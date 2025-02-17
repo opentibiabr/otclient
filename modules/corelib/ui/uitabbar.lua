@@ -189,3 +189,39 @@ function UITabBar:clearTabs()
         self:removeTab(self.tabs[#self.tabs])
     end
 end
+
+function UITabBar:addTabGrid(text, panel, icon, parent)
+    if panel == nil then
+        panel = g_ui.createWidget(self:getStyleName() .. 'Panel')
+        panel:setId('tabPanel')
+    end
+    local tab = nil
+    if parent then
+        tab = g_ui.createWidget(self:getStyleName() .. 'Button')
+    else
+        tab = g_ui.createWidget(self:getStyleName() .. 'Button', self.buttonsPanel)
+    end
+    panel.isTab = true
+    tab.tabPanel = panel
+    tab.tabBar = self
+    tab:setId('tab')
+    tab:setText(text)
+    tab.onClick = onTabClick
+    tab.onMouseRelease = onTabMouseRelease
+    tab.onDestroy = function()
+        if not tab.tabPanel:isDestroyed() then
+            tab.tabPanel:destroy()
+        end
+    end
+    table.insert(self.tabs, tab)
+    if #self.tabs == 1 then
+        self:selectTab(tab)
+    end
+    local tabStyle = {}
+    tabStyle['icon-source'] = icon
+    tab:mergeStyle(tabStyle)
+    if parent then
+        parent:addChild(tab)
+    end
+    return tab
+end

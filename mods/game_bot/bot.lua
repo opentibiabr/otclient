@@ -828,3 +828,7 @@ function botInventoryChange(player, slot, item, oldItem)
   if botExecutor == nil then return false end
   safeBotCall(function() botExecutor.callbacks.onInventoryChange(player, slot, item, oldItem) end)
 end
+
+function getBotTabs()
+  return botTabs
+end

@@ -1,4 +1,4 @@
-BotTabBar < TabBar
+BotTabBar < UITabBar
   tab-spacing: 1
   margin-left: 1
   margin-right: 1
@@ -13,12 +13,36 @@ BotTabBar < TabBar
     margin-top: -20
 
 BotTabBarPanel < TabBarPanel
-BotTabBarButton < TabBarButton
+BotTabBarButton < UIButton
   padding: 4
   padding-right: 5
   text-horizontal-auto-resize: true
+  size: 20 21
+  image-source: /images/ui/tabbutton_square
+  image-source: /images/ui/tabbutton_square
+  image-color: #dfdfdf
+  image-clip: 0 0 20 21
+  image-border: 3
+  image-border-bottom: 0
+  icon-color: #dfdfdf
+  color: #dfdfdf
+  padding: 5
   $!first:
     margin-left: 0
+  $hover !checked:
+    image-clip: 0 21 20 21
+    color: #dfdfdf
+
+  $disabled:
+    image-color: #dfdfdf88
+    icon-color: #dfdfdf
+
+  $checked:
+    image-clip: 0 42 20 21
+    color: #dfdfdf
+
+  $on !checked:
+    color: #dfdfdf
 
 MiniWindow
   id: botWindow
@@ -143,6 +167,11 @@ MiniWindow
       anchors.right: parent.right
       margin-right: -20
 
+      layout:
+        type: grid
+        cell-size: 45 21
+        flow: true
+        fit-children: true
     Panel
       id: botPanel
       margin-top: 2
