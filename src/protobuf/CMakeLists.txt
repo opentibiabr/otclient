@@ -8,7 +8,9 @@ if(APPLE)
 endif(APPLE)
 
 find_package(Protobuf REQUIRED)
-find_package(Threads)
+if(NOT WASM)
+        find_package(Threads)
+endif()
 
 if(EXISTS ${PROTOBUF_PROTOC_EXECUTABLE})
 	message(STATUS "Found Protobuf Compiler: ${PROTOBUF_PROTOC_EXECUTABLE}")
@@ -58,9 +60,9 @@ if(PROTOBUF_FOUND)
 	target_compile_definitions(${PROJECT_NAME} PUBLIC _DISABLE_VECTOR_ANNOTATION _DISABLE_STRING_ANNOTATION)
 	target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 
-	if(CMAKE_BASE_NAME STREQUAL "em++")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
-	endif()
+        if(CMAKE_BASE_NAME STREQUAL "em++" AND NOT WASM)
+                set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+        endif()
 
 	protobuf_generate(TARGET ${PROJECT_NAME} LANGUAGE cpp)
 endif(PROTOBUF_FOUND)
