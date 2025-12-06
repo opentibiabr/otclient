@@ -178,7 +178,9 @@ function initCooldown(progressRect, updateCallback, finishCallback)
     updateCallback()
 end
 
-local hasTierUpgradeFeature = g_game.getFeature(GameForgeSkillStats) or g_game.getFeature(GameCharacterSkillStats)
+function hasTierUpgradeFeature()
+    return g_game.getFeature(GameForgeSkillStats) or g_game.getFeature(GameCharacterSkillStats)
+end
 
 function updateCooldown(progressRect, duration)
     if not progressRect or progressRect:isDestroyed() then
@@ -211,7 +213,7 @@ function updateCooldown(progressRect, duration)
 end
 
 function isGroupCooldownIconActive(groupId)
-    if hasTierUpgradeFeature then
+    if hasTierUpgradeFeature() then
         local current = groupCooldown[groupId] or 0
         return g_clock.millis() < current
     else
@@ -220,7 +222,7 @@ function isGroupCooldownIconActive(groupId)
 end
 
 function isCooldownIconActive(iconId)
-    if hasTierUpgradeFeature then
+    if hasTierUpgradeFeature() then
         local current = cooldown[iconId] or 0
         return g_clock.millis() < current
     else
@@ -253,14 +255,14 @@ function onSpellCooldown(iconId, duration)
     end
     local finishFunc = function()
         removeCooldown(progressRect)
-        if hasTierUpgradeFeature then
+        if hasTierUpgradeFeature() then
             cooldown[iconId] = 0
         else
             cooldown[iconId] = false
         end
     end
     initCooldown(progressRect, updateFunc, finishFunc)
-    if hasTierUpgradeFeature then
+    if hasTierUpgradeFeature() then
         cooldown[iconId] = g_clock.millis() + duration
     else
         cooldown[iconId] = true
@@ -290,14 +292,14 @@ function onSpellGroupCooldown(groupId, duration)
         end
         local finishFunc = function()
             turnOffCooldown(progressRect)
-            if hasTierUpgradeFeature then
+            if hasTierUpgradeFeature() then
                 groupCooldown[groupId] = 0
             else
                 groupCooldown[groupId] = false
             end
         end
         initCooldown(progressRect, updateFunc, finishFunc)
-        if hasTierUpgradeFeature then
+        if hasTierUpgradeFeature() then
             groupCooldown[groupId] = g_clock.millis() + duration
         else
             groupCooldown[groupId] = true
