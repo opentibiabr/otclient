@@ -21,8 +21,7 @@ CaveBot.Extensions.PosCheck.setup = function()
     if #data == 6 then
       local maxRetriesArg = data[6] and data[6]:trim()
       if maxRetriesArg and maxRetriesArg:len() > 0 then
-        local lower = maxRetriesArg:lower()
-        if lower == "inf" or lower == "infinity" or lower == "0" then
+        if maxRetriesArg == "inf" or maxRetriesArg == "infinity" or maxRetriesArg == "0" then
           maxRetries = 0
         else
           maxRetries = tonumber(maxRetriesArg)
