@@ -102,8 +102,8 @@ void LoginHttp::httpLogin(const std::string& host, const std::string& path,
                           const std::string& password, int request_id, bool httpLogin, const std::string& token) {
 #ifndef __EMSCRIPTEN__
     this->errorMessage.clear();
-    g_asyncDispatcher.detach_task(
-        [this, host, path, port, email, password, request_id, token, httpLogin] {
+    g_asyncDispatcher->detach_task(
+        [this, host, path, port, email, password, token, request_id, httpLogin] {
         if (cancelled.load()) return;
         httplib::Result result =
             this->loginHttpsJson(host, path, port, email, password, token);
@@ -167,8 +167,9 @@ void LoginHttp::httpLogin(const std::string& host, const std::string& path,
     });
 #else
     this->errorMessage.clear();
-    g_asyncDispatcher.detach_task(
-        [this, host, path, port, email, password, request_id, token, httpLogin] {
+    g_asyncDispatcher->detach_task(
+        [this, host, path, port, email, password, token, request_id, httpLogin] {
+        if (cancelled.load()) return;
         emscripten_fetch_attr_t attr;
         emscripten_fetch_attr_init(&attr);
         strcpy(attr.requestMethod, "POST");

@@ -1,0 +1,145 @@
+name: Build - macOS
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - "src/**"
+      - ".github/workflows/build-macos.yml"
+  merge_group:
+  push:
+    branches:
+      - main
+    paths:
+      - "src/**"
+      - ".github/workflows/build-macos.yml"
+
+env:
+  LUKKA_RUN_VCPKG_SHA: "${{ vars.LUKKA_RUN_VCPKG_SHA != '' && vars.LUKKA_RUN_VCPKG_SHA || 'b3dd708d38df5c856fe1c18dc0d59ab771f93921' }}"
+  CMAKE_BUILD_PARALLEL_LEVEL: 2
+  MAKEFLAGS: "-j 2"
+
+jobs:
+  cancel-runs:
+    if: github.event_name == 'pull_request' && github.ref != 'refs/heads/main'
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@main
+        with:
+          access_token: ${{ github.token }}
+
+  build:
+    if: ${{ github.event_name == 'push' || !github.event.pull_request.draft }}
+    permissions:
+      contents: read
+      pull-requests: read
+    name: ${{ matrix.os }}-${{ matrix.buildtype }}
+    runs-on: ${{ matrix.os }}
+    env:
+      ACTIONS_RUNTIME_TOKEN: ${{ secrets.ACTIONS_RUNTIME_TOKEN }}
+      ACTIONS_CACHE_URL: ${{ secrets.ACTIONS_CACHE_URL }}
+
+    concurrency:
+      group: otclient-${{ github.workflow }}-${{ github.ref }}-${{ matrix.buildtype }}
+      cancel-in-progress: true
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-26]
+        buildtype: [macos-release]
+        include:
+          - os: macos-26
+            triplet: arm64-osx
+            cmake_build_type: Release
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event_name == 'push' && github.repository || (github.event.pull_request.head.repo.fork && github.repository || github.event.pull_request.head.repo.full_name) }}
+          ref: ${{ github.event_name == 'push' && github.ref || github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Get vcpkg commit ID
+        id: vcpkg-step
+        run: |
+          vcpkgCommitId=$(grep '.builtin-baseline' vcpkg.json | awk -F: '{print $2}' | tr -d '," ')
+          echo "vcpkgGitCommitId=$vcpkgCommitId" >> $GITHUB_OUTPUT
+
+      - name: Compute vcpkg.json hash
+        id: hash
+        run: |
+          hash=$(shasum -a 256 vcpkg.json | awk '{print toupper($1)}')
+          echo "hash=$hash" >> $GITHUB_OUTPUT
+
+      - name: Cache vcpkg binary artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/vcpkg/archives
+            ${{ github.workspace }}/vcpkg/downloads
+            ${{ github.workspace }}/vcpkg/installed
+            ${{ github.workspace }}/vcpkg/buildtrees
+          key: vcpkg-${{ matrix.os }}-${{ matrix.buildtype }}-${{ steps.hash.outputs.hash }}
+          restore-keys: |
+            vcpkg-${{ matrix.buildtype }}-
+
+      - name: Setup Python
+        id: python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@a400452f634fe49e9f18d388aeb1809dcc642136
+        env:
+          VCPKG_PYTHON3: ${{ steps.python.outputs.python-path }}
+        with:
+          vcpkgGitCommitId: ${{ steps.vcpkg-step.outputs.vcpkgGitCommitId }}
+
+      - name: Validate vcpkg baseline SHA
+        run: |
+          SHAS="${{ steps.vcpkg-step.outputs.vcpkgGitCommitId }}"
+          if [ -z "${SHAS}" ]; then
+            echo "::error title=Missing vcpkg baseline::Provide a full 40-char vcpkgGitCommitId."
+            exit 1
+          fi
+          if ! echo "${SHAS}" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "::error title=Invalid vcpkg baseline::vcpkgGitCommitId must be a full 40-char commit SHA."
+            exit 1
+          fi
+
+      - name: Install CMake and Ninja
+        uses: lukka/get-cmake@v3.31.6
+
+      - name: Cache CMake build directory
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/build-${{ matrix.buildtype }}
+          key: cmake-dir-${{ matrix.buildtype }}
+          restore-keys: |
+            cmake-dir-${{ matrix.buildtype }}
+
+      - name: Configure and Build
+        run: |
+          cmake -G Ninja -S . -B build-${{ matrix.buildtype }} \
+            -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
+            -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
+            -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }} \
+            -DTOGGLE_BIN_FOLDER=ON \
+            -DOPTIONS_ENABLE_IPO=OFF \
+            -DTOGGLE_BOT_PROTECTION=OFF
+
+          cmake --build build-${{ matrix.buildtype }} --target otclient
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: otclient-${{ matrix.os }}-${{ matrix.buildtype }}-${{ github.sha }}
+          path: |
+            ${{ github.workspace }}/build-${{ matrix.buildtype }}/bin/

@@ -134,5 +134,10 @@ private:
     T wd, ht;
 };
 
-using Size = TSize<int>;
-using SizeF = TSize<float>;
+namespace Fw {
+    using Size = TSize<int>;
+    using SizeF = TSize<float>;
+}
+
+using Fw::Size;
+using Fw::SizeF;

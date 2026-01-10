@@ -177,8 +177,9 @@ local function onWidgetKeyDown(widget, keyCode, keyboardModifiers)
     if keyCode == KeyUnknown then
         return false
     end
+    local callback
     if keyboardModifiers == KeyboardNoModifier then
-        local callback = widget.boundAloneKeyDownCombos[determineKeyComboDesc(keyCode, KeyboardNoModifier)]
+        callback = widget.boundAloneKeyDownCombos[determineKeyComboDesc(keyCode, KeyboardNoModifier)]
         signalcall(callback, widget, keyCode)
     end
     callback = widget.boundKeyDownCombos[determineKeyComboDesc(keyCode, keyboardModifiers)]

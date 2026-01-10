@@ -26,6 +26,4 @@
 
 #include <BS_thread_pool.hpp>
 
-using AsyncDispatcher = decltype(BS::thread_pool{ std::size_t{} });
-
-extern AsyncDispatcher g_asyncDispatcher;
+extern BS::thread_pool* g_asyncDispatcher;
