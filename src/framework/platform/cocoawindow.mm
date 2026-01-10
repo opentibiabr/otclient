@@ -41,237 +41,9 @@
 #undef Rect
 
 #include "cocoawindow.h"
+#include "cocoaview.h"
 #include <framework/core/eventdispatcher.h>
 #include <framework/graphics/image.h>
-
-@interface OTOpenGLView : NSOpenGLView
-@property (nonatomic, assign) CocoaWindow* platformWindow;
-@property (nonatomic) BOOL acceptsInput;
-@end
-
-@interface OTWindowDelegate : NSObject <NSWindowDelegate>
-@property (nonatomic, assign) CocoaWindow* platformWindow;
-@end
-
-@implementation OTOpenGLView
-
-- (instancetype)initWithFrame:(NSRect)frameRect pixelFormat:(NSOpenGLPixelFormat*)format {
-    self = [super initWithFrame:frameRect pixelFormat:format];
-    if (self) {
-        _acceptsInput = YES;
-        NSTrackingAreaOptions options = NSTrackingMouseEnteredAndExited |
-                                        NSTrackingMouseMoved |
-                                        NSTrackingActiveAlways |
-                                        NSTrackingInVisibleRect;
-        NSTrackingArea* trackingArea = [[NSTrackingArea alloc] initWithRect:NSZeroRect
-                                                                    options:options
-                                                                      owner:self
-                                                                   userInfo:nil];
-        [self addTrackingArea:trackingArea];
-    }
-    return self;
-}
-
-- (BOOL)acceptsFirstResponder {
-    return _acceptsInput;
-}
-
-- (BOOL)canBecomeKeyView {
-    return _acceptsInput;
-}
-
-- (void)keyDown:(NSEvent*)event {
-    if (!_platformWindow) return;
-
-    // Skip OS-level key repeats - game handles repeats via fireKeysPress()
-    if ([event isARepeat]) {
-        if ([event characters] && [[event characters] length] > 0) {
-            std::string chars = [[event characters] UTF8String];
-            Fw::Key key = _platformWindow->translateKeyCode([event keyCode]);
-            bool isSpecial = _platformWindow->isSpecialKey(key);
-            unsigned int modifiers = [event modifierFlags];
-            if (!isSpecial && !(modifiers & (NSEventModifierFlagCommand | NSEventModifierFlagControl))) {
-                _platformWindow->handleTextInput(chars);
-            }
-        }
-        return;
-    }
-
-    unsigned short keyCode = [event keyCode];
-    unsigned int modifiers = [event modifierFlags];
-
-    if ((modifiers & NSEventModifierFlagCommand) && keyCode == kVK_ANSI_Q) {
-        _platformWindow->handleClose();
-        return;
-    }
-
-    std::string chars;
-    if ([event characters] && [[event characters] length] > 0) {
-        chars = [[event characters] UTF8String];
-    }
-
-    _platformWindow->handleKeyDown(keyCode, modifiers, chars);
-
-    Fw::Key key = _platformWindow->translateKeyCode(keyCode);
-    bool isSpecial = _platformWindow->isSpecialKey(key);
-
-    if (chars.length() > 0 && !isSpecial && !(modifiers & (NSEventModifierFlagCommand | NSEventModifierFlagControl))) {
-        _platformWindow->handleTextInput(chars);
-    }
-}
-
-- (void)keyUp:(NSEvent*)event {
-    if (!_platformWindow) return;
-    _platformWindow->handleKeyUp([event keyCode], [event modifierFlags]);
-}
-
-- (void)flagsChanged:(NSEvent*)event {
-    if (!_platformWindow) return;
-    _platformWindow->handleFlagsChanged([event modifierFlags]);
-}
-
-- (Point)convertMousePosition:(NSEvent*)event {
-    NSPoint loc = [self convertPoint:[event locationInWindow] fromView:nil];
-    NSRect bounds = [self bounds];
-    return Point(static_cast<int>(loc.x), static_cast<int>(bounds.size.height - loc.y));
-}
-
-- (void)mouseDown:(NSEvent*)event {
-    if (!_platformWindow) return;
-    _platformWindow->handleMouseButton(Fw::MouseLeftButton, true, [self convertMousePosition:event]);
-}
-
-- (void)mouseUp:(NSEvent*)event {
-    if (!_platformWindow) return;
-    _platformWindow->handleMouseButton(Fw::MouseLeftButton, false, [self convertMousePosition:event]);
-}
-
-- (void)rightMouseDown:(NSEvent*)event {
-    if (!_platformWindow) return;
-    _platformWindow->handleMouseButton(Fw::MouseRightButton, true, [self convertMousePosition:event]);
-}
-
-- (void)rightMouseUp:(NSEvent*)event {
-    if (!_platformWindow) return;
-    _platformWindow->handleMouseButton(Fw::MouseRightButton, false, [self convertMousePosition:event]);
-}
-
-- (void)otherMouseDown:(NSEvent*)event {
-    if (!_platformWindow) return;
-    if ([event buttonNumber] == 2) {
-        _platformWindow->handleMouseButton(Fw::MouseMidButton, true, [self convertMousePosition:event]);
-    }
-}
-
-- (void)otherMouseUp:(NSEvent*)event {
-    if (!_platformWindow) return;
-    if ([event buttonNumber] == 2) {
-        _platformWindow->handleMouseButton(Fw::MouseMidButton, false, [self convertMousePosition:event]);
-    }
-}
-
-- (void)mouseMoved:(NSEvent*)event {
-    if (!_platformWindow) return;
-    _platformWindow->handleMouseMove([self convertMousePosition:event]);
-}
-
-- (void)mouseDragged:(NSEvent*)event {
-    if (!_platformWindow) return;
-    _platformWindow->handleMouseMove([self convertMousePosition:event]);
-}
-
-- (void)rightMouseDragged:(NSEvent*)event {
-    if (!_platformWindow) return;
-    _platformWindow->handleMouseMove([self convertMousePosition:event]);
-}
-
-- (void)otherMouseDragged:(NSEvent*)event {
-    if (!_platformWindow) return;
-    _platformWindow->handleMouseMove([self convertMousePosition:event]);
-}
-
-- (void)scrollWheel:(NSEvent*)event {
-    if (!_platformWindow) return;
-    CGFloat deltaX = [event scrollingDeltaX];
-    CGFloat deltaY = [event scrollingDeltaY];
-
-    if ([event hasPreciseScrollingDeltas]) {
-        deltaX *= 0.1;
-        deltaY *= 0.1;
-    }
-
-    _platformWindow->handleMouseScroll(static_cast<int>(deltaX), static_cast<int>(deltaY));
-}
-
-- (void)mouseEntered:(NSEvent*)event {
-    (void)event;
-}
-
-- (void)mouseExited:(NSEvent*)event {
-    (void)event;
-}
-
-@end
-
-@implementation OTWindowDelegate
-
-- (void)windowDidResize:(NSNotification*)notification {
-    if (!_platformWindow) return;
-    NSWindow* window = [notification object];
-    NSRect contentRect = [[window contentView] frame];
-    _platformWindow->handleResize(static_cast<int>(contentRect.size.width),
-                                   static_cast<int>(contentRect.size.height));
-}
-
-- (void)windowDidMove:(NSNotification*)notification {
-    if (!_platformWindow) return;
-    NSWindow* window = [notification object];
-    NSRect frame = [window frame];
-    NSScreen* screen = [window screen];
-    if (screen) {
-        NSRect screenFrame = [screen frame];
-        int y = static_cast<int>(screenFrame.size.height - frame.origin.y - frame.size.height);
-        _platformWindow->handleMove(static_cast<int>(frame.origin.x), y);
-    }
-}
-
-- (void)windowDidBecomeKey:(NSNotification*)notification {
-    (void)notification;
-    if (!_platformWindow) return;
-    _platformWindow->handleFocusChange(true);
-}
-
-- (void)windowDidResignKey:(NSNotification*)notification {
-    (void)notification;
-    if (!_platformWindow) return;
-    _platformWindow->handleFocusChange(false);
-}
-
-- (BOOL)windowShouldClose:(NSWindow*)sender {
-    (void)sender;
-    if (_platformWindow) {
-        _platformWindow->handleClose();
-    }
-    return NO;
-}
-
-- (void)windowWillEnterFullScreen:(NSNotification*)notification {
-    (void)notification;
-}
-
-- (void)windowDidEnterFullScreen:(NSNotification*)notification {
-    (void)notification;
-}
-
-- (void)windowWillExitFullScreen:(NSNotification*)notification {
-    (void)notification;
-}
-
-- (void)windowDidExitFullScreen:(NSNotification*)notification {
-    (void)notification;
-}
-
-@end
 
 CocoaWindow::CocoaWindow()
 {
@@ -850,6 +622,14 @@ void CocoaWindow::handleKeyDown(unsigned short keyCode, unsigned int modifiers, 
     (void)characters;
     updateModifiers(modifiers);
     Fw::Key key = translateKeyCode(keyCode);
+    if (key >= Fw::KeyLast)
+        return;
+
+    const bool cmdPressed = (modifiers & NSEventModifierFlagCommand) != 0;
+    const auto keyIndex = static_cast<size_t>(key);
+    if (cmdPressed && key != Fw::KeyMeta && key != Fw::KeyCtrl && key != Fw::KeyAlt && key != Fw::KeyShift) {
+        m_commandKeyDown[keyIndex] = true;
+    }
     processKeyDown(key);
 }
 
@@ -857,11 +637,17 @@ void CocoaWindow::handleKeyUp(unsigned short keyCode, unsigned int modifiers)
 {
     updateModifiers(modifiers);
     Fw::Key key = translateKeyCode(keyCode);
+    if (key < Fw::KeyLast) {
+        const auto keyIndex = static_cast<size_t>(key);
+        m_commandKeyDown[keyIndex] = false;
+    }
     processKeyUp(key);
 }
 
 void CocoaWindow::handleFlagsChanged(unsigned int modifiers)
 {
+    updateModifiers(modifiers);
+
     bool cmdPressed = (modifiers & NSEventModifierFlagCommand) != 0;
     bool cmdWasPressed = (m_lastModifiers & NSEventModifierFlagCommand) != 0;
     if (cmdPressed != cmdWasPressed) {
@@ -869,6 +655,14 @@ void CocoaWindow::handleFlagsChanged(unsigned int modifiers)
             processKeyDown(Fw::KeyMeta);
         else
             processKeyUp(Fw::KeyMeta);
+        if (!cmdPressed) {
+            for (size_t keyIndex = 0; keyIndex < m_commandKeyDown.size(); ++keyIndex) {
+                if (!m_commandKeyDown[keyIndex])
+                    continue;
+                m_commandKeyDown[keyIndex] = false;
+                processKeyUp(static_cast<Fw::Key>(keyIndex));
+            }
+        }
     }
 
     bool optPressed = (modifiers & NSEventModifierFlagOption) != 0;
@@ -904,9 +698,9 @@ void CocoaWindow::handleFlagsChanged(unsigned int modifiers)
 void CocoaWindow::updateModifiers(unsigned int modifiers)
 {
     if (modifiers & NSEventModifierFlagCommand)
-        m_inputEvent.keyboardModifiers |= Fw::KeyboardCtrlModifier;
+        m_inputEvent.keyboardModifiers |= Fw::KeyboardPrimaryModifier;
     else
-        m_inputEvent.keyboardModifiers &= ~Fw::KeyboardCtrlModifier;
+        m_inputEvent.keyboardModifiers &= ~Fw::KeyboardPrimaryModifier;
 
     if (modifiers & NSEventModifierFlagOption)
         m_inputEvent.keyboardModifiers |= Fw::KeyboardAltModifier;
@@ -914,9 +708,9 @@ void CocoaWindow::updateModifiers(unsigned int modifiers)
         m_inputEvent.keyboardModifiers &= ~Fw::KeyboardAltModifier;
 
     if (modifiers & NSEventModifierFlagControl)
-        m_inputEvent.keyboardModifiers |= Fw::KeyboardControlModifier;
+        m_inputEvent.keyboardModifiers |= Fw::KeyboardCtrlModifier;
     else
-        m_inputEvent.keyboardModifiers &= ~Fw::KeyboardControlModifier;
+        m_inputEvent.keyboardModifiers &= ~Fw::KeyboardCtrlModifier;
 
     if (modifiers & NSEventModifierFlagShift)
         m_inputEvent.keyboardModifiers |= Fw::KeyboardShiftModifier;

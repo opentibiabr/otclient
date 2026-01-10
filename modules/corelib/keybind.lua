@@ -534,19 +534,27 @@ function Keybind.setPrimaryActionKey(category, action, preset, keyCombo, chatMod
   local index = category .. '_' .. action
   local keybind = Keybind.defaultKeybinds[index]
 
+  if keyCombo and type(keyCombo) == "string" and keyCombo:len() > 0 then
+    keyCombo = retranslateKeyComboDesc(keyCombo)
+  end
+
+  local numericChatMode = chatMode
+  chatMode = tostring(chatMode)
+
   local keys = Keybind.configs.keybinds[preset]:getNode(index)
   if not keys then
-    keys = table.recursivecopy(keybind.keys)
-  else
-    chatMode = tostring(chatMode)
+    keys = {}
+    for k, v in pairs(keybind.keys) do
+      keys[tostring(k)] = table.recursivecopy(v)
+    end
   end
 
   if keybind.callbacks then
     Keybind.unbind(category, action)
   end
-  
+
   if not keys[chatMode] then
-    keys[chatMode] = { primary = keyCombo, secondary = keybind.keys[tonumber(chatMode)].secondary }
+    keys[chatMode] = { primary = keyCombo, secondary = keybind.keys[numericChatMode].secondary }
   end
 
   keys[chatMode].primary = keyCombo
@@ -570,19 +578,27 @@ function Keybind.setSecondaryActionKey(category, action, preset, keyCombo, chatM
   local index = category .. '_' .. action
   local keybind = Keybind.defaultKeybinds[index]
 
+  if keyCombo and type(keyCombo) == "string" and keyCombo:len() > 0 then
+    keyCombo = retranslateKeyComboDesc(keyCombo)
+  end
+
+  local numericChatMode = chatMode
+  chatMode = tostring(chatMode)
+
   local keys = Keybind.configs.keybinds[preset]:getNode(index)
   if not keys then
-    keys = table.recursivecopy(keybind.keys)
-  else
-    chatMode = tostring(chatMode)
+    keys = {}
+    for k, v in pairs(keybind.keys) do
+      keys[tostring(k)] = table.recursivecopy(v)
+    end
   end
 
   if keybind.callbacks then
     Keybind.unbind(category, action)
   end
-  
+
   if not keys[chatMode] then
-    keys[chatMode] = { primary = keybind.keys[tonumber(chatMode)].primary, secondary = keyCombo }
+    keys[chatMode] = { primary = keybind.keys[numericChatMode].primary, secondary = keyCombo }
   end
 
   keys[chatMode].secondary = keyCombo
@@ -640,7 +656,7 @@ function Keybind.getKeybindKeys(category, action, chatMode, preset, forceDefault
       secondary = keybind.keys[chatMode].secondary
     }
   else
-    keys = keys[chatMode] or keys[tostring(chatMode)]
+    keys = keys[tostring(chatMode)] or keys[chatMode]
   end
 
   if not keys then
@@ -764,6 +780,12 @@ function Keybind.editHotkeyKeys(hotkeyId, primary, secondary, chatMode)
   Keybind.unbindHotkey(hotkeyId, chatMode)
 
   local hotkey = Keybind.hotkeys[chatMode][Keybind.currentPreset][hotkeyId]
+  if primary and primary:len() > 0 then
+    primary = retranslateKeyComboDesc(primary)
+  end
+  if secondary and secondary:len() > 0 then
+    secondary = retranslateKeyComboDesc(secondary)
+  end
   hotkey.primary = primary or ""
   hotkey.secondary = secondary or ""
   Keybind.configs.hotkeys[Keybind.currentPreset]:setNode(chatMode, Keybind.hotkeys[chatMode][Keybind.currentPreset])

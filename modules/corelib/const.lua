@@ -43,7 +43,8 @@ KeyboardShiftModifier        = 4
 KeyboardCtrlShiftModifier    = 5
 KeyboardAltShiftModifier     = 6
 KeyboardCtrlAltShiftModifier = 7
-KeyboardControlModifier      = 8
+KeyboardMetaModifier         = 8
+KeyboardPrimaryModifier      = 16
 
 MouseNoButton                = 0
 MouseLeftButton              = 1
@@ -365,10 +366,19 @@ EVENT_TEXT_HOVER = 2
 function initPlatformKeyDescs()
     local platformType = g_window.getPlatformType()
     local isMacOS = platformType:find("MACOS") ~= nil
+    local isWindows = platformType:find("WIN32") ~= nil
+    local isX11 = platformType:find("X11") ~= nil
 
     if isMacOS then
         KeyCodeDescs[KeyCtrlCmd] = 'Cmd'
         KeyCodeDescs[KeyAltOpt] = 'Option'
         KeyCodeDescs[KeyControl] = 'Ctrl'
+        KeyCodeDescs[KeyMeta] = 'Cmd'
+    elseif isWindows then
+        KeyCodeDescs[KeyControl] = 'Ctrl'
+        KeyCodeDescs[KeyMeta] = 'Win'
+    elseif isX11 then
+        KeyCodeDescs[KeyControl] = 'Ctrl'
+        KeyCodeDescs[KeyMeta] = 'Super'
     end
 end

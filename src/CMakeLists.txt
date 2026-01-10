@@ -491,8 +491,14 @@ endif()
 if(WIN32)
   set(SOURCE_FILES ${SOURCE_FILES} framework/platform/win32window.cpp)
 elseif(APPLE AND NOT ANDROID AND NOT WASM)
-  set(SOURCE_FILES ${SOURCE_FILES} framework/platform/cocoawindow.mm)
-  set_source_files_properties(framework/platform/cocoawindow.mm PROPERTIES
+  set(SOURCE_FILES ${SOURCE_FILES}
+          framework/platform/cocoawindow.mm
+          framework/platform/cocoaview.mm
+  )
+  set_source_files_properties(
+    framework/platform/cocoawindow.mm
+    framework/platform/cocoaview.mm
+    PROPERTIES
     SKIP_UNITY_BUILD_INCLUSION ON
     SKIP_PRECOMPILE_HEADERS ON
   )

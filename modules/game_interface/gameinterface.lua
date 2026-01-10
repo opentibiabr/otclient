@@ -1164,7 +1164,7 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
             (mouseButton == MouseLeftButton or mouseButton == MouseRightButton) then
             g_game.look(lookThing)
             return true
-        elseif useThing and keyboardModifiers == KeyboardCtrlModifier and
+        elseif useThing and g_keyboard.isPrimaryModifierOnly(keyboardModifiers) and
             (mouseButton == MouseLeftButton or mouseButton == MouseRightButton) then
             local smartLeftClick = modules.client_options.getOption('smartLeftClick')
 
@@ -1195,7 +1195,7 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
                 end
             end
             return true
-        elseif useThing and useThing:isContainer() and keyboardModifiers == KeyboardCtrlShiftModifier and
+        elseif useThing and useThing:isContainer() and g_keyboard.isPrimaryShiftModifierOnly(keyboardModifiers) and
             (mouseButton == MouseLeftButton or mouseButton == MouseRightButton) then
             g_game.open(useThing)
             return true
@@ -1442,7 +1442,7 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
         end
 
         -- Common key combinations for all Classic Control modes
-        if useThing and useThing:isContainer() and keyboardModifiers == KeyboardCtrlShiftModifier and
+        if useThing and useThing:isContainer() and g_keyboard.isPrimaryShiftModifierOnly(keyboardModifiers) and
             (mouseButton == MouseLeftButton or mouseButton == MouseRightButton) then
             g_game.open(useThing)
             return true
@@ -1454,7 +1454,7 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
                 (g_mouse.isPressed(MouseRightButton) and mouseButton == MouseLeftButton)) then
             g_game.look(lookThing)
             return true
-        elseif useThing and keyboardModifiers == KeyboardCtrlModifier and
+        elseif useThing and g_keyboard.isPrimaryModifierOnly(keyboardModifiers) and
             (mouseButton == MouseLeftButton or mouseButton == MouseRightButton) then
             createThingMenu(menuPosition, lookThing, useThing, creatureThing)
             return true

@@ -24,6 +24,8 @@
 
 #include "platformwindow.h"
 
+#include <array>
+
 #ifdef __OBJC__
 @class NSWindow;
 @class NSOpenGLView;
@@ -109,4 +111,5 @@ private:
     bool m_cursorInWindow;
 
     unsigned int m_lastModifiers;
+    std::array<bool, Fw::KeyLast> m_commandKeyDown{};
 };

@@ -221,7 +221,7 @@ function consoleController:onInit()
     consoleTabBar.onDragLeave = onDragLeave
     consoleTabBar.onDragMove = onDragMove
     consolePanel.onKeyPress = function(self, keyCode, keyboardModifiers)
-        if not (keyboardModifiers == KeyboardCtrlModifier and keyCode == KeyC) then
+        if not (g_keyboard.isPrimaryModifierOnly(keyboardModifiers) and keyCode == KeyC) then
             return false
         end
 
@@ -377,10 +377,10 @@ local function unbindMovingKeys()
     gameWalk.unbindWalkKey('C')
     gameWalk.unbindWalkKey('Z')
 
-    gameWalk.unbindTurnKey('Ctrl+W')
-    gameWalk.unbindTurnKey('Ctrl+D')
-    gameWalk.unbindTurnKey('Ctrl+S')
-    gameWalk.unbindTurnKey('Ctrl+A')
+    gameWalk.unbindTurnKey('Control+W')
+    gameWalk.unbindTurnKey('Control+D')
+    gameWalk.unbindTurnKey('Control+S')
+    gameWalk.unbindTurnKey('Control+A')
 end
 
 local function bindMovingKeys()
@@ -395,10 +395,10 @@ local function bindMovingKeys()
     gameWalk.bindWalkKey('C', SouthEast)
     gameWalk.bindWalkKey('Z', SouthWest)
 
-    gameWalk.bindTurnKey('Ctrl+W', North)
-    gameWalk.bindTurnKey('Ctrl+D', East)
-    gameWalk.bindTurnKey('Ctrl+S', South)
-    gameWalk.bindTurnKey('Ctrl+A', West)
+    gameWalk.bindTurnKey('Control+W', North)
+    gameWalk.bindTurnKey('Control+D', East)
+    gameWalk.bindTurnKey('Control+S', South)
+    gameWalk.bindTurnKey('Control+A', West)
 end
 
 function switchChat(enabled)

@@ -1,13 +1,93 @@
 -- @docclass
 g_keyboard = {}
 
+local function getPlatformFlags()
+    local platformType = g_window.getPlatformType() or ""
+    local isMacOS = platformType:find("MACOS") ~= nil
+    return isMacOS, not isMacOS
+end
+
+local function resolveKeyAlias(desc)
+    if not desc then
+        return nil
+    end
+    local key = desc:trim():lower()
+    local isMacOS = getPlatformFlags()
+    if key == 'cmd' or key == 'command' then
+        return KeyMeta
+    end
+    if key == 'primary' then
+        if isMacOS then
+            return KeyMeta
+        end
+        return KeyCtrlCmd
+    end
+    if key == 'ctrl' then
+        if isMacOS then
+            return KeyMeta
+        end
+        return KeyCtrlCmd
+    end
+    if key == 'control' then
+        return KeyCtrlCmd
+    end
+    if key == 'alt' or key == 'option' then
+        return KeyAltOpt
+    end
+    if key == 'meta' or key == 'win' or key == 'super' then
+        return KeyMeta
+    end
+    return nil
+end
+
 -- private functions
+local function canonicalizeKeyCombo(keyCombo)
+    if not keyCombo or #keyCombo == 0 then
+        return keyCombo
+    end
+    local hasCtrl = false
+    local hasMeta = false
+    local hasAlt = false
+    local hasShift = false
+    local mainKey = nil
+    for _, keyCode in ipairs(keyCombo) do
+        if keyCode == KeyCtrlCmd or keyCode == KeyControl then
+            hasCtrl = true
+        elseif keyCode == KeyMeta then
+            hasMeta = true
+        elseif keyCode == KeyAltOpt then
+            hasAlt = true
+        elseif keyCode == KeyShift then
+            hasShift = true
+        else
+            mainKey = keyCode
+        end
+    end
+    local combo = {}
+    if hasCtrl then
+        table.insert(combo, KeyCtrlCmd)
+    end
+    if hasMeta then
+        table.insert(combo, KeyMeta)
+    end
+    if hasAlt then
+        table.insert(combo, KeyAltOpt)
+    end
+    if hasShift then
+        table.insert(combo, KeyShift)
+    end
+    if mainKey then
+        table.insert(combo, mainKey)
+    end
+    return combo
+end
+
 function translateKeyCombo(keyCombo)
     if not keyCombo or #keyCombo == 0 then
         return nil
     end
     local keyComboDesc = ''
-    for k, v in pairs(keyCombo) do
+    for _, v in ipairs(keyCombo) do
         local keyDesc = KeyCodeDescs[v]
         if keyDesc == nil then
             return nil
@@ -19,6 +99,10 @@ function translateKeyCombo(keyCombo)
 end
 
 local function getKeyCode(key)
+    local alias = resolveKeyAlias(key)
+    if alias then
+        return alias
+    end
     for keyCode, keyDesc in pairs(KeyCodeDescs) do
         if keyDesc:lower() == key:trim():lower() then
             return keyCode
@@ -37,25 +121,46 @@ function retranslateKeyComboDesc(keyComboDesc)
 
     local keyCombo = {}
     for i, currentKeyDesc in ipairs(keyComboDesc:split('+')) do
+        local alias = resolveKeyAlias(currentKeyDesc)
+        if alias then
+            table.insert(keyCombo, alias)
+        else
         for keyCode, keyDesc in pairs(KeyCodeDescs) do
             if keyDesc:lower() == currentKeyDesc:trim():lower() then
                 table.insert(keyCombo, keyCode)
             end
         end
+        end
     end
-    return translateKeyCombo(keyCombo)
+    return translateKeyCombo(canonicalizeKeyCombo(keyCombo))
 end
 
 function determineKeyComboDesc(keyCode, keyboardModifiers)
+    local isMacOS = getPlatformFlags()
     local keyCombo = {}
-    if keyCode == KeyCtrlCmd or keyCode == KeyShift or keyCode == KeyAltOpt or keyCode == KeyControl then
+    if keyCode == KeyShift or keyCode == KeyAltOpt or keyCode == KeyMeta or keyCode == KeyCtrlCmd then
         table.insert(keyCombo, keyCode)
+    elseif keyCode == KeyControl then
+        table.insert(keyCombo, KeyCtrlCmd)
     elseif KeyCodeDescs[keyCode] ~= nil then
-        if bit.band(keyboardModifiers, KeyboardControlModifier) ~= 0 then
-            table.insert(keyCombo, KeyControl)
-        end
-        if bit.band(keyboardModifiers, KeyboardCtrlModifier) ~= 0 then
-            table.insert(keyCombo, KeyCtrlCmd)
+        local primaryPressed = bit.band(keyboardModifiers, KeyboardPrimaryModifier) ~= 0
+        local ctrlPressed = bit.band(keyboardModifiers, KeyboardCtrlModifier) ~= 0
+        local metaPressed = bit.band(keyboardModifiers, KeyboardMetaModifier) ~= 0
+
+        if isMacOS then
+            if ctrlPressed then
+                table.insert(keyCombo, KeyCtrlCmd)
+            end
+            if primaryPressed or metaPressed then
+                table.insert(keyCombo, KeyMeta)
+            end
+        else
+            if ctrlPressed or primaryPressed then
+                table.insert(keyCombo, KeyCtrlCmd)
+            end
+            if metaPressed then
+                table.insert(keyCombo, KeyMeta)
+            end
         end
         if bit.band(keyboardModifiers, KeyboardAltModifier) ~= 0 then
             table.insert(keyCombo, KeyAltOpt)
@@ -72,8 +177,10 @@ local function onWidgetKeyDown(widget, keyCode, keyboardModifiers)
     if keyCode == KeyUnknown then
         return false
     end
-    local callback = widget.boundAloneKeyDownCombos[determineKeyComboDesc(keyCode, KeyboardNoModifier)]
-    signalcall(callback, widget, keyCode)
+    if keyboardModifiers == KeyboardNoModifier then
+        local callback = widget.boundAloneKeyDownCombos[determineKeyComboDesc(keyCode, KeyboardNoModifier)]
+        signalcall(callback, widget, keyCode)
+    end
     callback = widget.boundKeyDownCombos[determineKeyComboDesc(keyCode, keyboardModifiers)]
     return signalcall(callback, widget, keyCode)
 end
@@ -250,7 +357,15 @@ function g_keyboard.isCtrlPressed()
     if (g_platform.isMobile()) then
         return false
     else
-        return bit.band(g_window.getKeyboardModifiers(), KeyboardCtrlModifier) ~= 0
+        return bit.band(g_window.getKeyboardModifiers(), KeyboardPrimaryModifier) ~= 0
+    end
+end
+
+function g_keyboard.isPrimaryPressed()
+    if (g_platform.isMobile()) then
+        return false
+    else
+        return bit.band(g_window.getKeyboardModifiers(), KeyboardPrimaryModifier) ~= 0
     end
 end
 
@@ -274,6 +389,47 @@ function g_keyboard.isControlPressed()
     if (g_platform.isMobile()) then
         return false
     else
-        return bit.band(g_window.getKeyboardModifiers(), KeyboardControlModifier) ~= 0
+        return bit.band(g_window.getKeyboardModifiers(), KeyboardCtrlModifier) ~= 0
     end
+end
+
+function g_keyboard.isMetaPressed()
+    if (g_platform.isMobile()) then
+        return false
+    else
+        return bit.band(g_window.getKeyboardModifiers(), KeyboardMetaModifier) ~= 0
+    end
+end
+
+local function hasOnlyModifiers(modifiers, requiredMask, allowedMask)
+    return bit.band(modifiers, requiredMask) == requiredMask and bit.band(modifiers, allowedMask) == modifiers
+end
+
+local function primaryAllowedMask()
+    local _, primaryIsCtrl = getPlatformFlags()
+    if primaryIsCtrl then
+        return bit.bor(KeyboardPrimaryModifier, KeyboardCtrlModifier)
+    end
+    return KeyboardPrimaryModifier
+end
+
+function g_keyboard.isPrimaryModifierOnly(keyboardModifiers)
+    if (g_platform.isMobile()) then
+        return false
+    end
+    local allowedMask = primaryAllowedMask()
+    return hasOnlyModifiers(keyboardModifiers, KeyboardPrimaryModifier, allowedMask)
+end
+
+function g_keyboard.isPrimaryShiftModifierOnly(keyboardModifiers)
+    if (g_platform.isMobile()) then
+        return false
+    end
+    local requiredMask = bit.bor(KeyboardPrimaryModifier, KeyboardShiftModifier)
+    local allowedMask = requiredMask
+    local _, primaryIsCtrl = getPlatformFlags()
+    if primaryIsCtrl then
+        allowedMask = bit.bor(allowedMask, KeyboardCtrlModifier)
+    end
+    return hasOnlyModifiers(keyboardModifiers, requiredMask, allowedMask)
 end
