@@ -576,6 +576,7 @@ namespace Otc
         GameForgeSkillStats = 126,
         GameCharacterSkillStats = 127,
         GameCreaturePaperdoll = 128,
+        GameMonkVocation = 129,
         LastGameFeature
     };
 

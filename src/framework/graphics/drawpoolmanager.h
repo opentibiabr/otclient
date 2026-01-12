@@ -56,6 +56,7 @@ public:
 
     void bindFrameBuffer(const Size& size, const Color& color = Color::white) const { getCurrentPool()->bindFrameBuffer(size, color); }
     void releaseFrameBuffer(const Rect& dest) const { getCurrentPool()->releaseFrameBuffer(dest); };
+    void releaseFrameBuffer(const Rect& dest, uint8_t flipDirection) const { getCurrentPool()->releaseFrameBuffer(dest, flipDirection); };
 
     void setOpacity(const float opacity, const bool onlyOnce = false) const { getCurrentPool()->setOpacity(opacity, onlyOnce); }
     void setClipRect(const Rect& clipRect, const bool onlyOnce = false) const { getCurrentPool()->setClipRect(clipRect, onlyOnce); }

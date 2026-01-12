@@ -204,6 +204,7 @@ private:
     void addAction(const std::function<void()>& action, size_t hash = 0);
     void bindFrameBuffer(const Size& size, const Color& color = Color::white);
     void releaseFrameBuffer(const Rect& dest);
+    void releaseFrameBuffer(const Rect& dest, uint8_t flipDirection);
 
     void setFPS(const uint16_t fps) { m_refreshDelay = 1000 / fps; }
 
