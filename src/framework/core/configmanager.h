@@ -31,9 +31,18 @@ struct GraphicsConfig
     int16_t foregroundAtlasSize = 2048;
 };
 
+struct FontConfig
+{
+    std::string widget;
+    std::string staticText;
+    std::string animatedText;
+    std::string creatureText;
+};
+
 struct PublicConfig
 {
     GraphicsConfig graphics;
+    FontConfig font;
 };
 
 // @bindsingleton g_configs

@@ -271,7 +271,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>false</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>libEGL.lib;libGLESv2.lib;dxgi.lib;d3d9.lib;d3d11.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>freetype.lib;libEGL.lib;libGLESv2.lib;dxgi.lib;d3d9.lib;d3d11.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='OpenGL|x64'">
@@ -330,7 +330,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>libEGL.lib;libGLESv2.lib;dxgi.lib;d3d9.lib;d3d11.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>freetype.lib;libEGL.lib;libGLESv2.lib;dxgi.lib;d3d9.lib;d3d11.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -411,6 +411,7 @@
     <ClCompile Include="..\src\framework\graphics\animatedtexture.cpp" />
     <ClCompile Include="..\src\framework\graphics\apngloader.cpp" />
     <ClCompile Include="..\src\framework\graphics\bitmapfont.cpp" />
+    <ClCompile Include="..\src\framework\graphics\ttfloader.cpp" />
     <ClCompile Include="..\src\framework\graphics\cachedtext.cpp" />
     <ClCompile Include="..\src\framework\graphics\coordsbuffer.cpp" />
     <ClCompile Include="..\src\framework\graphics\drawpoolmanager.cpp" />
@@ -588,6 +589,7 @@
     <ClInclude Include="..\src\framework\graphics\apngloader.h" />
     <ClInclude Include="..\src\framework\graphics\bitmapfont.h" />
     <ClInclude Include="..\src\framework\graphics\bitmapfontwrapoptions.h" />
+    <ClInclude Include="..\src\framework\graphics\ttfloader.h" />    
     <ClInclude Include="..\src\framework\graphics\cachedtext.h" />
     <ClInclude Include="..\src\framework\graphics\coordsbuffer.h" />
     <ClInclude Include="..\src\framework\graphics\declarations.h" />
@@ -666,6 +668,7 @@
     <ClInclude Include="..\src\framework\stdext\compiler.h" />
     <ClInclude Include="..\src\framework\stdext\demangle.h" />
     <ClInclude Include="..\src\framework\stdext\exception.h" />
+    <ClInclude Include="..\src\framework\stdext\format.h" />
     <ClInclude Include="..\src\framework\stdext\hash.h" />
     <ClInclude Include="..\src\framework\stdext\math.h" />
     <ClInclude Include="..\src\framework\stdext\net.h" />

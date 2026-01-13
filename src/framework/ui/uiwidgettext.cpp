@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,9 @@
 #include <framework/html/htmlnode.h>
 
 #include "framework/otml/otmlnode.h"
+#include <sstream>
+#include <iomanip>
+#include <regex>
 
 namespace {
     WordBreakMode parseWordBreakMode(const std::string& v) {
@@ -113,27 +116,16 @@ void UIWidget::initText()
     m_font = g_fonts.getDefaultWidgetFont();
     m_textAlign = Fw::AlignCenter;
     m_coordsBuffer = std::make_shared<CoordsBuffer>();
-    m_textOverflowLength = 0;
-    m_textOverflowCharacter = "...";
-    m_baseTextColor = m_color;
+    m_textUnderline = std::make_shared<CoordsBuffer>();
 }
 
 void UIWidget::updateText()
 {
-    if ((hasEventListener(EVENT_TEXT_CLICK) || hasEventListener(EVENT_TEXT_HOVER)) && m_textEvents.empty())
-        processCodeTags();
-
     if (isTextWrap() && m_rect.isValid()) {
         m_drawTextColors = m_textColors;
-        if (m_textOverflowLength > 0 && m_text.length() > m_textOverflowLength)
-            m_drawText = m_font->wrapText(m_text.substr(0, m_textOverflowLength - m_textOverflowCharacter.length()) + m_textOverflowCharacter, getWidth() - m_textOffset.x, &m_drawTextColors);
-        else
-            m_drawText = m_font->wrapText(m_text, getWidth() - m_textOffset.x, &m_drawTextColors);
+        m_drawText = m_font->wrapText(m_text, getWidth() - m_textOffset.x, getTextWrapOptions());
     } else {
-        if (m_textOverflowLength > 0 && m_text.length() > m_textOverflowLength)
-            m_drawText = m_text.substr(0, m_textOverflowLength - m_textOverflowCharacter.length()) + m_textOverflowCharacter;
-        else
-            m_drawText = m_text;
+        m_drawText = m_text;
         m_drawTextColors = m_textColors;
     }
 
@@ -169,6 +161,51 @@ void UIWidget::resizeToText()
 
 void UIWidget::parseTextStyle(const OTMLNodePtr& styleNode)
 {
+
+    int ttfFontSize = 12; //default
+    int ttfStrokeWidth = 0;
+    Color ttfStrokeColor = Color::black;	
+    std::string ttfFontName;
+    
+    for (const auto& node : styleNode->children()) {
+        if (node->tag() == "ttf-font-size")
+            ttfFontSize = node->value<int>();
+        else if (node->tag() == "ttf-font")
+            ttfFontName = node->value();
+        else if (node->tag() == "ttf-stroke") {
+
+            std::string strokeValue = node->value();
+            std::istringstream iss(strokeValue);
+            iss >> ttfStrokeWidth;
+            std::string colorStr;
+            if (iss >> colorStr) {
+                ttfStrokeColor = Color(colorStr);
+            }
+        }
+        else if (node->tag() == "ttf-stroke-width")
+            ttfStrokeWidth = node->value<int>();
+        else if (node->tag() == "ttf-stroke-color")
+            ttfStrokeColor = Color(node->value());
+        else if (node->tag() == "stroke") {
+
+            std::string strokeValue = node->value();
+            std::istringstream iss(strokeValue);
+            iss >> ttfStrokeWidth;
+            std::string colorStr;
+            if (iss >> colorStr) {
+                ttfStrokeColor = Color(colorStr);
+            }
+        }		
+    }
+
+    if (!ttfFontName.empty()) {
+        g_logger.debug("parseTextStyle: setting TTF font '{}' size {} stroke {} rgba({},{},{},{})", 
+                      ttfFontName, ttfFontSize, ttfStrokeWidth, 
+                      ttfStrokeColor.r(), ttfStrokeColor.g(), ttfStrokeColor.b(), ttfStrokeColor.a());
+        setTTFFont(ttfFontName, ttfFontSize, ttfStrokeWidth, ttfStrokeColor);
+    }
+
+
     for (const auto& node : styleNode->children()) {
         const std::string tag = node->tag();
 
@@ -188,8 +225,10 @@ void UIWidget::parseTextStyle(const OTMLNodePtr& styleNode)
             setTextVerticalAutoResize(node->value<bool>());
         else if (tag == "text-only-upper-case")
             setTextOnlyUpperCase(node->value<bool>());
-        else if (tag == "font")
-            setFont(node->value());
+        else if (node->tag() == "font") {
+            if (ttfFontName.empty())
+                setFont(node->value());
+        }
         else if (tag == "font-scale")
             setFontScale(node->value<float>());
         else if (tag == "font-size")
@@ -202,10 +241,6 @@ void UIWidget::parseTextStyle(const OTMLNodePtr& styleNode)
             m_textWrapOptions.hyphenationMode = parseHyphenationMode(node->value());
         else if (tag == "text-lang")
             m_textWrapOptions.language = node->value();
-        else if (node->tag() == "text-overflow-length")
-            setTextOverflowLength(node->value<uint16_t>());
-        else if (node->tag() == "text-overflow-character")
-            setTextOverflowCharacter(node->value<>());
     }
 }
 
@@ -229,9 +264,6 @@ void UIWidget::drawText(const Rect& screenCoords)
         auto coords = Rect(screenCoords.topLeft().scale(m_fontScale), screenCoords.bottomRight().scale(m_fontScale));
         coords.translate(textOffset);
 
-        if (hasEventListener(EVENT_TEXT_CLICK) || hasEventListener(EVENT_TEXT_HOVER))
-            cacheRectToWord();
-
         if (m_drawTextColors.empty())
             m_font->fillTextCoords(m_coordsBuffer, m_drawText, m_textSize, m_textAlign, coords, m_glyphsPositionsCache);
         else
@@ -250,9 +282,6 @@ void UIWidget::drawText(const Rect& screenCoords)
     }
     g_drawPool.resetDrawOrder();
     g_drawPool.scale(1.f); // reset scale
-
-    if (m_textUnderline && m_textUnderline->getVertexCount() > 0)
-        g_drawPool.addTexturedCoordsBuffer(nullptr, m_textUnderline, m_color);
 }
 
 void UIWidget::onTextChange(const std::string_view text, const std::string_view oldText)
@@ -274,7 +303,6 @@ void UIWidget::setText(const std::string_view text, const bool dontFireLuaCall)
     m_textColors.clear();
     m_drawTextColors.clear();
     m_colorCoordsBuffer.clear();
-    m_textEvents.clear();
 
     const std::string oldText = m_text;
     m_text = _text;
@@ -298,118 +326,40 @@ void UIWidget::setColoredText(const std::string_view coloredText, bool dontFireL
     m_drawTextColors.clear();
     m_colorCoordsBuffer.clear();
     m_coordsBuffer->clear();
-    m_textEvents.clear();
 
-    static const std::regex expColor(R"(\{([^\}]+),[ ]*([^\}]+)\})");
-    static const std::regex expEvent(R"(\[text-event\](.*?)\[/text-event\])");
+    std::regex exp(R"(\{([^\}]+),[ ]*([^\}]+)\})");
 
     std::string _text{ coloredText.data() };
-    std::string text;
-    text.reserve(coloredText.size());
 
-    Color baseColor = m_color;
-    m_baseTextColor = baseColor;
+    Color baseColor = Color::white;
     std::smatch res;
-    text.clear();
-    auto processTextEvents = [&](const std::string& fragment, size_t basePosition) -> std::string {
-        if (fragment.find("[text-event]") == std::string::npos) {
-            return fragment;
-        }
-
-        std::string tempText = fragment;
-        std::vector<std::tuple<size_t, size_t, std::string, bool>> foundEvents;
-
-        foundEvents.reserve(5);
-
-        std::smatch eventMatch;
-        size_t eventAdjustment = 0;
-
-        while (std::regex_search(tempText, eventMatch, expEvent)) {
-            std::string fullMatch = eventMatch[0].str();
-            std::string eventContent = eventMatch[1].str();
-
-            // detect special marker prefix (\x01) which indicates "no underline"
-            bool noUnderline = false;
-            if (!eventContent.empty() && eventContent[0] == '\x01') {
-                noUnderline = true;
-                eventContent = eventContent.substr(1);
-            }
-
-            size_t pos = eventMatch.position(0);
-            size_t realPos = pos + basePosition - eventAdjustment;
-
-            foundEvents.emplace_back(
-                realPos,
-                realPos + eventContent.length(),
-                eventContent,
-                noUnderline
-            );
-
-            tempText = eventMatch.suffix().str();
-            eventAdjustment += fullMatch.length() - (eventContent.length() + (noUnderline ? 1u : 0u));
-        }
-
-        m_textEvents.reserve(m_textEvents.size() + foundEvents.size());
-
-        for (const auto& [startPos, endPos, word, noUnderline] : foundEvents) {
-            TextEvent event;
-            event.word = word;
-            event.startPos = startPos;
-            event.endPos = endPos;
-            event.noUnderline = noUnderline;
-            m_textEvents.push_back(event);
-        }
-        std::string result = fragment;
-        size_t pos = 0;
-
-        while ((pos = result.find("[text-event]", pos)) != std::string::npos) {
-            size_t endPos = result.find("[/text-event]", pos);
-            if (endPos != std::string::npos) {
-                size_t contentLength = endPos - pos - 12;
-                std::string eventContent = result.substr(pos + 12, contentLength);
-                if (!eventContent.empty() && eventContent[0] == '\x01')
-                    eventContent = eventContent.substr(1);
-                result.replace(pos, contentLength + 25, eventContent);
-            } else {
-                break;
-            }
-        }
-
-        return result;
-    };
-
-    m_textColors.reserve(coloredText.size() / 20 + 5);
-
-    while (std::regex_search(_text, res, expColor)) {
+    std::string text = "";
+    while (std::regex_search(_text, res, exp)) {
         std::string prefix = res.prefix().str();
-        if (!prefix.empty()) {
-            std::string processedPrefix = processTextEvents(prefix, text.size());
+        if (prefix.size() > 0) {
             m_textColors.emplace_back(text.size(), baseColor);
-            text.append(processedPrefix);
+            text = text + prefix;
         }
         auto color = Color(res[2].str());
-        std::string colorContent = res[1].str();
-        std::string processedColorContent = processTextEvents(colorContent, text.size());
         m_textColors.emplace_back(text.size(), color);
-        text.append(processedColorContent);
-        _text = res.suffix().str();
+        text = text + res[1].str();
+        _text = res.suffix();
     }
 
-    if (!_text.empty()) {
-        std::string processedRemaining = processTextEvents(_text, text.size());
+    if (_text.size() > 0) {
         m_textColors.emplace_back(text.size(), baseColor);
-        text.append(processedRemaining);
+        text = text + _text;
     }
 
     if (hasProp(PropTextOnlyUpperCase))
         stdext::toupper(text);
 
     std::string oldText = m_text;
-    m_text = std::move(text);
+    m_text = text;
     updateText();
 
     if (!dontFireLuaCall) {
-        onTextChange(m_text, oldText);
+        onTextChange(text, oldText);
     }
 }
 
@@ -423,6 +373,93 @@ void UIWidget::setFont(const std::string_view fontName)
     onFontChange(fontName);
     scheduleHtmlTask(PropUpdateSize);
     refreshHtml(true);
+}
+
+void UIWidget::setTTFFont(const std::string_view fontName, int fontSize, int strokeWidth, const Color& strokeColor)
+{
+
+    m_strokeWidth = strokeWidth;
+    m_strokeColor = strokeColor;
+
+    std::string baseName = std::string(fontName);
+    
+    size_t lastDot = baseName.find_last_of('.');
+    if (lastDot != std::string::npos) {
+        baseName = baseName.substr(0, lastDot);
+    }
+    
+
+    size_t lastSlash = baseName.find_last_of("/\\");
+    if (lastSlash != std::string::npos) {
+        baseName = baseName.substr(lastSlash + 1);
+    }
+    
+
+    std::string uniqueFontName = baseName + "_" + std::to_string(fontSize);
+	
+    if (strokeWidth > 0) {
+
+        std::ostringstream colorStream;
+        colorStream << std::hex << std::setfill('0') 
+                    << std::setw(2) << (int)strokeColor.r()
+                    << std::setw(2) << (int)strokeColor.g()
+                    << std::setw(2) << (int)strokeColor.b()
+                    << std::setw(2) << (int)strokeColor.a();
+        uniqueFontName += "_s" + std::to_string(strokeWidth) + "_" + colorStream.str();
+    }	
+    
+    if (!g_fonts.fontExists(uniqueFontName)) {
+		
+        if (g_fonts.importTTF(std::string(fontName), fontSize, strokeWidth, strokeColor).empty()) {
+            g_logger.error("Failed to load TTF font: {}", fontName);
+            return;
+        }
+    }
+    
+    m_font = g_fonts.getFont(uniqueFontName);
+    computeHtmlTextIntrinsicSize();
+    updateText();
+    onFontChange(fontName);
+    scheduleHtmlTask(PropUpdateSize);
+    refreshHtml(true);
+}
+
+void UIWidget::setStroke(int strokeWidth, const Color& strokeColor)
+{
+
+    if (m_font) {
+        std::string fontName = m_font->getName();
+        
+
+        size_t underscorePos = fontName.find('_');
+        if (underscorePos != std::string::npos) {
+            fontName = fontName.substr(0, underscorePos);
+        }
+        
+
+        int fontSize = 12;
+        std::string currentName = m_font->getName();
+        size_t sizePos = currentName.find('_');
+        if (sizePos != std::string::npos) {
+            std::string sizeStr = currentName.substr(sizePos + 1);
+            size_t nextUnderscore = sizeStr.find('_');
+            if (nextUnderscore != std::string::npos) {
+                sizeStr = sizeStr.substr(0, nextUnderscore);
+            }
+            try {
+                fontSize = std::stoi(sizeStr);
+            } catch (...) {
+                fontSize = 12;
+            }
+        }
+        
+
+        setTTFFont(fontName, fontSize, strokeWidth, strokeColor);
+    } else {
+
+        m_strokeWidth = strokeWidth;
+        m_strokeColor = strokeColor;
+    }
 }
 
 void UIWidget::computeHtmlTextIntrinsicSize() {
@@ -519,14 +556,10 @@ static void buildTextUnderline(Rect& wordRect, CoordsBuffer& textUnderlineCoords
 void UIWidget::updateRectToWord(const std::vector<Rect>& glypsCoords)
 {
     m_rectToWord.clear();
-    if (m_textUnderline)
-        m_textUnderline->clear();
+    m_textUnderline->clear();
 
     if (glypsCoords.empty() || m_textEvents.empty())
         return;
-
-    if (!m_textUnderline)
-        m_textUnderline = std::make_shared<CoordsBuffer>();
 
     const size_t glyphCount = glypsCoords.size();
 

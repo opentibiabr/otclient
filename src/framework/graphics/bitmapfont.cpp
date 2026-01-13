@@ -69,6 +69,14 @@ void BitmapFont::load(const OTMLNodePtr& fontNode)
                                              ((glyph - m_firstGlyph) / numHorizontalGlyphs) * glyphSize.height(),
                                              m_glyphsSize[glyph].width(),
                                              m_glyphHeight);
+
+        m_glyphsOffset[glyph] = Point(0, 0);
+        m_glyphsAdvance[glyph] = m_glyphsSize[glyph].width();
+    }
+    
+    for (int glyph = 0; glyph < m_firstGlyph; ++glyph) {
+        m_glyphsOffset[glyph] = Point(0, 0);
+        m_glyphsAdvance[glyph] = 0;
     }
 }
 
@@ -152,8 +160,11 @@ std::vector<std::pair<Rect, Rect>> BitmapFont::getDrawTextCoords(const std::stri
     for (int i = 0; i < textLength; ++i) {
         const int glyph = static_cast<uint8_t>(text[i]);
         if (glyph < 32) continue;
+		
+        if (m_glyphsSize[glyph].width() == 0 || m_glyphsSize[glyph].height() == 0)
+            continue;		
 
-        Rect glyphScreenCoords(glyphsPositions[i] + Point(dx, dy), m_glyphsSize[glyph]);
+        Rect glyphScreenCoords(glyphsPositions[i] + Point(dx, dy) + m_glyphsOffset[glyph], m_glyphsSize[glyph]);
         Rect glyphTextureCoords = m_glyphsTextureCoords[glyph];
 
         if (!clipAndTranslateGlyph(glyphScreenCoords, glyphTextureCoords, screenCoords))
@@ -195,8 +206,11 @@ void BitmapFont::fillTextCoords(const CoordsBufferPtr& coords, const std::string
     for (int i = 0; i < textLength; ++i) {
         const int glyph = static_cast<uint8_t>(text[i]);
         if (glyph < 32) continue;
+		
+        if (m_glyphsSize[glyph].width() == 0 || m_glyphsSize[glyph].height() == 0)
+            continue;		
 
-        Rect glyphScreenCoords(glyphsPositions[i] + Point(dx, dy), m_glyphsSize[glyph]);
+        Rect glyphScreenCoords(glyphsPositions[i] + Point(dx, dy) + m_glyphsOffset[glyph], m_glyphsSize[glyph]);
         Rect glyphTextureCoords = m_glyphsTextureCoords[glyph];
 
         if (!clipAndTranslateGlyph(glyphScreenCoords, glyphTextureCoords, screenCoords))
@@ -250,8 +264,11 @@ void BitmapFont::fillTextColorCoords(std::vector<std::pair<Color, CoordsBufferPt
 
         const int glyph = static_cast<uint8_t>(text[i]);
         if (glyph < 32) continue;
+		
+        if (m_glyphsSize[glyph].width() == 0 || m_glyphsSize[glyph].height() == 0)
+            continue;		
 
-        Rect glyphScreenCoords(glyphsPositions[i], m_glyphsSize[glyph]);
+        Rect glyphScreenCoords(glyphsPositions[i] + m_glyphsOffset[glyph], m_glyphsSize[glyph]);
         Rect glyphTextureCoords = m_glyphsTextureCoords[glyph];
 
         int dx = 0, dy = 0;
@@ -293,7 +310,7 @@ void BitmapFont::calculateGlyphsPositions(std::string_view text,
     int lines = 0;
 
     if (textBoxSize && textLength == 0) {
-        textBoxSize->resize(0, m_glyphHeight);
+        textBoxSize->resize(0, m_glyphHeight + m_yOffset);
         return;
     }
 
@@ -322,7 +339,8 @@ void BitmapFont::calculateGlyphsPositions(std::string_view text,
                 continue;
             }
             if (g >= 32) {
-                s_lineWidths[lines] += widths[g].width();
+      
+                s_lineWidths[lines] += m_glyphsAdvance[g];
                 if (i + 1 != textLength && p[i + 1] != static_cast<unsigned char>('\n'))
                     s_lineWidths[lines] += m_glyphSpacing.width();
                 if (s_lineWidths[lines] > maxLineWidth)
@@ -331,7 +349,7 @@ void BitmapFont::calculateGlyphsPositions(std::string_view text,
         }
     }
 
-    Point vpos(0, m_yOffset);
+    Point vpos(0, 0);
     lines = 0;
 
     for (int i = 0; i < textLength; ++i) {
@@ -353,13 +371,14 @@ void BitmapFont::calculateGlyphsPositions(std::string_view text,
 
         if (g >= 32 && g != static_cast<unsigned char>('\n')) {
             glyphsPositions[i] = vpos;
-            vpos.x += widths[g].width() + m_glyphSpacing.width();
+
+            vpos.x += m_glyphsAdvance[g] + m_glyphSpacing.width();
         }
     }
 
     if (textBoxSize) {
         textBoxSize->setWidth(maxLineWidth);
-        textBoxSize->setHeight(vpos.y + m_glyphHeight);
+        textBoxSize->setHeight(vpos.y + m_glyphHeight + m_yOffset);
     }
 }
 

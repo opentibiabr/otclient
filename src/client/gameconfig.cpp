@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
- *
+ 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -21,6 +21,9 @@
  */
 
 #include "gameconfig.h"
+
+#include "framework/core/configmanager.h"
+#include <sstream>
 
 #include "framework/core/resourcemanager.h"
 #include "framework/graphics/fontmanager.h"
@@ -49,6 +52,13 @@ void GameConfig::init()
     } catch (const std::exception& e) {
         g_logger.error("Failed to read config otml '{}': {}'", fileName, e.what());
     }
+
+    // Override from config.ini
+    const auto& publicFont = g_configs.getPublicConfig().font;
+    if (!publicFont.widget.empty()) m_widgetTextFontName = publicFont.widget;
+    if (!publicFont.staticText.empty()) m_staticTextFontName = publicFont.staticText;
+    if (!publicFont.animatedText.empty()) m_animatedTextFontName = publicFont.animatedText;
+    if (!publicFont.creatureText.empty()) m_creatureNameFontName = publicFont.creatureText;
 }
 
 void GameConfig::terminate() {
@@ -59,6 +69,36 @@ void GameConfig::terminate() {
 }
 
 void GameConfig::loadFonts() {
+    auto resolveFont = [](std::string& fontName) {
+        if (fontName.find('|') == std::string::npos) return;
+
+        std::vector<std::string> parts;
+        std::string token;
+        std::istringstream tokenStream(fontName);
+        while (std::getline(tokenStream, token, '|')) {
+            parts.push_back(token);
+        }
+
+        if (parts.size() >= 2) {
+            std::string file = parts[0];
+            int size = std::atoi(parts[1].c_str());
+            int strokeWidth = 0;
+            Color strokeColor = Color::black;
+            if (parts.size() > 2) strokeWidth = std::atoi(parts[2].c_str());
+            if (parts.size() > 3) strokeColor = Color(parts[3]);
+
+            std::string actualName = g_fonts.importTTF(file, size, strokeWidth, strokeColor);
+            if (!actualName.empty()) {
+                fontName = actualName;
+            }
+        }
+    };
+
+    resolveFont(m_creatureNameFontName);
+    resolveFont(m_animatedTextFontName);
+    resolveFont(m_staticTextFontName);
+    resolveFont(m_widgetTextFontName);
+
     m_creatureNameFont = g_fonts.getFont(m_creatureNameFontName);
     m_animatedTextFont = g_fonts.getFont(m_animatedTextFontName);
     m_staticTextFont = g_fonts.getFont(m_staticTextFontName);
