@@ -1,11 +1,11 @@
 Module
-  name: game_npctrade
-  description: NPC trade interface
+  name: game_npctrade_legacy
+  description: NPC trade interface legacy
   author: andrefaramir, baxnie
   website: https://github.com/edubart/otclient
   sandboxed: true
-  enabled: false
-  autoload: false
+  enabled: true
+  autoload: true
   scripts: [ npctrade ]
   @onLoad: init()
   @onUnload: terminate()

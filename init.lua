@@ -10,6 +10,9 @@ Services = {
     --getCoinsUrl = "http://localhost/?subtopic=shop&step=terms", --./game_market
 }
 
+-- Toggle NPC trade implementation: set to `true` to use the legacy module
+NPCTRADE_USE_LEGACY = false
+
 --[[
 Servers_init = {
     ["http://127.0.0.1/login.php"] = {
@@ -75,6 +78,43 @@ g_resources.searchAndAddPackages('/', '.otpkg', true)
 
 -- load settings
 g_configs.loadSettings('/config.otml')
+
+-- Ensure correct NPC trade module is enabled based on the toggle above.
+local function setOtmodState(folder, enable)
+    local filePath = g_resources.getWorkDir() .. 'modules/' .. folder .. '/npctrade.otmod'
+    local f = io.open(filePath, 'r')
+    if not f then
+        g_logger.warning('npctrade otmod not found: ' .. filePath)
+        return
+    end
+    local content = f:read('*a')
+    f:close()
+
+    if enable then
+        content = content:gsub('enabled:%s*false', 'enabled: true')
+        content = content:gsub('autoload:%s*false', 'autoload: true')
+    else
+        content = content:gsub('enabled:%s*true', 'enabled: false')
+        content = content:gsub('autoload:%s*true', 'autoload: false')
+    end
+
+    local fo = io.open(filePath, 'w')
+    if not fo then
+        g_logger.warning('Unable to open npctrade otmod for writing: ' .. filePath)
+        return
+    end
+    fo:write(content)
+    fo:close()
+    --g_logger.info(('Set %s -> enabled=%s autoload=%s'):format(folder, tostring(enable), tostring(enable)))
+end
+
+if NPCTRADE_USE_LEGACY then
+    setOtmodState('game_npctrade_legacy', true)
+    setOtmodState('game_npctrade', false)
+else
+    setOtmodState('game_npctrade', true)
+    setOtmodState('game_npctrade_legacy', false)
+end
 
 g_modules.discoverModules()
 
