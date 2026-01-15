@@ -10,6 +10,12 @@
     "liblzma",
     "libobfuscate",
     "libogg",
+    {
+      "name": "libpng",
+      "features": [
+        "apng"
+      ]
+    },
     "libvorbis",
     "nlohmann-json",
     "openal-soft",
