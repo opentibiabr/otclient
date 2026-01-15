@@ -152,6 +152,16 @@ local function inventoryEvent(player, slot, item, oldItem)
         ItemsDatabase.setCharges(slotPanel.item, item)
     end
     ItemsDatabase.setTier(slotPanel.item, item)
+
+    if slot == InventorySlotLeft then
+        if modules.game_proficiency and modules.game_proficiency.updateTopBarProficiency then
+            -- Request proficiency data for new weapon
+            if item and g_game.sendWeaponProficiencyAction then
+                g_game.sendWeaponProficiencyAction(0, item:getId())
+            end
+            modules.game_proficiency.updateTopBarProficiency()
+        end
+    end
 end
 
 local function onSoulChange(localPlayer, soul)
