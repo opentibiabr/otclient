@@ -41,6 +41,7 @@ public:
     ModulePtr getCurrentModule() { return m_currentModule; }
     void enableAutoReload();
     bool isAutoReloadEnabled() const { return m_reloadEnable; }
+    void updateModulesByClientVersion(int clientVersion);
 
 protected:
     void updateModuleLoadOrder(const ModulePtr& module);

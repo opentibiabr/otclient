@@ -15,10 +15,6 @@ function BlessingController:onGameStart()
         BlessingController:registerEvents(g_game, {
             onUpdateBlessDialog = onUpdateBlessDialog
         })
-    else
-        BlessingController:scheduleEvent(function()
-            g_modules.getModule("game_blessing"):unload()
-        end, 100, "unloadModule")
     end
 end
 
