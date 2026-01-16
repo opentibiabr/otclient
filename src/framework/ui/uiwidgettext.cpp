@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,9 @@
 #include <framework/html/htmlnode.h>
 
 #include "framework/otml/otmlnode.h"
+#include <sstream>
+#include <iomanip>
+#include <regex>
 
 namespace {
     WordBreakMode parseWordBreakMode(const std::string& v) {
@@ -126,9 +129,9 @@ void UIWidget::updateText()
     if (isTextWrap() && m_rect.isValid()) {
         m_drawTextColors = m_textColors;
         if (m_textOverflowLength > 0 && m_text.length() > m_textOverflowLength)
-            m_drawText = m_font->wrapText(m_text.substr(0, m_textOverflowLength - m_textOverflowCharacter.length()) + m_textOverflowCharacter, getWidth() - m_textOffset.x, &m_drawTextColors);
+            m_drawText = m_font->wrapText(m_text.substr(0, m_textOverflowLength - m_textOverflowCharacter.length()) + m_textOverflowCharacter, getWidth() - m_textOffset.x, WrapOptions{}, &m_drawTextColors);
         else
-            m_drawText = m_font->wrapText(m_text, getWidth() - m_textOffset.x, &m_drawTextColors);
+            m_drawText = m_font->wrapText(m_text, getWidth() - m_textOffset.x, WrapOptions{}, &m_drawTextColors);
     } else {
         if (m_textOverflowLength > 0 && m_text.length() > m_textOverflowLength)
             m_drawText = m_text.substr(0, m_textOverflowLength - m_textOverflowCharacter.length()) + m_textOverflowCharacter;
@@ -169,6 +172,51 @@ void UIWidget::resizeToText()
 
 void UIWidget::parseTextStyle(const OTMLNodePtr& styleNode)
 {
+
+    int ttfFontSize = 12; //default
+    int ttfStrokeWidth = 0;
+    Color ttfStrokeColor = Color::black;	
+    std::string ttfFontName;
+    
+    for (const auto& node : styleNode->children()) {
+        if (node->tag() == "ttf-font-size")
+            ttfFontSize = node->value<int>();
+        else if (node->tag() == "ttf-font")
+            ttfFontName = node->value();
+        else if (node->tag() == "ttf-stroke") {
+
+            std::string strokeValue = node->value();
+            std::istringstream iss(strokeValue);
+            iss >> ttfStrokeWidth;
+            std::string colorStr;
+            if (iss >> colorStr) {
+                ttfStrokeColor = Color(colorStr);
+            }
+        }
+        else if (node->tag() == "ttf-stroke-width")
+            ttfStrokeWidth = node->value<int>();
+        else if (node->tag() == "ttf-stroke-color")
+            ttfStrokeColor = Color(node->value());
+        else if (node->tag() == "stroke") {
+
+            std::string strokeValue = node->value();
+            std::istringstream iss(strokeValue);
+            iss >> ttfStrokeWidth;
+            std::string colorStr;
+            if (iss >> colorStr) {
+                ttfStrokeColor = Color(colorStr);
+            }
+        }		
+    }
+
+    if (!ttfFontName.empty()) {
+        g_logger.debug("parseTextStyle: setting TTF font '{}' size {} stroke {} rgba({},{},{},{})", 
+                      ttfFontName, ttfFontSize, ttfStrokeWidth, 
+                      ttfStrokeColor.r(), ttfStrokeColor.g(), ttfStrokeColor.b(), ttfStrokeColor.a());
+        setTTFFont(ttfFontName, ttfFontSize, ttfStrokeWidth, ttfStrokeColor);
+    }
+
+
     for (const auto& node : styleNode->children()) {
         const std::string tag = node->tag();
 
@@ -188,8 +236,10 @@ void UIWidget::parseTextStyle(const OTMLNodePtr& styleNode)
             setTextVerticalAutoResize(node->value<bool>());
         else if (tag == "text-only-upper-case")
             setTextOnlyUpperCase(node->value<bool>());
-        else if (tag == "font")
-            setFont(node->value());
+        else if (node->tag() == "font") {
+            if (ttfFontName.empty())
+                setFont(node->value());
+        }
         else if (tag == "font-scale")
             setFontScale(node->value<float>());
         else if (tag == "font-size")
@@ -205,7 +255,7 @@ void UIWidget::parseTextStyle(const OTMLNodePtr& styleNode)
         else if (node->tag() == "text-overflow-length")
             setTextOverflowLength(node->value<uint16_t>());
         else if (node->tag() == "text-overflow-character")
-            setTextOverflowCharacter(node->value<>());
+            setTextOverflowCharacter(node->value<std::string>());
     }
 }
 
@@ -250,7 +300,6 @@ void UIWidget::drawText(const Rect& screenCoords)
     }
     g_drawPool.resetDrawOrder();
     g_drawPool.scale(1.f); // reset scale
-
     if (m_textUnderline && m_textUnderline->getVertexCount() > 0)
         g_drawPool.addTexturedCoordsBuffer(nullptr, m_textUnderline, m_color);
 }
@@ -423,6 +472,93 @@ void UIWidget::setFont(const std::string_view fontName)
     onFontChange(fontName);
     scheduleHtmlTask(PropUpdateSize);
     refreshHtml(true);
+}
+
+void UIWidget::setTTFFont(const std::string_view fontName, int fontSize, int strokeWidth, const Color& strokeColor)
+{
+
+    m_strokeWidth = strokeWidth;
+    m_strokeColor = strokeColor;
+
+    std::string baseName = std::string(fontName);
+    
+    size_t lastDot = baseName.find_last_of('.');
+    if (lastDot != std::string::npos) {
+        baseName = baseName.substr(0, lastDot);
+    }
+    
+
+    size_t lastSlash = baseName.find_last_of("/\\");
+    if (lastSlash != std::string::npos) {
+        baseName = baseName.substr(lastSlash + 1);
+    }
+    
+
+    std::string uniqueFontName = baseName + "_" + std::to_string(fontSize);
+	
+    if (strokeWidth > 0) {
+
+        std::ostringstream colorStream;
+        colorStream << std::hex << std::setfill('0') 
+                    << std::setw(2) << (int)strokeColor.r()
+                    << std::setw(2) << (int)strokeColor.g()
+                    << std::setw(2) << (int)strokeColor.b()
+                    << std::setw(2) << (int)strokeColor.a();
+        uniqueFontName += "_s" + std::to_string(strokeWidth) + "_" + colorStream.str();
+    }	
+    
+    if (!g_fonts.fontExists(uniqueFontName)) {
+		
+        if (g_fonts.importTTF(std::string(fontName), fontSize, strokeWidth, strokeColor).empty()) {
+            g_logger.error("Failed to load TTF font: {}", fontName);
+            return;
+        }
+    }
+    
+    m_font = g_fonts.getFont(uniqueFontName);
+    computeHtmlTextIntrinsicSize();
+    updateText();
+    onFontChange(fontName);
+    scheduleHtmlTask(PropUpdateSize);
+    refreshHtml(true);
+}
+
+void UIWidget::setStroke(int strokeWidth, const Color& strokeColor)
+{
+
+    if (m_font) {
+        std::string fontName = m_font->getName();
+        
+
+        size_t underscorePos = fontName.find('_');
+        if (underscorePos != std::string::npos) {
+            fontName = fontName.substr(0, underscorePos);
+        }
+        
+
+        int fontSize = 12;
+        std::string currentName = m_font->getName();
+        size_t sizePos = currentName.find('_');
+        if (sizePos != std::string::npos) {
+            std::string sizeStr = currentName.substr(sizePos + 1);
+            size_t nextUnderscore = sizeStr.find('_');
+            if (nextUnderscore != std::string::npos) {
+                sizeStr = sizeStr.substr(0, nextUnderscore);
+            }
+            try {
+                fontSize = std::stoi(sizeStr);
+            } catch (...) {
+                fontSize = 12;
+            }
+        }
+        
+
+        setTTFFont(fontName, fontSize, strokeWidth, strokeColor);
+    } else {
+
+        m_strokeWidth = strokeWidth;
+        m_strokeColor = strokeColor;
+    }
 }
 
 void UIWidget::computeHtmlTextIntrinsicSize() {
