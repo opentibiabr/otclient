@@ -116,6 +116,9 @@ void UITextEdit::drawSelf(const DrawPoolType drawPane)
         }
     }
 
+    if (m_textUnderline && m_textUnderline->getVertexCount() > 0)
+        g_drawPool.addTexturedCoordsBuffer(nullptr, m_textUnderline, m_color);
+
     if (hasSelection()) {
         const int textLengthSel = std::min<int>(m_glyphsCoords.size(), static_cast<int>(m_displayedText.length()));
 
