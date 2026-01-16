@@ -36,6 +36,7 @@
 #include "missile.h"
 #include "thingtype.h"
 #include "thingtypemanager.h"
+#include "tile.h"
 #include "framework/core/eventdispatcher.h"
 #include "framework/net/inputmessage.h"
 #include "paperdollmanager.h"
@@ -1859,13 +1860,23 @@ void ProtocolGame::parseMagicEffect(const InputMessagePtr& msg)
 
 void ProtocolGame::parseRemoveMagicEffect(const InputMessagePtr& msg)
 {
-    getPosition(msg);
-    uint16_t effectId = g_game.getFeature(Otc::GameEffectU16) ? msg->getU16() : msg->getU8();
+    const auto& pos = getPosition(msg);
+    const uint16_t effectId = g_game.getFeature(Otc::GameEffectU16) ? msg->getU16() : msg->getU8();
+
     if (!g_things.isValidDatId(effectId, ThingCategoryEffect)) {
         g_logger.warning("[ProtocolGame::parseRemoveMagicEffect] - Invalid effectId type {}", effectId);
         return;
     }
-    // TO-DO
+
+    const auto& tile = g_map.getTile(pos);
+    if (!tile)
+        return;
+
+    const auto& effect = tile->getEffect(effectId);
+    if (!effect)
+        return;
+
+    g_map.removeThing(effect);
 }
 
 void ProtocolGame::parseAnimatedText(const InputMessagePtr& msg)
