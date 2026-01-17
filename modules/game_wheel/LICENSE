@@ -1,0 +1,41 @@
+JP CLIENT — EULA (JP Proprietary License) v1.0
+Copyright (c) 2025 JP / Elemental
+Versão: 1.0 — 07-out-2025
+
+1. Partes
+Este Contrato de Licença (“EULA”) é entre: (i) Licenciante: JP / Elemental; e (ii) Licenciado: pessoa física ou jurídica que adquire o software (“Você”).
+
+2. Objeto
+O objeto é o software, módulos, assets e documentação fornecidos pelo Licenciante (“Software”). O Software inclui módulos proprietários, scripts e pacotes binários entregues ao Licenciado.
+
+3. Tipos de Licença e Direitos
+3.1. Licença Perpétua (Sem Updates) — O Licenciado recebe uma licença não-exclusiva, intransferível e não-sublicenciável para usar o Software na(s) instância(s) contratada(s). Não há obrigação de fornecer updates.
+3.2. Licença com Atualizações (Assinatura) — Enquanto o Licenciado mantiver pagamento de assinatura (ou estiver em acordo de revenue share), terá direito a atualizações semanais e correções. Ao término do pagamento, o direito a updates cessa.
+3.3. Licença por Revenue-Share — O Licenciado permite a cobrança de uma porcentagem acordada sobre a receita do servidor em troca de updates contínuos. Regras detalhadas no contrato de prestação.
+
+4. Permissões de Uso
+4.1. O Licenciado pode executar o Software nas instâncias e servidores autorizados.
+4.2. Jogadores e usuários finais podem jogar com o Software, desde que não distribuam, publiquem ou modifiquem o Software proprietário.
+
+5. Restrições
+5.1. É proibido ao Licenciado: (a) redistribuir, sublicenciar, vender ou disponibilizar o Software a terceiros; (b) fazer engenharia reversa, desmontar ou descompilar; (c) remover avisos de copyright; (d) modificar módulos proprietários ou o core; (e) usar o Software para criar um produto concorrente sem autorização.
+5.2. Exceção: o Licenciante pode autorizar especificamente a edição limitada de scripts de perfil do jogador (bot/profile scripts), apenas para uso local do jogador, sem distribuir.
+
+6. Entregas, Entitlement e Atualizações
+6.1. O Licenciante pode fornecer updates via mecanismo de atualização. O cliente/instalador verificará licenças por meio de servidor de validação.
+6.2. O Licenciante pode revogar acesso a updates em caso de violação dos termos.
+
+7. Receita e Auditoria (caso revenue share)
+7.1. O contrato de revenue share definirá: percentual, período de pagamento, método de cálculo, relatórios, e direito de auditoria.
+7.2. O Licenciante terá o direito de auditar logs (com aviso) para confirmar receitas.
+
+8. Garantia e Limitação de Responsabilidade
+8.1. O Software é fornecido “como está”. O Licenciante não garante adequação a fim específico.
+8.2. Em nenhuma hipótese o Licenciante será responsável por danos indiretos, perda de receita ou lucros cessantes.
+
+9. Rescisão
+9.1. Violação destes termos poderá resultar em rescisão imediata da licença e obrigação de cessar uso e destruir cópias.
+
+10. Disposições Gerais
+10.1. Lei aplicável: Brasil. Foro: Saqurema / RJ.
+10.2. Este EULA complementa qualquer contrato de venda/serviço assinado entre as partes.

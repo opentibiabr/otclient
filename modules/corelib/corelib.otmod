@@ -11,6 +11,7 @@ Module
     dofile 'table'
     dofile 'bitwise'
     dofile 'struct'
+    dofile 'base64'
 
     dofile 'const'
     dofile 'util'
