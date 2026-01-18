@@ -196,6 +196,7 @@ pip-log.txt
 #################
 
 /otclient
+/OTClient.app
 /modules/otclientrc.lua
 src/framework/graphics/dx/
 

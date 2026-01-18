@@ -46,6 +46,8 @@ typedef void CocoaWindow;
 @interface OTOpenGLView : NSOpenGLView
 @property (nonatomic, assign) CocoaWindow* platformWindow;
 @property (nonatomic) BOOL acceptsInput;
+@property (nonatomic) CGFloat scrollAccumX;
+@property (nonatomic) CGFloat scrollAccumY;
 @end
 
 @interface OTWindowDelegate : NSObject <NSWindowDelegate>

@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@main
+        uses: styfle/cancel-workflow-action@0.12.1
         with:
           access_token: ${{ github.token }}
 
@@ -61,8 +61,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          repository: ${{ github.event_name == 'push' && github.repository || (github.event.pull_request.head.repo.fork && github.repository || github.event.pull_request.head.repo.full_name) }}
-          ref: ${{ github.event_name == 'push' && github.ref || github.event.pull_request.head.sha }}
+          repository: ${{ github.event_name == 'push' && github.repository || github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event_name == 'push' && github.ref || github.event.pull_request.head.ref || github.head_ref || github.ref }}
           fetch-depth: 0
 
       - name: Get vcpkg commit ID
@@ -101,6 +101,7 @@ jobs:
           VCPKG_PYTHON3: ${{ steps.python.outputs.python-path }}
         with:
           vcpkgGitCommitId: ${{ steps.vcpkg-step.outputs.vcpkgGitCommitId }}
+          vcpkgJsonGlob: 'vcpkg.json'
 
       - name: Validate vcpkg baseline SHA
         run: |
@@ -132,14 +133,21 @@ jobs:
             -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
             -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }} \
             -DTOGGLE_BIN_FOLDER=ON \
-            -DOPTIONS_ENABLE_IPO=OFF \
+            -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF \
             -DTOGGLE_BOT_PROTECTION=OFF
 
           cmake --build build-${{ matrix.buildtype }} --target otclient
+
+      - name: Create app bundle archive
+        run: |
+          cd build-${{ matrix.buildtype }}/bin
+          xattr -cr OTClient.app
+          codesign --force --deep --sign - OTClient.app
+          ditto -c -k --keepParent OTClient.app otclient-${{ matrix.os }}-${{ matrix.buildtype }}.zip
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: otclient-${{ matrix.os }}-${{ matrix.buildtype }}-${{ github.sha }}
-          path: |
-            ${{ github.workspace }}/build-${{ matrix.buildtype }}/bin/
+          path: build-${{ matrix.buildtype }}/bin/otclient-${{ matrix.os }}-${{ matrix.buildtype }}.zip
+          if-no-files-found: error
