@@ -415,7 +415,7 @@ add_library(otclient_core STATIC ${SOURCE_FILES})
 
 target_link_libraries(otclient_core PRIVATE unofficial::inih::inireader)
 
-if(NOT MSVC)
+if(NOT MSVC AND CMAKE_INTERPROCEDURAL_OPTIMIZATION MATCHES "^(ON|1|TRUE)$")
   target_link_options(otclient_core PUBLIC -flto=auto)
 endif()
 
@@ -832,6 +832,36 @@ else() # Linux
   endif()
 
 endif()
+
+if(APPLE AND NOT ANDROID AND NOT WASM)
+  set(MACOSX_BUNDLE_BUNDLE_NAME "OTClient")
+  set(MACOSX_BUNDLE_DISPLAY_NAME "OTClient")
+  set(MACOSX_BUNDLE_IDENTIFIER "com.otclient.otclient")
+  set(MACOSX_BUNDLE_VERSION "${VERSION}")
+  set(MACOSX_BUNDLE_SHORT_VERSION_STRING "${VERSION}")
+  set(MACOSX_BUNDLE_COPYRIGHT "Copyright © 2024")
+  set(MACOSX_BUNDLE_ICON_FILE "OTClient")
+
+  set(OTCLIENT_INFO_PLIST "${CMAKE_CURRENT_BINARY_DIR}/Info.plist")
+  configure_file("${CMAKE_SOURCE_DIR}/cmake/Info.plist.in" "${OTCLIENT_INFO_PLIST}" @ONLY)
+
+  set_target_properties(${PROJECT_NAME} PROPERTIES
+    OUTPUT_NAME "OTClient"
+    MACOSX_BUNDLE TRUE
+    MACOSX_BUNDLE_INFO_PLIST "${OTCLIENT_INFO_PLIST}"
+    MACOSX_BUNDLE_ICON_FILE "OTClient"
+  )
+
+  add_custom_command(TARGET ${PROJECT_NAME}
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy
+      "${CMAKE_SOURCE_DIR}/cmake/OTClient.icns"
+      "$<TARGET_FILE_DIR:${PROJECT_NAME}>/../Resources/OTClient.icns"
+    COMMENT "Copying OTClient.icns to app bundle Resources"
+    VERBATIM
+  )
+ endif()
+
 if(ENABLE_DISCORD_RPC AND NOT ANDROID)
         target_link_libraries(otclient_core PUBLIC ${DISCORDRPC_LIBRARY})
 endif()

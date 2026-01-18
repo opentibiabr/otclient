@@ -184,11 +184,18 @@
     CGFloat deltaY = [event scrollingDeltaY];
 
     if ([event hasPreciseScrollingDeltas]) {
-        deltaX *= 0.1;
-        deltaY *= 0.1;
+        _scrollAccumX += deltaX;
+        _scrollAccumY += deltaY;
+        int intDX = static_cast<int>(_scrollAccumX);
+        int intDY = static_cast<int>(_scrollAccumY);
+        if (intDX != 0 || intDY != 0) {
+            _platformWindow->handleMouseScroll(intDX, intDY);
+            _scrollAccumX -= intDX;
+            _scrollAccumY -= intDY;
+        }
+    } else {
+        _platformWindow->handleMouseScroll(static_cast<int>(deltaX), static_cast<int>(deltaY));
     }
-
-    _platformWindow->handleMouseScroll(static_cast<int>(deltaX), static_cast<int>(deltaY));
 }
 
 - (void)mouseEntered:(NSEvent*)event {

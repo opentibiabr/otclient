@@ -780,11 +780,17 @@ function Keybind.editHotkeyKeys(hotkeyId, primary, secondary, chatMode)
   Keybind.unbindHotkey(hotkeyId, chatMode)
 
   local hotkey = Keybind.hotkeys[chatMode][Keybind.currentPreset][hotkeyId]
-  if primary and primary:len() > 0 then
-    primary = retranslateKeyComboDesc(primary)
+  if primary ~= nil then
+    primary = tostring(primary)
+    if primary:len() > 0 then
+      primary = retranslateKeyComboDesc(primary)
+    end
   end
-  if secondary and secondary:len() > 0 then
-    secondary = retranslateKeyComboDesc(secondary)
+  if secondary ~= nil then
+    secondary = tostring(secondary)
+    if secondary:len() > 0 then
+      secondary = retranslateKeyComboDesc(secondary)
+    end
   end
   hotkey.primary = primary or ""
   hotkey.secondary = secondary or ""

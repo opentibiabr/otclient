@@ -520,7 +520,14 @@ end
 
 function updateBossFocus()
 	scheduleEvent(function()
-		BossCooldown.window:recursiveGetChildById("miniwindowScrollBar"):setValue(1)
+		if not BossCooldown.window then
+			return
+		end
+		local scrollBar = BossCooldown.window:recursiveGetChildById("miniwindowScrollBar")
+		if not scrollBar then
+			return
+		end
+		scrollBar:setValue(1)
 	end, 1)
 end
 

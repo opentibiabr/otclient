@@ -532,6 +532,7 @@ void UIWidget::parseBaseStyle(const OTMLNodePtr& styleNode)
             setFloat(type);
         } else if (node->tag() == "clear") {
             auto v = node->value<std::string>();
+            stdext::tolower(v);
             if (v == "left") setClear(ClearType::Left);
             else if (v == "right") setClear(ClearType::Right);
             else if (v == "both") setClear(ClearType::Both);
