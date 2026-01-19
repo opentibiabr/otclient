@@ -22,6 +22,7 @@
 
 #include "application.h"
 
+#include "asyncdispatcher.h"
 #include <gitinfo.h>
 
 #define ADD_QUOTES_HELPER(s) #s
@@ -150,6 +151,8 @@ void Application::terminate()
 
     // terminate proxy
     g_proxy.terminate();
+
+    g_asyncDispatcher.reset();
 
     m_terminated = true;
 

@@ -231,5 +231,10 @@ private:
     T x1, y1, x2, y2;
 };
 
-using Rect = TRect<int>;
-using RectF = TRect<float>;
+namespace Fw {
+    using Rect = TRect<int>;
+    using RectF = TRect<float>;
+}
+
+using Fw::Rect;
+using Fw::RectF;

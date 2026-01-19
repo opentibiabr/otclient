@@ -102,7 +102,7 @@ void LoginHttp::httpLogin(const std::string& host, const std::string& path,
                           const std::string& password, const std::string& token,
                           int request_id, bool httpLogin) {
 #ifndef __EMSCRIPTEN__
-    g_asyncDispatcher.detach_task(
+    g_asyncDispatcher->detach_task(
         [this, host, path, port, email, password, token, request_id, httpLogin] {
         if (cancelled.load()) return;
         httplib::Result result =
@@ -148,7 +148,7 @@ void LoginHttp::httpLogin(const std::string& host, const std::string& path,
         }
     });
 #else
-    g_asyncDispatcher.detach_task(
+    g_asyncDispatcher->detach_task(
         [this, host, path, port, email, password, token, request_id, httpLogin] {
         if (cancelled.load()) return;
         emscripten_fetch_attr_t attr;

@@ -1,0 +1,12 @@
+{
+  "name": "inih",
+  "version-string": "58",
+  "description": "Simple .INI file parser",
+  "homepage": "https://github.com/benhoyt/inih",
+  "license": "BSD-3-Clause",
+  "features": {
+    "cpp": {
+      "description": "C++ INIReader wrapper"
+    }
+  }
+}

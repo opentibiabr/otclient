@@ -23,10 +23,10 @@ local keys = {
 }
 
 local turnKeys = {
-    { "Ctrl+Up",    North },
-    { "Ctrl+Right", East },
-    { "Ctrl+Down",  South },
-    { "Ctrl+Left",  West },
+    { "Control+Up",    North },
+    { "Control+Right", East },
+    { "Control+Down",  South },
+    { "Control+Left",  West },
 }
 
 WalkController = Controller:new()

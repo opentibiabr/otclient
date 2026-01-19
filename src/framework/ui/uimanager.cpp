@@ -729,7 +729,7 @@ UIWidgetPtr UIManager::createWidgetFromOTML(const OTMLNodePtr& widgetNode, const
 
 void UIManager::updateHoveredText(bool now)
 {
-    if (m_hoverTextUpdateScheduled && !now || !m_hoveredWidget)
+    if ((m_hoverTextUpdateScheduled && !now) || !m_hoveredWidget)
         return;
 
     auto func = [this] {

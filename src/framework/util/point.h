@@ -106,5 +106,10 @@ struct fmt::formatter<TPoint<T>, char> {
     }
 };
 
-using Point = TPoint<int>;
-using PointF = TPoint<float>;
+namespace Fw {
+    using Point = TPoint<int>;
+    using PointF = TPoint<float>;
+}
+
+using Fw::Point;
+using Fw::PointF;

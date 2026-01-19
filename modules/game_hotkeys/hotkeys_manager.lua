@@ -886,8 +886,17 @@ function canPerformKeyCombo(keyCombo)
     if not modules.game_console.isChatEnabled() then
         return true
     end
+    local platformType = g_window.getPlatformType() or ""
+    local isMacOS = platformType:find("MACOS") ~= nil
+    if isMacOS then
+        return  string.match(keyCombo, "Cmd%+") or
+                string.match(keyCombo, "Ctrl%+") or
+                string.match(keyCombo, "Alt%+") or
+                string.match(keyCombo, "Option%+") or
+                string.match(keyCombo, "F%d+")
+    end
     return  string.match(keyCombo, "Ctrl%+") or
-            string.match(keyCombo, "Alt%+") or 
+            string.match(keyCombo, "Alt%+") or
             string.match(keyCombo, "F%d+")
 end
 

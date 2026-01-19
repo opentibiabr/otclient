@@ -33,5 +33,6 @@ Module
     dofile 'objectpool'
 
     Keybind.init()
-  
+    initPlatformKeyDescs()
+
   @onUnload: Keybind.terminate()
