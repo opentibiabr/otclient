@@ -1,3 +1,39 @@
+
+SpecialConditionLabelSettings < UIWidget
+  height: 20
+
+  UIWidget
+    id: icon
+    size: 10 10
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 5
+
+  Label
+    id: label
+    anchors.left: icon.right
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 10
+    color: #dfdfdf
+
+  CheckBox
+    id: showInHudCheckBox
+    size: 12 12
+    anchors.right: showInBarCheckBox.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-right: 80
+    image-source: /images/ui/checkbox
+    image-clip: 0 0 12 12
+
+  CheckBox
+    id: showInBarCheckBox
+    size: 12 12
+    anchors.right: parent.right
+    anchors.verticalCenter: parent.verticalCenter
+    margin-right: 50
+    image-source: /images/ui/checkbox
+    image-clip: 0 0 12 12
+
 OptionsCategory < UIWidget
   size: 115 22
   image-source: /images/ui/1pixel_down_frame
