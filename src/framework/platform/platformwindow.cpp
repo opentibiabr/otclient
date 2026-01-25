@@ -24,7 +24,6 @@
 
 #include "framework/core/clock.h"
 #include "framework/graphics/image.h"
-#include <framework/core/resourcemanager.h>
 
 #ifdef WIN32
 #include "win32window.h"

@@ -2,6 +2,12 @@ Cursors
   default:
     image: default
     hot-spot: 0 0
+  window:
+    image: default_window
+    hot-spot: 0 0
+  walk:
+    image: walkcursor
+    hot-spot: 0 0	
   target:
     image: targetcursor
     hot-spot: 9 9
