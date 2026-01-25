@@ -879,9 +879,7 @@ int WIN32Window::internalLoadMouseCursor(const ImagePtr& image, const Point& hot
 
     const HBITMAP hbmColor = CreateBitmap(width, height, 1, 32, &iconData[0]);
 
-    const HDC screenDC = GetDC(nullptr);
-    const HBITMAP hbmMask = CreateCompatibleBitmap(screenDC, width, height);
-    ReleaseDC(nullptr, screenDC);
+    const HBITMAP hbmMask = CreateBitmap(width, height, 1, 1, nullptr);
 
     ICONINFO ii;
     ii.fIcon = FALSE;
@@ -891,7 +889,6 @@ int WIN32Window::internalLoadMouseCursor(const ImagePtr& image, const Point& hot
     ii.hbmColor = hbmColor;
 
     const HCURSOR cursor = static_cast<HCURSOR>(CreateIconIndirect(&ii));
-
     DeleteObject(hbmMask);
     DeleteObject(hbmColor);
 
