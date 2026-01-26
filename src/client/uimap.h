@@ -70,6 +70,7 @@ public:
     float getMinimumAmbientLight();
     void setCrosshairTexture(const std::string& texturePath);
     void setDrawHighlightTarget(bool enable);
+    void setCursorAnimations(bool enable);
     void setAntiAliasingMode(Otc::AntialiasingMode mode);
     void setFloorFading(uint16_t v);
     MapViewPtr getMapView() const;

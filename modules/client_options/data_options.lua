@@ -357,6 +357,12 @@ return {
             panels.gameMapPanel:setDrawHighlightTarget(value)
         end
     },
+    showAnimatedCursor = {
+        value = true,
+        action = function(value, options, controller, panels, extraWidgets)
+            panels.gameMapPanel:setCursorAnimations(value)
+        end
+    },
     showDragIcon        = {
         value = true,
     },

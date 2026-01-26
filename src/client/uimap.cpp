@@ -163,6 +163,8 @@ void UIMap::setCrosshairTexture(const std::string& texturePath) { m_mapView->set
 
 void UIMap::setDrawHighlightTarget(const bool enable) { m_mapView->setDrawHighlightTarget(enable); }
 
+void UIMap::setCursorAnimations(const bool enable) { m_mapView->setCursorAnimations(enable); }
+
 void UIMap::setAntiAliasingMode(const Otc::AntialiasingMode mode) { m_mapView->setAntiAliasingMode(mode); }
 
 void UIMap::setFloorFading(const uint16_t v) { m_mapView->setFloorFading(v); }

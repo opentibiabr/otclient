@@ -571,19 +571,21 @@ void MapView::onMouseMove(const Position& mousePos, const bool /*isVirtualMove*/
 
     if (!g_mouse.isCursorChanged()) {
         bool cursorSet = false;
-        if (const auto& tile = getTopTile(mousePos)) {
-            if (const auto& creature = tile->getTopCreature()) {
-                if (creature->isMonster()) {
-                    int id = g_mouse.getCursorId("attack");
-                    if (id != -1) {
-                        g_window.setMouseCursor(id);
-                        cursorSet = true;
-                    }
-                } else if (creature->isNpc()) {
-                    int id = g_mouse.getCursorId("talk");
-                    if (id != -1) {
-                        g_window.setMouseCursor(id);
-                        cursorSet = true;
+        if (m_cursorAnimations) {
+            if (const auto& tile = getTopTile(mousePos)) {
+                if (const auto& creature = tile->getTopCreature()) {
+                    if (creature->isMonster()) {
+                        int id = g_mouse.getCursorId("attack");
+                        if (id != -1) {
+                            g_window.setMouseCursor(id);
+                            cursorSet = true;
+                        }
+                    } else if (creature->isNpc()) {
+                        int id = g_mouse.getCursorId("talk");
+                        if (id != -1) {
+                            g_window.setMouseCursor(id);
+                            cursorSet = true;
+                        }
                     }
                 }
             }
