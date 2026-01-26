@@ -31,6 +31,7 @@
 #include "map.h"
 #include "missile.h"
 #include "tile.h"
+#include "item.h"
 #include <framework/input/mouse.h>
 #include "framework/core/asyncdispatcher.h"
 #include "framework/core/eventdispatcher.h"
@@ -589,6 +590,30 @@ void MapView::onMouseMove(const Position& mousePos, const bool /*isVirtualMove*/
                     }
                 }
                 
+                if (!cursorSet) {
+                    if (const auto& thing = tile->getTopUseThing()) {
+                        if (thing->isContainer()) {
+                            int id = g_mouse.getCursorId("containercursor");
+                            if (id != -1) {
+                                g_window.setMouseCursor(id);
+                                cursorSet = true;
+                            }
+                        }
+                    }
+                }
+
+                if (!cursorSet) {
+                    if (const auto& thing = tile->getTopUseThing()) {
+                        if (thing->isUsable()) {
+                            int id = g_mouse.getCursorId("pointinghand");
+                            if (id != -1) {
+                                g_window.setMouseCursor(id);
+                                cursorSet = true;
+                            }
+                        }
+                    }
+                }
+
                 if (!cursorSet && tile->isWalkable()) {
                     int id = g_mouse.getCursorId("walk");
                     if (id != -1) {
