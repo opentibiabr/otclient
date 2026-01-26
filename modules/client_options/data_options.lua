@@ -341,6 +341,16 @@ return {
             panels.interface:recursiveGetChildById('crosshair'):setCurrentOptionByData(newValue, true)
         end
     },
+    nativeCursor = {
+        value = false,
+        action = function(value, options, controller, panels, extraWidgets)
+            if value then
+                g_mouse.pushCursor('window')
+            else
+                g_mouse.popCursor('window')
+            end
+        end
+    },
     enableHighlightMouseTarget        = {
         value = true,
         action = function(value, options, controller, panels, extraWidgets)
