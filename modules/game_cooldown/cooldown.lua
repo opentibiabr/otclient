@@ -50,7 +50,6 @@ function terminate()
     })
 
     cooldownWindow:destroy()
-
 end
 
 function loadIcon(iconId)
@@ -134,7 +133,6 @@ function offline()
     end
     if g_game.getFeature(GameSpellList) then
         --cooldownWindow:setParent(nil, true)
-   
     end
 end
 
@@ -180,6 +178,10 @@ function initCooldown(progressRect, updateCallback, finishCallback)
     updateCallback()
 end
 
+function hasTierUpgradeFeature()
+    return g_game.getFeature(GameForgeSkillStats) or g_game.getFeature(GameCharacterSkillStats)
+end
+
 function updateCooldown(progressRect, duration)
     if not progressRect or progressRect:isDestroyed() then
         return
@@ -211,11 +213,21 @@ function updateCooldown(progressRect, duration)
 end
 
 function isGroupCooldownIconActive(groupId)
-    return groupCooldown[groupId]
+    if hasTierUpgradeFeature() then
+        local current = groupCooldown[groupId] or 0
+        return g_clock.millis() < current
+    else
+        return groupCooldown[groupId]
+    end
 end
 
 function isCooldownIconActive(iconId)
-    return cooldown[iconId]
+    if hasTierUpgradeFeature() then
+        local current = cooldown[iconId] or 0
+        return g_clock.millis() < current
+    else
+        return cooldown[iconId]
+    end
 end
 
 function onSpellCooldown(iconId, duration)
@@ -243,10 +255,18 @@ function onSpellCooldown(iconId, duration)
     end
     local finishFunc = function()
         removeCooldown(progressRect)
-        cooldown[iconId] = false
+        if hasTierUpgradeFeature() then
+            cooldown[iconId] = 0
+        else
+            cooldown[iconId] = false
+        end
     end
     initCooldown(progressRect, updateFunc, finishFunc)
-    cooldown[iconId] = true
+    if hasTierUpgradeFeature() then
+        cooldown[iconId] = g_clock.millis() + duration
+    else
+        cooldown[iconId] = true
+    end
 end
 
 function onSpellGroupCooldown(groupId, duration)
@@ -257,9 +277,7 @@ function onSpellGroupCooldown(groupId, duration)
         return
     end
 
-    --print('onSpellGroupCooldown: ' .. groupId)
     local icon = contentsPanel:getChildById('groupIcon' .. SpellGroups[groupId])
-    --print("Progress Rect: " .. 'progressRect' .. SpellGroups[groupId])
     local progressRect = contentsPanel:getChildById('progressRect' .. SpellGroups[groupId])
     if icon then
         icon:setOn(true)
@@ -274,10 +292,18 @@ function onSpellGroupCooldown(groupId, duration)
         end
         local finishFunc = function()
             turnOffCooldown(progressRect)
-            groupCooldown[groupId] = false
+            if hasTierUpgradeFeature() then
+                groupCooldown[groupId] = 0
+            else
+                groupCooldown[groupId] = false
+            end
         end
         initCooldown(progressRect, updateFunc, finishFunc)
-        groupCooldown[groupId] = true
+        if hasTierUpgradeFeature() then
+            groupCooldown[groupId] = g_clock.millis() + duration
+        else
+            groupCooldown[groupId] = true
+        end
     end
 end
 
