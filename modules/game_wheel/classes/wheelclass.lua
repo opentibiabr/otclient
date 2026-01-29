@@ -43,6 +43,45 @@ local defaultExportString = {
   [5] = "M0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
 }
 
+local function normalizeEquipedGems(equipedGems)
+  if type(equipedGems) ~= "table" then
+    return {-1, -1, -1, -1}
+  end
+
+  local normalized = {}
+  local hasStruct = false
+  for _, value in pairs(equipedGems) do
+    if type(value) == "table" and value.gemID ~= nil then
+      hasStruct = true
+      break
+    end
+  end
+
+  if hasStruct then
+    local domains = {GemDomains.GREEN, GemDomains.RED, GemDomains.ACQUA, GemDomains.PURPLE}
+    for _, domain in ipairs(domains) do
+      local entry = equipedGems[domain]
+      local gemId = type(entry) == "table" and tonumber(entry.gemID) or tonumber(entry)
+      table.insert(normalized, gemId or -1)
+    end
+  else
+    for _, value in ipairs(equipedGems) do
+      table.insert(normalized, tonumber(value) or -1)
+    end
+    if #normalized == 0 then
+      for _, value in pairs(equipedGems) do
+        table.insert(normalized, tonumber(value) or -1)
+      end
+    end
+  end
+
+  while #normalized < 4 do
+    table.insert(normalized, -1)
+  end
+
+  return normalized
+end
+
 function WheelOfDestiny.getSliceIndex(position)
   local x = centerReferencePoint:getX()
   local y = centerReferencePoint:getY()
@@ -1153,7 +1192,16 @@ function resetWheel(ignoreprotocol)
   end
 
   WheelOfDestiny.equipedGemBonuses = {}
-  WheelOfDestiny.equipedGems = {0, 0, 0, 0}
+  WheelOfDestiny.equipedGems = {-1, -1, -1, -1}
+
+  if GemAtelier and gemAtelierWindow and gemAtelierWindow:isVisible() then
+    if GemAtelier.setupVesselPanel then
+      GemAtelier.setupVesselPanel()
+    end
+    if GemAtelier.showGems then
+      GemAtelier.showGems(true)
+    end
+  end
   WheelOfDestiny.configureDedicationPerk()
   WheelOfDestiny.configureConvictionPerk()
   WheelOfDestiny.configureVessels()
@@ -1791,8 +1839,9 @@ function WheelOfDestiny.create(playerId, canView, changeState, vocationId, point
   WheelOfDestiny.levelPoints = points
   WheelOfDestiny.scrollPoints = scrollPoints
   WheelOfDestiny.usedPromotionScrolls = usedPromotionScrolls
-  WheelOfDestiny.equipedGems = equipedGems
+  WheelOfDestiny.equipedGems = normalizeEquipedGems(equipedGems)
   WheelOfDestiny.atelierGems = atelierGems
+  
   WheelOfDestiny.basicModsUpgrade = basicUpgraded
   WheelOfDestiny.supremeModsUpgrade = supremeUpgraded
   WheelOfDestiny.extraGemPoints = 0
@@ -1937,34 +1986,19 @@ local function getGemStruct(preset)
 end
 
 local function getLocalGemStruct()
-	local struct = {
-		[GemDomains.GREEN + 1] = 0,
-		[GemDomains.RED + 1] = 0,
-		[GemDomains.ACQUA + 1] = 0,
-		[GemDomains.PURPLE + 1] = 0,
-	}
+  local struct = {-1, -1, -1, -1}
 
-	for _, id in pairs(WheelOfDestiny.equipedGems) do
-		local domain = GemAtelier.getGemDomainById(id)
-		if domain == -1 then
-			break
-		end
+  for _, id in pairs(WheelOfDestiny.equipedGems) do
+    local domain = GemAtelier.getGemDomainById(id)
+    if domain == -1 then
+      goto continue
+    end
 
-		struct[domain + 1] = id
-	end
+    struct[domain + 1] = id
+    ::continue::
+  end
 
-	local sortedKeys = {}
-	for key in pairs(struct) do
-			table.insert(sortedKeys, key)
-	end
-	table.sort(sortedKeys)
-
-	local sortedStruct = {}
-	for _, key in ipairs(sortedKeys) do
-			sortedStruct[key] = struct[key]
-	end
-
-	return sortedStruct
+  return struct
 end
 
 function onWheelOfDestinyApply(close, ignoreprotocol)
@@ -1978,7 +2012,7 @@ function onWheelOfDestinyApply(close, ignoreprotocol)
     local p = struct[GemDomains.PURPLE].gemID or 0
   
     if WheelOfDestiny.currentPreset then
-      WheelOfDestiny.currentPreset.equipedGems = struct
+      WheelOfDestiny.currentPreset.equipedGems = normalizeEquipedGems(struct)
     end
   
     g_logger.debug(string.format(

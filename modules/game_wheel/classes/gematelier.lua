@@ -136,7 +136,7 @@ function GemAtelier.redirectToGem(gemData)
 		currentGemList[#currentGemList + 1] = data
 		if widget then
 			widget.gemIndex = #currentGemList
-			widget.gemID = data.gemID or 0
+			-- gemID already set by setupGemWidget
 		  end
 		gemCount = gemCount + 1
 
@@ -174,7 +174,14 @@ function GemAtelier.showGems(selectFirst, lastIndex)
 	totalGemList = {}
 	currentGemList = {}
 	
+	
 	for i, data in pairs(WheelOfDestiny.atelierGems) do
+		-- Skip gems with invalid IDs (gemID can be 0, which is valid!)
+		if not data.gemID or data.gemID < 0 then
+			g_logger.warning(string.format("[GemAtelier] Skipping gem with invalid ID: %s", tostring(data.gemID)))
+			goto continue
+		end
+		
 		-- locked pode ser 0/1 ou true/false, então verificamos ambos
 		local isLocked = data.locked == 1 or data.locked == true
 		if lockedOnly and not isLocked then
@@ -207,14 +214,18 @@ function GemAtelier.showGems(selectFirst, lastIndex)
 		end
 
 		local widget = g_ui.createWidget('GemPanel', gemList)
-		GemAtelier.setupGemWidget(widget, data)
-
-		currentGemList[#currentGemList + 1] = data
-		if widget then
-			widget.gemIndex = #currentGemList
-			widget.gemID = data.gemID or 0
-		  end
-		gemCount = gemCount + 1
+		local success = GemAtelier.setupGemWidget(widget, data)
+		
+		if success then
+			currentGemList[#currentGemList + 1] = data
+			if widget then
+				widget.gemIndex = #currentGemList
+				-- gemID already set by setupGemWidget
+			end
+			gemCount = gemCount + 1
+		else
+			widget:destroy()
+		end
 
 		:: continue ::
 	end
@@ -284,26 +295,28 @@ function GemAtelier.setupGemWidget(widget, data)
 	-- Verificação de segurança: widget válido
 	if not widget then
 	  g_logger.warning("[GemAtelier] widget nil — não foi possível configurar a gem")
-	  return
+	  return false
 	end
   
 	-- Garante que o widget tenha o campo gemID (armazenado como dado Lua)
-	if data and data.gemID then
+	if data and data.gemID and data.gemID >= 0 then
 		widget.gemID = data.gemID
+		g_logger.debug(string.format("[GemAtelier] setupGemWidget: set gemID=%d for widget", data.gemID))
 	else
-		widget.gemID = 0
-		g_logger.warning("[GemAtelier] gem sem gemID — gemID=0")
+		widget.gemID = -1
+		g_logger.warning(string.format("[GemAtelier] gem sem gemID válido — gemID=%s (type=%s)", tostring(data and data.gemID), type(data and data.gemID)))
+		return false
 	end
   
 	-- Verifica se os dados da gem são válidos
 	if not data then
 	  g_logger.warning("[GemAtelier] setupGemWidget chamado com data=nil")
-	  return
+	  return false
 	end
 	if not data.gemType or not data.gemDomain then
 	  g_logger.warning(string.format("[GemAtelier] gem data incompleto: id=%s type=%s domain=%s",
 		tostring(data.gemID), tostring(data.gemType), tostring(data.gemDomain)))
-	  return
+	  return false
 	end
   
 	-- Calcula offsets visuais
@@ -316,7 +329,7 @@ function GemAtelier.setupGemWidget(widget, data)
 	if not tmpData then
 	  g_logger.warning(string.format("[GemAtelier] gem id %d não encontrado em GemVocations[%d][%d]",
 		data.gemID or -1, WheelOfDestiny.vocationId or -1, data.gemType or -1))
-	  return
+	  return false
 	end
   
 	-- Define estado e imagem base
@@ -347,7 +360,7 @@ function GemAtelier.setupGemWidget(widget, data)
 	local gemTypeWidget = widget:recursiveGetChildById("modType" .. data.gemType)
 	if not gemTypeWidget then
 	  g_logger.warning(string.format("[GemAtelier] gemTypeWidget modType%d não encontrado para gemID=%d", data.gemType, data.gemID))
-	  return
+	  return false
 	end
   
 	gemTypeWidget:setVisible(true)
@@ -369,6 +382,8 @@ function GemAtelier.setupGemWidget(widget, data)
   
 	g_logger.debug(string.format("[GemAtelier] GemWidget configurado: id=%d type=%d domain=%d locked=%d",
 	  data.gemID or -1, data.gemType or -1, data.gemDomain or -1, data.locked or -1))
+	
+	return true
   end
   
 
@@ -571,10 +586,17 @@ end
 
 function GemAtelier.onSelectGem(selected, clicked)
 	-- validações antecipadas
-	if not selected or not selected.gemID then
-		--g_logger.warning("[GemAtelier] widget nil ou sem gemID") --spamando muito
+	if not selected then
+		g_logger.warning("[GemAtelier] onSelectGem: selected widget is nil")
 		return true
 	end
+	
+	if not selected.gemID then
+		g_logger.warning(string.format("[GemAtelier] onSelectGem: widget has no gemID (widget=%s)", tostring(selected)))
+		return true
+	end
+	
+	g_logger.debug(string.format("[GemAtelier] onSelectGem: gemID=%d currentGemList size=%d", selected.gemID, #currentGemList))
 
 	if #currentGemList == 0 then
 		return true
@@ -661,13 +683,15 @@ function GemAtelier.onSelectGem(selected, clicked)
 	local alreadyEquipped = false
 	local isTheSameGem = false
 	for _, id in pairs(WheelOfDestiny.equipedGems or {}) do
-		local dom = GemAtelier.getGemDomainById(id)
-		if dom == gemData.gemDomain then
-			alreadyEquipped = true
-			if id == gemData.gemID then
-				isTheSameGem = true
+		if type(id) == "number" and id > 0 then
+			local dom = GemAtelier.getGemDomainById(id)
+			if dom == gemData.gemDomain then
+				alreadyEquipped = true
+				if id == gemData.gemID then
+					isTheSameGem = true
+				end
+				break
 			end
-			break
 		end
 	end
 
@@ -836,61 +860,47 @@ function GemAtelier.manageVessel(remove)
 	end
 
 	-- lógica visual antiga (mantém comportamento no painel)
-	local equipedList = {}
+	local equipedList = {-1, -1, -1, -1}
+	
+	-- Primeiro, copia as gems existentes para suas posições
 	for _, id in pairs(WheelOfDestiny.equipedGems or {}) do
-		local domain = GemAtelier.getGemDomainById(id)
-		if domain ~= gemData.gemDomain then
-			table.insert(equipedList, id)
+		if type(id) == "number" and id >= 0 then
+			local domain = GemAtelier.getGemDomainById(id)
+			if domain ~= -1 and domain ~= gemData.gemDomain then
+				equipedList[domain + 1] = id
+			end
 		end
 	end
+	
+	-- Então adiciona ou remove a gem do domínio atual
 	if not remove then
-		table.insert(equipedList, gemData.gemID)
+		equipedList[gemData.gemDomain + 1] = gemData.gemID
+	else
+		equipedList[gemData.gemDomain + 1] = -1
 	end
+	
 	WheelOfDestiny.equipedGems = equipedList
+
+	-- Atualiza o preset para manter sincronizado
+	if WheelOfDestiny.currentPreset then
+		WheelOfDestiny.currentPreset.equipedGems = equipedList
+	end
+
+	g_logger.debug(string.format(
+		"[GemAtelier] manageVessel -> %s gemID=%d domain=%d | equipedGems={%s}",
+		remove and "remove" or "equip",
+		gemData.gemID, gemData.gemDomain,
+		table.concat(WheelOfDestiny.equipedGems, ", ")
+	))
 
 	-- Força o refresh da UI após equipar/remover
 	if lastSelectedGem then
 		g_logger.debug("[GemAtelier] Atualizando painel lateral após equipar/remover.")
-		GemAtelier.onSelectGem(lastSelectedGem, true)
 		GemAtelier.setupVesselPanel()
+		GemAtelier.onSelectGem(lastSelectedGem, true)
 	else
 		g_logger.warning("[GemAtelier] Nenhuma gema selecionada após manageVessel, não foi possível atualizar painel.")
 	end
-
-	-- garante que WheelOfDestiny.currentPreset exista
-	WheelOfDestiny.currentPreset = WheelOfDestiny.currentPreset or {}
-
-	-- garante que o subtipo equipedGems exista e tenha todos os domínios
-	local preset = WheelOfDestiny.currentPreset
-	preset.equipedGems = preset.equipedGems or {}
-
-	for _, domain in ipairs({
-		GemDomains.GREEN,
-		GemDomains.RED,
-		GemDomains.ACQUA,
-		GemDomains.PURPLE
-	}) do
-		local entry = preset.equipedGems[domain]
-		if type(entry) ~= "table" then
-			preset.equipedGems[domain] = { gemID = tonumber(entry) or 0 }
-		end
-	end
-
-	-- força domínio para número
-	local domain = tonumber(gemData.gemDomain) or gemData.gemDomain
-
-	if remove then
-		preset.equipedGems[domain].gemID = 0
-	else
-		preset.equipedGems[domain].gemID = gemData.gemID
-	end
-
-	g_logger.debug(string.format(
-		"[GemAtelier] manageVessel -> %s gemID=%d domain=%s | visualList={%s}",
-		remove and "remove" or "equip",
-		gemData.gemID, tostring(domain),
-		table.concat(WheelOfDestiny.equipedGems, ", ")
-	))
 
 	-- redesenha mantendo foco
 	GemAtelier.showGems(false, lastSelectedGem.gemIndex or 1)
@@ -898,8 +908,11 @@ end
 
 
 function GemAtelier.isGemEquipped(gemID)
-	for _, id in pairs(WheelOfDestiny.equipedGems) do
-		if id == gemID then
+	if not gemID or gemID < 0 then
+		return false
+	end
+	for _, id in pairs(WheelOfDestiny.equipedGems or {}) do
+		if type(id) == "number" and id == gemID then
 			return true
 		end
 	end
@@ -907,6 +920,9 @@ function GemAtelier.isGemEquipped(gemID)
 end
 
 function GemAtelier.getGemDomainById(id)
+	if type(id) ~= "number" or id < 0 then
+		return -1
+	end
 	for _, data in pairs(WheelOfDestiny.atelierGems) do
 	  if data.gemID == id then
 		g_logger.debug(string.format("[DebugDomain] gemId=%d gemDomain=%d gemType=%d", id, data.gemDomain, data.gemType))
@@ -928,11 +944,16 @@ function GemAtelier.getGemCountByDomain(domain)
 end
 
 function GemAtelier.getGemDataById(id)
+	if type(id) ~= "number" or id < 0 then
+		g_logger.warning(string.format("[GemAtelier] getGemDataById called with invalid id: %s (type=%s)", tostring(id), type(id)))
+		return nil
+	end
 	for _, data in pairs(WheelOfDestiny.atelierGems) do
 		if data.gemID == id then
 			return data
 		end
 	end
+	g_logger.warning(string.format("[GemAtelier] getGemDataById: gemID=%d not found in atelierGems (total gems=%d)", id, #WheelOfDestiny.atelierGems))
 	return nil
 end
 
@@ -1176,7 +1197,7 @@ function GemAtelier.setupVesselPanel()
             gemItem:setImageClip("0 0 32 32")
 
             -- Agora usamos campo Lua para armazenar ID em vez de setActionId()
-            gemItem.gemID = 0
+            gemItem.gemID = -1
             gemItem:setVisible(false)
 
             local filledCount = GemAtelier.getFilledVesselCount(i)
@@ -1193,6 +1214,10 @@ function GemAtelier.setupVesselPanel()
 
     -- agora exibe as gems equipadas
     for _, id in pairs(WheelOfDestiny.equipedGems) do
+        if type(id) ~= "number" or id < 0 then
+            goto skipGem
+        end
+        
         local data = GemAtelier.getGemDataById(id)
         if data then
             local background = selectWidget:recursiveGetChildById("vesselBg" .. data.gemDomain)
@@ -1212,7 +1237,7 @@ function GemAtelier.setupVesselPanel()
                 local gemOffset = vocationOffset + domainOffset + typeOffset
 
                 gemItem:setImageClip(gemOffset .. " 0 32 32")
-                gemItem.gemID = data.gemID or 0
+                gemItem.gemID = data.gemID
                 gemItem:setVisible(true)
 
                 -- offset da moldura do receptáculo
@@ -1232,6 +1257,7 @@ function GemAtelier.setupVesselPanel()
                 ))
             end
         end
+        ::skipGem::
     end
 
     g_logger.debug("[GemAtelier] setupVesselPanel concluído com 4 receptáculos.")
