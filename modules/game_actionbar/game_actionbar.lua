@@ -47,10 +47,12 @@ lastHighlightWidget = nil
 isLoaded = false
 local areEventsConnected = false
 
+--- checks if action bar is visible
 local function isActionBarVisible(actionBar)
     return actionBar and actionBar:isVisible()
 end
 
+--- Adds an action bar to the active list
 function addActiveActionBar(actionBar)
     if not actionBar then
         return false
@@ -65,6 +67,7 @@ function addActiveActionBar(actionBar)
     table.insert(activeActionBars, actionBar)
     return true
 end
+--- Rebuilds the list of active action bars
 local function rebuildActiveActionBars()
     local previousCount = #activeActionBars
     local visibleCount = 0
@@ -82,6 +85,7 @@ local function rebuildActiveActionBars()
 
     return visibleCount > 0
 end
+--- Removes an action bar from the active list
 function removeActiveActionBar(actionBar)
     if not actionBar then
         return false
@@ -101,6 +105,7 @@ function removeActiveActionBar(actionBar)
     return removed
 end
 
+--- Checks if there are any active action bars
 function hasAnyActiveActionBar()
     if not g_game.isOnline() then
         return false
@@ -113,6 +118,7 @@ function hasAnyActiveActionBar()
     return false
 end
 
+--- Sets up an action bar by index
 function setupActionBar(n)
     local actionbar = actionBars[n]
     local barState = ApiJson.getActionBar(n) or {}
@@ -126,23 +132,59 @@ function setupActionBar(n)
     for i = 1, 50 do
         local layout = n < 4 and 'ActionButton' or 'SideActionButton'
         local widget = actionbar.tabBar:getChildById(n .. "." .. i)
-        if not widget then
-            widget = g_ui.createWidget(layout, actionbar.tabBar)
-            widget:setId(n .. "." .. i)
+        
+           if not widget then
+               local hasMapping = ApiJson.getMapping(n, i)
+           
+           if hasMapping then
+               widget = g_ui.createWidget(layout, actionbar.tabBar)
+               widget:setId(n .. "." .. i)
+           else
+               widget = g_ui.createWidget('UIWidget', actionbar.tabBar)
+               widget:setId(n .. "." .. i)
+               widget:setSize({width = 34, height = 34})
+               widget:setMarginLeft(2)
+               widget:setImageSource('/images/game/actionbar/actionbarslot')
+               widget:setDraggable(false)
+               
+               widget.onDrop = function(self, draggedWidget, mousePos)
+                    if draggedWidget and draggedWidget.currentDragThing then
+                        if tryAssignActionButtonFromDrop(mousePos, draggedWidget, draggedWidget.currentDragThing) then
+                            return true
+                        end
+                    end
+               end
+               
+               widget.onMouseRelease = function(self, mousePos, mouseButton)
+                    if mouseButton == MouseRightButton then
+                        local parent = self:getParent()
+                        local id = self:getId()
+                        updateButton(self)
+                        local newButton = parent:getChildById(id)
+                        if newButton and newButton.onMouseRelease then
+                            newButton.onMouseRelease(newButton, mousePos, mouseButton)
+                        end
+                        return true
+                    end
+               end
+           end
         end
-        resetButtonCache(widget)
-        if g_game.isOnline() then
-            updateButton(widget)
+        
+        -- Only update if it's a real button
+        if widget:getChildById('item') and g_game.isOnline() then
+             updateButton(widget)
         end
-        if widget.cooldown then
-            widget.cooldown:stop()
-        end
-        if widget.item and widget.item:getItemId() > 100 then
-            table.insert(items, widget.item:getItem())
-        end
+         
+         if widget.cooldown then
+             widget.cooldown:stop()
+         end
+         if widget.item and widget.item:getItemId() > 100 then
+             table.insert(items, widget.item:getItem())
+         end
     end
 end
 
+--- Gets the count of active bottom action bars
 function getActiveBottomBars()
     if #actionBars == 0 then
         return 0
@@ -157,6 +199,7 @@ function getActiveBottomBars()
     return count
 end
 
+--- Gets the count of active right action bars
 function getActiveRightBars()
     if #actionBars == 0 then
         return 0
@@ -201,6 +244,8 @@ end
 -- =            Event             =
 -- =============================================*/
 
+
+--- Connects player events
 local function connecting()
     if areEventsConnected then
         return
@@ -224,6 +269,7 @@ local function connecting()
     areEventsConnected = true
 end
 
+--- Disconnects player events
 local function disconnecting()
     if not areEventsConnected then
         return
@@ -247,6 +293,7 @@ local function disconnecting()
     areEventsConnected = false
 end
 
+--- Updates event subscriptions based on active bars
 function updateActionBarEventSubscriptions()
     if hasAnyActiveActionBar() then
         connecting()
@@ -260,6 +307,7 @@ end
 -- =            Controller             =
 -- =============================================*/
 ActionBarController = Controller:new()
+--- Initializes the action bar controller
 function ActionBarController:onInit()
     g_ui.importStyle("otui/style.otui")
     gameRootPanel = modules.game_interface.getRootPanel()
@@ -269,6 +317,7 @@ function ActionBarController:onInit()
     mouseGrabberWidget.onMouseRelease = onDropActionButton
 end
 
+--- Handles termination event
 function ActionBarController:onTerminate()
     ApiJson.saveData()
     for _, actionbar in pairs(actionBars) do
@@ -297,8 +346,12 @@ function ActionBarController:onTerminate()
     disconnecting()
 end
 
+--- Handles game start event
 function ActionBarController:onGameStart()
     onCreateActionBars()
+    
+    -- Ensure fresh cache
+    if clearHotkeyCache then clearHotkeyCache() end
     updateActionBarEventSubscriptions()
     dragItem = nil
     dragButton = nil
@@ -335,6 +388,8 @@ end
 -- =            Events Call            =
 -- =============================================*/
 
+
+--- Handles spell cooldown events
 function onSpellCooldown(spellId, delay)
     local showProgress = modules.client_options.getOption("graphicalCooldown")
     local showTime = modules.client_options.getOption("cooldownSecond")
@@ -349,7 +404,7 @@ function onSpellCooldown(spellId, delay)
     for _, actionbar in pairs(activeActionBars) do
         for _, button in pairs(actionbar.tabBar:getChildren()) do
             local cache = getButtonCache(button)
-            if cache.isSpell or cache.isRuneSpell then
+            if cache and (cache.isSpell or cache.isRuneSpell) then
                 local shouldUpdate = true
                 if cache.isRuneSpell and not isRune then
                     shouldUpdate = false
@@ -382,7 +437,7 @@ function onSpellGroupCooldown(groupId, delay)
     for _, actionbar in pairs(activeActionBars) do
         for _, button in pairs(actionbar.tabBar:getChildren()) do
             local cache = getButtonCache(button)
-            if not cache.isRuneSpell and cache.spellData then
+            if cache and (not cache.isRuneSpell and cache.spellData) then
                 if Spells.getCooldownByGroup(cache.spellData, groupId) then
                     local resttime = button.cooldown:getDuration() - button.cooldown:getTimeElapsed()
                     if resttime < delay then
@@ -427,6 +482,7 @@ function onSpellGroupCooldown(groupId, delay)
     end
 end
 
+--- Handles passive ability data updates
 function onPassiveData(currentCooldown, maxCooldown, canDecay)
     passiveData = {
         cooldown = currentCooldown,
@@ -435,6 +491,7 @@ function onPassiveData(currentCooldown, maxCooldown, canDecay)
     updateActionPassive()
 end
 
+--- Handles spell list changes
 function onSpellsChange(player, list)
     spellListData = {}
     for _, spellId in pairs(list) do
@@ -458,17 +515,19 @@ function onHotkeyItems(itemList)
     end
 end
 
+--- Handles level updates
 function onUpdateLevel(localPlayer, level, levelPercent, oldLevel, oldLevelPercent)
     if level ~= oldLevel then
         onUpdateActionBarStatus()
     end
 end
 
+--- Handles multi-use cooldown updates
 function onMultiUseCooldown(multiUseCooldown)
     for _, actionbar in pairs(activeActionBars) do
         for _, button in pairs(actionbar.tabBar:getChildren()) do
             updateButtonState(button)
-            if multiUseCooldown and button.item and button.cache.itemId then
+            if multiUseCooldown and button.item and button.cache and button.cache.itemId then
                 local item = button.item:getItem()
                 if item and item:isMultiUse() then
                     local marketArray = {MarketCategory.Potions, MarketCategory.Runes, MarketCategory.Tools}
@@ -489,9 +548,95 @@ function updateInventoryItems(_)
     end
 end
 
--- Export function for external modules to call when panel visibility changes
+--- Updates visible widgets externally
 function updateVisibleWidgetsExternal()
-    -- Call the updateVisibleWidgets function from ActionBarLayout.lua
-    -- The function should be available globally since all logic files are loaded
     updateVisibleWidgets()
+end
+
+--- Toggles cooldown display options
+function toggleCooldownOption()
+    for _, actionbar in pairs(activeActionBars) do
+        for _, button in pairs(actionbar.tabBar:getChildren()) do
+            if button.cooldown and button.cooldown:getPercent() < 100 then
+                 local remaining = button.cooldown:getDuration() - button.cooldown:getTimeElapsed()
+                 if remaining > 0 then
+                     updateCooldown(button, remaining) 
+                 end
+            end
+        end
+    end
+
+end
+
+function configureActionBar(key, value)
+    local map = {
+        actionBarShowBottom1 = 1,
+        actionBarShowBottom2 = 2,
+        actionBarShowBottom3 = 3,
+        actionBarShowLeft1 = 4,
+        actionBarShowLeft2 = 5,
+        actionBarShowLeft3 = 6,
+        actionBarShowRight1 = 7,
+        actionBarShowRight2 = 8,
+        actionBarShowRight3 = 9
+    }
+    local n = map[key]
+    if not n then return end
+    
+    local actionbar = actionBars[n]
+    if actionbar then
+        actionbar:setVisible(value)
+        actionbar:setOn(value)
+        if value then
+            addActiveActionBar(actionbar)
+            setupActionBar(n)
+        else
+            removeActiveActionBar(actionbar)
+        end
+        if resizeLockButtons then
+            resizeLockButtons()
+        end
+        if ActionBarController then
+            ActionBarController:scheduleEvent(onUpdateActionBarStatus)
+        end
+    end
+end
+
+--- Updates visible options
+function updateVisibleOptions(type, value)
+    for _, actionbar in pairs(activeActionBars) do
+        for _, button in pairs(actionbar.tabBar:getChildren()) do
+            if type == 'hotkey' and button.hotkeyLabel then
+                button.hotkeyLabel:setVisible(value)
+            elseif type == 'parameter' and button.parameterText then
+                button.parameterText:setVisible(value)
+            elseif type == 'tooltip' then
+                setupButtonTooltip(button, false)
+            elseif type == 'amount' then
+                updateButtonState(button)
+            end
+        end
+    end
+end
+
+--- Resets a specific action bar
+function resetAction(barId)
+    local actionbar = actionBars[barId]
+    if not actionbar then return end
+    
+    for i = 1, 50 do
+        ApiJson.removeAction(barId, i)
+        
+        local button = actionbar.tabBar:getChildById(barId .. "." .. i)
+        if button then
+            updateButton(button)
+        end
+    end
+end
+
+--- Resets all action bars
+function resetActionBars()
+    for i = 1, 9 do
+        resetAction(i)
+    end
 end
