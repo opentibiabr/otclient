@@ -231,10 +231,17 @@ function optionsController:onGameStart()
             end
         end
     end, 50, "onGameStart")
-    if g_game.getClientVersion() >= 1400 and not controlButton1400 then
-        controlButton1400 = modules.game_mainpanel.addToggleButton('controButtons', tr('Manage control buttons'),
-        '/images/options/button_control', function() modules.client_options.openOptionsCategory("Interface", "Control Buttons") end, false, 1)
-        controlButton1400:setOn(false)
+    if g_game.getClientVersion() >= 1400 then
+        if not controlButton1400 then
+            controlButton1400 = modules.game_mainpanel.addToggleButton('controButtons', tr('Manage control buttons'),
+                '/images/options/button_control', function()
+                    modules.client_options.openOptionsCategory("Interface", "Control Buttons")
+                end, false, 1)
+            controlButton1400:setOn(false)
+        end
+    elseif controlButton1400 then
+        controlButton1400:destroy()
+        controlButton1400 = nil
     end
 end
 

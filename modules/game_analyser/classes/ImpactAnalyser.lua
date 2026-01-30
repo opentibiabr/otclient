@@ -74,7 +74,7 @@ if not ImpactAnalyser then
 end
 local targetMaxMargin = 142
 
-local imageDir = '/game_cyclopedia/images/bestiary/icons/monster-icon-%s-resist'
+local imageDir = '/images/icons/monster-icon-%s-resist'
 
 local effectsFiles = {
 	[0] = 'physical',

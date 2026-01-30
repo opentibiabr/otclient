@@ -470,10 +470,6 @@ function rewardWallController:onGameStart()
             ButtonRewardWall = modules.game_mainpanel.addToggleButton("rewardWall", tr("Open rewardWall"),
                 "/images/options/rewardwall", toggle, false, 21)
         end
-    else
-        scheduleEvent(function()
-            g_modules.getModule("game_rewardwall"):unload()
-        end, 100)
     end
 end
 
