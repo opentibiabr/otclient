@@ -9,7 +9,7 @@ NewMainWindow
   Panel
     id: optionsTabBar
     size: 968 36
-    image-source: /images/game/wheel/menuBg
+    image-source: /game_wheel/images/menuBg
     image-border: 1
     anchors.top: parent.top
     anchors.left: parent.left
@@ -25,7 +25,7 @@ NewMainWindow
       size: 322 34
       margin-left: 1
       margin-top: 1
-      image-source: /images/game/wheel/wheelMenu
+      image-source: /game_wheel/images/wheelMenu
       image-clip: 0 0 322 34
       $hover !checked:
         image-clip: 0 0 322 34
@@ -42,7 +42,7 @@ NewMainWindow
       size: 322 34
       margin-left: 1
       margin-top: 1
-      image-source: /images/game/wheel/gemMenu
+      image-source: /game_wheel/images/gemMenu
       image-clip: 0 0 322 34
       $hover !checked:
         image-clip: 0 0 322 34
@@ -59,7 +59,7 @@ NewMainWindow
       size: 322 34
       margin-right: 1
       margin-top: 1
-      image-source: /images/game/wheel/fragmentMenu
+      image-source: /game_wheel/images/fragmentMenu
       image-clip: 0 0 322 34
       $hover !checked:
         image-clip: 0 0 322 34
@@ -126,7 +126,7 @@ NewMainWindow
     image-border: 7
     UIWidget
       size: 12 12
-      image-source: /images/game/wheel/fragmentIcon
+      image-source: /game_wheel/images/fragmentIcon
       image-clip: 0 0 12 12
       anchors.right: parent.right
       anchors.top: parent.top
@@ -155,7 +155,7 @@ NewMainWindow
     image-border: 7
     UIWidget
       size: 12 12
-      image-source: /images/game/wheel/fragmentIcon
+      image-source: /game_wheel/images/fragmentIcon
       image-clip: 0 12 12 12
       anchors.right: parent.right
       anchors.top: parent.top
@@ -178,7 +178,7 @@ NewMainWindow
     size: 20 20
     anchors.bottom: parent.bottom
     anchors.left: prev.right
-    image-source: /images/game/wheel/change_preset_icon
+    image-source: /game_wheel/images/change_preset_icon
     image-clip: 0 0 20 20
     margin-bottom: 12
     margin-left: 5
