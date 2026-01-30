@@ -62,15 +62,20 @@ local function normalizeEquipedGems(equipedGems)
     for _, domain in ipairs(domains) do
       local entry = equipedGems[domain]
       local gemId = type(entry) == "table" and tonumber(entry.gemID) or tonumber(entry)
+      -- Note: Gem ID 0 is valid! Only nil/false should become -1
       table.insert(normalized, gemId or -1)
     end
   else
     for _, value in ipairs(equipedGems) do
-      table.insert(normalized, tonumber(value) or -1)
+      local gemId = tonumber(value)
+      -- Note: Gem ID 0 is valid! Only nil/false should become -1
+      table.insert(normalized, gemId or -1)
     end
     if #normalized == 0 then
       for _, value in pairs(equipedGems) do
-        table.insert(normalized, tonumber(value) or -1)
+        local gemId = tonumber(value)
+        -- Note: Gem ID 0 is valid! Only nil/false should become -1
+        table.insert(normalized, gemId or -1)
       end
     end
   end
@@ -2396,12 +2401,17 @@ function WheelOfDestiny.onImportConfig(base64Data)
 
   while index <= #decodedData do
     local value = string.unpack_custom("I1", decodedData:sub(index, index))
+    -- Convert 255 to -1 (255 means no gem in import format, -1 is used internally)
+    -- Note: Gem ID 0 is valid and should not be converted!
+    if value == 255 then
+      value = -1
+    end
     table.insert(equipedGems, value)
     index = index + 1
   end
 
   while #equipedGems < 4 do
-    table.insert(equipedGems, 0)
+    table.insert(equipedGems, -1)
   end
 
   if usedPoints > points then
@@ -2419,18 +2429,9 @@ function WheelOfDestiny.onImportPreset()
 end
 
 function WheelOfDestiny.onExportPreset()
-  -- TODO: Implement export preset functionality
-  print("[WheelOfDestiny] Export preset - TODO")
-  -- This function should:
-  -- 1. Show a dialog with export options
-  -- 2. Generate export data for the current preset
-  -- 3. Allow user to save to file or copy to clipboard
-  -- 4. Provide feedback on successful export
-end
-
-function WheelOfDestiny.doExportCode()
   if exportCodeWindow then
     exportCodeWindow:destroy()
+    exportCodeWindow = nil
   end
 
   wheelWindow:hide()
@@ -2442,7 +2443,22 @@ function WheelOfDestiny.doExportCode()
     end
 
     wheelWindow:show()
-    WheelOfDestiny.onExportConfig()
+    
+    -- Generate and copy the export code to clipboard
+    local exportCode = WheelOfDestiny.getExportCode(WheelOfDestiny.currentPreset)
+    if exportCode and exportCode ~= "" then
+      g_window.setClipboardText(exportCode)
+      g_logger.info(string.format("[WheelOfDestiny] Export code copied to clipboard: %s", exportCode))
+    else
+      g_logger.error("[WheelOfDestiny] Failed to generate export code")
+    end
+    
+    return true
+  end
+
+  local urlButton = function()
+    -- TODO: Implement URL export functionality
+    g_logger.info("[WheelOfDestiny] URL export - TODO: Not yet implemented")
     return true
   end
 
@@ -2459,9 +2475,9 @@ function WheelOfDestiny.doExportCode()
   exportCodeWindow = displayGeneralBox('Copy to Clipboard', tr("Copy export code or URL of the planner to clipboard."),
     {
       { text=tr('Code'), callback=codeButton },
-      { text=tr('URL'), callback=nil, disabled=true },
+      { text=tr('URL'), callback=urlButton },
       { text=tr('Cancel'), callback=cancelButton }
-    }, confirm, deny)
+    })
 end
 
 function WheelOfDestiny.onExportConfig()
@@ -2483,11 +2499,17 @@ function WheelOfDestiny.onExportConfig()
       end
   end
 
+	-- Pack gems in fixed order: GREEN, RED, ACQUA, PURPLE
+	-- Note: Gem ID 0 is valid! Use 255 as marker for no gem (-1)
 	local gems = getGemStruct()
-	for k, v in pairs(gems) do
-		local packedValue = string.pack_custom("I1", v.gemID < 0 and 0 or v.gemID)
+	local gemOrder = {GemDomains.GREEN, GemDomains.RED, GemDomains.ACQUA, GemDomains.PURPLE}
+	for _, domain in ipairs(gemOrder) do
+		local gemData = gems[domain]
+		local gemID = gemData and gemData.gemID or -1
+		-- Use 255 as "no gem" marker since gem ID 0 is valid
+		local packedValue = string.pack_custom("I1", gemID < 0 and 255 or gemID)
 		if packedValue and packedValue ~= "" then
-				table.insert(dataParts, packedValue)
+			table.insert(dataParts, packedValue)
 		end
 	end
 
@@ -2549,13 +2571,19 @@ function WheelOfDestiny.getExportCode(preset)
       end
   end
 
-	local gems = getGemStruct(preset)
-	for k, v in pairs(gems) do
-		local packedValue = string.pack_custom("I1", v.gemID < 0 and 0 or v.gemID)
-		if packedValue and packedValue ~= "" then
-				table.insert(dataParts, packedValue)
-		end
-	end
+  -- Pack gems in fixed order: GREEN, RED, ACQUA, PURPLE
+  -- Note: Gem ID 0 is valid! Use 255 as marker for no gem (-1)
+  local gems = getGemStruct(preset)
+  local gemOrder = {GemDomains.GREEN, GemDomains.RED, GemDomains.ACQUA, GemDomains.PURPLE}
+  for _, domain in ipairs(gemOrder) do
+    local gemData = gems[domain]
+    local gemID = gemData and gemData.gemID or -1
+    -- Use 255 as "no gem" marker since gem ID 0 is valid
+    local packedValue = string.pack_custom("I1", gemID < 0 and 255 or gemID)
+    if packedValue and packedValue ~= "" then
+      table.insert(dataParts, packedValue)
+    end
+  end
 
   local data = table.concat(dataParts)
   if not data or data == "" then
@@ -2709,14 +2737,56 @@ function WheelOfDestiny.onConfirmCreatePreset()
   -- Save to JSON file
   WheelOfDestiny.saveWheelPresets()
   
-  -- Switch to manage presets tab to ensure preset list is visible
+  -- Now apply the preset data exactly like switching presets does
+  -- This ensures proper UI reload
+  local oldPoints = table.copy(dataCopy.pointInvested)
+  local oldGems = table.copy(dataCopy.equipedGems)
+
+  resetWheel(true)
+
+  WheelOfDestiny.currentPreset.pointInvested = oldPoints
+  WheelOfDestiny.currentPreset.equipedGems = oldGems
+  
+  -- Calculate base points from current character
+  local basePoints = WheelOfDestiny.levelPoints or WheelOfDestiny.points or 0
+  local pointsInvested = dataCopy.availablePoints - (WheelOfDestiny.extraGemPoints + WheelOfDestiny.scrollPoints)
+  
+  -- Use basePoints to let create() calculate properly
+  WheelOfDestiny.create(WheelOfDestiny.playerId, WheelOfDestiny.canView, WheelOfDestiny.changeState, WheelOfDestiny.vocationId, basePoints, WheelOfDestiny.scrollPoints, dataCopy.pointInvested, WheelOfDestiny.usedPromotionScrolls, dataCopy.equipedGems, WheelOfDestiny.atelierGems, WheelOfDestiny.basicModsUpgrade, WheelOfDestiny.supremeModsUpgrade)
+  
+  -- Update gem atelier vessel panel after create() has set the new gems
+  if GemAtelier and gemAtelierWindow and gemAtelierWindow:isVisible() then
+    if GemAtelier.setupVesselPanel then
+      GemAtelier.setupVesselPanel()
+    end
+  end
+  
+  -- Update preset label
+  local presetLabel = wheelWindow:recursiveGetChildById("presetLabel")
+  if presetLabel then
+    presetLabel:setText(string.format("Current Preset: %s", presetName))
+  end
+  
+  local presetHotCopy = wheelWindow:recursiveGetChildById("hotCopy")
+  if presetHotCopy then
+    presetHotCopy.onClick = function() 
+      WheelOfDestiny.onExportConfig()
+    end
+  end
+  
+  local managePanel = wheelWindow:recursiveGetChildById("manage")
+  if managePanel then
+    managePanel.applyPresetChanges:setEnabled(false)
+    managePanel.renamePreset:setEnabled(true)
+  end
+  
+  -- Switch to manage presets tab to show the new preset in the list
   toggleTabBarButtons('managePresetsButton')
   
-  -- Rebuild preset list after a small delay to ensure tab is switched
+  -- Rebuild preset list and focus the new preset
   scheduleEvent(function()
     WheelOfDestiny.configurePresets()
     
-    -- Find and manually focus the newly created preset to trigger selection
     local presetPanel = wheelWindow:recursiveGetChildById("presetList")
     if presetPanel then
       for _, widget in ipairs(presetPanel:getChildren()) do
