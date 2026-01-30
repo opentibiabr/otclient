@@ -390,6 +390,8 @@ public:
     void clearImbuement(uint8_t slot);
     void closeImbuingWindow();
     void imbuementDurations(bool isOpen = false);
+    void selectImbuementItem(uint16_t itemId, const Position& pos, uint8_t stackpos);
+    void selectImbuementScroll();
 
     void enableTileThingLuaCallback(const bool value) { m_tileThingsLuaCallback = value; }
     bool isTileThingLuaCallbackEnabled() { return m_tileThingsLuaCallback; }
