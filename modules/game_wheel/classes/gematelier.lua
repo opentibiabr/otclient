@@ -131,17 +131,21 @@ function GemAtelier.redirectToGem(gemData)
 		end
 
 		local widget = g_ui.createWidget('GemPanel', gemList)
-		GemAtelier.setupGemWidget(widget, data)
+		local success = GemAtelier.setupGemWidget(widget, data)
+		
+		if success then
+			currentGemList[#currentGemList + 1] = data
+			if widget then
+				widget.gemIndex = #currentGemList
+				-- gemID already set by setupGemWidget
+			  end
+			gemCount = gemCount + 1
 
-		currentGemList[#currentGemList + 1] = data
-		if widget then
-			widget.gemIndex = #currentGemList
-			-- gemID already set by setupGemWidget
-		  end
-		gemCount = gemCount + 1
-
-		if data.gemID == gemData.gemID then
-			focusedGem = widget
+			if data.gemID == gemData.gemID then
+				focusedGem = widget
+			end
+		else
+			widget:destroy()
 		end
 
 		:: continue ::
@@ -586,13 +590,8 @@ end
 
 function GemAtelier.onSelectGem(selected, clicked)
 	-- validações antecipadas
-	if not selected then
-		g_logger.warning("[GemAtelier] onSelectGem: selected widget is nil")
-		return true
-	end
-	
-	if not selected.gemID then
-		g_logger.warning(string.format("[GemAtelier] onSelectGem: widget has no gemID (widget=%s)", tostring(selected)))
+	if not selected or not selected.gemID then
+		-- Normal: widget destroyed or focus on empty area
 		return true
 	end
 	
@@ -925,11 +924,10 @@ function GemAtelier.getGemDomainById(id)
 	end
 	for _, data in pairs(WheelOfDestiny.atelierGems) do
 	  if data.gemID == id then
-		g_logger.debug(string.format("[DebugDomain] gemId=%d gemDomain=%d gemType=%d", id, data.gemDomain, data.gemType))
 		return data.gemDomain
 	  end
 	end
-	g_logger.warning(string.format("[DebugDomain] gemId=%d não encontrado em atelierGems", id))
+	-- Normal: presets can reference gems that no longer exist
 	return -1
   end
 
