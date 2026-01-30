@@ -2204,7 +2204,7 @@ function WheelOfDestiny.configureRevelationPerks()
     wheelOfDestinyWindow.revelationPerks.tabContent.spell2.value:setText("Stage 1")
   end
 
-  wheelOfDestinyWindow.revelationPerks.tabContent.infoSpell2:setTooltip(m2)
+  wheelOfDestinyWindow.revelationPerks.tabContent.infoSpell2:setTooltip(m1)
 
 
   local avatarName = "Avatar Of Nature"
@@ -2258,7 +2258,7 @@ function WheelOfDestiny.configureRevelationPerks()
     wheelOfDestinyWindow.revelationPerks.tabContent.avatar.value:setText("Stage 1")
   end
 
-  wheelOfDestinyWindow.revelationPerks.tabContent.infoAvatar:setTooltip(m2)
+  wheelOfDestinyWindow.revelationPerks.tabContent.infoAvatar:setTooltip(m1)
 
   local m1, m2 = getPassiveInfo(2)
   local passive = WheelOfDestiny.passivePoints[2]
@@ -2276,7 +2276,7 @@ function WheelOfDestiny.configureRevelationPerks()
     wheelOfDestinyWindow.revelationPerks.tabContent.spell1.value:setText("Stage 1")
   end
 
-  wheelOfDestinyWindow.revelationPerks.tabContent.infoSpell1:setTooltip(m2)
+  wheelOfDestinyWindow.revelationPerks.tabContent.infoSpell1:setTooltip(m1)
 
   local m1, m2 = getPassiveInfo(3)
   local passive = WheelOfDestiny.passivePoints[3]
@@ -2294,7 +2294,7 @@ function WheelOfDestiny.configureRevelationPerks()
     wheelOfDestinyWindow.revelationPerks.tabContent.spell3.value:setText("Stage 1")
   end
 
-  wheelOfDestinyWindow.revelationPerks.tabContent.infoSpell3:setTooltip(m2)
+  wheelOfDestinyWindow.revelationPerks.tabContent.infoSpell3:setTooltip(m1)
 end
 
 local function checkValidName(text)
