@@ -486,7 +486,7 @@ If it doesn't work, enable **curl**:
 
 - **Full Cyclopedia** — ([@luanluciano93](https://github.com/luanluciano93), [@kokekanon](https://github.com/kokekanon), [@MUN1Z](https://github.com/MUN1Z), [@qatari](https://github.com/qatari))
 
-- **Wheel of Destiny** — ([@R!ck](https://github.com/libergod/otclient), [@ZLukSrT#8740](https://github.com/libergod/otclient), [@Christianlb](https://github.com/libergod/otclient), [@andreoam](https://github.com/andreoam), [@Libergod](https://github.com/libergod))
+- **Wheel of Destiny** — ([@R!ck](), [@ZLukSrT#8740](), [@Christianlb](), [@andreoam](https://github.com/andreoam), [@Libergod](https://github.com/libergod))
 
 #### 🔦 OTClient V8 (Features)
 - Lighting System  
@@ -568,8 +568,8 @@ Found a bug? Please create an issue in our **[bug tracker](https://github.com/me
 | TO-DO list | Status | PR |
 |---|---|---|
 | Sound tibia 13 | ![](https://geps.dev/progress/80) | [#1098](https://github.com/mehah/otclient/pull/1098) |
-| Prey and tasks | ![](https://geps.dev/progress/0) | None |
-| compendium | ![](https://geps.dev/progress/0) | None |
+| Prey and tasks | ![](https://geps.dev/progress/10) | [#1380](https://github.com/mehah/otclient/pull/1380) |
+| Compendium | ![](https://geps.dev/progress/15) | [#1625](https://github.com/mehah/otclient/pull/1625) |
 | Party List | ![](https://geps.dev/progress/0) | None |
 | Proficiency | ![](https://geps.dev/progress/80) | [#1593](https://github.com/mehah/otclient/pull/1593) |
 | New Imbui 15x/14x | ![](https://geps.dev/progress/80) | [#1616](https://github.com/mehah/otclient/pull/1616) |
