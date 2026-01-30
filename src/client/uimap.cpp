@@ -163,6 +163,8 @@ void UIMap::setCrosshairTexture(const std::string& texturePath) { m_mapView->set
 
 void UIMap::setDrawHighlightTarget(const bool enable) { m_mapView->setDrawHighlightTarget(enable); }
 
+void UIMap::setCursorAnimations(const bool enable) { m_mapView->setCursorAnimations(enable); }
+
 void UIMap::setAntiAliasingMode(const Otc::AntialiasingMode mode) { m_mapView->setAntiAliasingMode(mode); }
 
 void UIMap::setFloorFading(const uint16_t v) { m_mapView->setFloorFading(v); }
@@ -249,6 +251,14 @@ void UIMap::onGeometryChange(const Rect& oldRect, const Rect& newRect)
 {
     UIWidget::onGeometryChange(oldRect, newRect);
     updateMapSize();
+}
+
+void UIMap::onHoverChange(bool hovered)
+{
+    UIWidget::onHoverChange(hovered);
+    if (!hovered && m_mapView->hasCursorAnimations() && !g_mouse.isCursorChanged()) {
+        g_window.restoreMouseCursor();
+    }
 }
 
 bool UIMap::onMouseMove(const Point& mousePos, const Point& mouseMoved)

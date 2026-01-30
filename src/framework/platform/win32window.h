@@ -23,6 +23,7 @@
 #pragma once
 
 #include "platformwindow.h"
+#include "framework/core/timer.h"
 
 #ifdef OPENGL_ES
 #include <EGL/egl.h>
@@ -84,14 +85,24 @@ private:
     Rect getClientRect() const;
     Rect getWindowRect();
     Rect adjustWindowRect(const Rect& rect) const;
+    void updateCursor();
 
-    std::vector<HCURSOR> m_cursors;
+    struct CursorState {
+         std::vector<HCURSOR> cursors;
+         std::vector<int> delays;
+    };
+    std::vector<CursorState> m_cursors;
+
     HWND m_window;
     HINSTANCE m_instance;
     HDC m_deviceContext;
     HCURSOR m_cursor;
     HCURSOR m_defaultCursor;
     bool m_hidden;
+
+    int m_currentCursorId = -1;
+    int m_cursorFrame = 0;
+    Timer m_cursorTimer;
 
 #ifdef OPENGL_ES
     EGLConfig m_eglConfig;
