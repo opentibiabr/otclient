@@ -486,6 +486,8 @@ If it doesn't work, enable **curl**:
 
 - **Full Cyclopedia** — ([@luanluciano93](https://github.com/luanluciano93), [@kokekanon](https://github.com/kokekanon), [@MUN1Z](https://github.com/MUN1Z), [@qatari](https://github.com/qatari))
 
+- **Wheel of Destiny** — ([@R!ck](https://github.com/libergod/otclient), [@ZLukSrT#8740](https://github.com/libergod/otclient), [@Christianlb](https://github.com/libergod/otclient), [@andreoam](https://github.com/andreoam), [@Libergod](https://github.com/libergod))
+
 #### 🔦 OTClient V8 (Features)
 - Lighting System  
 - Floor Fading  
@@ -565,7 +567,6 @@ Found a bug? Please create an issue in our **[bug tracker](https://github.com/me
 ## <a id="roadmap"></a>❤️ Roadmap
 | TO-DO list | Status | PR |
 |---|---|---|
-| wheel of destiny | ![](https://geps.dev/progress/100) | [#1578](https://github.com/mehah/otclient/pull/1578) |
 | Sound tibia 13 | ![](https://geps.dev/progress/80) | [#1098](https://github.com/mehah/otclient/pull/1098) |
 | Prey and tasks | ![](https://geps.dev/progress/0) | None |
 | compendium | ![](https://geps.dev/progress/0) | None |
