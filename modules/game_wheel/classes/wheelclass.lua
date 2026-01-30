@@ -2731,6 +2731,19 @@ function WheelOfDestiny.onConfirmCreatePreset()
   wheelWindow:show(true)
   newPresetWindow:hide()
   
+  -- When importing a preset, preserve the character's current gem equipment
+  -- Only the skill point distribution should be imported
+  -- Store current gems before they're cleared by resetWheel
+  local currentEquipedGems = table.copy(WheelOfDestiny.equipedGems)
+  local currentAtelierGems = WheelOfDestiny.atelierGems
+  local currentBasicMods = WheelOfDestiny.basicModsUpgrade
+  local currentSupremeMods = WheelOfDestiny.supremeModsUpgrade
+  
+  -- Replace imported gems with character's actual gems
+  if selectedOption == newPresetWindow.contentPanel.import then
+    dataCopy.equipedGems = currentEquipedGems
+  end
+  
   -- Create the preset (this sets it as current)
   WheelOfDestiny.createPreset(presetName, dataCopy)
   
@@ -2751,8 +2764,8 @@ function WheelOfDestiny.onConfirmCreatePreset()
   local basePoints = WheelOfDestiny.levelPoints or WheelOfDestiny.points or 0
   local pointsInvested = dataCopy.availablePoints - (WheelOfDestiny.extraGemPoints + WheelOfDestiny.scrollPoints)
   
-  -- Use basePoints to let create() calculate properly
-  WheelOfDestiny.create(WheelOfDestiny.playerId, WheelOfDestiny.canView, WheelOfDestiny.changeState, WheelOfDestiny.vocationId, basePoints, WheelOfDestiny.scrollPoints, dataCopy.pointInvested, WheelOfDestiny.usedPromotionScrolls, dataCopy.equipedGems, WheelOfDestiny.atelierGems, WheelOfDestiny.basicModsUpgrade, WheelOfDestiny.supremeModsUpgrade)
+  -- Use basePoints to let create() calculate properly  -- Always use character's actual gem data, never from imported preset
+  WheelOfDestiny.create(WheelOfDestiny.playerId, WheelOfDestiny.canView, WheelOfDestiny.changeState, WheelOfDestiny.vocationId, basePoints, WheelOfDestiny.scrollPoints, dataCopy.pointInvested, WheelOfDestiny.usedPromotionScrolls, dataCopy.equipedGems, currentAtelierGems, currentBasicMods, currentSupremeMods)
   
   -- Update gem atelier vessel panel after create() has set the new gems
   if GemAtelier and gemAtelierWindow and gemAtelierWindow:isVisible() then
