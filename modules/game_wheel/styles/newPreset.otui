@@ -29,7 +29,7 @@ NewMainWindow
       margin-left: 6
       margin-top: 2
       image-source: /images/skin/show-gui-help-orange
-      !tooltip: tr('Presets names need to be unique. Also, this field must not be empty.')
+      !tooltip: tr('Preset names must be unique. Also, this field must not be empty.')
 
     TextEdit
       id: presetName
@@ -87,6 +87,16 @@ NewMainWindow
       image-source: /images/ui/checkboxcircle
       image-clip: 0 0 12 12
       margin-top: 5
+
+    UIWidget
+      id: importTooltip
+      size: 12 12
+      anchors.top: prev.top
+      anchors.left: prev.right
+      margin-left: 6
+      margin-top: 2
+      image-source: /images/skin/show-gui-help-orange
+      !tooltip: tr('Export code does not match a valid Wheel of Destiny.')
 
     TextEdit
       id: presetCode

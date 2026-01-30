@@ -2410,14 +2410,10 @@ function WheelOfDestiny.onImportConfig(base64Data)
 end
 
 function WheelOfDestiny.onImportPreset()
-  -- TODO: Implement import preset functionality
-  print("[WheelOfDestiny] Import preset - TODO")
-  -- This function should:
-  -- 1. Show a dialog to select a file or paste an import code
-  -- 2. Parse the imported data
-  -- 3. Validate the imported preset
-  -- 4. Add it to the preset list
-  -- 5. Refresh the preset list
+  -- Open the New Preset dialog with Import option pre-selected
+  WheelOfDestiny.showNewPreset(false)
+  -- Focus keyboard on the import code text field
+  newPresetWindow.contentPanel.presetCode:focus()
 end
 
 function WheelOfDestiny.onExportPreset()
@@ -2580,7 +2576,7 @@ function WheelOfDestiny.onCancelConfig()
 end
 
 function WheelOfDestiny.validadeImportCode(code)
-	if not code or #code < 3 then
+	if not code or code == "" or #code < 3 then
 		return "Export code does not match a valid Wheel of Destiny."
 	end
 
@@ -2591,7 +2587,13 @@ function WheelOfDestiny.validadeImportCode(code)
 		return "Export code does not match the character's vocation."
 	end
 
-	if table.empty(WheelOfDestiny.onImportConfig(base64Data)) then
+	-- Verify base64Data is not empty
+	if not base64Data or base64Data == "" then
+		return "Export code does not match a valid Wheel of Destiny."
+	end
+
+	local importResult = WheelOfDestiny.onImportConfig(base64Data)
+	if not importResult or table.empty(importResult) then
 		return "Export code does not match a valid Wheel of Destiny."
 	end
 	return ""
@@ -2609,7 +2611,11 @@ function WheelOfDestiny.onEditCode(text)
   end
 
   newPresetWindow.contentPanel.importTooltip:setVisible(false)
-  newPresetWindow.contentPanel.ok:setEnabled(checkValidName(newPresetWindow.contentPanel.presetName:getText()))
+  
+  -- Only enable OK button if both preset name is valid AND code is valid
+  local presetName = newPresetWindow.contentPanel.presetName:getText()
+  local nameValid = checkValidName(presetName)
+  newPresetWindow.contentPanel.ok:setEnabled(nameValid)
 end
 
 function WheelOfDestiny.onEditName(text)
