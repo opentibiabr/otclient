@@ -486,7 +486,7 @@ If it doesn't work, enable **curl**:
 
 - **Full Cyclopedia** — ([@luanluciano93](https://github.com/luanluciano93), [@kokekanon](https://github.com/kokekanon), [@MUN1Z](https://github.com/MUN1Z), [@qatari](https://github.com/qatari))
 
-- **Wheel of Destiny** — ([@R!ck](), [@ZLukSrT#8740](), [@Christianlb](), [@andreoam](https://github.com/andreoam), [@Libergod](https://github.com/libergod))
+- **Wheel of Destiny** — (R!ck,ZLukSrT#8740,Christianlb, [@andreoam](https://github.com/andreoam), [@Libergod](https://github.com/libergod))
 
 #### 🔦 OTClient V8 (Features)
 - Lighting System  
