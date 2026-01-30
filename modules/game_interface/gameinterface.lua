@@ -914,6 +914,23 @@ end
 function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, useThing, creatureThing, attackCreature)
     local keyboardModifiers = g_keyboard.getModifiers()
 
+    if creatureThing and creatureThing:isNpc() and mouseButton == MouseRightButton and 
+    keyboardModifiers == KeyboardNoModifier and 
+    modules.client_options.getOption('talkOnRightClick') then
+        local player = g_game.getLocalPlayer()
+        if player then
+            local playerPos = player:getPosition()
+            local npcPos = creatureThing:getPosition()
+            if playerPos.z == npcPos.z then
+                local dist = math.max(math.abs(playerPos.x - npcPos.x), math.abs(playerPos.y - npcPos.y))
+                if dist <= 3 then
+                    g_game.talk("hi")
+                    return true
+                end
+            end
+        end
+    end
+
     if g_platform.isMobile() then
         if mouseButton == MouseRightButton then
             createThingMenu(menuPosition, lookThing, useThing, creatureThing)

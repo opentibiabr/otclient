@@ -73,6 +73,17 @@ UIWidget
     margin-top: 7
     height: 22
   
+    OptionCheckBox
+      id: talkOnRightClick
+      !text: tr('Right-click talk to NPC')
+
+  SmallReversedQtPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    margin-top: 7
+    height: 22
+  
     OptionCheckBoxMarked
       id: returnDisablesChat
       !text: tr('Enter to disable chat')
