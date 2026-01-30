@@ -58,6 +58,6 @@ Module
     - game_taskboard
     - game_wheel
     - game_proficiency
-
+    - game_compendium
   @onLoad: init()
   @onUnload: terminate()
