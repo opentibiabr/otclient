@@ -264,6 +264,16 @@ local function setup()
             end
         end
     end, 100)
+
+    local talkOnRightClick = panels.generalPanel:recursiveGetChildById('talkOnRightClick')
+    if talkOnRightClick then
+        local parent = talkOnRightClick:getParent()
+        if g_game.getClientVersion() >= 1511 then
+            parent:setVisible(false)
+            parent:setHeight(0)
+            parent:setMarginTop(0)
+        end
+    end
 end
 
 

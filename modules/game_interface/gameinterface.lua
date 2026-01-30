@@ -739,7 +739,7 @@ function createThingMenu(menuPosition, lookThing, useThing, creatureThing)
                 shortcut = nil
             end
             if creatureThing:getPosition().z == localPosition.z then
-                if creatureThing:isNpc() then
+                if creatureThing:isNpc() and g_game.getClientVersion() < 1511 then
                     menu:addOption(tr('Talk'), function()
                         g_game.talk("hi")
                     end)
@@ -922,7 +922,8 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
 
     if creatureThing and creatureThing:isNpc() and mouseButton == MouseRightButton and 
     keyboardModifiers == KeyboardNoModifier and 
-    modules.client_options.getOption('talkOnRightClick') then
+    modules.client_options.getOption('talkOnRightClick') and
+    g_game.getClientVersion() < 1511 then
         local player = g_game.getLocalPlayer()
         if player then
             local playerPos = player:getPosition()
