@@ -1,0 +1,32 @@
+-- Example OTUI Styles for Text Effects
+-- This demonstrates how text shaders could be applied via styles
+-- Note: This requires engine support for text-shader property in OTUI parser
+
+PlayerNameLabel < Label
+  font: verdana-11px-rounded
+  color: #ffffff
+  text-auto-resize: true
+  
+  -- Example: Apply shader directly (if engine supports it)
+  -- text-shader: Text - Black Outline
+  
+  $on:
+    color: #00ff00
+    
+HighlightedText < Label
+  font: verdana-11px-rounded
+  color: #ffff00
+  -- text-shader: Text - Glow
+
+ImportantText < Label
+  font: verdana-11px-rounded
+  color: #ffffff
+  -- text-shader: Text - Outline + Shadow
+
+GoldenText < Label
+  font: verdana-11px-rounded
+  color: #ffffff
+  -- text-shader: Text - Gold Outline
+
+-- Until OTUI integration is complete, use Lua to apply shaders:
+-- widget:setShader('Text - Black Outline')

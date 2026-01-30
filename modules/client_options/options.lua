@@ -88,17 +88,19 @@ local extraWidgets = {
 }
 
 local function toggleDisplays()
-    if options['displayNames'].value and options['displayHealth'].value and options['displayMana'].value then
+    if options['displayNames'].value and options['displayHealth'].value and options['displayMana'].value and options['displayHarmony'].value then
         setOption('displayNames', false)
     elseif options['displayHealth'].value then
         setOption('displayHealth', false)
         setOption('displayMana', false)
+        setOption('displayHarmony', false)
     else
         if not options['displayNames'].value and not options['displayHealth'].value then
             setOption('displayNames', true)
         else
             setOption('displayHealth', true)
             setOption('displayMana', true)
+            setOption('displayHarmony', true)
         end
     end
 end

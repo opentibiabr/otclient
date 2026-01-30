@@ -142,6 +142,16 @@ void ShaderManager::setupMapShader(const std::string_view name)
     });
 }
 
+void ShaderManager::setupTextShader(const std::string_view name)
+{
+    g_mainDispatcher.addEvent([&, name = name.data()] {
+        const auto& shader = getShader(name);
+        if (!shader) return;
+        shader->bindUniformLocation(TEXT_OFFSET_UNIFORM, "u_Offset");
+        shader->bindUniformLocation(TEXT_CENTER_UNIFORM, "u_Center");
+    });
+}
+
 void ShaderManager::addMultiTexture(const std::string_view name, const std::string_view file)
 {
     const auto& filePath = g_resources.resolvePath(file.data());

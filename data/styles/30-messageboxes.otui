@@ -1,7 +1,7 @@
 MessageBoxWindow < UIMessageBox
   icon-rect: 4 4 16 16
   size: 246 116
-  image-source: /images/ui/window_new
+  image-source: /images/ui/window
   image-border: 4
   image-border-top: 16
   image-border-bottom: 4
@@ -33,14 +33,16 @@ MessageBoxWindow < UIMessageBox
     anchors.left: parent.left
     anchors.right: parent.right
     opacity: 0.5
+    margin-top: 3
 
   Label
     id: content
-    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.left: parent.left
     anchors.top: parent.top
     text-wrap: true
     text-auto-resize: true
     color: #c0c0c0ff
+    margin-left: 15
     margin-top: 32
 
   HorizontalSeparator
@@ -98,11 +100,12 @@ MessageBoxShopWindow < UIMessageBox
     margin-right: 10
   Label
     id: content
-    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.left: parent.left
     anchors.top: parent.top
     text-wrap: true
     text-auto-resize: true
     color: #c0c0c0ff
+    margin-left: 15
     margin-top: 32
 
   UIWidget

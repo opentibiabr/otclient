@@ -38,6 +38,8 @@ public:
         MAP_WALKOFFSET = 15,
         MAP_CENTER_COORD = 16,
         MAP_GLOBAL_COORD = 17,
+        TEXT_OFFSET_UNIFORM = 18,
+        TEXT_CENTER_UNIFORM = 19,
     };
 
     void init();
@@ -46,6 +48,7 @@ public:
 
     // TODO: Move these setup methods to a ClientShaderManager
     void setupMapShader(std::string_view name);
+    void setupTextShader(std::string_view name);
     void setupItemShader(std::string_view name);
     void setupOutfitShader(std::string_view name);
     void setupMountShader(std::string_view name);

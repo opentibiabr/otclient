@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,9 @@
 #include <framework/html/htmlnode.h>
 
 #include "framework/otml/otmlnode.h"
+#include <sstream>
+#include <iomanip>
+#include <regex>
 
 namespace {
     WordBreakMode parseWordBreakMode(const std::string& v) {
@@ -106,11 +109,59 @@ namespace {
             s.assign(out, l, r - l + 1);
         }
     }
+
+    static std::vector<size_t> buildSrcPosToDrawPosMap(std::string_view src, std::string_view draw) {
+        std::vector<size_t> map;
+        map.assign(src.size() + 1, 0);
+
+        size_t i = 0;
+        size_t j = 0;
+        while (i < src.size() || j < draw.size()) {
+            if (i <= src.size())
+                map[i] = j;
+
+            if (i < src.size() && j < draw.size() && src[i] == draw[j]) {
+                ++i;
+                ++j;
+                continue;
+            }
+
+            if (j < draw.size() && (draw[j] == '\n' || draw[j] == '-') && (i >= src.size() || src[i] != draw[j])) {
+                ++j;
+                continue;
+            }
+
+            if (i < src.size() && src[i] == ' ' && (j >= draw.size() || draw[j] != ' ')) {
+                ++i;
+                continue;
+            }
+
+            if (i < src.size() && j < draw.size()) {
+                ++i;
+                ++j;
+                continue;
+            }
+            if (i < src.size()) {
+                ++i;
+                continue;
+            }
+            if (j < draw.size()) {
+                ++j;
+                continue;
+            }
+        }
+
+        map[src.size()] = j;
+        return map;
+    }
 }
 
 void UIWidget::initText()
 {
     m_font = g_fonts.getDefaultWidgetFont();
+    m_ttfFontPath.clear();
+    m_ttfBaseName.clear();
+    m_ttfFontSize = 0;
     m_textAlign = Fw::AlignCenter;
     m_coordsBuffer = std::make_shared<CoordsBuffer>();
     m_textOverflowLength = 0;
@@ -126,9 +177,9 @@ void UIWidget::updateText()
     if (isTextWrap() && m_rect.isValid()) {
         m_drawTextColors = m_textColors;
         if (m_textOverflowLength > 0 && m_text.length() > m_textOverflowLength)
-            m_drawText = m_font->wrapText(m_text.substr(0, m_textOverflowLength - m_textOverflowCharacter.length()) + m_textOverflowCharacter, getWidth() - m_textOffset.x, &m_drawTextColors);
+            m_drawText = m_font->wrapText(m_text.substr(0, m_textOverflowLength - m_textOverflowCharacter.length()) + m_textOverflowCharacter, getWidth() - m_textOffset.x, WrapOptions{}, &m_drawTextColors);
         else
-            m_drawText = m_font->wrapText(m_text, getWidth() - m_textOffset.x, &m_drawTextColors);
+            m_drawText = m_font->wrapText(m_text, getWidth() - m_textOffset.x, WrapOptions{}, &m_drawTextColors);
     } else {
         if (m_textOverflowLength > 0 && m_text.length() > m_textOverflowLength)
             m_drawText = m_text.substr(0, m_textOverflowLength - m_textOverflowCharacter.length()) + m_textOverflowCharacter;
@@ -169,6 +220,51 @@ void UIWidget::resizeToText()
 
 void UIWidget::parseTextStyle(const OTMLNodePtr& styleNode)
 {
+
+    int ttfFontSize = 12; //default
+    int ttfStrokeWidth = 0;
+    Color ttfStrokeColor = Color::black;	
+    std::string ttfFontName;
+    
+    for (const auto& node : styleNode->children()) {
+        if (node->tag() == "ttf-font-size")
+            ttfFontSize = node->value<int>();
+        else if (node->tag() == "ttf-font")
+            ttfFontName = node->value();
+        else if (node->tag() == "ttf-stroke") {
+
+            std::string strokeValue = node->value();
+            std::istringstream iss(strokeValue);
+            iss >> ttfStrokeWidth;
+            std::string colorStr;
+            if (iss >> colorStr) {
+                ttfStrokeColor = Color(colorStr);
+            }
+        }
+        else if (node->tag() == "ttf-stroke-width")
+            ttfStrokeWidth = node->value<int>();
+        else if (node->tag() == "ttf-stroke-color")
+            ttfStrokeColor = Color(node->value());
+        else if (node->tag() == "stroke") {
+
+            std::string strokeValue = node->value();
+            std::istringstream iss(strokeValue);
+            iss >> ttfStrokeWidth;
+            std::string colorStr;
+            if (iss >> colorStr) {
+                ttfStrokeColor = Color(colorStr);
+            }
+        }		
+    }
+
+    if (!ttfFontName.empty()) {
+        g_logger.debug("parseTextStyle: setting TTF font '{}' size {} stroke {} rgba({},{},{},{})", 
+                      ttfFontName, ttfFontSize, ttfStrokeWidth, 
+                      ttfStrokeColor.r(), ttfStrokeColor.g(), ttfStrokeColor.b(), ttfStrokeColor.a());
+        setTTFFont(ttfFontName, ttfFontSize, ttfStrokeWidth, ttfStrokeColor);
+    }
+
+
     for (const auto& node : styleNode->children()) {
         const std::string tag = node->tag();
 
@@ -188,8 +284,10 @@ void UIWidget::parseTextStyle(const OTMLNodePtr& styleNode)
             setTextVerticalAutoResize(node->value<bool>());
         else if (tag == "text-only-upper-case")
             setTextOnlyUpperCase(node->value<bool>());
-        else if (tag == "font")
-            setFont(node->value());
+        else if (node->tag() == "font") {
+            if (ttfFontName.empty())
+                setFont(node->value());
+        }
         else if (tag == "font-scale")
             setFontScale(node->value<float>());
         else if (tag == "font-size")
@@ -205,7 +303,7 @@ void UIWidget::parseTextStyle(const OTMLNodePtr& styleNode)
         else if (node->tag() == "text-overflow-length")
             setTextOverflowLength(node->value<uint16_t>());
         else if (node->tag() == "text-overflow-character")
-            setTextOverflowCharacter(node->value<>());
+            setTextOverflowCharacter(node->value<std::string>());
     }
 }
 
@@ -250,7 +348,7 @@ void UIWidget::drawText(const Rect& screenCoords)
     }
     g_drawPool.resetDrawOrder();
     g_drawPool.scale(1.f); // reset scale
-    if (m_textUnderline->getVertexCount() > 0)
+    if (m_textUnderline && m_textUnderline->getVertexCount() > 0)
         g_drawPool.addTexturedCoordsBuffer(nullptr, m_textUnderline, m_color);
 }
 
@@ -417,11 +515,110 @@ std::string UIWidget::getFont() { return m_font->getName(); }
 void UIWidget::setFont(const std::string_view fontName)
 {
     m_font = g_fonts.getFont(fontName);
+    m_ttfFontPath.clear();
+    m_ttfBaseName.clear();
+    m_ttfFontSize = 0;
     computeHtmlTextIntrinsicSize();
     updateText();
     onFontChange(fontName);
     scheduleHtmlTask(PropUpdateSize);
     refreshHtml(true);
+}
+
+void UIWidget::setTTFFont(const std::string_view fontName, int fontSize, int strokeWidth, const Color& strokeColor)
+{
+    const std::string fontPath(fontName);
+    std::string baseName = std::string(fontName);
+    
+    size_t lastDot = baseName.find_last_of('.');
+    if (lastDot != std::string::npos) {
+        baseName = baseName.substr(0, lastDot);
+    }
+    
+
+    size_t lastSlash = baseName.find_last_of("/\\");
+    if (lastSlash != std::string::npos) {
+        baseName = baseName.substr(lastSlash + 1);
+    }
+
+    std::string uniqueFontName = baseName + "_" + std::to_string(fontSize);
+	
+    if (strokeWidth > 0) {
+
+        std::ostringstream colorStream;
+        colorStream << std::hex << std::setfill('0') 
+                    << std::setw(2) << (int)strokeColor.r()
+                    << std::setw(2) << (int)strokeColor.g()
+                    << std::setw(2) << (int)strokeColor.b()
+                    << std::setw(2) << (int)strokeColor.a();
+        uniqueFontName += "_s" + std::to_string(strokeWidth) + "_" + colorStream.str();
+    }	
+    
+    if (!g_fonts.fontExists(uniqueFontName)) {
+        if (g_fonts.importTTF(fontPath, fontSize, strokeWidth, strokeColor).empty()) {
+            g_logger.error("Failed to load TTF font: {}", fontName);
+            return;
+        }
+    }
+    
+    m_strokeWidth = strokeWidth;
+    m_strokeColor = strokeColor;
+    m_ttfFontPath = fontPath;
+    m_ttfBaseName = baseName;
+    m_ttfFontSize = fontSize;
+
+    m_font = g_fonts.getFont(uniqueFontName);
+    computeHtmlTextIntrinsicSize();
+    updateText();
+    onFontChange(fontName);
+    scheduleHtmlTask(PropUpdateSize);
+    refreshHtml(true);
+}
+
+void UIWidget::setStroke(int strokeWidth, const Color& strokeColor)
+{
+
+    if (m_font) {
+        // Prefer the originally requested TTF path/size.
+        if (!m_ttfFontPath.empty() && m_ttfFontSize > 0) {
+            setTTFFont(m_ttfFontPath, m_ttfFontSize, strokeWidth, strokeColor);
+            return;
+        }
+
+        // Fallback: best-effort parse from the current font name.
+        // NOTE: this remains potentially ambiguous which is why we prefer
+        // m_ttfBaseName/m_ttfFontSize when available.
+        std::string currentName = m_font->getName();
+        int fontSize = 12;
+        std::string baseName;
+
+        // Strip optional stroke suffix: <base>_<size>_s<width>_<rgba>
+        const size_t strokePos = currentName.find("_s");
+        const std::string baseAndSize = (strokePos == std::string::npos) ? currentName : currentName.substr(0, strokePos);
+
+        const size_t sizeSep = baseAndSize.find_last_of('_');
+        if (sizeSep != std::string::npos && sizeSep + 1 < baseAndSize.size()) {
+            const std::string sizeStr = baseAndSize.substr(sizeSep + 1);
+            try {
+                fontSize = std::stoi(sizeStr);
+                baseName = baseAndSize.substr(0, sizeSep);
+            } catch (...) {
+                // keep defaults
+            }
+        }
+
+        if (baseName.empty()) {
+            m_strokeWidth = strokeWidth;
+            m_strokeColor = strokeColor;
+            return;
+        }
+
+        setTTFFont(baseName, fontSize, strokeWidth, strokeColor);
+    } else {
+
+        m_strokeWidth = strokeWidth;
+        m_strokeColor = strokeColor;
+    }
 }
 
 void UIWidget::computeHtmlTextIntrinsicSize() {
@@ -480,24 +677,24 @@ void UIWidget::processCodeTags() {
     std::regex regex(R"(\[text-event\](.*?)\[/text-event\])");
     std::smatch match;
 
-        while (std::regex_search(tempText, match, regex)) {
-            m_text += tempText.substr(0, match.position());
+    while (std::regex_search(tempText, match, regex)) {
+        m_text += tempText.substr(0, match.position());
 
-            std::string word = match[1];
-            size_t startPos = m_text.length();
-            size_t endPos = startPos + word.length();
+        std::string word = match[1];
+        size_t startPos = m_text.length();
+        size_t endPos = startPos + word.length();
 
-            // detect special marker prefix (\x01) which indicates "no underline"
-            bool noUnderline = false;
-            if (!word.empty() && word[0] == '\x01') {
-                noUnderline = true;
-                word = word.substr(1);
-            }
-
-            m_textEvents.push_back({ word, startPos, endPos, noUnderline });
-            m_text += word;
-            tempText = tempText.substr(match.position() + match.length());
+        // detect special marker prefix (\x01) which indicates "no underline"
+        bool noUnderline = false;
+        if (!word.empty() && word[0] == '\x01') {
+            noUnderline = true;
+            word = word.substr(1);
         }
+
+        m_textEvents.push_back({ word, startPos, endPos, noUnderline });
+        m_text += word;
+        tempText = tempText.substr(match.position() + match.length());
+    }
 
     m_text += tempText;
 }
@@ -518,14 +715,45 @@ static void buildTextUnderline(Rect& wordRect, CoordsBuffer& textUnderlineCoords
 void UIWidget::updateRectToWord(const std::vector<Rect>& glypsCoords)
 {
     m_rectToWord.clear();
-    m_textUnderline->clear();
+    if (m_textUnderline)
+        m_textUnderline->clear();
 
     if (glypsCoords.empty() || m_textEvents.empty())
         return;
 
+    if (!m_textUnderline)
+        m_textUnderline = std::make_shared<CoordsBuffer>();
+
     const size_t glyphCount = glypsCoords.size();
 
-    for (const auto& textEvent : m_textEvents) {
+    std::vector<TextEvent> drawEvents;
+    drawEvents.reserve(m_textEvents.size());
+    if (isTextWrap() && m_rect.isValid() && m_drawText != m_text) {
+        const auto srcPosToDrawPos = buildSrcPosToDrawPosMap(m_text, m_drawText);
+
+        for (const auto& ev : m_textEvents) {
+            TextEvent mapped = ev;
+            const size_t srcLen = m_text.size();
+            const size_t start = std::min(mapped.startPos, srcLen);
+            const size_t end = std::min(mapped.endPos, srcLen);
+            if (start >= end) {
+                mapped.startPos = 0;
+                mapped.endPos = 0;
+                drawEvents.push_back(std::move(mapped));
+                continue;
+            }
+
+            const size_t dStart = srcPosToDrawPos[start];
+            const size_t dEnd = srcPosToDrawPos[end];
+            mapped.startPos = std::min(dStart, m_drawText.size());
+            mapped.endPos = std::min(dEnd, m_drawText.size());
+            drawEvents.push_back(std::move(mapped));
+        }
+    } else {
+        drawEvents = m_textEvents;
+    }
+
+    for (const auto& textEvent : drawEvents) {
         const size_t start = std::min<int>(textEvent.startPos, glyphCount);
         const size_t end = std::min<int>(textEvent.endPos, glyphCount);
         if (start >= end)

@@ -85,6 +85,7 @@ void ProtocolGame::sendLoginPacket(const uint32_t challengeTimestamp, const uint
     if (g_game.getFeature(Otc::GameSessionKey)) {
         msg->addString(m_sessionKey);
         msg->addString(m_characterName);
+
     } else {
         if (g_game.getFeature(Otc::GameAccountNames))
             msg->addString(m_accountName);
@@ -933,7 +934,7 @@ void ProtocolGame::sendBugReport(const std::string_view comment)
 void ProtocolGame::sendRuleViolation(const std::string_view target, const uint8_t reason, const uint8_t action, const std::string_view comment, const std::string_view statement, const uint16_t statementId, const bool ipBanishment)
 {
     const auto& msg = std::make_shared<OutputMessage>();
-    msg->addU8(Proto::ClientRuleViolation);
+    msg->addU8(Proto::ClientWheelGemAction); // usado em gemas, desabilitado para ClientRuleViolation
     msg->addString(target);
     msg->addU8(reason);
     msg->addU8(action);
@@ -942,6 +943,28 @@ void ProtocolGame::sendRuleViolation(const std::string_view target, const uint8_
     msg->addU16(statementId);
     msg->addU8(ipBanishment);
     send(msg);
+}
+
+void ProtocolGame::sendWheelGemAction(uint8_t actionType, uint8_t param, uint8_t pos)
+{
+    const auto& msg = std::make_shared<OutputMessage>();
+    msg->addU8(Proto::ClientWheelGemAction); // 0xE7
+    msg->addU8(actionType);
+    msg->addU8(param);
+
+    // Apenas "ImproveGrade" (actionType == 4) envia o byte extra
+    if (actionType == 4)
+        msg->addU8(pos);
+
+    send(msg);
+
+    // 🔍 Log de envio bem-sucedido
+    g_logger.debug(fmt::format(
+        "[Client Gem Action] sendWheelGemAction enviado com sucesso -> actionType={} param={} pos={}",
+        static_cast<int>(actionType),
+        static_cast<int>(param),
+        static_cast<int>(pos)
+    ));
 }
 
 void ProtocolGame::sendDebugReport(const std::string_view a, const std::string_view b, const std::string_view c, const std::string_view d)
@@ -1542,6 +1565,36 @@ void ProtocolGame::sendImbuementDurations(const bool isOpen)
     send(msg);
 }
 
+void ProtocolGame::sendOpenWheelOfDestiny(uint32_t playerId)
+{
+    const auto& msg = std::make_shared<OutputMessage>();
+    msg->addU8(Proto::ClientOpenWheel);
+    msg->addU32(playerId);
+    g_logger.info("Sending Wheel of Destiny request for player ID {}", playerId);
+    send(msg);
+}
+
+void ProtocolGame::sendApplyWheelOfDestiny(const std::vector<uint16_t>& wheelPointsVec, const std::vector<uint16_t>& activeGemsVec)
+{
+    const auto& msg = std::make_shared<OutputMessage>();
+    msg->addU8(Proto::ClientSaveWheel);
+    for (const uint16_t points : wheelPointsVec) {
+        msg->addU16(points);
+    }
+
+    for (const uint16_t gem : activeGemsVec) {
+        if (gem > 0) {
+            msg->addU8(1);
+            msg->addU16(gem);
+
+        } else {
+            msg->addU8(0);
+        }
+    }
+
+    send(msg);
+}
+
 void ProtocolGame::sendQuickLoot(const uint8_t variant, const Position& pos, const uint16_t itemId, const uint8_t stackpos)
 {
     const auto msg = std::make_shared<OutputMessage>();
@@ -1587,4 +1640,63 @@ void ProtocolGame::openContainerQuickLoot(const uint8_t action, const uint8_t ca
         msg->addU8(category);
     }
     send(msg);
+}
+void ProtocolGame::sendOpenWheel(uint32_t playerId) {  
+    const auto& msg = std::make_shared<OutputMessage>();  
+    msg->addU8(Proto::ClientOpenWheel); // 0x61  
+    msg->addU32(playerId); // Adicionar o ID do jogador  
+    send(msg);  
+}
+
+void ProtocolGame::sendApplyWheelPoints(const std::vector<uint16_t>& slotPoints,
+                                        uint16_t greenGem, uint16_t redGem,
+                                        uint16_t acquaGem, uint16_t purpleGem)
+{
+    const auto& msg = std::make_shared<OutputMessage>();
+    msg->addU8(Proto::ClientSaveWheel); // 0x62 (ClientSaveWheel)
+    g_logger.debug("[Wheel C++ Send] sendApplyWheelPoints iniciado");
+
+
+    // Envia pontos por slot (36 slots válidos)
+    for (int i = 0; i < 36; ++i) {
+        uint16_t value = (i < static_cast<int>(slotPoints.size())) ? slotPoints[i] : 0;
+        msg->addU16(value);
+        g_logger.debug(fmt::format("  [Slot {:02d}] pontos={}", i, value));
+    }
+
+    // Gem Green
+    msg->addU8(greenGem != UINT16_MAX ? 1 : 0);
+    if (greenGem != UINT16_MAX) msg->addU16(greenGem);
+    g_logger.debug(fmt::format("[Gem Green C++] hasGem={} gemId={}", greenGem != UINT16_MAX, greenGem));
+
+    // Gem Red
+    msg->addU8(redGem != UINT16_MAX ? 1 : 0);
+    if (redGem != UINT16_MAX) msg->addU16(redGem);
+    g_logger.debug(fmt::format("[Gem Red C++] hasGem={} gemId={}", redGem != UINT16_MAX, redGem));
+
+    // Gem Acqua
+    msg->addU8(acquaGem != UINT16_MAX ? 1 : 0);
+    if (acquaGem != UINT16_MAX) msg->addU16(acquaGem);
+    g_logger.debug(fmt::format("[Gem Acqua C++] hasGem={} gemId={}", acquaGem != UINT16_MAX, acquaGem));
+
+    // Gem Purple
+    msg->addU8(purpleGem != UINT16_MAX ? 1 : 0);
+    if (purpleGem != UINT16_MAX) msg->addU16(purpleGem);
+    g_logger.debug(fmt::format("[Gem Purple C++] hasGem={} gemId={}", purpleGem != UINT16_MAX, purpleGem));
+    
+    msg->addU8(0);
+    g_logger.debug(fmt::format(
+        "[Wheel C++ Send] Enviando apply: {} slots, gems(G={} R={} A={} P={})",
+        slotPoints.size(), greenGem, redGem, acquaGem, purpleGem));
+
+    g_logger.debug("[Wheel C++ Send] Enviando pacote de ApplyWheelPoints...");
+    std::ostringstream oss;
+    const auto& buffer = msg->getBuffer();
+    const size_t length = msg->getMessageSize(); // usa o método existente
+    for (size_t i = 0; i < length; ++i) {
+        oss << fmt::format("{:02X} ", static_cast<uint8_t>(buffer[i]));
+    }
+    g_logger.debug(fmt::format("[WheelDebugHex] Pacote completo ({} bytes): {}", length, oss.str()));
+    send(msg);
+    g_logger.debug("[Wheel C++ Send] Pacote enviado com sucesso.");
 }
