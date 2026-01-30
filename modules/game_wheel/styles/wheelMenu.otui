@@ -606,33 +606,27 @@ Panel
         UIWidget
           id: import
           size: 65 20
-          anchors.top: renamePreset.bottom
+          anchors.top: new.bottom
           anchors.left: prev.right
-          margin-top: 0
+          margin-top: 3
           margin-left: 3
           image-source: /images/game/wheel/import_button
           image-clip: 0 0 65 20
-          visible: false 
-          height: 0 
-          width: 0 
           $pressed:
             image-clip: 0 20 65 20
-          @onClick: modules.game_wheel.WheelOfDestiny.showNewPreset(false)
+          @onClick: modules.game_wheel.WheelOfDestiny.onImportPreset()
         UIWidget
           id: export
           size: 65 20
-          anchors.top: deletePreset.bottom
+          anchors.top: new.bottom
           anchors.left: prev.right
-          margin-top: 0
+          margin-top: 3
           margin-left: 3
           image-source: /images/game/wheel/export_button
           image-clip: 0 0 65 20
-          visible: false
-          height: 0
-          width: 0
           $pressed:
             image-clip: 0 20 65 20
-          @onClick: modules.game_wheel.WheelOfDestiny.doExportCode()
+          @onClick: modules.game_wheel.WheelOfDestiny.onExportPreset()
         UIWidget
           anchors.top: applyPresetChanges.bottom
           anchors.left: parent.left

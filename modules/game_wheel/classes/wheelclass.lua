@@ -2409,6 +2409,27 @@ function WheelOfDestiny.onImportConfig(base64Data)
   return { maxPoints = points, usedPoints = usedPoints, pointInvested = pointInvested, equipedGems = equipedGems }
 end
 
+function WheelOfDestiny.onImportPreset()
+  -- TODO: Implement import preset functionality
+  print("[WheelOfDestiny] Import preset - TODO")
+  -- This function should:
+  -- 1. Show a dialog to select a file or paste an import code
+  -- 2. Parse the imported data
+  -- 3. Validate the imported preset
+  -- 4. Add it to the preset list
+  -- 5. Refresh the preset list
+end
+
+function WheelOfDestiny.onExportPreset()
+  -- TODO: Implement export preset functionality
+  print("[WheelOfDestiny] Export preset - TODO")
+  -- This function should:
+  -- 1. Show a dialog with export options
+  -- 2. Generate export data for the current preset
+  -- 3. Allow user to save to file or copy to clipboard
+  -- 4. Provide feedback on successful export
+end
+
 function WheelOfDestiny.doExportCode()
   if exportCodeWindow then
     exportCodeWindow:destroy()
