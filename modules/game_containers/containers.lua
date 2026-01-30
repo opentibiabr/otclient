@@ -1073,43 +1073,42 @@ function onContainerOpen(container, previousContainer)
 
     local layout = containerPanel:getLayout()
     local cellSize = layout:getCellSize()
+    local step = cellSize.height + layout:getCellSpacing()
+    local numLines = layout:getNumLines()
+    local chromeHeight = container:hasPages() and 55 or 31
     containerWindow:setContentMinimumHeight(cellSize.height)
-    
-    -- Set maximum height based on whether pages are active
-    local maxHeightOffset = container:hasPages() and 65 or 30
-    containerWindow:setContentMaximumHeight(cellSize.height * layout:getNumLines() + maxHeightOffset)
 
-    -- Define resize restriction function
-    local function restrictResize()
-        containerWindow.onResize = function()
-            local minHeight = cellSize.height + 30
-            if container:hasPages() then
-                minHeight = minHeight + 35
-            end
-            if containerWindow:getHeight() < minHeight then
-                containerWindow:setHeight(minHeight)
-            end
-        end
+    local resizeBorder = containerWindow:getChildById('bottomResizeBorder')
+    if resizeBorder then
+        resizeBorder:setMinimum(step + chromeHeight)
+        resizeBorder:setMaximum(numLines * step + chromeHeight)
     end
-    restrictResize()
-
-    -- Remove resize restriction on minimize, restore on maximize
-    containerWindow.onMinimize = function()
-        local pagePanel = containerWindow:getChildById('pagePanel')
-        if pagePanel and pagePanel:isVisible() then
-            pagePanel.wasVisibleBeforeMinimize = true
-            pagePanel:setVisible(false)
-        end
-        containerWindow.onResize = nil
+    -- Enables dragging only when mouse press occurs within window bounds (with tolerance margins)
+    -- and not over the containerPanel child widget
+    -- On Drop: When an item is dropped, it is placed at the nearest valid parent location, such as in a grid.
+    local TOLERANCE_HORIZONTAL = 5
+    local TOLERANCE_VERTICAL = 2
+    containerWindow.onMousePress = function(widget, mousePos, mouseButton)
+        local winX, winY = containerWindow:getX(), containerWindow:getY()
+        local winW, winH = containerWindow:getWidth(), containerWindow:getHeight()
+        local inBounds = mousePos.x >= winX + TOLERANCE_HORIZONTAL and 
+                        mousePos.x <= winX + winW - TOLERANCE_HORIZONTAL and
+                        mousePos.y >= winY + TOLERANCE_VERTICAL and 
+                        mousePos.y <= winY + winH - TOLERANCE_VERTICAL
+        containerWindow:setDraggable(inBounds and containerWindow:getChildByPos(mousePos) ~= containerPanel)
+        return inBounds
     end
-
-    containerWindow.onMaximize = function()
-        local pagePanel = containerWindow:getChildById('pagePanel')
-        if pagePanel and pagePanel.wasVisibleBeforeMinimize then
-            pagePanel:setVisible(true)
-            pagePanel.wasVisibleBeforeMinimize = nil
+    containerWindow.onMouseRelease = function(widget, mousePos, mouseButton)
+        containerWindow:setDraggable(true)
+    end
+    containerWindow.onDrop = function(container, widget, mousePos)
+        if containerPanel:getChildByPos(mousePos) then
+            return false
         end
-        restrictResize()
+        local child = containerPanel:getNearestChild(mousePos)
+        if child then
+            child:onDrop(widget, mousePos, true)
+        end
     end
 
     if not previousContainer then
@@ -1117,14 +1116,16 @@ function onContainerOpen(container, previousContainer)
         panel:addChild(containerWindow)
     end
 
-    -- Always set the content height based on the current container's content, with a minimum of one row
-    local minRows = 1
-    if modules.client_options.getOption('openMaximized') then
-        local numLines = math.max(layout:getNumLines(), minRows)
-        containerWindow:setContentHeight(cellSize.height * numLines)
-    else
-        local filledLines = math.max(math.ceil(container:getItemsCount() / layout:getNumColumns()), minRows)
-        containerWindow:setContentHeight(filledLines * cellSize.height)
+    if not previousContainer or previousContainer:getCapacity() >= container:getCapacity() then
+        -- Always set the content height based on the current container's content, with a minimum of one row
+        local minRows = 1
+        if modules.client_options.getOption('openMaximized') then
+            local numLines = math.max(layout:getNumLines(), minRows)
+            containerWindow:setContentHeight(numLines * step + chromeHeight)
+        else
+            local filledLines = math.max(math.ceil(container:getItemsCount() / layout:getNumColumns()), minRows)
+            containerWindow:setContentHeight(filledLines * step + chromeHeight)
+        end
     end
 
     containerWindow:setup()
