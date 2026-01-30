@@ -719,6 +719,13 @@ function WheelOfDestiny.onDestinyWheel(playerId, canView, changeState, vocationI
 
   WheelOfDestiny.create(playerId, canView, changeState, vocationId, points, scrollPoints, pointInvested, usedPromotionScrolls, equipedGems, atelierGems, basicUpgraded, supremeUpgraded, earnedFromAchievements)
 
+  -- Update gem atelier vessel panel after create() has set the gems
+  if GemAtelier and gemAtelierWindow and gemAtelierWindow:isVisible() then
+    if GemAtelier.setupVesselPanel then
+      GemAtelier.setupVesselPanel()
+    end
+  end
+
   wheelPanel.onMouseRelease = WheelOfDestiny.onMouseRelease
 
   local presetEnabled = (changeState == 1)
@@ -1194,14 +1201,9 @@ function resetWheel(ignoreprotocol)
   WheelOfDestiny.equipedGemBonuses = {}
   WheelOfDestiny.equipedGems = {-1, -1, -1, -1}
 
-  if GemAtelier and gemAtelierWindow and gemAtelierWindow:isVisible() then
-    if GemAtelier.setupVesselPanel then
-      GemAtelier.setupVesselPanel()
-    end
-    if GemAtelier.showGems then
-      GemAtelier.showGems(true)
-    end
-  end
+  -- Note: Do NOT call setupVesselPanel here as equipedGems is empty at this point.
+  -- The vessel panel will be updated after create() sets the correct gems.
+  
   WheelOfDestiny.configureDedicationPerk()
   WheelOfDestiny.configureConvictionPerk()
   WheelOfDestiny.configureVessels()
@@ -3020,7 +3022,14 @@ function WheelOfDestiny.onPresetClick(list, selection, oldSelection)
   WheelOfDestiny.currentPreset.equipedGems = oldGems
   local pointsInvested = presetData.availablePoints - (WheelOfDestiny.extraGemPoints + WheelOfDestiny.scrollPoints)
 
-  WheelOfDestiny.create(WheelOfDestiny.playerId, WheelOfDestiny.canView, WheelOfDestiny.changeState, WheelOfDestiny.vocationId, pointsInvested, WheelOfDestiny.scrollPoints, presetData.pointInvested, WheelOfDestiny.usedPromotionScrolls, presetData.equipedGems, WheelOfDestiny.atelierGems, WheelOfDestiny.basicModsUpgrade, WheelOfDestiny.supremeModsUpgrade) 
+  WheelOfDestiny.create(WheelOfDestiny.playerId, WheelOfDestiny.canView, WheelOfDestiny.changeState, WheelOfDestiny.vocationId, pointsInvested, WheelOfDestiny.scrollPoints, presetData.pointInvested, WheelOfDestiny.usedPromotionScrolls, presetData.equipedGems, WheelOfDestiny.atelierGems, WheelOfDestiny.basicModsUpgrade, WheelOfDestiny.supremeModsUpgrade)
+  
+  -- Update gem atelier vessel panel after create() has set the new gems
+  if GemAtelier and gemAtelierWindow and gemAtelierWindow:isVisible() then
+    if GemAtelier.setupVesselPanel then
+      GemAtelier.setupVesselPanel()
+    end
+  end 
 end
 
 function WheelOfDestiny.determinateCurrentPreset()
