@@ -1,0 +1,9 @@
+Module
+  name: game_compendium
+  description: compendium
+  author: libergod
+  website: https://github.com/opentibiabr/otclient/
+  sandboxed: true
+  scripts: [ compendium.lua ]
+  @onLoad: CompendiumController:init()
+  @onUnload: CompendiumController:terminate()

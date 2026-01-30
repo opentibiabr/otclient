@@ -1,0 +1,163 @@
+NewMainWindow
+  id: compendiumWindow
+  !text: tr('Compendium')
+  size: 753 528
+  @onEscape: modules.game_compendium.hide()
+
+  Panel
+    id: contentPanel
+    anchors.fill: parent
+    margin: 12 12 12 12
+
+    Panel
+      id: menuBackground
+      size: 721 36
+      anchors.top: parent.top
+      anchors.left: parent.left
+      image-source: /images/ui/back-icons
+
+      Button
+        id: buttonMenu1
+        anchors.top: parent.top
+        anchors.left: parent.left
+        size: 143 34
+        margin-left: 1
+        margin-top: 1
+        image-source: /images/game/compendium/game-content
+        image-clip: 0 0 143 34
+        $hover !checked:
+          image-clip: 0 0 143 34
+        $pressed:
+          image-clip: 0 34 143 34
+        $checked:
+          image-clip: 0 34 143 34
+        @onClick: print("toDo-Compendium")
+
+      Button
+        id: buttonMenu2
+        anchors.top: prev.top
+        anchors.left: prev.right
+        size: 143 34
+        margin-left: 1
+        image-source: /images/game/compendium/client-features
+        image-clip: 0 0 143 34
+        $hover !checked:
+          image-clip: 0 0 143 34
+        $pressed:
+          image-clip: 0 34 143 34
+        $checked:
+          image-clip: 0 34 143 34
+        @onClick: print("toDo-Compendium")
+
+      Button
+        id: buttonMenu3
+        anchors.top: prev.top
+        anchors.left: prev.right
+        size: 143 34
+        margin-left: 1
+        image-source: /images/game/compendium/useful-info
+        image-clip: 0 0 143 34
+        $hover !checked:
+          image-clip: 0 0 143 34
+        $pressed:
+          image-clip: 0 34 143 34
+        $checked:
+          image-clip: 0 34 143 34
+        @onClick: print("toDo-Compendium")
+
+
+      Button
+        id: buttonMenu4
+        anchors.top: prev.top
+        anchors.left: prev.right
+        size: 143 34
+        margin-left: 1
+        image-source: /images/game/compendium/major-updates
+        image-clip: 0 0 143 34
+        $hover !checked:
+          image-clip: 0 0 143 34
+        $pressed:
+          image-clip: 0 34 143 34
+        $checked:
+          image-clip: 0 34 143 34
+        @onClick: print("toDo-Compendium")
+
+      Button
+        id: buttonMenu5
+        anchors.top: prev.top
+        anchors.left: prev.right
+        size: 147 34
+        margin-left: 1
+        image-source: /images/game/compendium/support
+        image-clip: 0 0 147 34
+        $hover !checked:
+          image-clip: 0 0 147 34
+        $pressed:
+          image-clip: 0 34 147 34
+        $checked:
+          image-clip: 0 34 147 34
+        @onClick: print("toDo-Compendium")
+
+    TextList
+      id: compendiumContent
+      size: 721 372
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 7
+      vertical-scrollbar: contentScroll
+      text-wrap: true
+
+    VerticalScrollBar
+      id: contentScroll
+      anchors.top: prev.top
+      anchors.bottom: prev.bottom
+      anchors.right: prev.right
+      margin-right: 1
+      margin-top: 1
+      margin-bottom: 1
+      step: 16
+      pixels-scroll: true
+
+    Panel
+      size: 240 20
+      anchors.top: prev.bottom
+      anchors.horizontalCenter: parent.horizontalCenter
+      margin-top: 10
+
+      Button
+        id: prevButton
+        size: 100 20
+        anchors.top: parent.top
+        anchors.left: parent.left
+        !text: tr('Previous Page')
+
+      Label
+        id: pages
+        anchors.top: prev.top
+        anchors.horizontalCenter: parent.horizontalCenter
+        !text: tr('1 / 0')
+        text-auto-resize: true
+        font: $var-cip-font
+        color: $var-text-cip-color
+
+      Button
+        id: prevButton
+        size: 100 20
+        anchors.top: parent.top
+        anchors.right: parent.right
+        !text: tr('Next Page')
+
+    HorizontalSeparator
+      id: separator
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 11
+
+    Button
+      id: prevButton
+      size: 43 20
+      anchors.bottom: parent.bottom
+      anchors.right: parent.right
+      !text: tr('Close')
+      @onClick: modules.game_compendium.hide()

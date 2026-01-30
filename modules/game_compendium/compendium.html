@@ -1,0 +1,156 @@
+<style>
+  /* Main window styling */
+  .blessings-window {
+    position: relative;
+    width: 615px;
+    height: 410px;
+    display: block;
+  }
+
+  /* Layout containers */
+  .record-panel {
+    width: 100%;
+    height: 110px;
+    margin-top: 10px;
+    display: block;
+  }
+
+  .promo-panel {
+    width: 100%;
+    height: 113px;
+    margin-top: 10px;
+    padding-top: 45px;
+  }
+
+  .death-panel {
+    width: 100%;
+    height: 120px;
+    margin-top: 10px;
+  }
+
+
+  /* Record container */
+  .record-container {
+    width: 580px;
+    height: 100%;
+    overflow: scroll;
+  }
+
+  /* Promotion status layout */
+  .promo-container {
+    width: 100%;
+    height: 50px;
+    align-items: center;
+  }
+
+  #promotionStatusLabel {
+    text-align: right;
+    height: 50px;
+  }
+
+  #premium_only {
+    width: auto;
+    margin-right: 34px;
+    float: right;
+  }
+
+  .full-separator {
+    width: 100%;
+    margin-top: 5px;
+    height: 2px;
+  }
+
+
+  .buttons button {
+    float: right;
+    margin-right: 5px;
+    width: 40px;
+  }
+
+  .history-panel {
+    height: 370px;
+  }
+
+  /* History scroll area */
+  .history-scroll {
+    border: 1px #00000077;
+    background-color: #404040;
+    height: 100%;
+    width: 600px;
+    overflow: scroll;
+  }
+
+  /* Text styling */
+  .justified {
+    display: block;
+    width: 100%;
+    text-align: justify;
+    margin-bottom: 2px;
+  }
+
+  .big-premium-button {
+    width: 128px;
+    height: 37px;
+    --image-source: /images/ui/getpremium;
+    --image-clip: 0 0 128 37;
+    --image-border: 3;
+    display: inline-block;
+    background-repeat: no-repeat;
+  }
+
+  .big-premium-button:active {
+    --image-clip: 0 37 128 37;
+  }
+
+  .big-premium-button[on="false"],
+  .big-premium-button[on="0"],
+  .big-premium-button:not([on]) {
+    --image-clip: 0 74 128 37;
+  }
+
+  .big-premium-button:disabled {
+    opacity: 0.8;
+    color: #c0c0c0;
+  }
+</style>
+
+<html>
+<Window id="main" placement="center" class="blessings-window" title="Blessings" onescape="self:close()">
+
+  <!-- History Panel (initially hidden) -->
+  <div id="historyPanel" placement="top-left" class="history-panel minipanel" title="History"
+    *if="self.historyButtonText == 'Back'">
+    <div id="historyScrollArea" class="history-scroll">
+    </div>
+  </div>
+
+  <!-- Blessing Records Panel -->
+  <div id="blessingsRecordPanel" placement="top-left" class="record-panel minipanel" title="Record of Blessings"
+    layout="type: horizontalBox">
+  </div>
+
+  <!-- Promotion Status Panel -->
+  <div id="promotionPanel" class="promo-panel minipanel" title="Promotion and Premium Status">
+    <label id="promotionStatusLabel"></label>
+    <UIbutton id="premium_only" class="big-premium-button" onclick="self:onClickSendStore()"
+      *on="(g_game:getLocalPlayer() and not g_game:getLocalPlayer():isPremium()) or false">
+    </UIbutton>
+  </div>
+
+  <!-- Death Penalty Panel -->
+  <div id="deathPenaltyPanel" class="death-panel minipanel" title="Effect on Death Penalty">
+    <label id="fightRulesLabel" class="justified"></label>
+    <label id="expLossLabel" class="justified"></label>
+    <label id="containerLossLabel" class="justified"></label>
+    <label id="equipmentLossLabel" class="justified"></label>
+  </div>
+  <!-- Separator -->
+  <hr class="full-separator" />
+  <!-- Action Buttons -->
+  <div id="buttonsPanel" class="buttons" focusable="false">
+    <button id="historyButton" onclick="self:showHistory()">{{self.historyButtonText}}</button>
+    <button onclick="self:close()">Close</button>
+  </div>
+</Window>
+
+</html>
