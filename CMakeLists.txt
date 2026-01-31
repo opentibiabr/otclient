@@ -134,7 +134,7 @@ endif()
 # Add project
 # *****************************************************************************
 
-option(TOGGLE_FRAMEWORK_PROTOBUF "Use Protobuf" ON)
+option(TOGGLE_FRAMEWORK_PROTOBUF "Use Protobuf" OFF)
 
 if (TOGGLE_FRAMEWORK_PROTOBUF)
   # Protobuf
