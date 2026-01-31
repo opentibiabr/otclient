@@ -134,8 +134,12 @@ endif()
 # Add project
 # *****************************************************************************
 
-# Protobuf
-add_subdirectory(src/protobuf)
+option(TOGGLE_FRAMEWORK_PROTOBUF "Use Protobuf" ON)
+
+if (TOGGLE_FRAMEWORK_PROTOBUF)
+  # Protobuf
+  add_subdirectory(src/protobuf)
+endif()
 # Src
 add_subdirectory(src)
 

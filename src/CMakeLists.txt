@@ -8,6 +8,7 @@ option(TOGGLE_FRAMEWORK_GRAPHICS "Use Graphics " ON)
 option(TOGGLE_FRAMEWORK_SOUND "Use SOUND " ON)
 option(TOGGLE_FRAMEWORK_XML "Use XML " ON)
 option(TOGGLE_FRAMEWORK_NET "Use NET " ON)
+option(TOGGLE_FRAMEWORK_PROTOBUF "Use Protobuf" ON)
 option(TOGGLE_FRAMEWORK_EDITOR "Use Editor " OFF)
 option(TOGGLE_DIRECTX "Use DX9 support" OFF)
 option(ENABLE_DISCORD_RPC "Use Discord Rich Presence" OFF)
@@ -62,6 +63,9 @@ if (TOGGLE_FRAMEWORK_XML)
 endif()
 if (TOGGLE_FRAMEWORK_NET)
   set(FRAMEWORK_DEFINITIONS ${FRAMEWORK_DEFINITIONS} -DFRAMEWORK_NET)
+endif()
+if (TOGGLE_FRAMEWORK_PROTOBUF)
+  set(FRAMEWORK_DEFINITIONS ${FRAMEWORK_DEFINITIONS} -DFRAMEWORK_PROTOBUF)
 endif()
 
 if (TOGGLE_FRAMEWORK_EDITOR)
@@ -121,7 +125,9 @@ find_package(PhysFS REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(phmap REQUIRED)
 find_package(absl CONFIG REQUIRED)
-find_package(Protobuf REQUIRED)
+if (TOGGLE_FRAMEWORK_PROTOBUF)
+  find_package(Protobuf REQUIRED)
+endif()
 find_package(LibLZMA REQUIRED)
 find_package(nlohmann_json REQUIRED)
 find_package(asio REQUIRED)
@@ -547,8 +553,17 @@ if(MSVC)
           ${OPENSSL_LIBRARIES}
           ${DBGHELP_LIBRARY}
           ${STDUUID}
+  )
 
+  if (TOGGLE_FRAMEWORK_PROTOBUF)
+      target_link_libraries(otclient_core
+          PUBLIC
           protobuf::libprotobuf protobuf
+      )
+  endif()
+
+  target_link_libraries(otclient_core
+          PUBLIC
           absl::log_internal_check_op
           Threads::Threads
           GLEW::GLEW
@@ -594,8 +609,17 @@ elseif(ANDROID)
           ${OPENSSL_LIBRARIES}
           ${STDUUID}
           ${MINIZIP_LIBRARY}
+  )
 
+  if (TOGGLE_FRAMEWORK_PROTOBUF)
+      target_link_libraries(otclient_core
+          PUBLIC
           protobuf::libprotobuf protobuf
+      )
+  endif()
+
+  target_link_libraries(otclient_core
+          PUBLIC
           absl::log_internal_check_op
           Threads::Threads
           asio::asio
@@ -659,8 +683,17 @@ elseif(WASM)
           ${OPENSSL_LIBRARY}
           ${OPENSSL_CRYPTO_LIBRARY}
           ${HTTPLIB_LIBRARY}
+  )
 
+  if (TOGGLE_FRAMEWORK_PROTOBUF)
+      target_link_libraries(otclient_core
+          PUBLIC
           protobuf::libprotobuf protobuf
+      )
+  endif()
+
+  target_link_libraries(otclient_core
+          PUBLIC
           absl::log_internal_check_op
 
           Threads::Threads
@@ -777,7 +810,17 @@ else() # Linux
           ${OPENSSL_CRYPTO_LIBRARY}
           ${HTTPLIB_LIBRARY}
 
+  )
+
+  if (TOGGLE_FRAMEWORK_PROTOBUF)
+      target_link_libraries(otclient_core
+          PUBLIC
           protobuf::libprotobuf protobuf
+      )
+  endif()
+
+  target_link_libraries(otclient_core
+          PUBLIC
           absl::log_internal_check_op
           Threads::Threads
           X11::X11

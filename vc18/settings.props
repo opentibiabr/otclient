@@ -11,6 +11,7 @@
         FRAMEWORK_GRAPHICS;
         FRAMEWORK_NET;
         FRAMEWORK_SOUND;
+        FRAMEWORK_PROTOBUF;
         BUILD_TYPE="RelWithDebInfo";
         NOMINMAX;
     </PREPROCESSOR_DEFS>
