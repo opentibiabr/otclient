@@ -609,6 +609,7 @@ elseif(ANDROID)
           ${GMP_LIBRARY}
           ${OpenAL_LIBRARY}
           ${OPENSSL_LIBRARIES}
+          ${STDUUID}
           ${MINIZIP_LIBRARY}
           absl::log_internal_check_op
           Threads::Threads
