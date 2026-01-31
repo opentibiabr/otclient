@@ -83,7 +83,7 @@ endif()
 option(OPTIONS_ENABLE_CCACHE "Enable ccache" OFF)
 option(OPTIONS_ENABLE_SCCACHE "Use sccache to speed up compilation process" OFF)
 option(OPTIONS_ENABLE_IPO "Check and Enable interprocedural optimization (IPO/LTO)" ON)
-option(TOGGLE_FRAMEWORK_PROTOBUF "Use Protobuf" ON)
+
 
 # *****************************************************************************
 # Options Code
@@ -135,10 +135,7 @@ endif()
 # Add project
 # *****************************************************************************
 
-if (TOGGLE_FRAMEWORK_PROTOBUF)
-  # Protobuf
-  add_subdirectory(src/protobuf)
-endif()
+
 # Src
 add_subdirectory(src)
 

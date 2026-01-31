@@ -8,6 +8,7 @@ option(TOGGLE_FRAMEWORK_GRAPHICS "Use Graphics " ON)
 option(TOGGLE_FRAMEWORK_SOUND "Use SOUND " ON)
 option(TOGGLE_FRAMEWORK_XML "Use XML " ON)
 option(TOGGLE_FRAMEWORK_NET "Use NET " ON)
+option(TOGGLE_FRAMEWORK_PROTOBUF "Use Protobuf" ON)
 option(TOGGLE_FRAMEWORK_EDITOR "Use Editor " OFF)
 option(TOGGLE_DIRECTX "Use DX9 support" OFF)
 option(ENABLE_DISCORD_RPC "Use Discord Rich Presence" OFF)
@@ -17,6 +18,11 @@ option(ASAN_ENABLED "Build this target with AddressSanitizer" OFF)
 option(BUILD_STATIC_LIBRARY "Build using static libraries" OFF)
 option(TOGGLE_PRE_COMPILED_HEADER "Use precompiled header (speed up compile)" ON)
 option(SPEED_UP_BUILD_UNITY "Compile using build unity for speed up build" ON)
+
+if (TOGGLE_FRAMEWORK_PROTOBUF)
+  # Protobuf
+  add_subdirectory(protobuf)
+endif()
 
 # *****************************************************************************
 # Cmake Features
@@ -560,6 +566,7 @@ if(MSVC)
       target_link_libraries(otclient_core
           PUBLIC
           protobuf::libprotobuf
+          protobuf
       )
   endif()
 
