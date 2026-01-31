@@ -51,20 +51,6 @@ local function getCategory(arg)
 end
 
 local function getVocation(arg)
-    vocationNamesByClientId = {
-    [0] = "No Vocation",
-    [1] = "Knight",
-    [2] = "Paladin",
-    [3] = "Sorcerer",
-    [4] = "Druid",
-    [5] = "Monk",
-    [11] = "Elite Knight",
-    [12] = "Royal Paladin",
-    [13] = "Master Sorcerer",
-    [14] = "Elder Druid",
-    [15] = "Exalted Monk",
-}
-
     if type(arg) == "number" then
          return vocationNamesByClientId[arg] or "All Vocations"
     elseif type(arg) == "string" then
