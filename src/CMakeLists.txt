@@ -660,7 +660,7 @@ elseif(WASM)
           PUBLIC
           ${CMAKE_SOURCE_DIR}/src
           ${CMAKE_THREAD_LIBS_INIT}
-          $<$<BOOL:${TOGGLE_FRAMEWORK_PROTOBUF}>:${Protobuf_INCLUDE_DIRS}>
+
           ${GMP_INCLUDE_DIR}
           ${PHYSFS_INCLUDE_DIR}
           ${GLEW_INCLUDE_DIR}
@@ -675,7 +675,7 @@ elseif(WASM)
           ${LUA_LIBRARY}
           ${PHYSFS_LIBRARY}
           ${ZLIB_LIBRARY}
-          $<$<BOOL:${TOGGLE_FRAMEWORK_PROTOBUF}>:${PROTOBUF_LIBRARY}>
+
           ${NLOHMANN_JSON_LIBRARY}
           ${GLEW_LIBRARY}
           ${OPENGL_LIBRARIES}
