@@ -622,7 +622,7 @@ elseif(ANDROID)
   if (TOGGLE_FRAMEWORK_PROTOBUF)
       target_link_libraries(otclient_core
           PUBLIC
-          protobuf::libprotobuf
+          protobuf::libprotobuf protobuf
       )
   endif()
 
@@ -696,7 +696,7 @@ elseif(WASM)
   if (TOGGLE_FRAMEWORK_PROTOBUF)
       target_link_libraries(otclient_core
           PUBLIC
-          protobuf::libprotobuf
+          protobuf::libprotobuf protobuf
       )
   endif()
 
@@ -823,7 +823,7 @@ else() # Linux
   if (TOGGLE_FRAMEWORK_PROTOBUF)
       target_link_libraries(otclient_core
           PUBLIC
-          protobuf::libprotobuf
+          protobuf::libprotobuf protobuf
       )
   endif()
 
