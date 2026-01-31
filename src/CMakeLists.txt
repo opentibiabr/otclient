@@ -71,8 +71,6 @@ if (TOGGLE_FRAMEWORK_NET)
 endif()
 if (TOGGLE_FRAMEWORK_PROTOBUF)
   set(FRAMEWORK_DEFINITIONS ${FRAMEWORK_DEFINITIONS} -DFRAMEWORK_PROTOBUF)
-else()
-  remove_definitions(-DFRAMEWORK_PROTOBUF)
 endif()
 
 if (TOGGLE_FRAMEWORK_EDITOR)
@@ -560,18 +558,6 @@ if(MSVC)
           ${OPENSSL_LIBRARIES}
           ${DBGHELP_LIBRARY}
           ${STDUUID}
-  )
-
-  if (TOGGLE_FRAMEWORK_PROTOBUF)
-      target_link_libraries(otclient_core
-          PUBLIC
-          protobuf::libprotobuf
-          protobuf
-      )
-  endif()
-
-  target_link_libraries(otclient_core
-          PUBLIC
           absl::log_internal_check_op
           Threads::Threads
           GLEW::GLEW
@@ -584,6 +570,14 @@ if(MSVC)
           utf8cpp::utf8cpp
           Freetype::Freetype
   )
+
+  if (TOGGLE_FRAMEWORK_PROTOBUF)
+      target_link_libraries(otclient_core
+          PUBLIC
+          protobuf::libprotobuf
+          protobuf
+      )
+  endif()
 elseif(ANDROID)
   target_include_directories(otclient_core
           PUBLIC
@@ -615,19 +609,7 @@ elseif(ANDROID)
           ${GMP_LIBRARY}
           ${OpenAL_LIBRARY}
           ${OPENSSL_LIBRARIES}
-          ${STDUUID}
           ${MINIZIP_LIBRARY}
-  )
-
-  if (TOGGLE_FRAMEWORK_PROTOBUF)
-      target_link_libraries(otclient_core
-          PUBLIC
-          protobuf::libprotobuf protobuf
-      )
-  endif()
-
-  target_link_libraries(otclient_core
-          PUBLIC
           absl::log_internal_check_op
           Threads::Threads
           asio::asio
@@ -643,6 +625,13 @@ elseif(ANDROID)
           fmt::fmt-header-only
           utf8cpp::utf8cpp
   )
+
+  if (TOGGLE_FRAMEWORK_PROTOBUF)
+      target_link_libraries(otclient_core
+          PUBLIC
+          protobuf::libprotobuf protobuf
+      )
+  endif()
 
 elseif(WASM)
   option(WASM_USE_WASM_EXCEPTIONS "Use native WebAssembly exception handling" ON)
@@ -691,17 +680,6 @@ elseif(WASM)
           ${OPENSSL_LIBRARY}
           ${OPENSSL_CRYPTO_LIBRARY}
           ${HTTPLIB_LIBRARY}
-  )
-
-  if (TOGGLE_FRAMEWORK_PROTOBUF)
-      target_link_libraries(otclient_core
-          PUBLIC
-          protobuf::libprotobuf protobuf
-      )
-  endif()
-
-  target_link_libraries(otclient_core
-          PUBLIC
           absl::log_internal_check_op
 
           Threads::Threads
@@ -720,6 +698,13 @@ elseif(WASM)
           Vorbis::vorbis
           Freetype::Freetype
   )
+
+  if (TOGGLE_FRAMEWORK_PROTOBUF)
+      target_link_libraries(otclient_core
+          PUBLIC
+          protobuf::libprotobuf protobuf
+      )
+  endif()
 
 
   if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -818,17 +803,6 @@ else() # Linux
           ${OPENSSL_CRYPTO_LIBRARY}
           ${HTTPLIB_LIBRARY}
 
-  )
-
-  if (TOGGLE_FRAMEWORK_PROTOBUF)
-      target_link_libraries(otclient_core
-          PUBLIC
-          protobuf::libprotobuf protobuf
-      )
-  endif()
-
-  target_link_libraries(otclient_core
-          PUBLIC
           absl::log_internal_check_op
           Threads::Threads
           X11::X11
@@ -847,6 +821,13 @@ else() # Linux
           Vorbis::vorbis
           Freetype::Freetype
   )
+
+  if (TOGGLE_FRAMEWORK_PROTOBUF)
+      target_link_libraries(otclient_core
+          PUBLIC
+          protobuf::libprotobuf protobuf
+      )
+  endif()
 
   if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_options(otclient_core
