@@ -168,12 +168,12 @@ vocationNamesByClientId = {
     [2] = "Paladin",
     [3] = "Sorcerer",
     [4] = "Druid",
-    [9] = "Monk",
-    [10] = "Exalted Monk",
-    [11]= "Elite Knight",
+    [5] = "Monk",
+    [11] = "Elite Knight",
     [12] = "Royal Paladin",
     [13] = "Master Sorcerer",
-    [14] = "Elder Druid"
+    [14] = "Elder Druid",
+    [15] = "Exalted Monk",
 }
 
 function Player:isPartyLeader()
