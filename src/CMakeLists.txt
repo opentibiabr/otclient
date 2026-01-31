@@ -8,7 +8,6 @@ option(TOGGLE_FRAMEWORK_GRAPHICS "Use Graphics " ON)
 option(TOGGLE_FRAMEWORK_SOUND "Use SOUND " ON)
 option(TOGGLE_FRAMEWORK_XML "Use XML " ON)
 option(TOGGLE_FRAMEWORK_NET "Use NET " ON)
-option(TOGGLE_FRAMEWORK_PROTOBUF "Use Protobuf" OFF)
 option(TOGGLE_FRAMEWORK_EDITOR "Use Editor " OFF)
 option(TOGGLE_DIRECTX "Use DX9 support" OFF)
 option(ENABLE_DISCORD_RPC "Use Discord Rich Presence" OFF)
@@ -527,7 +526,7 @@ if(MSVC)
           $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/>
           $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
           ${LUAJIT_INCLUDE_DIR}
-          ${Protobuf_INCLUDE_DIRS}
+          $<$<BOOL:${TOGGLE_FRAMEWORK_PROTOBUF}>:${Protobuf_INCLUDE_DIRS}>
           ${VORBISFILE_INCLUDE_DIR}
           ${GMP_INCLUDE_DIR}
           ${OPENSSL_INCLUDE_DIR}
@@ -583,7 +582,7 @@ elseif(ANDROID)
           $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
           ${LUAJIT_INCLUDE_DIR}
           ${CMAKE_THREAD_LIBS_INIT}
-          ${Protobuf_INCLUDE_DIRS}
+          $<$<BOOL:${TOGGLE_FRAMEWORK_PROTOBUF}>:${Protobuf_INCLUDE_DIRS}>
           ${GMP_INCLUDE_DIR}
           ${OPENSSL_INCLUDE_DIR}
           ${PHYSFS_INCLUDE_DIR}
@@ -652,7 +651,7 @@ elseif(WASM)
           PUBLIC
           ${CMAKE_SOURCE_DIR}/src
           ${CMAKE_THREAD_LIBS_INIT}
-          ${Protobuf_INCLUDE_DIRS}
+          $<$<BOOL:${TOGGLE_FRAMEWORK_PROTOBUF}>:${Protobuf_INCLUDE_DIRS}>
           ${GMP_INCLUDE_DIR}
           ${PHYSFS_INCLUDE_DIR}
           ${GLEW_INCLUDE_DIR}
@@ -667,7 +666,7 @@ elseif(WASM)
           ${LUA_LIBRARY}
           ${PHYSFS_LIBRARY}
           ${ZLIB_LIBRARY}
-          ${PROTOBUF_LIBRARY}
+          $<$<BOOL:${TOGGLE_FRAMEWORK_PROTOBUF}>:${PROTOBUF_LIBRARY}>
           ${NLOHMANN_JSON_LIBRARY}
           ${GLEW_LIBRARY}
           ${OPENGL_LIBRARIES}
@@ -780,7 +779,7 @@ else() # Linux
           $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
           ${LUAJIT_INCLUDE_DIR}
           ${CMAKE_THREAD_LIBS_INIT}
-          ${Protobuf_INCLUDE_DIRS}
+          $<$<BOOL:${TOGGLE_FRAMEWORK_PROTOBUF}>:${Protobuf_INCLUDE_DIRS}>
           ${GMP_INCLUDE_DIR}
           ${PHYSFS_INCLUDE_DIR}
           ${GLEW_INCLUDE_DIR}
