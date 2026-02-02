@@ -308,7 +308,7 @@ function createCategoryButtons(uniqueCategories)
     for _, child in ipairs(compendiumController.ui.typeCharmPanel:getChildren()) do
         TypeCharmRadioGroup:addWidget(child)
     end
-    local defaultWidget = compendiumController.ui.typeCharmPanel:getChildById("OTC") or TypeCharmRadioGroup:getFirstWidget()
+    local defaultWidget = compendiumController.ui.typeCharmPanel:getChildById("player guide") or TypeCharmRadioGroup:getFirstWidget()
     if defaultWidget then
         TypeCharmRadioGroup:selectWidget(defaultWidget)
     end
