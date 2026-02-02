@@ -54,8 +54,34 @@ namespace {
         {"border", "image-border"},
         {"auto-resize", "image-auto-resize"},
         {"individual-animation", "image-individual-animation"},
+        {"*src", "*image-source"},
         {"src", "image-source"},
-        {"*src", "*image-source"}
+        {"align", "image-align"},
+        {"valign", "image-valign"},
+        {"vspace", "image-offset-y"}
+        , {"hspace", "image-offset-x"}
+    };
+
+    static const std::unordered_map<std::string, std::string> cssMap = {
+        {"active", "active"},
+        {"focus", "focus"},
+        {"hover", "hover"},
+        {"pressed", "pressed"},
+        {"checked", "checked"},
+        {"disabled", "disabled"},
+        {"first-child", "first"},
+        {"middle", "middle"},
+        {"last-child", "last"},
+        {"nth-child(even)", "alternate"},
+        {"nth-child(odd)", "alternate"},
+        {"on", "on"},
+        {"[aria-pressed='true']", "on"},
+        {"[data-on]", "on"},
+        {"dragging", "dragging"},
+        {"hidden", "hidden"},
+        {"[hidden]", "hidden"},
+        {"mobile", "mobile"},
+        {"@media", "mobile"}
     };
 
     static const std::unordered_set<std::string_view> kProps = {
@@ -77,6 +103,8 @@ namespace {
         "unicode-bidi",
         /*"visibility",*/
         "white-space",
+        "text-decoration",
+        "vertical-align",
         "word-spacing",
         "writing-mode",
         "hyphens",
@@ -134,6 +162,15 @@ namespace {
             auto it = IMG_ATTR_TRANSLATED.find(attr);
             if (it != IMG_ATTR_TRANSLATED.end()) {
                 attr = it->second;
+            }
+        }
+
+        // map some table-specific attributes to equivalent widget style tags
+        if (tagName == "table") {
+            if (attr == "cellpadding") {
+                attr = "padding";
+            } else if (attr == "cellspacing") {
+                attr = "border-spacing";
             }
         }
     }

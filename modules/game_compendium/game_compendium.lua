@@ -4,17 +4,30 @@ local treeView = nil
 local compendiumButton = nil
 local uiBuilt = false
 
-local function removeHtmlTags(text)
-    -- Handle HTML entities and tags
-    text = text:gsub("<em>", "")
-    text = text:gsub("</em>", "")
+local function processHtmlContent(text)
+    -- Minimal, non-destructive normalization:
+    -- - decode common HTML entities
+    -- - normalize <br> variants to a single form
+    -- - ensure <img> tags are self-closed
+    -- Do NOT strip or remove inline styles or attributes; OTClient's HTML engine
+    -- can consume inline styles via the style attribute and apply them.
+    if not text then return "" end
+    text = tostring(text)
     text = text:gsub("&nbsp;", " ")
-    text = text:gsub("<br>", "\n")
-    text = text:gsub("<br/>", "\n")
-    text = text:gsub("<br />", "\n")
-    text = text:gsub("</p><p>", "\n\n")
-    text = text:gsub("<p>", "")
-    text = text:gsub("</p>", "\n")
+    text = text:gsub("&lt;", "<")
+    text = text:gsub("&gt;", ">")
+    text = text:gsub("&amp;", "&")
+    text = text:gsub("&quot;", "\"")
+    text = text:gsub("&#39;", "'")
+
+    -- Normalize br tags to a consistent self-closing form
+    text = text:gsub("<br%s*/?>", "<br/>")
+
+    -- Ensure <img ...> are self-closed so the HTML parser treats them as void elements
+    text = text:gsub("<img%s+([^>]-)%s*>", "<img %1/>")
+
+    -- Keep all other tags, attributes and inline styles intact so the C++ HTML
+    -- engine can parse and apply them.
     return text
 end
 
@@ -228,7 +241,7 @@ function buildNewsUI(newsData)
     end
     local function setContent(headline, message)
         compendiumController:findWidget("#minipanel"):setTitle(headline)
-        compendiumController:findWidget("#optionsTabContent"):html(removeHtmlTags(message))
+        compendiumController:findWidget("#optionsTabContent"):html(processHtmlContent(message))
     end
 
     for _, entry in ipairs(newsData.gamenews) do
