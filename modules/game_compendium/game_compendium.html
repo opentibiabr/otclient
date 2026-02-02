@@ -45,12 +45,12 @@
     .modal-message {
         width: 98%;
         height: 93%;
-        overflow-y: auto;
-        overflow-x: hidden;
-        text-align: left;
-        padding: 10px;
+        padding-left: 10px;
+        padding-right: 10px;
+        text-align: center;
         word-wrap: break-word;
         white-space: normal;
+        overflow: scroll;
         --border-width-top: 1; --border-color-top: black; --border-width-left: 1; --border-color-left: black; --border-width-bottom: 1; --border-color-bottom: #747474; --border-width-right: 1; --border-color-right: #747474;
     }
 
@@ -65,6 +65,187 @@
     .footer-button {
         width: 64px;
         float: right;
+    }
+
+    /* HTML Content Styling - Optimized for OTClient's HTML Engine */
+    
+    /* Paragraphs and Text */
+    .modal-message p {
+        margin-top: 10px;
+        margin-bottom: 10px;
+    }
+
+    .modal-message center {
+        text-align: center;
+    }
+
+    .modal-message center p {
+        text-align: center;
+    }
+
+    /* Table Display Types - OTClient supports CSS display types */
+    .modal-message table {
+        display: table;
+        margin-top: 15px;
+        margin-bottom: 15px;
+        /* Do not force table width: allow inline/table attributes from compendium.json to control sizing */
+        border-collapse: collapse;
+        max-width: 100%;
+        box-sizing: border-box;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .modal-message table[align="center"] {
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .modal-message tr {
+        display: table-row;
+    }
+
+    .modal-message td {
+        display: table-cell;
+        padding: 10px;
+        vertical-align: middle;
+        text-align: center;
+    }
+
+    .modal-message th {
+        display: table-cell;
+        padding: 10px;
+        vertical-align: middle;
+        text-align: center;
+        font-weight: bold;
+    }
+
+    /* Table Borders */
+    .modal-message table[border="1"] td,
+    .modal-message table[border="1"] th {
+        border-width: 1px;
+        border-color: #888888;
+    }
+
+    .modal-message table[border="0"] td,
+    .modal-message table[border="0"] th {
+        border-width: 0px;
+    }
+
+    /* Table Cell Padding */
+    .modal-message table[cellpadding="2"] td {
+        padding: 5px;
+    }
+
+    .modal-message table[cellpadding="4"] td {
+        padding: 8px;
+    }
+
+    .modal-message table[cellpadding="5"] td {
+        padding: 10px;
+    }
+
+    /* Cell Alignment - OTClient supports these HTML attributes */
+    .modal-message td[align="center"] {
+        text-align: center;
+    }
+
+    .modal-message td[align="left"] {
+        text-align: left;
+    }
+
+    .modal-message td[align="right"] {
+        text-align: right;
+    }
+
+    .modal-message td[valign="top"] {
+        vertical-align: top;
+    }
+
+    .modal-message td[valign="middle"] {
+        vertical-align: middle;
+    }
+
+    .modal-message td[valign="bottom"] {
+        vertical-align: bottom;
+    }
+
+    /* Images */
+    .modal-message img {
+        /* Preserve explicit width/height from the JSON; avoid forcing scaling that breaks layout */
+        display: inline-block;
+        margin: 10px auto;
+        max-width: 100%;
+        height: auto;
+        vertical-align: middle;
+    }
+
+    /* Center block-level children (tables, divs, images) when requested by the content */
+    .modal-message > * {
+        margin-left: auto;
+        margin-right: auto;
+        box-sizing: border-box;
+    }
+
+    .modal-message img[align="center"] {
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .modal-message center img {
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .modal-message td img {
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    /* Lists */
+    .modal-message ul {
+        margin-left: 20px;
+        margin-top: 10px;
+        margin-bottom: 10px;
+    }
+
+    .modal-message li {
+        margin-top: 5px;
+        margin-bottom: 5px;
+        margin-left: 15px;
+    }
+
+    /* Links */
+    .modal-message a {
+        color: #4a9eff;
+        text-decoration: underline;
+    }
+
+    /* Text Formatting */
+    .modal-message em {
+        font-style: italic;
+        color: #ffcc66;
+    }
+
+    .modal-message strong {
+        font-weight: bold;
+        color: #ffffff;
+    }
+
+    /* Horizontal Rules */
+    .modal-message hr {
+        margin-top: 15px;
+        margin-bottom: 15px;
+        border-color: #555555;
+        height: 1px;
+    }
+
+    /* Line Breaks */
+    .modal-message br {
+        line-height: 1.5;
     }
 </style>
 
@@ -84,7 +265,7 @@
 
         <!-- Right Panel -->
         <div id="minipanel" class="content-panel minipanel">
-            <div id="optionsTabContent" class="modal-message">
+            <div id="optionsTabContent" class="modal-message UIScrollArea" layout="type: verticalBox" vertical-scrollbar-style="ScrollBarValueDefault">
             </div>
         </div>
     </div>
