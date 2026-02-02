@@ -5,9 +5,16 @@ local compendiumButton = nil
 local uiBuilt = false
 
 local function removeHtmlTags(text)
+    -- Handle HTML entities and tags
     text = text:gsub("<em>", "")
     text = text:gsub("</em>", "")
-    text = text:gsub("&nbsp;", "<br/>")
+    text = text:gsub("&nbsp;", " ")
+    text = text:gsub("<br>", "\n")
+    text = text:gsub("<br/>", "\n")
+    text = text:gsub("<br />", "\n")
+    text = text:gsub("</p><p>", "\n\n")
+    text = text:gsub("<p>", "")
+    text = text:gsub("</p>", "\n")
     return text
 end
 

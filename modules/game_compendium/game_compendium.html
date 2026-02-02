@@ -38,20 +38,20 @@
         margin-right: 0px;
         height: 100%;
         float: right;
+        overflow: hidden;
     }
 
     /* Internal message area */
     .modal-message {
         width: 98%;
         height: 93%;
-        overflow: scroll;
-        text-align: center;
-        padding-top: 22px;
-        padding-bottom: 15px;
-        padding-left: 15px;
-        padding-right: 10px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        text-align: left;
+        padding: 10px;
+        word-wrap: break-word;
+        white-space: normal;
         --border-width-top: 1; --border-color-top: black; --border-width-left: 1; --border-color-left: black; --border-width-bottom: 1; --border-color-bottom: #747474; --border-width-right: 1; --border-color-right: #747474;
-
     }
 
     .modal-separator {
