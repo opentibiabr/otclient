@@ -52,6 +52,7 @@ ContainerWindow < MiniWindow
 
   MiniWindowContents
     id: contentsPanel
+    phantom: false
     anchors.top: miniwindowTopBar.bottom
     anchors.left: parent.left
     anchors.bottom: next.top
