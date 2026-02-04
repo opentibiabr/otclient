@@ -242,15 +242,11 @@ function Updater.error(message)
   end
 end
 
--- IMPORTANTE: A Função changeUrl foi criada pelo Claude Opus 4.5
--- NÃO foi testada pois não utilizo client mobile, por favor verificar seu funcionamento e corrigir possíveis erros.
--- Esta função era chamada no updater.otui porém não havia implementação em Lua, por conta disso solicitei ao Claude a sua implementação.
+-- IMPORTANTE: A Funcao changeUrl foi criada pelo Claude Opus 4.5
+-- Nao foi testada pois nao utilizo client mobile, por favor verificar seu funcionamento e corrigir possiveis erros.
+-- Esta funcao era chamada no updater.otui porem nao havia implementacao em Lua, por conta disso solicitei ao Claude a sua implementacao.
 function Updater.changeUrl()
   if not updaterWindow then return end
-  
-  -- Cancel current update process to restart with new URL
-  removeEvent(scheduledEvent)
-  HTTP.cancel(httpOperationId)
   
   local dialog = g_ui.createWidget('MainWindow', rootWidget)
   dialog:setId('changeUrlDialog')
@@ -282,6 +278,13 @@ function Updater.changeUrl()
   okButton.onClick = function()
     local newUrl = textEdit:getText()
     if newUrl and newUrl:len() > 4 then
+      -- Cancel current update process before restarting with new URL
+      removeEvent(scheduledEvent)
+      HTTP.cancel(httpOperationId)
+      -- Normalize URL to ensure trailing slash
+      if not newUrl:match("/$") then
+        newUrl = newUrl .. "/"
+      end
       Services.updater = newUrl
       dialog:destroy()
       -- Restart updater with new URL
@@ -297,8 +300,11 @@ function Updater.changeUrl()
   restartButton:setText(tr('Restart'))
   restartButton:setWidth(80)
   restartButton.onClick = function()
+    -- Cancel current update process before restarting
+    removeEvent(scheduledEvent)
+    HTTP.cancel(httpOperationId)
     dialog:destroy()
-    -- Restart update process from beginning with new URL
+    -- Restart update process from beginning
     Updater.check()
   end
   
