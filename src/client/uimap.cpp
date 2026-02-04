@@ -28,6 +28,7 @@
 #include "framework/graphics/drawpoolmanager.h"
 #include "framework/otml/otmlnode.h"
 #include <framework/platform/platformwindow.h>
+#include <framework/input/mouse.h>
 
 UIMap::UIMap()
 {
