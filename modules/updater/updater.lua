@@ -242,13 +242,13 @@ function Updater.error(message)
   end
 end
 
--- IMPORTANTE: A Funcao changeUrl foi criada pelo Claude Opus 4.5
--- Nao foi testada pois nao utilizo client mobile, por favor verificar seu funcionamento e corrigir possiveis erros.
--- Esta funcao era chamada no updater.otui porem nao havia implementacao em Lua, por conta disso solicitei ao Claude que a criasse.
+-- IMPORTANTE: A Função changeUrl foi criada pelo Claude Opus 4.5
+-- NÃO foi testada pois não utilizo client mobile, por favor verificar seu funcionamento e corrigir possíveis erros.
+-- Esta função era chamada no updater.otui porém não havia implementação em Lua, por conta disso solicitei ao Claude a sua implementação.
 function Updater.changeUrl()
   if not updaterWindow then return end
   
-  -- Pause the update process
+  -- Cancel current update process to restart with new URL
   removeEvent(scheduledEvent)
   HTTP.cancel(httpOperationId)
   
@@ -293,12 +293,12 @@ function Updater.changeUrl()
     end
   end
   
-  local cancelButton = g_ui.createWidget('Button', buttonBox)
-  cancelButton:setText(tr('Cancel'))
-  cancelButton:setWidth(80)
-  cancelButton.onClick = function()
+  local restartButton = g_ui.createWidget('Button', buttonBox)
+  restartButton:setText(tr('Restart'))
+  restartButton:setWidth(80)
+  restartButton.onClick = function()
     dialog:destroy()
-    -- Resume update process
+    -- Restart update process from beginning with new URL
     Updater.check()
   end
   

@@ -17,9 +17,10 @@ $binaries = array(
 );
 // CONFIG END
 
-function sendError($error) {
-    echo(json_encode(array("error" => $error)));
-    die();    
+function sendError($error)
+{
+    echo (json_encode(array("error" => $error)));
+    die();
 }
 
 $data = json_decode(file_get_contents("php://input"));
@@ -39,61 +40,72 @@ $cache_file = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $checksum_file;
 if (file_exists($cache_file) && (filemtime($cache_file) + $checksum_update_interval > time())) {
     $cache = json_decode(file_get_contents($cache_file), true);
 }
-if(!$cache) { // update cache
+if (!$cache) { // update cache
     $dir = realpath($files_dir);
     if (!$dir || !is_dir($dir)) {
         sendError("Server configuration error: files directory not found");
     }
-    
+
     // File locking to prevent race conditions
     $lock_file = $cache_file . ".lock";
     $lock = fopen($lock_file, "w");
-    if (!flock($lock, LOCK_EX | LOCK_NB)) {
-        // Another process is updating cache, wait and use existing cache
-        fclose($lock);
-        usleep(100000); // 100ms
-        if (file_exists($cache_file)) {
-            $cache = json_decode(file_get_contents($cache_file), true);
-        }
+    if (!$lock) {
+        sendError("Server error: could not create lock file");
     }
     
-    if (!$cache) {
-        $rii = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir));
-        $cache = array(); 
-        foreach ($rii as $file) {
-        if (!$file->isFile())
-            continue;
-        $path = str_replace($dir, '', $file->getPathname());
-        $path = str_replace(DIRECTORY_SEPARATOR, '/', $path);
-        $checksum = hash_file("crc32b", $file->getPathname());
-
-            if ($checksum !== false && $checksum !== "") {
-                $parsed_checksum = ltrim($checksum, '0');
-                if ($parsed_checksum === '') {
-                    $parsed_checksum = '0';
+    try {
+        if (!flock($lock, LOCK_EX | LOCK_NB)) {
+            // Another process is updating cache, wait and use existing cache
+            usleep(100000); // 100ms
+            if (file_exists($cache_file)) {
+                $cache = json_decode(file_get_contents($cache_file), true);
+            }
+            if (!$cache) {
+                // Wait for the lock if cache still not available
+                flock($lock, LOCK_EX);
+                // Re-check cache after acquiring lock
+                if (file_exists($cache_file)) {
+                    $cache = json_decode(file_get_contents($cache_file), true);
                 }
-                $cache[$path] = $parsed_checksum;
             }
         }
-        file_put_contents($cache_file . ".tmp", json_encode($cache));
-        rename($cache_file . ".tmp", $cache_file);
-        
-        // Release lock
+
+        if (!$cache) {
+            $rii = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir));
+            $cache = array();
+            foreach ($rii as $file) {
+                if (!$file->isFile())
+                    continue;
+                $path = str_replace($dir, '', $file->getPathname());
+                $path = str_replace(DIRECTORY_SEPARATOR, '/', $path);
+                $checksum = hash_file("crc32b", $file->getPathname());
+
+                if ($checksum !== false && $checksum !== "") {
+                    $parsed_checksum = ltrim($checksum, '0');
+                    if ($parsed_checksum === '') {
+                        $parsed_checksum = '0';
+                    }
+                    $cache[$path] = $parsed_checksum;
+                }
+            }
+            file_put_contents($cache_file . ".tmp", json_encode($cache));
+            rename($cache_file . ".tmp", $cache_file);
+        }
+    } finally {
+        // Release lock and close handle - always executes
         flock($lock, LOCK_UN);
-    }
-    if (isset($lock) && is_resource($lock)) {
         fclose($lock);
     }
 }
 $ret = array("url" => $files_url, "files" => array(), "keepFiles" => false);
-foreach($cache as $file => $checksum) {
-    $base = trim(explode("/", ltrim($file, "/"))[0]); 
-    if(in_array($base, $files_and_dirs)) {
+foreach ($cache as $file => $checksum) {
+    $base = trim(explode("/", ltrim($file, "/"))[0]);
+    if (in_array($base, $files_and_dirs)) {
         $ret["files"][$file] = $checksum;
     }
     // Use basename to correctly match binary filename regardless of path
     $filename = basename($file);
-    if($filename == $binary && !empty($binary)) {
+    if ($filename == $binary && !empty($binary)) {
         $ret["binary"] = array("file" => $file, "checksum" => $checksum);
     }
 }
@@ -103,6 +115,4 @@ header("Content-Type: application/json");
 header("Content-Length: " . strlen($body));
 header("X-Content-Type-Options: nosniff");
 header("Cache-Control: no-store");
-echo($body);
-
-?>
+echo ($body);
