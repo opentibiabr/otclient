@@ -38,19 +38,17 @@
         height: 100%;
         float: right;
         overflow: hidden;
-        text-align: center;
         box-sizing: border-box;
     }
 
     /* Internal message area */
     .modal-message {
+        /* MUST be width 98% dont change */
         width: 98%;
         height: 93%;
         padding-right: 5px;
         word-wrap: break-word;
-        white-space: normal;
         overflow: scroll;
-        text-align: center;
         --border-width-top: 1; --border-color-top: black; --border-width-left: 1; --border-color-left: black; --border-width-bottom: 1; --border-color-bottom: #747474; --border-width-right: 1; --border-color-right: #747474;
     }
 
@@ -73,6 +71,7 @@
     
     .modal-message table {
         display: table;
+        width: 100%;
     }
 
     .modal-message tr {
@@ -81,6 +80,7 @@
 
     .modal-message td {
         display: table-cell;
+        width: 100%;
     }
 
     .modal-message th {
@@ -95,6 +95,7 @@
         display: block;
         margin-top: 10px;
         margin-bottom: 10px;
+        width: 100%;
     }
 
     .modal-message br {
@@ -104,13 +105,26 @@
     }
 
     .modal-message a {
-        color: #4a9eff;
+        color: #e2e5e9;
         text-decoration: underline;
+        cursor: pointer;
+    }
+
+    .modal-message a:hover {
+        color: rgb(245, 248, 251);
     }
 
     .modal-message center {
         display: block;
         text-align: center;
+        word-spacing: normal;
+        width: 100%;
+    }
+
+    .modal-message center p {
+        text-align: center;
+        word-spacing: normal;
+        width: 100%;
     }
 
     .modal-message strong {
