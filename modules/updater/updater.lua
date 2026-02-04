@@ -106,7 +106,9 @@ local function updateFiles(data, keepCurrentFiles)
 
   -- update binary
   local binary = nil
-  if type(data.binary) == "table" and type(data.binary.file) == "string" and data.binary.file:len() > 1 then
+  if type(data.binary) == "table" 
+    and type(data.binary.file) == "string" and data.binary.file:len() > 1 
+    and type(data.binary.checksum) == "string" and data.binary.checksum:len() > 0 then
     local selfChecksum = g_resources.selfChecksum()
     if selfChecksum:len() > 0 and selfChecksum ~= data.binary.checksum then
       binary = data.binary.file
@@ -304,6 +306,10 @@ function Updater.changeUrl()
     removeEvent(scheduledEvent)
     HTTP.cancel(httpOperationId)
     dialog:destroy()
+    if updaterWindow then
+      updaterWindow:destroy()
+      updaterWindow = nil
+    end
     -- Restart update process from beginning
     Updater.check()
   end
