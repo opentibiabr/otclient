@@ -435,8 +435,14 @@ bool UIManager::importStyle(const std::string& fl, const bool checkDeviceStyles)
     try {
         const auto& doc = OTMLDocument::parse(file);
 
-        for (const auto& styleNode : doc->children())
+        for (const auto& styleNode : doc->children()) {
+            const std::string tag = styleNode->tag();
+            if (!tag.empty() && tag.front() == '&')
+                continue;
+            if (tag.find('<') == std::string::npos)
+                continue;
             importStyleFromOTML(styleNode);
+        }
     } catch (stdext::exception& e) {
         g_logger.error("Failed to import UI styles from '{}': {}", file, e.what());
         return false;
@@ -563,6 +569,9 @@ OTMLNodePtr UIManager::findMainWidgetNode(const OTMLDocumentPtr& doc)
     for (const auto& node : doc->children()) {
         std::string tag = node->tag();
 
+        if (!tag.empty() && tag.front() == '&')
+            continue;
+
         if (tag.find('<') == std::string::npos) {
             if (mainNode)
                 throw Exception("cannot have multiple main widgets in otui files");
@@ -608,6 +617,9 @@ UIWidgetPtr UIManager::loadUI(const std::string& file, const UIWidgetPtr& parent
 
         for (const auto& node : doc->children()) {
             std::string tag = node->tag();
+
+            if (!tag.empty() && tag.front() == '&')
+                continue;
 
             // import styles in these files too
             if (tag.find('<') != std::string::npos)
@@ -660,8 +672,11 @@ UIWidgetPtr UIManager::loadUIFromString(const std::string& data, const UIWidgetP
         for (const OTMLNodePtr& node : doc->children()) {
             std::string tag = node->tag();
 
+            if (!tag.empty() && tag.front() == '&')
+                continue;
+
             // import styles in these files too
-            if (tag.find("<") != std::string::npos)
+            if (tag.find('<') != std::string::npos)
                 importStyleFromOTML(node);
             else {
                 if (widget)

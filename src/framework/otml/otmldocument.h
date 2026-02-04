@@ -22,6 +22,7 @@
 
 #pragma once
 #include "otmlnode.h"
+#include <unordered_map>
 
 class OTMLDocument final : public OTMLNode
 {
@@ -43,6 +44,10 @@ public:
     /// Save this document to a file
     bool save(std::string_view fileName);
 
+    void addGlobalAlias(const std::string& name, const std::string& value);
+    const std::unordered_map<std::string, std::string>& globalAliases() const;
+
 private:
     OTMLDocument() = default;
+    std::unordered_map<std::string, std::string> m_globalAliases;
 };
