@@ -22,7 +22,6 @@
 
 #pragma once
 #include "otmlnode.h"
-#include <unordered_map>
 
 class OTMLDocument final : public OTMLNode
 {
