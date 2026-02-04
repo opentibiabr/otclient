@@ -14,9 +14,14 @@ function(otclient_add_gtest TARGET_NAME)
         target_precompile_headers(${TARGET_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/src/framework/pch.h)
     endif()
 
+    if(NOT TARGET otclient_core)
+        message(FATAL_ERROR "otclient_core is required when building tests")
+    endif()
+    set(_otclient_core otclient_core)
+
     target_link_libraries(${TARGET_NAME}
         PRIVATE
-            otclient_core
+            ${_otclient_core}
             GTest::gtest
             GTest::gtest_main
     )
@@ -40,6 +45,7 @@ function(otclient_add_gtest TARGET_NAME)
 
     if(MSVC)
         target_compile_options(${TARGET_NAME} PRIVATE /utf-8)
+        target_link_options(${TARGET_NAME} PRIVATE /DEBUG:FASTLINK)
         if(BUILD_STATIC_LIBRARY)
             set_property(TARGET ${TARGET_NAME} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
         else()
