@@ -106,7 +106,7 @@ local function updateFiles(data, keepCurrentFiles)
 
   -- update binary
   local binary = nil
-  if type(data.binary) == "table" and data.binary.file:len() > 1 then
+  if type(data.binary) == "table" and type(data.binary.file) == "string" and data.binary.file:len() > 1 then
     local selfChecksum = g_resources.selfChecksum()
     if selfChecksum:len() > 0 and selfChecksum ~= data.binary.checksum then
       binary = data.binary.file
@@ -140,7 +140,9 @@ local function updateFiles(data, keepCurrentFiles)
   updaterWindow.downloadProgress:setPercent(0)
   updaterWindow.downloadProgress:show()
   updaterWindow.downloadStatus:show()
-  updaterWindow.changeUrlButton:hide()
+  if updaterWindow.changeUrlButton then
+    updaterWindow.changeUrlButton:hide()
+  end
 
   downloadFiles(data["url"], toUpdate, 1, 0, function()
     updaterWindow.status:setText(tr("Updating client (may take few seconds)"))
@@ -204,12 +206,13 @@ function Updater.check(args)
   updaterWindow:raise()
 
   local updateData = nil
+  local allowCustomServers = ALLOW_CUSTOM_SERVERS or false
   local function progressUpdater(value)
     removeEvent(scheduledEvent)
     if value == 100 then
       return Updater.error(tr("Timeout"))
     end
-    if updateData and (value > 60 or (not g_platform.isMobile() or not ALLOW_CUSTOM_SERVERS or not loadModulesFunc)) then -- gives 3s to set custom updater for mobile version
+    if updateData and (value > 60 or (not g_platform.isMobile() or not allowCustomServers or not loadModulesFunction)) then -- gives 3s to set custom updater for mobile version
       return updateFiles(updateData)
     end
     scheduledEvent = scheduleEvent(function() progressUpdater(value + 1) end, 100)
@@ -237,4 +240,70 @@ function Updater.error(message)
   displayErrorBox(tr("Updater Error"), message).onOk = function()
     Updater.abort()
   end
+end
+
+-- IMPORTANTE: A Funcao changeUrl foi criada pelo Claude Opus 4.5
+-- Nao foi testada pois nao utilizo client mobile, por favor verificar seu funcionamento e corrigir possiveis erros.
+-- Esta funcao era chamada no updater.otui porem nao havia implementacao em Lua, por conta disso solicitei ao Claude que a criasse.
+function Updater.changeUrl()
+  if not updaterWindow then return end
+  
+  -- Pause the update process
+  removeEvent(scheduledEvent)
+  HTTP.cancel(httpOperationId)
+  
+  local dialog = g_ui.createWidget('MainWindow', rootWidget)
+  dialog:setId('changeUrlDialog')
+  dialog:setText(tr('Change Updater URL'))
+  dialog:setSize({width = 400, height = 120})
+  
+  local layout = g_ui.createWidget('VerticalBox', dialog)
+  layout:setId('layout')
+  layout:addAnchor(AnchorTop, 'parent', AnchorTop)
+  layout:addAnchor(AnchorLeft, 'parent', AnchorLeft)
+  layout:addAnchor(AnchorRight, 'parent', AnchorRight)
+  layout:setMarginTop(30)
+  layout:setMarginLeft(10)
+  layout:setMarginRight(10)
+  
+  local textEdit = g_ui.createWidget('TextEdit', layout)
+  textEdit:setId('urlInput')
+  textEdit:setText(Services.updater or '')
+  textEdit:setHeight(20)
+  
+  local buttonBox = g_ui.createWidget('HorizontalBox', layout)
+  buttonBox:setMarginTop(10)
+  buttonBox:setHeight(25)
+  
+  local okButton = g_ui.createWidget('Button', buttonBox)
+  okButton:setText(tr('OK'))
+  okButton:setWidth(80)
+  okButton:setMarginRight(5)
+  okButton.onClick = function()
+    local newUrl = textEdit:getText()
+    if newUrl and newUrl:len() > 4 then
+      Services.updater = newUrl
+      dialog:destroy()
+      -- Restart updater with new URL
+      if updaterWindow then
+        updaterWindow:destroy()
+        updaterWindow = nil
+      end
+      Updater.check()
+    end
+  end
+  
+  local cancelButton = g_ui.createWidget('Button', buttonBox)
+  cancelButton:setText(tr('Cancel'))
+  cancelButton:setWidth(80)
+  cancelButton.onClick = function()
+    dialog:destroy()
+    -- Resume update process
+    Updater.check()
+  end
+  
+  dialog:show()
+  dialog:focus()
+  dialog:raise()
+  textEdit:focus()
 end
