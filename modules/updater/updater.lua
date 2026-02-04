@@ -244,78 +244,99 @@ function Updater.error(message)
   end
 end
 
--- IMPORTANTE: A Funcao changeUrl foi criada pelo Claude Opus 4.5
--- Nao foi testada pois nao utilizo client mobile, por favor verificar seu funcionamento e corrigir possiveis erros.
--- Esta funcao era chamada no updater.otui porem nao havia implementacao em Lua, por conta disso solicitei ao Claude a sua implementacao.
+-- TODO: [MOBILE-TEST] Mobile testing required for changeUrl functionality
+-- Feature flag to enable/disable changeUrl (set to false until mobile testing is complete)
+Updater.enableChangeUrl = false
+
+-- Test Checklist for changeUrl on mobile:
+-- [ ] 1. Verify dialog opens correctly on mobile screen sizes
+-- [ ] 2. Test TextEdit input works with mobile keyboard
+-- [ ] 3. Confirm OK button saves URL with trailing slash and restarts updater
+-- [ ] 4. Confirm Restart button restarts updater without changing URL
+-- [ ] 5. Verify dialog closes properly when buttons are clicked
+-- [ ] 6. Test with valid and invalid URLs (less than 5 characters)
+-- [ ] 7. Verify update process cancellation works correctly
+
 function Updater.changeUrl()
-  if not updaterWindow then return end
-  
-  local dialog = g_ui.createWidget('MainWindow', rootWidget)
-  dialog:setId('changeUrlDialog')
-  dialog:setText(tr('Change Updater URL'))
-  dialog:setSize({width = 400, height = 120})
-  
-  local layout = g_ui.createWidget('VerticalBox', dialog)
-  layout:setId('layout')
-  layout:addAnchor(AnchorTop, 'parent', AnchorTop)
-  layout:addAnchor(AnchorLeft, 'parent', AnchorLeft)
-  layout:addAnchor(AnchorRight, 'parent', AnchorRight)
-  layout:setMarginTop(30)
-  layout:setMarginLeft(10)
-  layout:setMarginRight(10)
-  
-  local textEdit = g_ui.createWidget('TextEdit', layout)
-  textEdit:setId('urlInput')
-  textEdit:setText(Services.updater or '')
-  textEdit:setHeight(20)
-  
-  local buttonBox = g_ui.createWidget('HorizontalBox', layout)
-  buttonBox:setMarginTop(10)
-  buttonBox:setHeight(25)
-  
-  local okButton = g_ui.createWidget('Button', buttonBox)
-  okButton:setText(tr('OK'))
-  okButton:setWidth(80)
-  okButton:setMarginRight(5)
-  okButton.onClick = function()
-    local newUrl = textEdit:getText()
-    if newUrl and newUrl:len() > 4 then
-      -- Cancel current update process before restarting with new URL
-      removeEvent(scheduledEvent)
-      HTTP.cancel(httpOperationId)
-      -- Normalize URL to ensure trailing slash
-      if not newUrl:match("/$") then
-        newUrl = newUrl .. "/"
-      end
-      Services.updater = newUrl
-      dialog:destroy()
-      -- Restart updater with new URL
-      if updaterWindow then
-        updaterWindow:destroy()
-        updaterWindow = nil
-      end
-      Updater.check()
+    if not updaterWindow then
+        return
     end
-  end
-  
-  local restartButton = g_ui.createWidget('Button', buttonBox)
-  restartButton:setText(tr('Restart'))
-  restartButton:setWidth(80)
-  restartButton.onClick = function()
-    -- Cancel current update process before restarting
-    removeEvent(scheduledEvent)
-    HTTP.cancel(httpOperationId)
-    dialog:destroy()
-    if updaterWindow then
-      updaterWindow:destroy()
-      updaterWindow = nil
+
+    -- Guard: only allow if feature flag is enabled
+    if not Updater.enableChangeUrl then
+        g_logger.warning("Updater.changeUrl is disabled. Set Updater.enableChangeUrl = true to enable.")
+        return
     end
-    -- Restart update process from beginning
-    Updater.check()
-  end
-  
-  dialog:show()
-  dialog:focus()
-  dialog:raise()
-  textEdit:focus()
+
+    local dialog = g_ui.createWidget('MainWindow', rootWidget)
+    dialog:setId('changeUrlDialog')
+    dialog:setText(tr('Change Updater URL'))
+    dialog:setSize({
+        width = 400,
+        height = 120
+    })
+
+    local layout = g_ui.createWidget('VerticalBox', dialog)
+    layout:setId('layout')
+    layout:addAnchor(AnchorTop, 'parent', AnchorTop)
+    layout:addAnchor(AnchorLeft, 'parent', AnchorLeft)
+    layout:addAnchor(AnchorRight, 'parent', AnchorRight)
+    layout:setMarginTop(30)
+    layout:setMarginLeft(10)
+    layout:setMarginRight(10)
+
+    local textEdit = g_ui.createWidget('TextEdit', layout)
+    textEdit:setId('urlInput')
+    textEdit:setText(Services.updater or '')
+    textEdit:setHeight(20)
+
+    local buttonBox = g_ui.createWidget('HorizontalBox', layout)
+    buttonBox:setMarginTop(10)
+    buttonBox:setHeight(25)
+
+    local okButton = g_ui.createWidget('Button', buttonBox)
+    okButton:setText(tr('OK'))
+    okButton:setWidth(80)
+    okButton:setMarginRight(5)
+    okButton.onClick = function()
+        local newUrl = textEdit:getText()
+        if newUrl and newUrl:len() > 4 then
+            -- Cancel current update process before restarting with new URL
+            removeEvent(scheduledEvent)
+            HTTP.cancel(httpOperationId)
+            -- Normalize URL to ensure trailing slash
+            if not newUrl:match("/$") then
+                newUrl = newUrl .. "/"
+            end
+            Services.updater = newUrl
+            dialog:destroy()
+            -- Restart updater with new URL
+            if updaterWindow then
+                updaterWindow:destroy()
+                updaterWindow = nil
+            end
+            Updater.check()
+        end
+    end
+
+    local restartButton = g_ui.createWidget('Button', buttonBox)
+    restartButton:setText(tr('Restart'))
+    restartButton:setWidth(80)
+    restartButton.onClick = function()
+        -- Cancel current update process before restarting
+        removeEvent(scheduledEvent)
+        HTTP.cancel(httpOperationId)
+        dialog:destroy()
+        if updaterWindow then
+            updaterWindow:destroy()
+            updaterWindow = nil
+        end
+        -- Restart update process from beginning
+        Updater.check()
+    end
+
+    dialog:show()
+    dialog:focus()
+    dialog:raise()
+    textEdit:focus()
 end
