@@ -56,9 +56,9 @@ local function getVocation(arg)
     elseif type(arg) == "string" then
         for id, name in pairs(vocationNamesByClientId) do
             if name == arg then
-                    return id
-                end
+                return id
             end
+        end
         for _, voc in ipairs(vocationArray) do
             if voc[2] == arg then
                 return voc[1]
