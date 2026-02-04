@@ -9,8 +9,7 @@ local function processHtmlContent(text)
     -- - decode common HTML entities
     -- - normalize <br> variants to a single form
     -- - ensure <img> tags are self-closed
-    -- Do NOT strip or remove inline styles or attributes; OTClient's HTML engine
-    -- can consume inline styles via the style attribute and apply them.
+    -- - remove problematic border styles that OTClient can't parse
     if not text then return "" end
     text = tostring(text)
     text = text:gsub("&nbsp;", " ")
@@ -26,8 +25,17 @@ local function processHtmlContent(text)
     -- Ensure <img ...> are self-closed so the HTML parser treats them as void elements
     text = text:gsub("<img%s+([^>]-)%s*>", "<img %1/>")
 
-    -- Keep all other tags, attributes and inline styles intact so the C++ HTML
-    -- engine can parse and apply them.
+    -- Remove border styles from style attributes as they cause OTML parsing errors
+    -- OTClient expects borders in a specific format that HTML border styles don't match
+    text = text:gsub("([%s;])border%s*:%s*[^;]*;?", "%1")
+    text = text:gsub("([%s;])border%-[^:]*%s*:%s*[^;]*;?", "%1")
+    
+    -- Clean up any double semicolons or trailing semicolons in style attributes
+    text = text:gsub(";;+", ";")
+    text = text:gsub(";%s*\"", "\"")
+    text = text:gsub("style=\";", "style=\"")
+    text = text:gsub("style=\"%s*\"", "")
+
     return text
 end
 
@@ -239,9 +247,31 @@ function buildNewsUI(newsData)
             uniqueCategories[entry.category] = true
         end
     end
-    local function setContent(headline, message)
+    local function setContent(headline, message, category)
         compendiumController:findWidget("#minipanel"):setTitle(headline)
-        compendiumController:findWidget("#optionsTabContent"):html(processHtmlContent(message))
+        local contentWidget = compendiumController:findWidget("#optionsTabContent")
+        
+        local processedMessage = processHtmlContent(message)
+        
+        -- Process content for major updates
+        if category and category:upper() == "MAJOR UPDATES" then
+            -- Remove width constraints from tables and cells to allow proper centering
+            processedMessage = processedMessage:gsub('width=".-"', '')
+            processedMessage = processedMessage:gsub("width='.-'", '')
+            -- Remove inline width styles
+            processedMessage = processedMessage:gsub('style=".-width:%s*[^;"]*;?', 'style="')
+            processedMessage = processedMessage:gsub("style='.-width:%s*[^;']*;?", "style='")
+            -- Wrap content with padding div
+            processedMessage = '<div style="padding-left: 0px;">' .. processedMessage .. '</div>'
+        end
+        
+        contentWidget:html(processedMessage)
+        
+        -- Add anchor click handler to open links
+        contentWidget.onAnchorClick = function(widget, url)
+            g_platform.openUrl(url)
+            return true
+        end
     end
 
     for _, entry in ipairs(newsData.gamenews) do
@@ -253,7 +283,7 @@ function buildNewsUI(newsData)
         local entryType = entry.type:lower()
         if entryType == "group header" then
             categories[entry.id] = treeView:addCategory(entry.headline, nil, function()
-                setContent(entry.headline, entry.message)
+                setContent(entry.headline, entry.message, entry.category)
             end, nil, catFlags)
         elseif entryType == "regular" or entryType == "returner" then
             local parentCategory = categories[entry.groupheaderid]
@@ -262,11 +292,11 @@ function buildNewsUI(newsData)
                     catFlags.category = parentCategory.flags.category
                 end
                 treeView:addSubCategory(parentCategory, entry.headline, nil, function()
-                    setContent(entry.headline, entry.message)
+                    setContent(entry.headline, entry.message, entry.category)
                 end, nil, catFlags)
             else
                 categories[entry.id] = treeView:addCategory(entry.headline, nil, function()
-                    setContent(entry.headline, entry.message)
+                    setContent(entry.headline, entry.message, entry.category)
                 end, nil, catFlags)
             end
         end
