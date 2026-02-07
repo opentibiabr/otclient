@@ -136,10 +136,12 @@ endif()
 
 # Protobuf
 add_subdirectory(src/protobuf)
+
+option(OTCLIENT_BUILD_CLIENT "Build client executable" ON)
+option(OTCLIENT_BUILD_TESTS "Build unit tests" ON)
+
 # Src
 add_subdirectory(src)
-
-option(OTCLIENT_BUILD_TESTS "Build unit tests" ON)
 
 if(OTCLIENT_BUILD_TESTS AND NOT ANDROID)
     enable_testing()
