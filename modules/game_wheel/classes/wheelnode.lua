@@ -47,7 +47,6 @@ WheelNodes[7].connecteds = {8, 13, 2, 1}
 -- 5 - 200
 WheelNodes[1].connecteds = {2, 7}
 
-
 -- Red Connections
 -- 1 - 50
 WheelNodes[16].connections = {17, 10}
@@ -79,7 +78,6 @@ WheelNodes[5].connecteds = {4, 11, 12, 6}
 -- 5 - 200
 WheelNodes[6].connecteds = {12, 5}
 
-
 -- Purple Connections
 -- 1 - 50
 WheelNodes[22].connections = {23, 28}
@@ -91,7 +89,7 @@ WheelNodes[24].connections = {23, 18, 29, 30}
 WheelNodes[29].connections = {23, 28, 24, 34, 30, 35}
 WheelNodes[34].connections = {28, 33, 29, 35}
 -- 4 - 150
-WheelNodes[30].connections = {24, 29,35, 36}
+WheelNodes[30].connections = {24, 29, 35, 36}
 WheelNodes[35].connections = {29, 34, 30, 36}
 -- 5 - 200
 WheelNodes[36].connections = {}
@@ -106,7 +104,7 @@ WheelNodes[24].connecteds = {23, 18, 29, 30}
 WheelNodes[29].connecteds = {23, 28, 24, 34, 30, 35}
 WheelNodes[34].connecteds = {28, 33, 29, 35}
 -- 4 - 150
-WheelNodes[30].connecteds = {24, 29,35, 36}
+WheelNodes[30].connecteds = {24, 29, 35, 36}
 WheelNodes[35].connecteds = {29, 34, 30, 36}
 -- 5 - 200
 WheelNodes[36].connecteds = {30, 35}
@@ -162,7 +160,8 @@ function canReachRootNodeFromNode(node, ignoreNode)
         end
 
         for _, connectedNode in ipairs(currentNode.connecteds) do
-            if not visitedNodes[connectedNode] and WheelOfDestiny.isLitFull(connectedNode) and connectedNode ~= ignoreNode then
+            if not visitedNodes[connectedNode] and WheelOfDestiny.isLitFull(connectedNode) and connectedNode ~=
+                ignoreNode then
                 table.insert(nodesToVisit, connectedNode)
             end
         end

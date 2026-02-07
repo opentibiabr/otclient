@@ -23,7 +23,10 @@ function Circle:divideIntoSlices(n)
         local angle = i * angleStep
         local x = self._centerX + self._radius * math.cos(angle)
         local y = self._centerY + self._radius * math.sin(angle)
-        table.insert(slices, {x = x, y = y})
+        table.insert(slices, {
+            x = x,
+            y = y
+        })
     end
 
     return slices
