@@ -651,8 +651,8 @@ void ProtocolGame::parseMessage(const InputMessagePtr& msg)
                     }
 
                     g_logger.warning(
-                        "Unhandled opcode 0x{:02X} ({}) with {} unread bytes; previous opcode: 0x{:02X} ({}); next bytes: {}",
-                        opcode, opcode, unreadSize, prevOpcode, prevOpcode, hexDump.str());
+                        "[{}] Unhandled opcode 0x{:02X} ({}) with {} unread bytes; previous opcode: 0x{:02X} ({}); next bytes: {}",
+                        g_game.getClientVersion(), opcode, opcode, unreadSize, prevOpcode, prevOpcode, hexDump.str());
                     msg->setReadPos(msg->getMessageSize());
                     break;
                 }
