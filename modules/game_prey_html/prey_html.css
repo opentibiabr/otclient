@@ -1,0 +1,485 @@
+.content {
+  position: relative;
+  width: 668px;
+  height: 500px;
+}
+
+.content p {
+  font: "verdana-11px-rounded";
+}
+
+.tab-container {
+  display: flex;
+  width: 664px;
+}
+
+.tab-button-clip {
+  width: 332px;
+  height: 34px;
+  --image-clip: 0 0 332 34;
+}
+
+.tab-button-clip:pressed {
+  --image-clip: 0 34 332 34;
+}
+
+.prey-slot-container {
+  display: flex;
+  max-height: 320px;
+  max-width: 666px;
+  margin-top: 4px;
+}
+
+.prey-slot-wrapper {
+  height: 320px;
+  width: 216px;
+  --image-source: "/modules/game_prey_html/images/2pixel-up-frame-borderimage";
+  --onHoverChange: modules.game_prey_html.onHover(self);
+}
+
+.header {
+  --image-size: 216 15;
+  text-align: center;
+  align-items: center;
+  --image-source: "/modules/game_prey_html/images/chat_channel_deselected";
+  color: #c0c0c0;
+}
+
+.race-container {
+  max-height: 133px;
+  max-width: 216px;
+  width: 216px;
+  margin-top: 4px;
+  padding-left: 6px;
+  padding-right: 6px;
+}
+
+.race-monster {
+  --image-size: 133 133;
+  --image-source: "/modules/game_prey_html/images/panel_flat";
+  width: 133px;
+  display: inline-block;
+  height: 133px;
+  text-align: center;
+}
+
+.race-monster uicreature {
+  --creature-size: 120;
+}
+
+.prey-current-bonus {
+  --image-source: "/modules/game_prey_html/images/panel_flat";
+  display: inline-block;
+  height: 133px;
+  text-align: center;
+  width: 65px;
+  margin-left: 6px;
+}
+
+.prey-current-bonus img {
+  height: 92px;
+  width: 44px;
+  margin-top: 2px;
+}
+
+.prey-current-stars {
+  height: 20px;
+  width: 65px;
+  margin-top: -4px;
+}
+
+.prey-current-stars img {
+  width: 9px;
+  height: 10px;
+  margin-left: 5px;
+}
+
+.progress {
+  --image-size: 204 20;
+  position: relative;
+  margin: 0 6px;
+  margin-top: 4px;
+  height: 20px;
+  width: 204px;
+  --image-source: "/modules/game_prey_html/images/progress.png";
+}
+
+.progress-bar {
+  height: 18px;
+  max-width: 202px;
+  --image-source: "/modules/game_prey_html/images/prey-timer-progress.png";
+  margin-top: 1px;
+  margin-left: 1px;
+}
+
+.progress-value {
+  position: relative;
+  height: 20px;
+  width: 204px;
+  text-align: center;
+  align-items: center;
+  color: #c0c0c0;
+  margin-top: -20px;
+  pointer-events: none;
+}
+
+.buttons {
+  height: 85px;
+  width: 204px;
+  margin-top: 4px;
+  display: flex;
+}
+
+.prey-reroll-container {
+  width: 66px;
+  height: 86px;
+  text-align: center;
+}
+
+.prey-reroll-wrapper {
+  position: relative;
+  width: 66px;
+  height: 66px;
+}
+
+.progress-bar-time-next-reroll {
+  height: 12px;
+  max-width: 60px;
+  --image-source: "/modules/game_prey_html/images/prey-timer-progress.png";
+  position: absolute;
+  bottom: 3px;
+  left: 3px;
+  pointer-events: none;
+}
+
+.base-img-clip {
+  width: 66px;
+  height: 66px;
+  --image-clip: 0 0 66 66;
+}
+.base-img-clip:pressed {
+  --image-clip: 0 66 66 66;
+}
+.base-img-clip:disabled {
+  --image-clip: 0 132 66 66;
+}
+
+.prey-reroll-timeleft {
+  bottom: 2;
+  left: 18%;
+  position: absolute;
+  color: #c0c0c0;
+  pointer-events: none;
+}
+
+.prey-reroll-cost {
+  height: 20px;
+  width: 66px;
+
+  --image-source: "/modules/game_prey_html/images/prey-info-bg.png";
+  align-items: center;
+  text-align: center;
+  margin-top: 1px;
+  color: #c0c0c0;
+}
+
+.prey-reroll-cost:disabled {
+  color: #d33c3c;
+}
+
+.prey-reroll-cost img {
+  margin-left: 6px;
+}
+
+.prey-pick-container {
+  width: 66px;
+  height: 84px;
+  text-align: center;
+  margin-left: 2px;
+  color: #c0c0c0;
+}
+
+.base-button-cost {
+  height: 20px;
+  width: 66px;
+  margin-top: 1px;
+  color: #c0c0c0;
+  --image-source: "/modules/game_prey_html/images/prey-info-bg.png";
+  align-items: center;
+}
+.base-button-cost:disabled {
+  color: #d33c3c;
+}
+
+.base-button-cost img {
+  margin-left: 6px;
+}
+
+.prey-pick-cost {
+  height: 20px;
+  width: 66px;
+  margin-top: 1px;
+  color: #c0c0c0;
+  --image-source: "/modules/game_prey_html/images/prey-info-bg.png";
+  align-items: center;
+}
+
+.prey-pick-cost:disabled {
+  color: #d33c3c;
+}
+
+.prey-pick-cost img {
+  margin-left: 6px;
+}
+
+.prey-bonus-container {
+  width: 66px;
+  height: 84px;
+  text-align: center;
+  margin-left: 4px;
+  color: #c0c0c0;
+}
+
+.prey-bonus-cost {
+  height: 20px;
+  width: 66px;
+  margin-top: 1px;
+
+  --image-source: "/modules/game_prey_html/images/prey-info-bg.png";
+  align-items: center;
+}
+
+.prey-bonus-cost:disabled {
+  color: #d33c3c;
+}
+
+.prey-bonus-cost img {
+  margin-left: 6px;
+}
+
+.monster-names {
+  --image-size: 202 170;
+  --image-source: "/modules/game_prey_html/images/_panel_map";
+  margin-left: 6px;
+  margin-top: 4px;
+  border: 1px transparent;
+  --border-color-top: #181818;
+  --border-color-left: #181818;
+  --border-color-bottom: #757575;
+  --border-color-right: #757575;
+  height: 170px;
+  width: 202px;
+}
+
+.monster-names-wrapper {
+  height: 168px;
+  width: 200px;
+  overflow: scroll;
+  margin-left: 1px;
+  margin-top: 1px;
+}
+
+.monster-name {
+  height: 20px;
+  padding: 4px;
+}
+
+.monster-list-buttons {
+  display: flex;
+  height: 92px;
+  width: 200px;
+}
+
+.search-bar {
+  position: relative;
+  margin-left: 6px;
+  margin-top: 4px;
+  width: 202px;
+}
+
+.search-placeholder {
+  position: relative;
+  color: #c0c0c0;
+  top: 2px;
+  left: 4px;
+  pointer-events: none;
+}
+
+.monster-preview {
+  height: 92px;
+  width: 132px;
+  align-items: center;
+  text-align: center;
+  margin-left: 6px;
+  margin-top: 4px;
+  --image-source: "/modules/game_prey_html/images/panel_flat";
+}
+
+.monster-preview uicreature {
+  --creature-size: 64;
+}
+
+.prey-choose-button {
+  width: 66px;
+  height: 92px;
+  --image-clip: 0 0 66 92;
+  margin-left: 4px;
+}
+.prey-choose-button:disabled {
+  --image-clip: 132 0 66 92;
+}
+.prey-choose-button:pressed {
+  --image-clip: 66 0 66 92;
+}
+
+.options {
+  height: 42px;
+  width: 204px;
+  margin: 0 6px;
+  margin-top: 4px;
+
+  color: #c0c0c0;
+}
+
+.options label {
+  margin-left: 4px;
+}
+
+.options-container {
+  display: flex;
+  align-items: center;
+  height: 22px;
+}
+
+.options-wrapper {
+  display: flex;
+  align-items: center;
+  margin-left: 2px;
+  padding: 2px;
+  border: 1px transparent;
+  --border-color-top: #181818;
+  --border-color-left: #181818;
+  --border-color-bottom: #757575;
+  --border-color-right: #757575;
+}
+
+.options-cost {
+  width: 35px;
+  height: 18px;
+  --image-source: "/modules/game_prey_html/images/prey-info-bg.png";
+  margin-right: 2px;
+  padding-top: 2px;
+  padding-left: 2px;
+  border: 1px transparent;
+  --border-color-top: #181818;
+  --border-color-left: #181818;
+  --border-color-bottom: #757575;
+  --border-color-right: #757575;
+}
+
+.options-cost img {
+  margin-left: 6px;
+  margin-top: 1px;
+}
+
+.options.lock-prey {
+  margin-top: 2px;
+}
+
+.description {
+  --image-size: 666 101;
+  height: 101;
+  --image-source: "/modules/game_prey_html/images/2pixel-up-frame-borderimage.png";
+  --image-border: 3;
+  margin-top: 7px;
+  color: #c0c0c0;
+  text-align: left;
+  padding: 4px;
+}
+
+.gold-container {
+  --image-source: "/modules/game_prey_html/images/player-gold-bg.png";
+  width: 130px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #c0c0c0;
+}
+
+.gold-container img {
+  margin-left: 2px;
+}
+
+.wildcard-container {
+  --image-source: "/modules/game_prey_html/images/prey-info-bg.png";
+  width: 52px;
+  height: 20px;
+  margin-left: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.store-icon-clip {
+  --image-clip: 0 0 26 20;
+}
+
+.store-icon-clip:pressed {
+  --image-clip: 0 20 26 20;
+  margin-left: 8px;
+}
+
+.choose-monster-list {
+  width: 200px;
+  height: 195px;
+  border: 1px transparent;
+  --border-color-top: #181818;
+  --border-color-left: #181818;
+  --border-color-bottom: #757575;
+  --border-color-right: #757575;
+  margin-left: 8px;
+  margin-top: 4px;
+  padding-left: 2px;
+}
+
+.choose-monster-list uicreature {
+  --creature-size: 65;
+}
+
+.prey-unlock-perm-button {
+  height: 67px;
+  width: 204px;
+  margin-top: 8px;
+  margin-left: 6px;
+  --image-clip: 0 0 204 67;
+}
+
+.prey-unlock-perm-button:pressed {
+  --image-clip: 0 67 204 67;
+}
+
+.footer {
+  display: flex;
+  height: 20px;
+  width: 666px;
+  justify-content: space-between;
+}
+
+.footer-content {
+  display: flex;
+  height: 20px;
+  width: 616px;
+}
+
+.footer-content img {
+  margin-left: 4px;
+}
+
+.close-btn {
+  padding: 3px 10px !important;
+}
+
+.close-btn:pressed {
+  padding: 3px 10px !important;
+}
