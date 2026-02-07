@@ -55,6 +55,10 @@ namespace {
         {"auto-resize", "image-auto-resize"},
         {"individual-animation", "image-individual-animation"},
         {"src", "image-source"}
+        , {"align", "image-align"}
+        , {"valign", "image-valign"}
+        , {"vspace", "image-offset-y"}
+        , {"hspace", "image-offset-x"}
     };
 
     static const std::unordered_map<std::string, std::string> cssMap = {
@@ -98,6 +102,8 @@ namespace {
         "unicode-bidi",
         /*"visibility",*/
         "white-space",
+        "text-decoration",
+        "vertical-align",
         "word-spacing",
         "writing-mode",
         "hyphens",
@@ -161,6 +167,15 @@ namespace {
             auto it = IMG_ATTR_TRANSLATED.find(attr);
             if (it != IMG_ATTR_TRANSLATED.end()) {
                 attr = it->second;
+            }
+        }
+
+        // map some table-specific attributes to equivalent widget style tags
+        if (tagName == "table") {
+            if (attr == "cellpadding") {
+                attr = "padding";
+            } else if (attr == "cellspacing") {
+                attr = "border-spacing";
             }
         }
     }

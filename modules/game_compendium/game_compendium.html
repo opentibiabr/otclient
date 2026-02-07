@@ -1,0 +1,167 @@
+<style>
+    /* ===== WINDOW STRUCTURE - DO NOT MODIFY ===== */
+    .modal-window {
+        width: 937px;
+        height: 637px;
+    }
+
+    /* Layout Sections */
+    .top-section {
+        padding-left: 2px;
+        padding-top: 2px;
+        margin-bottom: 10px;
+        height: 40px; 
+        --border-width-top: 1; --border-color-top: black; --border-width-left: 1; --border-color-left: black; --border-width-bottom: 1; --border-color-bottom: #747474; --border-width-right: 1; --border-color-right: #747474;
+    }
+
+    .middle-section {
+        height: 523px;
+    }
+
+    /* Left Sidebar (25%) */
+    .sidebar-panel {
+        width: 21%;
+        height: 100%;
+        float: left;
+        --image-border: 3;
+        --image-source: /images/ui/2pixel_up_frame_borderimage_dark;
+        overflow: scroll;
+        padding-top: 15px;
+        padding-bottom: 15px;
+        padding-left: -1px;
+    }
+
+    /* Right Content (75%) */
+    .content-panel {
+        width: 78%;
+        margin-right: 0px;
+        height: 100%;
+        float: right;
+        overflow: hidden;
+        box-sizing: border-box;
+    }
+
+    /* Internal message area */
+    .modal-message {
+        /* MUST be width 98% dont change */
+        width: 98%;
+        height: 93%;
+        padding-right: 5px;
+        word-wrap: break-word;
+        overflow: scroll;
+        --border-width-top: 1; --border-color-top: black; --border-width-left: 1; --border-color-left: black; --border-width-bottom: 1; --border-color-bottom: #747474; --border-width-right: 1; --border-color-right: #747474;
+    }
+
+    .modal-separator {
+        margin-top: 5px;
+        margin-bottom: 10px;
+        width: 100%;
+        border-color: #3e3e3e;
+        height: 2px;
+    }
+    
+    .footer-button {
+        width: 64px;
+        float: right;
+    }
+
+    /* ===== MINIMAL CONTENT STYLING - Essential HTML rendering only ===== */
+    /* Provide basic display types so HTML elements render correctly */
+    /* All custom styling (colors, sizes, spacing) should come from compendium.json inline styles */
+    
+    .modal-message table {
+        display: table;
+        width: 100%;
+    }
+
+    .modal-message tr {
+        display: table-row;
+    }
+
+    .modal-message td {
+        display: table-cell;
+        width: 100%;
+    }
+
+    .modal-message th {
+        display: table-cell;
+    }
+
+    .modal-message img {
+        display: inline-block;
+    }
+
+    .modal-message p {
+        display: block;
+        margin-top: 10px;
+        margin-bottom: 10px;
+        width: 100%;
+    }
+
+    .modal-message br {
+        display: block;
+        content: "";
+        margin-top: 0px;
+    }
+
+    .modal-message a {
+        color: #e2e5e9;
+        text-decoration: underline;
+        cursor: pointer;
+    }
+
+    .modal-message a:hover {
+        color: rgb(245, 248, 251);
+    }
+
+    .modal-message center {
+        display: block;
+        text-align: center;
+        word-spacing: normal;
+        width: 100%;
+    }
+
+    .modal-message center p {
+        text-align: center;
+        word-spacing: normal;
+        width: 100%;
+    }
+
+    .modal-message strong {
+        font-weight: bold;
+    }
+
+    .modal-message em {
+        font-style: italic;
+    }
+</style>
+
+<html>
+<window id="modalDialog" placement="center" class="modal-window" title="Compendium">
+    
+    <!-- Top Section: Grid/Menu Area -->
+    <div id="typeCharmPanel" class="top-section" 
+         layout="type: grid; cell-spacing: 1; num-columns: 5; num-lines: 2; fit-children: false; flow: true; cell-width: 155; cell-height: 36">
+         <!-- Items can be added here -->
+    </div>
+
+    <!-- Middle Section: Split View -->
+    <div class="middle-section">
+        <!-- Left Panel -->
+        <div id="optionsTabBar" class="sidebar-panel UIScrollArea" layout="type: verticalBox"></div>
+
+        <!-- Right Panel -->
+        <div id="minipanel" class="content-panel minipanel">
+            <div id="optionsTabContent" class="modal-message UIScrollArea" layout="type: verticalBox" vertical-scrollbar-style="ScrollBarValueDefault">
+            </div>
+        </div>
+    </div>
+<label id="date"></label>
+    <!-- Bottom Section: Separator and Close Button -->
+    <hr class="modal-separator" />
+    <button id="closeButton" text="Close" placement="bottom-right">
+    </button>
+
+</window>
+
+</html>
