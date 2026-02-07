@@ -651,8 +651,8 @@ void ProtocolGame::parseMessage(const InputMessagePtr& msg)
                     }
 
                     g_logger.warning(
-                        "Unhandled opcode 0x{:02X} ({}) with {} unread bytes; previous opcode: 0x{:02X} ({}); next bytes: {}",
-                        opcode, opcode, unreadSize, prevOpcode, prevOpcode, hexDump.str());
+                        "[{}] Unhandled opcode 0x{:02X} ({}) with {} unread bytes; previous opcode: 0x{:02X} ({}); next bytes: {}",
+                        g_game.getClientVersion(), opcode, opcode, unreadSize, prevOpcode, prevOpcode, hexDump.str());
                     msg->setReadPos(msg->getMessageSize());
                     break;
                 }
@@ -2166,23 +2166,18 @@ void ProtocolGame::parseOpenForge(const InputMessagePtr& msg)
 
 void ProtocolGame::setCreatureVocation(const InputMessagePtr& msg, const uint32_t creatureId) const
 {
+    const uint8_t vocationId = msg->getU8();
+
     const auto& creature = g_map.getCreatureById(creatureId);
     if (!creature) {
         return;
     }
 
-    const uint8_t vocationId = msg->getU8();
     creature->setVocation(vocationId);
 }
 
 void ProtocolGame::addCreatureIcon(const InputMessagePtr& msg, const uint32_t creatureId) const
 {
-    const auto& creature = g_map.getCreatureById(creatureId);
-    if (!creature) {
-        g_logger.traceDebug("ProtocolGame::addCreatureIcon: could not get creature with id {}", creatureId);
-        return;
-    }
-
     const uint8_t sizeIcons = msg->getU8();
     std::vector<std::tuple<uint8_t, uint8_t, uint16_t>> icons; // icon, category, count
     for (auto i = 0; i < sizeIcons; ++i) {
@@ -2191,6 +2186,13 @@ void ProtocolGame::addCreatureIcon(const InputMessagePtr& msg, const uint32_t cr
         const uint16_t count = msg->getU16(); // icon.count
         icons.emplace_back(icon, category, count);
     }
+
+    const auto& creature = g_map.getCreatureById(creatureId);
+    if (!creature) {
+        g_logger.traceDebug("ProtocolGame::addCreatureIcon: could not get creature with id {}", creatureId);
+        return;
+    }
+
     creature->setIcons(icons);
 }
 
