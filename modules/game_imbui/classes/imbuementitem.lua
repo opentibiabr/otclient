@@ -22,7 +22,7 @@ function ImbuementItem.setup(itemId, tier, slots, activeSlots, availableImbuemen
     self.slots = slots
 
     self.activeSlots = {}
-    for i = 0, #activeSlots do
+    for i = 0, slots - 1 do
         self.activeSlots["slot"..i] = activeSlots[i] or {}
     end
     self.availableImbuements = availableImbuements or {}

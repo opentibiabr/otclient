@@ -74,7 +74,7 @@ function ImbuementSelection.onChooseItemMouseRelease(widget, mousePosition, mous
     local stackPos = item:getStackPos()
     
     if self.isSelectingScroll then
-      g_game.selectImbuementItem(itemId, pos, stackPos)
+      g_game.selectImbuementScroll()
     else
       g_game.selectImbuementItem(itemId, pos, stackPos)
     end

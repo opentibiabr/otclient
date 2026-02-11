@@ -184,27 +184,23 @@ end
 
 function Imbuement:toggleMenu(menu)
   for key, value in pairs(self) do
-    if type(value) ~= 'userdata' or key == 'window' then
-      goto continue
-    end
-
-    if key == menu then
-      value:show()
-      -- Ajustar tamanho da janela baseado no menu
-      if menu == 'selectItemOrScroll' then
-        self.window:setHeight(388)
-      elseif menu == 'scrollImbue' then
-        self.window:setHeight(655)
-      elseif menu == 'selectImbue' then
-        self.window:setHeight(528)
-      elseif menu == 'clearImbue' then
-        self.window:setHeight(502)
+    if type(value) == 'userdata' and key ~= 'window' then
+      if key == menu then
+        value:show()
+        -- Ajustar tamanho da janela baseado no menu
+        if menu == 'selectItemOrScroll' then
+          self.window:setHeight(388)
+        elseif menu == 'scrollImbue' then
+          self.window:setHeight(655)
+        elseif menu == 'selectImbue' then
+          self.window:setHeight(528)
+        elseif menu == 'clearImbue' then
+          self.window:setHeight(502)
+        end
+      else
+        value:hide()
       end
-    else
-      value:hide()
     end
-
-    ::continue::
   end
 end
 

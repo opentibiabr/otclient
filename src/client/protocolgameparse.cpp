@@ -5760,6 +5760,11 @@ void ProtocolGame::parseImbuementWindow(const InputMessagePtr& msg)
     if (g_game.getClientVersion() >= 1510) {
         const uint8_t windowType = msg->getU8();
 
+        if (windowType > 2) {
+            g_logger.warning(fmt::format("ProtocolGame::parseImbuementWindow: unexpected windowType {}", windowType));
+            return;
+        }
+
         // 0 = CHOICE (select item or scroll)
         if (windowType == 0) {
             msg->getU8();   // unknown

@@ -161,6 +161,10 @@ end
 function setProtection(value)
     protection = value
     if protection then
+        if not selectedImbue then
+            protection = false
+            return
+        end
         emptyImbue.cost:setText(comma_value(selectedImbue['cost'] + selectedImbue['protectionCost']))
         emptyImbue.successRate:setText('100%')
         emptyImbue.successRate:setColor('green')
@@ -188,8 +192,8 @@ function setProtection(value)
             else
                 emptyImbue.cost:setColor('white')
             end
+            protectionBtn:setImageClip(torect('0 0 66 66'))
         end
-        protectionBtn:setImageClip(torect('0 0 66 66'))
     end
     
     -- Re-verificar o estado do botão de imbue quando a proteção mudar
