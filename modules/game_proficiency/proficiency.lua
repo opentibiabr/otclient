@@ -117,13 +117,18 @@ function onGameStart()
 end
 
 -- Initialize the proficiency widget in the top stats bar
-function initTopBarProficiency()
+function initTopBarProficiency(attempts)
+    attempts = attempts or 0
+    local maxRetries = 15
+    
     -- Delay initialization to ensure StatsBar is fully loaded
     scheduleEvent(function()
         -- Access StatsBar through modules.game_interface
         local StatsBarModule = modules.game_interface and modules.game_interface.StatsBar
         if not StatsBarModule then 
-            scheduleEvent(initTopBarProficiency, 500)
+            if attempts < maxRetries then
+                scheduleEvent(initTopBarProficiency, 500, attempts + 1)
+            end
             return 
         end
         
@@ -148,7 +153,9 @@ function initTopBarProficiency()
                 end
             end
         else
-            scheduleEvent(initTopBarProficiency, 500)
+            if attempts < maxRetries then
+                scheduleEvent(initTopBarProficiency, 500, attempts + 1)
+            end
         end
     end, 500) -- 500ms delay
 end
@@ -626,8 +633,8 @@ function createWindow()
     if searchText then
         searchText.onTextChange = function(widget, text)
             WeaponProficiency.searchFilter = text
-    WeaponProficiency:refreshItemList()
-end
+            WeaponProficiency:refreshItemList()
+        end
     end
     
     -- Setup clear search button
@@ -639,9 +646,9 @@ end
                 searchWidget:setText('')
                 WeaponProficiency.searchFilter = nil
                 WeaponProficiency:refreshItemList()
+            end
         end
     end
-end
 
     -- Initialize item list
     WeaponProficiency:refreshItemList()
@@ -733,9 +740,20 @@ function sortWeaponProficiency(marketCategory)
     if not itemList then return end
     
     table.sort(itemList, function(a, b)
-        -- Use showAs (marketData.showAs) for cache lookup - this is what the server uses
-        local idA = a.marketData.showAs or a.displayId or a.originalId
-        local idB = b.marketData.showAs or b.displayId or b.originalId
+        -- Use showAs (marketData.showAs) for cache lookup - explicitly check for nil to handle showAs==0
+        local idA
+        if a.marketData and a.marketData.showAs ~= nil then
+            idA = a.marketData.showAs
+        else
+            idA = a.displayId or a.originalId
+        end
+        
+        local idB
+        if b.marketData and b.marketData.showAs ~= nil then
+            idB = b.marketData.showAs
+        else
+            idB = b.displayId or b.originalId
+        end
         
         local expA = WeaponProficiency.cacheList[idA] and WeaponProficiency.cacheList[idA].exp or 0
         local expB = WeaponProficiency.cacheList[idB] and WeaponProficiency.cacheList[idB].exp or 0
@@ -953,8 +971,13 @@ function WeaponProficiency:refreshItemList()
             if itemWidget and marketItem.displayItem then
                 -- Use stored displayId (guaranteed non-zero) instead of displayItem:getId()
                 local displayId = marketItem.displayId or marketItem.originalId
-                -- Use showAs (displayId) as cache key - this is what the server uses
-                local cacheId = marketItem.marketData.showAs or displayId
+                -- Use showAs (displayId) as cache key - explicitly check for nil to handle showAs==0
+                local cacheId
+                if marketItem.marketData and marketItem.marketData.showAs ~= nil then
+                    cacheId = marketItem.marketData.showAs
+                else
+                    cacheId = displayId
+                end
                 itemWidget:setItemId(displayId)
                 
                 -- Add tooltip with item name
@@ -1755,18 +1778,32 @@ function WeaponProficiency:applyVocationFilter(items)
             -- Check if player's vocation bit is set in the restriction mask
             -- restrictVocation is a bitmask: bit N is set if vocation N can use the item
             -- playerVocation is 1-based (1=Knight, 2=Paladin, etc.)
-            -- The bitmask uses 2^(vocation-1) for each vocation
-            local vocBit = math.pow(2, playerVocation - 1)
-            if bit32 then
-                -- Use bit32 library if available
-                if bit32.band(restrictVocation, vocBit) ~= 0 then
-            table.insert(filteredItems, item)
-        end
-            else
-                -- Fallback: use modulo arithmetic for bitwise AND
-                local shifted = math.floor(restrictVocation / vocBit)
-                if shifted % 2 == 1 then
-                    table.insert(filteredItems, item)
+            -- Ensure playerVocation is valid (>=1)
+            if playerVocation >= 1 then
+                -- Compute integer bit mask
+                local vocBit
+                if bit32 then
+                    -- Use bit32 library if available
+                    vocBit = bit32.lshift(1, playerVocation - 1)
+                else
+                    -- Fallback: build the mask with integer multiplication
+                    vocBit = 1
+                    for i = 1, playerVocation - 1 do
+                        vocBit = vocBit * 2
+                    end
+                end
+                
+                if bit32 then
+                    -- Use bit32 library if available
+                    if bit32.band(restrictVocation, vocBit) ~= 0 then
+                        table.insert(filteredItems, item)
+                    end
+                else
+                    -- Fallback: use modulo arithmetic for bitwise AND
+                    local shifted = math.floor(restrictVocation / vocBit)
+                    if shifted % 2 == 1 then
+                        table.insert(filteredItems, item)
+                    end
                 end
             end
         end
@@ -1818,6 +1855,8 @@ function WeaponProficiency:onApplyClick()
         self:applyPendingSelections()
     end)
     if not success then
+        -- Log error with context before clearing
+        warn("Failed to apply pending selections: " .. tostring(err))
         -- Clear pending selections on error to allow closing
         self.pendingSelections = {}
         self:updateApplyButtonState()
@@ -1832,6 +1871,8 @@ function WeaponProficiency:onOkClick()
             self:applyPendingSelections()
         end)
         if not success then
+            -- Log error with context before clearing
+            warn("Failed to apply pending selections in onOkClick: " .. tostring(err))
             -- Clear on error to allow closing
             self.pendingSelections = {}
         end

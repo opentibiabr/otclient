@@ -480,7 +480,10 @@ void ProtocolGame::parseMessage(const InputMessagePtr& msg)
                     parseCyclopediaHouseAuctionMessage(msg);
                     break;
                 case Proto::GameServerWeaponProficiencyInfo:
-                    parseWeaponProficiencyInfo(msg);
+                    // Weapon proficiency info (Summer Update 2025)
+                    if (g_game.getClientVersion() >= 1510) {
+                        parseWeaponProficiencyInfo(msg);
+                    }
                     break;
                 case Proto::GameServerCyclopediaHousesInfo:
                     parseCyclopediaHousesInfo(msg);
@@ -6343,6 +6346,11 @@ void ProtocolGame::parseWeaponProficiencyInfo(const InputMessagePtr& msg)
     // Sent by server in response to sendWeaponProficiencyAction
     // Structure: uint16 itemId, uint32 experience, uint8 perksCount, [perksCount * {uint8 level, uint8 perkPosition}]
     
+    // Only parse for clients that support weapon proficiency (version 1510+)
+    if (g_game.getClientVersion() < 1510) {
+        return;
+    }
+    
     const uint16_t itemId = msg->getU16();
     const uint32_t experience = msg->getU32();
     const uint8_t perksCount = msg->getU8();
@@ -6355,7 +6363,8 @@ void ProtocolGame::parseWeaponProficiencyInfo(const InputMessagePtr& msg)
     }
     
     // Get market category for the item (for sorting in UI)
-    uint16_t marketCategory = 32; // Default: WeaponsAll
+    constexpr uint16_t MarketCategoryWeaponsAll = 32; // Default: WeaponsAll
+    uint16_t marketCategory = MarketCategoryWeaponsAll;
     if (g_things.isValidDatId(itemId, ThingCategoryItem)) {
         const auto& itemType = g_things.getThingType(itemId, ThingCategoryItem);
         if (itemType) {
