@@ -603,7 +603,7 @@ bool luavalue_cast(const int index, std::pair<K, V>& pair)
 {
     if (g_lua.isTable(index)) {
         // Get first element (index 1 in Lua)
-        g_lua.rawGeti(index < 0 ? index - 1 : index, 1);
+        g_lua.rawGeti(1, index);
         K firstValue;
         if (!luavalue_cast(-1, firstValue)) {
             g_lua.pop();
@@ -613,7 +613,7 @@ bool luavalue_cast(const int index, std::pair<K, V>& pair)
         g_lua.pop();
         
         // Get second element (index 2 in Lua)
-        g_lua.rawGeti(index < 0 ? index - 1 : index, 2);
+        g_lua.rawGeti(2, index);
         V secondValue;
         if (!luavalue_cast(-1, secondValue)) {
             g_lua.pop();

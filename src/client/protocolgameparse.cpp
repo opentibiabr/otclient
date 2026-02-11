@@ -170,7 +170,7 @@ void ProtocolGame::parseMessage(const InputMessagePtr& msg)
                 case Proto::GameServerWeaponProficiencyExperience:
                     // Weapon proficiency experience update (Summer Update 2025)
                     // Structure: uint16 itemId, uint32 experience, uint8 hasUnusedPerk
-                    {
+                    if (g_game.getClientVersion() >= 1510) {
                         uint16_t itemId = msg->getU16();
                         uint32_t experience = msg->getU32();
                         uint8_t hasUnusedPerk = msg->getU8(); // 0x01 if has unused perk

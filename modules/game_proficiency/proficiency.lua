@@ -1051,9 +1051,6 @@ function WeaponProficiency:selectItem(itemId, marketItem)
         self.starProgressPanel:destroyChildren()
     end
     
-    -- Use cacheId (originalId) for cache lookups since server sends proficiency data with originalId
-    local cacheId = marketItem.originalId or itemId
-    
     -- Initialize cache entry if not exists
     if not self.cacheList[cacheId] then
         self.cacheList[cacheId] = { exp = 0, perks = {} }
