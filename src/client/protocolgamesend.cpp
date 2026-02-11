@@ -1641,6 +1641,38 @@ void ProtocolGame::openContainerQuickLoot(const uint8_t action, const uint8_t ca
     }
     send(msg);
 }
+
+void ProtocolGame::sendWeaponProficiencyAction(const uint8_t actionType, const uint16_t itemId)
+{
+    // Opcode 0xB3 (179) - Weapon Proficiency Action
+    // actionType: 0 = request item info, 1 = request all items, 2 = reset perks, 3 = apply perks
+    const auto msg = std::make_shared<OutputMessage>();
+    msg->addU8(Proto::ClientWeaponProficiency);
+    msg->addU8(actionType);
+    if (actionType == 0 || actionType == 2) {
+        msg->addU16(itemId);
+    }
+    send(msg);
+}
+
+void ProtocolGame::sendWeaponProficiencyApply(const uint16_t itemId, const std::vector<std::pair<uint8_t, uint8_t>>& perks)
+{
+    // Opcode 0xB3 (179) - Weapon Proficiency Apply Perks
+    // Structure: byte actionType (3), uint16 itemId, uint8 perksCount, [perksCount * {uint8 level, uint8 perkPosition}]
+    const auto msg = std::make_shared<OutputMessage>();
+    msg->addU8(Proto::ClientWeaponProficiency);
+    msg->addU8(3); // WEAPON_PROFICIENCY_APPLY_PERKS
+    msg->addU16(itemId);
+    msg->addU8(static_cast<uint8_t>(perks.size()));
+    for (const auto& perk : perks) {
+        // Server expects 0-indexed values and adds +1 internally
+        // Lua sends 0-indexed values, so we pass them directly
+        msg->addU8(perk.first);   // level (0-indexed)
+        msg->addU8(perk.second);  // perkPosition (0-indexed)
+    }
+    send(msg);
+}
+
 void ProtocolGame::sendOpenWheel(uint32_t playerId) {  
     const auto& msg = std::make_shared<OutputMessage>();  
     msg->addU8(Proto::ClientOpenWheel); // 0x61  
