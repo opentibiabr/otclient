@@ -222,6 +222,7 @@ namespace Proto
         GameServerChannelEvent = 243,
         GameServerItemInfo = 244,
         GameServerPlayerInventory = 245,
+        GameServerInventoryImbuements = 96, // 0x60 - Inventory Imbuements opcode from server
         GameServerMarketEnter = 246,
         GameServerMarketLeave = 247,
         GameServerMarketDetail = 248,
