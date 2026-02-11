@@ -59,19 +59,18 @@ function UIProgressBarSD:getProgress()
   return (self.value - self.minimum) / (self.maximum - self.minimum)
 end
 
-function UIProgressBarSD:updateBackground()
-  if self:isOn() then
-    local width = math.round(math.max((self:getProgress() * (self:getWidth() - self.bgBorderLeft - self.bgBorderRight)), 1))
-    local height = self:getHeight() - self.bgBorderTop - self.bgBorderBottom
-    local rect = { x = self.bgBorderLeft, y = self.bgBorderTop, width = width, height = height }
-    self:setImageRect(rect)
-
-    --[[if width == 1 then
-      self:setImageVisible(false)
-    else
-      self:setImageVisible(true)
-    end]]
-  end
+function UIProgressBarSD:updateBackground()  
+  if self:isOn() then  
+    local width = math.round(math.max((self:getProgress() * (self:getWidth() - self.bgBorderLeft - self.bgBorderRight)), 1))  
+    local height = self:getHeight() - self.bgBorderTop - self.bgBorderBottom  
+    local rect = { x = self.bgBorderLeft, y = self.bgBorderTop, width = width, height = height }  
+      
+    if width == 1 then  
+      self:setImageSource('')  -- Esconde definindo fonte vazia  
+    else  
+      self:setImageRect(rect)
+    end  
+  end  
 end
 
 function UIProgressBarSD:onSetup()

@@ -168,7 +168,7 @@ function ProtocolLogin:onRecv(msg)
             local unknown = msg:getU8()
         elseif opcode == LoginServerTokenError then
             local unknown = msg:getU8()
-            signalcall(self.onTokenRequired, self)
+            signalcall(self.onLoginError, self, tr('Invalid authenticator token.'))
         elseif opcode == LoginServerCharacterList then
             self:parseCharacterList(msg)
         elseif opcode == LoginServerExtendedCharacterList then

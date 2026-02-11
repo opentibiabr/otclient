@@ -39,7 +39,7 @@ ManaBar < ProgressBar
   image-border: 4
   background-color: #4444ff
 
-ProgressBarSD < UIProgressBar
+ProgressBarSD < UIProgressBarSD
   height: 22
   tooltip-delayed: true
 
@@ -58,7 +58,3 @@ InvVerticalBar < UIVerticalProgressBarSDInverted
 VerticalBar < UIVerticalProgressBarSD 
   size: 10 30
   image-border: 1
-
-ProgressBarSD < UIProgressBarSD
-  height: 22
-  tooltip-delayed: true

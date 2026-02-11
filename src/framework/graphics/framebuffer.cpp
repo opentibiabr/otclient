@@ -137,7 +137,7 @@ void FrameBuffer::internalRelease() const
     boundFbo = m_prevBoundFbo;
 }
 
-void FrameBuffer::prepare(const Rect& dest, const Rect& src, const Color& colorClear)
+void FrameBuffer::prepare(const Rect& dest, const Rect& src, const Color& colorClear, uint8_t flipDirection)
 {
     const auto& _dest = dest.isValid() ? dest : Rect(0, 0, getSize());
     const auto& _src = src.isValid() ? src : Rect(0, 0, getSize());
@@ -145,12 +145,14 @@ void FrameBuffer::prepare(const Rect& dest, const Rect& src, const Color& colorC
     if (m_colorClear != colorClear)
         m_colorClear = colorClear;
 
-    if (_src != m_src || _dest != m_dest) {
-        m_src = _src;
-        m_dest = _dest;
-
-        m_coordsBuffer.clear();
-        m_coordsBuffer.addQuad(m_dest, m_src);
+    m_coordsBuffer.clear();
+    // 0 = none, 1 = horizontal, 2 = vertical
+    if (flipDirection == 1) {
+        m_coordsBuffer.addHorizontallyFlippedQuad(_dest, _src);
+    } else if (flipDirection == 2) {
+        m_coordsBuffer.addVerticallyFlippedQuad(_dest, _src);
+    } else {
+        m_coordsBuffer.addQuad(_dest, _src);
     }
 }
 

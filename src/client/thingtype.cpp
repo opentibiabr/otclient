@@ -668,14 +668,19 @@ void ThingType::draw(const Point& dest, const int layer, const int xPattern, con
 
     const auto& texture = getTexture(animationFrameId);
     if (!texture) {
+        // Reset any pending onlyOnce state to prevent stale opacity/shader
+        // from affecting subsequent draws when texture is still loading
+        g_drawPool.resetOnlyOnceParameters();
         return; // texture might not exists, neither its rects.
     }
 
     const auto& textureData = m_textureData[animationFrameId];
 
     const uint32_t frameIndex = getTextureIndex(layer, xPattern, yPattern, zPattern);
-    if (frameIndex >= textureData.pos.size())
+    if (frameIndex >= textureData.pos.size()) {
+        g_drawPool.resetOnlyOnceParameters();
         return;
+    }
 
     const auto& textureOffset = textureData.pos[frameIndex].offsets;
     const auto& textureRect = textureData.pos[frameIndex].rects;
@@ -689,6 +694,10 @@ void ThingType::draw(const Point& dest, const int layer, const int xPattern, con
             drawWithFrameBuffer(texture, screenRect, textureRect, newColor);
         else
             g_drawPool.addTexturedRect(screenRect, texture, textureRect, newColor);
+    } else {
+        // Reset any pending onlyOnce state when not drawing things
+        // to prevent stale opacity/shader from affecting subsequent draws
+        g_drawPool.resetOnlyOnceParameters();
     }
 
     if (lightView && hasLight()) {
@@ -1014,7 +1023,7 @@ ThingFlagAttr ThingType::thingAttrToThingFlagAttr(const ThingAttr attr) {
 }
 
 bool ThingType::isTall(const bool useRealSize) { return useRealSize ? getRealSize() > g_gameConfig.getSpriteSize() : getHeight() > 1; }
-int ThingType::getAnimationPhases() { return m_animator ? m_animator->getAnimationPhases() : m_animationPhases; }
+int ThingType::getAnimationPhases() const { return m_animator ? m_animator->getAnimationPhases() : m_animationPhases; }
 
 int ThingType::getMeanPrice() {
     static constexpr std::array<std::pair<uint32_t, uint32_t>, 3> forcedPrices = { {

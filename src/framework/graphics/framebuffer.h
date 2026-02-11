@@ -36,6 +36,7 @@ public:
     void bind();
     void draw();
     void draw(const Rect& dest) { prepare(dest, Rect(0, 0, getSize())); draw(); }
+    void draw(const Rect& dest, uint8_t flipDirection) { prepare(dest, Rect(0, 0, getSize()), Color::alpha, flipDirection); draw(); }
 
     void reset() { m_texture = nullptr; }
     void setSmooth(const bool enabled) { m_smooth = enabled; m_texture = nullptr; }
@@ -70,7 +71,7 @@ private:
 
     void internalBind();
     void internalRelease() const;
-    void prepare(const Rect& dest, const Rect& src, const Color& colorClear = Color::alpha);
+    void prepare(const Rect& dest, const Rect& src, const Color& colorClear = Color::alpha, uint8_t flipDirection = 0);
 
     Size m_oldSize;
 
