@@ -1868,26 +1868,35 @@ void Game::imbuementDurations(const bool isOpen)
     m_protocolGame->sendImbuementDurations(isOpen);
 }
 
+void Game::sendWeaponProficiencyAction(const uint8_t actionType, const uint16_t itemId)
+{
+    if (!canPerformGameAction())
+        return;
+
+    m_protocolGame->sendWeaponProficiencyAction(actionType, itemId);
+}
+
+void Game::sendWeaponProficiencyApply(const uint16_t itemId, const std::vector<std::pair<uint8_t, uint8_t>>& perks)
+{
+    if (!canPerformGameAction())
+        return;
+
+    m_protocolGame->sendWeaponProficiencyApply(itemId, perks);
+}
+
 void Game::sendWeaponProficiencyApplyLua(const uint16_t itemId, const std::vector<uint8_t>& levels, const std::vector<uint8_t>& perkPositions)
 {
     if (!canPerformGameAction())
         return;
 
-    if (levels.size() != perkPositions.size()) {
-        g_logger.warning("sendWeaponProficiencyApplyLua: levels.size() ({}) != perkPositions.size() ({}); refusing to send.",
-                         levels.size(), perkPositions.size());
-        return;
-    }
-
     // Convert two parallel arrays to vector of pairs
     std::vector<std::pair<uint8_t, uint8_t>> perks;
-    const size_t count = std::min<size_t>(levels.size(), 255);
-    perks.reserve(count);
+    size_t count = std::min(levels.size(), perkPositions.size());
     for (size_t i = 0; i < count; ++i) {
         perks.emplace_back(levels[i], perkPositions[i]);
     }
-
-    sendWeaponProficiencyApply(itemId, perks);
+    
+    m_protocolGame->sendWeaponProficiencyApply(itemId, perks);
 }
 
 void Game::stashWithdraw(const uint16_t itemId, const uint32_t count, const uint8_t stackpos)
