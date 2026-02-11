@@ -119,21 +119,52 @@ void OTMLParser::parseNode(const std::string_view data)
 {
     std::string tag;
     std::string value;
-    const std::size_t dotsPos = data.find_first_of(':');
+    std::size_t dotsPos = std::string::npos;
     const int nodeLine = currentLine;
 
-    // node that has no tag and may have a value
-    if (!data.empty() && data[0] == '-') {
-        value = data.substr(1);
-        stdext::trim(value);
-        // node that has tag and possible a value
-    } else if (dotsPos != std::string::npos) {
-        tag = data.substr(0, dotsPos);
-        if (data.size() > dotsPos + 1)
-            value = data.substr(dotsPos + 1);
-        // node that has only a tag
+    // Perform right-trim to avoid issues with spaces/tabs
+    std::string line = std::string(data);
+    while (!line.empty() && (line.back() == ' ' || line.back() == '\t' || line.back() == '\r'))
+        line.pop_back();
+
+    const bool isUrlWithColon = (line.starts_with("http://") || line.starts_with("https://")) && line.back() == ':';
+    const bool isUrlKey = line.starts_with("http://") || line.starts_with("https://");
+
+    if (isUrlWithColon) {
+        // URL ending in ':' → treat as a key without ':' and no value on the same line
+        tag = line.substr(0, line.size() - 1);
+        // Value remains empty
     } else {
-        tag = data;
+        // Normal processing (list item, key-value, or just key)
+        if (isUrlKey) {
+            // For URLs, prefer a separator colon followed by whitespace (avoids port/path colons)
+            const size_t schemeEnd = line.find("://");
+            const size_t searchFrom = (schemeEnd != std::string::npos) ? schemeEnd + 3 : 0;
+            const size_t sepPosSpace = line.find(": ", searchFrom);
+            const size_t sepPosTab = line.find(":\t", searchFrom);
+            if (sepPosSpace != std::string::npos)
+                dotsPos = sepPosSpace;
+            else if (sepPosTab != std::string::npos)
+                dotsPos = sepPosTab;
+            else
+                dotsPos = std::string::npos;
+        } else {
+            dotsPos = line.find(':');
+        }
+
+        if (!line.empty() && line.front() == '-') {
+            // "- item"
+            value = line.substr(1);
+            stdext::trim(value);
+        } else if (dotsPos != std::string::npos) {
+            // "key: value"
+            tag = line.substr(0, dotsPos);
+            if (dotsPos + 1 < line.size())
+                value = line.substr(dotsPos + 1);
+        } else {
+            // "key"
+            tag = line;
+        }
     }
 
     stdext::trim(tag);
@@ -186,7 +217,7 @@ void OTMLParser::parseNode(const std::string_view data)
     // create the node
     const auto& node = OTMLNode::create(tag);
 
-    node->setUnique(dotsPos != std::string::npos);
+    node->setUnique(isUrlWithColon || dotsPos != std::string::npos);
     node->setTag(tag);
     node->setSource(doc->source() + ":" + stdext::unsafe_cast<std::string>(nodeLine));
 

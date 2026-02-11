@@ -466,3 +466,18 @@ function pdumpWidgetId(widget, indent)
         pdumpWidgetId(child, newIndent)
     end
 end
+
+function translateVocation(id)
+	if id == 1 or id == 11 then
+		return 8 -- ek
+	elseif id == 2 or id == 12 then
+		return 7 -- rp
+	elseif id == 3 or id == 13 then
+		return 5 -- ms
+	elseif id == 4 or id == 14 then
+		return 6 -- ed
+  elseif id == 5 or id == 15 then
+    return 9 -- em
+	end
+  return 0
+end

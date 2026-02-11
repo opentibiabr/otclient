@@ -454,11 +454,9 @@ std::string BitmapFont::wrapText(std::string_view text, int maxWidth, const Wrap
 
     auto pushChar = [&](char ch) {
         out.push_back(ch);
-        if (colors) updateColors(colors, (int)out.size() - 1, 1);
     };
     auto pushSlice = [&](const char* s, int n) {
-        size_t o = out.size(); out.append(s, s + n);
-        if (colors) updateColors(colors, (int)o, n);
+        out.append(s, s + n);
     };
     auto newline = [&]() {
         out.push_back('\n');

@@ -52,12 +52,13 @@ end
 
 local function getVocation(arg)
     if type(arg) == "number" then
-        for _, voc in ipairs(vocationArray) do
-            if voc[1] == arg then
-                return voc[2]
+        return vocationNamesByClientId[arg] or "All Vocations"
+    elseif type(arg) == "string" then
+        for id, name in pairs(vocationNamesByClientId) do
+            if name == arg then
+                return id
             end
         end
-    elseif type(arg) == "string" then
         for _, voc in ipairs(vocationArray) do
             if voc[2] == arg then
                 return voc[1]
@@ -209,7 +210,7 @@ function createHighscores(list)
         row:setBackgroundColor(index % 2 == 0 and "#ffffff12" or "#00000012")
         row.rank:setText(entry[1] .. ".")
         row.name:setText(entry[2])
-        row.voc:setText(entry[4] == 0 and "None" or getVocation(entry[4] == 1 and entry[4] + 3 or (entry[4] < 3 and entry[4] + 1 or entry[4] - 2)))
+        row.voc:setText(entry[4] == 0 and "None" or getVocation(entry[4]))
         row.world:setText(entry[5])
         row.level:setText(entry[6])
         row.points:setText(comma_value(entry[8]))

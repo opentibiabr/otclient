@@ -1,5 +1,13 @@
 EnterGame = {}
 
+function safeDecrypt(text)
+    if not text or text == '' then
+        return ''
+    end
+    local success, result = pcall(g_crypt.decrypt, text)
+    return success and result or ''
+end
+
 -- private variables
 local loadBox
 local enterGame
@@ -8,12 +16,34 @@ local enterGameButton
 local clientBox
 local protocolLogin
 local motdEnabled = true
+local tokenWindow
+local authErrorBox
+local hasAttemptedAuthenticator = false
 
 -- private functions
 local function onError(protocol, message, errorCode)
     if loadBox then
         loadBox:destroy()
         loadBox = nil
+    end
+
+    if errorCode == 6 then
+        if hasAttemptedAuthenticator then
+            if authErrorBox then
+              authErrorBox:destroy()
+            end
+            authErrorBox = displayErrorBox(tr('Authentication Failed'), tr('The token you entered is incorrect.'))
+            connect(authErrorBox, {
+              onOk = function()
+                authErrorBox = nil
+                EnterGame.showAuthenticatorInput()
+              end
+            })
+        else
+            EnterGame.showAuthenticatorInput()
+        end
+
+        return
     end
 
     if not errorCode then
@@ -24,39 +54,6 @@ local function onError(protocol, message, errorCode)
     connect(errorBox, {
         onOk = EnterGame.show
     })
-end
-
-local function onTokenRequired(protocol)
-    if loadBox then
-        loadBox:destroy()
-        loadBox = nil
-    end
-
-    local function promptForToken()
-        displayInputBox(
-            tr('Authenticator Required'),
-            tr('Please enter your authenticator token:'),
-            function(text)
-                local token = text and text:trim() or ''
-                G.authenticatorToken = token
-
-                local tokenEdit = enterGame and enterGame:getChildById('authenticatorTokenTextEdit')
-                if tokenEdit then
-                    tokenEdit:setText(token)
-                end
-
-                EnterGame.doLogin()
-            end,
-            function()
-                G.authenticatorToken = ''
-                EnterGame.show()
-            end,
-            G.authenticatorToken or '',
-            8
-        )
-    end
-
-    promptForToken()
 end
 
 local function onMotd(protocol, motd)
@@ -85,10 +82,12 @@ local function onCharacterList(protocol, characters, account, otui)
         g_settings.set('account', account)
         g_settings.set('password', password)
 
-        ServerList.setServerAccount(G.host, account)
-        ServerList.setServerPassword(G.host, password)
+        ServerList.setServerAccount(G.host, G.account)
+        ServerList.setServerPassword(G.host, G.password)
+        ServerList.setServerAutologin(G.host, enterGame:getChildById('autoLoginBox'):isChecked())
 
         g_settings.set('autologin', enterGame:getChildById('autoLoginBox'):isChecked())
+        ServerList.save()
     else
         -- reset server list account/password
         ServerList.setServerAccount(G.host, '')
@@ -157,6 +156,14 @@ local function updateLabelText()
     end
 end
 
+local function loadServerListModule()
+    local module = g_modules.getModule('client_serverlist')
+
+    if module and not module:isLoaded() then
+        module:load()
+    end
+end
+
 -- public functions
 function EnterGame.init()
     enterGame = g_ui.displayUI('entergame')
@@ -168,8 +175,6 @@ function EnterGame.init()
       }
     })
 
-    local account = g_settings.get('account')
-    local password = g_settings.get('password')
     local host = g_settings.get('host')
     local port = g_settings.get('port')
     local stayLogged = g_settings.getBoolean('staylogged')
@@ -185,12 +190,21 @@ function EnterGame.init()
         port = 7171
     end
 
-    EnterGame.setAccountName(account)
-    EnterGame.setPassword(password)
-
+    local servers = g_settings.getNode("ServerList") or {}
+    local serverData = servers[host] or {}
+    if serverData and serverData.account then
+        EnterGame.setAccountName(serverData.account)
+        EnterGame.setPassword(serverData.password)
+        enterGame:getChildById('rememberEmailBox'):setChecked(true)
+    else
+        EnterGame.setAccountName('')
+        EnterGame.setPassword('')
+        enterGame:getChildById('rememberEmailBox'):setChecked(false)
+    end
+    
+    enterGame:getChildById('autoLoginBox'):setChecked(serverData.autologin == true)
     enterGame:getChildById('serverHostTextEdit'):setText(host)
     enterGame:getChildById('serverPortTextEdit'):setText(port)
-    enterGame:getChildById('autoLoginBox'):setChecked(autologin)
     enterGame:getChildById('stayLoggedBox'):setChecked(stayLogged)
     enterGame:getChildById('httpLoginBox'):setChecked(httpLogin)
 
@@ -225,7 +239,31 @@ function EnterGame.init()
         onOptionChange = EnterGame.onClientVersionChange
     })
 
-    if Servers_init then
+    connect(enterGame:getChildById('rememberEmailBox'), {
+        onCheckChange = function(self, checked)
+            local host = enterGame:getChildById('serverHostTextEdit'):getText()
+            local account = enterGame:getChildById('accountNameTextEdit'):getText()
+            local password = enterGame:getChildById('accountPasswordTextEdit'):getText()
+
+            if checked and #account > 0 then
+                ServerList.setServerAccount(host, account)
+                ServerList.setServerPassword(host, password)
+                ServerList.setServerAutologin(host, enterGame:getChildById('autoLoginBox'):isChecked() or false)
+                g_settings.set('host', host)
+            else
+                ServerList.setServerAccount(host, '')
+                ServerList.setServerPassword(host, '')
+                ServerList.setServerAutologin(host, false)
+            end
+
+            ServerList.save()
+            g_configs.saveSettings()
+        end
+    })
+
+    if Servers_init and next(Servers_init) ~= nil then
+        local server = Servers_init[host]
+        enterGame.disableToken = not (server and server.useAuthenticator)
         if table.size(Servers_init) == 1 then
             local hostInit, valuesInit = next(Servers_init)
             EnterGame.setUniqueServer(hostInit, valuesInit.port, valuesInit.protocol)
@@ -236,7 +274,6 @@ function EnterGame.init()
             EnterGame.setHttpLogin(valuesInit.httpLogin)
         end
     else
-        EnterGame.toggleAuthenticatorToken(clientVersion, true)
         EnterGame.toggleStayLoggedBox(clientVersion, true)
     end
 
@@ -271,13 +308,23 @@ function EnterGame.showPanels()
     modules.client_topmenu.show()
 end
 
+function EnterGame.showServerList()
+    loadServerListModule()
+
+    if ServerList then
+        ServerList.show()
+    end
+end
+
 function EnterGame.firstShow()
     EnterGame.show()
 
-    local account = g_crypt.decrypt(g_settings.get('account'))
-    local password = g_crypt.decrypt(g_settings.get('password'))
     local host = g_settings.get('host')
-    local autologin = g_settings.getBoolean('autologin')
+    local servers = g_settings.getNode('ServerList') or {}
+    local serverData = servers[host] or {}
+    local account = safeDecrypt(serverData.account)
+    local password = safeDecrypt(serverData.password)
+    local autologin = serverData.autologin == true
     if #host > 0 and #password > 0 and #account > 0 and autologin then
         addEvent(function()
             if not g_settings.getBoolean('autologin') then
@@ -345,10 +392,9 @@ function EnterGame.postCacheInfo()
     local requestType = 'cacheinfo'
 
     local onRecvInfo = function(message, err)
-        -- Guard: if UI is destroyed, do nothing
-        if not enterGame then return end
 
         if err then
+            -- onError(nil, 'Bad Request. Game_entergame postCacheInfo1 ', 400)
             reportRequestWarning(requestType, "Bad Request. Game_entergame postCacheInfo1")
             return
         end
@@ -370,15 +416,13 @@ function EnterGame.postCacheInfo()
             return
         end
 
-        -- Guard: check modules.client_topmenu still exists
-        if not modules or not modules.client_topmenu then return end
-
         modules.client_topmenu.setPlayersOnline(response.playersonline)
         modules.client_topmenu.setDiscordStreams(response.discord_online)
         modules.client_topmenu.setYoutubeStreams(response.gamingyoutubestreams)
         modules.client_topmenu.setYoutubeViewers(response.gamingyoutubeviewer)
         modules.client_topmenu.setLinkYoutube(response.youtube_link)
         modules.client_topmenu.setLinkDiscord(response.discord_link)
+
     end
 
     HTTP.post(Services.status, json.encode({
@@ -495,15 +539,10 @@ function EnterGame.show()
         return
     end
 
-    local tokenEdit = enterGame and enterGame:getChildById('authenticatorTokenTextEdit')
-    if tokenEdit then
-        tokenEdit:setText('')
-    end
-    G.authenticatorToken = ''
-
     enterGame:show()
     enterGame:raise()
     enterGame:focus()
+    hasAttemptedAuthenticator = false
 end
 
 function EnterGame.hide()
@@ -519,15 +558,14 @@ function EnterGame.openWindow()
 end
 
 function EnterGame.setAccountName(account)
-    local account = g_crypt.decrypt(account)
-    enterGame:getChildById('accountNameTextEdit'):setText(account)
+    local decrypted = safeDecrypt(account or '')
+    enterGame:getChildById('accountNameTextEdit'):setText(decrypted)
     enterGame:getChildById('accountNameTextEdit'):setCursorPos(-1)
-    enterGame:getChildById('rememberEmailBox'):setChecked(#account > 0)
+    enterGame:getChildById('rememberEmailBox'):setChecked(#decrypted > 0)
 end
 
 function EnterGame.setPassword(password)
-    local password = g_crypt.decrypt(password)
-    enterGame:getChildById('accountPasswordTextEdit'):setText(password)
+    enterGame:getChildById('accountPasswordTextEdit'):setText(safeDecrypt(password or ''))
 end
 
 function EnterGame.setHttpLogin(httpLogin)
@@ -541,49 +579,12 @@ end
 function EnterGame.clearAccountFields()
     enterGame:getChildById('accountNameTextEdit'):clearText()
     enterGame:getChildById('accountPasswordTextEdit'):clearText()
-    enterGame:getChildById('authenticatorTokenTextEdit'):clearText()
     enterGame:getChildById('accountNameTextEdit'):focus()
     g_settings.remove('account')
     g_settings.remove('password')
 end
 
-function EnterGame.toggleAuthenticatorToken(clientVersion, init)
-    if not enterGame.disableToken then
-        return
-    end
-
-    local enabled = (clientVersion >= 1072)
-    if enabled == enterGame.authenticatorEnabled then
-        return
-    end
-
-    enterGame:getChildById('authenticatorTokenLabel'):setOn(enabled)
-    enterGame:getChildById('authenticatorTokenTextEdit'):setOn(enabled)
-
-    local newHeight = enterGame:getHeight()
-    local newY = enterGame:getY()
-    if enabled then
-        newY = newY - enterGame.authenticatorHeight
-        newHeight = newHeight + enterGame.authenticatorHeight
-    else
-        newY = newY + enterGame.authenticatorHeight
-        newHeight = newHeight - enterGame.authenticatorHeight
-    end
-
-    if not init then
-        enterGame:breakAnchors()
-        enterGame:setY(newY)
-        enterGame:bindRectToParent()
-    end
-
-    enterGame:setHeight(newHeight)
-    enterGame.authenticatorEnabled = enabled
-end
-
 function EnterGame.toggleStayLoggedBox(clientVersion, init)
-    if not enterGame.disableToken then
-        return
-    end
     local enabled = (clientVersion >= 1074)
     if enabled == enterGame.stayLoggedBoxEnabled then
         return
@@ -613,7 +614,6 @@ end
 
 function EnterGame.onClientVersionChange(comboBox, text, data)
     local clientVersion = tonumber(text)
-    EnterGame.toggleAuthenticatorToken(clientVersion)
     EnterGame.toggleStayLoggedBox(clientVersion)
     updateLabelText()
 end
@@ -635,31 +635,8 @@ function EnterGame.tryHttpLogin(clientVersion, httpLogin)
         return
     end
 
-    local host, path = G.host:match("([^/]+)/([^/].*)")
-    local url = G.host
-
-    if not G.port then
-        local isHttps, _ = string.find(host, "https")
-        if not isHttps then
-            G.port = 443
-        else -- http
-            G.port = 80
-        end
-    end
-
-    if not path then
-        path = ""
-    else
-        path = '/' .. path
-    end
-
-    if not host then
-        loadBox = displayCancelBox(tr('Please wait'), tr('ERROR , try adding \n- ip/login.php \n- Enable HTTP login'))
-    else
-        loadBox = displayCancelBox(tr('Please wait'), tr('Connecting to login server...\nServer: [%s]',
-            host .. ":" .. tostring(G.port) .. path))
-    end
-
+    -- Show connecting message immediately
+    loadBox = displayCancelBox(tr('Connecting'), tr('Your character list is being loaded. Please wait.'))
     connect(loadBox, {
         onCancel = function(msgbox)
             loadBox = nil
@@ -668,21 +645,31 @@ function EnterGame.tryHttpLogin(clientVersion, httpLogin)
         end
     })
 
+    local host, path = G.host, "/"
+    if G.host:find("https?://") then
+        local url = G.host:gsub("https?://", "")
+        host, path = url:match("([^/]+)(/.*)")
+        if not host then
+            host = url
+            path = "/"
+        elseif not path or path == "" then
+            path = "/"
+        end
+    end
+
+    if not G.port then
+        if G.host:find("https") then
+            G.port = 443
+        else
+            G.port = 80
+        end
+    end
+
     math.randomseed(os.time())
     G.requestId = math.random(1)
 
     local http = LoginHttp.create()
-        http:httpLogin(host, path, G.port, G.account, G.password, G.authenticatorToken or '', G.requestId, httpLogin)
-        connect(loadBox, {
-            onCancel = function(msgbox)
-                loadBox = nil
-                G.requestId = 0
-                if http and http.cancel then
-                    http:cancel()
-                end
-                EnterGame.show()
-            end
-        })
+    http:httpLogin(host, path, G.port, G.account, G.password, G.requestId, httpLogin, G.authenticatorToken)
 end
 
 function printTable(t)
@@ -700,6 +687,25 @@ end
 function EnterGame.loginSuccess(requestId, jsonSession, jsonWorlds, jsonCharacters)
     if G.requestId ~= requestId then
         return
+    end
+
+    -- Update the existing loadBox message or create new one if it doesn't exist
+    if loadBox then
+        loadBox:destroy()
+    end
+    loadBox = displayCancelBox(tr('Connecting'), tr('Your character list is being loaded. Please wait.'))
+
+    connect(loadBox, {
+        onCancel = function(msgbox)
+            loadBox = nil
+            G.requestId = 0
+            EnterGame.show()
+        end
+    })
+
+    if tokenWindow then
+        tokenWindow:destroy()
+        tokenWindow = nil
     end
 
     local worlds = {}
@@ -755,29 +761,12 @@ function EnterGame.loginFailed(requestId, msg, result)
     if G.requestId ~= requestId then
         return
     end
-
-    local shouldRequestToken = false
-
-    if msg then
-        local lowerMsg = msg:lower()
-        if lowerMsg:find('two%-factor') then
-            shouldRequestToken = true
-        end
-    end
-
-    if shouldRequestToken then
-        G.authenticatorToken = ''
-        onTokenRequired(nil)
-    else
     onError(nil, msg, result)
-    end
 end
 
 function EnterGame.doLogin()
     G.account = enterGame:getChildById('accountNameTextEdit'):getText()
     G.password = enterGame:getChildById('accountPasswordTextEdit'):getText()
-    local initialToken = enterGame:getChildById('authenticatorTokenTextEdit'):getText()
-    G.authenticatorToken = initialToken and initialToken:trim() or ''
     G.stayLogged = enterGame:getChildById('stayLoggedBox'):isChecked()
     G.host = enterGame:getChildById('serverHostTextEdit'):getText()
     G.port = tonumber(enterGame:getChildById('serverPortTextEdit'):getText())
@@ -807,9 +796,9 @@ function EnterGame.doLogin()
         protocolLogin.onSessionKey = onSessionKey
         protocolLogin.onCharacterList = onCharacterList
         protocolLogin.onUpdateNeeded = onUpdateNeeded
-        protocolLogin.onTokenRequired = onTokenRequired
 
         loadBox = displayCancelBox(tr('Please wait'), tr('Connecting to login server...'))
+
         connect(loadBox, {
             onCancel = function(msgbox)
                 loadBox = nil
@@ -854,7 +843,6 @@ function EnterGame.setDefaultServer(host, port, protocol)
     local clientLabel = enterGame:getChildById('clientLabel')
     local accountTextEdit = enterGame:getChildById('accountNameTextEdit')
     local passwordTextEdit = enterGame:getChildById('accountPasswordTextEdit')
-    local authenticatorTokenTextEdit = enterGame:getChildById('authenticatorTokenTextEdit')
 
     if hostTextEdit:getText() ~= host then
         hostTextEdit:setText(host)
@@ -862,7 +850,6 @@ function EnterGame.setDefaultServer(host, port, protocol)
         clientBox:setCurrentOption(protocol)
         accountTextEdit:setText('')
         passwordTextEdit:setText('')
-        authenticatorTokenTextEdit:setText('')
     end
 end
 
@@ -876,12 +863,6 @@ function EnterGame.setUniqueServer(host, port, protocol, windowWidth, windowHeig
     portTextEdit:setText(port)
     portTextEdit:setVisible(false)
     portTextEdit:setHeight(0)
-
-    local authenticatorTokenTextEdit = enterGame:getChildById('authenticatorTokenTextEdit')
-    authenticatorTokenTextEdit:setText('')
-    authenticatorTokenTextEdit:setOn(false)
-    local authenticatorTokenLabel = enterGame:getChildById('authenticatorTokenLabel')
-    authenticatorTokenLabel:setOn(false)
 
     local stayLoggedBox = enterGame:getChildById('stayLoggedBox')
     stayLoggedBox:setChecked(false)
@@ -926,6 +907,8 @@ function EnterGame.setUniqueServer(host, port, protocol, windowWidth, windowHeig
 
     enterGame:setHeight(windowHeight)
     enterGame.disableToken = true
+    local server = Servers_init[host]
+    enterGame.disableToken = not (server and server.useAuthenticator)
 
     -- preload the assets
     -- this is for the client_bottommenu module
@@ -942,6 +925,164 @@ end
 
 function EnterGame.disableMotd()
     motdEnabled = false
+end
+
+function EnterGame.showAuthenticatorInput()
+    if tokenWindow then
+        tokenWindow:destroy()
+        tokenWindow = nil
+    end
+    
+    -- Create a custom message box with embedded text edit
+    tokenWindow = g_ui.createWidget('MessageBoxWindow', rootWidget)
+    tokenWindow.title = tokenWindow:getChildById('title')
+    tokenWindow.title:setText(tr('Two-Factor Authentication'))
+    
+    tokenWindow.content = tokenWindow:getChildById('content')
+    tokenWindow.content:setText(tr('Please enter a new, valid token:'))
+    tokenWindow.content:setColor('#c0c0c0')
+    tokenWindow.content:resizeToText()
+    -- Align content to the left instead of center
+    tokenWindow.content:breakAnchors()
+    tokenWindow.content:addAnchor(AnchorLeft, 'parent', AnchorLeft)
+    tokenWindow.content:addAnchor(AnchorTop, 'parent', AnchorTop)
+    tokenWindow.content:setMarginLeft(15)
+    tokenWindow.content:setMarginTop(32)
+    
+    -- Add text edit field for token input
+    local tokenEdit = g_ui.createWidget('TextEdit', tokenWindow)
+    tokenEdit:setId('tokenEdit')
+    tokenEdit:addAnchor(AnchorHorizontalCenter, 'parent', AnchorHorizontalCenter)
+    tokenEdit:addAnchor(AnchorTop, 'content', AnchorBottom)
+    tokenEdit:setMarginTop(10)
+    tokenEdit:setMaxLength(8)
+    tokenEdit:setWidth(320)
+    tokenEdit:setHeight(16)
+    tokenEdit:setMarginLeft(15)
+    tokenEdit:setMarginRight(15)
+    tokenEdit:focus()
+    
+    -- Add horizontal separator
+    local separator = g_ui.createWidget('HorizontalSeparator', tokenWindow)
+    separator:setId('customSeparator')
+    separator:addAnchor(AnchorLeft, 'parent', AnchorLeft)
+    separator:addAnchor(AnchorRight, 'parent', AnchorRight)
+    separator:addAnchor(AnchorTop, 'tokenEdit', AnchorBottom)
+    separator:setMarginTop(10)
+    separator:setMarginLeft(15)
+    separator:setMarginRight(15)
+    
+    -- Reposition the holder to be below our custom separator
+    tokenWindow.holder = tokenWindow:getChildById('holder')
+    tokenWindow.holder:breakAnchors()
+    tokenWindow.holder:addAnchor(AnchorRight, 'customSeparator', AnchorRight)
+    tokenWindow.holder:addAnchor(AnchorLeft, 'customSeparator', AnchorLeft)
+    tokenWindow.holder:addAnchor(AnchorTop, 'customSeparator', AnchorBottom)
+    tokenWindow.holder:addAnchor(AnchorBottom, 'parent', AnchorBottom)
+    tokenWindow.holder:setMarginTop(12)
+    
+    local okCallback = function()
+        local token = tokenEdit:getText()
+        if not token or token:len() == 0 then
+            if authErrorBox then
+              authErrorBox:destroy()
+            end
+            authErrorBox = displayErrorBox(tr('Error'), tr('Token is required.'))
+            connect(authErrorBox, {
+              onOk = function()
+                authErrorBox = nil
+                if tokenWindow then
+                    tokenWindow:raise()
+                    tokenWindow:focus()
+                    tokenEdit:focus()
+                end
+              end
+            })
+            return
+        end
+        
+        hasAttemptedAuthenticator = true
+        
+        G.account = enterGame:getChildById('accountNameTextEdit'):getText()
+        G.password = enterGame:getChildById('accountPasswordTextEdit'):getText()
+        G.host = enterGame:getChildById('serverHostTextEdit'):getText()
+        G.port = tonumber(enterGame:getChildById('serverPortTextEdit'):getText())
+        G.authenticatorToken = token
+        local clientVersion = tonumber(clientBox:getText())
+        local httpLogin = enterGame:getChildById('httpLoginBox'):isChecked()
+        
+        if tokenWindow then
+            tokenWindow:destroy()
+            tokenWindow = nil
+        end
+        
+        EnterGame.tryHttpLogin(clientVersion, httpLogin)
+    end
+    
+    local cancelCallback = function()
+        hasAttemptedAuthenticator = false
+        G.authenticatorToken = nil
+        if tokenWindow then
+            tokenWindow:destroy()
+            tokenWindow = nil
+        end
+        EnterGame.show()
+    end
+        
+    -- Add Cancel button (to the left of OK button)
+    local cancelButton = tokenWindow:addButton(tr('Cancel'), cancelCallback)
+    cancelButton:breakAnchors()
+    cancelButton:addAnchor(AnchorTop, 'parent', AnchorTop)
+    cancelButton:addAnchor(AnchorRight, 'parent', AnchorRight)
+    cancelButton:setWidth(45)
+
+    -- Add OK button (right side, added first)
+    local okButton = tokenWindow:addButton(tr('Ok'), okCallback)
+    okButton:breakAnchors()
+    okButton:addAnchor(AnchorTop, 'prev', AnchorTop)
+    okButton:addAnchor(AnchorRight, 'prev', AnchorLeft)
+    okButton:setMarginRight(10)
+    okButton:setWidth(40)
+    
+    -- Calculate window size based on content
+    local windowWidth = 350
+    local windowHeight = 28 + tokenWindow.content:getHeight() + 10 + tokenEdit:getHeight() + 10 + 2 + 12 + okButton:getHeight() + 12
+    
+    tokenWindow:setWidth(windowWidth)
+    tokenWindow:setHeight(windowHeight)
+    
+    -- Connect Enter and Escape keys
+    connect(tokenWindow, {
+        onEnter = okCallback,
+        onEscape = cancelCallback
+    })
+    
+    -- Connect text edit Enter key
+    connect(tokenEdit, {
+        onEnter = okCallback
+    })
+end
+
+function EnterGame.doLoginWithToken()
+    local servers = Servers_init or {}
+    local serverData = servers[G.host]
+    if not (serverData and serverData.useAuthenticator) then
+        print('Authenticator token is disabled for this server.')
+        return
+    end
+    
+    EnterGame.showAuthenticatorInput()
+end
+
+function EnterGame.destroyToken()
+    if tokenWindow then
+      if tokenWindow.destroy then
+        tokenWindow:destroy()
+      end
+      tokenWindow = nil
+      hasAttemptedAuthenticator = false
+      G.authenticatorToken = nil
+    end
 end
 
 function ensableBtnCreateNewAccount()

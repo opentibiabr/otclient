@@ -1899,6 +1899,22 @@ void Game::sendWeaponProficiencyApplyLua(const uint16_t itemId, const std::vecto
     m_protocolGame->sendWeaponProficiencyApply(itemId, perks);
 }
 
+void Game::openWheelOfDestiny(uint32_t playerId)
+{
+    if (!playerId || !canPerformGameAction())
+        return;
+
+    m_protocolGame->sendOpenWheelOfDestiny(playerId);
+}
+
+void Game::applyWheelOfDestiny(const std::vector<uint16_t>& wheelPointsVec, const std::vector<uint16_t>& activeGemsVec)
+{
+    if (!canPerformGameAction())
+        return;
+
+    m_protocolGame->sendApplyWheelOfDestiny(wheelPointsVec, activeGemsVec);
+}
+
 void Game::stashWithdraw(const uint16_t itemId, const uint32_t count, const uint8_t stackpos)
 {
     if (!canPerformGameAction())
@@ -2115,4 +2131,25 @@ void Game::processCyclopediaCharacterDefenceStats(const CyclopediaCharacterDefen
 void Game::processCyclopediaCharacterMiscStats(const CyclopediaCharacterMiscStats& data)
 {
     g_lua.callGlobalField("g_game", "onCyclopediaCharacterMiscStats", data);
+}
+
+void Game::openWheel(uint32_t playerId)
+{
+    if (!canPerformGameAction())
+        return;
+    m_protocolGame->sendOpenWheel(playerId);
+}
+
+void Game::gemAction(const uint8_t actionType, const uint8_t param, const uint8_t pos)
+{
+    if (!canPerformGameAction())
+        return;
+    m_protocolGame->sendWheelGemAction(actionType, param, pos);
+}
+
+void Game::sendApplyWheelPoints(const std::vector<uint16_t>& slotPoints,uint16_t greenGem,uint16_t redGem,uint16_t acquaGem,uint16_t purpleGem)
+{
+    if (!canPerformGameAction())
+        return;
+    m_protocolGame->sendApplyWheelPoints(slotPoints, greenGem, redGem, acquaGem, purpleGem);
 }
