@@ -347,6 +347,8 @@ Panel
     shift-navigation: true
     max-length: 255
     height: 18
+    placeholder:  "Type here to chat"
+    placeholder-color: #707070
     @onTextChange: onTextChange(self:getText())
 
   TopToggleButton
