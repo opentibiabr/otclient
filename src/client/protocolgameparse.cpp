@@ -844,11 +844,14 @@ void ProtocolGame::parseResourceBalance(const InputMessagePtr& msg) const
     const auto type = static_cast<Otc::ResourceTypes_t>(msg->getU8());
     uint64_t value;
     switch (type) {
+        // 14.10+
         case Otc::RESOURCE_CHARM:
         case Otc::RESOURCE_MINOR_CHARM:
         case Otc::RESOURCE_MAX_CHARM:
         case Otc::RESOURCE_MAX_MINOR_CHARM:
-            // 14.10
+        // 15.13+
+        case Otc::RESOURCE_BOUNTY_POINTS:
+        case Otc::RESOURCE_SOULSEALS:
             value = msg->getU32();
             break;
         default:
