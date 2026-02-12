@@ -274,7 +274,7 @@ controller:registerEvents(g_game, {
         if version >= 1514 then
             g_game.enableFeature(GameEffectSource)
         end
-        if version >= 1521 then --check correct version
+        if version >= 1520 then
             g_game.enableFeature(GameLevelPercentU16)
         end
     end
