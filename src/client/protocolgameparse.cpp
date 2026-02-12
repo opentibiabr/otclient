@@ -2191,23 +2191,17 @@ void ProtocolGame::parseOpenForge(const InputMessagePtr& msg)
 
 void ProtocolGame::setCreatureVocation(const InputMessagePtr& msg, const uint32_t creatureId) const
 {
+    const uint8_t vocationId = msg->getU8();
     const auto& creature = g_map.getCreatureById(creatureId);
     if (!creature) {
         return;
     }
 
-    const uint8_t vocationId = msg->getU8();
     creature->setVocation(vocationId);
 }
 
 void ProtocolGame::addCreatureIcon(const InputMessagePtr& msg, const uint32_t creatureId) const
 {
-    const auto& creature = g_map.getCreatureById(creatureId);
-    if (!creature) {
-        g_logger.traceDebug("ProtocolGame::addCreatureIcon: could not get creature with id {}", creatureId);
-        return;
-    }
-
     const uint8_t sizeIcons = msg->getU8();
     std::vector<std::tuple<uint8_t, uint8_t, uint16_t>> icons; // icon, category, count
     for (auto i = 0; i < sizeIcons; ++i) {
@@ -2215,6 +2209,11 @@ void ProtocolGame::addCreatureIcon(const InputMessagePtr& msg, const uint32_t cr
         const uint8_t category = msg->getU8(); // icon.category -- 0x00 = monster // 0x01 = player?
         const uint16_t count = msg->getU16(); // icon.count
         icons.emplace_back(icon, category, count);
+    }
+    const auto& creature = g_map.getCreatureById(creatureId);
+    if (!creature) {
+        g_logger.traceDebug("ProtocolGame::addCreatureIcon: could not get creature with id {}", creatureId);
+        return;
     }
     creature->setIcons(icons);
 }
