@@ -576,9 +576,18 @@ function ngfor_exec(content, env, fn)
     return list, keys_str
 end
 
-function UIWidget:__childFor(moduleName, expr, html, index)
+function UIWidget:__childFor(moduleName, expr, html, index, onFinished)
     local controller = G_CONTROLLER_CALLED[moduleName]
+
+    local finishedFnc
+    if onFinished and onFinished ~= "" then
+        finishedFnc = getFncByExpr('return function(self) ' .. onFinished .. ' end',
+            html, self, controller)
+    end
+
+    local hasChanges = false
     local scan = function(self)
+        hasChanges = false
         local baseEnv = { self = controller }
         setmetatable(baseEnv, { __index = _G })
 
@@ -647,8 +656,10 @@ function UIWidget:__childFor(moduleName, expr, html, index)
         end)
 
         if isFirst then
+            hasChanges = true
             local watch = table.watchList(list, {
                 onInsert = function(i, it)
+                    hasChanges = true
                     local outer_keys    = widget.__for_keys or ''
                     local outer_values  = widget.__for_values
                     local combined_keys = (outer_keys or '') .. keys
@@ -679,6 +690,7 @@ function UIWidget:__childFor(moduleName, expr, html, index)
                     FOR_CTX.__values = nil
                 end,
                 onRemove = function(i)
+                    hasChanges = true
                     local child = widget:getChildByIndex(index + i)
                     if not child then
                         pwarning('onRemove: child(' .. index + i .. ') not found.')
@@ -703,6 +715,9 @@ function UIWidget:__childFor(moduleName, expr, html, index)
         end
 
         self.watchList:scan()
+        if finishedFnc and hasChanges then
+            execFnc(finishedFnc, { controller }, self.widget, controller, html)
+        end
     end
 
     WidgetWatch.register({

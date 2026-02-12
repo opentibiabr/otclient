@@ -148,6 +148,33 @@ struct NPCData
     std::string currencyQuestFlagDisplayName;
 };
 
+enum KeywordButtonIcon : uint16_t
+{
+    KEYWORDBUTTONICON_GENERALTRADE = 0,
+    KEYWORDBUTTONICON_POTIONTRADE = 1,
+    KEYWORDBUTTONICON_EQUIPMENTTRADE = 2,
+    KEYWORDBUTTONICON_SAIL = 3,
+    KEYWORDBUTTONICON_DEPOSITALL = 4,
+    KEYWORDBUTTONICON_WITHDRAW = 5,
+    KEYWORDBUTTONICON_BALANCE = 6,
+    KEYWORDBUTTONICON_YES = 7,
+    KEYWORDBUTTONICON_NO = 8,
+    KEYWORDBUTTONICON_BYE = 9,
+    KEYWORDBUTTONICON_LAST
+};
+
+struct NpcButton
+{
+    uint16_t id;
+    std::string text;
+};
+
+struct NpcChatWindowData
+{
+    std::vector<uint32_t> npcIds;
+    std::vector<NpcButton> buttons;
+};
+
 struct MarketOffer
 {
     uint32_t timestamp = 0;
@@ -357,7 +384,7 @@ struct CyclopediaCharacterGeneralStats
 {
     uint64_t experience;
     uint16_t level;
-    uint8_t levelPercent;
+    uint16_t levelPercent;
     uint16_t baseExpGain;
     uint16_t lowLevelExpBonus;
     uint16_t XpBoostPercent;
@@ -657,6 +684,7 @@ struct CyclopediaCharacterOffenceStats
     double onslaught;
     double onslaughtBase;
     double onslaughtBonus;
+    double onslaughtEventBonus;
 
     double cleavePercent;
 
@@ -664,6 +692,7 @@ struct CyclopediaCharacterOffenceStats
 
     uint16_t flatDamage;
     uint16_t flatDamageBase;
+    uint16_t flatDamageWheel;
 
     uint16_t weaponAttack;
     uint16_t weaponFlatModifier;
@@ -674,7 +703,38 @@ struct CyclopediaCharacterOffenceStats
     uint8_t weaponElement;
     double weaponElementDamage;
     uint8_t weaponElementType;
-    std::vector<double> weaponAccuracy;
+    
+    struct AccuracyData { uint8_t range; double chance; };
+    std::vector<AccuracyData> weaponAccuracy;
+
+    double damagePowerfulFoes;
+    struct TargetBonus { std::string name; double value; };
+    std::vector<TargetBonus> damageSpecificTargets;
+
+    struct ElementModifier { uint8_t element; double value; };
+    std::vector<ElementModifier> damageElements;
+
+    double offensiveRuneDamage;
+    double autoAttackDamage;
+
+    std::vector<ElementModifier> critDamageElements;
+    double critDamageOffensiveRunes;
+    double critDamageAutoAttack;
+
+    uint16_t lifeGainHit;
+    uint16_t manaGainHit;
+    uint16_t lifeGainKill;
+    uint16_t manaGainKill;
+
+    struct SkillBonus { uint8_t skillId; double valueA; double valueB; };
+    std::vector<SkillBonus> extraDamageSkills;
+    std::vector<SkillBonus> extraDamageSpells;
+    std::vector<SkillBonus> extraHealingSpells;
+
+    double damageHighHp;
+    double damageLowHp;
+    double armorPenetration;
+    std::vector<ElementModifier> elementalPierce;
 };
 
 struct CyclopediaCharacterDefenceStats

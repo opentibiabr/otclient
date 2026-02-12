@@ -31,16 +31,6 @@ local function getItemServerName(itemId)
     return "Unknown Item"
 end
 
-local function short_text(text, maxLength)
-    if not text then
-        return ""
-    end
-    if string.len(text) > maxLength then
-        return text:sub(1, maxLength - 3) .. "..."
-    end
-    return text
-end
-
 -- Helper function to get item color based on value
 local function getItemColor(itemId)
     local thingType = g_things.getThingType(itemId, ThingCategoryItem)
