@@ -32,3 +32,7 @@ end
 function math.isinteger(num)
     return ((type(num) == 'number') and (num == math.floor(num)))
 end
+
+function roundToTwoDecimalPlaces(value)
+    return math.floor(value * 100 + 0.5) / 100
+end

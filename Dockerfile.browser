@@ -34,7 +34,7 @@ ENV VCPKG_ROOT=/opt/vcpkg
 COPY vcpkg.json /tmp/vcpkg.json
 RUN git clone --filter=blob:none https://github.com/microsoft/vcpkg.git ${VCPKG_ROOT} \
  && cd ${VCPKG_ROOT} \
- && git checkout "$(grep '.builtin-baseline' /tmp/vcpkg.json | awk -F: '{print $2}' | tr -d ',\" ')" \
+ && git checkout "$(grep 'builtin-baseline' /tmp/vcpkg.json | cut -d'"' -f4)" \
  && ./bootstrap-vcpkg.sh
 
 WORKDIR /workspace
@@ -44,12 +44,16 @@ COPY . /workspace
 ARG BUILD_TYPE=Release
 ENV BUILD_DIR=/workspace/build-emscripten
 RUN mkdir -p ${BUILD_DIR}
+# Force complete rebuild by clearing all vcpkg and emscripten caches
 RUN source /opt/emsdk/emsdk_env.sh \
+ && rm -rf ${VCPKG_ROOT}/buildtrees ${VCPKG_ROOT}/packages ${BUILD_DIR}/vcpkg_installed \
+ && rm -rf /opt/emsdk/upstream/emscripten/cache \
  && cmake -G Ninja -S /workspace -B ${BUILD_DIR} \
     -DWASM=ON \
     -DVCPKG_CHAINLOAD_TOOLCHAIN_FILE=/opt/emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake \
     -DCMAKE_TOOLCHAIN_FILE=${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake \
-    -DVCPKG_TARGET_TRIPLET=wasm32-emscripten \
+    -DVCPKG_TARGET_TRIPLET=wasm32-emscripten-pthread \
+    -DVCPKG_OVERLAY_TRIPLETS=/workspace/browser/triplets \
     -DVCPKG_OVERLAY_PORTS=/workspace/browser/overlay-ports \
     -DVCPKG_BUILD_TYPE=${BUILD_TYPE} \
     -DWASM_USE_WASM_EXCEPTIONS=OFF \
@@ -58,8 +62,9 @@ RUN source /opt/emsdk/emsdk_env.sh \
     -DTOGGLE_BOT_PROTECTION=OFF \
     -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
     -DCMAKE_CXX_STANDARD=20 \
-    -DCMAKE_CXX_FLAGS="-fno-lto -std=c++20 -D_LIBCPP_DISABLE_AVAILABILITY -fexperimental-library" \
-    -DCMAKE_EXE_LINKER_FLAGS="-s ALLOW_MEMORY_GROWTH=1 -s USE_PTHREADS=1 -s WASM=1 -s NO_EXIT_RUNTIME=1 -fno-lto" \
+    -DCMAKE_C_FLAGS="-pthread -matomics -mbulk-memory -fno-lto" \
+    -DCMAKE_CXX_FLAGS="-pthread -matomics -mbulk-memory -fno-lto -std=c++20 -D_LIBCPP_DISABLE_AVAILABILITY -fexperimental-library" \
+    -DCMAKE_EXE_LINKER_FLAGS="-pthread -matomics -mbulk-memory -s ALLOW_MEMORY_GROWTH=1 -s USE_PTHREADS=1 -s PTHREAD_POOL_SIZE=4 -s WASM=1 -s NO_EXIT_RUNTIME=1 -fno-lto" \
     -DCMAKE_CXX_FLAGS_RELEASE="-O2 -DNDEBUG -fno-lto" \
     -DCMAKE_CXX_FLAGS_DEBUG="-O0 -g -fno-lto" \
     -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF \

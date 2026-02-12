@@ -282,7 +282,27 @@ function displayMessage(mode, text)
 end
 
 function displayPrivateMessage(text)
-    displayMessage(254, text)
+    if not g_game.isOnline() then
+        return
+    end
+    
+    local msgtype = MessageSettings.private
+    if not msgtype or not msgtype.screenTarget then
+        return
+    end
+    
+    local label = messagesPanel:recursiveGetChildById(msgtype.screenTarget)
+    if not label then
+        return
+    end
+    
+    label:setText(text)
+    label:setColor(msgtype.color)
+    label:setVisible(true)
+    removeEvent(label.hideEvent)
+    label.hideEvent = scheduleEvent(function()
+        label:setVisible(false)
+    end, calculateVisibleTime(text))
 end
 
 function displayStatusMessage(text)

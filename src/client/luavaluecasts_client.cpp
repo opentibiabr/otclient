@@ -1962,3 +1962,60 @@ int push_luavalue(const PartyMemberName& data) {
     g_lua.setField("memberName");
     return 1;
 }
+
+int push_luavalue(const GemData& gem)
+{
+    g_lua.createTable(0, 7);
+
+    g_lua.pushInteger(gem.gemID);
+    g_lua.setField("gemID");
+
+    g_lua.pushInteger(gem.locked);
+    g_lua.setField("locked");
+
+    g_lua.pushInteger(gem.gemDomain);
+    g_lua.setField("gemDomain");
+
+    g_lua.pushInteger(gem.gemType);
+    g_lua.setField("gemType");
+
+    g_lua.pushInteger(gem.lesserBonus);
+    g_lua.setField("lesserBonus");
+
+    g_lua.pushInteger(gem.regularBonus);
+    g_lua.setField("regularBonus");
+
+    g_lua.pushInteger(gem.supremeBonus);
+    g_lua.setField("supremeBonus");
+
+    return 1;
+}
+
+bool luavalue_cast(int index, GemData& gem)
+{
+    if (!g_lua.isTable(index))
+        return false;
+
+    g_lua.getField("gemID", index);
+    gem.gemID = g_lua.popInteger();
+
+    g_lua.getField("locked", index);
+    gem.locked = g_lua.popInteger();
+
+    g_lua.getField("gemDomain", index);
+    gem.gemDomain = g_lua.popInteger();
+
+    g_lua.getField("gemType", index);
+    gem.gemType = g_lua.popInteger();
+
+    g_lua.getField("lesserBonus", index);
+    gem.lesserBonus = g_lua.popInteger();
+
+    g_lua.getField("regularBonus", index);
+    gem.regularBonus = g_lua.popInteger();
+
+    g_lua.getField("supremeBonus", index);
+    gem.supremeBonus = g_lua.popInteger();
+
+    return true;
+}

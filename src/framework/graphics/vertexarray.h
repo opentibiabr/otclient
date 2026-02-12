@@ -103,6 +103,50 @@ public:
         m_buffer.insert(m_buffer.end(), &arr[0], &arr[size]);
     }
 
+
+    void addHorizontallyFlippedQuad(const Rect& rect)
+    {
+        const float top = rect.top();
+        const float right = rect.right() + 1;
+        const float bottom = rect.bottom() + 1;
+        const float left = rect.left();
+
+        // Inverte left e right para flip horizontal
+        float arr[] = {
+            right, top,
+            left, top,
+            right, bottom,
+            right, bottom,
+            left, top,
+            left, bottom
+        };
+
+        const size_t size = sizeof(arr) / sizeof(float);
+        m_buffer.insert(m_buffer.end(), &arr[0], &arr[size]);
+    }
+
+    void addVerticallyFlippedQuad(const Rect& rect)
+    {
+        const float top = rect.top();
+        const float right = rect.right() + 1;
+        const float bottom = rect.bottom() + 1;
+        const float left = rect.left();
+
+        // Inverte top e bottom para flip vertical
+        float arr[] = {
+            left, bottom,
+            right, bottom,
+            left, top,
+            left, top,
+            right, bottom,
+            right, top
+        };
+
+        const size_t size = sizeof(arr) / sizeof(float);
+        m_buffer.insert(m_buffer.end(), &arr[0], &arr[size]);
+    }
+
+
     void addUpsideDownQuad(const Rect& rect)
     {
         const float top = rect.top();

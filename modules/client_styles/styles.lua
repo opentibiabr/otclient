@@ -1,13 +1,17 @@
 local resourceLoaders = {
     ["otui"] = g_ui.importStyle,
     ["otfont"] = g_fonts.importFont,
+    ["ttf"] = g_fonts.importFont,
+    ["otf"] = g_fonts.importFont,
     ["otps"] = g_particles.importParticle,
 }
 
 function init()
     local device = g_platform.getDevice()
     importResources("styles", "otui", device)
-    importResources("fonts", "otfont", device)
+    importResources("fonts/otfont", "otfont", device)
+    importResources("fonts//ttf", "ttf", device)
+    importResources("fonts/ttf", "otf", device)
     importResources("particles", "otps", device)
 
     g_mouse.loadCursors('/cursors/cursors')

@@ -204,6 +204,12 @@ void Creature::drawInformation(const MapPosInfo& mapRect, const Point& dest, con
     auto backgroundRect = Rect(p.x - (15.5), p.y - cropSizeBackGround, 31, 4);
     auto textRect = Rect(p.x - nameSize.width() / 2.0, p.y - cropSizeText, nameSize);
 
+    constexpr int minNameBarSpacing = 2;
+    const int currentSpacing = backgroundRect.top() - textRect.bottom();
+    if (currentSpacing < minNameBarSpacing) {
+        backgroundRect.moveTop(textRect.bottom() + minNameBarSpacing);
+    }
+
     if (!isScaled) {
         backgroundRect.bind(parentRect);
         textRect.bind(parentRect);

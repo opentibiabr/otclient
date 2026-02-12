@@ -54,6 +54,8 @@ UITextEdit::UITextEdit()
     m_placeholderColor = Color::gray;
     m_placeholderFont = g_fonts.getDefaultFont();
     m_placeholderAlign = Fw::AlignLeftCenter;
+    // Always use 1.0 to prevent distortion with TTF fonts
+    m_fontScale = 1.0f;	
     blinkCursor();
 }
 
@@ -85,16 +87,33 @@ void UITextEdit::drawSelf(const DrawPoolType drawPane)
         if (m_placeholderColor != Color::alpha && !m_placeholder.empty())
             m_placeholderFont->drawText(m_placeholder, m_drawArea, m_placeholderColor, m_placeholderAlign);
     }
-
+	
+    // This ensures TTF font offsets are always correctly applied
     if (m_color != Color::alpha) {
-        g_drawPool.setDrawOrder(m_textDrawOrder);
-        if (m_drawTextColors.empty() || m_colorCoordsBuffer.empty()) {
-            g_drawPool.addTexturedCoordsBuffer(texture, m_coordsBuffer, m_color);
-        } else {
-            for (const auto& [color, coordsBuffer] : m_colorCoordsBuffer)
-                g_drawPool.addTexturedCoordsBuffer(texture, coordsBuffer, color);
+        for (int i = 0; i < textLength; ++i) {
+            const auto& [dest, src] = m_glyphsCoords[i];
+            if (dest.isValid() && src.isValid()) {
+                // Apply text colors if available
+                Color glyphColor = m_color;
+                if (!m_drawTextColors.empty()) {
+                    // Find the color for this glyph
+                    for (size_t colorIdx = 0; colorIdx < m_drawTextColors.size(); ++colorIdx) {
+                        if (i >= m_drawTextColors[colorIdx].first) {
+                            if (colorIdx + 1 < m_drawTextColors.size()) {
+                                if (i < m_drawTextColors[colorIdx + 1].first) {
+                                    glyphColor = m_drawTextColors[colorIdx].second;
+                                    break;
+                                }
+                            } else {
+                                glyphColor = m_drawTextColors[colorIdx].second;
+                                break;
+                            }
+                        }
+                    }
+                }
+                g_drawPool.addTexturedRect(dest, texture, src, glyphColor);
+            }
         }
-        g_drawPool.resetDrawOrder();
     }
 
     if (m_textUnderline && m_textUnderline->getVertexCount() > 0)
@@ -112,15 +131,54 @@ void UITextEdit::drawSelf(const DrawPoolType drawPane)
 
         if (glyphsMustRecache) {
             m_glyphsSelectRectCache.clear();
+            m_glyphsSelectBgRectCache.clear();
+
+            const Point textScreenOffset = m_drawArea.topLeft() - m_textVirtualOffset;
+            const int lineHeight = m_font->getGlyphHeight();
+            const Size* glyphsSize = m_font->getGlyphsSize();
+            const Point* glyphsOffset = m_font->getGlyphsOffset();
+
             for (int i = visStart; i < visEnd; ++i) {
+                // Determine source for text drawing
                 const auto& dest = m_glyphsCoords[i].first;
                 const auto& src = m_glyphsCoords[i].second;
                 if (dest.isValid()) m_glyphsSelectRectCache.emplace_back(dest, src);
+
+                if (i >= static_cast<int>(m_glyphsPositionsCache.size())) continue;
+                uint8_t glyph = static_cast<uint8_t>(m_displayedText[i]);
+                Point baselinePos = textScreenOffset + m_glyphsPositionsCache[i];
+                Point pos(baselinePos.x + glyphsOffset[glyph].x, baselinePos.y);
+                int width = 0;
+
+                if (i + 1 < static_cast<int>(m_glyphsPositionsCache.size()) && i + 1 < static_cast<int>(m_displayedText.length())) {
+                    uint8_t nextGlyph = static_cast<uint8_t>(m_displayedText[i + 1]);
+                    Point nextBaselinePos = textScreenOffset + m_glyphsPositionsCache[i + 1];
+                    Point nextPos(nextBaselinePos.x + glyphsOffset[nextGlyph].x, nextBaselinePos.y);
+                    if (nextPos.y == pos.y) {
+                        width = nextPos.x - pos.x;
+                    }
+                }
+
+                if (width == 0) {
+                    if (glyph >= 32) {
+                        int advanceGuess = glyphsOffset[glyph].x + glyphsSize[glyph].width();
+                        if (dest.isValid()) {
+                            advanceGuess = std::max(advanceGuess, dest.right() - pos.x);
+                        }
+                        if (glyph == ' ' && width == 0) advanceGuess = std::max(advanceGuess, lineHeight / 4);
+                        width = advanceGuess;
+                    } else if (glyph == '\n') {
+                        width = lineHeight / 4;
+                    }
+                }
+
+                if (width > 0)
+                    m_glyphsSelectBgRectCache.emplace_back(Rect(pos.x, pos.y, width, lineHeight));
             }
         }
 
-        for (const auto& it : m_glyphsSelectRectCache)
-            g_drawPool.addFilledRect(it.first, m_selectionBackgroundColor);
+        for (const auto& rect : m_glyphsSelectBgRectCache)
+            g_drawPool.addFilledRect(rect, m_selectionBackgroundColor);
 
         for (const auto& it : m_glyphsSelectRectCache)
             g_drawPool.addTexturedRect(it.first, texture, it.second, m_selectionColor);
@@ -165,19 +223,25 @@ void UITextEdit::drawSelf(const DrawPoolType drawPane)
             }
 
             const int visLen = std::min<int>(m_glyphsCoords.size(), static_cast<int>(m_displayedText.length()));
+            const Point* glyphsOffset = m_font->getGlyphsOffset();
+            const int lineH = m_font->getGlyphHeight();
+
             for (auto& li : lines) {
                 for (int v = li.visStart; v < li.visEnd && v < visLen; ++v) {
                     const Rect& r = m_glyphsCoords[v].first;
                     if (!r.isValid()) continue;
                     li.hasGlyphs = true;
-                    li.top = (li.top == std::numeric_limits<int>::min()) ? r.top() : std::min(li.top, r.top());
-                    li.bottom = (li.bottom == std::numeric_limits<int>::min()) ? r.bottom() : std::max(li.bottom, r.bottom());
+
+                    uint8_t g = static_cast<uint8_t>(m_displayedText[v]);
+                    int calculatedTop = r.top() - glyphsOffset[g].y;
+
+                    li.top = (li.top == std::numeric_limits<int>::min()) ? calculatedTop : std::min(li.top, calculatedTop);
+                    li.bottom = (li.bottom == std::numeric_limits<int>::min()) ? (calculatedTop + lineH) : std::max(li.bottom, calculatedTop + lineH);
                     li.left = std::min(li.left, r.left());
                     li.right = std::max(li.right, r.right());
                 }
             }
 
-            const int lineH = m_font->getGlyphHeight();
             const int lineDy = m_font->getGlyphSpacing().height();
             int yCursor = m_drawArea.top();
             for (size_t i = 0; i < lines.size(); ++i) {
@@ -260,6 +324,7 @@ void UITextEdit::update(const bool focusCursor, bool disableAreaUpdate)
     Size textBoxSize;
     m_font->calculateGlyphsPositions(m_drawText, m_textAlign, m_glyphsPositionsCache, &textBoxSize);
     const Rect* glyphsTextureCoords = m_font->getGlyphsTextureCoords();
+    const Point* glyphsOffset = m_font->getGlyphsOffset();  // Get glyph offsets for TTF fonts	
     const Size* glyphsSize = m_font->getGlyphsSize();
 
     if (!m_rect.isValid() || hasProp(PropTextHorizontalAutoResize) || hasProp(PropTextVerticalAutoResize)) {
@@ -552,7 +617,8 @@ void UITextEdit::update(const bool focusCursor, bool disableAreaUpdate)
         if (glyph < 32)
             continue;
 
-        Rect glyphScreenCoords(m_glyphsPositionsCache[i], glyphsSize[glyph]);
+        // Add glyph offset for proper TTF font rendering (same as BitmapFont::fillTextCoords)
+        Rect glyphScreenCoords(m_glyphsPositionsCache[i] + glyphsOffset[glyph], glyphsSize[glyph]);
         Rect glyphTextureCoords = glyphsTextureCoords[glyph];
 
         if (m_textAlign & Fw::AlignBottom) {
@@ -1116,7 +1182,7 @@ int UITextEdit::getTextPos(const Point& pos)
 void UITextEdit::updateDisplayedText()
 {
     std::string src = getProp(PropTextHidden) ? std::string(m_text.length(), '*') : m_text;
-    m_drawTextColors = m_textColors;
+    const auto& srcColors = m_textColors;
 
     std::string vis = src;
     if (isTextWrap() && m_rect.isValid()) {
@@ -1149,6 +1215,23 @@ void UITextEdit::updateDisplayedText()
 
     m_srcToVis[src.size()] = static_cast<int>(j);
     m_visToSrc[vis.size()] = static_cast<int>(i);
+
+    m_drawTextColors.clear();
+    m_drawTextColors.reserve(srcColors.size());
+
+    const int visSize = static_cast<int>(vis.size());
+    const int srcSize = static_cast<int>(src.size());
+
+    for (const auto& [srcPosRaw, color] : srcColors) {
+        const int srcPos = std::clamp(srcPosRaw, 0, srcSize);
+        const int visPos = m_srcToVis.empty() ? srcPos : std::clamp(m_srcToVis[srcPos], 0, visSize);
+
+        if (!m_drawTextColors.empty() && m_drawTextColors.back().first == visPos) {
+            m_drawTextColors.back().second = color;
+        } else {
+            m_drawTextColors.emplace_back(visPos, color);
+        }
+    }
 }
 
 std::string UITextEdit::getSelection()
@@ -1163,7 +1246,6 @@ void UITextEdit::updateText()
     if (m_cursorPos > static_cast<int>(m_text.length()))
         m_cursorPos = m_text.length();
 
-    // any text changes reset the selection
     if (getProp(PropSelectable)) {
         m_selectionEnd = 0;
         m_selectionStart = 0;
@@ -1187,8 +1269,17 @@ void UITextEdit::onHoverChange(const bool hovered)
 void UITextEdit::onStyleApply(const std::string_view styleName, const OTMLNodePtr& styleNode)
 {
     UIWidget::onStyleApply(styleName, styleNode);
+		
+    // Force scale to 1.0 to prevent distortion with TTF fonts
+    m_fontScale = 1.0f;	
 
-    for (const auto& node : styleNode->children()) {
+    for (const auto& node : styleNode->children()) {    // Force scale to 1.0 to prevent distortion with TTF fonts
+    m_fontScale = 1.0f;	
+        if (node->tag() == "ttf-font" || node->tag() == "ttf-font-size" || 
+            node->tag() == "ttf-stroke-width" || node->tag() == "ttf-stroke-color" ||
+            node->tag() == "stroke" || node->tag() == "font" || node->tag() == "font-scale") {
+            continue;
+        }		
         if (node->tag() == "text") {
             setText(node->value());
             setCursorPos(m_text.length());

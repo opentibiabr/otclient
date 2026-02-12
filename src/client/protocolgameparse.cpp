@@ -36,6 +36,7 @@
 #include "missile.h"
 #include "thingtype.h"
 #include "thingtypemanager.h"
+#include "tile.h"
 #include "framework/core/eventdispatcher.h"
 #include "framework/net/inputmessage.h"
 #include "paperdollmanager.h"
@@ -643,6 +644,9 @@ void ProtocolGame::parseMessage(const InputMessagePtr& msg)
                     break;
                 case Proto::GameServerStoreCompletePurchase:
                     parseCompleteStorePurchase(msg);
+                    break;
+                case Proto::GameServerOpenWheelWindow: // 0x5F
+                    parseOpenWheelWindow(msg);
                     break;
                 default: {
                     const auto unreadSize = msg->getUnreadSize();
@@ -1898,13 +1902,23 @@ void ProtocolGame::parseMagicEffect(const InputMessagePtr& msg)
 
 void ProtocolGame::parseRemoveMagicEffect(const InputMessagePtr& msg)
 {
-    getPosition(msg);
-    uint16_t effectId = g_game.getFeature(Otc::GameEffectU16) ? msg->getU16() : msg->getU8();
+    const auto& pos = getPosition(msg);
+    const uint16_t effectId = g_game.getFeature(Otc::GameEffectU16) ? msg->getU16() : msg->getU8();
+
     if (!g_things.isValidDatId(effectId, ThingCategoryEffect)) {
         g_logger.warning("[ProtocolGame::parseRemoveMagicEffect] - Invalid effectId type {}", effectId);
         return;
     }
-    // TO-DO
+
+    const auto& tile = g_map.getTile(pos);
+    if (!tile)
+        return;
+
+    const auto& effect = tile->getEffect(effectId);
+    if (!effect)
+        return;
+
+    g_map.removeThing(effect);
 }
 
 void ProtocolGame::parseAnimatedText(const InputMessagePtr& msg)
@@ -6507,6 +6521,185 @@ void ProtocolGame::parseWeaponProficiencyInfo(const InputMessagePtr& msg)
         msg->getU8(); // proficiencyLevel
         msg->getU8(); // perkPosition
     }
+}
+
+// 0x5F - parse destiny wheel window
+void ProtocolGame::parseOpenWheelWindow(const InputMessagePtr& msg)
+{
+    // Player ID
+    uint32_t playerId = msg->getU32();
+    g_logger.debug(fmt::format("[Wheel C++ Parse] parseOpenWheelWindow -> playerId={}", playerId));
+
+    // CanView
+    uint8_t canView = msg->getU8();
+    g_logger.debug(fmt::format("[Wheel C++ Parse] canView={}", static_cast<int>(canView)));
+
+    // Se não pode visualizar, encerra e dispara callback "vazio"
+    if (!canView) {
+        g_logger.debug("[Wheel C++ Parse] Player não pode abrir a Wheel of Destiny.");
+        g_lua.callGlobalField("g_game", "onDestinyWheel",
+            playerId, canView, 0, 0, 0, 0,
+            std::vector<uint16_t>(), std::vector<uint16_t>(),
+            std::vector<uint16_t>(), std::vector<GemData>(),
+            std::map<uint8_t, uint8_t>(), std::map<uint8_t, uint8_t>(), 0);
+        return;
+    }
+
+    // Estado de mudança + vocation
+    uint8_t changeState = msg->getU8();
+    uint8_t vocationId = msg->getU8();
+    g_logger.debug(fmt::format("[Wheel C++ Parse] changeState={} vocationId={}",
+        static_cast<int>(changeState), static_cast<int>(vocationId)));
+
+    // Pontos
+    uint16_t points = msg->getU16();
+    uint16_t extraPoints = msg->getU16();
+
+    g_logger.debug(fmt::format("[Wheel C++ Parse] points={} extraPoints={}",
+        static_cast<int>(points),
+        static_cast<int>(extraPoints)));
+
+    // Points por slot (37 slots fixos, igual ao servidor de 0 a 36)
+    std::vector<uint16_t> pointInvested;
+    pointInvested.reserve(36);
+
+    for (int i = 0; i < 36; ++i) {
+        uint16_t slotPoints = msg->getU16();
+        pointInvested.push_back(slotPoints);
+    }
+
+    g_logger.debug(fmt::format("[Wheel C++ Parse] pointInvested ({} slots)", static_cast<int>(pointInvested.size())));
+
+    // Log detalhado de cada slot
+    for (int i = 0; i < static_cast<int>(pointInvested.size()); ++i) {
+        g_logger.debug(fmt::format("  [Slot {:>2}] points={}", i, pointInvested[i]));
+    }
+
+    // Promotion scrolls
+    std::vector<uint16_t> usedPromotionScrolls;
+    uint16_t scrollCount = msg->getU16();
+    g_logger.debug(fmt::format("[Wheel C++ Parse] scrollCount={}", static_cast<int>(scrollCount)));
+
+    for (uint16_t i = 0; i < scrollCount; ++i) {
+        uint16_t itemId = msg->getU16();
+        // Em protocolos 1500+ o servidor envia 1 byte extra (extraPoints)
+        uint8_t extraPoints = 0;
+        if (g_game.getProtocolVersion() >= 1500 && msg->getUnreadSize() > 0) {
+            extraPoints = msg->getU8();
+        }
+        usedPromotionScrolls.push_back(itemId);
+
+        g_logger.debug(fmt::format("  [Scroll {}] id={} extraPoints={}",
+            static_cast<int>(i),
+            static_cast<int>(itemId),
+            static_cast<int>(extraPoints)));
+    }
+
+    uint8_t hasMonkQuest = 0;
+    if (g_game.getProtocolVersion() >= 1500 && msg->getUnreadSize() > 0) {
+        hasMonkQuest = msg->getU8();
+        g_logger.debug(fmt::format("[Wheel C++ Parse] hasMonkQuest lido (valor={})", static_cast<int>(hasMonkQuest)));
+    }
+
+    // Gems ativas (equipadas)
+    std::vector<uint16_t> equipedGems;
+    uint8_t activeGemCount = msg->getU8();
+    g_logger.debug(fmt::format("[Wheel C++ Parse] activeGemCount={}", static_cast<int>(activeGemCount)));
+    for (uint8_t i = 0; i < activeGemCount; ++i) {
+        uint16_t gemIndex = msg->getU16();
+        equipedGems.push_back(gemIndex);
+        g_logger.debug(fmt::format("  [ActiveGem {}] index={}", static_cast<int>(i), static_cast<int>(gemIndex)));
+    }
+
+    // Gems reveladas (atelier)
+    std::vector<GemData> atelierGems;
+    uint16_t revealedCount = msg->getU16();
+    g_logger.debug(fmt::format("[Wheel C++ Parse] revealedGemCount={}", static_cast<int>(revealedCount)));
+
+    for (uint16_t i = 0; i < revealedCount; ++i) {
+        GemData gem;
+        gem.gemID = msg->getU16();          // ID único da gema
+        gem.locked = msg->getU8();          // Status bloqueada/desbloqueada
+        gem.gemDomain = msg->getU8();       // Afinidade elemental
+        gem.gemType = msg->getU8();         // Qualidade (Lesser, Regular, Greater, Supreme)
+        gem.lesserBonus = msg->getU8();     // Primeiro modificador
+
+        if (gem.gemType >= Otc::WheelGemQuality_Regular)
+            gem.regularBonus = msg->getU8();
+        if (gem.gemType >= Otc::WheelGemQuality_Greater)
+            gem.supremeBonus = msg->getU8();
+
+        atelierGems.push_back(gem);
+
+        g_logger.debug(fmt::format(
+            "  [RevealedGem {:02}] id={} locked={} domain={} type={} lesser={} regular={} supreme={}",
+            static_cast<int>(i),
+            static_cast<int>(gem.gemID),
+            static_cast<int>(gem.locked),
+            static_cast<int>(gem.gemDomain),
+            static_cast<int>(gem.gemType),
+            static_cast<int>(gem.lesserBonus),
+            static_cast<int>(gem.regularBonus),
+            static_cast<int>(gem.supremeBonus)
+        ));
+    }
+
+    // Basic upgrades
+    std::map<uint8_t, uint8_t> basicUpgraded;
+    uint8_t basicCount = msg->getU8(); // geralmente 0x2E (46)
+    g_logger.debug(fmt::format("[Wheel C++ Parse] basicUpgraded count={}", static_cast<int>(basicCount)));
+    for (uint8_t i = 0; i < basicCount; ++i) {
+        uint8_t pos = msg->getU8();
+        uint8_t val = msg->getU8();
+        basicUpgraded[pos] = val;
+        g_logger.debug(fmt::format("  [BasicUpgrade {}] pos={} val={}",
+            static_cast<int>(i), static_cast<int>(pos), static_cast<int>(val)));
+    }
+
+    // Supreme upgrades
+    std::map<uint8_t, uint8_t> supremeUpgraded;
+    uint8_t supCount = msg->getU8(); // geralmente 0x17 (23)
+    g_logger.debug(fmt::format("[Wheel C++ Parse] supremeUpgraded count={}", static_cast<int>(supCount)));
+    for (uint8_t i = 0; i < supCount; ++i) {
+        uint8_t pos = msg->getU8();
+        uint8_t val = msg->getU8();
+        supremeUpgraded[pos] = val;
+        g_logger.debug(fmt::format("  [SupremeUpgrade {}] pos={} val={}",
+            static_cast<int>(i), static_cast<int>(pos), static_cast<int>(val)));
+    }
+
+    // Campo adicional (desde Canary 15.10+)
+    if (g_game.getProtocolVersion() >= 1510 && msg->getUnreadSize() >= 1) {
+        uint8_t earnedFromAchievements = msg->getU8();
+        g_logger.debug(fmt::format("[Wheel C++ Parse] earnedFromAchievements={}", static_cast<int>(earnedFromAchievements)));
+    }
+
+    // Verifica se sobraram bytes após o parse
+    const uint16_t unread = msg->getUnreadSize();
+    if (unread > 0) {
+        std::ostringstream hexDump;
+        hexDump << std::hex << std::setfill('0');
+        std::vector<uint8_t> leftover;
+
+        // Lê os bytes restantes sem estourar o buffer
+        for (uint16_t i = 0; i < unread; ++i) {
+            uint8_t b = msg->getU8();
+            leftover.push_back(b);
+            hexDump << std::setw(2) << static_cast<int>(b) << " ";
+        }
+
+        // Log detalhado
+        g_logger.warning(fmt::format("[Wheel C++ Parse] Restaram {} bytes após parseOpenWheelWindow (descartados).", unread));
+        g_logger.warning(fmt::format("[Wheel C++ Parse] Bytes extras (hex): {}", hexDump.str()));
+    }
+
+    // Callback Lua
+    g_lua.callGlobalField("g_game", "onDestinyWheel",
+        playerId, canView, changeState, vocationId,
+        points, extraPoints, pointInvested,
+        usedPromotionScrolls, equipedGems, atelierGems,
+        basicUpgraded, supremeUpgraded, 0 // earnedFromAchievements placeholder
+    );
 }
 
 void ProtocolGame::parseAttachedPaperdoll(const InputMessagePtr& msg) {

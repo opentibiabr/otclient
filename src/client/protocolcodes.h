@@ -87,6 +87,7 @@ namespace Proto
         GameServerWeaponProficiencyExperience = 92,
         GameServerImbuementDurations = 93,
         GameServerPassiveCooldown = 94,
+        GameServerOpenWheelWindow = 95, // 0x5F
         GameServerBosstiaryData = 97,
         GameServerBosstiarySlots = 98,
         GameServerSendClientCheck = 99,
@@ -257,6 +258,8 @@ namespace Proto
 
         // original tibia ONLY
         ClientImbuementDurations = 96,
+        ClientOpenWheel = 97, // server received 0x61
+        ClientSaveWheel = 98, // server received 0x62
         ClientAutoWalk = 100,
         ClientWalkNorth = 101,
         ClientWalkEast = 102,
@@ -352,7 +355,7 @@ namespace Proto
         ClientCyclopediaSendBuyCharmRune = 228,
         ClientCyclopediaRequestCharacterInfo = 229,
         ClientBugReport = 230,
-        ClientRuleViolation = 231,
+        ClientWheelGemAction = 231, // 0xE7 usado em gemas, desabilitado para ClientRuleViolation = 231
         ClientDebugReport = 232,
         ClientPreyAction = 235,
         ClientPreyRequest = 237,
