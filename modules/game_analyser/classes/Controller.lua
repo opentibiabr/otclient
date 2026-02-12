@@ -111,3 +111,22 @@ function ControllerAnalyser:startEvent()
         InputAnalyser:checkAnchos()
     end
 end
+
+function ControllerAnalyser:stopAllEvent()
+    if ControllerAnalyser.eventGraph then
+        ControllerAnalyser.eventGraph:cancel()
+        ControllerAnalyser.eventGraph = nil
+    end
+    if ControllerAnalyser.event250 then
+        ControllerAnalyser.event250:cancel()
+        ControllerAnalyser.event250 = nil
+    end
+    if ControllerAnalyser.event1000 then
+        ControllerAnalyser.event1000:cancel()
+        ControllerAnalyser.event1000 = nil
+    end
+    if ControllerAnalyser.event2000 then
+        ControllerAnalyser.event2000:cancel()
+        ControllerAnalyser.event2000 = nil
+    end
+end

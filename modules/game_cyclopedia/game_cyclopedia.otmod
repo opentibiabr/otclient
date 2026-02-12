@@ -4,5 +4,6 @@ Module
   scripts: [ game_cyclopedia, tab/*, utils]
   sandboxed: true
   autoload: true
+  minClientVersion: 1310
   @onLoad: controllerCyclopedia:init()
   @onUnload: controllerCyclopedia:terminate()

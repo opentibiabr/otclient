@@ -4,6 +4,7 @@ Module
   author: reyaleman
   website: https://github.com/reyaleman
   sandboxed: true
+  minClientVersion: 1100
   dependencies: [ game_imbuing ]
   scripts: [ imbuementtracker ]
   @onLoad: initialize()
