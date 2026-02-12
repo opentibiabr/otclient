@@ -54,14 +54,16 @@ local function getVocation(arg)
     if type(arg) == "number" then
         return vocationNamesByClientId[arg] or "All Vocations"
     elseif type(arg) == "string" then
-        for id, name in pairs(vocationNamesByClientId) do
-            if name == arg then
-                return id
-            end
-        end
+        -- First, search in vocationArray which comes from server
         for _, voc in ipairs(vocationArray) do
             if voc[2] == arg then
                 return voc[1]
+            end
+        end
+        -- If not found in vocationArray, search in vocationNamesByClientId
+        for id, name in pairs(vocationNamesByClientId) do
+            if name == arg then
+                return id
             end
         end
     end
