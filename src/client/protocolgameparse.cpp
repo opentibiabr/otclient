@@ -1486,12 +1486,21 @@ void ProtocolGame::parseTileRemoveThing(const InputMessagePtr& msg) const
 {
     const auto& thing = getMappedThing(msg);
     if (!thing) {
-        g_logger.traceError("ProtocolGame::parseTileRemoveThing: no thing");
+        // Silently ignore - thing may have already been removed or never added due to network issues
         return;
     }
 
-    if (!g_map.removeThing(thing))
-        g_logger.traceError("ProtocolGame::parseTileRemoveThing: unable to remove thing");
+    if (!g_map.removeThing(thing)) {
+        // Try to remove from the thing's current tile if it has moved
+        if (const auto& tile = thing->getTile()) {
+            if (tile->removeThing(thing)) {
+                g_map.notificateTileUpdate(thing->getServerPosition(), thing, Otc::OPERATION_REMOVE);
+                return;
+            }
+        }
+        g_logger.traceError("ProtocolGame::parseTileRemoveThing: unable to remove thing at pos:{}", 
+                           thing->getServerPosition());
+    }
 }
 
 void ProtocolGame::parseCreatureMove(const InputMessagePtr& msg)
@@ -1500,18 +1509,31 @@ void ProtocolGame::parseCreatureMove(const InputMessagePtr& msg)
     const auto& newPos = getPosition(msg);
 
     if (!thing || !thing->isCreature()) {
-        g_logger.traceError("ProtocolGame::parseCreatureMove: no creature found to move");
-        return;
-    }
-
-    if (!g_map.removeThing(thing)) {
-        g_logger.traceError("ProtocolGame::parseCreatureMove: unable to remove creature");
+        // Silently ignore - creature may have already been removed or never added
         return;
     }
 
     const auto& creature = thing->static_self_cast<Creature>();
-    creature->allowAppearWalk();
+    
+    // Try to remove from the expected position first
+    if (!g_map.removeThing(thing)) {
+        // If not found at expected position, try to remove from creature's current tile
+        if (const auto& currentTile = creature->getTile()) {
+            if (!currentTile->removeThing(thing)) {
+                g_logger.traceError("ProtocolGame::parseCreatureMove: unable to remove creature '{}' (id: {}) from current tile at pos:{}", 
+                                   creature->getName(), creature->getId(), creature->getPosition());
+                return;
+            }
+            // Successfully removed from current tile, continue with move
+        } else {
+            // Creature has no tile, it may have been removed already
+            // Just add it to the new position
+            g_logger.traceDebug("ProtocolGame::parseCreatureMove: creature '{}' (id: {}) has no tile, adding to new pos:{}", 
+                               creature->getName(), creature->getId(), newPos);
+        }
+    }
 
+    creature->allowAppearWalk();
     g_map.addThing(thing, newPos, -1);
 }
 
@@ -3823,14 +3845,33 @@ ThingPtr ProtocolGame::getMappedThing(const InputMessagePtr& msg) const
             return thing;
         }
 
-        g_logger.traceError("no thing at pos:{}, stackpos:{}", pos, stackpos);
+        // Try to find the thing in adjacent tiles (network desync mitigation)
+        for (int dx = -1; dx <= 1; ++dx) {
+            for (int dy = -1; dy <= 1; ++dy) {
+                if (dx == 0 && dy == 0) continue;
+                
+                const Position adjacentPos{ static_cast<uint16_t>(x + dx), 
+                                           static_cast<uint16_t>(y + dy), z };
+                if (const auto& thing = g_map.getThing(adjacentPos, stackpos)) {
+                    if (thing->isCreature()) {
+                        // Found creature in adjacent tile, likely due to movement desync
+                        g_logger.traceDebug("getMappedThing: found creature at adjacent pos:{} instead of expected pos:{}", 
+                                          adjacentPos, pos);
+                        return thing;
+                    }
+                }
+            }
+        }
+
+        // Only log as debug since this is common with network issues
+        g_logger.traceDebug("no thing at pos:{}, stackpos:{}", pos, stackpos);
     } else {
         const uint32_t creatureId = msg->getU32();
         if (const auto& thing = g_map.getCreatureById(creatureId)) {
             return thing;
         }
 
-        g_logger.traceError("ProtocolGame::getMappedThing: no creature with id {}", creatureId);
+        g_logger.traceDebug("ProtocolGame::getMappedThing: no creature with id {}", creatureId);
     }
 
     return nullptr;

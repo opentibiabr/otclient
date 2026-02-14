@@ -250,6 +250,13 @@ end
 function onGameStart()
     show()
 
+    local player = g_game.getLocalPlayer()
+    if player then
+        LoadedPlayer:setId(player:getId())
+        LoadedPlayer:setName(player:getName())
+        LoadedPlayer:setVocation(player:getVocation())
+    end
+
     leftIncreaseSidePanels:setEnabled(not modules.client_options.getOption('showLeftExtraPanel'))
     if g_platform.isMobile() then
         leftDecreaseSidePanels:setEnabled(false)
@@ -1961,4 +1968,102 @@ function toggleFocus(value, reason)
     gameLeftPanel:setFocusable(value)
     gameRightExtraPanel:setFocusable(value)
     gameLeftExtraPanel:setFocusable(value)
+end
+
+function addToPanels(uiWidget)
+  local right = getRightPanel()
+  local left = getLeftPanel()
+  uiWidget.onRemoveFromContainer = function(widget)
+    if left:isOn() then
+      if widget:getParent():getId() == 'gameRightPanel' then
+        if left:getEmptySpaceHeight() - widget:getHeight() >= 0 then
+          widget:setParent(left)
+        end
+      elseif widget:getParent():getId() == 'gameLeftPanel' then
+        if right:getEmptySpaceHeight() - widget:getHeight() >= 0 then
+          widget:setParent(right)
+        end
+      end
+    end
+  end
+
+  local widgetName = uiWidget:getId()
+  if string.find(widgetName, "widget") then
+    uiWidget:setHeight(uiWidget:getMinimumHeight())
+  end
+
+  local count = gameRightPanel:getChildCount()
+  local panels = {}
+
+  for i = count, 1, -1 do
+    local panel = gameRightPanel:getChildByIndex(i)
+    panels[#panels+1] = panel
+  end
+
+  local count = gameLeftPanel:getChildCount()
+  for i = 1, count do
+    local panel = gameLeftPanel:getChildByIndex(i)
+    panels[#panels+1] = panel
+  end
+
+  for _, panel in ipairs(panels) do
+    if configureWidgetOnPanel(uiWidget, panel) then
+      return true
+    end
+  end
+
+  local childrenIds = {"tradeWindow",}
+  if table.find(childrenIds, uiWidget:getId()) then
+    uiWidget:setHeight(uiWidget:getMinimumHeight())
+    for _, panel in ipairs(panels) do
+      if recalculateWidgetOnPanel(uiWidget, panel) then
+        return true
+      end
+    end
+  end
+
+  uiWidget:close()
+  modules.game_textmessage.displayFailureMessage(tr('There is no available space.'))
+  return false
+end
+
+function configureWidgetOnPanel(widget, panel)
+  local childsSize = 0
+  for _, child in pairs(panel:getChildren()) do
+    if child:isVisible() and widget:getId() ~= child:getId() then
+      childsSize = child:getHeight() + childsSize
+    end
+  end
+
+  local emptySize = panel:getHeight() - childsSize
+  if emptySize - widget:getHeight() >= 0 then
+    widget:setParent(panel)
+    widget.onClose = function()
+      local panel = widget:getParent()
+      if panel then
+        panel:removeChild(widget)
+      end
+    end
+    return true
+  end
+
+  local minimus = widget:getMinimumHeight()
+   if widget:getId():find("BattleWindow") then
+    minimus = 104
+  elseif widget:getId():find("minimapWindow") then
+    minimus = 200
+  end
+
+  if emptySize - minimus >= 0 then
+    widget:setParent(panel)
+    widget.onClose = function()
+      local panel = widget:getParent()
+      if panel then
+        panel:removeChild(widget)
+      end
+    end
+    return true
+  end
+
+  return false
 end

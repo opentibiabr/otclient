@@ -1,0 +1,12 @@
+Module
+  name: game_party_list
+  description: game_party_list
+  author: game_party_list
+  sandboxed: true
+  scripts: [ partyList, partyClass ]
+  dependencies:
+    - game_interface
+  autoload: true
+  autoload-priority: 1200
+  @onLoad: init()
+  @onUnload: terminate()

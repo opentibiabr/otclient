@@ -636,6 +636,7 @@ void Client::registerLuaFunctions()
     );
     g_lua.bindClassMemberFunction<Creature>("canBeSeen", &Creature::canBeSeen);
     g_lua.bindClassMemberFunction<Creature>("jump", &Creature::jump);
+    g_lua.bindClassMemberFunction<Creature>("getCollisionSquare", &Creature::getCollisionSquare);
     g_lua.bindClassMemberFunction<Creature>("setMountShader", &Creature::setMountShader);
     // bind via lambdas to avoid ambiguous member-function pointer template resolution
     g_lua.registerClassMemberFunction(stdext::demangle_class<Creature>(), "setNameShader",
