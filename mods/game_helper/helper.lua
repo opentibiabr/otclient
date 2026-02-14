@@ -358,12 +358,70 @@ function init()
   mouseGrabberWidget:setVisible(false)
   mouseGrabberWidget:setFocusable(false)
 
+  -- Registrar keybinds do Helper para OTClient Redemption (Keybind API)
+  if Keybind and Keybind.new and KEY_PRESS then
+    local root = rootWidget or (modules.game_interface and modules.game_interface.getRootPanel and modules.game_interface.getRootPanel())
+    if root then
+      if not Keybind.getAction("Helper", "Enable/Disable Helper") then
+        Keybind.new("Helper", "Enable/Disable Helper", "Pause", "")
+        Keybind.bind("Helper", "Enable/Disable Helper", { { type = KEY_PRESS, callback = function() botStatus() end } }, root)
+      end
+      if not Keybind.getAction("Helper", "Enable/Disable Auto Target") then
+        Keybind.new("Helper", "Enable/Disable Auto Target", "", "")
+        Keybind.bind("Helper", "Enable/Disable Auto Target", { { type = KEY_PRESS, callback = function()
+          local w = shooterPanel and shooterPanel:recursiveGetChildById("enableAutoTarget")
+          if w then
+            w:setChecked(not w:isChecked())
+            toggleAutoTarget(w)
+          end
+        end } }, root)
+      end
+      if not Keybind.getAction("Helper", "Enable/Disable Magic Shooter") then
+        Keybind.new("Helper", "Enable/Disable Magic Shooter", "", "")
+        Keybind.bind("Helper", "Enable/Disable Magic Shooter", { { type = KEY_PRESS, callback = function()
+          local w = shooterPanel and shooterPanel:recursiveGetChildById("enableMagicShooter")
+          if w then
+            w:setChecked(not w:isChecked())
+            toggleMagicShooter(w)
+          end
+        end } }, root)
+      end
+      if not Keybind.getAction("Helper", "Enable/Disable Target and Magic Shooter") then
+        Keybind.new("Helper", "Enable/Disable Target and Magic Shooter", "", "")
+        Keybind.bind("Helper", "Enable/Disable Target and Magic Shooter", { { type = KEY_PRESS, callback = function()
+          local wt = shooterPanel and shooterPanel:recursiveGetChildById("enableAutoTarget")
+          local wm = shooterPanel and shooterPanel:recursiveGetChildById("enableMagicShooter")
+          if wt then
+            wt:setChecked(not wt:isChecked())
+            toggleAutoTarget(wt)
+          end
+          if wm then
+            wm:setChecked(not wm:isChecked())
+            toggleMagicShooter(wm)
+          end
+        end } }, root)
+      end
+      if not Keybind.getAction("Helper", "Change Shooter Preset") then
+        Keybind.new("Helper", "Change Shooter Preset", "", "")
+        Keybind.bind("Helper", "Change Shooter Preset", { { type = KEY_PRESS, callback = function() toggleShooterPreset() end } }, root)
+      end
+    end
+  end
+
   if g_game.isOnline() then
 		online()
 	end
 end
 
 function terminate()
+  if Keybind and Keybind.delete then
+    Keybind.delete("Helper", "Enable/Disable Helper")
+    Keybind.delete("Helper", "Enable/Disable Auto Target")
+    Keybind.delete("Helper", "Enable/Disable Magic Shooter")
+    Keybind.delete("Helper", "Enable/Disable Target and Magic Shooter")
+    Keybind.delete("Helper", "Change Shooter Preset")
+  end
+
   disconnect(LocalPlayer, {
     onPartyMembersChange = onPartyMembersChange,
 	})
@@ -428,7 +486,13 @@ function helperCycleEvent()
       timers[eventName] = 0
       local func = eventData.action
       if func and type(func) == "function" then
-        func()
+        local ok, err = pcall(func)
+        if not ok and err then
+          -- evita que um evento quebrado pare o ciclo (ex: widget nil em checkExerciseEvent)
+          if g_logger and g_logger.warning then
+            g_logger.warning("[game_helper] helperCycleEvent: " .. tostring(eventName) .. " failed: " .. tostring(err))
+          end
+        end
       end
     end
   end
@@ -3378,29 +3442,38 @@ function loadSettings()
 end
 
 function checkExerciseEvent()
-  local checkBox = toolsPanel:recursiveGetChildById("autoTrainingCheck")
-  if not checkBox:isChecked() then
+  if not toolsPanel then return end
+  local w = toolsPanel:recursiveGetChildById("autoTrainingCheck")
+  if not w or type(w.isChecked) ~= "function" or type(w.setChecked) ~= "function" then
     return
   end
+  if not w:isChecked() then return end
 
-  local itemBox = toolsPanel:recursiveGetChildById("autoTrainingItem").potionItem
-  if not itemBox or itemBox:getItemId() == 0 then
-    return checkBox:setChecked(false)
+  local autoTrainingItem = toolsPanel:recursiveGetChildById("autoTrainingItem")
+  local itemBox = autoTrainingItem and autoTrainingItem.potionItem
+  if not itemBox or type(itemBox.getItemId) ~= "function" or itemBox:getItemId() == 0 then
+    w:setChecked(false)
+    return
   end
 
   local itemId = itemBox:getItemId()
   if itemId == 0 then
-    return checkBox:setChecked(false)
+    w:setChecked(false)
+    return
   end
 
+  if not player or type(player.getInventoryCount) ~= "function" then return end
   if player:getInventoryCount(itemId, 0) == 0 then
-    return checkBox:setChecked(false)
+    w:setChecked(false)
+    return
   end
 
   local dummy = getExerciseDummy()
   if not dummy then
-    modules.game_textmessage.displayGameMessage("No exercise dummy found.")
-    checkBox:setChecked(false)
+    if modules.game_textmessage and modules.game_textmessage.displayGameMessage then
+      modules.game_textmessage.displayGameMessage("No exercise dummy found.")
+    end
+    w:setChecked(false)
     return
   end
 
@@ -3518,15 +3591,23 @@ function botStatus()
     helperStatusLabel:setText("Enabled")
     helperTrackerStatus:setText("Active")
     helperTrackerStatus:setColor("#44ad25")
-    helperStatus:setTooltip(" - Helper Status: Enabled\n\nYou can Enable or Disable the helper using\nthe default hotkey (Pause Break).\n\nAlso you can change the hotkey on settings.")
-    modules.game_textmessage.displayFailureMessage(tr('Helper Status: Enabled'))
+    helperStatus:setTooltip(" - Helper Status: Enabled (Chat On/Off)\n\nYou can Enable or Disable the helper using\nthe default hotkey (Pause Break).\n\nAlso you can change the hotkey on settings.")
+    if modules.game_textmessage and modules.game_textmessage.displayGameMessage then
+      modules.game_textmessage.displayGameMessage(tr('Helper Status: Enabled'))
+    else
+      modules.game_textmessage.displayFailureMessage(tr('Helper Status: Enabled'))
+    end
   else
     helperStatus:setImageSource("/images/store/icon-no")
     helperTrackerStatus:setText("Inactive")
     helperStatusLabel:setText("Disabled")
     helperTrackerStatus:setColor("#D33C3C")
-    helperStatus:setTooltip(" - Helper Status: Disabled\n\nYou can Enable or Disable the helper using\nthe default hotkey (Pause Break).\n\nAlso you can change the hotkey on settings.")
-    modules.game_textmessage.displayFailureMessage(tr('Helper Status: Disabled'))
+    helperStatus:setTooltip(" - Helper Status: Disabled (Chat On/Off)\n\nYou can Enable or Disable the helper using\nthe default hotkey (Pause Break).\n\nAlso you can change the hotkey on settings.")
+    if modules.game_textmessage and modules.game_textmessage.displayGameMessage then
+      modules.game_textmessage.displayGameMessage(tr('Helper Status: Disabled'))
+    else
+      modules.game_textmessage.displayFailureMessage(tr('Helper Status: Disabled'))
+    end
   end
 
   if not helperTracker.clickHandlersSetup then
@@ -3615,25 +3696,56 @@ function toggleNextWindow()
   loadMenu(menuId)
 end
 
+-- Retorna chatMode como string "chatOn"/"chatOff" e como número (CHAT_MODE) para Keybind (OTClient Redemption)
+local function getChatModeForHotkeys()
+  local isOn = modules.game_console and modules.game_console.isChatEnabled and modules.game_console.isChatEnabled()
+  local chatStr = isOn and "chatOn" or "chatOff"
+  local chatNum = (isOn and CHAT_MODE and CHAT_MODE.ON or 1) or (CHAT_MODE and CHAT_MODE.OFF or 2)
+  return isOn, chatStr, chatNum
+end
+
+-- Limpa um hotkey de outro keybind que esteja usando a mesma tecla (OTClient Redemption Keybind API)
+local function clearKeybindByHotkey(keyCombo, exceptCategory, exceptAction, chatModeNum)
+  if not Keybind or not Keybind.defaultKeybinds or not keyCombo or keyCombo == "" then return end
+  local preset = Keybind.currentPreset
+  for index, keybind in pairs(Keybind.defaultKeybinds) do
+    if not keybind.callbacks then break end
+    local cat, act = keybind.category, keybind.action
+    if (not exceptCategory or cat ~= exceptCategory or act ~= exceptAction) then
+      local keys = Keybind.getKeybindKeys(cat, act, chatModeNum, preset)
+      if keys.primary == keyCombo then
+        Keybind.setPrimaryActionKey(cat, act, preset, "", chatModeNum)
+      end
+      if keys.secondary == keyCombo then
+        Keybind.setSecondaryActionKey(cat, act, preset, "", chatModeNum)
+      end
+    end
+  end
+end
+
 function manageHotkeys(typo)
   helper:hide()
-  local assignWindow = g_ui.createWidget('ActionAssignWindow', rootWidget)
+  local root = rootWidget or (modules.game_interface and modules.game_interface.getRootPanel and modules.game_interface.getRootPanel())
+  local assignWindow = g_ui.createWidget('ActionAssignWindow', root)
   assignWindow:setText("Enable/Disable State")
   assignWindow:grabKeyboard()
 
+  local chatOn, chatStr, chatModeNum = getChatModeForHotkeys()
   local currentHotkey = ""
-  local chatMode = Options.isChatOnEnabled
-  local currentBind = KeyBind:getKeyBind("Helper", typo)
-  if currentBind then
-    currentHotkey = currentBind:getFirstKey()
+  local hasKeybind = Keybind and Keybind.getAction and Keybind.getAction("Helper", typo)
+  if hasKeybind then
+    local keys = Keybind.getKeybindKeys("Helper", typo, chatModeNum, Keybind.currentPreset)
+    currentHotkey = (keys and keys.primary) and tostring(keys.primary) or ""
   end
 
   assignWindow.display:setText(currentHotkey)
   assignWindow.desc:setText("Assign or edit a hotkey to manage Target/Shooter state.")
   assignWindow:setHeight(190)
 
+  local blockedKeysList = (blockedKeys and type(blockedKeys) == "table") and blockedKeys or {"Escape", "Return"}
+
   assignWindow.onKeyDown = function(assignWindow, keyCode, keyboardModifiers, keyText)
-    local keyCombo = determineKeyComboDesc(keyCode, keyboardModifiers, keyText)
+    local keyCombo = determineKeyComboDesc and determineKeyComboDesc(keyCode, keyboardModifiers, keyText) or tostring(keyCode)
     local resetCombo = {"Shift", "Ctrl", "Alt"}
     if table.contains(resetCombo, keyCombo) then
       assignWindow.display:setText('')
@@ -3645,12 +3757,18 @@ function manageHotkeys(typo)
     assignWindow.display:setText(keyCombo)
     assignWindow.warning:setVisible(false)
     assignWindow.buttonOk:setEnabled(true)
-    if KeyBinds:hotkeyIsUsed(keyCombo) or modules.game_actionbar.isHotkeyUsed(keyCombo, false) or modules.game_actionbar.isHotkeyUsed(keyCombo, true) then
+    if Keybind and Keybind.isKeyComboUsed and Keybind.isKeyComboUsed(keyCombo, "Helper", typo, chatModeNum) then
       assignWindow.warning:setVisible(true)
       assignWindow.warning:setText("This hotkey is already in use and will be overwritten.")
     end
+    if modules.game_actionbar and modules.game_actionbar.isHotkeyUsed then
+      if modules.game_actionbar.isHotkeyUsed(keyCombo, false) or modules.game_actionbar.isHotkeyUsed(keyCombo, true) then
+        assignWindow.warning:setVisible(true)
+        assignWindow.warning:setText("This hotkey is already in use and will be overwritten.")
+      end
+    end
 
-    if table.contains(blockedKeys, keyCombo) then
+    if table.contains(blockedKeysList, keyCombo) then
       assignWindow.warning:setVisible(true)
       assignWindow.warning:setText("This hotkey is already in use and cannot be overwritten.")
       assignWindow.buttonOk:setEnabled(false)
@@ -3658,53 +3776,63 @@ function manageHotkeys(typo)
     return true
   end
 
+  -- Aplica a tecla em Chat On e Chat Off para funcionar em ambos os estados
+  local function setKeyForBothChatModes(keyCombo)
+    if not hasKeybind or not Keybind or not Keybind.setPrimaryActionKey then return end
+    local preset = Keybind.currentPreset
+    local modeOn = CHAT_MODE and CHAT_MODE.ON or 1
+    local modeOff = CHAT_MODE and CHAT_MODE.OFF or 2
+    Keybind.setPrimaryActionKey("Helper", typo, preset, keyCombo, modeOn)
+    Keybind.setPrimaryActionKey("Helper", typo, preset, keyCombo, modeOff)
+  end
+
   assignWindow.buttonOk.onClick = function()
     local text = tostring(assignWindow.display:getText())
     if #text == 0 then
-      if currentBind then
-        Options.removeActionHotkey(chatMode and "chatOn" or "chatOff", currentBind.jsonName, false)
-        KeyBinds:setupAndReset(Options.currentHotkeySetName, chatMode and "chatOn" or "chatOff")
-      end
+      setKeyForBothChatModes("")
       assignWindow:destroy()
       return true
     end
 
-    if KeyBinds:hotkeyIsUsed(text) and text ~= '' then
-      local key = KeyBind:getKeyBindByHotkey(text)
-      if key then
-        g_keyboard.unbindKeyDown(text, nil)
-        Options.removeActionHotkey(chatMode and "chatOn" or "chatOff", key.jsonName)
+    if Keybind and Keybind.isKeyComboUsed then
+      local modeOn = CHAT_MODE and CHAT_MODE.ON or 1
+      local modeOff = CHAT_MODE and CHAT_MODE.OFF or 2
+      if Keybind.isKeyComboUsed(text, nil, nil, modeOn) or Keybind.isKeyComboUsed(text, nil, nil, modeOff) then
+        clearKeybindByHotkey(text, "Helper", typo, modeOn)
+        clearKeybindByHotkey(text, "Helper", typo, modeOff)
+        if root and g_keyboard.unbindKeyDown then
+          g_keyboard.unbindKeyDown(text, nil, root)
+        end
       end
     end
 
-    if modules.game_actionbar.isHotkeyUsedByChat(text, chatMode and "chatOn" or "chatOff") then
-      local usedButton = modules.game_actionbar.getUsedHotkeyButton(text)
-      if usedButton then
-        Options.removeHotkey(usedButton:getId())
-        g_keyboard.unbindKeyPress(text, nil, modules.game_interface.getRootPanel())
-        g_keyboard.unbindKeyDown(text, nil, modules.game_interface.getRootPanel())
-        usedButton.cache.hotkey = nil
-        modules.game_actionbar.updateButton(usedButton)
+    if modules.game_actionbar then
+      local usedByChat = modules.game_actionbar.isHotkeyUsedByChat and modules.game_actionbar.isHotkeyUsedByChat(text, chatStr)
+        or (modules.game_actionbar.isHotkeyUsed and modules.game_actionbar.isHotkeyUsed(text, false))
+      if usedByChat and modules.game_actionbar.getUsedHotkeyButton then
+        local usedButton = modules.game_actionbar.getUsedHotkeyButton(text)
+        if usedButton then
+          if usedButton.getId and modules.game_actionbar.removeHotkey then
+            modules.game_actionbar.removeHotkey(usedButton:getId())
+          end
+          if root and g_keyboard.unbindKeyPress then g_keyboard.unbindKeyPress(text, nil, root) end
+          if root and g_keyboard.unbindKeyDown then g_keyboard.unbindKeyDown(text, nil, root) end
+          if usedButton.cache then usedButton.cache.hotkey = nil end
+          if modules.game_actionbar.updateButton then modules.game_actionbar.updateButton(usedButton) end
+        end
       end
     end
 
-    m_settings.CustomHotkeys.checkAndRemoveUsedHotkey(text, chatMode)
-    if currentBind then
-      Options.updateGeneralHotkey(chatMode and "chatOn" or "chatOff", currentBind.jsonName, text)
-      KeyBinds:setupAndReset(Options.currentHotkeySetName, chatMode and "chatOn" or "chatOff")
-      currentBind:setFirstKey(text)
-      currentBind.firstKey = text
+    if m_settings and m_settings.CustomHotkeys and m_settings.CustomHotkeys.checkAndRemoveUsedHotkey then
+      m_settings.CustomHotkeys.checkAndRemoveUsedHotkey(text, chatOn)
     end
 
+    setKeyForBothChatModes(text)
     assignWindow:destroy()
   end
 
   assignWindow.buttonClear.onClick = function()
-    if currentBind then
-      Options.removeActionHotkey(chatMode and "chatOn" or "chatOff", currentBind.jsonName, false)
-      KeyBinds:setupAndReset(Options.currentHotkeySetName, chatMode and "chatOn" or "chatOff")
-    end
-
+    setKeyForBothChatModes("")
     assignWindow:destroy()
   end
 
