@@ -10,5 +10,6 @@ Module
     - game_itemselector
     - client_textedit
     - game_bot
+    - game_wheel
     - game_helper
     - game_party_list
