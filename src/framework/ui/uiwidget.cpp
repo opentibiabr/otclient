@@ -1578,7 +1578,7 @@ UIWidgetPtr UIWidget::getNearestChild(const Point& pos)
         return nullptr;
 
     UIWidgetPtr nearestChild = nullptr;
-    float minDistance = std::numeric_limits<float>::max();
+    float minDistance = (std::numeric_limits<float>::max)();
     for (const auto& child : m_children) {
         if (!child->isExplicitlyVisible())
             continue;
