@@ -301,6 +301,22 @@ local function hideOldClientStats()
     setSkillGroupVisibility('GameAdditionalSkills', features.additionalSkills)
     setSkillGroupVisibility('GameForgeSkillStats1332', features.forgeSkills and version >= 1332)
     setSkillGroupVisibility('GameForgeSkillStats', features.forgeSkills)
+    -- For very old clients (before 1098) the skills list fits without a slider.
+    -- Keep the scrollbar track visible but hide the draggable slider so it's not interactive.
+    if version < 1098 then
+        local scroll = skillsWindow:recursiveGetChildById('miniwindowScrollBar')
+        if scroll then
+            local slider = scroll:getChildById('sliderButton')
+            if slider then
+                slider:setVisible(false)
+            end
+        end
+         -- Also hide the offence info separator for old clients
+        local sep = skillsWindow:recursiveGetChildById('separadorOnOffenceInfoChange')
+        if sep then
+            sep:setVisible(false)
+        end
+    end
 end
 
 local function hideMenuOptionsForOldClients(menu)

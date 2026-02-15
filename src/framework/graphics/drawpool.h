@@ -204,6 +204,7 @@ private:
     void addAction(const std::function<void()>& action, size_t hash = 0);
     void bindFrameBuffer(const Size& size, const Color& color = Color::white);
     void releaseFrameBuffer(const Rect& dest);
+    void releaseFrameBuffer(const Rect& dest, uint8_t flipDirection);
 
     void setFPS(const uint16_t fps) { m_refreshDelay = 1000 / fps; }
 
@@ -277,20 +278,23 @@ private:
 
     void resetOnlyOnceParameters() {
         if (m_onlyOnceStateFlag > 0) { // Only Once State
+            // Restore previous values instead of resetting to defaults
             if (m_onlyOnceStateFlag & STATE_OPACITY)
-                resetOpacity();
+                getCurrentState().opacity = m_previousOpacity;
 
             if (m_onlyOnceStateFlag & STATE_BLEND_EQUATION)
-                resetBlendEquation();
+                getCurrentState().blendEquation = m_previousBlendEquation;
 
             if (m_onlyOnceStateFlag & STATE_CLIP_RECT)
-                resetClipRect();
+                getCurrentState().clipRect = m_previousClipRect;
 
             if (m_onlyOnceStateFlag & STATE_COMPOSITE_MODE)
-                resetCompositionMode();
+                getCurrentState().compositionMode = m_previousCompositionMode;
 
-            if (m_onlyOnceStateFlag & STATE_SHADER_PROGRAM)
-                resetShaderProgram();
+            if (m_onlyOnceStateFlag & STATE_SHADER_PROGRAM) {
+                getCurrentState().shaderProgram = m_previousShaderProgram;
+                getCurrentState().action = m_previousShaderAction;
+            }
 
             m_onlyOnceStateFlag = 0;
         }
@@ -314,6 +318,14 @@ private:
     uint16_t m_refreshDelay{ 0 }, m_shaderRefreshDelay{ 0 };
     uint32_t m_onlyOnceStateFlag{ 0 };
     uint_fast64_t m_lastFramebufferId{ 0 };
+
+    // Store previous values before onlyOnce override to restore them correctly
+    float m_previousOpacity{ 1.f };
+    BlendEquation m_previousBlendEquation{ BlendEquation::ADD };
+    CompositionMode m_previousCompositionMode{ CompositionMode::NORMAL };
+    Rect m_previousClipRect;
+    PainterShaderProgram* m_previousShaderProgram{ nullptr };
+    std::function<void()> m_previousShaderAction{ nullptr };
 
     PoolState m_states[10];
     uint_fast8_t m_lastStateIndex{ 0 };

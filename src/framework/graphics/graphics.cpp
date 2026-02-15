@@ -25,6 +25,7 @@
 #include "fontmanager.h"
 #include "painter.h"
 #include "texturemanager.h"
+#include <framework/core/logger.h>
 
 Graphics g_graphics;
 
@@ -84,6 +85,9 @@ void Graphics::init()
     g_painter = std::make_unique<Painter>();
 
     g_textures.init();
+
+    g_fonts.init();   
+
 }
 
 void Graphics::terminate()

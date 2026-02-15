@@ -816,6 +816,37 @@ struct ForgeOpenData
     uint16_t dustLevel{ 0 };
 };
 
+struct GemData {
+    uint16_t gemID = 0;
+    uint8_t locked = 0;
+    uint8_t gemDomain = 0;
+    uint8_t gemType = 0;
+    uint8_t lesserBonus = 0;
+    uint8_t regularBonus = 0;
+    uint8_t supremeBonus = 0;
+};
+
+struct WheelData
+{
+    uint32_t ownerId;
+    uint8_t canUse;
+    uint8_t options;     // 0=cannot change, 1=can inc/dec, 2=only inc
+    uint8_t vocationId;
+    uint16_t points;
+    uint16_t extraPoints;
+
+    std::array<uint16_t, static_cast<size_t>(Otc::WheelSlots_t::SLOT_LAST)> wheelPoints;
+
+    std::vector<std::pair<uint16_t, uint8_t>> promotionScrolls;
+    uint8_t extraPointsForMonkQuest;
+
+    std::vector<uint16_t> activeGems;
+
+    std::unordered_map<uint16_t, GemData> revealedGems;
+
+    std::unordered_map<uint8_t, uint8_t> basicGrades;
+    std::unordered_map<uint8_t, uint8_t> supremeGrades;
+};
 struct ForgeHistory
 {
     uint32_t createdAt;

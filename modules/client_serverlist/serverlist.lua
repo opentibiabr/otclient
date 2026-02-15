@@ -1,5 +1,13 @@
 ServerList = {}
 
+function safeDecrypt(text)
+    if not text or text == '' then
+        return ''
+    end
+    local success, result = pcall(g_crypt.decrypt, text)
+    return success and result or ''
+end
+
 -- private variables
 local serverListWindow = nil
 local serverTextList = nil
@@ -30,7 +38,7 @@ end
 function ServerList.terminate()
     ServerList.destroy()
 
-    g_settings.setNode('ServerList', servers)
+    ServerList.save()
 
     ServerList = nil
     serverListWindow = nil
@@ -148,13 +156,30 @@ function ServerList.hide()
 end
 
 function ServerList.setServerAccount(host, account)
-    if servers[host] then
-        servers[host].account = account
-    end
+    servers[host] = servers[host] or {}
+    servers[host].account = g_crypt.encrypt(account)
 end
 
 function ServerList.setServerPassword(host, password)
-    if servers[host] then
-        servers[host].password = password
-    end
+    servers[host] = servers[host] or {}
+    servers[host].password = g_crypt.encrypt(password)
+end
+
+function ServerList.setServerAutologin(host, auto)
+    servers[host] = servers[host] or {}
+    servers[host].autologin = auto and true or false
+end
+
+function ServerList.getServerAutologin(host)
+    local servers = g_settings.getNode('ServerList') or {}
+    return servers[host] and servers[host].autologin or false
+end
+
+function ServerList.save()
+    g_settings.setNode('ServerList', servers)
+    g_configs.saveSettings()
+end
+
+function ServerList.getServers()
+    return servers
 end

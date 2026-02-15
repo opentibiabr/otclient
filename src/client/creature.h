@@ -180,6 +180,9 @@ minHeight,
     void setWidgetInformation(const UIWidgetPtr& info);
     UIWidgetPtr getWidgetInformation() { return m_widgetInformation; }
 
+    void setNameShader(const std::string& name) { m_nameShader = name; }
+    std::string getNameShader() { return m_nameShader; }
+
     void setText(const std::string& text, const Color& color);
     std::string getText();
     void clearText() { setText("", Color::white); }
@@ -296,6 +299,7 @@ private:
     EventPtr m_disappearEvent;
 
     CachedText m_name;
+    std::string m_nameShader;
     CachedStep m_stepCache;
 
     Position m_lastStepToPosition;

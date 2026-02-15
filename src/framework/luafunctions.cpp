@@ -185,6 +185,7 @@ void Application::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_configs", "load", &ConfigManager::load, &g_configs);
     g_lua.bindSingletonFunction("g_configs", "unload", &ConfigManager::unload, &g_configs);
     g_lua.bindSingletonFunction("g_configs", "create", &ConfigManager::create, &g_configs);
+    g_lua.bindSingletonFunction("g_configs", "saveSettings", &ConfigManager::saveSettings, &g_configs);
 
     // Logger
     g_lua.registerSingletonClass("g_logger");
@@ -477,7 +478,10 @@ void Application::registerLuaFunctions()
     // FontManager
     g_lua.registerSingletonClass("g_fonts");
     g_lua.bindSingletonFunction("g_fonts", "clearFonts", &FontManager::clearFonts, &g_fonts);
-    g_lua.bindSingletonFunction("g_fonts", "importFont", &FontManager::importFont, &g_fonts);
+    g_lua.bindSingletonFunction("g_fonts", "importFont",
+        static_cast<bool (FontManager::*)(const std::string&)>(&FontManager::importFont), &g_fonts);
+    g_lua.bindSingletonFunction("g_fonts", "importFontWithSize",
+        static_cast<bool (FontManager::*)(const std::string&, int)>(&FontManager::importFont), &g_fonts);
     g_lua.bindSingletonFunction("g_fonts", "fontExists", &FontManager::fontExists, &g_fonts);
 
     // ParticleManager
@@ -492,6 +496,7 @@ void Application::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_shaders", "createFragmentShader", &ShaderManager::createFragmentShader, &g_shaders);
     g_lua.bindSingletonFunction("g_shaders", "createFragmentShaderFromCode", &ShaderManager::createFragmentShaderFromCode, &g_shaders);
     g_lua.bindSingletonFunction("g_shaders", "setupMapShader", &ShaderManager::setupMapShader, &g_shaders);
+    g_lua.bindSingletonFunction("g_shaders", "setupTextShader", &ShaderManager::setupTextShader, &g_shaders);
     g_lua.bindSingletonFunction("g_shaders", "setupItemShader", &ShaderManager::setupItemShader, &g_shaders);
     g_lua.bindSingletonFunction("g_shaders", "setupOutfitShader", &ShaderManager::setupOutfitShader, &g_shaders);
     g_lua.bindSingletonFunction("g_shaders", "setupMountShader", &ShaderManager::setupMountShader, &g_shaders);
@@ -816,6 +821,8 @@ void Application::registerLuaFunctions()
     g_lua.bindClassMemberFunction<UIWidget>("setTextHorizontalAutoResize", &UIWidget::setTextHorizontalAutoResize);
     g_lua.bindClassMemberFunction<UIWidget>("setFont", &UIWidget::setFont);
     g_lua.bindClassMemberFunction<UIWidget>("setFontScale", &UIWidget::setFontScale);
+    g_lua.bindClassMemberFunction<UIWidget>("setTTFFont", &UIWidget::setTTFFont);
+    g_lua.bindClassMemberFunction<UIWidget>("setStroke", &UIWidget::setStroke); 
     g_lua.bindClassMemberFunction<UIWidget>("setShader", &UIWidget::setShader);
     g_lua.bindClassMemberFunction<UIWidget>("getText", &UIWidget::getText);
     g_lua.bindClassMemberFunction<UIWidget>("getDrawText", &UIWidget::getDrawText);

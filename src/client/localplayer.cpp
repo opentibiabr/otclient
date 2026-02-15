@@ -260,8 +260,8 @@ void LocalPlayer::setStates(const uint64_t states)
     const uint64_t oldStates = m_states;
     m_states = states;
 
-    if (isParalyzed())
-        m_walkTimer.update(-getStepDuration());
+    if (isParalyzed() && isWalking() && m_serverWalk)
+        updateWalk();
 
     callLuaField("onStatesChange", states, oldStates);
 }
@@ -721,9 +721,6 @@ void LocalPlayer::setStoreExpBoostTime(uint16_t value)
 
 void LocalPlayer::setHarmony(const uint8_t harmony)
 {
-    if (m_harmony == harmony)
-        return;
-
     const uint8_t oldHarmony = m_harmony;
     m_harmony = harmony;
 
@@ -732,9 +729,6 @@ void LocalPlayer::setHarmony(const uint8_t harmony)
 
 void LocalPlayer::setSerene(const bool serene)
 {
-    if (m_serene == serene)
-        return;
-
     const bool oldSerene = m_serene;
     m_serene = serene;
 

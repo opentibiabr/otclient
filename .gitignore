@@ -58,6 +58,8 @@ vc17/
 *.exp
 *.lib
 *.bak
+*.code-workspace
+
 
 # Protobuf generated files
 *.pb.cc

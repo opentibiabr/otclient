@@ -133,6 +133,7 @@ find_package(httplib CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(utf8cpp REQUIRED)
 find_package(unofficial-inih CONFIG REQUIRED)
+find_package(Freetype REQUIRED)
 
 find_path(CPPCODEC_INCLUDE_DIRS "cppcodec/base32_crockford.hpp")
 
@@ -328,6 +329,7 @@ if (TOGGLE_FRAMEWORK_GRAPHICS)
           framework/graphics/drawpool.cpp
           framework/graphics/drawpoolmanager.cpp
           framework/graphics/fontmanager.cpp
+          framework/graphics/ttfloader.cpp
           framework/graphics/framebuffer.cpp
           framework/graphics/graphics.cpp
           framework/graphics/image.cpp
@@ -557,6 +559,7 @@ if(MSVC)
           pugixml::pugixml
           fmt::fmt-header-only
           utf8cpp::utf8cpp
+          Freetype::Freetype
   )
 elseif(ANDROID)
   target_include_directories(otclient_core
@@ -674,6 +677,7 @@ elseif(WASM)
           Ogg::ogg
           Vorbis::vorbisfile
           Vorbis::vorbis
+          Freetype::Freetype
   )
 
 
@@ -790,6 +794,7 @@ else() # Linux
           Ogg::ogg
           Vorbis::vorbisfile
           Vorbis::vorbis
+          Freetype::Freetype
   )
 
   if(CMAKE_BUILD_TYPE STREQUAL "Debug")

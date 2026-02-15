@@ -94,6 +94,22 @@ local MOUNT_SHADERS = { {
     frag = 'shaders/fragment/party.frag'
 } }
 
+-- Text shaders for improved readability and visual effects
+-- All shaders use multi-sample circular sampling for smooth outlines
+local TEXT_SHADERS = { {
+    name = 'Text - Default',
+    frag = nil -- No shader, standard text rendering
+}, {
+    name = 'Text - Gold Outline',
+    frag = 'shaders/fragment/text_golden_shadow_bold_fragment.frag' -- Smooth gold (#ee8413) outline
+}, {
+    name = 'Text - Black Outline',
+    frag = 'shaders/fragment/text_black_outline.frag' -- Classic black outline, max readability
+}, {
+    name = 'Text - Glow',
+    frag = 'shaders/fragment/text_glow.frag' -- Soft glow effect (higher GPU cost)
+} }
+
 local function attachShaders()
     local map = modules.game_interface.getMapPanel()
     map:setShader('Default')
@@ -136,6 +152,11 @@ function ShaderController:onInit()
     for _, opts in pairs(MOUNT_SHADERS) do
         registerShader(opts, 'setupMountShader')
     end
+
+    for _, opts in pairs(TEXT_SHADERS) do
+        registerShader(opts, 'setupTextShader')
+    end
+
     Keybind.new('Windows', 'show/hide Shader Windows', HOTKEY, '')
     Keybind.bind('Windows', 'show/hide Shader Windows', {
         {
@@ -197,5 +218,25 @@ function ShaderController:open()
 
     for _, opts in pairs(MOUNT_SHADERS) do
         self.ui.mountComboBox:addOption(opts.name, opts)
+    end
+    for _, opts in pairs(TEXT_SHADERS) do
+        self.ui.textComboBox:addOption(opts.name, opts)
+    end
+end
+
+function ShaderController:onTextComboBoxChange(event)
+    -- Apply text shader to local player's name
+    -- This affects how the player's name is rendered above their character
+    local player = g_game.getLocalPlayer()
+    if player then
+        -- If using widget-based name rendering
+        local infoWidget = player:getWidgetInformation()
+        if infoWidget then
+            infoWidget:setShader(event.text)
+        end
+        -- Apply to engine-level name rendering (requires C++ support)
+        if player.setNameShader then
+            player:setNameShader(event.text)
+        end
     end
 end

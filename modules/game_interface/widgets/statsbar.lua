@@ -428,6 +428,7 @@ function StatsBar.reloadCurrentStatsBarDeepInfo()
 end
 
 function StatsBar.onHarmonyChange(localPlayer, harmony, oldHarmony)
+    modules.game_healthcircle.whenMonkHarmonyChange(localPlayer, harmony, oldHarmony)
     local statsBars = StatsBar.getAllStatsBarWithPosition()
     for _, barElement in ipairs(statsBars) do
         local harmonies = barElement:recursiveGetChildById('harmonies')
@@ -450,6 +451,7 @@ function StatsBar.onHarmonyChange(localPlayer, harmony, oldHarmony)
 end
 
 function StatsBar.onSereneChange(localPlayer, serene, oldSerene)
+    modules.game_healthcircle.whenMonkSereneChange(localPlayer, serene, oldSerene)
     local statsBars = StatsBar.getAllStatsBarWithPosition()
     for _, barElement in ipairs(statsBars) do
         local sereneIcon = barElement:recursiveGetChildById('serene')
@@ -471,6 +473,7 @@ function StatsBar.onSereneChange(localPlayer, serene, oldSerene)
 end
 
 function StatsBar.onVocationChange(localPlayer, vocation, oldVocation)
+    modules.game_healthcircle.checkMonkVocation()
     local statsBars = StatsBar.getAllStatsBarWithPosition()
     local isMonk = localPlayer:isMonk() and g_game.getFeature(GameVocationMonk)
     for _, barElement in ipairs(statsBars) do

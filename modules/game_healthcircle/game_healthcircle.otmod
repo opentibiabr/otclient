@@ -9,6 +9,6 @@ Module
   autoload-priority: 1000
   sandboxed: true
   dependencies: [ game_interface ]
-  scripts: [ game_healthcircle ]
+  scripts: [ game_healthcircle_monk, game_healthcircle ]
   @onLoad: init()
   @onUnload: terminate()

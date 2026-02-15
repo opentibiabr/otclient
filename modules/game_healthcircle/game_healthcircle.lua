@@ -64,6 +64,9 @@ function init()
     manaShieldCircle:setVisible(false)
     manaShieldCircleFront:setVisible(false)
 
+    -- @ MONK
+    initMonkWidgets()
+    -- @
     whenMapResizeChange()
     initOnHpAndMpChange()
     initOnGeometryChange()
@@ -121,7 +124,9 @@ function terminate()
     expCircleFront = nil
     skillCircleFront:destroy()
     skillCircleFront = nil
-
+    -- @ Destroy MONK
+    terminateMonkWidgets()
+    -- @
     terminateOnHpAndMpChange()
     terminateOnGeometryChange()
     terminateOnLoginChange()
@@ -146,7 +151,12 @@ function initOnHpAndMpChange()
         onSkillChange = whenSkillsChange,
         onManaShieldChange = whenManaShieldChange,
         onMagicLevelChange = whenSkillsChange,
-        onLevelChange = whenSkillsChange
+        onLevelChange = whenSkillsChange,
+        -- @ MONK in modules\game_interface\widgets\statsbar.lua
+        -- onHarmonyChange = whenMonkHarmonyChange,
+        -- onSereneChange = whenMonkSereneChange,
+        -- onVocationChange = function() checkMonkVocation() end
+        -- @
     })
 end
 
@@ -157,7 +167,12 @@ function terminateOnHpAndMpChange()
         onSkillChange = whenSkillsChange,
         onManaShieldChange = whenManaShieldChange,
         onMagicLevelChange = whenSkillsChange,
-        onLevelChange = whenSkillsChange
+        onLevelChange = whenSkillsChange,
+        -- @ MONK in modules\game_interface\widgets\statsbar.lua
+        -- onHarmonyChange = whenMonkHarmonyChange,
+        -- onSereneChange = whenMonkSereneChange,
+        -- onVocationChange = function() checkMonkVocation() end
+        -- @
     })
 end
 
@@ -187,6 +202,12 @@ end
 
 function whenHealthChange()
     if g_game.isOnline() then
+        -- @ MONK
+        if isMonkMode then
+            whenMonkHealthChange()
+            return
+        end
+        -- @
         -- Fix By TheMaoci ~ if your server doesn't have this properly implemented,
         -- it will cause alot of unnecessary deaths from players which will be unfair.
         -- My friend reported me that while he was using his otcv8 and asked for a fix so here you go :)
@@ -539,6 +560,9 @@ function whenMapResizeChange()
         if isExpCircle or isSkillCircle then
             whenSkillsChange()
         end
+        -- @ MONK
+        positionMonkWidgets()
+        -- @
     end
 
     updateManaShieldDisplay()
@@ -552,13 +576,25 @@ function setHealthCircle(value)
     value = toboolean(value)
     isHealthCircle = value
     if value then
-        healthCircle:setVisible(true)
-        healthCircleFront:setVisible(true)
+        -- @ MONK
+        checkMonkVocation()
+        if isMonkMode then
+            healthCircle:setVisible(false)
+            healthCircleFront:setVisible(false)
+            setMonkWidgetsVisible(true)
+        else
+            healthCircle:setVisible(true)
+            healthCircleFront:setVisible(true)
+        end
         whenMapResizeChange()
         updateManaShieldDisplay()
+        -- @
     else
         healthCircle:setVisible(false)
         healthCircleFront:setVisible(false)
+        -- @ MONK
+        setMonkWidgetsVisible(false)
+        -- @
         if manaShieldCircle and manaShieldCircleFront then
             manaShieldCircle:setVisible(false)
             manaShieldCircleFront:setVisible(false)
@@ -651,7 +687,9 @@ function setCircleOpacity(value)
     expCircleFront:setOpacity(value)
     skillCircle:setOpacity(value)
     skillCircleFront:setOpacity(value)
-
+    -- @ MONK
+    setMonkCircleOpacity(value)
+    -- @
     g_settings.set('healthcircle_opacity', value)
 end
 

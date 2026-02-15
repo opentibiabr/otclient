@@ -149,6 +149,16 @@ function Creature:onIconsChange(icon, category, count)
         local clipX = (icon - 1) * 11
         self:setIconsTexture(imagePath, torect(clipX .. ' 0 11 11'), count)
     end
+    -- Apply fiendish text shader only to monsters and only when the icon matches
+    if type(self.isMonster) ~= 'function' or not self:isMonster() then
+        return
+    end
+    if category == 1 and icon == 5 then
+        self:setNameShader('Text - Gold Outline')
+    elseif self.getNameShader and self:getNameShader() == 'Text - Gold Outline' then
+        -- Reset only if we previously applied the fiendish shader
+        self:setNameShader('Text - Default')
+    end
 end
 
 function Creature:onSkullChange(skullId)
