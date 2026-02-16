@@ -840,6 +840,7 @@ else() # Linux
             Ogg::ogg
             Vorbis::vorbisfile
             Vorbis::vorbis
+            Freetype::Freetype
     )
   endforeach()
 
