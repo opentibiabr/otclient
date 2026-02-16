@@ -55,10 +55,7 @@
     .modal-message {
         width: 100%;
         height: 100%;
-        padding-left: 20px;
-        padding-right: 20px;
-        padding-top: 10px;
-        padding-bottom: 10px;
+        padding: 0;
         box-sizing: border-box;
         word-wrap: break-word;
         overflow: scroll;
@@ -68,7 +65,14 @@
     #optionsTabContent {
         width: 100%;
         height: 100%;
+        padding-left: 10px;
+        padding-right: 10px;
+        padding-top: 10px;
+        padding-bottom: 10px;
         box-sizing: border-box;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        white-space: normal;
     }
     .modal-separator {
         margin-top: 5px;
@@ -92,6 +96,7 @@
     
     .modal-message table {
         display: table;
+        table-layout: auto;
     }
     
     .modal-message tbody {
@@ -104,6 +109,8 @@
 
     .modal-message td {
         display: table-cell;
+        overflow-wrap: break-word;
+        word-wrap: break-word;
     }
 
     .modal-message th {
@@ -117,6 +124,10 @@
     .modal-message p {
         display: block;
         overflow-wrap: break-word;
+        word-wrap: break-word;
+        padding: 0;
+        margin: 0;
+        white-space: normal;
     }
     
     .modal-message ul {
@@ -132,9 +143,12 @@
     }
 
     .modal-message a {
-        color: #e2e5e9;
+        display: inline;
+        color: #ffffff;
         text-decoration: underline;
         cursor: pointer;
+        padding: 0;
+        margin: 0;
     }
 
     .modal-message a:hover {
@@ -143,14 +157,28 @@
 
     .modal-message center {
         display: block;
+        text-align: center;
+        width: 100%;
     }
 
     .modal-message strong {
+        display: inline;
         font-weight: bold;
+        padding: 0;
+        margin: 0;
     }
 
     .modal-message em {
+        display: inline;
         font-style: italic;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .modal-message span {
+        display: inline;
+        padding: 0;
+        margin: 0;
     }
     
     .modal-message h1, .modal-message h2, .modal-message h3, .modal-message h4 {
