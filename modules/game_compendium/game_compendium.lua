@@ -25,16 +25,31 @@ local function processHtmlContent(text)
     -- Ensure <img ...> are self-closed so the HTML parser treats them as void elements
     text = text:gsub("<img%s+([^>]-)%s*>", "<img %1/>")
 
-    -- Remove border styles from style attributes as they cause OTML parsing errors
+    -- Remove border attributes completely as they cause OTML parsing errors
     -- OTClient expects borders in a specific format that HTML border styles don't match
-    text = text:gsub("([%s;])border%s*:%s*[^;]*;?", "%1")
-    text = text:gsub("([%s;])border%-[^:]*%s*:%s*[^;]*;?", "%1")
+    text = text:gsub('%s+border="[^"]*"', '')
+    text = text:gsub("%s+border='[^']*'", '')
     
-    -- Clean up any double semicolons or trailing semicolons in style attributes
-    text = text:gsub(";;+", ";")
-    text = text:gsub(";%s*\"", "\"")
-    text = text:gsub("style=\";", "style=\"")
-    text = text:gsub("style=\"%s*\"", "")
+    -- Remove all border-related CSS properties from style attributes
+    text = text:gsub('style="([^"]*)"', function(style)
+        -- Remove all border properties
+        style = style:gsub('border%s*:%s*[^;]*;?', '')
+        style = style:gsub('border%-[^:]*%s*:%s*[^;]*;?', '')
+        -- Clean up semicolons
+        style = style:gsub(';;+', ';')
+        style = style:gsub('^%s*;%s*', '')
+        style = style:gsub('%s*;%s*$', '')
+        style = style:gsub('^%s*', '')
+        style = style:gsub('%s*$', '')
+        if style == '' then
+            return ''
+        else
+            return 'style="' .. style .. '"'
+        end
+    end)
+    
+    -- Clean up empty style attributes
+    text = text:gsub('%s+style=""', '')
 
     return text
 end
@@ -255,23 +270,26 @@ function buildNewsUI(newsData)
         
         -- Process content for major updates
         if category and category:upper() == "MAJOR UPDATES" then
-            -- Remove width constraints from tables and cells to allow proper centering
-            processedMessage = processedMessage:gsub('width=".-"', '')
-            processedMessage = processedMessage:gsub("width='.-'", '')
-            -- Remove inline width styles
-            processedMessage = processedMessage:gsub('style=".-width:%s*[^;"]*;?', 'style="')
-            processedMessage = processedMessage:gsub("style='.-width:%s*[^;']*;?", "style='")
-            -- Wrap content with padding div
-            processedMessage = '<div style="padding-left: 0px;">' .. processedMessage .. '</div>'
+            -- Convert \n in paragraphs to <br/> for proper line breaks
+            processedMessage = processedMessage:gsub('</p>\n<p>', '</p><br/><p>')
+            processedMessage = processedMessage:gsub('<p>([^<]*)</p>', function(content)
+                -- Convert \n within paragraph content to <br/>
+                content = content:gsub('\n', '<br/>')
+                return '<p>' .. content .. '</p>'
+            end)
         end
         
         contentWidget:html(processedMessage)
         
         -- Add anchor click handler to open links
+        if contentWidget.onAnchorClick then
+            disconnect(contentWidget, {onAnchorClick = contentWidget.onAnchorClick})
+        end
         contentWidget.onAnchorClick = function(widget, url)
             g_platform.openUrl(url)
             return true
         end
+        connect(contentWidget, {onAnchorClick = contentWidget.onAnchorClick})
     end
 
     for _, entry in ipairs(newsData.gamenews) do
