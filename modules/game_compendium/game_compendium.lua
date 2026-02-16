@@ -27,15 +27,28 @@ local function processHtmlContent(text)
     -- Ensure img tags are self-closed (case-insensitive)
     text = text:gsub("<[Ii][Mm][Gg]%s+([^>]-)%s*>", "<img %1/>")
 
-    -- Remove attributes that OTClient can't parse
+    -- Remove attributes that OTClient can't parse well
     text = text:gsub('%s+border="[^"]*"', '')
     text = text:gsub("%s+border='[^']*'", '')
     text = text:gsub('%s+cellpadding="[^"]*"', '')
     text = text:gsub('%s+cellspacing="[^"]*"', '')
+    text = text:gsub('%s+valign="[^"]*"', '')
+    text = text:gsub("%s+valign='[^']*'", '')
+    text = text:gsub('%s+align="[^"]*"', '')
+    text = text:gsub("%s+align='[^']*'", '')
+    text = text:gsub('%s+target="[^"]*"', '')
+    text = text:gsub("%s+target='[^']*'", '')
+    text = text:gsub('%s+rel="[^"]*"', '')
+    text = text:gsub("%s+rel='[^']*'", '')
     
-    -- Remove border CSS from style attributes
+    -- Remove complex CSS from style attributes that OTClient may not support
     text = text:gsub('style="([^"]*)"', function(style)
         style = style:gsub('border[^;]*;?', '')
+        style = style:gsub('height%s*:%s*[^;]*;?', '')
+        style = style:gsub('margin%-left%s*:%s*auto', '')
+        style = style:gsub('margin%-right%s*:%s*auto', '')
+        style = style:gsub('vertical%-align[^;]*;?', '')
+        style = style:gsub('box%-sizing[^;]*;?', '')
         style = style:gsub(';;+', ';')
         style = style:gsub('^%s*;%s*', '')
         style = style:gsub('%s*;%s*$', '')
@@ -266,16 +279,8 @@ function buildNewsUI(newsData)
         
         local processedMessage = processHtmlContent(message)
         
-        -- Process content for major updates
-        if category and category:upper() == "MAJOR UPDATES" then
-            -- Convert \n in paragraphs to <br/> for proper line breaks
-            processedMessage = processedMessage:gsub('</p>\n<p>', '</p><br/><p>')
-            processedMessage = processedMessage:gsub('<p>([^<]*)</p>', function(content)
-                -- Convert \n within paragraph content to <br/>
-                content = content:gsub('\n', '<br/>')
-                return '<p>' .. content .. '</p>'
-            end)
-        end
+        -- Simple cleanup: just remove newlines between tags, keep everything else
+        processedMessage = processedMessage:gsub('>\n<', '><')
         
         contentWidget:html(processedMessage)
         
