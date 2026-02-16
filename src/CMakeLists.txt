@@ -720,6 +720,7 @@ elseif(WASM)
             Ogg::ogg
             Vorbis::vorbisfile
             Vorbis::vorbis
+            Freetype::Freetype
     )
   endforeach()
 
