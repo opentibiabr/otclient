@@ -1009,11 +1009,24 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
         if smartLeftClick and mouseButton == MouseLeftButton and keyboardModifiers == KeyboardNoModifier then
             local player = g_game.getLocalPlayer()
 
-            -- Handle creature attacks first
-            if attackCreature and attackCreature ~= player then
+            -- Handle NPCs first - they should not be attacked
+            if creatureThing and creatureThing:isNpc() and g_game.getClientVersion() < 1511 then
+                local playerPos = player:getPosition()
+                local npcPos = creatureThing:getPosition()
+                if playerPos.z == npcPos.z then
+                    local dist = math.max(math.abs(playerPos.x - npcPos.x), math.abs(playerPos.y - npcPos.y))
+                    if dist <= 3 then
+                        g_game.talk("hi")
+                        return true
+                    end
+                end
+            end
+
+            -- Handle creature attacks (but not NPCs)
+            if attackCreature and attackCreature ~= player and not attackCreature:isNpc() then
                 g_game.attack(attackCreature)
                 return true
-            elseif creatureThing and creatureThing ~= player and autoWalkPos and creatureThing:getPosition().z == autoWalkPos.z then
+            elseif creatureThing and creatureThing ~= player and not creatureThing:isNpc() and autoWalkPos and creatureThing:getPosition().z == autoWalkPos.z then
                 g_game.attack(creatureThing)
                 return true
             elseif useThing then
@@ -1153,11 +1166,11 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
             (mouseButton == MouseLeftButton or mouseButton == MouseRightButton) then
             g_game.open(useThing)
             return true
-        elseif attackCreature and g_keyboard.isAltPressed() and
+        elseif attackCreature and not attackCreature:isNpc() and g_keyboard.isAltPressed() and
             (mouseButton == MouseLeftButton or mouseButton == MouseRightButton) then
             g_game.attack(attackCreature)
             return true
-        elseif creatureThing and autoWalkPos and creatureThing:getPosition().z == autoWalkPos.z and g_keyboard.isAltPressed() and
+        elseif creatureThing and not creatureThing:isNpc() and autoWalkPos and creatureThing:getPosition().z == autoWalkPos.z and g_keyboard.isAltPressed() and
             (mouseButton == MouseLeftButton or mouseButton == MouseRightButton) then
             g_game.attack(creatureThing)
             return true
@@ -1412,11 +1425,11 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
             (mouseButton == MouseLeftButton or mouseButton == MouseRightButton) then
             createThingMenu(menuPosition, lookThing, useThing, creatureThing)
             return true
-        elseif attackCreature and g_keyboard.isAltPressed() and
+        elseif attackCreature and not attackCreature:isNpc() and g_keyboard.isAltPressed() and
             (mouseButton == MouseLeftButton or mouseButton == MouseRightButton) then
             g_game.attack(attackCreature)
             return true
-        elseif creatureThing and autoWalkPos and creatureThing:getPosition().z == autoWalkPos.z and g_keyboard.isAltPressed() and
+        elseif creatureThing and not creatureThing:isNpc() and autoWalkPos and creatureThing:getPosition().z == autoWalkPos.z and g_keyboard.isAltPressed() and
             (mouseButton == MouseLeftButton or mouseButton == MouseRightButton) then
             g_game.attack(creatureThing)
             return true
