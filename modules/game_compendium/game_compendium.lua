@@ -32,6 +32,8 @@ local function processHtmlContent(text)
     text = text:gsub("%s+border='[^']*'", '')
     text = text:gsub('%s+cellpadding="[^"]*"', '')
     text = text:gsub('%s+cellspacing="[^"]*"', '')
+    text = text:gsub('%s+height="[^"]*"', '')
+    text = text:gsub("%s+height='[^']*'", '')
     text = text:gsub('%s+valign="[^"]*"', '')
     text = text:gsub("%s+valign='[^']*'", '')
     text = text:gsub('%s+align="[^"]*"', '')
@@ -61,6 +63,13 @@ local function processHtmlContent(text)
     
     -- Clean up empty style attributes
     text = text:gsub('%s+style=""', '')
+
+    -- Ensure adjacent block elements break lines in OTClient HTML renderer
+    text = text:gsub('</p>%s*<p', '</p><br/><p')
+    text = text:gsub('</p>%s*<ul', '</p><br/><ul')
+    text = text:gsub('</ul>%s*<p', '</ul><br/><p')
+    text = text:gsub('</table>%s*<p', '</table><br/><p')
+    text = text:gsub('</table>%s*<table', '</table><br/><table')
 
     return text
 end
