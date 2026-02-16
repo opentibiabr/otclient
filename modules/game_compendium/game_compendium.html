@@ -84,19 +84,18 @@
     }
 
     /* ===== MINIMAL CONTENT STYLING - Essential HTML rendering only ===== */
-    /* Provide basic display types so HTML elements render correctly */
-    /* All custom styling (colors, sizes, spacing) should come from compendium.json inline styles */
+    /* Only define display types - let JSON inline styles handle dimensions, margins, alignment */
     
-    .modal-message > * {
-        margin-left: 100px;
-        margin-right: 100px;
+    .modal-message div {
+        display: block;
     }
     
     .modal-message table {
         display: table;
-        width: calc(100% - 200px);
-        margin-left: 100px;
-        margin-right: 100px;
+    }
+    
+    .modal-message tbody {
+        display: table-row-group;
     }
 
     .modal-message tr {
@@ -105,7 +104,6 @@
 
     .modal-message td {
         display: table-cell;
-        padding: 5px;
     }
 
     .modal-message th {
@@ -118,23 +116,19 @@
 
     .modal-message p {
         display: block;
-        margin-top: 10px;
-        margin-bottom: 10px;
-        margin-left: 100px;
-        margin-right: 100px;
         overflow-wrap: break-word;
     }
     
-    .modal-message center p {
-        text-align: center;
-        margin-top: 5px;
-        margin-bottom: 5px;
+    .modal-message ul {
+        display: block;
+    }
+    
+    .modal-message li {
+        display: list-item;
     }
 
     .modal-message br {
         display: block;
-        content: "";
-        margin-top: 0px;
     }
 
     .modal-message a {
@@ -149,17 +143,6 @@
 
     .modal-message center {
         display: block;
-        text-align: center;
-        word-spacing: normal;
-        width: 100%;
-        margin-left: 0px;
-        margin-right: 0px;
-    }
-    
-    .modal-message center p {
-        text-align: center;
-        margin-top: 5px;
-        margin-bottom: 5px;
     }
 
     .modal-message strong {
@@ -168,6 +151,11 @@
 
     .modal-message em {
         font-style: italic;
+    }
+    
+    .modal-message h1, .modal-message h2, .modal-message h3, .modal-message h4 {
+        display: block;
+        font-weight: bold;
     }
 </style>
 

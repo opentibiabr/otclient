@@ -5,42 +5,40 @@ local compendiumButton = nil
 local uiBuilt = false
 
 local function processHtmlContent(text)
-    -- Minimal, non-destructive normalization:
-    -- - decode common HTML entities
-    -- - normalize <br> variants to a single form
-    -- - ensure <img> tags are self-closed
-    -- - remove problematic border styles that OTClient can't parse
+    -- Minimal HTML normalization for OTClient parser:
+    -- - decode HTML entities
+    -- - normalize self-closing tags
+    -- - remove unsupported attributes
+    -- Let JSON inline styles do their job
     if not text then return "" end
     text = tostring(text)
+    
+    -- Decode HTML entities
     text = text:gsub("&nbsp;", " ")
     text = text:gsub("&lt;", "<")
     text = text:gsub("&gt;", ">")
     text = text:gsub("&amp;", "&")
     text = text:gsub("&quot;", "\"")
     text = text:gsub("&#39;", "'")
+    
+    -- Normalize br tags to self-closing (case-insensitive)
+    text = text:gsub("<[Bb][Rr]%s*/?>", "<br/>")
 
-    -- Normalize br tags to a consistent self-closing form
-    text = text:gsub("<br%s*/?>", "<br/>")
+    -- Ensure img tags are self-closed (case-insensitive)
+    text = text:gsub("<[Ii][Mm][Gg]%s+([^>]-)%s*>", "<img %1/>")
 
-    -- Ensure <img ...> are self-closed so the HTML parser treats them as void elements
-    text = text:gsub("<img%s+([^>]-)%s*>", "<img %1/>")
-
-    -- Remove border attributes completely as they cause OTML parsing errors
-    -- OTClient expects borders in a specific format that HTML border styles don't match
+    -- Remove attributes that OTClient can't parse
     text = text:gsub('%s+border="[^"]*"', '')
     text = text:gsub("%s+border='[^']*'", '')
+    text = text:gsub('%s+cellpadding="[^"]*"', '')
+    text = text:gsub('%s+cellspacing="[^"]*"', '')
     
-    -- Remove all border-related CSS properties from style attributes
+    -- Remove border CSS from style attributes
     text = text:gsub('style="([^"]*)"', function(style)
-        -- Remove all border properties
-        style = style:gsub('border%s*:%s*[^;]*;?', '')
-        style = style:gsub('border%-[^:]*%s*:%s*[^;]*;?', '')
-        -- Clean up semicolons
+        style = style:gsub('border[^;]*;?', '')
         style = style:gsub(';;+', ';')
         style = style:gsub('^%s*;%s*', '')
         style = style:gsub('%s*;%s*$', '')
-        style = style:gsub('^%s*', '')
-        style = style:gsub('%s*$', '')
         if style == '' then
             return ''
         else
