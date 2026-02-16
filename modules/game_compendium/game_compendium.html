@@ -28,13 +28,14 @@
         overflow: scroll;
         padding-top: 15px;
         padding-bottom: 15px;
-        padding-left: -1px;
+        padding-left: 2px;
     }
 
     /* Right Content (75%) */
     .content-panel {
         width: 78%;
         margin-right: 0px;
+        margin-left: 0px;
         height: 100%;
         float: right;
         overflow: hidden;
@@ -46,12 +47,18 @@
         /* MUST be width 98% dont change */
         width: 98%;
         height: 93%;
-        padding-right: 5px;
+        padding-left: 10px;
+        padding-right: 10px;
+        padding-top: 10px;
         word-wrap: break-word;
         overflow: scroll;
         --border-width-top: 1; --border-color-top: black; --border-width-left: 1; --border-color-left: black; --border-width-bottom: 1; --border-color-bottom: #747474; --border-width-right: 1; --border-color-right: #747474;
     }
-
+    /* Ensure optionsTabContent uses full available width */
+    #optionsTabContent {
+        width: 100%;
+        box-sizing: border-box;
+    }
     .modal-separator {
         margin-top: 5px;
         margin-bottom: 10px;
@@ -80,7 +87,7 @@
 
     .modal-message td {
         display: table-cell;
-        width: 100%;
+        padding: 5px;
     }
 
     .modal-message th {
@@ -95,7 +102,13 @@
         display: block;
         margin-top: 10px;
         margin-bottom: 10px;
-        width: 100%;
+        overflow-wrap: break-word;
+    }
+    
+    .modal-message center p {
+        text-align: center;
+        margin-top: 5px;
+        margin-bottom: 5px;
     }
 
     .modal-message br {
@@ -119,12 +132,14 @@
         text-align: center;
         word-spacing: normal;
         width: 100%;
+        margin-left: 0px;
+        margin-right: 0px;
     }
-
+    
     .modal-message center p {
         text-align: center;
-        word-spacing: normal;
-        width: 100%;
+        margin-top: 5px;
+        margin-bottom: 5px;
     }
 
     .modal-message strong {
