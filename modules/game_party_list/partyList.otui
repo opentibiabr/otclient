@@ -1,0 +1,198 @@
+PartyIcon < UICheckBox
+  size: 20 20
+  image-color: white
+  image-rect: 0 0 20 20
+  tooltip-delayed: true
+
+  $hover !disabled:
+    color: #cccccc
+
+  $!checked:
+    image-clip: 0 0 20 20
+
+  $hover !checked:
+    image-clip: 0 40 20 20
+
+  $checked:
+    image-clip: 0 20 20 20
+
+  $hover checked:
+    image-clip: 0 60 20 20
+
+  $disabled:
+    image-color: #ffffff88
+
+PartyPlayers < PartyIcon
+  image-source: /images/game/battle/battlelist_players
+
+PartyDruids < PartyIcon
+  image-source: /images/game/battle/battlelist_druid
+
+PartyKnights < PartyIcon
+  image-source: /images/game/battle/battlelist_knight
+
+PartySorcerers < PartyIcon
+  image-source: /images/game/battle/battlelist_sorcerer
+
+PartyPaladins < PartyIcon
+  image-source: /images/game/battle/battlelist_paladin
+
+PartyMonks < PartyIcon
+  image-source: /images/game/battle/battlelist_monk
+
+PartySummons < PartyIcon
+  image-source: /images/game/battle/battlelist_summon
+
+PartyListWindow < MiniWindow
+  id: partyWindow
+  !text: tr('Party List')
+  &type: 'partyList'
+  height: 166
+  icon: /images/icons/icon-battlelist-party-widget
+  &save: true
+  &autoOpen: false
+  @onFilter: modules.game_party_list.toggleFilterPanel(self)
+  @onBattleExtra: filterPopUp()
+
+  Panel
+    id: filterPanel
+    margin-top: 20
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: miniwindowScrollBar.left
+    &originalHeight: 50
+    height: 50
+
+    Panel
+      id: buttons
+      anchors.top: parent.top
+      anchors.horizontalCenter: parent.horizontalCenter
+      height: 50
+      width: 150
+      margin-left: 2
+      layout:
+        type: grid
+        flow: true
+        cell-spacing: 6
+        num-columns: 8
+
+      PartyPlayers
+        id: showPlayers
+        !tooltip: tr('Hide players')
+        checked: true
+        @onSetup: if g_platform.isMobile() then self:setChecked(true) end
+        @onCheckChange: PartyClass:setFilter("showPlayers", self:isChecked());
+
+      PartyKnights
+        id: showKnights
+        checked: true
+        !tooltip: tr('Hide knights')
+        @onCheckChange: PartyClass:setFilter("showKnights", self:isChecked());
+
+      PartyPaladins
+        id: showPaladins
+        !tooltip: tr('Hide paladins')
+        checked: true
+        @onCheckChange: PartyClass:setFilter("showPaladins", self:isChecked());
+
+      PartyDruids
+        id: showDruids
+        !tooltip: tr('Hide druids')
+        checked: true
+        @onCheckChange: PartyClass:setFilter("showDruids", self:isChecked());
+
+      PartySorcerers
+        id: showSorcerers
+        !tooltip: tr('Hide sorcerers')
+        checked: true
+        @onCheckChange: PartyClass:setFilter("showSorcerers", self:isChecked());
+      
+      PartyMonks
+        id: showMonks
+        !tooltip: tr('Hide monks')
+        checked: true
+        @onCheckChange: PartyClass:setFilter("showMonks", self:isChecked());
+
+      PartySummons
+        id: showSummons
+        !tooltip: tr('Hide summons')
+        checked: true
+        @onCheckChange: PartyClass:setFilter("showSummons", self:isChecked());
+
+    Panel
+      id: sortPanel
+      visible: false
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      height: 20
+      margin-top: 6
+
+      ComboBox
+        id: sortTypeBox
+        width: 75
+        anchors.top: parent.top
+        anchors.left: prev.right
+        anchors.horizontalCenter: parent.horizontalCenter
+        margin-left: -31
+
+      ComboBox
+        id: sortOrderBox
+        width: 60
+        anchors.top: parent.top
+        anchors.left: prev.right
+        margin-left: 4
+
+  Panel
+    height: 18
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: miniwindowScrollBar.left
+    margin-top: 4
+
+    UIWidget
+      id: toggleFilterButton
+      anchors.top: prev.top
+      width: 21
+      anchors.horizontalCenter: parent.horizontalCenter
+
+  HorizontalSeparator
+    id: separator
+    anchors.top: prev.top
+    anchors.left: parent.left
+    anchors.right: miniwindowScrollBar.left
+    margin-right: 1
+    margin-left: 4
+    margin-top: -4
+
+  MiniWindowContents
+    anchors.top: prev.bottom
+    margin-top: -1
+
+    Panel
+      id: partyPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: parent.top
+      margin-top: 5
+      padding-right: 5
+      layout:
+        type: verticalBox
+
+  UIWidget
+    id: miniborder
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    image-source: /images/ui/miniborder
+    size: 14 14
+    margin-left: 2
+    margin-bottom: 2
+  ResizeBorder
+    id: bottomResizeBorder
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    height: 3
+    minimum: 104
+    margin-left: 3
+    margin-right: 3

@@ -23,6 +23,10 @@ function UIComboBox:clearOptions()
     self:clearText()
 end
 
+function UIComboBox:getOptionsCount()
+  return #self.options
+end
+
 function UIComboBox:isOption(text)
     if not self.options then
         return false

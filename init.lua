@@ -167,7 +167,7 @@ local function loadModules()
     end
 
     -- uncomment the line below so that modules are reloaded when modified. (Note: Use only mod dev)
-    -- g_modules.enableAutoReload()
+    g_modules.enableAutoReload()
 end
 
 -- run updater, must use data.zip

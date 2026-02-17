@@ -307,3 +307,7 @@ SwitchAndButtonPanel < Panel
     anchors.right: prev.left
     margin-right: 3
     text-align: center
+
+Panel < UIWidget
+  phantom: true
+  auto-focus: first

@@ -1,0 +1,12 @@
+Module
+  name: game_helper
+  description: game_helper
+  author: game_helper
+  sandboxed: true
+  scripts: [ helper ]
+  autoload: true
+  autoload-priority: 1200
+  dependencies:
+    - game_interface
+  @onLoad: init()
+  @onUnload: terminate()

@@ -22,3 +22,4 @@ Module
     dofile 'tile'
     dofile 'items'
     dofiles 'ui'
+    dofile 'core/player'

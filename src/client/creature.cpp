@@ -1204,6 +1204,13 @@ uint16_t Creature::getCurrentAnimationPhase(const bool mount)
     return isDisabledWalkAnimation() ? 0 : m_walkAnimationPhase;
 }
 
+
+int Creature::getCollisionSquare()
+{
+    const auto& thingType = getThingType();
+    return thingType ? thingType->getWidth() : 1;
+}
+
 int Creature::getExactSize(int layer, int /*xPattern*/, int yPattern, int zPattern, int /*animationPhase*/)
 {
     if (m_exactSize > 0)

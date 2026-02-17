@@ -1,0 +1,63 @@
+NewMainWindow < MainWindow
+  id: window
+  anchors.horizontalCenter: parent.horizontalCenter
+  !text: tr('Add shooter preset')
+  font: Verdana Bold-11px
+  color: #909090
+  size: 360 121
+  @onClose:
+  @onEscape: self:hide()
+
+  Panel
+    id: contentPanel
+    anchors.fill: parent
+    margin: 14 12 12 12
+
+    UIWidget
+      id: text
+      size: 213 11
+      anchors.top: parent.top
+      anchors.left: parent.left
+      margin-left: 1
+      image-source: /images/optionstab/name-label
+    UIWidget
+      id: warning
+      size: 12 12
+      anchors.top: prev.top
+      anchors.left: prev.right
+      margin-left: 10
+      image-source: /images/skin/show-gui-help-red
+      visible: false
+      !tooltip: tr('')
+
+    TextEdit
+      id: target
+      size: 328 16
+      focusable: true
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      max-length: 7
+      margin-top: 6
+
+    HorizontalSeparator
+      id: separator
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 11
+
+    Button
+      id: cancelButton
+      anchors.bottom: parent.bottom
+      anchors.right: parent.right
+      !text: tr('Cancel')
+      size: 43 20
+
+    Button
+      id: okButton
+      anchors.bottom: parent.bottom
+      anchors.right: prev.left
+      margin-right: 10
+      !text: tr('Ok')
+      size: 43 20
