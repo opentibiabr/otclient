@@ -57,7 +57,6 @@
         height: 100%;
         padding: 0;
         box-sizing: border-box;
-        word-wrap: break-word;
         overflow: scroll;
         --border-width-top: 1; --border-color-top: black; --border-width-left: 1; --border-color-left: black; --border-width-bottom: 1; --border-color-bottom: #747474; --border-width-right: 1; --border-color-right: #747474;
     }
@@ -65,14 +64,11 @@
     #optionsTabContent {
         width: 100%;
         height: 100%;
-        padding-left: 10px;
-        padding-right: 10px;
-        padding-top: 10px;
-        padding-bottom: 10px;
+        padding-left: 10;
+        padding-right: 10;
+        padding-top: 10;
+        padding-bottom: 10;
         box-sizing: border-box;
-        word-wrap: break-word;
-        overflow-wrap: break-word;
-        white-space: normal;
     }
     .modal-separator {
         margin-top: 5px;
@@ -87,103 +83,32 @@
         float: right;
     }
 
-    /* ===== MINIMAL CONTENT STYLING - Essential HTML rendering only ===== */
-    /* Only define display types - let JSON inline styles handle dimensions, margins, alignment */
-    
-    .modal-message div {
-        display: block;
+    /* ===== CONTENT STYLING - MINIMAL AND STABLE ===== */
+    .modal-message {
+        --text-wrap: true;
     }
-    
+
     .modal-message table {
-        display: table;
-        table-layout: auto;
-    }
-    
-    .modal-message tbody {
-        display: table-row-group;
+        border-collapse: collapse;
     }
 
-    .modal-message tr {
-        display: table-row;
-    }
-
-    .modal-message td {
-        display: table-cell;
-        overflow-wrap: break-word;
-        word-wrap: break-word;
-    }
-
-    .modal-message th {
-        display: table-cell;
+    .modal-message td, .modal-message th {
+        padding: 2 6;
+        vertical-align: middle;
+        --text-wrap: true;
     }
 
     .modal-message img {
-        display: inline-block;
+        vertical-align: middle;
     }
 
     .modal-message p {
-        display: block;
-        overflow-wrap: break-word;
-        word-wrap: break-word;
-        padding: 0;
-        margin: 0;
-        white-space: normal;
-    }
-    
-    .modal-message ul {
-        display: block;
-    }
-    
-    .modal-message li {
-        display: list-item;
+        margin: 0 0 6 0;
+        --text-wrap: true;
     }
 
     .modal-message br {
-        display: block;
-    }
-
-    .modal-message a {
-        display: inline;
-        color: #ffffff;
-        text-decoration: underline;
-        cursor: pointer;
-        padding: 0;
-        margin: 0;
-    }
-
-    .modal-message a:hover {
-        color: rgb(245, 248, 251);
-    }
-
-    .modal-message center {
-        display: block;
-        text-align: center;
-        width: 100%;
-    }
-
-    .modal-message strong {
-        display: inline;
-        font-weight: bold;
-        padding: 0;
-        margin: 0;
-    }
-
-    .modal-message em {
-        display: inline;
-        font-style: italic;
-        padding: 0;
-        margin: 0;
-    }
-    
-    .modal-message span {
-        display: inline;
-        padding: 0;
-        margin: 0;
-    }
-    
-    .modal-message h1, .modal-message h2, .modal-message h3, .modal-message h4 {
-        display: block;
-        font-weight: bold;
+        height: 15;
     }
 </style>
 
@@ -204,7 +129,7 @@
         <!-- Right Panel -->
         <div class="content-panel">
             <window id="minipanel" class="minipanel" title="Compendium">
-                <div id="optionsTabContent" class="modal-message UIScrollArea" layout="type: verticalBox" vertical-scrollbar-style="ScrollBarValueDefault">
+                <div id="optionsTabContent" class="modal-message UIScrollArea" vertical-scrollbar-style="ScrollBarValueDefault">
                 </div>
             </window>
         </div>

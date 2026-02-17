@@ -3,6 +3,36 @@ local file = "compendium.json"
 local treeView = nil
 local compendiumButton = nil
 local uiBuilt = false
+local currentContentWidget = nil  -- Track current content widget for cleanup
+local contentAnchorConnected = false
+
+local function clearContentWidget(widget)
+    if not widget or widget:isDestroyed() then
+        return
+    end
+    if widget.destroyChildren then
+        widget:destroyChildren()
+        return
+    end
+    local children = widget:getChildren()
+    for _, child in ipairs(children) do
+        if not child:isDestroyed() then
+            child:destroy()
+        end
+    end
+end
+
+local function ensureAnchorHandler(widget)
+    if contentAnchorConnected then
+        return
+    end
+    widget.onAnchorClick = function(_, url)
+        g_platform.openUrl(url)
+        return true
+    end
+    compendiumController:registerUIEvents(widget, {onAnchorClick = widget.onAnchorClick})
+    contentAnchorConnected = true
+end
 
 local function processHtmlContent(text)
     -- Minimal HTML normalization for OTClient parser:
@@ -28,29 +58,16 @@ local function processHtmlContent(text)
     text = text:gsub("<[Ii][Mm][Gg]%s+([^>]-)%s*>", "<img %1/>")
 
     -- Remove attributes that OTClient can't parse well
-    text = text:gsub('%s+border="[^"]*"', '')
-    text = text:gsub("%s+border='[^']*'", '')
-    text = text:gsub('%s+cellpadding="[^"]*"', '')
-    text = text:gsub('%s+cellspacing="[^"]*"', '')
-    text = text:gsub('%s+height="[^"]*"', '')
-    text = text:gsub("%s+height='[^']*'", '')
-    text = text:gsub('%s+valign="[^"]*"', '')
-    text = text:gsub("%s+valign='[^']*'", '')
-    text = text:gsub('%s+align="[^"]*"', '')
-    text = text:gsub("%s+align='[^']*'", '')
     text = text:gsub('%s+target="[^"]*"', '')
     text = text:gsub("%s+target='[^']*'", '')
     text = text:gsub('%s+rel="[^"]*"', '')
     text = text:gsub("%s+rel='[^']*'", '')
     
-    -- Remove complex CSS from style attributes that OTClient may not support
+    -- Normalize style attributes for OTClient (unitless values, keep layout hints)
     text = text:gsub('style="([^"]*)"', function(style)
-        style = style:gsub('border[^;]*;?', '')
-        style = style:gsub('height%s*:%s*[^;]*;?', '')
-        style = style:gsub('margin%-left%s*:%s*auto', '')
-        style = style:gsub('margin%-right%s*:%s*auto', '')
-        style = style:gsub('vertical%-align[^;]*;?', '')
         style = style:gsub('box%-sizing[^;]*;?', '')
+        style = style:gsub('(%d+)%s*px', '%1')
+        style = style:gsub('(%d+%.%d+)%s*px', '%1')
         style = style:gsub(';;+', ';')
         style = style:gsub('^%s*;%s*', '')
         style = style:gsub('%s*;%s*$', '')
@@ -72,6 +89,14 @@ local function processHtmlContent(text)
     text = text:gsub('</table>%s*<table', '</table><br/><table')
 
     return text
+end
+
+local function wrapHtmlContent(text)
+    if not text or text == "" then
+        return ""
+    end
+    -- Keep content centered with a fixed max width using a table wrapper.
+    return '<table align="center" width="650"><tr><td>' .. text .. '</td></tr></table>'
 end
 
 -- Controller setup
@@ -155,12 +180,23 @@ end
 function compendiumController:onTerminate()
     if treeView then
         treeView:clearCategories()
+        treeView:destroy()
         treeView = nil
     end
     if compendiumButton then
         compendiumButton:destroy()
         compendiumButton = nil
     end
+    
+    -- Clean up current content widget
+    clearContentWidget(currentContentWidget)
+    currentContentWidget = nil
+    contentAnchorConnected = false
+
+    if compendiumController.ui then
+        compendiumController:unloadHtml()
+    end
+    
     uiBuilt = false
 end
 -- /*=============================================
@@ -275,33 +311,31 @@ function buildNewsUI(newsData)
         return
     end
     treeView:clearCategories()
+    
     local categories = {}
     local uniqueCategories = {}
+    local contentWidget = compendiumController:findWidget("#optionsTabContent")
+    
     for _, entry in ipairs(newsData.gamenews) do
         if entry.category then
             uniqueCategories[entry.category] = true
         end
     end
-    local function setContent(headline, message, category)
-        compendiumController:findWidget("#minipanel"):setTitle(headline)
-        local contentWidget = compendiumController:findWidget("#optionsTabContent")
+    
+    local function setContent(entryId, headline, message)
+        clearContentWidget(contentWidget)
         
         local processedMessage = processHtmlContent(message)
-        
-        -- Simple cleanup: just remove newlines between tags, keep everything else
         processedMessage = processedMessage:gsub('>\n<', '><')
+        processedMessage = wrapHtmlContent(processedMessage)
         
         contentWidget:html(processedMessage)
+
+        -- Add anchor click handler once
+        ensureAnchorHandler(contentWidget)
         
-        -- Add anchor click handler to open links
-        if contentWidget.onAnchorClick then
-            disconnect(contentWidget, {onAnchorClick = contentWidget.onAnchorClick})
-        end
-        contentWidget.onAnchorClick = function(widget, url)
-            g_platform.openUrl(url)
-            return true
-        end
-        connect(contentWidget, {onAnchorClick = contentWidget.onAnchorClick})
+        compendiumController:findWidget("#minipanel"):setTitle(headline)
+        currentContentWidget = contentWidget
     end
 
     for _, entry in ipairs(newsData.gamenews) do
@@ -313,7 +347,7 @@ function buildNewsUI(newsData)
         local entryType = entry.type:lower()
         if entryType == "group header" then
             categories[entry.id] = treeView:addCategory(entry.headline, nil, function()
-                setContent(entry.headline, entry.message, entry.category)
+                setContent(entry.id, entry.headline, entry.message)
             end, nil, catFlags)
         elseif entryType == "regular" or entryType == "returner" then
             local parentCategory = categories[entry.groupheaderid]
@@ -322,11 +356,11 @@ function buildNewsUI(newsData)
                     catFlags.category = parentCategory.flags.category
                 end
                 treeView:addSubCategory(parentCategory, entry.headline, nil, function()
-                    setContent(entry.headline, entry.message, entry.category)
+                    setContent(entry.id, entry.headline, entry.message)
                 end, nil, catFlags)
             else
                 categories[entry.id] = treeView:addCategory(entry.headline, nil, function()
-                    setContent(entry.headline, entry.message, entry.category)
+                    setContent(entry.id, entry.headline, entry.message)
                 end, nil, catFlags)
             end
         end
@@ -406,20 +440,47 @@ function createCategoryButtons(uniqueCategories)
 end
 
 function addOtcContent()
+    local contentWidget = compendiumController:findWidget("#optionsTabContent")
+    
+    local function loadOtcRedemption()
+        clearContentWidget(contentWidget)
+        compendiumController:findWidget("#minipanel"):setTitle("OTC Redemption")
+        
+        HTTP.get("https://raw.githubusercontent.com/kokekanon/OTredemption-Picture-NODELETE/refs/heads/main/Wiki/readme.html", function(data, err)
+            if err then
+                warn("[Compendium]: Unable to load OTC Redemption content:\n" .. err)
+                contentWidget:html("<p>Failed to load content. Please check your internet connection.</p>")
+                return
+            end
+            contentWidget:html(wrapHtmlContent(data))
+            ensureAnchorHandler(contentWidget)
+        end)
+        
+        currentContentWidget = contentWidget
+    end
+    
+    local function loadAttachEffect()
+        clearContentWidget(contentWidget)
+        compendiumController:findWidget("#minipanel"):setTitle("Attach Effect")
+        
+        HTTP.get("https://raw.githubusercontent.com/wiki/mehah/otclient/Tutorial-Attached-Effects.md", function(data, err)
+            if err then
+                warn("[Compendium]: Unable to load Attach Effect content:\n" .. err)
+                contentWidget:html("<p>Failed to load content. Please check your internet connection.</p>")
+                return
+            end
+            contentWidget:html(wrapHtmlContent(data))
+            ensureAnchorHandler(contentWidget)
+        end)
+        
+        currentContentWidget = contentWidget
+    end
+    
     local buttons = {{
         text = "OTC Redemption",
         icon = "/images/icons/icon_controls",
         callback = function()
-            compendiumController:findWidget("#minipanel"):setTitle("OTC Redemption")
-            compendiumController:findWidget("#optionsTabContent"):html("")
-
-            HTTP.get("https://raw.githubusercontent.com/kokekanon/OTredemption-Picture-NODELETE/refs/heads/main/Wiki/readme.html", function(data, err)
-                if err then
-                    warn("[vBot updater]: Unable to check version:\n" .. err)
-                    return
-                end
-                compendiumController:findWidget("#optionsTabContent"):html(data)
-            end)
+            loadOtcRedemption()
         end,
         flag = {
             category = "OTC",
@@ -431,17 +492,7 @@ function addOtcContent()
             text = "Attach Effect",
             icon = "/images/icons/icon_controls",
             callback = function()
-                compendiumController:findWidget("#minipanel"):setTitle("Attach Effect")
-                compendiumController:findWidget("#optionsTabContent"):setText("")
-
-                HTTP.get("https://raw.githubusercontent.com/wiki/mehah/otclient/Tutorial-Attached-Effects.md",
-                    function(data, err)
-                        if err then
-                            warn("[vBot updater]: Unable to check version:\n" .. err)
-                            return
-                        end
-                        compendiumController:findWidget("#optionsTabContent"):html(data)
-                    end)
+                loadAttachEffect()
             end,
             flag = {
                 category = "OTC",
