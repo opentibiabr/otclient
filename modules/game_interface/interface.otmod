@@ -13,7 +13,7 @@ Module
     - game_healthinfo
     - game_inventory
     - game_mainpanel
-    - game_prey
+    - game_prey_html
     - game_imbuing
     - game_imbuementtracker
     - game_hotkeys

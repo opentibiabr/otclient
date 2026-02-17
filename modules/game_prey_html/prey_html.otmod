@@ -1,0 +1,9 @@
+Module
+  name: game_prey_html
+  description: HTML Sample
+  author:
+  website:
+  scripts: [ game_prey_html.lua ]
+  sandboxed: true
+  @onLoad: PreyController:init()
+  @onUnload: PreyController:terminate()
