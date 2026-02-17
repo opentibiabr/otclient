@@ -30,7 +30,7 @@
       "groupAttackIgnorePlayers": true,
       "maxDistance": 10,
       "groupAttackIgnoreParty": false,
-      "lureCount": 5,
+      "lureCount": 30,
       "useGroupAttack": false,
       "groupRuneAttackTargets": 2,
       "attackSpell": "",
