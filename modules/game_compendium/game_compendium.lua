@@ -50,12 +50,32 @@ local function processHtmlContent(text)
     text = text:gsub("&amp;", "&")
     text = text:gsub("&quot;", "\"")
     text = text:gsub("&#39;", "'")
+
+    -- Collapse excessive whitespace in text nodes only
+    text = text:gsub("([^<]+)", function(segment)
+        segment = segment:gsub("%s+", " ")
+        return segment
+    end)
     
     -- Normalize br tags to self-closing (case-insensitive)
     text = text:gsub("<[Bb][Rr]%s*/?>", "<br/>")
 
     -- Ensure img tags are self-closed (case-insensitive)
     text = text:gsub("<[Ii][Mm][Gg]%s+([^>]-)%s*>", "<img %1/>")
+
+    -- Ensure block text starts after standalone images
+    text = text:gsub("(<img[^>]-/>)%s*<p", "%1<br/><p")
+    text = text:gsub("(<img[^>]-/>)%s*<center", "%1<br/><center")
+
+    -- Strip <a> tags but keep their inner text.
+    -- OTClient's HTML renderer gives text nodes the full parent width,
+    -- so inline <a> elements after text nodes get pushed to new lines
+    -- with large gaps. Merging link text into the surrounding text node
+    -- produces correct continuous text flow.
+    text = text:gsub('<a[^>]*>(.-)</a>', '%1')
+
+    -- Remove <tbody> tags (OTClient may not handle them; rows work directly under <table>)
+    text = text:gsub('</?tbody[^>]*>', '')
 
     -- Remove attributes that OTClient can't parse well
     text = text:gsub('%s+target="[^"]*"', '')
@@ -77,7 +97,55 @@ local function processHtmlContent(text)
             return 'style="' .. style .. '"'
         end
     end)
+
+    -- Remove fixed heights on tables that cause image overlap
+    text = text:gsub('<table([^>]-)style="([^"]*)"', function(attrs, style)
+        style = style:gsub('height%s*:%s*[^;]*;?', '')
+        style = style:gsub(';;+', ';')
+        style = style:gsub('^%s*;%s*', '')
+        style = style:gsub('%s*;%s*$', '')
+        if style == '' then
+            return '<table' .. attrs
+        end
+        return '<table' .. attrs .. 'style="' .. style .. '"'
+    end)
+    text = text:gsub('<table([^>]-)%s+height="[^"]*"', '<table%1')
+    text = text:gsub("<table([^>]-)%s+height='[^']*'", '<table%1')
     
+    -- Constrain oversized images to fit the content wrapper (max 630px)
+    text = text:gsub('<img([^>]-)width="(%d+)"([^>]-)height="(%d+)"', function(pre, w, post, h)
+        w = tonumber(w)
+        h = tonumber(h)
+        local maxW = 630
+        if w > maxW then
+            local ratio = maxW / w
+            h = math.floor(h * ratio)
+            w = maxW
+        end
+        return '<img' .. pre .. 'width="' .. w .. '"' .. post .. 'height="' .. h .. '"'
+    end)
+
+    -- Remove fixed widths on inner tables/tds that are narrower than images
+    -- (let the outer wrapper table control width)
+    text = text:gsub('<td([^>]-)style="([^"]*)"', function(attrs, style)
+        if not style:find('width') then
+            return '<td' .. attrs .. 'style="' .. style .. '"'
+        end
+        style = style:gsub('width%s*:%s*[^;]*;?', '')
+        style = style:gsub(';;+', ';')
+        style = style:gsub('^%s*;%s*', '')
+        style = style:gsub('%s*;%s*$', '')
+        if style == '' then
+            return '<td' .. attrs
+        end
+        return '<td' .. attrs .. 'style="' .. style .. '"'
+    end)
+
+    -- Remove width attributes from inner tables (wrapper table controls width)
+    -- Only remove width from tables nested inside the wrapper (not the wrapper itself)
+    -- The wrapper is added by wrapHtmlContent(), so all tables in processHtmlContent are inner tables.
+    text = text:gsub('<table([^>]-)%s+width="[^"]*"', '<table%1')
+
     -- Clean up empty style attributes
     text = text:gsub('%s+style=""', '')
 
