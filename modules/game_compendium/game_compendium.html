@@ -89,7 +89,9 @@
     }
 
     /* <center> is a presentational block element that centers its inline content.
-       text-align is inheritable so it cascades into all descendant text nodes. */
+       text-align is inheritable so it cascades into all descendant text nodes.
+       Block children with explicit pixel widths (e.g. <table width="N">) are centered
+       by applyBlock() which detects this parent text-align: center + explicit width. */
     center {
         display: block;
         text-align: center;

@@ -382,6 +382,19 @@ namespace {
     }
 
     static inline void applyBlock(UIWidget* self, const FlowContext& ctx, bool topCleared) {
+        // Horizontal centering for block elements:
+        // (a) CSS standard: margin-left: auto + margin-right: auto
+        // (b) Legacy <center> behavior: parent has text-align: center AND this block has an
+        //     explicit pixel width (not auto-fill). This covers <table width="N"> inside <center>.
+        //     Auto-width blocks like <p> are intentionally excluded — they fill the parent and
+        //     rely on text-align: center cascading to their inline children instead.
+        const bool marginAutoCenter = self->isMarginLeftAuto() && self->isMarginRightAuto();
+        const bool centerTagCenter = !marginAutoCenter
+            && self->getParent()
+            && self->getParent()->getTextAlign() == Fw::AlignCenter
+            && self->getWidthHtml().unit == Unit::Px;
+        const bool centerH = marginAutoCenter || centerTagCenter;
+
         if (ctx.lastNormalWidget && isInlineLike(ctx.lastNormalWidget->getDisplay())) {
             if (auto* tallest = ctx.tallestInlineWidget) {
                 self->addAnchor(Fw::AnchorLeft, "parent", Fw::AnchorLeft);
@@ -389,6 +402,18 @@ namespace {
                     self->addAnchor(Fw::AnchorTop, tallest->getId().c_str(), Fw::AnchorBottom);
                 return;
             }
+        }
+
+        if (centerH) {
+            // Center horizontally; stack vertically as normal blocks
+            self->addAnchor(Fw::AnchorHorizontalCenter, "parent", Fw::AnchorHorizontalCenter);
+            if (!topCleared) {
+                if (!ctx.lastNormalWidget)
+                    self->addAnchor(Fw::AnchorTop, "parent", Fw::AnchorTop);
+                else
+                    self->addAnchor(Fw::AnchorTop, ctx.lastNormalWidget->getId().c_str(), Fw::AnchorBottom);
+            }
+            return;
         }
 
         if (!ctx.lastNormalWidget) {
