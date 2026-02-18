@@ -29,6 +29,7 @@
 #ifdef FRAMEWORK_EDITOR
 #include "tools/datdump.h"
 #endif
+#include <iostream>
 
 #ifndef ANDROID
 #if ENABLE_DISCORD_RPC == 1
@@ -91,7 +92,7 @@ void printHelp(const std::string& executableName)
         if (std::find(args.begin(), args.end(), "--encrypt") != args.end()) {
             g_lua.init();
             g_resources.runEncryption(args.size() >= 3 ? args[2] : std::string(ENCRYPTION_PASSWORD));
-            std::cout << "Encryption complete" << std::endl;
+            g_logger.info("Encryption complete");
 #ifdef WIN32
             MessageBoxA(NULL, "Encryption complete", "Success", 0);
 #endif

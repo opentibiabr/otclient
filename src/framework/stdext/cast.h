@@ -166,8 +166,7 @@ namespace stdext
     {
         try {
             return safe_cast<R, T>(t);
-        } catch (const cast_exception& e) {
-            std::cerr << "CAST ERROR: " << e.what() << std::endl;
+        } catch (const cast_exception&) {
             return def;
         }
     }

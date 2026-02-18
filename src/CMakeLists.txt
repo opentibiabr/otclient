@@ -131,6 +131,7 @@ find_package(pugixml CONFIG REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(httplib CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
+find_package(spdlog CONFIG REQUIRED)
 find_package(utf8cpp REQUIRED)
 find_package(unofficial-inih CONFIG REQUIRED)
 find_package(Freetype REQUIRED)
@@ -558,6 +559,7 @@ if(MSVC)
           winmm.lib
           pugixml::pugixml
           fmt::fmt-header-only
+          spdlog::spdlog_header_only
           utf8cpp::utf8cpp
           Freetype::Freetype
   )
@@ -609,6 +611,7 @@ elseif(ANDROID)
           log
           pugixml::pugixml
           fmt::fmt-header-only
+          spdlog::spdlog_header_only
           utf8cpp::utf8cpp
   )
 
@@ -673,6 +676,7 @@ elseif(WASM)
           OpenSSL::Crypto
           httplib::httplib
           fmt::fmt
+          spdlog::spdlog_header_only
           utf8cpp::utf8cpp
           Ogg::ogg
           Vorbis::vorbisfile
@@ -790,6 +794,7 @@ else() # Linux
           OpenSSL::Crypto
           httplib::httplib
           fmt::fmt-header-only
+          spdlog::spdlog_header_only
           utf8cpp::utf8cpp
           Ogg::ogg
           Vorbis::vorbisfile
