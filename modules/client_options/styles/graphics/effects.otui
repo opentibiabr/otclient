@@ -90,6 +90,7 @@ UIWidget
       !tooltip: tr('The limit is based on your maximum range.')
 
   SmallReversedQtPanel
+    id: floatingEffectPanel
     anchors.left: parent.left
     anchors.right: parent.right
     anchors.top: prev.bottom
@@ -101,6 +102,7 @@ UIWidget
       !text: 'Draw Floating Effects'
       
   SmallReversedQtPanel
+    id: clientEffectOpacity
     anchors.left: parent.left
     anchors.right: parent.right
     anchors.top: prev.bottom
@@ -115,6 +117,7 @@ UIWidget
       &scrollSize: 21
 
   SmallReversedQtPanel
+    id: clientMissileOpacity
     anchors.left: parent.left
     anchors.right: parent.right
     anchors.top: prev.bottom
@@ -127,3 +130,60 @@ UIWidget
       &minimumScrollValue: 10
       &maximumScrollValue: 100
       &scrollSize: 21
+
+  SmallReversedQtPanel
+    id: GameEffectSource
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: floatingEffectPanel.bottom
+    margin-top: 7
+    height: 100
+    visible: false
+    OptionLabelMarked
+      !text: tr('Opacity Of Spells Effects')
+      margin-top:5
+      margin-left:-15
+      !tooltip: tr("Adjust the opacity of spell effects cast by yourself, other players,\nregular creatures and boss creatures separately.\n\nNote that some effects, such as long-lasting map effects, spawn\neffects, and others, are not affected by these settings.")
+      anchors.top: parent.top
+      anchors.left: parent.left
+    OptionScaleScroll
+      id: setOwnSpellEffectAlphaScroll
+      margin-top:5
+      anchors.top: prev.bottom
+      &minimumScrollValue: 10
+      &maximumScrollValue: 100
+      &scrollSize: 5
+      @onSetup: |
+        local value = modules.client_options.getOption('setOwnSpellEffectAlphaScroll')
+        self:setText(tr('Own Spells Effect: %s %%', value))
+    OptionScaleScroll
+      id: setOtherPlayerSpellEffectAlphaScroll
+      margin-top:5
+      anchors.top: prev.bottom
+      &minimumScrollValue: 10
+      &maximumScrollValue: 100
+      &scrollSize: 5
+      @onSetup: |
+        local value = modules.client_options.getOption('setOtherPlayerSpellEffectAlphaScroll')
+        self:setText(tr('Other Player Spells Effect: %s %%', value))
+    OptionScaleScroll
+      id: setCreatureSpellEffectAlphaScroll
+      margin-top:5
+      anchors.top: prev.bottom
+      &minimumScrollValue: 10
+      &maximumScrollValue: 100
+      &scrollSize: 5
+      @onSetup: |
+        local value = modules.client_options.getOption('setCreatureSpellEffectAlphaScroll')
+        self:setText(tr('Creature Spells Effect: %s %%', value))
+
+    OptionScaleScroll
+      id: setBossAreaCreatureEffectAlphaScroll
+      margin-top:5
+      anchors.top: prev.bottom
+      &minimumScrollValue: 10
+      &maximumScrollValue: 100
+      &scrollSize: 5
+      @onSetup: |
+        local value = modules.client_options.getOption('setBossAreaCreatureEffectAlphaScroll')
+        self:setText(tr('Boss Area Creature Effect: %s %%', value))

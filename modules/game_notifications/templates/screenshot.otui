@@ -66,14 +66,14 @@ UIWidget
     width: 64
     anchors.right: parent.right
     anchors.bottom: parent.bottom
-    @onClick: modules.game_screenshot.resetValues()
+    @onClick: modules.game_notifications.resetValues()
     
   Button
     !text: tr('Open Screenshots Folder') 
     width: 164
     anchors.left: parent.left
     anchors.bottom: parent.bottom
-    @onClick: modules.game_screenshot.OpenFolder()
+    @onClick: modules.game_notifications.OpenFolder()
 
 ScreenshotType < UIWidget
   background-color: alpha
@@ -90,7 +90,7 @@ ScreenshotType < UIWidget
     height: 15
     margin-top: 2
     margin-left: 3
-    @onCheckChange: modules.game_screenshot.onUICheckBox(self, self:isChecked())
+    @onCheckChange: modules.game_notifications.onUICheckBox(self, self:isChecked())
 
   Label
     id: text

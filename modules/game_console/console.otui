@@ -347,6 +347,8 @@ Panel
     shift-navigation: true
     max-length: 255
     height: 18
+    placeholder:  "Type here to chat"
+    placeholder-color: #707070
     @onTextChange: onTextChange(self:getText())
 
   TopToggleButton
@@ -360,12 +362,4 @@ Panel
     font: cipsoftFont
     !text: tr('Chat Off')
     &isChecked: false
-    @onClick: |
-      if self.isChecked then
-        self.isChecked = false
-        self:setText(tr('Chat On'))
-      else
-        self.isChecked = true
-        self:setText(tr('Chat Off'))
-      end
-      updateChatMode()
+    @onClick: toggleChat()

@@ -1299,6 +1299,20 @@ function Cyclopedia.onParseCyclopediaStoreSummary(xpBoostTime, dailyRewardXpBoos
         itemWidget:fill('parent')
     end
 end
+local function getWeaponSkillName2(skillType)
+        local skillNames = {
+            [1]  = "Magic Level",
+	        [6]  = "Shielding",
+	        [7]  = "Distance Fighting",
+	        [8]  = "Sword Fighting",
+	        [9]  = "Club Fighting",
+	        [10] = "Axe Fighting",
+	        [11] = "Fist Fighting",
+	        [13] = "Fishing"
+        }
+        
+    return skillNames[skillType] or "Fighting Skill"
+end
 
 local  function getWeaponSkillName(skillType)
         local skillNames = {
@@ -1316,84 +1330,226 @@ local  function getWeaponSkillName(skillType)
         }
         
         return skillNames[skillType] or "Fighting Skill"
+end
+
+local function getElementName(id)
+        local elementNames = {
+          [0] = "Physical",
+          [1] = "Fire",
+          [2] = "Earth",
+          [3] = "Energy",
+          [4] = "Ice",
+          [5] = "Holy",
+          [6] = "Death",
+          [7] = "Healing",
+          [8] = "Drowning",
+          [9] = "Life Drain",
+          [10] = "Mana Drain",
+          [11] = "Agony"
+        }
+        return elementNames[id] or "Unknown"
     end
     function Cyclopedia.onCyclopediaCharacterOffenceStats(data)
-        UI.OffenceStats.rightPanel:destroyChildren()
-        UI.OffenceStats.leftPanel:destroyChildren()
-    
-        local attackValue = data.weaponAttack + data.weaponFlatModifier + data.weaponDamage + data.weaponSkillLevel
+        -- TODO UI/UX , verticalScroll, add new stats
+        local container = UI.OffenceStats.content.statsContainer
+        local leftPanel = container.leftPanel
+        local rightPanel = container.rightPanel
+        
+        rightPanel:destroyChildren()
+        leftPanel:destroyChildren()
+
+        -- pdump(data)
+
+        -- Initial Stats List
         local stats = {
+            -- Left Panel Items
             {name = "Flat Damage and healing", value = data.flatDamage or 0, icon = false, percent = false},
-            {name = "Attack Value", value = attackValue, icon = true, weaponElement = data.weaponElement},
-            {name = "From Base Attack", value = data.weaponAttack or 0, align = "center", icon = false},
-            {name = "From Equipment", value = data.weaponFlatModifier or 0, align = "center", icon = false},
+            {name = "From Character Level",  value = data.flatDamageBase or 0, align = "center", percent = false, icon = false},
+            {name = "From Wheel of destiny",  value = data.flatDamageWheel or 0, align = "center", percent = false, icon = false},
+
+            {name = "Attack Value", value = data.weaponAttack, icon = true, weaponElement = data.weaponElementType},
+            {name = "From Flat Bonus", value = data.weaponFlatModifier or 0, align = "center", icon = false},
+            {name = "From Magic Level", value = data.weaponDamage or 0, align = "center", icon = false},
+            {name = "From Equipment", value = data.weaponSkillLevel or 0, align = "center", icon = false},
+            {name = "From Combat Tactics", value = data.weaponSkillModifier or 0, align = "center", icon = false},
     
-            {name = getWeaponSkillName(data.weaponSkillType), value = data.weaponSkillLevel or 0, align = "center", icon = false},
-            {name = "From Combat Tactics", value = data.weaponDamage or 0, align = "center", icon = false},
-    
-            {name = "Life Leech", value = data.lifeLeechTotal or 0, icon = false, percent = true},
-            {name = "From Base", value = data.lifeLeechEquipament or 0, align = "center", percent = true, icon = false},
-            {name = "From Equipment", value = data.lifeLeechImbuement or 0, align = "center", percent = true, icon = false},
-            {name = "From Wheel", value = data.lifeLeechWheel or 0, align = "center", percent = true, icon = false},
-    
-            {name = "Mana Leech", value = data.manaLeechTotal or 0, icon = false, percent = true},
-            {name = "From Base", value = data.manaLeechEquipament or 0, align = "center", percent = true, icon = false},
+            {name = "Converted Damage", value = data.weaponElementDamage, icon = true, weaponElement = data.weaponElementType, percent = true},
+
+            {name = "Life Leech", value = data.lifeLeechTotal or data.lifeLeech or 0, icon = false, percent = true},
+            {name = "From Equipment", value = data.lifeLeechBase or data.lifeLeechEquipament or 0, align = "center", percent = true, icon = false},
+            {name = "From Imbuements", value = data.lifeLeechImbuement or 0, align = "center", percent = true, icon = false},
+            {name = "From Wheel of Destiny", value = data.lifeLeechWheel or 0, align = "center", percent = true, icon = false},
+            {name = "From Event Bonus", value = data.lifeLeechEventBonus or 0, align = "center", percent = true, icon = false},
+
+            {name = "Life Gain on hit", value = data.lifeGainHit or 0, icon = false, percent = false},
+            {name = "Life Gain on kill", value = data.lifeGainKill or 0, icon = false, percent = false},
+
+            {name = "Mana Leech", value = data.manaLeechTotal or data.manaLeech or 0, icon = false, percent = true},
+            {name = "From Base", value = data.manaLeechBase or data.manaLeechEquipament or 0, align = "center", percent = true, icon = false},
             {name = "From Equipment", value = data.manaLeechImbuement or 0, align = "center", percent = true, icon = false},
             {name = "From Wheel", value = data.manaLeechWheel or 0, align = "center", percent = true, icon = false},
+            {name = "From Event", value = data.manaLeechEventBonus or 0, align = "center", percent = true, icon = false},
     
+            {name = "Mana Gain on hit", value = data.manaGainHit or 0, icon = false, percent = false},
+            {name = "Mana Gain on kill", value = data.manaGainKill or 0, icon = false, percent = false},
+
             {name = "Onslaught", value = data.onslaught or 0, icon = false, percent = true},
-            {name = "From Base", value = data.onslaughtBase or 0, align = "center", percent = true, icon = false},
+            {name = "From Equipment", value = data.onslaughtBase or 0, align = "center", percent = true, icon = false},
             {name = "From Amplification", value = data.onslaughtBonus or 0, align = "center", percent = true, icon = false},
-    
-            {name = "Critical Hit", parent = "right", value = "", icon = false},
-            {name = "     Chance", parent = "right", value = data.critChanceTotal or 0, percent = true, icon = false},
-            {name = "     Extra Damage", parent = "right", value = data.critChanceFlat or 0, percent = true, icon = false},
-            {name = "From Base", parent = "right", value = data.critChanceEquipament or 0, align = "center", percent = true, icon = false},
-            {name = "From Equipment", parent = "right", value = data.critDamageImbuement or 0, align = "center", percent = true, icon = false},
-            {name = "From Wheel", parent = "right", value = data.critDamageWheel or 0, align = "center", percent = true, icon = false}
+            {name = "From Event Bonus", value = data.onslaughtEventBonus or 0, align = "center", percent = true, icon = false},
+
+            {name = "Damage against Specific Targets", value = "", icon = false, percent = false},
+            {name = "against Placeholder", value = data.critDamageFlat or 0, align = "center", percent = true, icon = false},
+            {name = "against Powerful Foes", value = data.critChanceImbuement or 0, align = "center", percent = true, icon = false},
         }
+
+        -- Dynamic Left/Mixed Panel Lists
+        if data.extraDamageSkills and #data.extraDamageSkills > 0 then
+            table.insert(stats, {name = "Auto-Attack Extra Damage", value = "", icon = false, percent = false})
+            for _, skill in ipairs(data.extraDamageSkills) do
+                table.insert(stats, {name = "from " .. getWeaponSkillName2(skill.skillId), value = skill.valueA or 0, align = "center", percent = false, icon = false})
+            end
+        end
+
+        if data.extraDamageSpells and #data.extraDamageSpells > 0 then
+            table.insert(stats, {name = "Extra Spell Damage", value = "", icon = false, percent = false})
+            for _, skill in ipairs(data.extraDamageSpells) do
+                table.insert(stats, {name = "from " .. getWeaponSkillName2(skill.skillId), value = skill.valueA or 0, align = "center", percent = false, icon = false})
+            end
+        end
+
+        if data.extraHealingSpells and #data.extraHealingSpells > 0 then
+            table.insert(stats, {name = "Extra Spell Healing", value = "", icon = false, percent = false})
+            for _, skill in ipairs(data.extraHealingSpells) do
+                table.insert(stats, {name = "from " .. getWeaponSkillName2(skill.skillId), value = skill.valueA or 0, align = "center", percent = false, icon = false})
+            end
+        end
+
+        -- Right Panel Items (Critical Hit Section)
+        table.insert(stats, {name = "Critical Hit", parent = "right", value = "", icon = false})
+        table.insert(stats, {name = "  Chance", parent = "right", value = data.critChanceTotal or data.critChance or 0, percent = true, icon = false})
+        table.insert(stats, {name = "     from flat Bonus", parent = "right", align = "center", value = data.critChanceEquipament or 0, percent = true, icon = false})
+        table.insert(stats, {name = "     from Equipment", parent = "right", align = "center", value = data.critChanceFlat or 0, percent = true, icon = false})
+        table.insert(stats, {name = "     from Imbuement", parent = "right", align = "center", value = data.critChanceImbuement or 0, percent = true, icon = false})
+        table.insert(stats, {name = "     from Wheel of destiny", parent = "right", align = "center", value = data.critChanceWheel or 0, percent = true, icon = false})
+        table.insert(stats, {name = "     from Concoction", parent = "right", align = "center", value = data.critChanceConcoction or 0, percent = true, icon = false})
         
+        -- Critical Chance by Type
+        table.insert(stats, {name = "Critical Chance by Type", parent = "right", value = "", percent = false, icon = false})
+        if data.damageElements and #data.damageElements > 0 then
+             for _, el in ipairs(data.damageElements) do
+                 table.insert(stats, {
+                     name = "     from " .. getElementName(el.element),
+                     parent = "right",
+                     value = el.value,
+                     align = "center",
+                     percent = true,
+                     icon = false
+                 })
+             end
+        end
+        table.insert(stats, {name = "     from Offensive Runes", parent = "right", value = data.offensiveRuneDamage or 0, align = "center", percent = true, icon = false})
+        table.insert(stats, {name = "     from Auto Attack", parent = "right", value = data.autoAttackDamage or 0, align = "center", percent = true, icon = false})
+
+        -- Critical Damage
+        table.insert(stats, {name = "  Extra damage", parent = "right", value = data.critDamageTotal or 0, icon = false, percent = true})
+        table.insert(stats, {name = "     from flat Bonus", parent = "right", align = "center", value = data.critDamageEquipament or 0, percent = true, icon = false})
+        table.insert(stats, {name = "     from Equipment", parent = "right", align = "center", value = data.critDamageFlat or 0, percent = true, icon = false})
+        table.insert(stats, {name = "     from Imbuement", parent = "right", align = "center", value = data.critDamageImbuement or 0, percent = true, icon = false})
+        table.insert(stats, {name = "     from Wheel of destiny", parent = "right", align = "center", value = data.critDamageWheel or 0, percent = true, icon = false})
+        table.insert(stats, {name = "     from Concoction", parent = "right", align = "center", value = data.critDamageConcoction or 0, percent = true, icon = false})
+        
+        -- Critical Damage by Type
+        table.insert(stats, {name = "Critical Damage by Type", parent = "right", value = "", percent = false, icon = false})
+        if data.critDamageElements and #data.critDamageElements > 0 then
+             for _, el in ipairs(data.critDamageElements) do
+                 table.insert(stats, {
+                     name = "     from " .. getElementName(el.element),
+                     parent = "right",
+                     value = el.value,
+                     align = "center",
+                     percent = true,
+                     icon = false
+                 })
+             end
+        end
+        table.insert(stats, {name = "     from Offensive Runes", parent = "right", value = data.critDamageOffensiveRunes or 0, align = "center", percent = true, icon = false})
+        table.insert(stats, {name = "     from Auto Attack", parent = "right", value = data.critDamageAutoAttack or 0, align = "center", percent = true, icon = false})
+
+        -- Cleave & Distance
+        table.insert(stats, {name = "Cleave", parent = "right", value = data.cleavePercent or 0, icon = false, percent = true})
+        table.insert(stats, {name = "Distance Fighting Accuracy", parent = "right", value = data.critChanceEquipament or 0, icon = false, percent = true})
+
+        -- Perfect Shot
         if data.perfectShotDamage then
-            for i = 1, 5 do
+            for i = 1, #data.perfectShotDamage do
                 if data.perfectShotDamage[i] and data.perfectShotDamage[i] > 0 then
+                    if i == 1 then
+                         table.insert(stats, {name = "Perfect Shot Damage Bonus", parent = "right", value = "", icon = false})
+                    end
                     table.insert(stats, {
-                        name = "Perfect Shot Damage Bonus", 
+                        name = "     from Range " .. i, 
                         parent = "right", 
-                        value = "", 
-                        icon = false
-                    })
-                    table.insert(stats, {
-                        name = "     +" .. data.perfectShotDamage[i] .. " from range " .. i, 
-                        parent = "right", 
-                        value = "", 
+                        value = "+" .. data.perfectShotDamage[i], 
                         align = "center", 
                         icon = false
                     })
-                    break
                 end
             end
         end
-    
+
+        -- Target Specific & Armor Pen
+        table.insert(stats, {name = "Damage Against Targets \nAbove 95% hit points", parent = "right", value = data.damageHighHp or 0, icon = false, percent = true})
+        table.insert(stats, {name = "Damage Against Targets \nBelow 30% hit points", parent = "right", value = data.damageLowHp or 0, icon = false, percent = true})
+        table.insert(stats, {name = "Armor Penetration", parent = "right", value = data.armorPenetration or 0, icon = false, percent = true})
+
+        -- Elemental Pierce
+        table.insert(stats, {name = "Elemental Pierce", parent = "right", value = "", icon = false, percent = true})
+        if data.elementalPierce and #data.elementalPierce > 0 then
+             for _, el in ipairs(data.elementalPierce) do
+                 table.insert(stats, {
+                     name = "     from " .. getElementName(el.element),
+                     parent = "right",
+                     value = el.value,
+                     align = "center",
+                     percent = true,
+                     icon = false
+                 })
+             end
+        end
+
+        -- Render Helper Function
         local function renderStat(stat)
-            local parent = stat.parent == "right" and UI.OffenceStats.rightPanel or UI.OffenceStats.leftPanel
+            local parent = stat.parent == "right" and rightPanel or leftPanel
     
             if stat.align == "center" then
                 local widget = g_ui.createWidget("Label", parent)
                 local valueText = stat.value
-                if stat.percent then
-                    local percentValue = math.floor(stat.value * 10000) / 100
+                -- Check if value is a string (pre-formatted) or number
+                if type(valueText) == "number" and stat.percent then
+                    local percentValue = math.floor(valueText * 10000) / 100
                     local sign = percentValue > 0 and "+ " or ""
                     valueText = sign .. percentValue .. "%"
+                elseif type(valueText) == "number" then
+                     valueText = tostring(valueText)
                 end
                 widget:setText("   " .. valueText .. " " .. stat.name)
-                widget:setMarginLeft(80)
+                widget:setTextOffset("29 0")
+                widget:setHeight(16)
                 return widget
             else
                 local widget = g_ui.createWidget("CharacterSkillBase", parent)
                 local nameLabel = g_ui.createWidget("SkillNameLabel", widget)
                 nameLabel:setText(stat.name .. ":")
+                
+                if string.find(stat.name, "\n") then
+                    nameLabel:setTextWrap(true)
+                    nameLabel:setTextAutoResize(true)
+                    widget:setHeight(math.max(widget:getHeight(), nameLabel:getHeight() + 4))
+                end
+
                 local valueLabel = g_ui.createWidget("SkillValueLabel", widget)
-                if stat.percent then
+                if stat.percent and type(stat.value) == "number" then
                     local percentValue = math.floor(stat.value * 10000) / 100
                     local sign = percentValue > 0 and "+ " or ""
                     valueLabel:setText(sign .. percentValue .. "%")
@@ -1421,11 +1577,17 @@ local  function getWeaponSkillName(skillType)
     
         for _, stat in ipairs(stats) do
             if stat.align ~= "center" and stat.value == 0 and stat.value ~= "" then
-                -- Skip
+                -- Skip 0
             else
                 renderStat(stat)
             end
-        end
+        end 
+
+        -- temp fix
+        controllerCyclopedia:scheduleEvent(function()
+            local height = math.max(leftPanel:getHeight() + leftPanel:getMarginTop(), rightPanel:getHeight() + rightPanel:getMarginTop())
+            container:setHeight(height + 10)
+        end, 50)
     end
     function Cyclopedia.onCyclopediaCharacterDefenceStats(data)
         UI.DeffenceStats.rightPanel:destroyChildren()

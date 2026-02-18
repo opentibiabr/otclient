@@ -210,6 +210,7 @@ private:
     void parsePlayerHelpers(const InputMessagePtr& msg) const;
     void parseMessage(const InputMessagePtr& msg);
     void parseBugReport(const InputMessagePtr& msg);
+    void parseNpcChatWindow(const InputMessagePtr& msg);
     void parsePendingGame(const InputMessagePtr& msg);
     void parseEnterGame(const InputMessagePtr& msg);
     void parseLogin(const InputMessagePtr& msg) const;
@@ -242,6 +243,7 @@ private:
     void parseContainerUpdateItem(const InputMessagePtr& msg);
     void parseContainerRemoveItem(const InputMessagePtr& msg);
     void parseBosstiaryInfo(const InputMessagePtr& msg);
+    void parseClientEvent(const InputMessagePtr& msg);
     void parseTakeScreenshot(const InputMessagePtr& msg);
     void parseCyclopediaItemDetail(const InputMessagePtr& msg);
     void parseAddInventoryItem(const InputMessagePtr& msg);

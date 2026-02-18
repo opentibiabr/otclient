@@ -68,6 +68,19 @@ UIWidget
     anchors.left: parent.left
     anchors.right: parent.right
     anchors.top: prev.bottom
+    height: 22
+    margin-top: 5
+
+    OptionCheckBoxMarked
+      id: showInfoBanner
+      !text: tr('Show Info Banner')
+      !tooltip: tr('Tick this box to display an info banner for certain ingame events.')
+
+
+  SmallReversedQtPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
     margin-top: 7
     height: 32
   

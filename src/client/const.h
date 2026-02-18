@@ -579,6 +579,9 @@ namespace Otc
         GameCreaturePaperdoll = 128,
         GameMultiSpr = 129,
         GameVocationMonk = 130,
+        GameLevelPercentU16 = 131,
+        GameEffectSource = 132,
+        GameNpcWindowRedesign = 133,
         LastGameFeature
     };
 
@@ -686,30 +689,33 @@ namespace Otc
 
     enum ResourceTypes_t : uint8_t
     {
-        RESOURCE_BANK_BALANCE = 0,
-        RESOURCE_GOLD_EQUIPPED = 1,
-        RESOURCE_CURRENCY_CUSTOM_EQUIPPED = 2,
-        RESOURCE_PREY_WILDCARDS = 10,
-        RESOURCE_DAILYREWARD_STREAK = 20,
-        RESOURCE_DAILYREWARD_JOKERS = 21,
-        RESOURCE_CHARM = 30,
-        RESOURCE_MINOR_CHARM = 31,
-        RESOURCE_MAX_CHARM = 32,
-        RESOURCE_MAX_MINOR_CHARM = 33,
-        RESOURCE_TASK_HUNTING = 50,
-        RESOURCE_FORGE_DUST = 70,
-        RESOURCE_FORGE_SLIVER = 71,
-        RESOURCE_FORGE_CORES = 72,
-        RESOURCE_LESSER_GEMS = 81,
-        RESOURCE_REGULAR_GEMS = 82,
-        RESOURCE_GREATER_GEMS = 83,
-        RESOURCE_LESSER_FRAGMENTS = 84,
-        RESOURCE_GREATER_FRAGMENTS = 85,
-        RESOURCE_WHEEL_OF_DESTINY = 86,
-        RESOURE_COIN_NORMAL = 90,
-        RESOURE_COIN_TRANSFERRABLE = 91,
-        RESOURE_COIN_AUCTION = 92,
-        RESOURE_COIN_TOURNAMENT = 93,
+        RESOURCE_BANK_BALANCE = 0, // 0x00
+        RESOURCE_GOLD_EQUIPPED = 1, // 0x01
+        RESOURCE_NPC_TRADE = 2, // 0x02
+        RESOURCE_PREY_WILDCARDS = 10, // 0x0A
+        RESOURCE_DAILYREWARD_STREAK = 20, // 0x14
+        RESOURCE_DAILYREWARD_JOKERS = 21, // 0x15
+        RESOURCE_CHARM = 30, // 0x1E
+        RESOURCE_MINOR_CHARM = 31, // 0x1F
+        RESOURCE_MAX_CHARM = 32, // 0x20
+        RESOURCE_MAX_MINOR_CHARM = 33, // 0x21
+        RESOURCE_TASK_HUNTING = 50, // 0x32
+        RESOURCE_NPC_STORAGE_TRADE = 60, // 0x3C
+        RESOURCE_FORGE_DUST = 70, // 0x46
+        RESOURCE_FORGE_SLIVER = 71, // 0x47
+        RESOURCE_FORGE_CORES = 72, // 0x48
+        RESOURCE_WHEEL_POINTS = 80, // 0x50
+        RESOURCE_LESSER_GEMS = 81, // 0x51
+        RESOURCE_REGULAR_GEMS = 82, // 0x52
+        RESOURCE_GREATER_GEMS = 83, // 0x53
+        RESOURCE_LESSER_FRAGMENT = 84, // 0x54
+        RESOURCE_GREATER_FRAGMENT = 85, // 0x55
+        RESOURCE_BOUNTY_POINTS = 86, // 0x56
+        RESOURCE_SOULSEALS = 87, // 0x57
+        RESOURE_COIN_NORMAL = 90, // 0x5A
+        RESOURE_COIN_TRANSFERRABLE = 91, // 0x5B
+        RESOURE_COIN_AUCTION = 92, // 0x5C
+        RESOURE_COIN_TOURNAMENT = 93, // 0x5D
     };
 
     enum ExperienceRate_t : uint8_t
@@ -885,6 +891,43 @@ namespace Otc
         IMBUEMENT_WINDOW_SCROLL = 2
     };
 
+    enum ClientEventType_t : uint8_t
+    {
+        CLIENT_EVENT_TYPE_SIMPLE = 1,
+        CLIENT_EVENT_TYPE_ACHIEVEMENT = 2,
+        CLIENT_EVENT_TYPE_TITLE = 3,
+        CLIENT_EVENT_TYPE_LEVEL = 4,
+        CLIENT_EVENT_TYPE_SKILL = 5,
+        CLIENT_EVENT_TYPE_BESTIARY = 6,
+        CLIENT_EVENT_TYPE_BOSSTIARY = 7,
+        CLIENT_EVENT_TYPE_QUEST = 8,
+        CLIENT_EVENT_TYPE_COSMETIC = 9,
+        CLIENT_EVENT_TYPE_PROFICIENCY = 10,
+        CLIENT_EVENT_TYPE_LAST
+    };
+
+    enum ClientEvent_t : uint8_t
+    {
+        // screenshot
+        CLIENT_EVENT_NONE = 0,
+        CLIENT_EVENT_BOSSDEFEATED = 1,
+        CLIENT_EVENT_DEATHPVE = 2,
+        CLIENT_EVENT_DEATHPVP = 3,
+        CLIENT_EVENT_PLAYERKILLASSIST = 4,
+        CLIENT_EVENT_PLAYERKILL = 5,
+        CLIENT_EVENT_PLAYERATTACKING = 6,
+        CLIENT_EVENT_TREASUREFOUND = 7,
+        CLIENT_EVENT_GIFTOFLIFE = 8,
+        // pop up
+        CLIENT_EVENT_ATTACKSTOPPED = 9,
+        CLIENT_EVENT_CAPACITYLIMIT = 10,
+        CLIENT_EVENT_OUTOFAMMO = 11,
+        CLIENT_EVENT_TARGETTOOCLOSE = 12,
+        CLIENT_EVENT_OUTOFSOULPOINTS = 13,
+        CLIENT_EVENT_TUTORIALCOMPLETE = 14,
+        CLIENT_EVENT_LAST
+    };
+
     enum Vocations_t : uint8_t
     {
         NONE = 0,
@@ -932,6 +975,18 @@ namespace Otc
         ANTIALIASING_ENABLED,
         ANTIALIASING_SMOOTH_RETRO
     };
+
+    enum MagicEffectSources : uint8_t
+    {
+        // always 100% opacity, not configurable
+        ME_SOURCE_DEFAULT = 0,
+        // configurable with sliders in the client
+        ME_SOURCE_OWN = 1,
+        ME_SOURCE_OTHER_PLAYER = 2,
+        ME_SOURCE_MONSTER = 3,
+        ME_SOURCE_BOSS = 4,
+        ME_SOURCE_LAST = ME_SOURCE_BOSS
+    }; 
 
     enum class WheelSlots_t : uint8_t
     {

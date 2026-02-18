@@ -827,3 +827,14 @@ function StatsBar.onHungryChange(regenerationTime, alert)
         end
     end
 end
+
+function StatsBar.getHeight()
+    if currentStats.dimension == 'hide' or not statsBarTop then
+        return 0
+    end
+    if statsBarTop:isVisible() then
+        return statsBarTop:getHeight()
+    else
+        return 0
+    end
+end

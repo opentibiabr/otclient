@@ -5,21 +5,6 @@ local function string_empty(str)
     return #str == 0
 end
 
-local function short_text(text, chars_limit)
-    if #text > chars_limit then
-        local newstring = ''
-        for char in (text):gmatch(".") do
-            newstring = string.format("%s%s", newstring, char)
-            if #newstring >= chars_limit then
-                break
-            end
-        end
-        return newstring .. '...'
-    else
-        return text
-    end
-end
-
 local function lineBreaks(input, lineLength, spaceCount)
     spaceCount = spaceCount or 0
     local result = {}

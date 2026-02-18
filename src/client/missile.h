@@ -32,6 +32,7 @@ public:
 
     void setId(uint32_t id) override;
     void setPath(const Position& fromPosition, const Position& toPosition);
+    void setSource(Otc::MagicEffectSources source) { m_source = source; }
 
     bool isMissile() const override { return true; }
 
@@ -52,4 +53,5 @@ private:
     Otc::Direction m_direction{ Otc::InvalidDirection };
 
     uint8_t m_distance{ 0 };
+    Otc::MagicEffectSources m_source{ Otc::ME_SOURCE_DEFAULT };
 };

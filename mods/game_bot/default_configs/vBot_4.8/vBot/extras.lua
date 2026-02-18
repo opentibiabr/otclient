@@ -596,6 +596,8 @@ if true then
         voc = "EK"
       elseif text:lower():find("paladin") then
         voc = "RP"
+      elseif text:lower():find("monk") then
+        voc = "EM"
       end
       local creature = getCreatureByName(name)
       if creature then

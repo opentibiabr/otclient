@@ -406,6 +406,17 @@ function controller:onGameStart()
             updateKeybinds()
         end
     end
+    if not g_game.getFeature(GameEffectSource) then
+        panels.graphicsEffectsPanel.clientEffectOpacity:show()
+        panels.graphicsEffectsPanel.clientMissileOpacity:show()
+        panels.graphicsEffectsPanel.GameEffectSource:hide()
+    else
+        g_client.setEffectAlpha(1)
+        g_client.setMissileAlpha(1)
+        panels.graphicsEffectsPanel.clientEffectOpacity:hide()
+        panels.graphicsEffectsPanel.clientMissileOpacity:hide()
+        panels.graphicsEffectsPanel.GameEffectSource:show()
+    end
 end
 
 function setOption(key, value, force)

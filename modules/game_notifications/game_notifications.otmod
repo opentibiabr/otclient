@@ -1,0 +1,9 @@
+Module
+  name: game_notifications
+  description: Handles in-game notifications (popups and screenshots)
+  author: game_notifications
+  website: https://github.com/mehah/otclient
+  sandboxed: true
+  scripts: [ game_notifications, controllers/infobanner, controllers/screenshot ]
+  @onLoad: notificationsController:init()
+  @onUnload: notificationsController:terminate()

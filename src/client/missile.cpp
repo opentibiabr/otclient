@@ -47,8 +47,13 @@ void Missile::draw(const Point& dest, const bool drawThings, LightView* lightVie
 
     if (g_drawPool.getCurrentType() == DrawPoolType::MAP) {
         g_drawPool.setDrawOrder(DrawOrder::FOURTH);
-        if (drawThings && g_client.getMissileAlpha() < 1.f)
-            g_drawPool.setOpacity(g_client.getMissileAlpha(), true);
+
+        float alpha = g_client.getMissileAlpha();
+        if (m_source != Otc::ME_SOURCE_DEFAULT)
+             alpha = g_client.getEffectAlpha(m_source);
+
+        if (drawThings && alpha < 1.f)
+            g_drawPool.setOpacity(alpha, true);
     }
 
     if (drawThings && hasShader())

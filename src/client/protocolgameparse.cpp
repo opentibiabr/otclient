@@ -108,6 +108,9 @@ void ProtocolGame::parseMessage(const InputMessagePtr& msg)
                 case Proto::GameServerBugReport:
                     parseBugReport(msg);
                     break;
+                case Proto::GameServerNpcChatWindow:
+                    parseNpcChatWindow(msg);
+                    break;
                 case Proto::GameServerPingBack:
                 case Proto::GameServerPing:
                     if (((opcode == Proto::GameServerPing) && (g_game.getFeature(Otc::GameClientPing))) ||
@@ -232,7 +235,12 @@ void ProtocolGame::parseMessage(const InputMessagePtr& msg)
                     parseBosstiaryInfo(msg);
                     break;
                 case Proto::GameServerTakeScreenshot:
-                    parseTakeScreenshot(msg);
+                    // todo improve this if
+                    if (g_game.getClientVersion() >= 1521) {
+                        parseClientEvent(msg);
+                    } else {
+                        parseTakeScreenshot(msg);
+                    }
                     break;
                 case Proto::GameServerCyclopediaItemDetail:
                     parseCyclopediaItemDetail(msg);
@@ -754,6 +762,33 @@ void ProtocolGame::parseBugReport(const InputMessagePtr& msg)
     g_game.setCanReportBugs(canReportBugs);
 }
 
+void ProtocolGame::parseNpcChatWindow(const InputMessagePtr& msg)
+{
+    const uint8_t status = msg->getU8();
+    if (status != 0) {
+        return;
+    }
+    NpcChatWindowData data;
+
+    const uint8_t npcCount = msg->getU8();
+    data.npcIds.reserve(npcCount);
+    for (uint8_t i = 0; i < npcCount; ++i) {
+        data.npcIds.push_back(msg->getU32());
+    }
+
+    const uint8_t buttonCount = msg->getU8();
+    data.buttons.reserve(buttonCount);
+    for (uint8_t i = 0; i < buttonCount; ++i) {
+        NpcButton button;
+        button.id = msg->getU8();
+        button.text = msg->getString();
+        data.buttons.push_back(button);
+    }
+
+    g_lua.callGlobalField("g_game", "onNpcChatWindow", data);
+}
+
+
 void ProtocolGame::parsePendingGame(const InputMessagePtr&)
 {
     //set player to pending game state
@@ -809,11 +844,14 @@ void ProtocolGame::parseResourceBalance(const InputMessagePtr& msg) const
     const auto type = static_cast<Otc::ResourceTypes_t>(msg->getU8());
     uint64_t value;
     switch (type) {
+        // 14.10+
         case Otc::RESOURCE_CHARM:
         case Otc::RESOURCE_MINOR_CHARM:
         case Otc::RESOURCE_MAX_CHARM:
         case Otc::RESOURCE_MAX_MINOR_CHARM:
-            // 14.10
+        // 15.13+
+        case Otc::RESOURCE_BOUNTY_POINTS:
+        case Otc::RESOURCE_SOULSEALS:
             value = msg->getU32();
             break;
         default:
@@ -1791,6 +1829,7 @@ void ProtocolGame::parseMagicEffect(const InputMessagePtr& msg)
                     const uint16_t shotId = g_game.getFeature(Otc::GameEffectU16) ? msg->getU16() : msg->getU8();
                     const auto offsetX = static_cast<int8_t>(msg->getU8());
                     const auto offsetY = static_cast<int8_t>(msg->getU8());
+                    const uint16_t effectSource = g_game.getFeature(Otc::GameEffectSource) ? msg->getU8() : 0;
                     if (!g_things.isValidDatId(shotId, ThingCategoryMissile)) {
                         g_logger.traceError("invalid missile id {}", shotId);
                         return;
@@ -1798,6 +1837,7 @@ void ProtocolGame::parseMagicEffect(const InputMessagePtr& msg)
 
                     const auto& missile = std::make_shared<Missile>();
                     missile->setId(shotId);
+                    missile->setSource(static_cast<Otc::MagicEffectSources>(effectSource));
 
                     if (effectType == Otc::MAGIC_EFFECTS_CREATE_DISTANCEEFFECT) {
                         missile->setPath(pos, Position(pos.x + offsetX, pos.y + offsetY, pos.z));
@@ -1815,9 +1855,11 @@ void ProtocolGame::parseMagicEffect(const InputMessagePtr& msg)
                         g_logger.traceError("invalid effect id {}", effectId);
                         continue;
                     }
+                    const uint16_t effectSource = g_game.getFeature(Otc::GameEffectSource) ? msg->getU8() : 0;
 
                     const auto& effect = std::make_shared<Effect>();
                     effect->setId(effectId);
+                    effect->setSource(static_cast<Otc::MagicEffectSources>(effectSource));
                     g_map.addThing(effect, pos);
                     break;
                 }
@@ -2166,23 +2208,17 @@ void ProtocolGame::parseOpenForge(const InputMessagePtr& msg)
 
 void ProtocolGame::setCreatureVocation(const InputMessagePtr& msg, const uint32_t creatureId) const
 {
+    const uint8_t vocationId = msg->getU8();
     const auto& creature = g_map.getCreatureById(creatureId);
     if (!creature) {
         return;
     }
 
-    const uint8_t vocationId = msg->getU8();
     creature->setVocation(vocationId);
 }
 
 void ProtocolGame::addCreatureIcon(const InputMessagePtr& msg, const uint32_t creatureId) const
 {
-    const auto& creature = g_map.getCreatureById(creatureId);
-    if (!creature) {
-        g_logger.traceDebug("ProtocolGame::addCreatureIcon: could not get creature with id {}", creatureId);
-        return;
-    }
-
     const uint8_t sizeIcons = msg->getU8();
     std::vector<std::tuple<uint8_t, uint8_t, uint16_t>> icons; // icon, category, count
     for (auto i = 0; i < sizeIcons; ++i) {
@@ -2190,6 +2226,11 @@ void ProtocolGame::addCreatureIcon(const InputMessagePtr& msg, const uint32_t cr
         const uint8_t category = msg->getU8(); // icon.category -- 0x00 = monster // 0x01 = player?
         const uint16_t count = msg->getU16(); // icon.count
         icons.emplace_back(icon, category, count);
+    }
+    const auto& creature = g_map.getCreatureById(creatureId);
+    if (!creature) {
+        g_logger.traceDebug("ProtocolGame::addCreatureIcon: could not get creature with id {}", creatureId);
+        return;
     }
     creature->setIcons(icons);
 }
@@ -2452,7 +2493,7 @@ void ProtocolGame::parsePlayerStats(const InputMessagePtr& msg) const
 
     const uint64_t experience = g_game.getFeature(Otc::GameDoubleExperience) ? msg->getU64() : msg->getU32();
     const uint16_t level = g_game.getFeature(Otc::GameLevelU16) ? msg->getU16() : msg->getU8();
-    const uint8_t levelPercent = msg->getU8();
+    const uint8_t levelPercent = g_game.getFeature(Otc::GameLevelPercentU16) ? msg->getU16() : msg->getU8();
 
     if (g_game.getFeature(Otc::GameExperienceBonus)) {
         if (g_game.getClientVersion() <= 1096) {
@@ -4796,7 +4837,7 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
             CyclopediaCharacterGeneralStats stats;
             stats.experience = msg->getU64();
             stats.level = msg->getU16();
-            stats.levelPercent = msg->getU8();
+            stats.levelPercent = g_game.getFeature(Otc::GameLevelPercentU16) ? msg->getU16() : msg->getU8();
             stats.baseExpGain = msg->getU16();
             if (g_game.getFeature(Otc::GameTournamentPackets)) {
                 msg->getU32(); // tournament exp(deprecated)
@@ -5161,6 +5202,10 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
                 const uint8_t count = msg->getU8();
                 houseItems.emplace_back(itemId, itemName, count);
             }
+
+            if (g_game.getClientVersion() >= 1521) {
+                msg->getU8();
+            }
             g_lua.callGlobalField("g_game", "onParseCyclopediaStoreSummary", xpBoostTime, dailyRewardXpBoostTime, blessings, preySlotsUnlocked, preyWildcards, instantRewards, hasCharmExpansion, hirelingsObtained, hirelingSkills, houseItems);
             break;
         }
@@ -5203,22 +5248,21 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
         {
             CyclopediaCharacterOffenceStats data;
 
-            // Critical hit chance
             data.critChanceTotal = msg->getDouble();
+            data.critChanceEquipament = msg->getDouble();
             if (g_game.getClientVersion() >= 1510) {
                 data.critChanceFlat = msg->getDouble();
             }
-            data.critChanceEquipament = msg->getDouble();
             data.critChanceImbuement = msg->getDouble();
             data.critChanceWheel = msg->getDouble();
             data.critChanceConcoction = msg->getDouble();
 
             // Critical hit damage
             data.critDamageTotal = msg->getDouble();
+            data.critDamageEquipament = msg->getDouble();
             if (g_game.getClientVersion() >= 1510) {
                 data.critDamageFlat = msg->getDouble();
             }
-            data.critDamageEquipament = msg->getDouble();
             data.critDamageImbuement = msg->getDouble();
             data.critDamageWheel = msg->getDouble();
             data.critDamageConcoction = msg->getDouble();
@@ -5241,7 +5285,7 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
             data.onslaught = msg->getDouble();
             data.onslaughtBase = msg->getDouble();
             data.onslaughtBonus = msg->getDouble();
-            msg->getDouble(); // unused
+            data.onslaughtEventBonus = msg->getDouble();
 
             data.cleavePercent = msg->getDouble();
 
@@ -5253,7 +5297,7 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
 
             data.flatDamage = msg->getU16();
             data.flatDamageBase = msg->getU16();
-            msg->getU16(); // unused
+            data.flatDamageWheel = msg->getU16();
 
             data.weaponAttack = msg->getU16();
             data.weaponFlatModifier = msg->getU16();
@@ -5262,31 +5306,87 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
             data.weaponSkillLevel = msg->getU16();
             data.weaponSkillModifier = msg->getU16();
             data.weaponElement = msg->getU8();
-            data.weaponElementDamage = msg->getDouble();
-            data.weaponElementType = msg->getU8();
+            // damage conversion
+            data.weaponElementDamage = msg->getDouble(); // % amount
+            data.weaponElementType = msg->getU8(); // new element
 
-            const uint8_t accuracyCount = msg->getU8();
+            const uint8_t accuracyCount = msg->getU8();// distance fighting accuracy
             for (int i = 0; i < accuracyCount; i++) {
-                msg->getU8(); // range
-                data.weaponAccuracy.push_back(msg->getDouble());
+                CyclopediaCharacterOffenceStats::AccuracyData acc;
+                acc.range = msg->getU8(); // range
+                acc.chance = msg->getDouble(); // change to hit (placeholder)
+                data.weaponAccuracy.push_back(acc);
             }
 
             if (g_game.getClientVersion() >= 1510) {
-                msg->getDouble(); // unused
-                msg->getU16(); // unused
-                msg->getU8(); // unused
-                msg->getDouble(); // unused
-                msg->getDouble(); // unused
-                msg->getU8(); // unused
-                msg->getDouble(); // unused
-                msg->getDouble(); // unused
-                msg->getU16(); // unused
-                msg->getU16(); // unused
-                msg->getU16(); // unused
-                msg->getU16(); // unused
-                msg->getU8(); // unused
-                msg->getU8(); // unused
-                msg->getU8(); // unused
+                data.damagePowerfulFoes = msg->getDouble(); // damage against powerful foes
+                const uint16_t targetCount = msg->getU16(); // damage against specific targets FOR
+                for (int i = 0; i < targetCount; i++) {
+                    CyclopediaCharacterOffenceStats::TargetBonus bonus;
+                    bonus.name = msg->getString(); // placeholder
+                    bonus.value = msg->getDouble(); // 1.25
+                    data.damageSpecificTargets.push_back(bonus);
+                }
+                const uint8_t elementCount = msg->getU8();// critical chance by type
+                for (int i = 0; i < elementCount; i++) {
+                    CyclopediaCharacterOffenceStats::ElementModifier mod;
+                    mod.element = msg->getU8(); // element id
+                    mod.value = msg->getDouble(); // modifier
+                    data.damageElements.push_back(mod);
+                }
+                data.offensiveRuneDamage = msg->getDouble(); // +x% for offensive runes
+                data.autoAttackDamage = msg->getDouble(); // +x% for auto-attack
+                const uint8_t critDmgElemCount = msg->getU8(); // critical damage by type
+                for (int i = 0; i < critDmgElemCount; i++) {
+                    CyclopediaCharacterOffenceStats::ElementModifier mod;
+                    mod.element = msg->getU8(); // element id
+                    mod.value = msg->getDouble(); // modifier
+                    data.critDamageElements.push_back(mod);
+                }
+                data.critDamageOffensiveRunes = msg->getDouble(); // crit dmg: +x% for offensive runes
+                data.critDamageAutoAttack = msg->getDouble(); // crit dmg: +x% for auto-attack
+
+                data.lifeGainHit = msg->getU16(); // life gain on hit
+                data.manaGainHit = msg->getU16(); // mana gain on hit
+                data.lifeGainKill = msg->getU16(); // life gain on kill
+                data.manaGainKill = msg->getU16(); // mana gain on kill
+
+                const uint8_t adExtraDmgCount = msg->getU8();
+                for (int i = 0; i < adExtraDmgCount; i++) {
+                    CyclopediaCharacterOffenceStats::SkillBonus bonus;
+                    bonus.skillId = msg->getU8(); // skill id, uses same enums as in HardcodedSkillIds
+                    bonus.valueA = msg->getDouble(); // value a
+                    bonus.valueB = msg->getDouble(); // value b
+                    data.extraDamageSkills.push_back(bonus);
+                }
+                const uint8_t spellExtraCount = msg->getU8();
+                for (int i = 0; i < spellExtraCount; i++) {
+                    CyclopediaCharacterOffenceStats::SkillBonus bonus;
+                    bonus.skillId = msg->getU8(); // skill id, uses same enums as in HardcodedSkillIds
+                    bonus.valueA = msg->getDouble(); // value a
+                    bonus.valueB = msg->getDouble(); // value b
+                    data.extraDamageSpells.push_back(bonus);
+                }
+                const uint8_t spellExtraHealingCount = msg->getU8();
+                for (int i = 0; i < spellExtraHealingCount; i++) {
+                    CyclopediaCharacterOffenceStats::SkillBonus bonus;
+                    bonus.skillId = msg->getU8(); // skill id, uses same enums as in HardcodedSkillIds
+                    bonus.valueA = msg->getDouble(); // value a
+                    bonus.valueB = msg->getDouble(); // value b
+                    data.extraHealingSpells.push_back(bonus);
+                }
+            }
+            if (g_game.getClientVersion() >= 1521) {
+                data.damageHighHp = msg->getDouble(); // damage to targets above 95% hp
+                data.damageLowHp = msg->getDouble(); // damage to targets below 30% hp
+                data.armorPenetration = msg->getDouble(); // armor penetration multiplier
+                const uint8_t elemPierceBonuses = msg->getU8(); // elemental pierce
+                for (int i = 0; i < elemPierceBonuses; i++) {
+                    CyclopediaCharacterOffenceStats::ElementModifier mod;
+                    mod.element = msg->getU8(); // element id
+                    mod.value = msg->getDouble(); // modifier
+                    data.elementalPierce.push_back(mod);
+                }
             }
 
             g_game.processCyclopediaCharacterOffenceStats(data);
@@ -5692,10 +5792,12 @@ void ProtocolGame::parsePreyRerollPrice(const InputMessagePtr& msg)
     if (g_game.getProtocolVersion() >= 1230) {
         wildcard = msg->getU8();
         directly = msg->getU8();
-        msg->getU32(); // task hunting reroll price
-        msg->getU32(); // task hunting reroll price
-        msg->getU8(); // task hunting selection list price
-        msg->getU8(); // task hunting bonus reroll price
+        if (g_game.getProtocolVersion() < 1521) {
+            msg->getU32(); // task hunting reroll price
+            msg->getU32(); // task hunting reroll price
+            msg->getU8(); // task hunting selection list price
+            msg->getU8(); // task hunting bonus reroll price
+        }
     }
 
     g_lua.callGlobalField("g_game", "onPreyRerollPrice", price, wildcard, directly);
@@ -6188,6 +6290,67 @@ void ProtocolGame::parseBosstiaryCooldownTimer(const InputMessagePtr& msg)
 void ProtocolGame::parseBosstiaryEntryChanged(const InputMessagePtr& msg)
 {
     msg->getU32(); // bossId
+}
+
+void ProtocolGame::parseClientEvent(const InputMessagePtr& msg)
+{
+    const auto type = static_cast<Otc::ClientEventType_t>(msg->getU8());
+    switch (type) {
+        case Otc::CLIENT_EVENT_TYPE_SIMPLE: {
+            const auto eventType = static_cast<Otc::ClientEvent_t>(msg->getU8());
+            if (eventType < Otc::CLIENT_EVENT_ATTACKSTOPPED) {
+                m_localPlayer->takeScreenshot(eventType); // TODO unTest
+            } else {
+                g_lua.callGlobalField("g_game", "onClientEvent", type, eventType);
+            }
+            break;
+        }
+        case Otc::CLIENT_EVENT_TYPE_ACHIEVEMENT:
+        case Otc::CLIENT_EVENT_TYPE_TITLE: {
+            const auto name = msg->getString();
+            g_lua.callGlobalField("g_game", "onClientEvent", type, name);
+            break;
+        }
+        case Otc::CLIENT_EVENT_TYPE_LEVEL: {
+            const auto level = msg->getU16();
+            g_lua.callGlobalField("g_game", "onClientEvent", type, level);
+            break;
+        }
+        case Otc::CLIENT_EVENT_TYPE_SKILL: {
+            const auto skillId = msg->getU8();
+            const auto level = msg->getU16();
+            g_lua.callGlobalField("g_game", "onClientEvent", type, skillId, level);
+            break;
+        }
+        case Otc::CLIENT_EVENT_TYPE_BESTIARY:
+        case Otc::CLIENT_EVENT_TYPE_BOSSTIARY: {
+            const auto raceId = msg->getU16();
+            const auto progressLevel = msg->getU8();
+            g_lua.callGlobalField("g_game", "onClientEvent", type, raceId, progressLevel);
+            break;
+        }
+        case Otc::CLIENT_EVENT_TYPE_QUEST: {
+            const auto questName = msg->getString();
+            const auto isCompleted = msg->getU8();
+            g_lua.callGlobalField("g_game", "onClientEvent", type, questName, isCompleted);
+            break;
+        }
+        case Otc::CLIENT_EVENT_TYPE_COSMETIC: {
+            const auto lookType = msg->getU16();
+            const auto skinName = msg->getString();
+            const auto skinType = msg->getU8();
+            g_lua.callGlobalField("g_game", "onClientEvent", type, lookType, skinName, skinType);
+            break;
+        }
+        case Otc::CLIENT_EVENT_TYPE_PROFICIENCY: {
+            const auto itemId = msg->getU16();
+            const auto message = msg->getString();
+            g_lua.callGlobalField("g_game", "onClientEvent", type, itemId, message);
+            break;
+        }
+        default:
+            break;
+    }
 }
 
 void ProtocolGame::parseTakeScreenshot(const InputMessagePtr& msg)

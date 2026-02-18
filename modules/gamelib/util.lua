@@ -35,6 +35,17 @@ function math.cround(value, rd)
     return _round * rd
 end
 
+function short_text(text, chars_limit)
+    if not text then
+        return ""
+    end
+    chars_limit = chars_limit or 20
+    if string.len(text) <= chars_limit then
+        return text
+    end
+    return string.sub(text, 1, chars_limit - 3) .. "..."
+end
+
 function formatMoney(amount, separator)
   local patternSeparator = string.format("%%1%s%%2", separator)
   local formatted = amount
@@ -47,10 +58,8 @@ function formatMoney(amount, separator)
   return formatted
 end
 
-if not setStringColor then
-  function setStringColor(str, color)
-    return str  -- ignora a cor e retorna o texto puro
-  end
+function setStringColor(str, color)
+    return str
 end
 
 function convertLongGold(amount, shortValue, normalized)
@@ -96,7 +105,6 @@ function convertLongGold(amount, shortValue, normalized)
 end
 
 function translateWheelVocation(id)
-	-- Sprawdź czy id jest stringiem i spróbuj przekonwertować
 	if type(id) == "string" then
 		id = tonumber(id)
 	end

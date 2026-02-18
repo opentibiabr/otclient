@@ -780,5 +780,38 @@ return {
     },
     actionBarBottomLocked = false,
     actionBarLeftLocked = false,
-    actionBarRightLocked = false    
+    actionBarRightLocked = false ,
+        setOwnSpellEffectAlphaScroll                       = {
+        value = 100,
+        action = function(value, options, controller, panels, extraWidgets)
+            panels.graphicsEffectsPanel:recursiveGetChildById('setOwnSpellEffectAlphaScroll'):setText(string.format('Own Spells Effect: %s %%',
+                value))
+            g_client.setOwnSpellEffectAlpha(value / 100)
+        end
+    },
+    setOtherPlayerSpellEffectAlphaScroll                       = {
+        value = 100,
+        action = function(value, options, controller, panels, extraWidgets)
+            panels.graphicsEffectsPanel:recursiveGetChildById('setOtherPlayerSpellEffectAlphaScroll'):setText(string.format('Other Player Spells Effect: %s %%',
+                value))
+           g_client.setOtherPlayerSpellEffectAlpha(value / 100)
+        end
+    },
+        setCreatureSpellEffectAlphaScroll                       = {
+        value = 100,
+        action = function(value, options, controller, panels, extraWidgets)
+            panels.graphicsEffectsPanel:recursiveGetChildById('setCreatureSpellEffectAlphaScroll'):setText(string.format('Creature Spells Effect: %s %%',
+                value))
+            g_client.setCreatureSpellEffectAlpha(value / 100)
+        end
+    },
+        setBossAreaCreatureEffectAlphaScroll                       = {
+        value = 100,
+        action = function(value, options, controller, panels, extraWidgets)
+            panels.graphicsEffectsPanel:recursiveGetChildById('setBossAreaCreatureEffectAlphaScroll'):setText(string.format('Boss Area Creature Effect: %s %%',
+                value))
+           g_client.setBossAreaCreatureEffectAlpha(value / 100)
+        end
+    },   
+    showInfoBanner                     = true,
 }

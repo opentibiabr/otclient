@@ -26,7 +26,6 @@ Module
     - game_containers
     - game_viplist
     - game_battle
-    - game_npctrade
     - game_textwindow
     - game_playertrade
     - game_bugreport
@@ -44,7 +43,7 @@ Module
     - game_stash
     - game_healthcircle
     - game_shop
-    - game_screenshot
+    - game_notifications
     - game_highscore
     - game_blessing
     - game_store
@@ -53,5 +52,6 @@ Module
     - game_creatureinformation
     - game_rewardwall
     - game_forge
+    - game_npctrader
   @onLoad: init()
   @onUnload: terminate()
