@@ -83,54 +83,20 @@
         float: right;
     }
 
-    /* ===== CONTENT STYLING - MINIMAL AND STABLE ===== */
-    .modal-message {
-        --text-wrap: true;
+    /* tbody/thead/tfoot: assign correct display types so OTClient table layout handles them natively */
+    tbody {
+        display: table-row-group;
     }
 
-    .modal-message table {
-        display: table;
-        table-layout: auto;
-        border-collapse: collapse;
+    thead {
+        display: table-header-group;
     }
 
-    .modal-message tr {
-        display: table-row;
+    tfoot {
+        display: table-footer-group;
     }
 
-    .modal-message td, .modal-message th {
-        display: table-cell;
-        padding: 2 6;
-        vertical-align: middle;
-        --text-wrap: true;
-    }
 
-    .modal-message img {
-        display: inline-block;
-        vertical-align: middle;
-    }
-
-    .modal-message table img {
-        display: block;
-        margin-bottom: 6;
-    }
-
-    .modal-message p {
-        display: block;
-        margin: 0 0 6 0;
-        --text-wrap: true;
-    }
-
-    .modal-message center {
-        display: block;
-        width: 100%;
-        text-align: center;
-        --text-wrap: true;
-    }
-
-    .modal-message br {
-        height: 15;
-    }
 </style>
 
 <html>

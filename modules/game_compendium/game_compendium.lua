@@ -35,127 +35,30 @@ local function ensureAnchorHandler(widget)
 end
 
 local function processHtmlContent(text)
-    -- Minimal HTML normalization for OTClient parser:
-    -- - decode HTML entities
-    -- - normalize self-closing tags
-    -- - remove unsupported attributes
-    -- Let JSON inline styles do their job
     if not text then return "" end
     text = tostring(text)
-    
-    -- Decode HTML entities
+
+    -- Decode common HTML entities
     text = text:gsub("&nbsp;", " ")
+    text = text:gsub("&amp;", "&")
     text = text:gsub("&lt;", "<")
     text = text:gsub("&gt;", ">")
-    text = text:gsub("&amp;", "&")
     text = text:gsub("&quot;", "\"")
     text = text:gsub("&#39;", "'")
 
-    -- Collapse excessive whitespace in text nodes only
+    -- Collapse all whitespace (including newlines) outside of tags into a single space
     text = text:gsub("([^<]+)", function(segment)
-        segment = segment:gsub("%s+", " ")
-        return segment
-    end)
-    
-    -- Normalize br tags to self-closing (case-insensitive)
-    text = text:gsub("<[Bb][Rr]%s*/?>", "<br/>")
-
-    -- Ensure img tags are self-closed (case-insensitive)
-    text = text:gsub("<[Ii][Mm][Gg]%s+([^>]-)%s*>", "<img %1/>")
-
-    -- Ensure block text starts after standalone images
-    text = text:gsub("(<img[^>]-/>)%s*<p", "%1<br/><p")
-    text = text:gsub("(<img[^>]-/>)%s*<center", "%1<br/><center")
-
-    -- Strip <a> tags but keep their inner text.
-    -- OTClient's HTML renderer gives text nodes the full parent width,
-    -- so inline <a> elements after text nodes get pushed to new lines
-    -- with large gaps. Merging link text into the surrounding text node
-    -- produces correct continuous text flow.
-    text = text:gsub('<a[^>]*>(.-)</a>', '%1')
-
-    -- Remove <tbody> tags (OTClient may not handle them; rows work directly under <table>)
-    text = text:gsub('</?tbody[^>]*>', '')
-
-    -- Remove attributes that OTClient can't parse well
-    text = text:gsub('%s+target="[^"]*"', '')
-    text = text:gsub("%s+target='[^']*'", '')
-    text = text:gsub('%s+rel="[^"]*"', '')
-    text = text:gsub("%s+rel='[^']*'", '')
-    
-    -- Normalize style attributes for OTClient (unitless values, keep layout hints)
-    text = text:gsub('style="([^"]*)"', function(style)
-        style = style:gsub('box%-sizing[^;]*;?', '')
-        style = style:gsub('(%d+)%s*px', '%1')
-        style = style:gsub('(%d+%.%d+)%s*px', '%1')
-        style = style:gsub(';;+', ';')
-        style = style:gsub('^%s*;%s*', '')
-        style = style:gsub('%s*;%s*$', '')
-        if style == '' then
-            return ''
-        else
-            return 'style="' .. style .. '"'
-        end
+        return segment:gsub("%s+", " ")
     end)
 
-    -- Remove fixed heights on tables that cause image overlap
-    text = text:gsub('<table([^>]-)style="([^"]*)"', function(attrs, style)
-        style = style:gsub('height%s*:%s*[^;]*;?', '')
-        style = style:gsub(';;+', ';')
-        style = style:gsub('^%s*;%s*', '')
-        style = style:gsub('%s*;%s*$', '')
-        if style == '' then
-            return '<table' .. attrs
-        end
-        return '<table' .. attrs .. 'style="' .. style .. '"'
-    end)
-    text = text:gsub('<table([^>]-)%s+height="[^"]*"', '<table%1')
-    text = text:gsub("<table([^>]-)%s+height='[^']*'", '<table%1')
-    
-    -- Constrain oversized images to fit the content wrapper (max 630px)
-    text = text:gsub('<img([^>]-)width="(%d+)"([^>]-)height="(%d+)"', function(pre, w, post, h)
-        w = tonumber(w)
-        h = tonumber(h)
-        local maxW = 630
-        if w > maxW then
-            local ratio = maxW / w
-            h = math.floor(h * ratio)
-            w = maxW
-        end
-        return '<img' .. pre .. 'width="' .. w .. '"' .. post .. 'height="' .. h .. '"'
-    end)
+    -- Self-close img tags (OTClient requires XML-style self-closing)
+    text = text:gsub("<[Ii][Mm][Gg](%s+[^>]-)%s*/?>", "<img%1/>")
 
-    -- Remove fixed widths on inner tables/tds that are narrower than images
-    -- (let the outer wrapper table control width)
-    text = text:gsub('<td([^>]-)style="([^"]*)"', function(attrs, style)
-        if not style:find('width') then
-            return '<td' .. attrs .. 'style="' .. style .. '"'
-        end
-        style = style:gsub('width%s*:%s*[^;]*;?', '')
-        style = style:gsub(';;+', ';')
-        style = style:gsub('^%s*;%s*', '')
-        style = style:gsub('%s*;%s*$', '')
-        if style == '' then
-            return '<td' .. attrs
-        end
-        return '<td' .. attrs .. 'style="' .. style .. '"'
-    end)
-
-    -- Remove width attributes from inner tables (wrapper table controls width)
-    -- Only remove width from tables nested inside the wrapper (not the wrapper itself)
-    -- The wrapper is added by wrapHtmlContent(), so all tables in processHtmlContent are inner tables.
-    text = text:gsub('<table([^>]-)%s+width="[^"]*"', '<table%1')
-
-    -- Clean up empty style attributes
-    text = text:gsub('%s+style=""', '')
-
-    -- Ensure adjacent block elements break lines in OTClient HTML renderer
-    text = text:gsub('</p>%s*<p', '</p><br/><p')
-    text = text:gsub('</p>%s*<ul', '</p><br/><ul')
-    text = text:gsub('</ul>%s*<p', '</ul><br/><p')
-    text = text:gsub('</table>%s*<p', '</table><br/><p')
-    text = text:gsub('</table>%s*<table', '</table><br/><table')
-
+    -- Strip <a> tags (keep inner text): text nodes fill full parent width in OTClient's
+    -- block layout, so a sibling <a> widget gets pushed off the line. Stripping merges
+    -- link text into the surrounding text node so it flows correctly.
+    text = text:gsub("</[Aa]>", "")
+    text = text:gsub("<[Aa][^>]*>", "")
     return text
 end
 
@@ -163,8 +66,7 @@ local function wrapHtmlContent(text)
     if not text or text == "" then
         return ""
     end
-    -- Keep content centered with a fixed max width using a table wrapper.
-    return '<table align="center" width="650"><tr><td>' .. text .. '</td></tr></table>'
+    return text
 end
 
 -- Controller setup
@@ -392,11 +294,8 @@ function buildNewsUI(newsData)
     
     local function setContent(entryId, headline, message)
         clearContentWidget(contentWidget)
-        
-        local processedMessage = processHtmlContent(message)
-        processedMessage = processedMessage:gsub('>\n<', '><')
-        processedMessage = wrapHtmlContent(processedMessage)
-        
+
+        local processedMessage = wrapHtmlContent(processHtmlContent(message))
         contentWidget:html(processedMessage)
 
         -- Add anchor click handler once
