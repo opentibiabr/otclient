@@ -132,8 +132,8 @@ find_package(ZLIB REQUIRED)
 find_package(httplib CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(utf8cpp REQUIRED)
-find_package(unofficial-inih CONFIG REQUIRED)
 find_package(Freetype REQUIRED)
+find_package(unofficial-inih CONFIG REQUIRED)
 
 find_path(CPPCODEC_INCLUDE_DIRS "cppcodec/base32_crockford.hpp")
 
@@ -391,24 +391,39 @@ if (WASM)
   )
 endif()
 
-add_library(otclient_core STATIC ${SOURCE_FILES})
+set(OTCLIENT_CORE_TARGETS "")
 
-target_link_libraries(otclient_core PRIVATE unofficial::inih::inireader)
+if(OTCLIENT_BUILD_TESTS AND NOT ANDROID)
+  add_library(otclient_core STATIC ${SOURCE_FILES})
+  list(APPEND OTCLIENT_CORE_TARGETS otclient_core)
+  target_link_libraries(${PROJECT_NAME} PRIVATE otclient_core)
+else()
+  list(APPEND OTCLIENT_CORE_TARGETS ${PROJECT_NAME})
+  target_sources(${PROJECT_NAME} PRIVATE ${SOURCE_FILES})
+endif()
+
+foreach(core_target IN LISTS OTCLIENT_CORE_TARGETS)
+  target_link_libraries(${core_target} PUBLIC unofficial::inih::inireader)
+endforeach()
 
 if(NOT MSVC)
-  target_link_options(otclient_core PUBLIC -flto=auto)
+  target_link_options(${PROJECT_NAME} PUBLIC -flto=auto)
 endif()
 
 if(TOGGLE_PRE_COMPILED_HEADER)
   # === PRECOMPILED HEADER ===
-  target_precompile_headers(otclient_core PRIVATE framework/pch.h)
+  foreach(core_target IN LISTS OTCLIENT_CORE_TARGETS)
+    target_precompile_headers(${core_target} PRIVATE framework/pch.h)
+  endforeach()
   message(STATUS "Use precompiled header: ON")
 else()
   message(STATUS "Use precompiled header: OFF")
 endif(TOGGLE_PRE_COMPILED_HEADER)
 
 if(SPEED_UP_BUILD_UNITY)
-  set_target_properties(otclient_core PROPERTIES UNITY_BUILD ON)
+  foreach(core_target IN LISTS OTCLIENT_CORE_TARGETS)
+    set_target_properties(${core_target} PROPERTIES UNITY_BUILD ON)
+  endforeach()
   log_option_enabled("Build unity for speed up compilation")
 endif(SPEED_UP_BUILD_UNITY)
 
@@ -418,19 +433,28 @@ else()
   target_sources(${PROJECT_NAME} PRIVATE main.cpp)
 endif()
 
-target_link_libraries(${PROJECT_NAME} PRIVATE otclient_core)
+if(NOT OTCLIENT_BUILD_CLIENT)
+  set_target_properties(${PROJECT_NAME} PROPERTIES EXCLUDE_FROM_ALL ON)
+  if(MSVC)
+    set_target_properties(${PROJECT_NAME} PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD ON)
+  endif()
+endif()
 
 # *****************************************************************************
 # Build flags
 # *****************************************************************************
 if (NOT MSVC)
   if (CMAKE_COMPILER_IS_GNUCXX)
-    target_compile_options(otclient_core PRIVATE -Wno-deprecated-declarations)
+    foreach(core_target IN LISTS OTCLIENT_CORE_TARGETS)
+      target_compile_options(${core_target} PRIVATE -Wno-deprecated-declarations)
+    endforeach()
   endif()
 endif()
 
 if(THREADS_HAVE_PTHREAD_ARG)
-  target_compile_options(otclient_core PUBLIC "-pthread")
+  foreach(core_target IN LISTS OTCLIENT_CORE_TARGETS)
+    target_compile_options(${core_target} PUBLIC "-pthread")
+  endforeach()
 endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -447,10 +471,14 @@ if(ASAN_ENABLED)
 
   if(MSVC)
     string(REGEX REPLACE "/RTC(su|[1su])" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-    target_compile_options(otclient_core PUBLIC /fsanitize=address)
+    foreach(core_target IN LISTS OTCLIENT_CORE_TARGETS)
+      target_compile_options(${core_target} PUBLIC /fsanitize=address)
+    endforeach()
     target_link_options(${PROJECT_NAME} PUBLIC /fsanitize=address)
   else()
-    target_compile_options(otclient_core PUBLIC -fsanitize=address)
+    foreach(core_target IN LISTS OTCLIENT_CORE_TARGETS)
+      target_compile_options(${core_target} PUBLIC -fsanitize=address)
+    endforeach()
     target_link_options(${PROJECT_NAME} PUBLIC -fsanitize=address)
   endif()
 else()
@@ -460,13 +488,17 @@ endif()
 # === DEBUG LOG ===
 # cmake -DDEBUG_LOG=ON ..
 if(CMAKE_BUILD_TYPE MATCHES Debug)
-  target_compile_definitions(otclient_core PRIVATE -DDEBUG_LOG=ON )
+  foreach(core_target IN LISTS OTCLIENT_CORE_TARGETS)
+    target_compile_definitions(${core_target} PRIVATE -DDEBUG_LOG=ON )
+  endforeach()
   log_option_enabled("DEBUG LOG")
 else()
   log_option_disabled("DEBUG LOG")
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
-target_compile_definitions(otclient_core PRIVATE ENABLE_DISCORD_RPC=${OTCLIENT_ENABLE_DISCORD_RPC})
+foreach(core_target IN LISTS OTCLIENT_CORE_TARGETS)
+  target_compile_definitions(${core_target} PUBLIC ENABLE_DISCORD_RPC=${OTCLIENT_ENABLE_DISCORD_RPC})
+endforeach()
 
 # *****************************************************************************
 # Includes and librarys
@@ -474,13 +506,15 @@ target_compile_definitions(otclient_core PRIVATE ENABLE_DISCORD_RPC=${OTCLIENT_E
 if(MSVC)
 
   # Set variables to have Windows Vista Value so httplib will build 'inet_pton'
-  target_compile_definitions(otclient_core
-          PUBLIC
-          NTDDI_VERSION=0x06000000
-          _WIN32_WINNT=0x0600
-  )
+  foreach(core_target IN LISTS OTCLIENT_CORE_TARGETS)
+    target_compile_definitions(${core_target}
+            PUBLIC
+            NTDDI_VERSION=0x06000000
+            _WIN32_WINNT=0x0600
+    )
 
-  target_compile_options(otclient_core PUBLIC /MP /FS /Zf /EHsc /bigobj)
+    target_compile_options(${core_target} PUBLIC /MP /FS /Zf /EHsc /bigobj)
+  endforeach()
 
   if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     string(REPLACE "/Zi" "/Z7" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
@@ -500,7 +534,9 @@ if(MSVC)
     if(ANDROID)
       find_package(Vorbis CONFIG REQUIRED)
     endif()
-    foreach(msvc_target IN ITEMS otclient_core ${PROJECT_NAME})
+    set(_msvc_runtime_targets ${OTCLIENT_CORE_TARGETS} ${PROJECT_NAME})
+    list(REMOVE_DUPLICATES _msvc_runtime_targets)
+    foreach(msvc_target IN LISTS _msvc_runtime_targets)
       if(TARGET ${msvc_target})
         set_property(TARGET ${msvc_target} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
       endif()
@@ -509,108 +545,114 @@ if(MSVC)
   else()
     log_option_disabled("STATIC_LIBRARY")
     set(VCPKG_TARGET_TRIPLET "x64-windows" CACHE STRING "")
-    foreach(msvc_target IN ITEMS otclient_core ${PROJECT_NAME})
+    set(_msvc_runtime_targets ${OTCLIENT_CORE_TARGETS} ${PROJECT_NAME})
+    list(REMOVE_DUPLICATES _msvc_runtime_targets)
+    foreach(msvc_target IN LISTS _msvc_runtime_targets)
       if(TARGET ${msvc_target})
         set_property(TARGET ${msvc_target} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
       endif()
     endforeach()
   endif()
 
-  target_include_directories(otclient_core
-          PUBLIC
-          $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/>
-          $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-          ${LUAJIT_INCLUDE_DIR}
-          ${Protobuf_INCLUDE_DIRS}
-          ${VORBISFILE_INCLUDE_DIR}
-          ${GMP_INCLUDE_DIR}
-          ${OPENSSL_INCLUDE_DIR}
-          ${PHYSFS_INCLUDE_DIR}
-          ${PARALLEL_HASHMAP_INCLUDE_DIRS}
-          ${NLOHMANN_JSON_INCLUDE_DIR}
-          ${CPPCODEC_INCLUDE_DIRS}
-  )
-  target_link_libraries(otclient_core
-          PUBLIC
-          ${LUAJIT_LIBRARY}
-          ${CMAKE_THREAD_LIBS_INIT}
-          ${PHYSFS_LIBRARY}
-          ${ZLIB_LIBRARY}
-          ${NLOHMANN_JSON_LIBRARY}
-          ${OPENGL_LIBRARIES}
-          ${DirectX_LIBRARY}
-          ${DirectX_LIBRARIES}
-          ${OGG_LIBRARY}
-          ${VORBISFILE_LIBRARY}
-          ${VORBIS_LIBRARY}
-          ${GMP_LIBRARY}
-          ${OPENSSL_LIBRARIES}
-          ${DBGHELP_LIBRARY}
-          ${STDUUID}
+  foreach(core_target IN LISTS OTCLIENT_CORE_TARGETS)
+    target_include_directories(${core_target}
+            PUBLIC
+            $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/>
+            $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+            ${LUAJIT_INCLUDE_DIR}
+            ${Protobuf_INCLUDE_DIRS}
+            ${VORBISFILE_INCLUDE_DIR}
+            ${GMP_INCLUDE_DIR}
+            ${OPENSSL_INCLUDE_DIR}
+            ${PHYSFS_INCLUDE_DIR}
+            ${PARALLEL_HASHMAP_INCLUDE_DIRS}
+            ${NLOHMANN_JSON_INCLUDE_DIR}
+            ${CPPCODEC_INCLUDE_DIRS}
+    )
+    target_link_libraries(${core_target}
+            PUBLIC
+            ${LUAJIT_LIBRARY}
+            ${CMAKE_THREAD_LIBS_INIT}
+            ${PHYSFS_LIBRARY}
+            ${ZLIB_LIBRARY}
+            ${NLOHMANN_JSON_LIBRARY}
+            ${OPENGL_LIBRARIES}
+            ${DirectX_LIBRARY}
+            ${DirectX_LIBRARIES}
+            ${OGG_LIBRARY}
+            ${VORBISFILE_LIBRARY}
+            ${VORBIS_LIBRARY}
+            ${GMP_LIBRARY}
+            ${OPENSSL_LIBRARIES}
+            ${DBGHELP_LIBRARY}
+            ${STDUUID}
 
-          protobuf::libprotobuf protobuf
-          absl::log_internal_check_op
-          Threads::Threads
-          GLEW::GLEW
-          asio::asio
-          OpenAL::OpenAL
-          LibLZMA::LibLZMA
-          winmm.lib
-          pugixml::pugixml
-          fmt::fmt-header-only
-          utf8cpp::utf8cpp
-          Freetype::Freetype
-  )
+            protobuf::libprotobuf protobuf
+            absl::log_internal_check_op
+            Threads::Threads
+            GLEW::GLEW
+            asio::asio
+            OpenAL::OpenAL
+            LibLZMA::LibLZMA
+            winmm.lib
+            pugixml::pugixml
+            fmt::fmt-header-only
+            utf8cpp::utf8cpp
+            Freetype::Freetype
+    )
+  endforeach()
 elseif(ANDROID)
-  target_include_directories(otclient_core
-          PUBLIC
-          $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/>
-          $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-          ${LUAJIT_INCLUDE_DIR}
-          ${CMAKE_THREAD_LIBS_INIT}
-          ${Protobuf_INCLUDE_DIRS}
-          ${GMP_INCLUDE_DIR}
-          ${OPENSSL_INCLUDE_DIR}
-          ${PHYSFS_INCLUDE_DIR}
-          ${EGL_INCLUDE_DIR}
-          ${PARALLEL_HASHMAP_INCLUDE_DIRS}
-          ${NLOHMANN_JSON_INCLUDE_DIR}
-          ${MINIZIP_INCLUDE_DIR}
-          ${CPPCODEC_INCLUDE_DIRS}
-  )
-  target_link_libraries(otclient_core
-          PUBLIC
-          ${LUA_LIBRARY}
-          ${LUAJIT_LIBRARY}
-          ${PHYSFS_LIBRARY}
-          ${ZLIB_LIBRARY}
-          ${NLOHMANN_JSON_LIBRARY}
-          ${EGL_LIBRARY}
-          ${OGG_LIBRARY}
-          ${VORBISFILE_LIBRARY}
-          ${VORBIS_LIBRARY}
-          ${GMP_LIBRARY}
-          ${OpenAL_LIBRARY}
-          ${OPENSSL_LIBRARIES}
-          ${STDUUID}
-          ${MINIZIP_LIBRARY}
+  foreach(core_target IN LISTS OTCLIENT_CORE_TARGETS)
+    target_include_directories(${core_target}
+            PUBLIC
+            $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/>
+            $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+            ${LUAJIT_INCLUDE_DIR}
+            ${CMAKE_THREAD_LIBS_INIT}
+            ${Protobuf_INCLUDE_DIRS}
+            ${GMP_INCLUDE_DIR}
+            ${OPENSSL_INCLUDE_DIR}
+            ${PHYSFS_INCLUDE_DIR}
+            ${EGL_INCLUDE_DIR}
+            ${PARALLEL_HASHMAP_INCLUDE_DIRS}
+            ${NLOHMANN_JSON_INCLUDE_DIR}
+            ${MINIZIP_INCLUDE_DIR}
+            ${CPPCODEC_INCLUDE_DIRS}
+    )
+    target_link_libraries(${core_target}
+            PUBLIC
+            ${LUA_LIBRARY}
+            ${LUAJIT_LIBRARY}
+            ${PHYSFS_LIBRARY}
+            ${ZLIB_LIBRARY}
+            ${NLOHMANN_JSON_LIBRARY}
+            ${EGL_LIBRARY}
+            ${OGG_LIBRARY}
+            ${VORBISFILE_LIBRARY}
+            ${VORBIS_LIBRARY}
+            ${GMP_LIBRARY}
+            ${OpenAL_LIBRARY}
+            ${OPENSSL_LIBRARIES}
+            ${STDUUID}
+            ${MINIZIP_LIBRARY}
 
-          protobuf::libprotobuf protobuf
-          absl::log_internal_check_op
-          Threads::Threads
-          asio::asio
-          OpenSLES
-          Vorbis::vorbis
-          Vorbis::vorbisfile
-          LibLZMA::LibLZMA
-          game-activity::game-activity
-          GLESv3
-          android
-          log
-          pugixml::pugixml
-          fmt::fmt-header-only
-          utf8cpp::utf8cpp
-  )
+            protobuf::libprotobuf protobuf
+            absl::log_internal_check_op
+            Threads::Threads
+            asio::asio
+            OpenSLES
+            Vorbis::vorbis
+            Vorbis::vorbisfile
+            LibLZMA::LibLZMA
+            game-activity::game-activity
+            GLESv3
+            android
+            log
+            pugixml::pugixml
+            fmt::fmt-header-only
+            utf8cpp::utf8cpp
+    )
+  endforeach()
 
 elseif(WASM)
   option(WASM_USE_WASM_EXCEPTIONS "Use native WebAssembly exception handling" ON)
@@ -624,68 +666,72 @@ elseif(WASM)
     string(APPEND _WASM_CXX_FLAGS " -fwasm-exceptions")
   endif()
 
-  target_include_directories(otclient_core
-          PUBLIC
-          ${CMAKE_SOURCE_DIR}/src
-          ${CMAKE_THREAD_LIBS_INIT}
-          ${Protobuf_INCLUDE_DIRS}
-          ${GMP_INCLUDE_DIR}
-          ${PHYSFS_INCLUDE_DIR}
-          ${GLEW_INCLUDE_DIR}
-          ${PARALLEL_HASHMAP_INCLUDE_DIRS}
-          ${NLOHMANN_JSON_INCLUDE_DIR}
-          ${OPENSSL_INCLUDE_DIR}
-          ${BROWSER_INCLUDE_DIR}
-          ${CPPCODEC_INCLUDE_DIRS}
-  )
-  target_link_libraries(otclient_core
-          PUBLIC
-          ${LUA_LIBRARY}
-          ${PHYSFS_LIBRARY}
-          ${ZLIB_LIBRARY}
-          ${PROTOBUF_LIBRARY}
-          ${NLOHMANN_JSON_LIBRARY}
-          ${GLEW_LIBRARY}
-          ${OPENGL_LIBRARIES}
-          ${DirectX_LIBRARY}
-          ${DirectX_LIBRARIES}
-          ${OGG_LIBRARY}
-          ${VORBISFILE_LIBRARY}
-          ${VORBIS_LIBRARY}
-          ${GMP_LIBRARY}
-          ${STDUUID}
-          ${FOUNDATION}
-          ${IOKIT}
-          ${OPENSSL_LIBRARY}
-          ${OPENSSL_CRYPTO_LIBRARY}
-          ${HTTPLIB_LIBRARY}
+  foreach(core_target IN LISTS OTCLIENT_CORE_TARGETS)
+    target_include_directories(${core_target}
+            PUBLIC
+            ${CMAKE_SOURCE_DIR}/src
+            ${CMAKE_THREAD_LIBS_INIT}
+            ${Protobuf_INCLUDE_DIRS}
+            ${GMP_INCLUDE_DIR}
+            ${PHYSFS_INCLUDE_DIR}
+            ${GLEW_INCLUDE_DIR}
+            ${PARALLEL_HASHMAP_INCLUDE_DIRS}
+            ${NLOHMANN_JSON_INCLUDE_DIR}
+            ${OPENSSL_INCLUDE_DIR}
+            ${BROWSER_INCLUDE_DIR}
+            ${CPPCODEC_INCLUDE_DIRS}
+    )
+    target_link_libraries(${core_target}
+            PUBLIC
+            ${LUA_LIBRARY}
+            ${PHYSFS_LIBRARY}
+            ${ZLIB_LIBRARY}
+            ${PROTOBUF_LIBRARY}
+            ${NLOHMANN_JSON_LIBRARY}
+            ${GLEW_LIBRARY}
+            ${OPENGL_LIBRARIES}
+            ${DirectX_LIBRARY}
+            ${DirectX_LIBRARIES}
+            ${OGG_LIBRARY}
+            ${VORBISFILE_LIBRARY}
+            ${VORBIS_LIBRARY}
+            ${GMP_LIBRARY}
+            ${STDUUID}
+            ${FOUNDATION}
+            ${IOKIT}
+            ${OPENSSL_LIBRARY}
+            ${OPENSSL_CRYPTO_LIBRARY}
+            ${HTTPLIB_LIBRARY}
 
-          protobuf::libprotobuf protobuf
-          absl::log_internal_check_op
+            protobuf::libprotobuf protobuf
+            absl::log_internal_check_op
 
-          Threads::Threads
-          asio::asio
-          # OpenAL::OpenAL (using emscripten openal api)
-          LibLZMA::LibLZMA
-          pugixml::pugixml
-          ZLIB::ZLIB
-          OpenSSL::SSL
-          OpenSSL::Crypto
-          httplib::httplib
-          fmt::fmt
-          utf8cpp::utf8cpp
-          Ogg::ogg
-          Vorbis::vorbisfile
-          Vorbis::vorbis
-          Freetype::Freetype
-  )
+            Threads::Threads
+            asio::asio
+            # OpenAL::OpenAL (using emscripten openal api)
+            LibLZMA::LibLZMA
+            pugixml::pugixml
+            ZLIB::ZLIB
+            OpenSSL::SSL
+            OpenSSL::Crypto
+            httplib::httplib
+            fmt::fmt
+            utf8cpp::utf8cpp
+            Ogg::ogg
+            Vorbis::vorbisfile
+            Vorbis::vorbis
+            Freetype::Freetype
+    )
+  endforeach()
 
 
   if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    target_compile_options(otclient_core
-            PRIVATE
-            -Wall -Wextra -Wpedantic
-    )
+    foreach(core_target IN LISTS OTCLIENT_CORE_TARGETS)
+      target_compile_options(${core_target}
+              PRIVATE
+              -Wall -Wextra -Wpedantic
+      )
+    endforeach()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
   endif()
 
@@ -741,72 +787,78 @@ elseif(WASM)
   set(VCPKG_TARGET_TRIPLET "wasm32-emscripten" CACHE STRING "")
 
 else() # Linux
-  target_include_directories(otclient_core
-          PUBLIC
-          $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/>
-          $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-          ${LUAJIT_INCLUDE_DIR}
-          ${CMAKE_THREAD_LIBS_INIT}
-          ${Protobuf_INCLUDE_DIRS}
-          ${GMP_INCLUDE_DIR}
-          ${PHYSFS_INCLUDE_DIR}
-          ${GLEW_INCLUDE_DIR}
-          ${PARALLEL_HASHMAP_INCLUDE_DIRS}
-          ${NLOHMANN_JSON_INCLUDE_DIR}
-          ${OPENSSL_INCLUDE_DIR}
-          ${CPPCODEC_INCLUDE_DIRS}
-  )
-  target_link_libraries(otclient_core
-          PUBLIC
-          ${LUAJIT_LIBRARY}
-          ${PHYSFS_LIBRARY}
-          ${ZLIB_LIBRARY}
-          ${NLOHMANN_JSON_LIBRARY}
-          ${GLEW_LIBRARY}
-          ${OPENGL_LIBRARIES}
-          ${DirectX_LIBRARY}
-          ${DirectX_LIBRARIES}
-          ${OGG_LIBRARY}
-          ${VORBISFILE_LIBRARY}
-          ${VORBIS_LIBRARY}
-          ${GMP_LIBRARY}
-          ${STDUUID}
-          ${FOUNDATION}
-          ${IOKIT}
-          ${OPENSSL_LIBRARY}
-          ${OPENSSL_CRYPTO_LIBRARY}
-          ${HTTPLIB_LIBRARY}
+  foreach(core_target IN LISTS OTCLIENT_CORE_TARGETS)
+    target_include_directories(${core_target}
+            PUBLIC
+            $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/>
+            $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+            ${LUAJIT_INCLUDE_DIR}
+            ${CMAKE_THREAD_LIBS_INIT}
+            ${Protobuf_INCLUDE_DIRS}
+            ${GMP_INCLUDE_DIR}
+            ${PHYSFS_INCLUDE_DIR}
+            ${GLEW_INCLUDE_DIR}
+            ${PARALLEL_HASHMAP_INCLUDE_DIRS}
+            ${NLOHMANN_JSON_INCLUDE_DIR}
+            ${OPENSSL_INCLUDE_DIR}
+            ${CPPCODEC_INCLUDE_DIRS}
+    )
+    target_link_libraries(${core_target}
+            PUBLIC
+            ${LUAJIT_LIBRARY}
+            ${PHYSFS_LIBRARY}
+            ${ZLIB_LIBRARY}
+            ${NLOHMANN_JSON_LIBRARY}
+            ${GLEW_LIBRARY}
+            ${OPENGL_LIBRARIES}
+            ${DirectX_LIBRARY}
+            ${DirectX_LIBRARIES}
+            ${OGG_LIBRARY}
+            ${VORBISFILE_LIBRARY}
+            ${VORBIS_LIBRARY}
+            ${GMP_LIBRARY}
+            ${STDUUID}
+            ${FOUNDATION}
+            ${IOKIT}
+            ${OPENSSL_LIBRARY}
+            ${OPENSSL_CRYPTO_LIBRARY}
+            ${HTTPLIB_LIBRARY}
 
-          protobuf::libprotobuf protobuf
-          absl::log_internal_check_op
-          Threads::Threads
-          X11::X11
-          asio::asio
-          OpenAL::OpenAL
-          LibLZMA::LibLZMA
-          pugixml::pugixml
-          ZLIB::ZLIB
-          OpenSSL::SSL
-          OpenSSL::Crypto
-          httplib::httplib
-          fmt::fmt-header-only
-          utf8cpp::utf8cpp
-          Ogg::ogg
-          Vorbis::vorbisfile
-          Vorbis::vorbis
-          Freetype::Freetype
-  )
+            protobuf::libprotobuf protobuf
+            absl::log_internal_check_op
+            Threads::Threads
+            X11::X11
+            asio::asio
+            OpenAL::OpenAL
+            LibLZMA::LibLZMA
+            pugixml::pugixml
+            ZLIB::ZLIB
+            OpenSSL::SSL
+            OpenSSL::Crypto
+            httplib::httplib
+            fmt::fmt-header-only
+            utf8cpp::utf8cpp
+            Ogg::ogg
+            Vorbis::vorbisfile
+            Vorbis::vorbis
+            Freetype::Freetype
+    )
+  endforeach()
 
   if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    target_compile_options(otclient_core
-            PRIVATE
-            -Wall -Wextra -Wpedantic
-    )
+    foreach(core_target IN LISTS OTCLIENT_CORE_TARGETS)
+      target_compile_options(${core_target}
+              PRIVATE
+              -Wall -Wextra -Wpedantic
+      )
+    endforeach()
   endif()
 
 endif()
 if(ENABLE_DISCORD_RPC AND NOT ANDROID)
-        target_link_libraries(otclient_core PUBLIC ${DISCORDRPC_LIBRARY})
+  foreach(core_target IN LISTS OTCLIENT_CORE_TARGETS)
+    target_link_libraries(${core_target} PUBLIC ${DISCORDRPC_LIBRARY})
+  endforeach()
 endif()
 
 # *****************************************************************************
