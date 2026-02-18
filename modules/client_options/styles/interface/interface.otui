@@ -14,6 +14,30 @@ UIWidget
   SmallReversedQtPanel
     anchors.left: parent.left
     anchors.right: parent.right
+    anchors.top: parent.top
+    anchors.top: prev.bottom
+    margin-top: 7
+    height: 22
+
+    OptionCheckBox
+      id: nativeCursor
+      !text: tr('Use Native Mouse Cursor')	 
+
+  SmallReversedQtPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: parent.top
+    anchors.top: prev.bottom
+    margin-top: 7
+    height: 22
+
+    OptionCheckBoxMarked
+      id: showAnimatedCursor
+      !text: tr('Show Animated Mouse Cursor')	  	  
+
+  SmallReversedQtPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
     anchors.top: prev.bottom
     margin-top: 7
     height: 22

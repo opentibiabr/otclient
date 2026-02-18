@@ -55,11 +55,6 @@ int PlatformWindow::loadMouseCursor(const std::string& file, const Point& hotSpo
         return -1;
     }
 
-    if (image->getWidth() != 32 || image->getHeight() != 32) {
-        g_logger.error("the cursor image must have 32x32 dimension");
-        return -1;
-    }
-
     return internalLoadMouseCursor(image, hotSpot);
 }
 

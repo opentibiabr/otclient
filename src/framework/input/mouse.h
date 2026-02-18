@@ -36,6 +36,7 @@ public:
     void popCursor(const std::string& name);
     bool isCursorChanged();
     bool isPressed(Fw::MouseButton mouseButton);
+    int getCursorId(const std::string& name);
 
 private:
     void checkStackSize();
