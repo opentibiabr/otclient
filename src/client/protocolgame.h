@@ -142,6 +142,7 @@ public:
     void sendApplyImbuement(uint8_t slot, uint32_t imbuementId, bool protectionCharm);
     void sendClearImbuement(uint8_t slot);
     void sendCloseImbuingWindow();
+    void sendImbuementWindowAction(uint8_t type, uint16_t itemId = 0, const Position& pos = Position(), uint8_t stackpos = 0);
     void sendOpenRewardWall();
     void sendOpenRewardHistory();
     void sendGetRewardDaily(const uint8_t bonusShrine, const std::map<uint16_t, uint8_t>& items);

@@ -1,5 +1,5 @@
 Button < UIButton
-  font: cipsoftFont
+  font: verdana-11px-antialised
   color: #dfdfdfff
   size: 43 20
   text-offset: 0 2
@@ -211,7 +211,7 @@ NextQtButton < UIButton
     image-clip: 48 16 16 16
 
 QtButton < UIButton
-  font: cipsoftFont
+  font: verdana-11px-antialised
   size: 106 23
   text-offset: 0 0
   image-source: /images/ui/button
