@@ -88,6 +88,13 @@
         display: table-row-group;
     }
 
+    /* <center> is a presentational block element that centers its inline content.
+       text-align is inheritable so it cascades into all descendant text nodes. */
+    center {
+        display: block;
+        text-align: center;
+    }
+
     thead {
         display: table-header-group;
     }
@@ -95,7 +102,11 @@
     tfoot {
         display: table-footer-group;
     }
-
+    
+    a {
+        color: #4a90e2;
+        text-decoration: none;
+    }
 
 </style>
 
