@@ -1749,7 +1749,16 @@ void UIWidget::applyAnchorAlignment() {
     if (m_parent && m_parent->getDisplay() == DisplayType::TableCell) {
         const auto ta = resolveCellTextAlign(this);
         const auto va = resolveCellVerticalAlign(this);
-        anchorHorizontalInCell(this, ta);
+        if (isInlineLike(m_displayType)) {
+            // Inline elements are positioned according to the cell's text-align.
+            anchorHorizontalInCell(this, ta);
+        } else {
+            // Block-level elements (display: block, table, etc.) always fill the cell
+            // width, just like real browsers. text-align is stored on this widget via
+            // setTextAlign() and will center the inline content WITHIN this block.
+            addAnchor(Fw::AnchorLeft, "parent", Fw::AnchorLeft);
+            addAnchor(Fw::AnchorRight, "parent", Fw::AnchorRight);
+        }
         anchorVerticalInCell(this, va);
         return;
     }
