@@ -23,6 +23,7 @@
 #include "httplogin.h"
 #include <framework/core/asyncdispatcher.h>
 #include <framework/core/eventdispatcher.h>
+#include <framework/core/logger.h>
 #include <nlohmann/json.hpp>
 
 #ifdef __EMSCRIPTEN__
@@ -44,27 +45,27 @@ void LoginHttp::cancel() {
 }
 
 void LoginHttp::Logger(const auto& req, const auto& res) {
-    std::cout << "======= LOG ======= " << std::endl;
-    std::cout << "-- REQUEST --" << std::endl;
-    std::cout << req.method << std::endl;
-    std::cout << req.path << std::endl;
-    std::cout << req.body << std::endl;
+    g_logger.debug("======= HTTP LOG =======");
+    g_logger.debug("-- REQUEST --");
+    g_logger.debug("{}", req.method);
+    g_logger.debug("{}", req.path);
+    g_logger.debug("{}", req.body);
 
     for (auto itr = req.headers.begin(); itr != req.headers.end(); ++itr) {
-        std::cout << itr->first << '\t' << itr->second << '\n';
+        g_logger.debug("{}\t{}", itr->first, itr->second);
     }
-    std::cout << "-- RESPONSE --" << std::endl;
-    std::cout << res.version << std::endl;
-    std::cout << res.status << std::endl;
-    std::cout << res.reason << std::endl;
-    std::cout << res.body << std::endl;
-    std::cout << res.location << std::endl;
+    g_logger.debug("-- RESPONSE --");
+    g_logger.debug("{}", res.version);
+    g_logger.debug("{}", res.status);
+    g_logger.debug("{}", res.reason);
+    g_logger.debug("{}", res.body);
+    g_logger.debug("{}", res.location);
 
     for (auto itr = res.headers.begin(); itr != res.headers.end(); ++itr) {
-        std::cout << itr->first << '\t' << itr->second << '\n';
+        g_logger.debug("{}\t{}", itr->first, itr->second);
     }
 
-    std::cout << "========= " << std::endl;
+    g_logger.debug("=========");
 }
 
 void LoginHttp::startHttpLogin(const std::string& host, const std::string& path,
@@ -81,13 +82,13 @@ void LoginHttp::startHttpLogin(const std::string& host, const std::string& path,
     if (auto res = cli.Post(path, headers, body.dump(1), "application/json")) {
         if (res->status == 200) {
             const json bodyResponse = json::parse(res->body);
-            std::cout << bodyResponse.dump() << std::endl;
+            g_logger.debug("{}", bodyResponse.dump());
 
-            std::cout << std::boolalpha << json::accept(res->body) << std::endl;
+            g_logger.debug("json::accept={}", json::accept(res->body));
         }
     } else {
         const auto err = res.error();
-        std::cout << "HTTP error: " << to_string(err) << std::endl;
+        g_logger.error("HTTP error: {}", to_string(err));
     }
 }
 
@@ -278,17 +279,15 @@ httplib::Result LoginHttp::loginHttpsJson(const std::string& host,
         client.Post(path, headers, body.dump(), "application/json");
     if (!response) {
         this->errorMessage = "Failed to connect to server (HTTPS). Check the address and port.";
-        std::cout << "HTTPS error: unknown" << std::endl;
+        g_logger.warning("HTTPS error: {}", to_string(response.error()));
     } else if (response->status != Success) {
         this->errorMessage = "HTTP " + std::to_string(response->status);
         if (!response->reason.empty()) {
             this->errorMessage += " - " + response->reason;
         }
-        std::cout << "HTTPS error: " << to_string(response.error())
-            << std::endl;
+        g_logger.warning("HTTPS request returned HTTP {} {}", response->status, response->reason);
     } else {
-        std::cout << "HTTPS status: " << to_string(response.error())
-            << std::endl;
+        g_logger.debug("HTTPS status: HTTP {}", response->status);
     }
 
     return response;
@@ -320,17 +319,15 @@ httplib::Result LoginHttp::loginHttpJson(const std::string& host,
         client.Post(path, headers, body.dump(), "application/json");
     if (!response) {
         this->errorMessage = "Failed to connect to server (HTTP). Check the address and port.";
-        std::cout << "HTTP error: unknown" << std::endl;
+        g_logger.warning("HTTP error: {}", to_string(response.error()));
     } else if (response->status != Success) {
         this->errorMessage = "HTTP " + std::to_string(response->status);
         if (!response->reason.empty()) {
             this->errorMessage += " - " + response->reason;
         }
-        std::cout << "HTTP error: " << to_string(response.error())
-            << std::endl;
+        g_logger.warning("HTTP request returned HTTP {} {}", response->status, response->reason);
     } else {
-        std::cout << "HTTP status: " << to_string(response.error())
-            << std::endl;
+        g_logger.debug("HTTP status: HTTP {}", response->status);
     }
     if (response && response->status == Success && !parseJsonResponse(response->body)) {
         return response;

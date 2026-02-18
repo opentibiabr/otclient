@@ -23,6 +23,8 @@
 #include "soundeffect.h"
 #include "soundmanager.h"
 
+#include <framework/core/logger.h>
+
 #include <AL/al.h>
 #include <AL/alc.h>
 #include <AL/efx-presets.h>
@@ -266,7 +268,7 @@ SoundEffect::~SoundEffect()
 void SoundEffect::loadPreset(const EFXEAXREVERBPROPERTIES& preset)
 {
     if (g_sounds.isEaxEnabled()) {
-        std::cout << "Using EAX Reverb!\n";
+        g_logger.debug("Using EAX Reverb");
 
         /* EAX Reverb is available. Set the EAX effect type then load the
         * reverb properties. */
@@ -296,7 +298,7 @@ void SoundEffect::loadPreset(const EFXEAXREVERBPROPERTIES& preset)
         alEffectf(m_effectId, AL_EAXREVERB_ROOM_ROLLOFF_FACTOR, preset.flRoomRolloffFactor);
         alEffecti(m_effectId, AL_EAXREVERB_DECAY_HFLIMIT, preset.iDecayHFLimit);
     } else {
-        std::cout << "Using Standard Reverb!\n";
+        g_logger.debug("Using Standard Reverb");
 
         /* No EAX Reverb. Set the standard reverb effect type then load the
          * available reverb properties. */

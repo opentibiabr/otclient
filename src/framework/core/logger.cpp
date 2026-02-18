@@ -25,6 +25,12 @@
 #include "eventdispatcher.h"
 #include "framework/platform/platform.h"
 
+#include <spdlog/logger.h>
+#include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/sinks/sink.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/spdlog.h>
+
 #ifdef FRAMEWORK_GRAPHICS
 #include <framework/platform/platformwindow.h>
 #endif
@@ -38,11 +44,83 @@ Logger g_logger;
 namespace
 {
     constexpr std::string_view s_logPrefixes[] = { "", "", "", "WARNING: ", "ERROR: ", "FATAL ERROR: " };
+    constexpr std::string_view s_spdConsolePattern = "[%Y-%d-%m %H:%M:%S.%e] [%^%l%$] %v";
+    constexpr std::string_view s_spdConsolePatternDebug = "[%Y-%d-%m %H:%M:%S.%e] [thread %t] [%^%l%$] %v";
+    constexpr std::string_view s_spdFilePattern = "[%Y-%d-%m %H:%M:%S.%e] [%l] %v";
+    constexpr std::string_view s_spdFilePatternDebug = "[%Y-%d-%m %H:%M:%S.%e] [thread %t] [%l] %v";
 #if ENABLE_ENCRYPTION == 1
     bool s_ignoreLogs = true;
 #else
     bool s_ignoreLogs = false;
 #endif
+
+    std::string_view getConsolePattern()
+    {
+#ifdef DEBUG_LOG
+        return s_spdConsolePatternDebug;
+#else
+        return s_spdConsolePattern;
+#endif
+    }
+
+    std::string_view getFilePattern()
+    {
+#ifdef DEBUG_LOG
+        return s_spdFilePatternDebug;
+#else
+        return s_spdFilePattern;
+#endif
+    }
+
+    spdlog::level::level_enum toSpdLogLevel(const Fw::LogLevel level)
+    {
+        switch (level) {
+            case Fw::LogFine:
+                return spdlog::level::trace;
+            case Fw::LogDebug:
+                return spdlog::level::debug;
+            case Fw::LogInfo:
+                return spdlog::level::info;
+            case Fw::LogWarning:
+                return spdlog::level::warn;
+            case Fw::LogError:
+                return spdlog::level::err;
+            case Fw::LogFatal:
+                return spdlog::level::critical;
+            default:
+                return spdlog::level::info;
+        }
+    }
+
+    std::shared_ptr<spdlog::logger> createSpdLogger()
+    {
+        try {
+            auto sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+            sink->set_color_mode(spdlog::color_mode::always);
+            sink->set_pattern(std::string{ getConsolePattern() });
+
+            auto logger = std::make_shared<spdlog::logger>("otclient", sink);
+            logger->set_level(spdlog::level::trace);
+            logger->flush_on(spdlog::level::warn);
+            spdlog::set_default_logger(logger);
+
+            return logger;
+        } catch (...) {
+            return nullptr;
+        }
+    }
+
+    std::shared_ptr<spdlog::logger>& getSpdLogger()
+    {
+        static std::shared_ptr<spdlog::logger> s_logger = createSpdLogger();
+        return s_logger;
+    }
+
+    std::shared_ptr<spdlog::sinks::sink>& getSpdLogFileSink()
+    {
+        static std::shared_ptr<spdlog::sinks::sink> s_fileSink;
+        return s_fileSink;
+    }
 }
 
 void Logger::log(Fw::LogLevel level, const std::string_view message)
@@ -65,14 +143,27 @@ void Logger::log(Fw::LogLevel level, const std::string_view message)
         return;
     }
 
-    std::string outmsg{ s_logPrefixes[level] };
+    std::string outmsg{ s_logPrefixes[static_cast<std::size_t>(level)] };
     outmsg.append(message);
 
 #ifdef ANDROID
     __android_log_print(ANDROID_LOG_INFO, "OTClientMobile", "%s", outmsg.c_str());
 #endif // ANDROID
 
-    std::cout << outmsg << std::endl;
+    auto& spdLogger = getSpdLogger();
+    if (spdLogger) {
+        spdLogger->log(toSpdLogLevel(level), "{}", message);
+        if (level >= Fw::LogError) {
+            spdLogger->flush();
+        }
+    } else {
+        if (const auto fallbackLogger = spdlog::default_logger(); fallbackLogger) {
+            fallbackLogger->log(toSpdLogLevel(level), "{}", message);
+            if (level >= Fw::LogError) {
+                fallbackLogger->flush();
+            }
+        }
+    }
 
     if (m_outFile.good()) {
         m_outFile << outmsg << std::endl;
@@ -138,6 +229,27 @@ void Logger::fireOldMessages()
 
 void Logger::setLogFile(const std::string_view file)
 {
+    auto& spdLogger = getSpdLogger();
+    if (spdLogger) {
+        try {
+            auto fileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(stdext::utf8_to_latin1(file), true);
+            fileSink->set_pattern(std::string{ getFilePattern() });
+
+            auto& currentLogFileSink = getSpdLogFileSink();
+            auto& sinks = spdLogger->sinks();
+            if (currentLogFileSink) {
+                std::erase(sinks, currentLogFileSink);
+            }
+
+            currentLogFileSink = fileSink;
+            sinks.push_back(currentLogFileSink);
+            spdLogger->flush();
+            return;
+        } catch (const spdlog::spdlog_ex& e) {
+            g_logger.error("Unable to save log to '{}' using spdlog: {}", file, e.what());
+        }
+    }
+
     m_outFile.open(stdext::utf8_to_latin1(file), std::ios::out | std::ios::app);
     if (!m_outFile.is_open() || !m_outFile.good()) {
         g_logger.error("Unable to save log to '{}'", file);

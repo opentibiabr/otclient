@@ -24,6 +24,7 @@
 
 #include "demangle.h"
 #include "exception.h"
+#include <spdlog/spdlog.h>
 
 namespace stdext
 {
@@ -167,7 +168,7 @@ namespace stdext
         try {
             return safe_cast<R, T>(t);
         } catch (const cast_exception& e) {
-            std::cerr << "CAST ERROR: " << e.what() << std::endl;
+            spdlog::error("CAST ERROR: {}", e.what());
             return def;
         }
     }

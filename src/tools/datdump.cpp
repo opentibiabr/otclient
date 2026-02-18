@@ -25,13 +25,13 @@
 #include "client/game.h"
 #include "client/thingtype.h"
 #include "client/thingtypemanager.h"
+#include "framework/core/logger.h"
 #include "framework/luaengine/luainterface.h"
 
 #include <nlohmann/json.hpp>
 
 #include <array>
 #include <fstream>
-#include <iostream>
 #include <optional>
 #include <string_view>
 #include <stdexcept>
@@ -245,7 +245,7 @@ namespace datdump {
 
         bool success = true;
         if (request.outputPath.empty()) {
-            std::cout << payload << std::endl;
+            g_logger.info("{}", payload);
         } else {
             std::ofstream out(request.outputPath, std::ios::out | std::ios::trunc);
             if (!out) {

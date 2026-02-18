@@ -59,14 +59,15 @@ bool shouldShowHelp(const std::vector<std::string>& args)
 
 void printHelp(const std::string& executableName)
 {
-    std::cout << "Usage: " << executableName << " [options]\n\n"
-                 "General options:\n"
-                 "  --help, -h, /?              Show this help message and exit\n"
-                 "  --encrypt <password>        Encrypt assets (requires ENABLE_ENCRYPTION == 1 && ENABLE_ENCRYPTION_BUILDER == 1 build)\n\n"
-                 "DAT debugging:\n"
-                 "  --dump-dat-to-json=<path|ver> Dump the specified Tibia DAT file or version as JSON (requires FRAMEWORK_EDITOR build)\n"
-                 "    --dump-dat-output=<path>    Write JSON to file instead of stdout\n"
-                 "    --dump-dat-compact          Emit compact (single-line) JSON\n";
+    g_logger.info("Usage: {} [options]\n\n"
+                  "General options:\n"
+                  "  --help, -h, /?              Show this help message and exit\n"
+                  "  --encrypt <password>        Encrypt assets (requires ENABLE_ENCRYPTION == 1 && ENABLE_ENCRYPTION_BUILDER == 1 build)\n\n"
+                  "DAT debugging:\n"
+                  "  --dump-dat-to-json=<path|ver> Dump the specified Tibia DAT file or version as JSON (requires FRAMEWORK_EDITOR build)\n"
+                  "    --dump-dat-output=<path>    Write JSON to file instead of stdout\n"
+                  "    --dump-dat-compact          Emit compact (single-line) JSON",
+                  executableName);
 }
 
 } // namespace
@@ -91,7 +92,7 @@ void printHelp(const std::string& executableName)
         if (std::find(args.begin(), args.end(), "--encrypt") != args.end()) {
             g_lua.init();
             g_resources.runEncryption(args.size() >= 3 ? args[2] : std::string(ENCRYPTION_PASSWORD));
-            std::cout << "Encryption complete" << std::endl;
+            g_logger.info("Encryption complete");
 #ifdef WIN32
             MessageBoxA(NULL, "Encryption complete", "Success", 0);
 #endif
