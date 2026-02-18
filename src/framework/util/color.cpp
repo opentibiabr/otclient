@@ -133,9 +133,8 @@ namespace {
 
     inline std::string to_lower_ascii(std::string_view s) {
         std::string out(s);
-        for (char &c : out)
-            if (c >= 'A' && c <= 'Z')
-                c |= 0x20;
+        for (char& c : out)
+            c += (c >= 'A' && c <= 'Z') ? 0x20 : 0;
         return out;
     }
 
