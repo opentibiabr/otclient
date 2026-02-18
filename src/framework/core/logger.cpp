@@ -44,10 +44,10 @@ Logger g_logger;
 namespace
 {
     constexpr std::string_view s_logPrefixes[] = { "", "", "", "WARNING: ", "ERROR: ", "FATAL ERROR: " };
-    constexpr std::string_view s_spdConsolePattern = "[%Y-%d-%m %H:%M:%S.%e] [%^%l%$] %v";
-    constexpr std::string_view s_spdConsolePatternDebug = "[%Y-%d-%m %H:%M:%S.%e] [thread %t] [%^%l%$] %v";
-    constexpr std::string_view s_spdFilePattern = "[%Y-%d-%m %H:%M:%S.%e] [%l] %v";
-    constexpr std::string_view s_spdFilePatternDebug = "[%Y-%d-%m %H:%M:%S.%e] [thread %t] [%l] %v";
+    constexpr std::string_view s_spdConsolePattern = "[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v";
+    constexpr std::string_view s_spdConsolePatternDebug = "[%Y-%m-%d %H:%M:%S.%e] [thread %t] [%^%l%$] %v";
+    constexpr std::string_view s_spdFilePattern = "[%Y-%m-%d %H:%M:%S.%e] [%l] %v";
+    constexpr std::string_view s_spdFilePatternDebug = "[%Y-%m-%d %H:%M:%S.%e] [thread %t] [%l] %v";
 #if ENABLE_ENCRYPTION == 1
     bool s_ignoreLogs = true;
 #else
@@ -157,11 +157,10 @@ void Logger::log(Fw::LogLevel level, const std::string_view message)
             spdLogger->flush();
         }
     } else {
-        if (const auto fallbackLogger = spdlog::default_logger(); fallbackLogger) {
-            fallbackLogger->log(toSpdLogLevel(level), "{}", message);
-            if (level >= Fw::LogError) {
-                fallbackLogger->flush();
-            }
+        auto fallbackLogger = spdlog::default_logger();
+        fallbackLogger->log(toSpdLogLevel(level), "{}", message);
+        if (level >= Fw::LogError) {
+            fallbackLogger->flush();
         }
     }
 

@@ -25,12 +25,109 @@
 #include <framework/core/eventdispatcher.h>
 #include <framework/core/logger.h>
 #include <nlohmann/json.hpp>
+#include <cctype>
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten/fetch.h>
 #endif
 
 using json = nlohmann::json;
+
+namespace {
+    constexpr std::string_view s_redacted = "***";
+
+    std::string toLowerCopy(const std::string_view value)
+    {
+        std::string out;
+        out.reserve(value.size());
+        for (const auto c : value) {
+            out.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(c))));
+        }
+        return out;
+    }
+
+    std::string redactTokenLikeValue(const std::string& value)
+    {
+        if (value.empty() || value.size() <= 8) {
+            return std::string{ s_redacted };
+        }
+        return value.substr(0, 4) + "..." + value.substr(value.size() - 4);
+    }
+
+    bool isSensitiveRequestField(const std::string_view key)
+    {
+        const auto lowered = toLowerCopy(key);
+        return lowered.find("password") != std::string::npos
+            || lowered.find("token") != std::string::npos
+            || lowered.find("session") != std::string::npos;
+    }
+
+    bool isSensitiveResponseField(const std::string_view key)
+    {
+        const auto lowered = toLowerCopy(key);
+        return lowered.find("token") != std::string::npos
+            || lowered.find("session") != std::string::npos
+            || lowered.find("cookie") != std::string::npos;
+    }
+
+    bool isSensitiveHeaderKey(const std::string_view key)
+    {
+        const auto lowered = toLowerCopy(key);
+        return lowered == "authorization"
+            || lowered == "proxy-authorization"
+            || lowered == "cookie"
+            || lowered == "set-cookie"
+            || lowered == "x-auth-token";
+    }
+
+    std::string sanitizeHeaderValue(const std::string_view key, const std::string_view value)
+    {
+        if (isSensitiveHeaderKey(key)) {
+            return std::string{ s_redacted };
+        }
+        return std::string{ value };
+    }
+
+    void sanitizeJson(json& value, const bool requestBody)
+    {
+        if (value.is_object()) {
+            for (auto it = value.begin(); it != value.end(); ++it) {
+                const bool sensitiveField = requestBody ? isSensitiveRequestField(it.key()) : isSensitiveResponseField(it.key());
+                if (sensitiveField) {
+                    if (!requestBody && it.value().is_string()) {
+                        it.value() = redactTokenLikeValue(it.value().get<std::string>());
+                    } else {
+                        it.value() = std::string{ s_redacted };
+                    }
+                    continue;
+                }
+                sanitizeJson(it.value(), requestBody);
+            }
+            return;
+        }
+
+        if (value.is_array()) {
+            for (auto& item : value) {
+                sanitizeJson(item, requestBody);
+            }
+        }
+    }
+
+    std::string sanitizeHttpBody(const std::string& body, const bool requestBody)
+    {
+        if (body.empty()) {
+            return {};
+        }
+
+        try {
+            auto parsed = json::parse(body);
+            sanitizeJson(parsed, requestBody);
+            return parsed.dump();
+        } catch (...) {
+            return "[redacted-unparsed-body]";
+        }
+    }
+}
 
 LoginHttp::LoginHttp() {
     this->characters.clear();
@@ -45,24 +142,27 @@ void LoginHttp::cancel() {
 }
 
 void LoginHttp::Logger(const auto& req, const auto& res) {
+    const auto sanitizedRequestBody = sanitizeHttpBody(req.body, true);
+    const auto sanitizedResponseBody = sanitizeHttpBody(res.body, false);
+
     g_logger.debug("======= HTTP LOG =======");
     g_logger.debug("-- REQUEST --");
     g_logger.debug("{}", req.method);
     g_logger.debug("{}", req.path);
-    g_logger.debug("{}", req.body);
+    g_logger.debug("{}", sanitizedRequestBody);
 
     for (auto itr = req.headers.begin(); itr != req.headers.end(); ++itr) {
-        g_logger.debug("{}\t{}", itr->first, itr->second);
+        g_logger.debug("{}\t{}", itr->first, sanitizeHeaderValue(itr->first, itr->second));
     }
     g_logger.debug("-- RESPONSE --");
     g_logger.debug("{}", res.version);
     g_logger.debug("{}", res.status);
     g_logger.debug("{}", res.reason);
-    g_logger.debug("{}", res.body);
+    g_logger.debug("{}", sanitizedResponseBody);
     g_logger.debug("{}", res.location);
 
     for (auto itr = res.headers.begin(); itr != res.headers.end(); ++itr) {
-        g_logger.debug("{}\t{}", itr->first, itr->second);
+        g_logger.debug("{}\t{}", itr->first, sanitizeHeaderValue(itr->first, itr->second));
     }
 
     g_logger.debug("=========");
@@ -83,12 +183,10 @@ void LoginHttp::startHttpLogin(const std::string& host, const std::string& path,
         if (res->status == 200) {
             const json bodyResponse = json::parse(res->body);
             g_logger.debug("{}", bodyResponse.dump());
-
-            g_logger.debug("json::accept={}", json::accept(res->body));
         }
     } else {
         const auto err = res.error();
-        g_logger.error("HTTP error: {}", to_string(err));
+        g_logger.warning("HTTP error: {}", to_string(err));
     }
 }
 

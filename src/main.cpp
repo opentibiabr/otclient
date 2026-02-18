@@ -29,6 +29,7 @@
 #ifdef FRAMEWORK_EDITOR
 #include "tools/datdump.h"
 #endif
+#include <iostream>
 
 #ifndef ANDROID
 #if ENABLE_DISCORD_RPC == 1
@@ -59,15 +60,14 @@ bool shouldShowHelp(const std::vector<std::string>& args)
 
 void printHelp(const std::string& executableName)
 {
-    g_logger.info("Usage: {} [options]\n\n"
-                  "General options:\n"
-                  "  --help, -h, /?              Show this help message and exit\n"
-                  "  --encrypt <password>        Encrypt assets (requires ENABLE_ENCRYPTION == 1 && ENABLE_ENCRYPTION_BUILDER == 1 build)\n\n"
-                  "DAT debugging:\n"
-                  "  --dump-dat-to-json=<path|ver> Dump the specified Tibia DAT file or version as JSON (requires FRAMEWORK_EDITOR build)\n"
-                  "    --dump-dat-output=<path>    Write JSON to file instead of stdout\n"
-                  "    --dump-dat-compact          Emit compact (single-line) JSON",
-                  executableName);
+    std::cout << "Usage: " << executableName << " [options]\n\n"
+                 "General options:\n"
+                 "  --help, -h, /?              Show this help message and exit\n"
+                 "  --encrypt <password>        Encrypt assets (requires ENABLE_ENCRYPTION == 1 && ENABLE_ENCRYPTION_BUILDER == 1 build)\n\n"
+                 "DAT debugging:\n"
+                 "  --dump-dat-to-json=<path|ver> Dump the specified Tibia DAT file or version as JSON (requires FRAMEWORK_EDITOR build)\n"
+                 "    --dump-dat-output=<path>    Write JSON to file instead of stdout\n"
+                 "    --dump-dat-compact          Emit compact (single-line) JSON\n";
 }
 
 } // namespace
