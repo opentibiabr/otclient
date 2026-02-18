@@ -8,14 +8,14 @@ local function debugPrint(...)
 end
 
 local OPEN_FRAMES = {
-    "/game_notifications/static/images/infobanner/backdrop-infobanner-anim0",
-    "/game_notifications/static/images/infobanner/backdrop-infobanner-anim1",
-    "/game_notifications/static/images/infobanner/backdrop-infobanner-anim2", 
-    "/game_notifications/static/images/infobanner/backdrop-infobanner-anim3",
-    "/game_notifications/static/images/infobanner/backdrop-infobanner-anim4",
-    "/game_notifications/static/images/infobanner/backdrop-infobanner-anim5",
-    "/game_notifications/static/images/infobanner/backdrop-infobanner-anim6", 
-    "/game_notifications/static/images/infobanner/backdrop-infobanner-anim7"
+    "/game_notifications/assets/images/infobanner/backdrop-infobanner-anim0",
+    "/game_notifications/assets/images/infobanner/backdrop-infobanner-anim1",
+    "/game_notifications/assets/images/infobanner/backdrop-infobanner-anim2", 
+    "/game_notifications/assets/images/infobanner/backdrop-infobanner-anim3",
+    "/game_notifications/assets/images/infobanner/backdrop-infobanner-anim4",
+    "/game_notifications/assets/images/infobanner/backdrop-infobanner-anim5",
+    "/game_notifications/assets/images/infobanner/backdrop-infobanner-anim6", 
+    "/game_notifications/assets/images/infobanner/backdrop-infobanner-anim7"
 }
 
 local MAX_WIDTH = 289
@@ -100,7 +100,7 @@ local infoPopUp = {
             title = "Outfit Unlocked",
             description = "You have unlocked '%s'", --skinName
             creatureId = '%d', --lookType
-            img = "/game_notifications/static/images/nodo/icon-infobanner-unlock"
+            img = "/game_notifications/assets/images/nodo/icon-infobanner-unlock"
         }
     },
     [eventCategory.CLIENT_EVENT_TYPE_BOSSTIARY] = {
@@ -109,7 +109,7 @@ local infoPopUp = {
             title = "Bosstiary Progress",
             description = "You have progressed '%s'",--progressLevel
             raceId = '%d', --RaceId
-            img = "/game_notifications/static/images/nodo/icon-infobanner-unlock"
+            img = "/game_notifications/assets/images/nodo/icon-infobanner-unlock"
         }
     },
     [eventCategory.CLIENT_EVENT_TYPE_BESTIARY] = {
@@ -118,7 +118,7 @@ local infoPopUp = {
             title = "Bestiary Progress",
             description = "You have progressed '%s'", --progressLevel
             raceId = '%d', --RaceId
-            img = "/game_notifications/static/images/nodo/icon-infobanner-unlock"
+            img = "/game_notifications/assets/images/nodo/icon-infobanner-unlock"
         }
     },
     [eventCategory.CLIENT_EVENT_TYPE_ACHIEVEMENT] = {
@@ -126,7 +126,7 @@ local infoPopUp = {
         {
             title = "New Achievement",
             description = "You have earned '%s'", --name
-            img = "/game_notifications/static/images/nodo/icon-infobanner-achievements"
+            img = "/game_notifications/assets/images/nodo/icon-infobanner-achievements"
         }
     },
     [eventCategory.CLIENT_EVENT_TYPE_TITLE] = {
@@ -134,7 +134,7 @@ local infoPopUp = {
         {
             title = "Title Gained",
             description = "You have earned '%s'", --name
-            img = "/game_notifications/static/images/nodo/icon-infobanner-title"
+            img = "/game_notifications/assets/images/nodo/icon-infobanner-title"
         }
     },
     [eventCategory.CLIENT_EVENT_TYPE_PROFICIENCY] = {
@@ -143,7 +143,7 @@ local infoPopUp = {
             title = "Weapon Proficiency",
             description = "you have improved '%s'", -- message
             itemId = '%d', -- itemId
-            img = "/game_notifications/static/images/nodo/icon-infobanner-unlock"
+            img = "/game_notifications/assets/images/nodo/icon-infobanner-unlock"
         }
     },
     [eventCategory.CLIENT_EVENT_TYPE_QUEST] = {
@@ -151,19 +151,19 @@ local infoPopUp = {
         [true] = { -- isCompleted(bool)
             title = "Quest started",
             description = "you have begun '%s'",
-            img = "/game_notifications/static/images/nodo/icon-infobanner-quests"
+            img = "/game_notifications/assets/images/nodo/icon-infobanner-quests"
         },
         [false] = { -- isCompleted(bool)
             title = "Quest completed",
             description = "you have finished '%s'",
-            img = "/game_notifications/static/images/nodo/icon-infobanner-quests"
+            img = "/game_notifications/assets/images/nodo/icon-infobanner-quests"
         }
     },
     [eventCategory.CLIENT_EVENT_TYPE_LEVEL] = {
         {
             title = "Level %d!",
             description = "You gained hit points, mana, and capacity.",
-            img = "/game_notifications/static/images/nodo/icon-infobanner-levelup"
+            img = "/game_notifications/assets/images/nodo/icon-infobanner-levelup"
         }
     },
     [eventCategory.CLIENT_EVENT_TYPE_SKILL] = {
@@ -171,7 +171,7 @@ local infoPopUp = {
         {
             title = "%s",
             description = "your skill has advanced to level %d",
-            img = "/game_notifications/static/images/nodo/icon-infobanner-skill-%s"
+            img = "/game_notifications/assets/images/nodo/icon-infobanner-skill-%s"
         }
     },
     [eventCategory.CLIENT_EVENT_TYPE_SIMPLE] = {
@@ -179,27 +179,27 @@ local infoPopUp = {
         [eventType.CLIENT_EVENT_CAPACITYLIMIT] = {
             title = "Capacity Limit",
             description = "Remove items before adding new ones.",
-            img = "/game_notifications/static/images/nodo/icon-infobanner-quests"
+            img = "/game_notifications/assets/images/nodo/icon-infobanner-quests"
         },
         [eventType.CLIENT_EVENT_OUTOFAMMO] = {
             title = "Out of Ammunition",
             description = "You have no arrow or bolt equipped.",
-            img = "/game_notifications/static/images/nodo/icon-infobanner-hint"
+            img = "/game_notifications/assets/images/nodo/icon-infobanner-hint"
         },
         [eventType.CLIENT_EVENT_TARGETTOOCLOSE] = {
             title = "Target Too Close",
             description = "You are using a ranged auto-attack at melee distance.",
-            img = "/game_notifications/static/images/nodo/icon-infobanner-hint"
+            img = "/game_notifications/assets/images/nodo/icon-infobanner-hint"
         },
         [eventType.CLIENT_EVENT_OUTOFSOULPOINTS] = {
             title = "Out of Soul Points",
             description = "You don't have enough soul points to cast this spell.",
-            img = "/game_notifications/static/images/nodo/icon-infobanner-hint"
+            img = "/game_notifications/assets/images/nodo/icon-infobanner-hint"
         },
         [eventType.CLIENT_EVENT_TUTORIALCOMPLETE] = {
             title = "Off to New Shores",
             description = "Leave the village and set sail to start your real adventure.",
-            img = "/game_notifications/static/images/nodo/icon-infobanner-offtonewshores"
+            img = "/game_notifications/assets/images/nodo/icon-infobanner-offtonewshores"
         }
     }
 }

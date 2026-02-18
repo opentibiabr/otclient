@@ -105,7 +105,7 @@ function controllerNpcTrader:initNpcWindow(creature, buttons)
         self.outfit = creature:getOutfit()
     else
         self.creatureName = "Unknown"
-        self.outfit = "/game_npctrader/static/images/icon-npcdialog-multiplenpcs"
+        self.outfit = "/game_npctrader/assets/images/icon-npcdialog-multiplenpcs"
     end
     self.buttons = buttons or self.buttons or self.buttonsDefault
     self:updateChatButton()
