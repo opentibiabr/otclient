@@ -343,6 +343,29 @@ void applyAttributesAndStyles(UIWidget* widget, HtmlNode* node, std::unordered_m
         }
     }
 
+    // Map presentational HTML attributes to CSS properties before stylesMerge is built.
+    // emplace() is used so an explicit inline style="..." always wins.
+    {
+        const auto& tag = node->getTag();
+        auto mapPresAttr = [&](const std::string& htmlAttr, const std::string& cssProp) {
+            const auto& v = node->getAttr(htmlAttr);
+            if (!v.empty()) {
+                node->getAttrStyles().emplace(cssProp, v);
+                if (isInheritable(cssProp))
+                    setChildrenStyles(widget->getHtmlId(), node, "styles", cssProp, v);
+            }
+        };
+        if (tag == "td" || tag == "th") {
+            mapPresAttr("valign", "vertical-align");
+            mapPresAttr("align",  "text-align");
+        }
+        if (tag == "p"  || tag == "div" || tag == "center" ||
+            tag == "h1" || tag == "h2" || tag == "h3" ||
+            tag == "h4" || tag == "h5" || tag == "h6") {
+            mapPresAttr("align", "text-align");
+        }
+    }
+
     // text node depends on style
     if (!node->getText().empty()) {
         widget->setText(node->getText());
