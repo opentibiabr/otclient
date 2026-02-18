@@ -1974,6 +1974,21 @@ bool UIWidget::onClick(const Point& mousePos)
             callLuaField("onTextClick", clickedText, mousePos);
         }
     }
+
+    // If this is an <a> element with href, bubble onAnchorClick(url) up the ancestor chain.
+    // This fires the onAnchorClick Lua event registered on any ancestor widget (e.g. a scroll area).
+    if (m_htmlNode && m_htmlNode->getTag() == "a") {
+        const std::string href = m_htmlNode->getAttr("href");
+        if (!href.empty()) {
+            UIWidgetPtr p = m_parent;
+            while (p) {
+                if (p->callLuaField<bool>("onAnchorClick", href))
+                    return true;
+                p = p->getParent();
+            }
+        }
+    }
+
     return callLuaField<bool>("onClick", mousePos);
 }
 

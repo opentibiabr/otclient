@@ -54,11 +54,7 @@ local function processHtmlContent(text)
     -- Self-close img tags (OTClient requires XML-style self-closing)
     text = text:gsub("<[Ii][Mm][Gg](%s+[^>]-)%s*/?>", "<img%1/>")
 
-    -- Strip <a> tags (keep inner text): text nodes fill full parent width in OTClient's
-    -- block layout, so a sibling <a> widget gets pushed off the line. Stripping merges
-    -- link text into the surrounding text node so it flows correctly.
-    text = text:gsub("</[Aa]>", "")
-    text = text:gsub("<[Aa][^>]*>", "")
+
     return text
 end
 

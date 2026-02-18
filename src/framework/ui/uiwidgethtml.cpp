@@ -1438,7 +1438,24 @@ void UIWidget::updateSize() {
 
     if (m_htmlNode && (m_htmlNode->getType() == NodeType::Text || m_htmlNode->getStyle("inherit-text") == "true")) {
         setProp(PropTextVerticalAutoResize, true);
-        if (m_parent->m_width.unit == Unit::FitContent) {
+
+        // If this text node shares a block parent with inline element siblings (e.g. <a> tags),
+        // size it to fit its actual text content instead of filling the full parent width.
+        // Filling the full width would push those inline siblings past the right edge.
+        bool hasInlineElementSibling = false;
+        if (m_parent->m_width.unit != Unit::FitContent) {
+            for (const auto& sibling : m_parent->getChildren()) {
+                if (sibling.get() == this) continue;
+                if (sibling->getHtmlNode()
+                        && sibling->getHtmlNode()->getType() == NodeType::Element
+                        && isInlineLike(sibling->getDisplay())) {
+                    hasInlineElementSibling = true;
+                    break;
+                }
+            }
+        }
+
+        if (m_parent->m_width.unit == Unit::FitContent || hasInlineElementSibling) {
             setProp(PropTextHorizontalAutoResize, true);
             setWidth_px(m_realTextSize.width());
         } else {

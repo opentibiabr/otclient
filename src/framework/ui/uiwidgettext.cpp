@@ -644,7 +644,23 @@ void UIWidget::applyWhiteSpace() {
 
     if (whiteSpace == "normal") {
         setProp(PropTextWrap, true);
+        // CSS white-space: normal collapses/trims spaces, but must preserve a single
+        // boundary space between adjacent inline elements (e.g. text before/after <a>).
+        // Record whether the raw text had leading/trailing whitespace before normalising.
+        const bool hadLeadingSpace  = !m_text.empty() && static_cast<unsigned char>(m_text.front()) <= ' ';
+        const bool hadTrailingSpace = !m_text.empty() && static_cast<unsigned char>(m_text.back())  <= ' ';
         normalizeWhiteSpace(m_text, true, false);
+        if (!m_text.empty()) {
+            // Re-add a single space at boundaries that touch an inline element sibling.
+            if (hadLeadingSpace) {
+                if (auto prevNode = m_htmlNode->getPrev(); prevNode && prevNode->getType() == NodeType::Element)
+                    m_text.insert(m_text.begin(), ' ');
+            }
+            if (hadTrailingSpace) {
+                if (auto nextNode = m_htmlNode->getNext(); nextNode && nextNode->getType() == NodeType::Element)
+                    m_text.push_back(' ');
+            }
+        }
     } else if (whiteSpace == "nowrap") {
         setProp(PropTextWrap, false);
         setProp(PropTextHorizontalAutoResize, true);
