@@ -72,8 +72,13 @@ br {
   height: 15;
 }
 
-div {
+div,
+center {
   display: block;
+}
+
+center {
+  text-align: center;
 }
 
 pre {
