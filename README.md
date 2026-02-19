@@ -519,6 +519,14 @@ If you are interested in compiling this project, visit the **[Wiki](https://gith
 
 ---
 
+## vcpkg policy
+
+- The vcpkg builtin-baseline in vcpkg.json must point to a commit contained in a microsoft/vcpkg release tag.
+- Baseline updates are handled by the automated weekly workflow, which opens a PR for review.
+- Builds should use the toolchain at external/vcpkg/scripts/buildsystems/vcpkg.cmake.
+
+---
+
 ## <a id="docker"></a>🐳 Docker
 
 In order to build the app for production, run the following commands:

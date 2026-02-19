@@ -1,0 +1,60 @@
+name: Update vcpkg release
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  update-vcpkg:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: true
+
+      - name: Resolve latest vcpkg release tag
+        id: vcpkg_tag
+        run: |
+          latest_tag=$(git ls-remote --tags --refs https://github.com/microsoft/vcpkg.git | awk '{print $2}' | sed 's#refs/tags/##' | sort -V | tail -n1)
+          if [[ -z "${latest_tag}" ]]; then
+            echo "Failed to resolve latest vcpkg release tag." >&2
+            exit 1
+          fi
+          echo "tag=${latest_tag}" >> "${GITHUB_OUTPUT}"
+
+      - name: Update vcpkg submodule to latest release
+        run: |
+          if [[ ! -f .gitmodules ]]; then
+            git submodule add https://github.com/microsoft/vcpkg.git external/vcpkg
+          else
+            git submodule update --init --recursive
+          fi
+          git -C external/vcpkg fetch --tags origin
+          git -C external/vcpkg checkout "${{ steps.vcpkg_tag.outputs.tag }}"
+
+      - name: Update vcpkg builtin-baseline
+        run: |
+          ./external/vcpkg/bootstrap-vcpkg.sh
+          ./external/vcpkg/vcpkg x-update-baseline
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: chore/vcpkg-update-${{ steps.vcpkg_tag.outputs.tag }}
+          commit-message: "chore(vcpkg): update to latest vcpkg release ${{ steps.vcpkg_tag.outputs.tag }}"
+          title: "chore(vcpkg): update to latest vcpkg release ${{ steps.vcpkg_tag.outputs.tag }}"
+          body: |
+            Automated update to the latest vcpkg release tag.
+
+            - Update external/vcpkg submodule to the latest release tag.
+            - Refresh builtin-baseline via vcpkg x-update-baseline.
+          labels: |
+            dependencies
+            automation
