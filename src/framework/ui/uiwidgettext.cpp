@@ -174,7 +174,9 @@ void UIWidget::updateText()
     if ((hasEventListener(EVENT_TEXT_CLICK) || hasEventListener(EVENT_TEXT_HOVER)) && m_textEvents.empty())
         processCodeTags();
 
-    if (isTextWrap() && m_rect.isValid()) {
+    // Use m_rect.width() > 0 instead of m_rect.isValid() so that wrapText runs even when
+    // height hasn't been resolved yet (height=0 makes isValid()=false on first layout pass).
+    if (isTextWrap() && m_rect.width() > 0) {
         m_drawTextColors = m_textColors;
         if (m_textOverflowLength > 0 && m_text.length() > m_textOverflowLength)
             m_drawText = m_font->wrapText(m_text.substr(0, m_textOverflowLength - m_textOverflowCharacter.length()) + m_textOverflowCharacter, getWidth() - m_textOffset.x, WrapOptions{}, &m_drawTextColors);

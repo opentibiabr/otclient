@@ -773,10 +773,22 @@ namespace {
         if (maxLineWidth > width) width = maxLineWidth;
         height += totalHeight;
 
+        // Auto-fill block elements (width:auto, display:block/list-item) derive their width
+        // from the containing block, not from their content. Do NOT stamp a content-driven
+        // width onto them here — updateDimension() in the scheduled layout batch will apply
+        // the correct parent-constrained width. Without this guard, applyFitContentRecursive
+        // would expand them to their unconstrained natural content width (e.g. unbroken text),
+        // clear pendingUpdate, and cause updateDimension() to skip them entirely, leaving
+        // paragraphs/centers wider than their containing table cell.
+        const bool isAutoFillWidth =
+            w->getWidthHtml().unit == Unit::Auto &&
+            (w->getDisplay() == DisplayType::Block || w->getDisplay() == DisplayType::ListItem);
+
         const bool widthNeedsUpdate =
-            w->getWidthHtml().needsUpdate(Unit::Auto, SIZE_VERSION_COUNTER) ||
-            w->getWidthHtml().needsUpdate(Unit::Percent, SIZE_VERSION_COUNTER) ||
-            w->getWidthHtml().needsUpdate(Unit::FitContent, SIZE_VERSION_COUNTER);
+            !isAutoFillWidth &&
+            (w->getWidthHtml().needsUpdate(Unit::Auto, SIZE_VERSION_COUNTER) ||
+             w->getWidthHtml().needsUpdate(Unit::Percent, SIZE_VERSION_COUNTER) ||
+             w->getWidthHtml().needsUpdate(Unit::FitContent, SIZE_VERSION_COUNTER));
 
         const bool heightNeedsUpdate =
             w->getHeightHtml().needsUpdate(Unit::Auto, SIZE_VERSION_COUNTER) ||
