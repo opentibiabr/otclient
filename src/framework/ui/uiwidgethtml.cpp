@@ -392,12 +392,29 @@ namespace {
         const bool centerTagCenter = !marginAutoCenter
             && self->getParent()
             && self->getParent()->getTextAlign() == Fw::AlignCenter
-            && self->getWidthHtml().unit == Unit::Px;
+            && self->getWidthHtml().unit == Unit::Px
+            && self->getWidthHtml().valueCalculed > -1;  // must be explicitly set
         const bool centerH = marginAutoCenter || centerTagCenter;
+
+        // Auto-width blocks (no explicit CSS width) fill 100% of their parent — standard
+        // CSS block layout. Blocks with an explicit pixel, percentage, or fit-content width
+        // keep their own sizing and are NOT stretched by AnchorRight.
+        // Only display:block / list-item flow boxes naturally fill 100%; table and others
+        // do not (tables shrink to fit their content).
+        // valueCalculed > -1 means an explicit px CSS width was applied (default is -1).
+        const auto& wHtml = self->getWidthHtml();
+        const bool selfHasExplicitWidth = wHtml.valueCalculed > -1
+            || wHtml.unit == Unit::Percent
+            || wHtml.unit == Unit::FitContent;
+        const DisplayType selfDisplay = self->getDisplay();
+        const bool fillsParentWidth = !selfHasExplicitWidth
+            && (selfDisplay == DisplayType::Block || selfDisplay == DisplayType::ListItem);
 
         if (ctx.lastNormalWidget && isInlineLike(ctx.lastNormalWidget->getDisplay())) {
             if (auto* tallest = ctx.tallestInlineWidget) {
                 self->addAnchor(Fw::AnchorLeft, "parent", Fw::AnchorLeft);
+                if (fillsParentWidth)
+                    self->addAnchor(Fw::AnchorRight, "parent", Fw::AnchorRight);
                 if (!topCleared)
                     self->addAnchor(Fw::AnchorTop, tallest->getId().c_str(), Fw::AnchorBottom);
                 return;
@@ -425,10 +442,15 @@ namespace {
                 self->addAnchor(Fw::AnchorRight, "parent", Fw::AnchorRight);
                 if (!topCleared) self->addAnchor(Fw::AnchorTop, "parent", Fw::AnchorTop);
             } else {
-                self->addAnchor(Fw::AnchorLeft, "parent", Fw::AnchorLeft); self->addAnchor(Fw::AnchorTop, "parent", Fw::AnchorTop);
+                self->addAnchor(Fw::AnchorLeft, "parent", Fw::AnchorLeft);
+                if (fillsParentWidth)
+                    self->addAnchor(Fw::AnchorRight, "parent", Fw::AnchorRight);
+                if (!topCleared) self->addAnchor(Fw::AnchorTop, "parent", Fw::AnchorTop);
             }
         } else {
             self->addAnchor(Fw::AnchorLeft, "parent", Fw::AnchorLeft);
+            if (fillsParentWidth)
+                self->addAnchor(Fw::AnchorRight, "parent", Fw::AnchorRight);
             if (!topCleared) self->addAnchor(Fw::AnchorTop, ctx.lastNormalWidget->getId().c_str(), Fw::AnchorBottom);
         }
     }
