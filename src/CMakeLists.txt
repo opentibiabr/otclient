@@ -8,6 +8,7 @@ option(TOGGLE_FRAMEWORK_GRAPHICS "Use Graphics " ON)
 option(TOGGLE_FRAMEWORK_SOUND "Use SOUND " ON)
 option(TOGGLE_FRAMEWORK_XML "Use XML " ON)
 option(TOGGLE_FRAMEWORK_NET "Use NET " ON)
+option(TOGGLE_FRAMEWORK_PROTOBUF "Use Protobuf" ON)
 option(TOGGLE_FRAMEWORK_EDITOR "Use Editor " OFF)
 option(TOGGLE_DIRECTX "Use DX9 support" OFF)
 option(ENABLE_DISCORD_RPC "Use Discord Rich Presence" OFF)
@@ -17,6 +18,11 @@ option(ASAN_ENABLED "Build this target with AddressSanitizer" OFF)
 option(BUILD_STATIC_LIBRARY "Build using static libraries" OFF)
 option(TOGGLE_PRE_COMPILED_HEADER "Use precompiled header (speed up compile)" ON)
 option(SPEED_UP_BUILD_UNITY "Compile using build unity for speed up build" ON)
+
+if (TOGGLE_FRAMEWORK_PROTOBUF)
+  # Protobuf
+  add_subdirectory(protobuf)
+endif()
 
 # *****************************************************************************
 # Cmake Features
@@ -62,6 +68,9 @@ if (TOGGLE_FRAMEWORK_XML)
 endif()
 if (TOGGLE_FRAMEWORK_NET)
   set(FRAMEWORK_DEFINITIONS ${FRAMEWORK_DEFINITIONS} -DFRAMEWORK_NET)
+endif()
+if (TOGGLE_FRAMEWORK_PROTOBUF)
+  set(FRAMEWORK_DEFINITIONS ${FRAMEWORK_DEFINITIONS} -DFRAMEWORK_PROTOBUF)
 endif()
 
 if (TOGGLE_FRAMEWORK_EDITOR)
@@ -121,7 +130,9 @@ find_package(PhysFS REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(phmap REQUIRED)
 find_package(absl CONFIG REQUIRED)
-find_package(Protobuf REQUIRED)
+if (TOGGLE_FRAMEWORK_PROTOBUF)
+  find_package(Protobuf REQUIRED)
+endif()
 find_package(LibLZMA REQUIRED)
 find_package(nlohmann_json REQUIRED)
 find_package(asio REQUIRED)
@@ -521,7 +532,7 @@ if(MSVC)
           $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/>
           $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
           ${LUAJIT_INCLUDE_DIR}
-          ${Protobuf_INCLUDE_DIRS}
+          $<$<BOOL:${TOGGLE_FRAMEWORK_PROTOBUF}>:${Protobuf_INCLUDE_DIRS}>
           ${VORBISFILE_INCLUDE_DIR}
           ${GMP_INCLUDE_DIR}
           ${OPENSSL_INCLUDE_DIR}
@@ -547,8 +558,6 @@ if(MSVC)
           ${OPENSSL_LIBRARIES}
           ${DBGHELP_LIBRARY}
           ${STDUUID}
-
-          protobuf::libprotobuf protobuf
           absl::log_internal_check_op
           Threads::Threads
           GLEW::GLEW
@@ -561,6 +570,14 @@ if(MSVC)
           utf8cpp::utf8cpp
           Freetype::Freetype
   )
+
+  if (TOGGLE_FRAMEWORK_PROTOBUF)
+      target_link_libraries(otclient_core
+          PUBLIC
+          protobuf::libprotobuf
+          protobuf
+      )
+  endif()
 elseif(ANDROID)
   target_include_directories(otclient_core
           PUBLIC
@@ -568,7 +585,7 @@ elseif(ANDROID)
           $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
           ${LUAJIT_INCLUDE_DIR}
           ${CMAKE_THREAD_LIBS_INIT}
-          ${Protobuf_INCLUDE_DIRS}
+          $<$<BOOL:${TOGGLE_FRAMEWORK_PROTOBUF}>:${Protobuf_INCLUDE_DIRS}>
           ${GMP_INCLUDE_DIR}
           ${OPENSSL_INCLUDE_DIR}
           ${PHYSFS_INCLUDE_DIR}
@@ -594,8 +611,6 @@ elseif(ANDROID)
           ${OPENSSL_LIBRARIES}
           ${STDUUID}
           ${MINIZIP_LIBRARY}
-
-          protobuf::libprotobuf protobuf
           absl::log_internal_check_op
           Threads::Threads
           asio::asio
@@ -611,6 +626,13 @@ elseif(ANDROID)
           fmt::fmt-header-only
           utf8cpp::utf8cpp
   )
+
+  if (TOGGLE_FRAMEWORK_PROTOBUF)
+      target_link_libraries(otclient_core
+          PUBLIC
+          protobuf::libprotobuf protobuf
+      )
+  endif()
 
 elseif(WASM)
   option(WASM_USE_WASM_EXCEPTIONS "Use native WebAssembly exception handling" ON)
@@ -628,7 +650,7 @@ elseif(WASM)
           PUBLIC
           ${CMAKE_SOURCE_DIR}/src
           ${CMAKE_THREAD_LIBS_INIT}
-          ${Protobuf_INCLUDE_DIRS}
+          $<$<BOOL:${TOGGLE_FRAMEWORK_PROTOBUF}>:${Protobuf_INCLUDE_DIRS}>
           ${GMP_INCLUDE_DIR}
           ${PHYSFS_INCLUDE_DIR}
           ${GLEW_INCLUDE_DIR}
@@ -643,7 +665,7 @@ elseif(WASM)
           ${LUA_LIBRARY}
           ${PHYSFS_LIBRARY}
           ${ZLIB_LIBRARY}
-          ${PROTOBUF_LIBRARY}
+
           ${NLOHMANN_JSON_LIBRARY}
           ${GLEW_LIBRARY}
           ${OPENGL_LIBRARIES}
@@ -659,8 +681,6 @@ elseif(WASM)
           ${OPENSSL_LIBRARY}
           ${OPENSSL_CRYPTO_LIBRARY}
           ${HTTPLIB_LIBRARY}
-
-          protobuf::libprotobuf protobuf
           absl::log_internal_check_op
 
           Threads::Threads
@@ -679,6 +699,13 @@ elseif(WASM)
           Vorbis::vorbis
           Freetype::Freetype
   )
+
+  if (TOGGLE_FRAMEWORK_PROTOBUF)
+      target_link_libraries(otclient_core
+          PUBLIC
+          protobuf::libprotobuf protobuf
+      )
+  endif()
 
 
   if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -747,7 +774,7 @@ else() # Linux
           $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
           ${LUAJIT_INCLUDE_DIR}
           ${CMAKE_THREAD_LIBS_INIT}
-          ${Protobuf_INCLUDE_DIRS}
+          $<$<BOOL:${TOGGLE_FRAMEWORK_PROTOBUF}>:${Protobuf_INCLUDE_DIRS}>
           ${GMP_INCLUDE_DIR}
           ${PHYSFS_INCLUDE_DIR}
           ${GLEW_INCLUDE_DIR}
@@ -777,7 +804,6 @@ else() # Linux
           ${OPENSSL_CRYPTO_LIBRARY}
           ${HTTPLIB_LIBRARY}
 
-          protobuf::libprotobuf protobuf
           absl::log_internal_check_op
           Threads::Threads
           X11::X11
@@ -796,6 +822,13 @@ else() # Linux
           Vorbis::vorbis
           Freetype::Freetype
   )
+
+  if (TOGGLE_FRAMEWORK_PROTOBUF)
+      target_link_libraries(otclient_core
+          PUBLIC
+          protobuf::libprotobuf protobuf
+      )
+  endif()
 
   if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_options(otclient_core

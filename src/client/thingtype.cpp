@@ -50,6 +50,7 @@ namespace {
     }
 }
 
+#ifdef FRAMEWORK_PROTOBUF
 void ThingType::unserializeAppearance(const uint16_t clientId, const ThingCategory category, const appearances::Appearance& appearance)
 {
     m_null = false;
@@ -376,6 +377,7 @@ void ThingType::applyAppearanceFlags(const appearances::AppearanceFlags& flags)
         m_flags |= ThingFlagAttrDualWield;
     }
 }
+#endif
 
 void ThingType::unserialize(const uint16_t clientId, const ThingCategory category, const FileStreamPtr& fin)
 {

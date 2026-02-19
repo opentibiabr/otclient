@@ -11,6 +11,7 @@
         FRAMEWORK_GRAPHICS;
         FRAMEWORK_NET;
         FRAMEWORK_SOUND;
+        FRAMEWORK_PROTOBUF;
         BUILD_TYPE="RelWithDebInfo";
         NOMINMAX;
     </PREPROCESSOR_DEFS>
@@ -30,7 +31,7 @@
         user32.lib;
         winmm.lib;
         libcrypto.lib;
-        libprotobuf.lib;
+
         libssl.lib;
         lua51.lib;
         lzma.lib;
@@ -57,7 +58,7 @@
         lzma.lib;
         libssl.lib;
         libcrypto.lib;
-        libprotobufd.lib;
+
         opengl32.lib;
         physfs-static.lib;
         shell32.lib;
@@ -69,6 +70,10 @@
         zlibd.lib;
         openal32.lib;
     </OTCLIENT_LIBDEPS_D>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OTCLIENT_LIBDEPS Condition="$(PREPROCESSOR_DEFS.Contains('FRAMEWORK_PROTOBUF'))">$(OTCLIENT_LIBDEPS);libprotobuf.lib;</OTCLIENT_LIBDEPS>
+    <OTCLIENT_LIBDEPS_D Condition="$(PREPROCESSOR_DEFS.Contains('FRAMEWORK_PROTOBUF'))">$(OTCLIENT_LIBDEPS_D);libprotobufd.lib;</OTCLIENT_LIBDEPS_D>
   </PropertyGroup>
   <PropertyGroup>
     <LinkIncremental>false</LinkIncremental>
