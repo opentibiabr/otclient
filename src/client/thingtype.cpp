@@ -366,6 +366,15 @@ void ThingType::applyAppearanceFlags(const appearances::AppearanceFlags& flags)
         m_flags |= ThingFlagAttrExpireStop;
     }
 
+    // proficiency flag
+    if (flags.has_proficiency()) {
+        if (g_game.getFeature(Otc::GameProficiency)) {
+            m_proficiencyId = flags.proficiency().id();
+            m_flags |= ThingFlagAttrProficiency;
+        }
+    }
+
+    // skill wheel gem
     if (flags.has_skillwheel_gem()) {
         m_skillWheelGem.gem_quality_id = flags.skillwheel_gem().gem_quality_id();
         m_skillWheelGem.vocation_id = flags.skillwheel_gem().vocation_id();

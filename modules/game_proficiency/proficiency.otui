@@ -1,0 +1,552 @@
+MiniStar < UIWidget
+  id: miniStar
+  size: 5 5
+  image-source: /images/game/proficiency/icon-star-tiny-silver
+  image-clip: 0 0 5 5
+
+ItemBox < UIButton
+  size: 34 34
+  image-source: /images/ui/item
+  change-cursor-image: true
+  cursor: pointer
+  border-width: 0
+  tooltip-delayed: true
+  focusable: true
+
+  $focus:
+    border-width: 1
+    border-color: #ffffff
+
+  UIItem
+    id: item
+    size: 32 32
+    anchors.top: parent.top
+    anchors.horizontalCenter: parent.horizontalCenter
+    margin-top: 1
+    virtual: true
+    show-count: false
+    draggable: false
+    phantom: true
+
+  UIWidget
+    id: starsBackground
+    height: 6
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-left: 1
+    margin-right: 1
+    margin-bottom: 1
+    phantom: true
+    layout:
+      type: horizontalBox
+      spacing: 0
+
+StarWidget < UIWidget
+  id: starWidget
+  size: 108 20
+  image-source: /images/game/proficiency/star-progress-bg
+  tooltip-delayed: true
+
+  ProgressBar
+    id: starProgress
+    anchors.fill: parent
+    image-source: /images/game/proficiency/star-progress
+    margin: 1 1 1 1
+    percent: 0
+
+  UIWidget
+    id: star
+    size: 9 10
+    phantom: true
+    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.verticalCenter: parent.verticalCenter
+    image-source: /images/game/proficiency/icon-star-dark
+
+BonusIcon < UIWidget
+  id: bonusIcon
+  size: 80 80
+
+  UIWidget
+    size: 80 80
+    id: highlight
+    visible: false
+    phantom: true
+    image-source: /images/game/proficiency/backdrop_weaponmastery_highlight
+    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.verticalCenter: parent.verticalCenter
+
+  UIWidget
+    id: border
+    size: 76 76
+    phantom: true
+    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.verticalCenter: parent.verticalCenter
+    image-source: /images/game/proficiency/border-weaponmasterytreeicons-inactive
+
+  UIWidget
+    id: icon
+    size: 64 64
+    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.verticalCenter: parent.verticalCenter
+    image-source: /images/game/proficiency/icons-0
+    image-clip: 0 0 64 64
+    phantom: true
+
+  UIWidget
+    id: icon-grey
+    size: 64 64
+    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.verticalCenter: parent.verticalCenter
+    image-source: /images/game/proficiency/icons-0
+    image-clip: 0 64 64 64
+    phantom: true
+
+  UIWidget
+    id: iconPerks
+    size: 32 32
+    anchors.top: icon.top
+    anchors.right: icon.right
+    margin-top: -16
+    margin-right: -16
+    visible: false
+    phantom: true
+    image-source: /images/game/proficiency/augment-icons
+    image-clip: 0 0 32 32
+
+  UIWidget
+    id: iconPerks-grey
+    size: 32 32
+    anchors.top: icon.top
+    anchors.right: icon.right
+    margin-top: -16
+    margin-right: -16
+    visible: false
+    phantom: true
+    image-source: /images/game/proficiency/augment-icons
+    image-clip: 0 32 32 32
+
+  UIWidget
+    id: locked-perk
+    size: 18 28
+    anchors.bottom: border.bottom
+    anchors.horizontalCenter: parent.horizontalCenter
+    margin-bottom: -8
+    visible: false
+    image-source: /images/game/proficiency/big-icon-lock-grey
+
+BonusSelectPanel < UIWidget
+  id: bonusSelectPanel
+  size: 108 354
+  image-source: /images/game/proficiency/bonus-select-bg
+
+  UIWidget
+    id: bonusSelectProgress
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.bottom: parent.bottom
+    width: 0
+    image-source: /images/game/proficiency/bonus-select-bg-progress
+    image-border: 1
+    margin: 1 1 1 1
+
+  Panel
+    id: oneBonusIconPanel
+    anchors.fill: parent
+    visible: false
+
+    BonusIcon
+      id: bonusIcon0
+      anchors.horizontalCenter: parent.horizontalCenter
+      anchors.verticalCenter: parent.verticalCenter
+
+  Panel
+    id: twoBonusIconPanel
+    anchors.fill: parent
+    visible: false
+
+    BonusIcon
+      id: bonusIcon0
+      anchors.top: parent.top
+      anchors.left: parent.left
+      margin-top: 49
+      margin-left: 14
+
+    BonusIcon
+      id: bonusIcon1
+      anchors.bottom: parent.bottom
+      anchors.left: bonusIcon0.left
+      margin-bottom: 49
+
+  Panel
+    id: threeBonusIconPanel
+    anchors.fill: parent
+    visible: false
+
+    BonusIcon
+      id: bonusIcon0
+      anchors.top: parent.top
+      anchors.left: parent.left
+      margin-top: 20
+      margin-left: 14
+
+    BonusIcon
+      id: bonusIcon1
+      anchors.top: bonusIcon0.bottom
+      anchors.left: bonusIcon0.left
+      margin-top: 38
+
+    BonusIcon
+      id: bonusIcon2
+      anchors.top: bonusIcon1.bottom
+      anchors.left: bonusIcon1.left
+      margin-top: 39
+
+BonusDetailPanel < UIWidget
+  id: bonusDetailPanel
+  size: 108 77
+  background-color: #404040
+  border-width: 1
+  border-color: #606060
+
+  UIWidget
+    id: bonusName
+    anchors.fill: parent
+    margin: 4 4 4 4
+    color: #c0c0c0
+    text-align: center
+    text-wrap: true
+    tooltip-delayed: true
+    image-source: /images/game/proficiency/icon-lock-grey
+    image-rect: 0 0 9 14
+    image-offset: 45 30
+
+MainWindow
+  id: weaponProficiencyWindow
+  !text: tr('Weapon Proficiency')
+  size: 1000 572
+  @onEscape: modules.game_proficiency.hide()
+
+  Panel
+    id: contentPanel
+    anchors.fill: parent
+    margin: 0 12 12 12
+
+    UIWidget
+      anchors.fill: parent
+      visible: true
+
+      Panel
+        id: itemPanel
+        size: 202 149
+        anchors.left: parent.left
+        anchors.top: parent.top
+        image-source: /images/ui/window
+        image-border: 4
+
+        Label
+          id: itemNameTitle
+          anchors.horizontalCenter: parent.horizontalCenter
+          anchors.top: parent.top
+          !text: tr('Unknown Item')
+          text-auto-resize: true
+          color: #909090
+          margin-top: 2
+
+        UIWidget
+          id: iconMasteryLevel
+          size: 190 84
+          anchors.top: parent.top
+          anchors.horizontalCenter: parent.horizontalCenter
+          margin-top: 22
+          margin-left: 1
+          image-source: /images/game/proficiency/icon-masterylevel-0
+
+
+        UIWidget
+          id: itemMasteryLevel
+          size: 190 84
+          anchors.top: parent.top
+          anchors.horizontalCenter: parent.horizontalCenter
+          margin-top: 22
+          margin-left: 1
+          image-source: /images/game/proficiency/icon-masterylevel-1-silver
+          phantom: true
+          visible: false
+
+        Item
+          id: item
+          anchors.top: iconMasteryLevel.top
+          anchors.horizontalCenter: parent.horizontalCenter
+          margin-top: 22
+          margin-left: -2
+          image-source: 
+          virtual: true
+          priceable: false
+          show-count: false
+
+        Label
+          id: progressDescription
+          anchors.top: iconMasteryLevel.bottom
+          anchors.left: parent.left
+          anchors.right: parent.right
+          margin-top: 5
+          !text: tr('0 / 0')
+          color: #c0c0c0
+          text-auto-resize: true
+          text-wrap: true
+          text-align: center
+
+        Label
+          id: nextLevelDescription
+          anchors.top: prev.bottom
+          anchors.left: parent.left
+          anchors.right: parent.right
+          margin-top: 5
+          !text: tr('0 XP for next level')
+          color: #c0c0c0
+          text-auto-resize: true
+          text-wrap: true
+          text-align: center
+
+      Button
+        id: levelButton
+        size: 47 20
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        margin-top: 6
+        !text: tr('Level')
+        tooltip-delayed: true
+        tooltip: Restrict list to objects that match your level
+        @onClick: modules.game_proficiency.WeaponProficiency:toggleFilterOption(self)
+
+      Button
+        id: vocButton
+        size: 47 20
+        anchors.top: prev.top
+        anchors.left: prev.right
+        margin-left: 5
+        !text: tr('Voc.')
+        tooltip-delayed: true
+        tooltip: Restrict list to objects that match your vocation
+        @onClick: modules.game_proficiency.WeaponProficiency:toggleFilterOption(self)
+
+      Button
+        id: oneButton
+        size: 47 20
+        anchors.top: prev.top
+        anchors.left: prev.right
+        margin-left: 5
+        !text: tr('1H')
+        tooltip-delayed: true
+        tooltip: Restrict list to one-handed weapons
+        @onClick: modules.game_proficiency.WeaponProficiency:toggleFilterOption(self)
+
+      Button
+        id: twoButton
+        size: 47 20
+        anchors.top: prev.top
+        anchors.left: prev.right
+        margin-left: 5
+        !text: tr('2H')
+        tooltip-delayed: true
+        tooltip: Restrict list to two-handed weapons
+        @onClick: modules.game_proficiency.WeaponProficiency:toggleFilterOption(self)
+
+      ComboBox
+        id: classFilter
+        size: 202 20
+        !text: tr('Weapons: All')
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        color: #c0c0c0
+        margin-top: 4
+        @onSetup: |
+          self:addOption("Weapons: Axes", nil, true)
+          self:addOption("Weapons: Clubs", nil, true)
+          self:addOption("Weapons: Distance", nil, true)
+          self:addOption("Weapons: Fist", nil, true)
+          self:addOption("Weapons: Swords", nil, true)
+          self:addOption("Weapons: Wands", nil, true)
+          self:addOption("Weapons: All", nil, true)
+          self:setCurrentOption("Weapons: All", true)
+
+      TextEdit
+        id: searchText
+        size: 202 20
+        focusable: true
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        margin-top: 4
+        padding-top: 2
+        padding-left: 2
+        !placeholder: tr('Type to search')
+
+      Button
+        id: clearSearchButton
+        anchors.top: prev.top
+        anchors.right: prev.right
+        margin-top: 1
+        margin-right: 1
+        size: 18 18
+        image-source: /images/ui/buttons/button-clear-18x18-up
+        tooltip-delayed: true
+        tooltip: Clear all text from the search field.
+
+      TextList
+        id: itemList
+        size: 202 220
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        vertical-scrollbar: itemListScroll
+        margin-top: 5
+        color: #c0c0c0
+        keep-scroll-range: true
+        padding-top: 4
+        padding-left: 4
+        layout:
+          type: grid
+          cell-size: 34 34
+          cell-spacing: 3
+          num-columns: 5
+
+        @onSetup: |
+          for i = 0, 44 do
+            g_ui.createWidget("ItemBox", self, "widget_" .. i)
+          end
+
+      VerticalScrollBar
+        id: itemListScroll
+        anchors.top: prev.top
+        anchors.bottom: prev.bottom
+        anchors.right: prev.right
+        margin-right: 1
+        margin-top: 1
+        margin-bottom: 1
+        step: 37
+        pixels-scroll: true
+
+      Panel
+        id: starsPanelBackground
+        size: 756 20
+        anchors.top: parent.top
+        anchors.left: itemPanel.right
+        margin-left: 11
+        image-source: /images/game/proficiency/star-progress-bg
+        image-border: 1
+        layout:
+          type: grid
+          cell-size: 108 20
+          num-columns: 7
+          padding-left: 1
+
+      Panel
+        id: progressBackground
+        size: 756 14
+        anchors.top: prev.bottom
+        anchors.left: prev.left
+        margin-top: 2
+        image-source: /images/game/proficiency/progress-bg
+
+        ProgressBar
+          id: proficiencyProgress
+          anchors.fill: parent
+          image-source: /images/game/proficiency/proficiency-progress
+          margin: 1 1 1 1
+          percent: 0
+
+      Panel
+        id: bonusProgressBackground
+        size: 756 354
+        anchors.top: prev.bottom
+        anchors.left: prev.left
+        margin-top: 3
+        image-source: /images/game/proficiency/full-bonus-select-bg
+        layout:
+          type: grid
+          cell-size: 108 354
+          num-columns: 7
+
+      UIWidget
+        id: vocationWarning
+        size: 754 17
+        anchors.top: prev.top
+        anchors.left: prev.left
+        margin-top: 1
+        margin-left: 1
+        background-color: #ff9854
+        text-align: center
+        text: Perks are inactive because you don't meet the requirements to use this weapon.
+        text-offset: 7 3
+        visible: false
+
+      Panel
+        id: bonusDetailBackground
+        size: 756 77
+        anchors.top: bonusProgressBackground.bottom
+        anchors.left: bonusProgressBackground.left
+        margin-top: 3
+        background-color: #404040
+        border-width: 1
+        border-color: #606060
+        layout:
+          type: grid
+          cell-size: 108 77
+          num-columns: 7
+
+  HorizontalSeparator
+    id: bottomSep
+    anchors.bottom: close.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-bottom: 11
+    margin-left: 12
+    margin-right: 12
+
+  Button
+    id: close
+    anchors.bottom: parent.bottom
+    anchors.right: parent.right
+    !text: tr('Close')
+    size: 60 20
+    margin-bottom: 12
+    margin-right: 12
+    @onClick: modules.game_proficiency.hide()
+
+  Button
+    id: reset
+    anchors.bottom: parent.bottom
+    anchors.right: prev.left
+    !text: tr('Reset')
+    size: 60 20
+    margin-bottom: 12
+    margin-right: 5
+    tooltip-delayed: true
+    enabled: false
+    @onClick: modules.game_proficiency.WeaponProficiency:onResetClick()
+
+  Button
+    id: apply
+    anchors.bottom: parent.bottom
+    anchors.right: prev.left
+    !text: tr('Apply')
+    size: 60 20
+    margin-bottom: 12
+    margin-right: 5
+    tooltip-delayed: true
+    enabled: false
+    @onClick: modules.game_proficiency.WeaponProficiency:onApplyClick()
+
+  Button
+    id: ok
+    anchors.bottom: parent.bottom
+    anchors.right: prev.left
+    !text: tr('Ok')
+    size: 60 20
+    margin-bottom: 12
+    margin-right: 5
+    tooltip-delayed: true
+    enabled: false
+    @onClick: modules.game_proficiency.WeaponProficiency:onOkClick()
+
+
