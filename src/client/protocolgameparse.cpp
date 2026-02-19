@@ -3622,23 +3622,29 @@ void ProtocolGame::parseChangeMapAwareRange(const InputMessagePtr& msg)
 void ProtocolGame::parseCreaturesMark(const InputMessagePtr& msg)
 {
     const uint32_t creatureId = msg->getU32();
-    const bool isPermanent = g_game.getClientVersion() >= 1076 ? msg->getU8() == 0 : false;
-    const uint8_t markType = msg->getU8();
 
     const auto& creature = g_map.getCreatureById(creatureId);
     if (!creature) {
-        g_logger.traceDebug("ProtocolGame::parseTrappers: could not get creature with id {}", creatureId);
+        g_logger.traceDebug("ProtocolGame::parseCreaturesMark: could not get creature with id {}", creatureId);
         return;
     }
 
-    if (isPermanent) {
-        if (markType == 0xff) {
-            creature->hideStaticSquare();
-        } else {
-            creature->showStaticSquare(Color::from8bit(markType != 0 ? markType : 1));
-        }
-    } else {
+    if (g_game.getClientVersion() < 1076) {
+        const uint8_t markType = msg->getU8();
         creature->addTimedSquare(markType);
+        return;
+    }
+
+    const uint8_t squareType  = msg->getU8(); // SQUARE_REMOVE=0, SQUARE_FLASH=1, SQUARE_STAY=2
+    const uint8_t squareColor = msg->getU8();
+
+    if (squareType == 0 || squareColor == 0) {
+        creature->hideStaticSquare();
+        creature->removeTimedSquare();
+    } else if (squareType == 2) {
+        creature->showStaticSquare(Color::from8bit(squareColor));
+    } else {
+        creature->addTimedSquare(squareColor);
     }
 }
 
