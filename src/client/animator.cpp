@@ -30,6 +30,7 @@ void Animator::unserializeAppearance(const appearances::SpriteAnimation& animati
     m_animationPhases = animation.sprite_phase_size();
     m_async = !animation.synchronized();
     m_loopCount = animation.loop_count();
+    m_loopType = animation.loop_type();
     m_startPhase = animation.default_start_phase();
 
     for (const auto& phase : animation.sprite_phase()) {

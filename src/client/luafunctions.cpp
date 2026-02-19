@@ -825,6 +825,8 @@ void Client::registerLuaFunctions()
     g_lua.registerClass<Effect, Thing>();
     g_lua.bindClassStaticFunction<Effect>("create", [] { return std::make_shared<Effect>(); });
     g_lua.bindClassMemberFunction<Effect>("setId", &Effect::setId);
+    g_lua.bindClassMemberFunction<Effect>("setPermanent", &Effect::setPermanent);
+    g_lua.bindClassMemberFunction<Effect>("isPermanent", &Effect::isPermanent);
 
     g_lua.registerClass<Missile, Thing>();
     g_lua.bindClassStaticFunction<Missile>("create", [] { return std::make_shared<Missile>(); });
