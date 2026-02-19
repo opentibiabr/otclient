@@ -1,5 +1,6 @@
 -- Weapon Proficiency Module
 -- Implements the Weapon Proficiency system from Summer Update 2025
+-- credits: cipsoft
 
 if not WeaponProficiency then
     WeaponProficiency = {}
