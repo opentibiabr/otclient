@@ -547,6 +547,7 @@ public:
     UIWidgetPtr getChildByIndex(int index);
     UIWidgetPtr getChildByState(Fw::WidgetState state);
     UIWidgetPtr getChildByStyleName(std::string_view styleName);
+    UIWidgetPtr getNearestChild(const Point& pos);
     UIWidgetPtr recursiveGetChildById(std::string_view id);
     UIWidgetPtr recursiveGetChildByPos(const Point& childPos, bool wantsPhantom);
     UIWidgetPtr recursiveGetChildByState(Fw::WidgetState state, bool wantsPhantom);
