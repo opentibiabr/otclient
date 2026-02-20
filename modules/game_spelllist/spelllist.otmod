@@ -4,6 +4,7 @@ Module
   author: Summ, Edubart
   website: https://github.com/edubart/otclient
   sandboxed: true
+  minClientVersion: 870
   scripts: [ spelllist ]
   @onLoad: init()
   @onUnload: terminate()

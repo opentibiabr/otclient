@@ -231,6 +231,7 @@ void Application::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_modules", "getModules", &ModuleManager::getModules, &g_modules);
     g_lua.bindSingletonFunction("g_modules", "getCurrentModule", &ModuleManager::getCurrentModule, &g_modules);
     g_lua.bindSingletonFunction("g_modules", "enableAutoReload", &ModuleManager::enableAutoReload, &g_modules);
+    g_lua.bindSingletonFunction("g_modules", "updateModulesByClientVersion", &ModuleManager::updateModulesByClientVersion, &g_modules);
 
     // EventDispatcher
     g_lua.registerSingletonClass("g_dispatcher");
@@ -334,6 +335,7 @@ void Application::registerLuaFunctions()
     g_lua.bindClassMemberFunction<Module>("getSandbox", &Module::getSandbox);
     g_lua.bindClassMemberFunction<Module>("isAutoLoad", &Module::isAutoLoad);
     g_lua.bindClassMemberFunction<Module>("getAutoLoadPriority", &Module::getAutoLoadPriority);
+    g_lua.bindClassMemberFunction<Module>("getMinClientVersion", &Module::getMinClientVersion);
 
     // Event
     g_lua.registerClass<Event>();

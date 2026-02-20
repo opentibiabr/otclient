@@ -98,7 +98,7 @@ function controllerCyclopedia:onGameStart()
             onUpdateCyclopediaCharacterItemSummary = Cyclopedia.loadCharacterItems,
             onParseCyclopediaCharacterAppearances = Cyclopedia.loadCharacterAppearances,
             onParseCyclopediaStoreSummary = Cyclopedia.onParseCyclopediaStoreSummary,
--- character 14.10
+            -- character 14.10
             onCyclopediaCharacterOffenceStats = Cyclopedia.onCyclopediaCharacterOffenceStats,
             onCyclopediaCharacterDefenceStats = Cyclopedia.onCyclopediaCharacterDefenceStats,
             onCyclopediaCharacterMiscStats = Cyclopedia.onCyclopediaCharacterMiscStats,

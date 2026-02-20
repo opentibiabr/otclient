@@ -44,12 +44,6 @@ function ForgeController:onGameStart()
                 end)
         end
         self.currentTab = 'conversion'
-    else
-        -- Store unload callback
-        self.callbacks.unloadModule = function()
-            g_modules.getModule("game_forge"):unload()
-        end
-        scheduleEvent(self.callbacks.unloadModule, 100)
     end
 end
 

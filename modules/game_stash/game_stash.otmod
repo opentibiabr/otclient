@@ -4,6 +4,7 @@ Module
   author: Aluisio Penna
   website: https://github.com/mehah/otclient
   sandboxed: false
+  minClientVersion: 1180
   scripts: [ game_stash ]
   @onLoad: init()
   @onUnload: terminate()

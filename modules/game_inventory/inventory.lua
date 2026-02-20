@@ -107,10 +107,13 @@ local function updateSlotsDuration()
         return
     end
     -- @
-
+    local ui = inventoryController.ui.onPanel
+    if not ui then
+        stopEvent()
+        return
+    end
     if not modules.client_options.getOption('showExpiryInInvetory') then
         stopEvent()
-        local ui = getInventoryUi()
         for slot, itemDurationReg in pairs(itemSlotsWithDuration) do
             local getSlotInfo = getSlotPanelBySlot[slot]
             if getSlotInfo then
@@ -124,7 +127,6 @@ local function updateSlotsDuration()
     end
 
     local currTime = g_clock.seconds()
-    local ui = getInventoryUi()
     local hasItemsWithDuration = false
 
     for slot, itemDurationReg in pairs(itemSlotsWithDuration) do
@@ -569,9 +571,11 @@ function reloadInventory()
     if modules.client_options.getOption('showExpiryInInvetory') then
         updateSlotsDuration()
     end
-    
+    local ui = inventoryController.ui.onPanel
+    if not ui then
+        return
+    end
     for slot, getSlotInfo in pairs(getSlotPanelBySlot) do
-        local ui = getInventoryUi()
         local slotPanel, toggler = getSlotInfo(ui)
         if slotPanel then
             local player = g_game.getLocalPlayer()
@@ -619,8 +623,11 @@ function toggle()
 end
 
 function toggleAdventurerStyle(hasBlessing)
+    local ui = inventoryController.ui.onPanel
+    if not ui then
+        return
+    end
     for slot, getSlotInfo in pairs(getSlotPanelBySlot) do
-        local ui = getInventoryUi()
         local slotPanel, toggler = getSlotInfo(ui)
         if slotPanel then
             slotPanel:setOn(hasBlessing)
@@ -631,6 +638,9 @@ end
 function onBlessingsChange(blessings, blessVisualState)
     toggleAdventurerStyle(blessings == 1)
     local blessedButton = getInventoryUi().blessings
+    if not blessedButton then
+        return
+    end
 --[[     local tooltip = 'You are protected by the following blessings:'
         tooltip = tooltip .. '\nTwist of Fate'
         tooltip = tooltip .. '\nWisdom of Solitude'

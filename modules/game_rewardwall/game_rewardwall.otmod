@@ -5,5 +5,6 @@ Module
   website: game_rewardwall
   scripts: [ game_rewardwall.lua ]
   sandboxed: true
+  minClientVersion: 1140
   @onLoad: rewardWallController:init()
   @onUnload: rewardWallController:terminate()

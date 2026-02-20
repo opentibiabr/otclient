@@ -7,5 +7,6 @@ Module
   website: https://github.com/mehah/otclient
   sandboxed: true
   scripts: [ game_screenshot ]
+  minClientVersion: 1180
   @onLoad: screenshotController:init()
   @onUnload: screenshotController:terminate()

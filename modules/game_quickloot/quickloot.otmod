@@ -4,6 +4,7 @@ Module
   author: Undefined
   website: undefined_.
   sandboxed: true
+  minClientVersion: 1200
   scripts:
     - quickloot
   @onLoad: quickLootController:init()

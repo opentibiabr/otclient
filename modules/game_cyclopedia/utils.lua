@@ -701,14 +701,14 @@ local combatStates= {
 }
 
 Cyclopedia.clientCombat ={}
-Cyclopedia.clientCombat[combatStates.CLIENT_COMBAT_PHYSICAL] = { path = '/game_cyclopedia/images/bestiary/icons/monster-icon-physical-resist', id = 'Physical' }
-Cyclopedia.clientCombat[combatStates.CLIENT_COMBAT_FIRE] = {  path = '/game_cyclopedia/images/bestiary/icons/monster-icon-fire-resist', id = 'Fire' }
-Cyclopedia.clientCombat[combatStates.CLIENT_COMBAT_EARTH] = { path = '/game_cyclopedia/images/bestiary/icons/monster-icon-earth-resist', id = 'Earth' }
-Cyclopedia.clientCombat[combatStates.CLIENT_COMBAT_ENERGY] = {  path = '/game_cyclopedia/images/bestiary/icons/monster-icon-energy-resist', id = 'Energy' }
-Cyclopedia.clientCombat[combatStates.CLIENT_COMBAT_ICE] = { path = '/game_cyclopedia/images/bestiary/icons/monster-icon-ice-resist', id = 'Ice' }
-Cyclopedia.clientCombat[combatStates.CLIENT_COMBAT_HOLY] = {path = '/game_cyclopedia/images/bestiary/icons/monster-icon-holy-resist', id = 'Holy' }
-Cyclopedia.clientCombat[combatStates.CLIENT_COMBAT_DEATH] = {  path = '/game_cyclopedia/images/bestiary/icons/monster-icon-death-resist', id = 'Death' }
-Cyclopedia.clientCombat[combatStates.CLIENT_COMBAT_HEALING] = { path = '/game_cyclopedia/images/bestiary/icons/monster-icon-healing-resist', id = 'Healing' }
-Cyclopedia.clientCombat[combatStates.CLIENT_COMBAT_DROWN] = {  path = '/game_cyclopedia/images/bestiary/icons/monster-icon-drowning-resist', id = 'Drown' }
-Cyclopedia.clientCombat[combatStates.CLIENT_COMBAT_LIFEDRAIN] = {  path = '/game_cyclopedia/images/bestiary/icons/monster-icon-lifedrain-resist', id = 'Lifedrain ' }
-Cyclopedia.clientCombat[combatStates.CLIENT_COMBAT_MANADRAIN] = {  path = '/game_cyclopedia/images/bestiary/icons/monster-icon-manadrain-resist', id = 'Manadrain' }
+Cyclopedia.clientCombat[combatStates.CLIENT_COMBAT_PHYSICAL] = { path = '/images/icons/monster-icon-physical-resist', id = 'Physical' }
+Cyclopedia.clientCombat[combatStates.CLIENT_COMBAT_FIRE] = {  path = '/images/icons/monster-icon-fire-resist', id = 'Fire' }
+Cyclopedia.clientCombat[combatStates.CLIENT_COMBAT_EARTH] = { path = '/images/icons/monster-icon-earth-resist', id = 'Earth' }
+Cyclopedia.clientCombat[combatStates.CLIENT_COMBAT_ENERGY] = {  path = '/images/icons/monster-icon-energy-resist', id = 'Energy' }
+Cyclopedia.clientCombat[combatStates.CLIENT_COMBAT_ICE] = { path = '/images/icons/monster-icon-ice-resist', id = 'Ice' }
+Cyclopedia.clientCombat[combatStates.CLIENT_COMBAT_HOLY] = {path = '/images/icons/monster-icon-holy-resist', id = 'Holy' }
+Cyclopedia.clientCombat[combatStates.CLIENT_COMBAT_DEATH] = {  path = '/images/icons/monster-icon-death-resist', id = 'Death' }
+Cyclopedia.clientCombat[combatStates.CLIENT_COMBAT_HEALING] = { path = '/images/icons/monster-icon-healing-resist', id = 'Healing' }
+Cyclopedia.clientCombat[combatStates.CLIENT_COMBAT_DROWN] = {  path = '/images/icons/monster-icon-drowning-resist', id = 'Drown' }
+Cyclopedia.clientCombat[combatStates.CLIENT_COMBAT_LIFEDRAIN] = {  path = '/images/icons/monster-icon-lifedrain-resist', id = 'Lifedrain ' }
+Cyclopedia.clientCombat[combatStates.CLIENT_COMBAT_MANADRAIN] = {  path = '/images/icons/monster-icon-manadrain-resist', id = 'Manadrain' }

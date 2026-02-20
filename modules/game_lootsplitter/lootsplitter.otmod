@@ -5,6 +5,7 @@ Module
   website: https://github.com/mehah/otclient
   sandboxed: true
   autoload: true
+  minClientVersion: 1310
   scripts: [ lootsplitter ]
   @onLoad: init()
   @onUnload: terminate()

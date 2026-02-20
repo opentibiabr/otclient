@@ -3,6 +3,7 @@ Module
   description: Preys, sponsored by kivera-global.com, remade by Vithrax#5814
   author: otclient.ovh & kivera-global.com & Vithrax#5814
   website: http://otclient.ovh
+  minClientVersion: 1100
   sandboxed: true
   scripts: [ prey ]
   dependencies: [ client_topmenu ]

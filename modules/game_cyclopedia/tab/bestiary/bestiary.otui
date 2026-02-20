@@ -235,14 +235,14 @@ UIWidget
         anchors.left: ProgressBorder1.left
         anchors.top: StarFill.bottom
         margin-top: 5
-        image-source: /game_cyclopedia/images/bestiary/icons/monster-icon-diamond-inactive
+        image-source: /images/icons/monster-icon-diamond-inactive
         image-repeated: true
         width: 36
       UIWidget
         id: DiamondFill
         anchors.left: ProgressBorder1.left
         anchors.top: DiamondBase.top
-        image-source: /game_cyclopedia/images/bestiary/icons/monster-icon-diamond-active
+        image-source: /images/icons/monster-icon-diamond-active
         image-repeated: true
         width: 36
       UIWidget
@@ -257,7 +257,7 @@ UIWidget
         anchors.top: SubTextLabel.bottom
         anchors.left: SubTextLabel.left
         margin-top: 5
-        image-source: /game_cyclopedia/images/bestiary/icons/monster-icon-bonuspoints
+        image-source: /images/icons/monster-icon-bonuspoints
       Label
         id: BonusValue
         anchors.verticalCenter: BonusIcon.verticalCenter
@@ -335,7 +335,7 @@ UIWidget
         anchors.left: IconsSep.right
         margin-top: 2
         margin-left: 5
-        image-source: /game_cyclopedia/images/bestiary/icons/monster-icon-hitpoints
+        image-source: /images/icons/monster-icon-hitpoints
       Label
         id: Value1
         anchors.verticalCenter: Icon1.verticalCenter
@@ -351,7 +351,7 @@ UIWidget
         anchors.left: IconsSep.right
         margin-top: 7
         margin-left: 5
-        image-source: /game_cyclopedia/images/bestiary/icons/monster-icon-experience
+        image-source: /images/icons/monster-icon-experience
       Label
         id: Value2
         anchors.verticalCenter: Icon2.verticalCenter
@@ -367,7 +367,7 @@ UIWidget
         anchors.left: IconsSep.right
         margin-top: 7
         margin-left: 5
-        image-source: /game_cyclopedia/images/bestiary/icons/monster-icon-speed
+        image-source: /images/icons/monster-icon-speed
       Label
         id: Value3
         anchors.verticalCenter: Icon3.verticalCenter
@@ -383,7 +383,7 @@ UIWidget
         anchors.left: IconsSep.right
         margin-top: 7
         margin-left: 5
-        image-source: /game_cyclopedia/images/bestiary/icons/monster-icon-armor
+        image-source: /images/icons/monster-icon-armor
       Label
         id: Value4
         anchors.verticalCenter: Icon4.verticalCenter
@@ -399,7 +399,7 @@ UIWidget
         anchors.left: IconsSep.right
         margin-top: 7
         margin-left: 5
-        image-source: /game_cyclopedia/images/bestiary/icons/monster-icon-mitigation
+        image-source: /images/icons/monster-icon-mitigation
       Label
         id: Value5
         anchors.verticalCenter: Icon5.verticalCenter
@@ -459,7 +459,7 @@ UIWidget
         color: #C7C7C7
       UIWidget
         id: PhysicalResist
-        image-source: /game_cyclopedia/images/bestiary/icons/monster-icon-physical-resist
+        image-source: /images/icons/monster-icon-physical-resist
         anchors.left: ProgressBorder3.right
         anchors.top: parent.top
         margin-top: 35
@@ -471,7 +471,7 @@ UIWidget
         margin-left: 5
       UIWidget
         id: EarthResist
-        image-source: /game_cyclopedia/images/bestiary/icons/monster-icon-earth-resist
+        image-source: /images/icons/monster-icon-earth-resist
         anchors.left: PhysicalProgress.right
         anchors.top: PhysicalResist.top
         margin-left: 5
@@ -482,7 +482,7 @@ UIWidget
         margin-left: 5
       UIWidget
         id: FireResist
-        image-source: /game_cyclopedia/images/bestiary/icons/monster-icon-fire-resist
+        image-source: /images/icons/monster-icon-fire-resist
         anchors.left: EarthProgress.right
         anchors.top: PhysicalResist.top
         margin-left: 5
@@ -493,7 +493,7 @@ UIWidget
         margin-left: 5
       UIWidget
         id: DeathResist
-        image-source: /game_cyclopedia/images/bestiary/icons/monster-icon-death-resist
+        image-source: /images/icons/monster-icon-death-resist
         anchors.left: FireProgress.right
         anchors.top: PhysicalResist.top
         margin-left: 5
@@ -504,7 +504,7 @@ UIWidget
         margin-left: 5
       UIWidget
         id: EnergyResist
-        image-source: /game_cyclopedia/images/bestiary/icons/monster-icon-energy-resist
+        image-source: /images/icons/monster-icon-energy-resist
         anchors.left: ProgressBorder3.right
         anchors.top: PhysicalResist.bottom
         margin-top: 10
@@ -518,7 +518,7 @@ UIWidget
         
       UIWidget
         id: HolyResist
-        image-source: /game_cyclopedia/images/bestiary/icons/monster-icon-holy-resist
+        image-source: /images/icons/monster-icon-holy-resist
         anchors.left: EnergyProgress.right
         anchors.top: EnergyResist.top
         margin-left: 5
@@ -529,7 +529,7 @@ UIWidget
         margin-left: 5
       UIWidget
         id: IceResist
-        image-source: /game_cyclopedia/images/bestiary/icons/monster-icon-ice-resist
+        image-source: /images/icons/monster-icon-ice-resist
         anchors.left: HolyProgress.right
         anchors.top: EnergyResist.top
         margin-left: 5
@@ -540,7 +540,7 @@ UIWidget
         margin-left: 5
       UIWidget
         id: HealingResist
-        image-source: /game_cyclopedia/images/bestiary/icons/monster-icon-healing-resist
+        image-source: /images/icons/monster-icon-healing-resist
         anchors.left: IceProgress.right
         anchors.top: EnergyResist.top
         margin-left: 5

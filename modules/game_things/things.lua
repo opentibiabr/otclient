@@ -86,6 +86,7 @@ local function load(version)
         -- sound files are optional, this means that failing to load them
         -- will not block logging into game
         g_sounds.loadClientFiles(resolvepath(string.format('/sounds/%d/', version)))
+        g_modules.updateModulesByClientVersion(version)
         return
     end
 

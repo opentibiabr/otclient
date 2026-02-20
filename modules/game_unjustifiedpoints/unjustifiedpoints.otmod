@@ -3,6 +3,7 @@ Module
   description: View unjustified points
   author: Summ
   sandboxed: true
+  minClientVersion: 1053
   scripts: [ unjustifiedpoints ]
   @onLoad: init()
   @onUnload: terminate()
