@@ -253,7 +253,15 @@ void UIWidget::parseBaseStyle(const OTMLNodePtr& styleNode)
             std::string fieldName = node->tag().substr(1);
             std::string fieldOrigin = "@" + node->source() + ": [" + node->tag() + "]";
 
-            g_lua.evaluateExpression(node->value(), fieldOrigin);
+            std::string fieldValue = node->value();
+            stdext::trim(fieldValue);
+
+            if (!fieldValue.empty() && fieldValue.front() == '#') {
+                g_lua.pushString(fieldValue);
+            } else {
+                g_lua.evaluateExpression(fieldValue, fieldOrigin);
+            }
+
             luaSetField(fieldName);
         }
     }

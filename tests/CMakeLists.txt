@@ -52,3 +52,4 @@ endfunction()
 
 add_subdirectory(map)
 add_subdirectory(stdext)
+add_subdirectory(otml)
