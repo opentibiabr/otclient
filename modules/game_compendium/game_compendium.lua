@@ -65,6 +65,15 @@ local function wrapHtmlContent(text)
     return text
 end
 
+-- Accepts either a plain string or an array-of-lines (the format used in compendium.json
+-- for readability) and always returns a single HTML string.
+local function resolveMessage(msg)
+    if type(msg) == "table" then
+        return table.concat(msg, "\n")
+    end
+    return msg or ""
+end
+
 -- Controller setup
 compendiumController = Controller:new()
 
@@ -281,8 +290,28 @@ function buildNewsUI(newsData)
     local categories = {}
     local uniqueCategories = {}
     local contentWidget = compendiumController:findWidget("#optionsTabContent")
+
+    -- Sort MAJOR UPDATES entries by publishdate descending (newest first),
+    -- keeping all other entries in their original positions.
+    local gamenews = newsData.gamenews
+    local majorUpdates = {}
+    local majorPositions = {}
+    for i, entry in ipairs(gamenews) do
+        if entry.category == "MAJOR UPDATES" then
+            table.insert(majorUpdates, entry)
+            table.insert(majorPositions, i)
+        end
+    end
+    table.sort(majorUpdates, function(a, b)
+        return (a.publishdate or 0) > (b.publishdate or 0)
+    end)
+    local sortedNews = {}
+    for i, v in ipairs(gamenews) do sortedNews[i] = v end
+    for i, pos in ipairs(majorPositions) do
+        sortedNews[pos] = majorUpdates[i]
+    end
     
-    for _, entry in ipairs(newsData.gamenews) do
+    for _, entry in ipairs(sortedNews) do
         if entry.category then
             uniqueCategories[entry.category] = true
         end
@@ -301,7 +330,7 @@ function buildNewsUI(newsData)
         currentContentWidget = contentWidget
     end
 
-    for _, entry in ipairs(newsData.gamenews) do
+    for _, entry in ipairs(sortedNews) do
         local catFlags = {
             category = entry.category,
             type = entry.type,
@@ -310,7 +339,7 @@ function buildNewsUI(newsData)
         local entryType = entry.type:lower()
         if entryType == "group header" then
             categories[entry.id] = treeView:addCategory(entry.headline, nil, function()
-                setContent(entry.id, entry.headline, entry.message)
+                setContent(entry.id, entry.headline, resolveMessage(entry.message))
             end, nil, catFlags)
         elseif entryType == "regular" or entryType == "returner" then
             local parentCategory = categories[entry.groupheaderid]
@@ -319,11 +348,11 @@ function buildNewsUI(newsData)
                     catFlags.category = parentCategory.flags.category
                 end
                 treeView:addSubCategory(parentCategory, entry.headline, nil, function()
-                    setContent(entry.id, entry.headline, entry.message)
+                    setContent(entry.id, entry.headline, resolveMessage(entry.message))
                 end, nil, catFlags)
             else
                 categories[entry.id] = treeView:addCategory(entry.headline, nil, function()
-                    setContent(entry.id, entry.headline, entry.message)
+                    setContent(entry.id, entry.headline, resolveMessage(entry.message))
                 end, nil, catFlags)
             end
         end
