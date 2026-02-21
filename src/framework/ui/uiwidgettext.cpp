@@ -306,6 +306,14 @@ void UIWidget::parseTextStyle(const OTMLNodePtr& styleNode)
             setTextOverflowLength(node->value<uint16_t>());
         else if (node->tag() == "text-overflow-character")
             setTextOverflowCharacter(node->value<std::string>());
+        else if (tag == "text-decoration") {
+            m_textDecorationUnderline = (node->value<std::string>() == "underline");
+            m_textCachedScreenCoords = {};
+        }
+        else if (tag == "text-decoration-style") {
+            m_textDecorationSolid = (node->value<std::string>() != "dotted");
+            m_textCachedScreenCoords = {};
+        }
     }
 }
 
@@ -329,7 +337,7 @@ void UIWidget::drawText(const Rect& screenCoords)
         auto coords = Rect(screenCoords.topLeft().scale(m_fontScale), screenCoords.bottomRight().scale(m_fontScale));
         coords.translate(textOffset);
 
-        if (hasEventListener(EVENT_TEXT_CLICK) || hasEventListener(EVENT_TEXT_HOVER))
+        if (hasEventListener(EVENT_TEXT_CLICK) || hasEventListener(EVENT_TEXT_HOVER) || m_textDecorationUnderline)
             cacheRectToWord();
 
         if (m_drawTextColors.empty())
@@ -730,13 +738,18 @@ static void buildTextUnderline(Rect& wordRect, CoordsBuffer& textUnderlineCoords
     }
 }
 
+static void buildSolidUnderline(const Rect& lineRect, int underlineY, CoordsBuffer& textUnderlineCoords) {
+    if (lineRect.width() > 0)
+        textUnderlineCoords.addRect(Rect(lineRect.x(), underlineY, lineRect.width(), 1));
+}
+
 void UIWidget::updateRectToWord(const std::vector<Rect>& glypsCoords)
 {
     m_rectToWord.clear();
     if (m_textUnderline)
         m_textUnderline->clear();
 
-    if (glypsCoords.empty() || m_textEvents.empty())
+    if (glypsCoords.empty() || (m_textEvents.empty() && !m_textDecorationUnderline))
         return;
 
     if (!m_textUnderline)
@@ -803,5 +816,44 @@ void UIWidget::updateRectToWord(const std::vector<Rect>& glypsCoords)
             if (!textEvent.noUnderline)
                 buildTextUnderline(wordRect, *m_textUnderline);
         }
+    }
+
+    if (m_textDecorationUnderline && m_font) {
+        // Use the font's full line height so the underline sits at the bottom
+        // of the cell regardless of individual glyph bitmap heights.
+        const int fontLineH = m_font->getGlyphHeight();
+        int lineStartY = -1;
+        Rect lineXRect;
+
+        auto flushLine = [&]() {
+            if (!lineXRect.isValid() || lineStartY < 0)
+                return;
+            const int underlineY = lineStartY + fontLineH;
+            if (m_textDecorationSolid)
+                buildSolidUnderline(lineXRect, underlineY, *m_textUnderline);
+            else {
+                Rect dotRect(lineXRect.x(), underlineY, lineXRect.width(), 2);
+                buildTextUnderline(dotRect, *m_textUnderline);
+            }
+            lineXRect = {};
+            lineStartY = -1;
+        };
+
+        for (size_t i = 0; i < glypsCoords.size(); ++i) {
+            if (i < m_drawText.size() && m_drawText[i] == '\n') {
+                flushLine();
+                continue;
+            }
+            const auto& r = glypsCoords[i];
+            if (!r.isValid())
+                continue;
+            if (lineStartY < 0)
+                lineStartY = r.y();
+            if (!lineXRect.isValid())
+                lineXRect = r;
+            else
+                lineXRect.expand(0, r.width(), 0, 0);
+        }
+        flushLine();
     }
 }
