@@ -28,6 +28,7 @@
 #include "framework/otml/otmlnode.h"
 #include "framework/ui/uimanager.h"
 #include "framework/ui/uiwidget.h"
+#include <functional>
 
 HtmlManager g_html;
 
@@ -482,12 +483,48 @@ UIWidgetPtr HtmlManager::readNode(DataRoot& root, const UIWidgetPtr& parent, con
             script = el->getText();
             scriptStr = el->toString();
         } else if (el->getTag() == "html") {
+            // Tags whose layout dimensions come from their loaded resource (image texture,
+            // video frame…) rather than from text metrics.  Propagating "font" (or any
+            // text-specific inheritable property) to these elements would trigger setFont()
+            // → scheduleHtmlTask(PropUpdateSize) → applyFitContentRecursive which resets
+            // their layout size to 0 before the texture has loaded, breaking float/block
+            // paragraph clearance and vertical-centering inside table cells.
+            static const std::unordered_set<std::string_view> kReplacedContentTags = {
+                "img", "video", "canvas", "audio", "embed", "iframe", "object", "picture", "source"
+            };
+
+            // Recursive helper that mirrors setChildrenStyles but skips replaced-content
+            // elements so their layout dimensions are left intact.
+            std::function<void(HtmlNode*, const std::string&, const std::string&, const std::string&)>
+            propagateToTextBearing = [&](HtmlNode* node,
+                                         const std::string& styleName,
+                                         const std::string& style,
+                                         const std::string& value)
+            {
+                for (const auto& child : node->getChildren()) {
+                    if (kReplacedContentTags.count(child->getTag()))
+                        continue;  // skip: font/color have no effect here and cause layout resets
+                    auto& styleMap = child->getStyles()[styleName];
+                    auto it = styleMap.find(style);
+                    if (it == styleMap.end() || !it->second.important) {
+                        styleMap[style] = { value, parent->getHtmlId() };
+                        if (child->getType() == NodeType::Element)
+                            child->getInheritableStyles()[styleName][style] = value;
+                        propagateToTextBearing(child.get(), styleName, style, value);
+                    }
+                }
+            };
+
             for (const auto& n : el->getChildren()) {
                 if (isDynamic) {
                     n->getInheritableStyles() = parent->getHtmlNode()->getInheritableStyles();
                     for (const auto& [styleName, styleMap] : n->getInheritableStyles()) {
-                        for (auto& [style, value] : styleMap)
+                        for (auto& [style, value] : styleMap) {
                             n->getStyles()[styleName][style] = { value , parent->getHtmlId() };
+                            // Propagate to all text-bearing descendants in the dynamic content
+                            // tree (but not to replaced-content elements like <img>).
+                            propagateToTextBearing(n.get(), styleName, style, value);
+                        }
                     }
                 }
                 widget = createWidgetFromNode(n, parent, textNodes, htmlId, moduleName, widgets);
