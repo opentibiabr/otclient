@@ -376,6 +376,14 @@ void applyAttributesAndStyles(UIWidget* widget, HtmlNode* node, std::unordered_m
                 node->getAttrStyles().emplace("vertical-align", alignVal);
             }
         }
+        if (tag == "img") {
+            // Map width/height HTML attributes to CSS layout dimensions so the img
+            // widget occupies proper space in the flow layout.
+            // image-width/image-height (set via IMG_ATTR_TRANSLATED) control texture
+            // rendering; these CSS width/height properties control the layout box size.
+            mapPresAttr("width",  "width");
+            mapPresAttr("height", "height");
+        }
     }
 
     // text node depends on style

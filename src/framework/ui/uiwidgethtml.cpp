@@ -1837,22 +1837,31 @@ void UIWidget::applyAnchorAlignment() {
         bool anchored = true;
         const auto isInline = isInlineLike(m_displayType);
 
+        // After a block-level sibling (e.g. <br>, <div>) the inline flow restarts at the
+        // parent's own edge, not at the block's right/center edge (which is the parent's
+        // right edge since blocks fill 100% width).  Without this guard every inline
+        // widget following a <br> would be anchored to br.AnchorRight == parent.AnchorRight
+        // and rendered entirely off-screen to the right.
+        const bool prevIsBlock = isInline
+            && ctx.lastNormalWidget
+            && !isInlineLike(ctx.lastNormalWidget->getDisplay());
+
         if (isInline && m_parent->getTextAlign() == Fw::AlignCenter ||
             !isInline && m_parent->getJustifyItems() == JustifyItemsType::Center) {
-            if (ctx.lastNormalWidget)
+            if (ctx.lastNormalWidget && !prevIsBlock)
                 addAnchor(Fw::AnchorLeft, ctx.lastNormalWidget->getId().c_str(), Fw::AnchorRight);
             else
                 addAnchor(Fw::AnchorHorizontalCenter, "parent", Fw::AnchorHorizontalCenter);
         } else if (m_positionType != PositionType::Absolute) {
             if (isInline && m_parent->getTextAlign() == Fw::AlignLeft ||
                 !isInline && m_parent->getJustifyItems() == JustifyItemsType::Left) {
-                if (ctx.lastNormalWidget)
+                if (ctx.lastNormalWidget && !prevIsBlock)
                     addAnchor(Fw::AnchorLeft, ctx.lastNormalWidget->getId().c_str(), Fw::AnchorRight);
                 else
                     addAnchor(Fw::AnchorLeft, "parent", Fw::AnchorLeft);
             } else if (isInline && m_parent->getTextAlign() == Fw::AlignRight ||
                        !isInline && m_parent->getJustifyItems() == JustifyItemsType::Right) {
-                if (ctx.lastNormalWidget)
+                if (ctx.lastNormalWidget && !prevIsBlock)
                     addAnchor(Fw::AnchorRight, "next", Fw::AnchorLeft);
                 else
                     addAnchor(Fw::AnchorRight, "parent", Fw::AnchorRight);
