@@ -263,6 +263,17 @@ summary {
   display: list-item;
 }
 
+/* === Inline semantic / phrasing content === */
+em,
+i {
+  font-style: italic;
+}
+
+strong,
+b {
+  font-weight: bold;
+}
+
 /* === Hidden elements === */
 script,
 style,
