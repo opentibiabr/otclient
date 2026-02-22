@@ -314,6 +314,28 @@ void UIWidget::parseTextStyle(const OTMLNodePtr& styleNode)
             m_textDecorationSolid = (node->value<std::string>() != "dotted");
             m_textCachedScreenCoords = {};
         }
+        else if (tag == "font-style") {
+            // Try to load a dedicated italic variant of the current font.
+            // Convention: <fontname>-italic (same as how headings use <fontname>-bold).
+            // Falls back silently if no such font is registered.
+            const auto val = node->value<std::string>();
+            if ((val == "italic" || val == "oblique") && m_font && ttfFontName.empty()) {
+                const std::string italicName = m_font->getName() + "-italic";
+                if (g_fonts.fontExists(italicName))
+                    setFont(italicName);
+            }
+        }
+        else if (tag == "font-weight") {
+            // Try to load a dedicated bold variant of the current font.
+            // Convention: <fontname>-bold.
+            // Falls back silently if no such font is registered.
+            const auto val = node->value<std::string>();
+            if (val == "bold" && m_font && ttfFontName.empty()) {
+                const std::string boldName = m_font->getName() + "-bold";
+                if (g_fonts.fontExists(boldName))
+                    setFont(boldName);
+            }
+        }
     }
 }
 
