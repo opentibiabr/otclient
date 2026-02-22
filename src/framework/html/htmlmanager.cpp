@@ -365,6 +365,17 @@ void applyAttributesAndStyles(UIWidget* widget, HtmlNode* node, std::unordered_m
             tag == "h4" || tag == "h5" || tag == "h6") {
             mapPresAttr("align", "text-align");
         }
+        if (tag == "img" || tag == "video" || tag == "object" || tag == "embed") {
+            // align="middle/top/bottom" on replaced content is a vertical-alignment hint,
+            // not text-align.  Map it to the vertical-align CSS property so the anchor
+            // layout code can vertically centre the image relative to its inline siblings.
+            const auto& alignVal = node->getAttr("align");
+            if (alignVal == "middle" || alignVal == "center") {
+                node->getAttrStyles().emplace("vertical-align", "middle");
+            } else if (alignVal == "top" || alignVal == "bottom") {
+                node->getAttrStyles().emplace("vertical-align", alignVal);
+            }
+        }
     }
 
     // text node depends on style

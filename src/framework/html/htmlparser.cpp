@@ -36,6 +36,14 @@ static const std::unordered_set<std::string> kVoid = {
     "area","base","br","col","embed","hr","img","input","link","meta","source","track","wbr"
 };
 
+// Inline phrasing elements: when one of these is adjacent to text without whitespace,
+// inject a space at the boundary so "check the<a>link</a>here" renders correctly.
+static const std::unordered_set<std::string> kInlinePhrasing = {
+    "a","abbr","b","bdi","bdo","cite","code","data","del","dfn",
+    "em","i","ins","kbd","mark","q","rp","rt","ruby","s",
+    "samp","small","span","strong","sub","sup","time","u","var"
+};
+
 static const std::unordered_set<std::string> kPCloseOn = {
     "address","article","aside","blockquote","div","dl","fieldset","footer","form",
     "h1","h2","h3","h4","h5","h6","header","hgroup","hr","main","nav","ol","p",
@@ -181,6 +189,19 @@ HtmlNodePtr parseHtml(const std::string& html) {
             }
         }
 
+        // Inject a space into the preceding text node when an inline element
+        // opens without any whitespace after the preceding text content.
+        // e.g. "check the<a>link</a>" → "check the <a>link</a>"
+        if (node->type == NodeType::Element && kInlinePhrasing.count(node->tag)) {
+            if (!parent->children.empty()) {
+                auto last = parent->children.back();
+                if (last->type == NodeType::Text && !last->isExpression()
+                    && !last->text.empty() && !is_space((unsigned char)last->text.back())) {
+                    last->text += ' ';
+                }
+            }
+        }
+
         if (!parent->children.empty()) {
             auto last = parent->children.back();
             last->next = node;
@@ -252,9 +273,21 @@ HtmlNodePtr parseHtml(const std::string& html) {
             return; // drop standalone whitespace
         }
 
+        // Inject a leading space when text immediately follows a closing inline element
+        // with no whitespace in between.
+        // e.g. "<a>link</a>here" → "<a>link</a> here"
+        std::string adjustedLiteral = literal;
+        if (!parent->children.empty()) {
+            auto last = parent->children.back();
+            if (last->type == NodeType::Element && kInlinePhrasing.count(last->tag)
+                && !literal.empty() && !is_space((unsigned char)literal[0])) {
+                adjustedLiteral = ' ' + literal;
+            }
+        }
+
         auto t = std::make_shared<HtmlNode>();
         t->type = NodeType::Text;
-        t->text = literal;
+        t->text = adjustedLiteral;
         t->setExpression(false);
         push_node(t);
     };

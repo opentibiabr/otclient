@@ -1872,13 +1872,34 @@ void UIWidget::applyAnchorAlignment() {
             }
         }
 
+        // An inline/inline-block element with its own vertical-align: middle should be
+        // vertically centred on the same line as its adjacent inline siblings (e.g.
+        // <img align="middle"> sitting next to a text node).
+        // The relationship is bidirectional: if the PREVIOUS sibling has vertical-align:middle
+        // (e.g. the text node that follows <img align="middle">), the current widget must
+        // also centre on it — otherwise only the sibling before the image benefits.
+        const bool selfVAlignMiddle = m_htmlNode
+            && (m_htmlNode->getStyle("vertical-align") == "middle"
+                || m_htmlNode->getStyle("vertical-align") == "center");
+
+        const bool prevVAlignMiddle = ctx.lastNormalWidget
+            && ctx.lastNormalWidget->getHtmlNode()
+            && (ctx.lastNormalWidget->getHtmlNode()->getStyle("vertical-align") == "middle"
+                || ctx.lastNormalWidget->getHtmlNode()->getStyle("vertical-align") == "center");
+
         if (anchored) {
             if (!ctx.lastNormalWidget) {
-                addAnchor(Fw::AnchorTop, "parent", Fw::AnchorTop);
-            } else {
-                if (isInlineLike(m_displayType) && isInlineLike(ctx.lastNormalWidget->getDisplay()))
-                    addAnchor(Fw::AnchorTop, ctx.lastNormalWidget->getId().c_str(), Fw::AnchorTop);
+                if (selfVAlignMiddle)
+                    addAnchor(Fw::AnchorVerticalCenter, "parent", Fw::AnchorVerticalCenter);
                 else
+                    addAnchor(Fw::AnchorTop, "parent", Fw::AnchorTop);
+            } else {
+                if (isInlineLike(m_displayType) && isInlineLike(ctx.lastNormalWidget->getDisplay())) {
+                    if (selfVAlignMiddle || prevVAlignMiddle)
+                        addAnchor(Fw::AnchorVerticalCenter, ctx.lastNormalWidget->getId().c_str(), Fw::AnchorVerticalCenter);
+                    else
+                        addAnchor(Fw::AnchorTop, ctx.lastNormalWidget->getId().c_str(), Fw::AnchorTop);
+                } else
                     addAnchor(Fw::AnchorTop, ctx.lastNormalWidget->getId().c_str(), Fw::AnchorBottom);
             }
             return;
