@@ -1882,11 +1882,16 @@ void UIWidget::applyAnchorAlignment() {
         }
 
         // An inline/inline-block element with its own vertical-align: middle should be
-        // vertically centred on the same line as its adjacent inline siblings (e.g.
-        // <img align="middle"> sitting next to a text node).
-        // The relationship is bidirectional: if the PREVIOUS sibling has vertical-align:middle
-        // (e.g. the text node that follows <img align="middle">), the current widget must
-        // also centre on it — otherwise only the sibling before the image benefits.
+        // vertically centred within its containing block (the parent), not relative to an
+        // adjacent inline sibling. Since applyFitContentRecursive sizes the parent block to
+        // the tallest inline child (e.g. a 41px image), anchoring to parent.VCenter places
+        // every vertical-align:middle element at the correct visual midpoint of the line.
+        //
+        // Three cases must all centre on parent.VCenter:
+        //  • selfVAlignMiddle  – this widget itself has vertical-align:middle (the image)
+        //  • prevVAlignMiddle  – previous sibling had it (text AFTER the image)
+        //  • nextVAlignMiddle  – a following inline sibling has it (text BEFORE the image,
+        //                        e.g. "Press" that precedes <img align="middle">)
         const bool selfVAlignMiddle = m_htmlNode
             && (m_htmlNode->getStyle("vertical-align") == "middle"
                 || m_htmlNode->getStyle("vertical-align") == "center");
@@ -1896,16 +1901,39 @@ void UIWidget::applyAnchorAlignment() {
             && (ctx.lastNormalWidget->getHtmlNode()->getStyle("vertical-align") == "middle"
                 || ctx.lastNormalWidget->getHtmlNode()->getStyle("vertical-align") == "center");
 
+        // Scan forward through same-line inline siblings to detect a following
+        // vertical-align:middle element (e.g. image that comes after this text node).
+        const bool nextVAlignMiddle = [&]() -> bool {
+            if (!isInlineLike(m_displayType) || !m_parent) return false;
+            bool passed = false;
+            for (const auto& sp : m_parent->getChildren()) {
+                UIWidget* c = sp.get();
+                if (!passed) {
+                    if (c == this) passed = true;
+                    continue;
+                }
+                if (skipInFlow(c)) continue;
+                if (!isInlineLike(c->getDisplay())) break; // hit a block sibling, stop
+                if (c->getHtmlNode()
+                        && (c->getHtmlNode()->getStyle("vertical-align") == "middle"
+                            || c->getHtmlNode()->getStyle("vertical-align") == "center"))
+                    return true;
+            }
+            return false;
+        }();
+
+        const bool anyVAlignMiddle = selfVAlignMiddle || prevVAlignMiddle || nextVAlignMiddle;
+
         if (anchored) {
             if (!ctx.lastNormalWidget) {
-                if (selfVAlignMiddle)
+                if (anyVAlignMiddle)
                     addAnchor(Fw::AnchorVerticalCenter, "parent", Fw::AnchorVerticalCenter);
                 else
                     addAnchor(Fw::AnchorTop, "parent", Fw::AnchorTop);
             } else {
                 if (isInlineLike(m_displayType) && isInlineLike(ctx.lastNormalWidget->getDisplay())) {
-                    if (selfVAlignMiddle || prevVAlignMiddle)
-                        addAnchor(Fw::AnchorVerticalCenter, ctx.lastNormalWidget->getId().c_str(), Fw::AnchorVerticalCenter);
+                    if (anyVAlignMiddle)
+                        addAnchor(Fw::AnchorVerticalCenter, "parent", Fw::AnchorVerticalCenter);
                     else
                         addAnchor(Fw::AnchorTop, ctx.lastNormalWidget->getId().c_str(), Fw::AnchorTop);
                 } else
