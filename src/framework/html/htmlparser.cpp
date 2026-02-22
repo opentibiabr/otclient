@@ -36,12 +36,15 @@ static const std::unordered_set<std::string> kVoid = {
     "area","base","br","col","embed","hr","img","input","link","meta","source","track","wbr"
 };
 
-// Inline phrasing elements: when one of these is adjacent to text without whitespace,
-// inject a space at the boundary so "check the<a>link</a>here" renders correctly.
+// Inline phrasing / replaced elements: when one of these is adjacent to text without
+// whitespace, inject a space at the boundary so "check the<a>link</a>here" and
+// "Press<img .../>or click" both get a separating space automatically.
 static const std::unordered_set<std::string> kInlinePhrasing = {
     "a","abbr","b","bdi","bdo","cite","code","data","del","dfn",
     "em","i","ins","kbd","mark","q","rp","rt","ruby","s",
-    "samp","small","span","strong","sub","sup","time","u","var"
+    "samp","small","span","strong","sub","sup","time","u","var",
+    // void inline replaced elements
+    "img","audio","video","canvas","embed","object"
 };
 
 static const std::unordered_set<std::string> kPCloseOn = {
