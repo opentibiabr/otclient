@@ -1,0 +1,152 @@
+<style>
+    /* ===== WINDOW STRUCTURE - DO NOT MODIFY ===== */
+    .modal-window {
+        width: 937px;
+        height: 637px;
+        font: Verdana Bold-11px;
+        font-size: 10;
+        color: #C0C0C0;
+    }
+
+    /* Layout Sections */
+    .top-section {
+        padding-left: 2px;
+        padding-top: 2px;
+        margin-bottom: 10px;
+        height: 40px; 
+        --border-width-top: 1; --border-color-top: black; --border-width-left: 1; --border-color-left: black; --border-width-bottom: 1; --border-color-bottom: #747474; --border-width-right: 1; --border-color-right: #747474;
+    }
+
+    .middle-section {
+        height: 523px;
+    }
+
+    .content-panel {
+        width: 78%;
+        height: 100%;
+        min-width: 730px;
+        min-height: 523px;
+        float: right;
+        margin-left: 0px;
+        margin-right: 0px;
+        box-sizing: border-box;
+    }
+
+    /* Left Sidebar (25%) */
+    .sidebar-panel {
+        width: 21%;
+        height: 100%;
+        float: left;
+        --image-border: 3;
+        --image-source: /images/ui/2pixel_up_frame_borderimage_dark;
+        overflow: scroll;
+        padding-top: 15px;
+        padding-bottom: 15px;
+        padding-left: 2px;
+    }
+
+    .minipanel {
+        width: 100%;
+        height: 100%;
+        margin: 0px;
+        min-width: 730px;
+        min-height: 523px;
+        box-sizing: border-box;
+    }
+
+    /* Internal message area */
+    .modal-message {
+        width: 100%;
+        height: 100%;
+        padding: 0;
+        box-sizing: border-box;
+        overflow: scroll;
+        --border-width-top: 1; --border-color-top: black; --border-width-left: 1; --border-color-left: black; --border-width-bottom: 1; --border-color-bottom: #747474; --border-width-right: 1; --border-color-right: #747474;
+    }
+    /* Ensure optionsTabContent uses full available width */
+    #optionsTabContent {
+        width: 100%;
+        height: 100%;
+        padding-left: 10;
+        padding-right: 10;
+        padding-top: 10;
+        padding-bottom: 10;
+        box-sizing: border-box;
+    }
+    .modal-separator {
+        margin-top: 5px;
+        margin-bottom: 10px;
+        width: 100%;
+        border-color: #3e3e3e;
+        height: 2px;
+    }
+    
+    .footer-button {
+        float: right;
+        margin-right: 5px;
+        font: cipsoftFont;
+    }
+
+    /* tbody/thead/tfoot: assign correct display types so OTClient table layout handles them natively */
+    tbody {
+        display: table-row-group;
+    }
+
+    /* <center> is a presentational block element that centers its inline content.
+       text-align is inheritable so it cascades into all descendant text nodes.
+       Block children with explicit pixel widths (e.g. <table width="N">) are centered
+       by applyBlock() which detects this parent text-align: center + explicit width. */
+    center {
+        display: block;
+        text-align: center;
+    }
+
+    thead {
+        display: table-header-group;
+    }
+
+    tfoot {
+        display: table-footer-group;
+    }
+    
+    a {
+        text-decoration: underline;
+    }
+
+    p {
+        margin: 5px;
+    }
+
+</style>
+
+<html>
+<window id="modalDialog" placement="center" class="modal-window" title="Compendium">
+    
+    <!-- Top Section: Grid/Menu Area -->
+    <div id="typeCharmPanel" class="top-section" 
+         layout="type: grid; cell-spacing: 1; num-columns: 5; num-lines: 2; fit-children: false; flow: true; cell-width: 155; cell-height: 36">
+         <!-- Items can be added here -->
+    </div>
+
+    <!-- Middle Section: Split View -->
+    <div class="middle-section">
+        <!-- Left Panel -->
+        <div id="optionsTabBar" class="sidebar-panel UIScrollArea" layout="type: verticalBox"></div>
+
+        <!-- Right Panel -->
+        <div class="content-panel">
+            <window id="minipanel" class="minipanel" title="Compendium">
+                <div id="optionsTabContent" class="modal-message UIScrollArea" vertical-scrollbar-style="ScrollBarValueDefault">
+                </div>
+            </window>
+        </div>
+    </div>
+<label id="date"></label>
+    <!-- Bottom Section: Separator and Close Button -->
+    <hr class="modal-separator" />
+    <button id="closeButton" class="footer-button" text="Close" placement="bottom-right">
+    </button>
+
+</window>
+
+</html>

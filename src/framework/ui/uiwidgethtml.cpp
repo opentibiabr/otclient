@@ -382,13 +382,55 @@ namespace {
     }
 
     static inline void applyBlock(UIWidget* self, const FlowContext& ctx, bool topCleared) {
+        // Horizontal centering for block elements:
+        // (a) CSS standard: margin-left: auto + margin-right: auto
+        // (b) Legacy <center> behavior: parent has text-align: center AND this block has an
+        //     explicit pixel width (not auto-fill). This covers <table width="N"> inside <center>.
+        //     Auto-width blocks like <p> are intentionally excluded — they fill the parent and
+        //     rely on text-align: center cascading to their inline children instead.
+        const bool marginAutoCenter = self->isMarginLeftAuto() && self->isMarginRightAuto();
+        const bool centerTagCenter = !marginAutoCenter
+            && self->getParent()
+            && self->getParent()->getTextAlign() == Fw::AlignCenter
+            && self->getWidthHtml().unit == Unit::Px
+            && self->getWidthHtml().valueCalculed > -1;  // must be explicitly set
+        const bool centerH = marginAutoCenter || centerTagCenter;
+
+        // Auto-width blocks (no explicit CSS width) fill 100% of their parent — standard
+        // CSS block layout. Blocks with an explicit pixel, percentage, or fit-content width
+        // keep their own sizing and are NOT stretched by AnchorRight.
+        // Only display:block / list-item flow boxes naturally fill 100%; table and others
+        // do not (tables shrink to fit their content).
+        // valueCalculed > -1 means an explicit px CSS width was applied (default is -1).
+        const auto& wHtml = self->getWidthHtml();
+        const bool selfHasExplicitWidth = wHtml.valueCalculed > -1
+            || wHtml.unit == Unit::Percent
+            || wHtml.unit == Unit::FitContent;
+        const DisplayType selfDisplay = self->getDisplay();
+        const bool fillsParentWidth = !selfHasExplicitWidth
+            && (selfDisplay == DisplayType::Block || selfDisplay == DisplayType::ListItem);
+
         if (ctx.lastNormalWidget && isInlineLike(ctx.lastNormalWidget->getDisplay())) {
             if (auto* tallest = ctx.tallestInlineWidget) {
                 self->addAnchor(Fw::AnchorLeft, "parent", Fw::AnchorLeft);
+                if (fillsParentWidth)
+                    self->addAnchor(Fw::AnchorRight, "parent", Fw::AnchorRight);
                 if (!topCleared)
                     self->addAnchor(Fw::AnchorTop, tallest->getId().c_str(), Fw::AnchorBottom);
                 return;
             }
+        }
+
+        if (centerH) {
+            // Center horizontally; stack vertically as normal blocks
+            self->addAnchor(Fw::AnchorHorizontalCenter, "parent", Fw::AnchorHorizontalCenter);
+            if (!topCleared) {
+                if (!ctx.lastNormalWidget)
+                    self->addAnchor(Fw::AnchorTop, "parent", Fw::AnchorTop);
+                else
+                    self->addAnchor(Fw::AnchorTop, ctx.lastNormalWidget->getId().c_str(), Fw::AnchorBottom);
+            }
+            return;
         }
 
         if (!ctx.lastNormalWidget) {
@@ -400,10 +442,15 @@ namespace {
                 self->addAnchor(Fw::AnchorRight, "parent", Fw::AnchorRight);
                 if (!topCleared) self->addAnchor(Fw::AnchorTop, "parent", Fw::AnchorTop);
             } else {
-                self->addAnchor(Fw::AnchorLeft, "parent", Fw::AnchorLeft); self->addAnchor(Fw::AnchorTop, "parent", Fw::AnchorTop);
+                self->addAnchor(Fw::AnchorLeft, "parent", Fw::AnchorLeft);
+                if (fillsParentWidth)
+                    self->addAnchor(Fw::AnchorRight, "parent", Fw::AnchorRight);
+                if (!topCleared) self->addAnchor(Fw::AnchorTop, "parent", Fw::AnchorTop);
             }
         } else {
             self->addAnchor(Fw::AnchorLeft, "parent", Fw::AnchorLeft);
+            if (fillsParentWidth)
+                self->addAnchor(Fw::AnchorRight, "parent", Fw::AnchorRight);
             if (!topCleared) self->addAnchor(Fw::AnchorTop, ctx.lastNormalWidget->getId().c_str(), Fw::AnchorBottom);
         }
     }
@@ -726,10 +773,22 @@ namespace {
         if (maxLineWidth > width) width = maxLineWidth;
         height += totalHeight;
 
+        // Auto-fill block elements (width:auto, display:block/list-item) derive their width
+        // from the containing block, not from their content. Do NOT stamp a content-driven
+        // width onto them here — updateDimension() in the scheduled layout batch will apply
+        // the correct parent-constrained width. Without this guard, applyFitContentRecursive
+        // would expand them to their unconstrained natural content width (e.g. unbroken text),
+        // clear pendingUpdate, and cause updateDimension() to skip them entirely, leaving
+        // paragraphs/centers wider than their containing table cell.
+        const bool isAutoFillWidth =
+            w->getWidthHtml().unit == Unit::Auto &&
+            (w->getDisplay() == DisplayType::Block || w->getDisplay() == DisplayType::ListItem);
+
         const bool widthNeedsUpdate =
-            w->getWidthHtml().needsUpdate(Unit::Auto, SIZE_VERSION_COUNTER) ||
-            w->getWidthHtml().needsUpdate(Unit::Percent, SIZE_VERSION_COUNTER) ||
-            w->getWidthHtml().needsUpdate(Unit::FitContent, SIZE_VERSION_COUNTER);
+            !isAutoFillWidth &&
+            (w->getWidthHtml().needsUpdate(Unit::Auto, SIZE_VERSION_COUNTER) ||
+             w->getWidthHtml().needsUpdate(Unit::Percent, SIZE_VERSION_COUNTER) ||
+             w->getWidthHtml().needsUpdate(Unit::FitContent, SIZE_VERSION_COUNTER));
 
         const bool heightNeedsUpdate =
             w->getHeightHtml().needsUpdate(Unit::Auto, SIZE_VERSION_COUNTER) ||
@@ -1438,7 +1497,24 @@ void UIWidget::updateSize() {
 
     if (m_htmlNode && (m_htmlNode->getType() == NodeType::Text || m_htmlNode->getStyle("inherit-text") == "true")) {
         setProp(PropTextVerticalAutoResize, true);
-        if (m_parent->m_width.unit == Unit::FitContent) {
+
+        // If this text node shares a block parent with inline element siblings (e.g. <a> tags),
+        // size it to fit its actual text content instead of filling the full parent width.
+        // Filling the full width would push those inline siblings past the right edge.
+        bool hasInlineElementSibling = false;
+        if (m_parent->m_width.unit != Unit::FitContent) {
+            for (const auto& sibling : m_parent->getChildren()) {
+                if (sibling.get() == this) continue;
+                if (sibling->getHtmlNode()
+                        && sibling->getHtmlNode()->getType() == NodeType::Element
+                        && isInlineLike(sibling->getDisplay())) {
+                    hasInlineElementSibling = true;
+                    break;
+                }
+            }
+        }
+
+        if (m_parent->m_width.unit == Unit::FitContent || hasInlineElementSibling) {
             setProp(PropTextHorizontalAutoResize, true);
             setWidth_px(m_realTextSize.width());
         } else {
@@ -1707,7 +1783,16 @@ void UIWidget::applyAnchorAlignment() {
     if (m_parent && m_parent->getDisplay() == DisplayType::TableCell) {
         const auto ta = resolveCellTextAlign(this);
         const auto va = resolveCellVerticalAlign(this);
-        anchorHorizontalInCell(this, ta);
+        if (isInlineLike(m_displayType)) {
+            // Inline elements are positioned according to the cell's text-align.
+            anchorHorizontalInCell(this, ta);
+        } else {
+            // Block-level elements (display: block, table, etc.) always fill the cell
+            // width, just like real browsers. text-align is stored on this widget via
+            // setTextAlign() and will center the inline content WITHIN this block.
+            addAnchor(Fw::AnchorLeft, "parent", Fw::AnchorLeft);
+            addAnchor(Fw::AnchorRight, "parent", Fw::AnchorRight);
+        }
         anchorVerticalInCell(this, va);
         return;
     }
@@ -1752,22 +1837,31 @@ void UIWidget::applyAnchorAlignment() {
         bool anchored = true;
         const auto isInline = isInlineLike(m_displayType);
 
+        // After a block-level sibling (e.g. <br>, <div>) the inline flow restarts at the
+        // parent's own edge, not at the block's right/center edge (which is the parent's
+        // right edge since blocks fill 100% width).  Without this guard every inline
+        // widget following a <br> would be anchored to br.AnchorRight == parent.AnchorRight
+        // and rendered entirely off-screen to the right.
+        const bool prevIsBlock = isInline
+            && ctx.lastNormalWidget
+            && !isInlineLike(ctx.lastNormalWidget->getDisplay());
+
         if (isInline && m_parent->getTextAlign() == Fw::AlignCenter ||
             !isInline && m_parent->getJustifyItems() == JustifyItemsType::Center) {
-            if (ctx.lastNormalWidget)
+            if (ctx.lastNormalWidget && !prevIsBlock)
                 addAnchor(Fw::AnchorLeft, ctx.lastNormalWidget->getId().c_str(), Fw::AnchorRight);
             else
                 addAnchor(Fw::AnchorHorizontalCenter, "parent", Fw::AnchorHorizontalCenter);
         } else if (m_positionType != PositionType::Absolute) {
             if (isInline && m_parent->getTextAlign() == Fw::AlignLeft ||
                 !isInline && m_parent->getJustifyItems() == JustifyItemsType::Left) {
-                if (ctx.lastNormalWidget)
+                if (ctx.lastNormalWidget && !prevIsBlock)
                     addAnchor(Fw::AnchorLeft, ctx.lastNormalWidget->getId().c_str(), Fw::AnchorRight);
                 else
                     addAnchor(Fw::AnchorLeft, "parent", Fw::AnchorLeft);
             } else if (isInline && m_parent->getTextAlign() == Fw::AlignRight ||
                        !isInline && m_parent->getJustifyItems() == JustifyItemsType::Right) {
-                if (ctx.lastNormalWidget)
+                if (ctx.lastNormalWidget && !prevIsBlock)
                     addAnchor(Fw::AnchorRight, "next", Fw::AnchorLeft);
                 else
                     addAnchor(Fw::AnchorRight, "parent", Fw::AnchorRight);
@@ -1787,13 +1881,62 @@ void UIWidget::applyAnchorAlignment() {
             }
         }
 
+        // An inline/inline-block element with its own vertical-align: middle should be
+        // vertically centred within its containing block (the parent), not relative to an
+        // adjacent inline sibling. Since applyFitContentRecursive sizes the parent block to
+        // the tallest inline child (e.g. a 41px image), anchoring to parent.VCenter places
+        // every vertical-align:middle element at the correct visual midpoint of the line.
+        //
+        // Three cases must all centre on parent.VCenter:
+        //  • selfVAlignMiddle  – this widget itself has vertical-align:middle (the image)
+        //  • prevVAlignMiddle  – previous sibling had it (text AFTER the image)
+        //  • nextVAlignMiddle  – a following inline sibling has it (text BEFORE the image,
+        //                        e.g. "Press" that precedes <img align="middle">)
+        const bool selfVAlignMiddle = m_htmlNode
+            && (m_htmlNode->getStyle("vertical-align") == "middle"
+                || m_htmlNode->getStyle("vertical-align") == "center");
+
+        const bool prevVAlignMiddle = ctx.lastNormalWidget
+            && ctx.lastNormalWidget->getHtmlNode()
+            && (ctx.lastNormalWidget->getHtmlNode()->getStyle("vertical-align") == "middle"
+                || ctx.lastNormalWidget->getHtmlNode()->getStyle("vertical-align") == "center");
+
+        // Scan forward through same-line inline siblings to detect a following
+        // vertical-align:middle element (e.g. image that comes after this text node).
+        const bool nextVAlignMiddle = [&]() -> bool {
+            if (!isInlineLike(m_displayType) || !m_parent) return false;
+            bool passed = false;
+            for (const auto& sp : m_parent->getChildren()) {
+                UIWidget* c = sp.get();
+                if (!passed) {
+                    if (c == this) passed = true;
+                    continue;
+                }
+                if (skipInFlow(c)) continue;
+                if (!isInlineLike(c->getDisplay())) break; // hit a block sibling, stop
+                if (c->getHtmlNode()
+                        && (c->getHtmlNode()->getStyle("vertical-align") == "middle"
+                            || c->getHtmlNode()->getStyle("vertical-align") == "center"))
+                    return true;
+            }
+            return false;
+        }();
+
+        const bool anyVAlignMiddle = selfVAlignMiddle || prevVAlignMiddle || nextVAlignMiddle;
+
         if (anchored) {
             if (!ctx.lastNormalWidget) {
-                addAnchor(Fw::AnchorTop, "parent", Fw::AnchorTop);
-            } else {
-                if (isInlineLike(m_displayType) && isInlineLike(ctx.lastNormalWidget->getDisplay()))
-                    addAnchor(Fw::AnchorTop, ctx.lastNormalWidget->getId().c_str(), Fw::AnchorTop);
+                if (anyVAlignMiddle)
+                    addAnchor(Fw::AnchorVerticalCenter, "parent", Fw::AnchorVerticalCenter);
                 else
+                    addAnchor(Fw::AnchorTop, "parent", Fw::AnchorTop);
+            } else {
+                if (isInlineLike(m_displayType) && isInlineLike(ctx.lastNormalWidget->getDisplay())) {
+                    if (anyVAlignMiddle)
+                        addAnchor(Fw::AnchorVerticalCenter, "parent", Fw::AnchorVerticalCenter);
+                    else
+                        addAnchor(Fw::AnchorTop, ctx.lastNormalWidget->getId().c_str(), Fw::AnchorTop);
+                } else
                     addAnchor(Fw::AnchorTop, ctx.lastNormalWidget->getId().c_str(), Fw::AnchorBottom);
             }
             return;

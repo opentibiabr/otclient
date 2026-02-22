@@ -174,7 +174,9 @@ void UIWidget::updateText()
     if ((hasEventListener(EVENT_TEXT_CLICK) || hasEventListener(EVENT_TEXT_HOVER)) && m_textEvents.empty())
         processCodeTags();
 
-    if (isTextWrap() && m_rect.isValid()) {
+    // Use m_rect.width() > 0 instead of m_rect.isValid() so that wrapText runs even when
+    // height hasn't been resolved yet (height=0 makes isValid()=false on first layout pass).
+    if (isTextWrap() && m_rect.width() > 0) {
         m_drawTextColors = m_textColors;
         if (m_textOverflowLength > 0 && m_text.length() > m_textOverflowLength)
             m_drawText = m_font->wrapText(m_text.substr(0, m_textOverflowLength - m_textOverflowCharacter.length()) + m_textOverflowCharacter, getWidth() - m_textOffset.x, WrapOptions{}, &m_drawTextColors);
@@ -304,6 +306,36 @@ void UIWidget::parseTextStyle(const OTMLNodePtr& styleNode)
             setTextOverflowLength(node->value<uint16_t>());
         else if (node->tag() == "text-overflow-character")
             setTextOverflowCharacter(node->value<std::string>());
+        else if (tag == "text-decoration") {
+            m_textDecorationUnderline = (node->value<std::string>() == "underline");
+            m_textCachedScreenCoords = {};
+        }
+        else if (tag == "text-decoration-style") {
+            m_textDecorationSolid = (node->value<std::string>() != "dotted");
+            m_textCachedScreenCoords = {};
+        }
+        else if (tag == "font-style") {
+            // Try to load a dedicated italic variant of the current font.
+            // Convention: <fontname>-italic (same as how headings use <fontname>-bold).
+            // Falls back silently if no such font is registered.
+            const auto val = node->value<std::string>();
+            if ((val == "italic" || val == "oblique") && m_font && ttfFontName.empty()) {
+                const std::string italicName = m_font->getName() + "-italic";
+                if (g_fonts.fontExists(italicName))
+                    setFont(italicName);
+            }
+        }
+        else if (tag == "font-weight") {
+            // Try to load a dedicated bold variant of the current font.
+            // Convention: <fontname>-bold.
+            // Falls back silently if no such font is registered.
+            const auto val = node->value<std::string>();
+            if (val == "bold" && m_font && ttfFontName.empty()) {
+                const std::string boldName = m_font->getName() + "-bold";
+                if (g_fonts.fontExists(boldName))
+                    setFont(boldName);
+            }
+        }
     }
 }
 
@@ -327,7 +359,7 @@ void UIWidget::drawText(const Rect& screenCoords)
         auto coords = Rect(screenCoords.topLeft().scale(m_fontScale), screenCoords.bottomRight().scale(m_fontScale));
         coords.translate(textOffset);
 
-        if (hasEventListener(EVENT_TEXT_CLICK) || hasEventListener(EVENT_TEXT_HOVER))
+        if (hasEventListener(EVENT_TEXT_CLICK) || hasEventListener(EVENT_TEXT_HOVER) || m_textDecorationUnderline)
             cacheRectToWord();
 
         if (m_drawTextColors.empty())
@@ -644,7 +676,23 @@ void UIWidget::applyWhiteSpace() {
 
     if (whiteSpace == "normal") {
         setProp(PropTextWrap, true);
+        // CSS white-space: normal collapses/trims spaces, but must preserve a single
+        // boundary space between adjacent inline elements (e.g. text before/after <a>).
+        // Record whether the raw text had leading/trailing whitespace before normalising.
+        const bool hadLeadingSpace  = !m_text.empty() && static_cast<unsigned char>(m_text.front()) <= ' ';
+        const bool hadTrailingSpace = !m_text.empty() && static_cast<unsigned char>(m_text.back())  <= ' ';
         normalizeWhiteSpace(m_text, true, false);
+        if (!m_text.empty()) {
+            // Re-add a single space at boundaries that touch an inline element sibling.
+            if (hadLeadingSpace) {
+                if (auto prevNode = m_htmlNode->getPrev(); prevNode && prevNode->getType() == NodeType::Element)
+                    m_text.insert(m_text.begin(), ' ');
+            }
+            if (hadTrailingSpace) {
+                if (auto nextNode = m_htmlNode->getNext(); nextNode && nextNode->getType() == NodeType::Element)
+                    m_text.push_back(' ');
+            }
+        }
     } else if (whiteSpace == "nowrap") {
         setProp(PropTextWrap, false);
         setProp(PropTextHorizontalAutoResize, true);
@@ -712,13 +760,18 @@ static void buildTextUnderline(Rect& wordRect, CoordsBuffer& textUnderlineCoords
     }
 }
 
+static void buildSolidUnderline(const Rect& lineRect, int underlineY, CoordsBuffer& textUnderlineCoords) {
+    if (lineRect.width() > 0)
+        textUnderlineCoords.addRect(Rect(lineRect.x(), underlineY, lineRect.width(), 1));
+}
+
 void UIWidget::updateRectToWord(const std::vector<Rect>& glypsCoords)
 {
     m_rectToWord.clear();
     if (m_textUnderline)
         m_textUnderline->clear();
 
-    if (glypsCoords.empty() || m_textEvents.empty())
+    if (glypsCoords.empty() || (m_textEvents.empty() && !m_textDecorationUnderline))
         return;
 
     if (!m_textUnderline)
@@ -785,5 +838,44 @@ void UIWidget::updateRectToWord(const std::vector<Rect>& glypsCoords)
             if (!textEvent.noUnderline)
                 buildTextUnderline(wordRect, *m_textUnderline);
         }
+    }
+
+    if (m_textDecorationUnderline && m_font) {
+        // Use the font's full line height so the underline sits at the bottom
+        // of the cell regardless of individual glyph bitmap heights.
+        const int fontLineH = m_font->getGlyphHeight();
+        int lineStartY = -1;
+        Rect lineXRect;
+
+        auto flushLine = [&]() {
+            if (!lineXRect.isValid() || lineStartY < 0)
+                return;
+            const int underlineY = lineStartY + fontLineH;
+            if (m_textDecorationSolid)
+                buildSolidUnderline(lineXRect, underlineY, *m_textUnderline);
+            else {
+                Rect dotRect(lineXRect.x(), underlineY, lineXRect.width(), 2);
+                buildTextUnderline(dotRect, *m_textUnderline);
+            }
+            lineXRect = {};
+            lineStartY = -1;
+        };
+
+        for (size_t i = 0; i < glypsCoords.size(); ++i) {
+            if (i < m_drawText.size() && m_drawText[i] == '\n') {
+                flushLine();
+                continue;
+            }
+            const auto& r = glypsCoords[i];
+            if (!r.isValid())
+                continue;
+            if (lineStartY < 0)
+                lineStartY = r.y();
+            if (!lineXRect.isValid())
+                lineXRect = r;
+            else
+                lineXRect.expand(0, r.width(), 0, 0);
+        }
+        flushLine();
     }
 }
