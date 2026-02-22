@@ -1267,7 +1267,7 @@ void UIWidget::updateTableLayout()
             if (cellHeight < 0 && cell->m_height.valueCalculed > -1)
                 cellHeight = cell->m_height.valueCalculed;
             if (cell->m_height.unit == Unit::Px)
-                cellHeight = cell->m_height.value;
+                cellHeight = std::max<int>(cell->m_height.value, cellHeight); // HTML: cell height is minimum
 
             const int outerHeight = std::max<int>(0, cellHeight) + cell->m_padding.top + cell->m_padding.bottom;
 
@@ -1423,6 +1423,10 @@ void UIWidget::updateTableLayout()
             if (cell->m_height.unit == Unit::Auto || cell->m_height.unit == Unit::FitContent) {
                 cell->setHeight_px(contentH);
                 cell->m_height.applyUpdate(cell->getHeight(), SIZE_VERSION_COUNTER);
+            } else if (cell->m_height.unit == Unit::Px && contentH > cell->m_height.value) {
+                // HTML: cell height is minimum - expand to match the tallest row
+                cell->setHeight_px(contentH);
+                cell->m_height.applyUpdate(cell->getHeight(), SIZE_VERSION_COUNTER);
             }
         }
     }
@@ -1432,6 +1436,10 @@ void UIWidget::updateTableLayout()
         const int rowContentHeight = rowContentHeights[rowIndex];
 
         if ((row->m_height.unit == Unit::Auto || row->m_height.unit == Unit::FitContent) && rowContentHeight > 0) {
+            row->setHeight_px(rowContentHeight);
+            row->m_height.applyUpdate(row->getHeight(), SIZE_VERSION_COUNTER);
+        } else if (row->m_height.unit == Unit::Px && rowContentHeight > row->m_height.value) {
+            // HTML: row height is minimum - expand if content is taller
             row->setHeight_px(rowContentHeight);
             row->m_height.applyUpdate(row->getHeight(), SIZE_VERSION_COUNTER);
         }
@@ -1460,6 +1468,10 @@ void UIWidget::updateTableLayout()
         if ((group->m_height.unit == Unit::Auto || group->m_height.unit == Unit::FitContent) && contentHeight > 0) {
             group->setHeight_px(contentHeight);
             group->m_height.applyUpdate(group->getHeight(), SIZE_VERSION_COUNTER);
+        } else if (group->m_height.unit == Unit::Px && contentHeight > group->m_height.value) {
+            // HTML: row group height is minimum - expand if content is taller
+            group->setHeight_px(contentHeight);
+            group->m_height.applyUpdate(group->getHeight(), SIZE_VERSION_COUNTER);
         }
     }
 
@@ -1485,6 +1497,10 @@ void UIWidget::updateTableLayout()
     }
 
     if ((m_height.unit == Unit::Auto || m_height.unit == Unit::FitContent) && totalContentHeight > 0) {
+        setHeight_px(totalContentHeight);
+        m_height.applyUpdate(getHeight(), SIZE_VERSION_COUNTER);
+    } else if (m_height.unit == Unit::Px && totalContentHeight > m_height.value) {
+        // HTML: table height attribute is a minimum height - expand if content is taller
         setHeight_px(totalContentHeight);
         m_height.applyUpdate(getHeight(), SIZE_VERSION_COUNTER);
     }
