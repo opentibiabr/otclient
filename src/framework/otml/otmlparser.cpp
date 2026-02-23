@@ -183,7 +183,7 @@ namespace {
             }
         }
 
-        // 3) agora resolve valores dos filhos e desce recursivo
+        // 3) now resolve child values and recurse down
         const auto children = node->children();
         for (const auto& child : children) {
             if (!isAliasTag(child->tag())) {
