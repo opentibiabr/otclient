@@ -174,7 +174,7 @@ namespace {
             // register in local map (valid for children)
             aliases[aliasName] = aliasValue;
 
-            // 2) se estiver na raiz (doc != nullptr), registra como global
+            // 2) if at the root (doc != nullptr), register as global
             if (doc) {
                 if (doc->globalAliases().contains(aliasName)) {
                     g_logger.warning("Overriding global OTML variable: {}", aliasName);
