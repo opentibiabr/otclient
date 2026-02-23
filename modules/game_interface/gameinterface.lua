@@ -739,6 +739,12 @@ function createThingMenu(menuPosition, lookThing, useThing, creatureThing)
                 shortcut = nil
             end
             if creatureThing:getPosition().z == localPosition.z then
+                if creatureThing:isNpc() and g_game.getClientVersion() < 1511 then
+                    menu:addOption(tr('Talk'), function()
+                        g_game.talk("hi")
+                    end)
+                end
+
                 if g_game.getAttackingCreature() ~= creatureThing then
                     menu:addOption(tr('Attack'), function()
                         g_game.attack(creatureThing)
@@ -914,6 +920,31 @@ end
 function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, useThing, creatureThing, attackCreature)
     local keyboardModifiers = g_keyboard.getModifiers()
 
+    local smartLeftClick = modules.client_options.getOption('smartLeftClick')
+    local classicControls = modules.client_options.getOption('classicControl')
+
+    -- Classic controls: right-click on NPC says "hi"
+    if creatureThing and creatureThing:isNpc() and mouseButton == MouseRightButton and 
+    keyboardModifiers == KeyboardNoModifier and 
+    g_game.getClientVersion() < 1511 then
+        -- In classic controls, always allow NPC interaction
+        -- In non-classic controls, check the talkOnRightClick option
+        if classicControls or modules.client_options.getOption('talkOnRightClick') then
+            local player = g_game.getLocalPlayer()
+            if player then
+                local playerPos = player:getPosition()
+                local npcPos = creatureThing:getPosition()
+                if playerPos.z == npcPos.z then
+                    local dist = math.max(math.abs(playerPos.x - npcPos.x), math.abs(playerPos.y - npcPos.y))
+                    if dist <= 3 then
+                        g_game.talk("hi")
+                        return true
+                    end
+                end
+            end
+        end
+    end
+
     if g_platform.isMobile() then
         if mouseButton == MouseRightButton then
             createThingMenu(menuPosition, lookThing, useThing, creatureThing)
@@ -978,11 +1009,24 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
         if smartLeftClick and mouseButton == MouseLeftButton and keyboardModifiers == KeyboardNoModifier then
             local player = g_game.getLocalPlayer()
 
-            -- Handle creature attacks first
-            if attackCreature and attackCreature ~= player then
+            -- Handle NPCs first - they should not be attacked
+            if creatureThing and creatureThing:isNpc() and g_game.getClientVersion() < 1511 then
+                local playerPos = player:getPosition()
+                local npcPos = creatureThing:getPosition()
+                if playerPos.z == npcPos.z then
+                    local dist = math.max(math.abs(playerPos.x - npcPos.x), math.abs(playerPos.y - npcPos.y))
+                    if dist <= 3 then
+                        g_game.talk("hi")
+                        return true
+                    end
+                end
+            end
+
+            -- Handle creature attacks (but not NPCs)
+            if attackCreature and attackCreature ~= player and not attackCreature:isNpc() then
                 g_game.attack(attackCreature)
                 return true
-            elseif creatureThing and creatureThing ~= player and autoWalkPos and creatureThing:getPosition().z == autoWalkPos.z then
+            elseif creatureThing and creatureThing ~= player and not creatureThing:isNpc() and autoWalkPos and creatureThing:getPosition().z == autoWalkPos.z then
                 g_game.attack(creatureThing)
                 return true
             elseif useThing then
@@ -1122,11 +1166,11 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
             (mouseButton == MouseLeftButton or mouseButton == MouseRightButton) then
             g_game.open(useThing)
             return true
-        elseif attackCreature and g_keyboard.isAltPressed() and
+        elseif attackCreature and not attackCreature:isNpc() and g_keyboard.isAltPressed() and
             (mouseButton == MouseLeftButton or mouseButton == MouseRightButton) then
             g_game.attack(attackCreature)
             return true
-        elseif creatureThing and autoWalkPos and creatureThing:getPosition().z == autoWalkPos.z and g_keyboard.isAltPressed() and
+        elseif creatureThing and not creatureThing:isNpc() and autoWalkPos and creatureThing:getPosition().z == autoWalkPos.z and g_keyboard.isAltPressed() and
             (mouseButton == MouseLeftButton or mouseButton == MouseRightButton) then
             g_game.attack(creatureThing)
             return true
@@ -1143,7 +1187,20 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
         if lootControlMode == 0 then
             -- Right click with no modifiers: main loot functionality
             if mouseButton == MouseRightButton and keyboardModifiers == KeyboardNoModifier then
-                -- Handle creature attacks first (match Smart Left-Click behavior)
+                -- Handle NPCs first - they should not be attacked
+                if creatureThing and creatureThing:isNpc() and g_game.getClientVersion() < 1511 then
+                    local playerPos = player:getPosition()
+                    local npcPos = creatureThing:getPosition()
+                    if playerPos.z == npcPos.z then
+                        local dist = math.max(math.abs(playerPos.x - npcPos.x), math.abs(playerPos.y - npcPos.y))
+                        if dist <= 3 then
+                            g_game.talk("hi")
+                            return true
+                        end
+                    end
+                end
+                
+                -- Handle creature attacks (match Smart Left-Click behavior)
                 if attackCreature and attackCreature ~= player then
                     g_game.attack(attackCreature)
                     return true
@@ -1215,7 +1272,20 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
         elseif lootControlMode == 1 then
             -- Right click with no modifiers: use or open containers
             if mouseButton == MouseRightButton and keyboardModifiers == KeyboardNoModifier then
-                -- Handle creature attacks first
+                -- Handle NPCs first - they should not be attacked
+                if creatureThing and creatureThing:isNpc() and g_game.getClientVersion() < 1511 then
+                    local playerPos = player:getPosition()
+                    local npcPos = creatureThing:getPosition()
+                    if playerPos.z == npcPos.z then
+                        local dist = math.max(math.abs(playerPos.x - npcPos.x), math.abs(playerPos.y - npcPos.y))
+                        if dist <= 3 then
+                            g_game.talk("hi")
+                            return true
+                        end
+                    end
+                end
+                
+                -- Handle creature attacks
                 if attackCreature and attackCreature ~= player then
                     g_game.attack(attackCreature)
                     return true
@@ -1291,7 +1361,20 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
 
             -- Right click for Loot: Left mode - use items instead of showing context menu
             if mouseButton == MouseRightButton and keyboardModifiers == KeyboardNoModifier then
-                -- Handle creature attacks first
+                -- Handle NPCs first - they should not be attacked
+                if creatureThing and creatureThing:isNpc() and g_game.getClientVersion() < 1511 then
+                    local playerPos = player:getPosition()
+                    local npcPos = creatureThing:getPosition()
+                    if playerPos.z == npcPos.z then
+                        local dist = math.max(math.abs(playerPos.x - npcPos.x), math.abs(playerPos.y - npcPos.y))
+                        if dist <= 3 then
+                            g_game.talk("hi")
+                            return true
+                        end
+                    end
+                end
+                
+                -- Handle creature attacks
                 if attackCreature and attackCreature ~= player then
                     g_game.attack(attackCreature)
                     return true
@@ -1342,11 +1425,11 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
             (mouseButton == MouseLeftButton or mouseButton == MouseRightButton) then
             createThingMenu(menuPosition, lookThing, useThing, creatureThing)
             return true
-        elseif attackCreature and g_keyboard.isAltPressed() and
+        elseif attackCreature and not attackCreature:isNpc() and g_keyboard.isAltPressed() and
             (mouseButton == MouseLeftButton or mouseButton == MouseRightButton) then
             g_game.attack(attackCreature)
             return true
-        elseif creatureThing and autoWalkPos and creatureThing:getPosition().z == autoWalkPos.z and g_keyboard.isAltPressed() and
+        elseif creatureThing and not creatureThing:isNpc() and autoWalkPos and creatureThing:getPosition().z == autoWalkPos.z and g_keyboard.isAltPressed() and
             (mouseButton == MouseLeftButton or mouseButton == MouseRightButton) then
             g_game.attack(creatureThing)
             return true
