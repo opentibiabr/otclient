@@ -9,7 +9,7 @@ OTML files can now expose lightweight variables that keep palettes, spacing toke
 * Use that variable later in the file by writing `$primaryColor` in fields that expect literals (colors, borders, paddings, etc.). The parser resolves these references before Lua expression evaluation occurs.
 * Variables inherit down the tree. A definition near the root of a `.otui` is also saved into `OTMLDocument::globalAliases`, which allows other files loaded afterward to reuse the same tokens.
 * A variable can reference another variable (`&accentColor: $primaryColor`). Cycles and undefined references are reported in the console so you can catch mistakes early.
-* Strings wrapped in quotes remain quoted during resolution, which keeps separators or text literals intact.
+* Outer quotes are stripped during resolution; the unquoted literal is substituted directly, which keeps the value from being re-evaluated as a Lua expression.
 
 ## Example file
 
