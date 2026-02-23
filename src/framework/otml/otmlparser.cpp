@@ -192,7 +192,7 @@ namespace {
                     if (result.resolvedValue) {
                         child->setValue(normalizeValue(*result.resolvedValue));
                     } else {
-                        // referenciou e falhou: mantém como está (ou zera), você decide
+                        // referenced and failed: keep as is (or clear), you decide
                     }
                 }
             }
