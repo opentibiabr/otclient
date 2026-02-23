@@ -1,6 +1,6 @@
 # Changelog
 
-## 02-04-2026
+## 2026-02-04
 - Added OTML alias resolution so `.otui` files can declare variables (e.g. `&primaryColor`) and reference them as `$primaryColor`, improving theme consistency and readability.
 
 ## 05-12-2023
