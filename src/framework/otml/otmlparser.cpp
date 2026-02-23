@@ -171,7 +171,7 @@ namespace {
 
             aliasNode->setUnique(true);
 
-            // registra no mapa local (válido para filhos)
+            // register in local map (valid for children)
             aliases[aliasName] = aliasValue;
 
             // 2) se estiver na raiz (doc != nullptr), registra como global
