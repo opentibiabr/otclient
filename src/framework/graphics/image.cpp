@@ -53,11 +53,11 @@ ImagePtr Image::loadPNG(const char* data, const size_t size)
     if (apng_data apng; load_apng(fin, &apng) == 0) {
         image = std::make_shared<Image>(Size(apng.width, apng.height), apng.bpp, apng.pdata);
         if (apng.num_frames > 1 && apng.frames_delay) {
-            const int frameSize = apng.width * apng.height * apng.bpp;
-            const uint32_t frames = apng.num_frames;
+            const size_t frameSize = static_cast<size_t>(apng.width) * apng.height * apng.bpp;
+            const uint32_t frames = std::min(apng.num_frames, apng.last_frame);
             for (uint32_t i = 0; i < frames; ++i) {
                 // Create a new Image for every frame to avoid circular reference (image -> m_animation -> image)
-                ImagePtr frameImage = std::make_shared<Image>(Size(apng.width, apng.height), apng.bpp, apng.pdata + (i * frameSize));
+                ImagePtr frameImage = std::make_shared<Image>(Size(apng.width, apng.height), apng.bpp, apng.pdata + (static_cast<size_t>(i) * frameSize));
                 image->addAnimationFrame(frameImage, apng.frames_delay[i]);
             }
         }
