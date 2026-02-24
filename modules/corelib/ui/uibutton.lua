@@ -12,15 +12,26 @@ function UIButton:onMouseRelease(pos, button)
 end
 
 function UIButton:onHoverChange(hovered)
-    if modules.client_options and modules.client_options.getOption('showAnimatedCursor') then
+    if not modules.client_options then
+        return
+    end
+    
+    local nativeCursor = modules.client_options.getOption('nativeCursor')
+    local animatedCursor = modules.client_options.getOption('showAnimatedCursor')
+    
+    -- Native cursor takes priority - don't change cursor when using native Windows cursor
+    if nativeCursor then
+        return
+    end
+    
+    -- Animated cursor mode - show pointer button on hover
+    if animatedCursor then
         if hovered then
-            g_window.setMouseCursor(g_mouse.getCursorId('pointerbutton'))
+            g_mouse.pushCursor('pointerbutton')
         else
-            if not modules.client_options.getOption('nativeCursor') then
-                g_window.setMouseCursor(g_mouse.getCursorId('default'))
-            else
-                g_window.restoreMouseCursor()
-            end
+            g_mouse.popCursor('pointerbutton')
         end
     end
+    -- When both are disabled, use default Tibia cursors (no animation)
+    -- The cursor is already set to default, so we don't need to change it
 end

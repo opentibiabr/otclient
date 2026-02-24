@@ -1097,9 +1097,9 @@ end
 
 function onConsoleTextHovered(widget, text, hovered)
     if hovered then
-        g_mouse.pushCursor("pointer")
+        g_mouse.pushCursor("pointerbutton")
     else
-       g_mouse.popCursor("pointer")
+       g_mouse.popCursor("pointerbutton")
     end
 end
 
