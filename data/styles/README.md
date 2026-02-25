@@ -15,7 +15,7 @@ OTML files can now expose lightweight variables that keep palettes, spacing toke
 
 `data/styles/global_alias_test.otui` is not tied to a real in-game window—it exists solely to demonstrate and exercise the alias resolution path. If the resolver were broken, this file would trigger an error in `otclient.log` when `UIManager` loads it, so it acts as a lightweight sanity check.
 
-```
+```otui
 &primaryColor: #33AAFF
 &secondaryColor: $primaryColor
 &lightText: '#FFFFFF'

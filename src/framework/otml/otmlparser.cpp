@@ -147,7 +147,23 @@ namespace {
             }
         }
 
-        // 1) primeiro processa todos os &aliases deste nível
+        // Process all &-prefixed nodes (ampersand alias nodes) at this level
+        // 
+        // IMPORTANT: The & prefix has DUAL PURPOSE in OTUI files:
+        //   1. OTML Variable Definition: Values are stored in alias maps for $variable references
+        //   2. Lua Field Assignment: These same nodes are later processed by UIWidget::parseBaseStyle
+        //                            to set Lua fields on widget objects
+        //
+        // SCOPE BEHAVIOR:
+        //   - Root-level & nodes (doc != nullptr): Registered as GLOBAL variables in doc->m_globalAliases
+        //   - Nested & nodes (doc == nullptr): Only in LOCAL alias map, accessible to descendants
+        //
+        // CONSEQUENCE: Nested & nodes (like &minimizedHeight, &save, &onClick in widget definitions)
+        //              are simultaneously Lua fields AND local OTML variables. While this doesn't break
+        //              functionality since alias nodes are still passed to parseBaseStyle(), it creates
+        //              semantic ambiguity - these Lua field values can be referenced with $ syntax.
+        //
+        // See docs/otml-variables.md for detailed explanation and best practices.
         for (const auto& aliasNode : aliasNodes) {
             const auto aliasName = normalizeAliasName(aliasNode->tag());
             if (aliasName.empty()) {
@@ -171,10 +187,13 @@ namespace {
 
             aliasNode->setUnique(true);
 
-            // register in local map (valid for children)
+            // Register in local alias map - available to all descendant nodes
             aliases[aliasName] = aliasValue;
 
-            // 2) if at the root (doc != nullptr), register as global
+            // If at document root (doc != nullptr), also register as global variable
+            // This distinction prevents nested &-nodes (like &save, &minimizedHeight in widget
+            // definitions) from polluting the global namespace, though they are still
+            // available as local variables and will be processed as Lua fields separately.
             if (doc) {
                 if (doc->globalAliases().contains(aliasName)) {
                     g_logger.warning("Overriding global OTML variable: {}", aliasName);
@@ -183,7 +202,7 @@ namespace {
             }
         }
 
-        // 3) now resolve child values and recurse down
+        // Resolve $variable references in child values and recurse down the tree
         const auto children = node->children();
         for (const auto& child : children) {
             if (!isAliasTag(child->tag())) {
@@ -192,12 +211,14 @@ namespace {
                     if (result.resolvedValue) {
                         child->setValue(normalizeValue(*result.resolvedValue));
                     } else {
-                        // referenced and failed: keep as is (or clear), you decide
+                        // Variable referenced but resolution failed - error already logged
                     }
                 }
             }
 
-            // doc só na raiz
+            // Recurse with nullptr for doc - only root level registers global variables
+            // Nested &-nodes will be in local scope only, preventing Lua fields from
+            // becoming global OTML variables (though they remain in local alias map)
             resolveVariablesRecursive(child, aliases, nullptr);
         }
     }
