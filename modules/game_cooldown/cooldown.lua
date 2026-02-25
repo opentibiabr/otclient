@@ -11,6 +11,7 @@ lastPlayer = nil
 
 cooldown = {}
 groupCooldown = {}
+tierUpgradeFeatureEnabled = false
 
 function init()
     connect(g_game, {
@@ -95,6 +96,8 @@ function loadIcon(iconId)
 end
 
 function online()
+    tierUpgradeFeatureEnabled = g_game.getFeature(GameForgeSkillStats) or g_game.getFeature(GameCharacterSkillStats)
+
     local console = modules.game_console.consolePanel
     if console then
         console:addAnchor(AnchorTop, cooldownWindow:getId(), AnchorBottom)
@@ -126,6 +129,8 @@ function online()
 end
 
 function offline()
+    tierUpgradeFeatureEnabled = false
+
     local console = modules.game_console.consolePanel
     if console then
         console:removeAnchor(AnchorTop)
@@ -179,7 +184,7 @@ function initCooldown(progressRect, updateCallback, finishCallback)
 end
 
 function hasTierUpgradeFeature()
-    return g_game.getFeature(GameForgeSkillStats) or g_game.getFeature(GameCharacterSkillStats)
+    return tierUpgradeFeatureEnabled
 end
 
 function updateCooldown(progressRect, duration)
