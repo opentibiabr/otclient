@@ -2,7 +2,7 @@
 
 OTML files can now expose lightweight variables that keep palettes, spacing tokens and theme tweaks in sync without rewriting the same literals across styles. In this context, a standalone OTML node whose tag begins with `&` is treated as a variable definition and is skipped by `UIManager` when instantiating widgets; its value is made available to subsequent nodes through `$name` references.
 
-> **Note on existing `&` syntax:** Older `.otui` files already use `&` as a prefix for Lua-backed widget fields (for example `&minimizedHeight`, `&static`). That syntax remains valid: lines like `&minimizedHeight: 42` inside a widget definition still define Lua fields on the widget. OTML variables, by contrast, are separate nodes whose entire tag is the variable name (for example a top-level line `&primaryColor: #33AAFF`, or an alias nested under a style node but not as a Lua field). The loader distinguishes variable nodes from widget fields based on where they appear in the tree, so this is an intentional overloading of `&`, not a breaking change.
+> **Note on existing `&` syntax:** Older `.otui` files already use `&` as a prefix for Lua-backed widget fields (for example `&minimizedHeight`, `&static`). That syntax remains valid: lines like `&minimizedHeight: 42` inside a widget definition still define Lua fields on the widget. With the current resolver, nested `&` nodes can also participate as local OTML aliases, while root-level aliases are additionally exported globally. This overloading of `&` is intentional and backward-compatible.
 ## How it works
 
 * Declare a variable by prefixing a node tag with `&` and assigning a literal value, for example `&primaryColor: #33AAFF`.

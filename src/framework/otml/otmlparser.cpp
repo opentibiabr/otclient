@@ -121,10 +121,6 @@ namespace {
             return { false, std::nullopt };
         }
 
-        if (aliases.empty()) {
-            return { false, std::nullopt };
-        }
-
         if (aliases.find(aliasName) == aliases.end()) {
             g_logger.error("Undefined OTML variable: {}", aliasName);
             return { true, std::nullopt };
@@ -180,6 +176,8 @@ namespace {
                 if (!result.resolvedValue) {
                     // referenciou $var mas não resolveu -> mantém para erro posterior
                     aliasNode->setUnique(true);
+                    // Keep unresolved reference in map so it's available (even if unresolved)
+                    aliases[aliasName] = aliasValue;
                     continue;
                 }
                 aliasValue = *result.resolvedValue;
