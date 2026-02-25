@@ -778,6 +778,48 @@ function ApiJson.setClientOption(optionKey, value)
     g_settings.set(optionKey, value)
 end
 
+function ApiJson.setCurrentHotkeySetName(name)
+    if not name or name == "" then
+        return false
+    end
+
+    ApiJson.bootstrap()
+    local options = ensureState()
+    local array = options.array
+    if not array then
+        return false
+    end
+
+    local hotkeyOptions = array.hotkeyOptions or {}
+    array.hotkeyOptions = hotkeyOptions
+
+    local hotkeySets = hotkeyOptions.hotkeySets or options.hotkeySets or {}
+    hotkeyOptions.hotkeySets = hotkeySets
+
+    if not hotkeySets[name] then
+        return false
+    end
+
+    hotkeyOptions.currentHotkeySetName = name
+    options.currentHotkeySetName = name
+    options.currentHotkeySet = hotkeySets[name]
+
+    options.actionBarOptions = options.currentHotkeySet.actionBarOptions
+    if not options.actionBarOptions then
+        options.actionBarOptions = {}
+        options.currentHotkeySet.actionBarOptions = options.actionBarOptions
+    end
+
+    options.actionBarMappings = options.actionBarOptions.mappings
+    if not options.actionBarMappings then
+        options.actionBarMappings = {}
+        options.actionBarOptions.mappings = options.actionBarMappings
+    end
+
+    options.actionBarMappingsIndex = nil
+    return true
+end
+
 function ApiJson.toggleLockGroup(optionKey, rangeStart, rangeEnd)
     local newState = not ApiJson.getClientOption(optionKey)
     ApiJson.setClientOption(optionKey, newState)

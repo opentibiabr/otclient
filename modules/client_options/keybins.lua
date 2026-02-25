@@ -745,6 +745,9 @@ end
 function listKeybindsComboBox(value)
     local widget = panels.keybindsPanel.presets.list
     presetOption(widget, 'currentPreset', value, false)
+    if modules.game_actionbar and modules.game_actionbar.selectHotkeySet then
+        modules.game_actionbar.selectHotkeySet(value)
+    end
     changedKeybinds = {}
     changedHotkeys = {}
     applyChangedOptions()

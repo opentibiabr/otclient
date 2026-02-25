@@ -495,3 +495,34 @@ function updateVisibleWidgetsExternal()
     -- The function should be available globally since all logic files are loaded
     updateVisibleWidgets()
 end
+
+function selectHotkeySet(name)
+    if not ApiJson or not ApiJson.setCurrentHotkeySetName then
+        return false
+    end
+
+    if not ApiJson.setCurrentHotkeySetName(name) then
+        return false
+    end
+
+    ApiJson.saveData()
+
+    if #actionBars == 0 then
+        return true
+    end
+
+    for _, actionbar in pairs(actionBars) do
+        if actionbar and not actionbar:isDestroyed() then
+            unbindActionBarEvent(actionbar)
+        end
+    end
+
+    for i = 1, #actionBars do
+        setupActionBar(i)
+    end
+
+    updateVisibleWidgets()
+    updateActionBarEventSubscriptions()
+
+    return true
+end

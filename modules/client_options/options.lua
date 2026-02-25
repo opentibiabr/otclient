@@ -404,6 +404,9 @@ function controller:onGameStart()
         if Keybind.selectPreset(name) then
             panels.keybindsPanel.presets.list:setCurrentOption(name, true)
             updateKeybinds()
+            if modules.game_actionbar and modules.game_actionbar.selectHotkeySet then
+                modules.game_actionbar.selectHotkeySet(name)
+            end
         end
     end
 end
