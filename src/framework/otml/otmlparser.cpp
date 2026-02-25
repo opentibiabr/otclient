@@ -132,7 +132,21 @@ namespace {
 
     void resolveVariablesRecursive(const OTMLNodePtr& node, const AliasMap& parentAliases, OTMLDocument* doc)
     {
-        AliasMap aliases = parentAliases;
+        std::optional<AliasMap> localAliases;
+
+        const auto getAliases = [&]() -> const AliasMap& {
+            if (localAliases) {
+                return *localAliases;
+            }
+            return parentAliases;
+        };
+
+        const auto getMutableAliases = [&]() -> AliasMap& {
+            if (!localAliases) {
+                localAliases.emplace(parentAliases);
+            }
+            return *localAliases;
+        };
 
         std::vector<OTMLNodePtr> aliasNodes;
         aliasNodes.reserve(node->children().size());
@@ -171,13 +185,13 @@ namespace {
             const std::string aliasValueLiteral = aliasNode->rawValue();
             std::string aliasValue = normalizeValue(aliasValueLiteral);
 
-            const auto result = resolveAliasValue(aliasValue, aliases);
+            const auto result = resolveAliasValue(aliasValue, getAliases());
             if (result.aliasReferenced) {
                 if (!result.resolvedValue) {
                     // referenced $var but failed to resolve -> keep for later error
                     aliasNode->setUnique(true);
                     // Keep unresolved reference in map so it's available (even if unresolved)
-                    aliases[aliasName] = aliasValue;
+                    getMutableAliases()[aliasName] = aliasValue;
                     continue;
                 }
                 aliasValue = *result.resolvedValue;
@@ -186,7 +200,7 @@ namespace {
             aliasNode->setUnique(true);
 
             // Register in local alias map - available to all descendant nodes
-            aliases[aliasName] = aliasValue;
+            getMutableAliases()[aliasName] = aliasValue;
 
             // If at document root (doc != nullptr), also register as global variable
             // This distinction prevents nested &-nodes (like &save, &minimizedHeight in widget
@@ -204,7 +218,7 @@ namespace {
         const auto children = node->children();
         for (const auto& child : children) {
             if (!isAliasTag(child->tag())) {
-                const auto result = resolveAliasValue(child->rawValue(), aliases);
+                const auto result = resolveAliasValue(child->rawValue(), getAliases());
                 if (result.aliasReferenced) {
                     if (result.resolvedValue) {
                         child->setValue(normalizeValue(*result.resolvedValue));
@@ -217,7 +231,7 @@ namespace {
             // Recurse with nullptr for doc - only root level registers global variables
             // Nested &-nodes will be in local scope only, preventing Lua fields from
             // becoming global OTML variables (though they remain in local alias map)
-            resolveVariablesRecursive(child, aliases, nullptr);
+            resolveVariablesRecursive(child, getAliases(), nullptr);
         }
     }
 } // namespace
