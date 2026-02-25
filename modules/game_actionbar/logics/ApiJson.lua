@@ -843,7 +843,14 @@ function ApiJson.createHotkeySet(name, sourceName)
         return false
     end
 
-    local source = sourceName and hotkeySets[sourceName] or nil
+    local source = nil
+    if sourceName then
+        source = hotkeySets[sourceName]
+        if not source then
+            return false
+        end
+    end
+
     local newSet = source and table.recursivecopy(source) or {
         actionBarOptions = {
             mappings = {}
