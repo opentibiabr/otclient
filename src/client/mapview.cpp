@@ -26,6 +26,7 @@
 
 #include "animatedtext.h"
 #include "creature.h"
+#include "game.h"
 #include "gameconfig.h"
 #include "lightview.h"
 #include "map.h"
@@ -592,8 +593,14 @@ void MapView::onMouseMove(const Position& mousePos, const bool /*isVirtualMove*/
                 
                 if (!cursorSet) {
                     if (const auto& thing = tile->getTopUseThing()) {
-                        if (thing->isContainer()) {
-                            int id = g_mouse.getCursorId("containercursor");
+                        // Check for both containers and corpses (corpses might not always be containers)
+                        if (thing->isContainer() || thing->isLyingCorpse()) {
+                            // Use quicklootcursor for dead creatures when quickloot is active
+                            const bool isDeadCreature = thing->isLyingCorpse();
+                            const bool quickLootActive = g_game.getFeature(Otc::GameThingQuickLoot);
+                            const char* cursorName = (isDeadCreature && quickLootActive) ? "quicklootcursor" : "containercursor";
+                            
+                            int id = g_mouse.getCursorId(cursorName);
                             if (id != -1) {
                                 g_window.setMouseCursor(id);
                                 cursorSet = true;
