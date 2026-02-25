@@ -219,8 +219,8 @@ end
 
 function isGroupCooldownIconActive(groupId)
     if hasTierUpgradeFeature() then
-        local current = groupCooldown[groupId] or 0
-        return g_clock.millis() < current
+        local current = groupCooldown[groupId]
+        return type(current) == 'number' and g_clock.millis() < current
     else
         return groupCooldown[groupId] == true
     end
@@ -228,8 +228,8 @@ end
 
 function isCooldownIconActive(iconId)
     if hasTierUpgradeFeature() then
-        local current = cooldown[iconId] or 0
-        return g_clock.millis() < current
+        local current = cooldown[iconId]
+        return type(current) == 'number' and g_clock.millis() < current
     else
         return cooldown[iconId] == true
     end
@@ -260,11 +260,7 @@ function onSpellCooldown(iconId, duration)
     end
     local finishFunc = function()
         removeCooldown(progressRect)
-        if hasTierUpgradeFeature() then
-            cooldown[iconId] = nil
-        else
-            cooldown[iconId] = nil
-        end
+        cooldown[iconId] = nil
     end
     initCooldown(progressRect, updateFunc, finishFunc)
     if hasTierUpgradeFeature() then
@@ -297,11 +293,7 @@ function onSpellGroupCooldown(groupId, duration)
         end
         local finishFunc = function()
             turnOffCooldown(progressRect)
-            if hasTierUpgradeFeature() then
-                groupCooldown[groupId] = nil
-            else
-                groupCooldown[groupId] = nil
-            end
+            groupCooldown[groupId] = nil
         end
         initCooldown(progressRect, updateFunc, finishFunc)
         if hasTierUpgradeFeature() then
