@@ -174,7 +174,7 @@ namespace {
             const auto result = resolveAliasValue(aliasValue, aliases);
             if (result.aliasReferenced) {
                 if (!result.resolvedValue) {
-                    // referenciou $var mas não resolveu -> mantém para erro posterior
+                    // referenced $var but failed to resolve -> keep for later error
                     aliasNode->setUnique(true);
                     // Keep unresolved reference in map so it's available (even if unresolved)
                     aliases[aliasName] = aliasValue;
