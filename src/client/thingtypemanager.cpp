@@ -226,7 +226,7 @@ bool ThingTypeManager::loadAppearances(const std::string& file)
         return false;
     }
 #else
-    g_logger.error("Protobuf not supported in this build. enable FRAMEWORK_PROTOBUF");
+    g_logger.error("Protobuf not supported in this build. Enable FRAMEWORK_PROTOBUF");
     return false;
 #endif
 }
@@ -310,7 +310,7 @@ bool ThingTypeManager::loadStaticData(const std::string& file)
 #else
 bool ThingTypeManager::loadStaticData(const std::string& file)
 {
-    g_logger.error("Protobuf not supported in this build. enable FRAMEWORK_PROTOBUF");
+    g_logger.error("Protobuf not supported in this build. Enable FRAMEWORK_PROTOBUF");
     return false;
 }
 #endif
