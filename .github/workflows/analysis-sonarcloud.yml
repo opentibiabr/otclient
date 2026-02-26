@@ -96,8 +96,18 @@ jobs:
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
         run: echo "Skipping build on fork PR to avoid executing untrusted code."
 
-      - name: SonarCloud Scan
-        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-        uses: SonarSource/sonarcloud-github-action@4b4d7634dab97dcee0b75763a54a6dc92a9e6bc1
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      # NOTE: SonarCloud scan requires configuration:
+      # 1. Create a project on https://sonarcloud.io/
+      # 2. Replace 'myproject_key' with your SonarCloud project key
+      # 3. Replace 'myorganization' with your SonarCloud organization key
+      # 4. Add SONAR_TOKEN secret to your repository settings
+      # 5. Uncomment the step below
+      # - name: SonarCloud Scan
+      #   if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+      #   uses: SonarSource/sonarcloud-github-action@4b4d7634dab97dcee0b75763a54a6dc92a9e6bc1
+      #   env:
+      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      #   with:
+      #     args: >
+      #       -Dsonar.projectKey=myproject_key
+      #       -Dsonar.organization=myorganization
