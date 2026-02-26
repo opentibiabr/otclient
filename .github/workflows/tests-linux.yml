@@ -1,4 +1,4 @@
-name: Build - Ubuntu
+name: Tests - Linux
 
 on:
   workflow_dispatch:
@@ -6,14 +6,21 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - "src/**"
-      - ".github/workflows/build-ubuntu.yml"
-  merge_group:
+      - "tests/**"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
+      - "vcpkg.json"
+      - ".github/workflows/tests-linux.yml"
   push:
     branches:
       - main
     paths:
       - "src/**"
-      - ".github/workflows/build-ubuntu.yml"
+      - "tests/**"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
+      - "vcpkg.json"
+      - ".github/workflows/tests-linux.yml"
 
 permissions:
   contents: read
@@ -24,42 +31,23 @@ env:
   MAKEFLAGS: "-j 2"
 
 jobs:
-  cancel-runs:
-    if: github.event_name == 'pull_request' && github.ref != 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@main
-        with:
-          access_token: ${{ github.token }}
-
-  build:
-    if: ${{ github.event_name == 'push' || !github.event.pull_request.draft }}
-    name: ${{ matrix.os }}-${{ matrix.buildtype }}
-    runs-on: ${{ matrix.os }}
+  tests:
+    name: ubuntu-24.04-linux-tests
+    runs-on: ubuntu-24.04
     env:
       ACTIONS_RUNTIME_TOKEN: ${{ secrets.ACTIONS_RUNTIME_TOKEN }}
       ACTIONS_CACHE_URL: ${{ secrets.ACTIONS_CACHE_URL }}
 
     concurrency:
-      group: otclient-${{ github.workflow }}-${{ github.ref }}-${{ matrix.buildtype }}
+      group: otclient-${{ github.workflow }}-${{ github.ref }}
       cancel-in-progress: true
-
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-24.04]
-        buildtype: [linux-debug]
-        include:
-          - os: ubuntu-24.04
-            triplet: x64-linux
-            cmake_build_type: Debug
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - name: Install Linux Dependencies
         run: |
           sudo apt-get update
@@ -109,9 +97,10 @@ jobs:
             ${{ github.workspace }}/vcpkg/downloads
             ${{ github.workspace }}/vcpkg/installed
             ${{ github.workspace }}/vcpkg/buildtrees
-          key: vcpkg-${{ matrix.os }}-${{ matrix.buildtype }}-${{ steps.hash.outputs.hash }}
+          key: vcpkg-ubuntu-tests-${{ steps.hash.outputs.hash }}
           restore-keys: |
-            vcpkg-${{ matrix.buildtype }}-
+            vcpkg-ubuntu-tests-
+
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@b3dd708d38df5c856fe1c18dc0d59ab771f93921
         with:
@@ -124,7 +113,8 @@ jobs:
           $files = @(
             "CMakeLists.txt",
             "vcpkg.json",
-            "src/CMakeLists.txt"
+            "src/CMakeLists.txt",
+            "tests/CMakeLists.txt"
           )
           $combinedContent = ""
           foreach ($file in $files) {
@@ -144,32 +134,25 @@ jobs:
       - name: Cache CMake build directory
         uses: actions/cache@v4
         with:
-          path: ${{ github.workspace }}/build-${{ matrix.buildtype }}
-          key: cmake-dir-${{ runner.os }}-${{ matrix.buildtype }}-${{ steps.cmake-hash.outputs.hash }}
+          path: ${{ github.workspace }}/build-linux-tests
+          key: cmake-dir-${{ runner.os }}-linux-tests-${{ steps.cmake-hash.outputs.hash }}
           restore-keys: |
-            cmake-dir-${{ runner.os }}-${{ matrix.buildtype }}-
+            cmake-dir-${{ runner.os }}-linux-tests-
 
-      - name: Configure and Build
+      - name: Configure
         run: |
-          cmake -G Ninja -S . -B build-${{ matrix.buildtype }} \
-            -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
+          cmake -G Ninja -S . -B build-linux-tests \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
             -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
-            -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }} \
+            -DVCPKG_TARGET_TRIPLET=x64-linux \
+            -DOTCLIENT_BUILD_TESTS=ON \
             -DTOGGLE_BIN_FOLDER=ON \
             -DOPTIONS_ENABLE_IPO=OFF \
-            -DTOGGLE_BOT_PROTECTION=OFF \
             -DCMAKE_C_COMPILER=gcc \
             -DCMAKE_CXX_COMPILER=g++
 
-          cmake --build build-${{ matrix.buildtype }} --target otclient
+      - name: Build
+        run: cmake --build build-linux-tests
 
-      - name: Check otclient.exe path
-        run: Get-ChildItem -Recurse -Filter "otclient*.exe"
-        shell: pwsh
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: otclient-${{ matrix.os }}-${{ matrix.buildtype }}-${{ github.sha }}
-          path: |
-            ${{ github.workspace }}/build-${{ matrix.buildtype }}/bin/
+      - name: Run Tests
+        run: ctest --test-dir build-linux-tests --output-on-failure --parallel 2

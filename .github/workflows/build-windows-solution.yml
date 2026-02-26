@@ -14,7 +14,6 @@ permissions:
   pull-requests: read
 
 env:
-  LUKKA_RUN_VCPKG_SHA: "${{ vars.LUKKA_RUN_VCPKG_SHA != '' && vars.LUKKA_RUN_VCPKG_SHA || 'b3dd708d38df5c856fe1c18dc0d59ab771f93921' }}"
   CMAKE_BUILD_PARALLEL_LEVEL: 2
   MAKEFLAGS: "-j 2"
 
@@ -42,6 +41,19 @@ jobs:
         $commit = $json.'builtin-baseline'
         echo "vcpkgGitCommitId=$commit" >> $env:GITHUB_OUTPUT
 
+    - name: Validate vcpkg baseline SHA
+      shell: pwsh
+      run: |
+        $SHAS = "${{ steps.vcpkg-step.outputs.vcpkgGitCommitId }}"
+        if ([string]::IsNullOrEmpty($SHAS)) {
+          echo "::error title=Missing vcpkg baseline::Provide a full 40-char vcpkgGitCommitId."
+          exit 1
+        }
+        if ($SHAS -notmatch '^[0-9a-f]{40}$') {
+          echo "::error title=Invalid vcpkg baseline::vcpkgGitCommitId must be a full 40-char commit SHA."
+          exit 1
+        }
+
     - name: Compute vcpkg.json hash
       id: hash
       shell: pwsh
@@ -63,25 +75,12 @@ jobs:
           vcpkg-${{ matrix.triplet }}-
 
     - name: Install vcpkg
-      uses: lukka/run-vcpkg@${{ env.LUKKA_RUN_VCPKG_SHA }}
+      uses: lukka/run-vcpkg@b3dd708d38df5c856fe1c18dc0d59ab771f93921
       with:
         vcpkgGitCommitId: ${{ steps.vcpkg-step.outputs.vcpkgGitCommitId }}
 
-    - name: Validate vcpkg baseline SHA
-      shell: pwsh
-      run: |
-        $SHAS = "${{ steps.vcpkg-step.outputs.vcpkgGitCommitId }}"
-        if ([string]::IsNullOrEmpty($SHAS)) {
-          echo "::error title=Missing vcpkg baseline::Provide a full 40-char vcpkgGitCommitId."
-          exit 1
-        }
-        if ($SHAS -notmatch '^[0-9a-f]{40}$') {
-          echo "::error title=Invalid vcpkg baseline::vcpkgGitCommitId must be a full 40-char commit SHA."
-          exit 1
-        }
-
     - name: Configure and Build
-      uses: lukka/run-cmake@main
+      uses: lukka/run-cmake@67c73a83a46f86c4e0b96b741ac37ff495478c38
       with:
         configurePreset: windows-debug-msbuild
         buildPreset: windows-debug-msbuild

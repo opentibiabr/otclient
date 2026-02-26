@@ -22,13 +22,11 @@ permissions:
   pull-requests: read
 
 env:
-  LUKKA_RUN_VCPKG_SHA: "${{ vars.LUKKA_RUN_VCPKG_SHA != '' && vars.LUKKA_RUN_VCPKG_SHA || 'b3dd708d38df5c856fe1c18dc0d59ab771f93921' }}"
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   cancel-runs:
-    if: ${{ github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false) }}
     if: github.event_name == 'pull_request' && github.ref != 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:

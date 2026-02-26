@@ -1,4 +1,4 @@
-FROM ubuntu:22.04 AS builder
+FROM ubuntu:24.04 AS builder
 
 RUN export DEBIAN_FRONTEND=noninteractive \
 	&& ln -fs /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
@@ -6,6 +6,8 @@ RUN export DEBIAN_FRONTEND=noninteractive \
 RUN apt-get update && apt-get install -y --no-install-recommends \
 	git cmake curl zip unzip tar automake ca-certificates build-essential \
 	libglew-dev libx11-dev autoconf libtool pkg-config tzdata libssl3 \
+	python3 python3-pip python3-setuptools ninja-build meson \
+	flex bison gperf nasm yasm \
 	&& dpkg-reconfigure --frontend noninteractive tzdata \
 	&& apt-get clean && apt-get autoclean
 
@@ -20,7 +22,8 @@ RUN vcpkgCommitId=$(grep '.builtin-baseline' vcpkg.json | awk -F: '{print $2}' |
 
 WORKDIR /opt/vcpkg
 COPY vcpkg.json /opt/vcpkg/
-RUN /opt/vcpkg/vcpkg --feature-flags=binarycaching,manifests,versions install
+ENV VCPKG_BINARY_SOURCES=clear
+RUN /opt/vcpkg/vcpkg install --triplet=x64-linux --debug
 
 COPY ./ /otclient/
 WORKDIR /otclient/build
@@ -28,16 +31,16 @@ WORKDIR /otclient/build
 RUN cmake -DCMAKE_TOOLCHAIN_FILE=/opt/vcpkg/scripts/buildsystems/vcpkg.cmake ..
 RUN make -j$(nproc)
 
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 RUN apt-get update; \
- 	apt-get install -y \
+	apt-get install -y \
 	libluajit-5.1-dev \
- 	libglew-dev \
+	libglew-dev \
 	libx11-dev \
- 	libopenal1 \
- 	libopengl0 \
- 	&& apt-get clean && apt-get autoclean
+	libopenal1 \
+	libopengl0 \
+	&& apt-get clean && apt-get autoclean
 
 COPY --from=builder /otclient /otclient
 COPY ./data/ /otclient/data/.
