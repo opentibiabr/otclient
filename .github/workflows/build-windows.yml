@@ -56,10 +56,7 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
         with:
-          repository: ${{ github.event_name == 'push' && github.repository || (github.event.pull_request.head.repo.fork && github.repository || github.event.pull_request.head.repo.full_name) }}
-          ref: ${{ github.event_name == 'push' && github.ref || (github.event.pull_request.head.repo.fork && github.event.pull_request.base.ref || github.event.pull_request.head.ref) }}
           fetch-depth: 0
       - name: Get vcpkg commit ID
         id: vcpkg-step
@@ -105,7 +102,7 @@ jobs:
 
       - name: Install vcpkg
         if: ${{ matrix.buildtype == 'windows-release' }}
-        uses: lukka/run-vcpkg@a400452f634fe49e9f18d388aeb1809dcc642136
+        uses: lukka/run-vcpkg@${{ env.LUKKA_RUN_VCPKG_SHA }}
         with:
           vcpkgGitCommitId: ${{ steps.vcpkg-step.outputs.vcpkgGitCommitId }}
 
