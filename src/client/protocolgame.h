@@ -318,7 +318,37 @@ private:
     void parseModalDialog(const InputMessagePtr& msg);
     void parseExtendedOpcode(const InputMessagePtr& msg);
     void parseChangeMapAwareRange(const InputMessagePtr& msg);
+
+    /**
+     * @brief Parses and applies the creature mark (square) received from the server.
+     *
+     * The server sends a mark for a creature identified by its ID. The mark is represented
+     * by a square drawn around the creature and can be:
+     * - Removed
+     * - Temporary (flashing / timed)
+     * - Permanent (static)
+     *
+     * @param msg Input message containing:
+     * - uint32 creatureId: Target creature identifier.
+     * - uint8  squareType: Square behavior type:
+     *   - 0 = SQUARE_REMOVE: remove any square (static and timed)
+     *   - 1 = SQUARE_FLASH: temporary (timed/flashing)
+     *   - 2 = SQUARE_STAY : permanent (static)
+     * - uint8  squareColor: 8-bit color used by the square.
+     *
+     * @note If the creature cannot be found in the map, the function logs a debug trace
+     *       and returns without doing anything.
+     *
+     * Behavior rules:
+     * - If @c squareType == 0 OR @c squareColor == 0:
+     *   Removes any square (static and timed).
+     * - If @c squareType == 2:
+     *   Shows a permanent/static square using @c squareColor.
+     * - Otherwise:
+     *   Adds a timed square using @c squareColor.
+     */
     void parseCreaturesMark(const InputMessagePtr& msg);
+
     // 12x
     void parseShowDescription(const InputMessagePtr& msg);
     void parseBestiaryTracker(const InputMessagePtr& msg);
