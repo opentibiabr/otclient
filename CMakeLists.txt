@@ -84,6 +84,11 @@ option(OPTIONS_ENABLE_CCACHE "Enable ccache" OFF)
 option(OPTIONS_ENABLE_SCCACHE "Use sccache to speed up compilation process" OFF)
 option(OPTIONS_ENABLE_IPO "Check and Enable interprocedural optimization (IPO/LTO)" ON)
 
+if(CMAKE_BASE_NAME STREQUAL "em++")
+  set(WASM ON)
+  message(STATUS "WASM: ON")
+endif()
+
 # *****************************************************************************
 # Options Code
 # *****************************************************************************
@@ -139,9 +144,7 @@ add_subdirectory(src/protobuf)
 # Src
 add_subdirectory(src)
 
-option(OTCLIENT_BUILD_TESTS "Build unit tests" ON)
-
-if(OTCLIENT_BUILD_TESTS AND NOT ANDROID)
+if(NOT WASM)
     enable_testing()
     add_subdirectory(tests)
     log_option_enabled("Build tests")

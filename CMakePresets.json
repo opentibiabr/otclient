@@ -149,6 +149,18 @@
         "ASAN_ENABLED": "ON",
         "BUILD_STATIC_LIBRARY": "OFF"
       }
+    },
+    {
+      "name": "wasm-debug",
+      "displayName": "WASM - Debug",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+        "VCPKG_TARGET_TRIPLET": "wasm32-emscripten",
+        "CMAKE_BUILD_TYPE": "Debug",
+        "WASM": "ON"
+      }
     }
   ],
   "buildPresets": [
@@ -183,6 +195,10 @@
     {
       "name": "macos-debug",
       "configurePreset": "macos-debug"
+    },
+    {
+      "name": "wasm-debug",
+      "configurePreset": "wasm-debug"
     }
   ]
 }

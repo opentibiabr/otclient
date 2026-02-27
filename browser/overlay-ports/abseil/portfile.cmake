@@ -2,6 +2,11 @@ if(NOT VCPKG_TARGET_IS_WINDOWS)
     vcpkg_check_linkage(ONLY_STATIC_LIBRARY)
 endif()
 
+set(ABSEIL_PATCHES)
+if(NOT VCPKG_TARGET_IS_EMSCRIPTEN)
+    list(APPEND ABSEIL_PATCHES use_pthread.patch)
+endif()
+
 vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO abseil/abseil-cpp
@@ -9,7 +14,7 @@ vcpkg_from_github(
     SHA512 bd2cca8f007f2eee66f51c95a979371622b850ceb2ce3608d00ba826f7c494a1da0fba3c1427728f2c173fe50d59b701da35c2c9fdad2752a5a49746b1c8ef31
     HEAD_REF master
     PATCHES
-	use_pthread.patch
+    ${ABSEIL_PATCHES}
 )
 
 # With ABSL_PROPAGATE_CXX_STD=ON abseil automatically detect if it is being

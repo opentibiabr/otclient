@@ -13,7 +13,10 @@
     "libvorbis",
     "nlohmann-json",
     "openal-soft",
-    "openssl",
+    {
+      "name": "openssl",
+      "platform": "!wasm32"
+    },
     "parallel-hashmap",
     "physfs",
     "protobuf",
@@ -22,8 +25,10 @@
     "zlib",
     "bshoshany-thread-pool",
     "fmt",
-    "utfcpp",
-    "gtest",
+    {
+      "name": "gtest",
+      "platform": "!wasm32"
+    },
     "freetype",
     {
       "name": "inih",

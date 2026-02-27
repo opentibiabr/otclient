@@ -1,3 +1,13 @@
+set(PROTOBUF_PATCHES
+    fix-static-build.patch
+    fix-default-proto-file-path.patch
+    fix-utf8-range.patch
+    fix-arm64-msvc.patch
+)
+if(NOT VCPKG_TARGET_IS_EMSCRIPTEN)
+    list(APPEND PROTOBUF_PATCHES use_pthread.patch)
+endif()
+
 vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO protocolbuffers/protobuf
@@ -5,11 +15,7 @@ vcpkg_from_github(
     SHA512 ce81add9d978a6b63d4205715eac5084e81a6753da1f6c6bad6493e60253215901bffc4a60d704a873333f2b9f94fd86cb7eb5b293035f2268c12692bd808bac
     HEAD_REF master
     PATCHES
-	use_pthread.patch
-        fix-static-build.patch
-        fix-default-proto-file-path.patch
-        fix-utf8-range.patch
-        fix-arm64-msvc.patch
+    ${PROTOBUF_PATCHES}
 )
 
 string(COMPARE EQUAL "${TARGET_TRIPLET}" "${HOST_TRIPLET}" protobuf_BUILD_PROTOC_BINARIES)
