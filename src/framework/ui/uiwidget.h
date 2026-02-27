@@ -1003,6 +1003,8 @@ protected:
 
     uint16_t m_textOverflowLength{ 0 };
     CoordsBufferPtr m_textUnderline;
+    bool m_textDecorationUnderline{ false };
+    bool m_textDecorationSolid{ true };
     int m_strokeWidth{ 0 };
     Color m_strokeColor{ Color::black };	
 

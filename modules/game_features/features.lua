@@ -192,6 +192,7 @@ controller:registerEvents(g_game, {
 
         if version >= 1100 then
             g_game.enableFeature(GamePrey)
+            g_game.enableFeature(GameCompendium)
         end
 
         if version >= 1200 then
