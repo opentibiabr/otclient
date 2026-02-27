@@ -4,6 +4,7 @@ Module
   author: game_blessing
   website: game_blessing
   scripts: [ blessing.lua ]
+  minClientVersion: 1000
   sandboxed: true
   @onLoad: BlessingController:init()
   @onUnload: BlessingController:terminate()

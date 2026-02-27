@@ -44,7 +44,6 @@ local luaFiles = {
   "eat_food",
   "equip",
   "exeta",
-  "analyzer",
   "spy_level",
   "supplies",
   "depositer_config",
@@ -53,6 +52,10 @@ local luaFiles = {
   "hold_target",
   "cavebot_control_panel"
 }
+
+if g_game.getClientVersion() < 1310 and modules.game_analyser then
+  table.insert(luaFiles, #luaFiles, "analyzer")
+end
 
 for i, file in ipairs(luaFiles) do
   loadScript(file)

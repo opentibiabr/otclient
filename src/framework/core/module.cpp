@@ -219,6 +219,7 @@ void Module::discover(const OTMLNodePtr& moduleNode)
     m_reloadable = moduleNode->valueAt<bool>("reloadable", true);
     m_sandboxed = moduleNode->valueAt<bool>("sandboxed", false);
     m_autoLoadPriority = moduleNode->valueAt<int>("autoload-priority", 9999);
+    m_minClientVersion = moduleNode->valueAt<int>("minClientVersion", 0);
 
     if (const auto& node = moduleNode->get("devices")) {
         for (const auto& tmp : node->children()) {
