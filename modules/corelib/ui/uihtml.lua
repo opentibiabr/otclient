@@ -203,3 +203,12 @@ function UIHTML:onScrollHeightChange()
         self.verticalScrollBar:setValue(self.verticalScrollBar:getMaximum())
     end
 end
+
+function UIHTML:setInvertedScroll(inverted)
+    -- 01/23/2026 "inverted-scroll: true" not working in css or html
+    -- [CSS].panelConsole { --inverted-scroll: true }
+    -- or 
+    -- [HTML] style="overflow: scroll; inverted-scroll: true"
+    -- temp fix in [html]add <div inverted-scroll="true"></div>
+    self:setInverted(inverted)
+end

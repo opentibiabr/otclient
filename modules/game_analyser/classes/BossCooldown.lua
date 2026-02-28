@@ -10,17 +10,6 @@ if not string.capitalize then
     end
 end
 
--- Function to truncate text to a maximum length
-local function short_text(text, maxLength)
-    if not text or text == "" or text == nil then
-        return "Unknown"
-    end
-    if string.len(text) > maxLength then
-        return text:sub(1, maxLength - 3) .. "..."
-    end
-    return text
-end
-
 if not BossCooldown then
 	BossCooldown = {
 		launchTime = 0,

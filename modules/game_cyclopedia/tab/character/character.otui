@@ -1800,37 +1800,61 @@ UIWidget
     margin-left: 10
     visible: false
 
-    VerticalSeparator
-      id: separator
-      anchors.horizontalCenter: parent.horizontalCenter
-      anchors.top: parent.top
-      anchors.bottom: parent.bottom
-      margin-top: 5
-      margin-bottom: 5
-
-
-    Panel
-      id: leftPanel
+    
+    UIScrollArea
+      id: content
       anchors.top: parent.top
       anchors.left: parent.left
-      anchors.right: separator.right
-      margin-top: 5
-      margin-left: 5
-      height: 350
-      layout:
-        type: verticalBox
-        spacing: 2
+      anchors.right: scrollbar.left
+      anchors.bottom: parent.bottom
+      vertical-scrollbar: scrollbar
 
-    Panel
-      id: rightPanel
-      anchors.top: prev.top
-      anchors.left: separator.left
+
+      UIWidget
+        id: statsContainer
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: 350
+        layout:
+          type: anchor
+
+        VerticalSeparator
+          id: separator
+          anchors.horizontalCenter: parent.horizontalCenter
+          anchors.top: parent.top
+          anchors.bottom: parent.bottom
+          margin-top: 5
+          margin-bottom: 5
+
+        Panel
+          id: leftPanel
+          anchors.top: parent.top
+          anchors.left: parent.left
+          anchors.right: separator.right
+          margin-top: 5
+          margin-left: 5
+          layout:
+            type: verticalBox
+            fit-children: true
+            
+        Panel
+          id: rightPanel
+          anchors.top: leftPanel.top
+          anchors.left: separator.left
+          anchors.right: parent.right
+          margin-top: 1
+          layout:
+            type: verticalBox
+            fit-children: true
+
+    VerticalScrollBar
+      id: scrollbar
+      anchors.top: parent.top
+      anchors.bottom: parent.bottom
       anchors.right: parent.right
-      margin-top: 1
-      height: 350
-      layout:
-        type: verticalBox
-        spacing: 2
+      step: 48
+      pixel-scroll: true
 
 
   BorderBox
