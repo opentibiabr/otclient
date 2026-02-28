@@ -59,3 +59,25 @@ function g_mouse.bindOnDrop(widget, callback)
         end
     })
 end
+
+if not g_mouse.grabbedMouse then
+  g_mouse.grabbedMouse = {}
+end
+
+function g_mouse.updateGrabber(widget, mouse)
+  if not g_mouse.grabbedMouse[widget] then
+    g_mouse.grabbedMouse[widget] = mouse
+  else
+    g_mouse.grabbedMouse[widget] = nil
+  end
+end
+
+function g_mouse.clearGrabber()
+  for widget, mouse in pairs(g_mouse.grabbedMouse) do
+    if mouse ~= '' then
+      g_mouse.popCursor(mouse)
+    end
+    widget:ungrabMouse()
+  end
+  g_mouse.grabbedMouse = {}
+end
