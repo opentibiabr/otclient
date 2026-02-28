@@ -237,7 +237,17 @@ void UIWidget::initBaseStyle()
 
 void UIWidget::parseBaseStyle(const OTMLNodePtr& styleNode)
 {
-    // parse lua variables and callbacks first
+    // Parse Lua variables and callbacks first
+    // 
+    // IMPORTANT: These &-prefixed nodes serve dual purpose:
+    //   1. They are processed here as Lua fields/callbacks for script access
+    //   2. They were already processed by OTML parser as variable definitions (see otmlparser.cpp)
+    //
+    // This dual behavior means widget properties like &minimizedHeight, &save, &onClick are:
+    //   - Set as Lua fields (accessible via widget.fieldName in scripts)
+    //   - Available as OTML variables (usable with $fieldName in descendant nodes)
+    //
+    // For detailed documentation, see docs/otml-variables.md
     for (const auto& node : styleNode->children()) {
         // lua functions
         if (node->tag().starts_with("@")) {
@@ -253,7 +263,15 @@ void UIWidget::parseBaseStyle(const OTMLNodePtr& styleNode)
             std::string fieldName = node->tag().substr(1);
             std::string fieldOrigin = "@" + node->source() + ": [" + node->tag() + "]";
 
-            g_lua.evaluateExpression(node->value(), fieldOrigin);
+            std::string fieldValue = node->value();
+            stdext::trim(fieldValue);
+
+            if (!fieldValue.empty() && fieldValue.front() == '#') {
+                g_lua.pushString(fieldValue);
+            } else {
+                g_lua.evaluateExpression(fieldValue, fieldOrigin);
+            }
+
             luaSetField(fieldName);
         }
     }

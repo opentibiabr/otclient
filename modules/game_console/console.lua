@@ -1096,10 +1096,36 @@ function onConsoleTextClicked(widget, text)
 end
 
 function onConsoleTextHovered(widget, text, hovered)
-    if hovered then
-        g_mouse.pushCursor("pointer")
-    else
-       g_mouse.popCursor("pointer")
+    if not modules.client_options then
+        return
+    end
+    
+    local nativeCursor = modules.client_options.getOption('nativeCursor')
+    local animatedCursor = modules.client_options.getOption('showAnimatedCursor')
+    
+    -- Only show cursor in animated mode
+    if animatedCursor and not nativeCursor then
+        if hovered then
+            if not widget.consoleCursorPushed then
+                g_mouse.pushCursor("pointerbutton")
+                widget.consoleCursorPushed = true
+            end
+        else
+            if widget.consoleCursorPushed then
+                g_mouse.popCursor("pointerbutton")
+                widget.consoleCursorPushed = false
+            end
+        end
+    elseif nativeCursor and hovered then
+        if not widget.consoleCursorPushed then
+            g_window.setSystemCursor('hand')
+            widget.consoleCursorPushed = true
+        end
+    elseif nativeCursor and not hovered then
+        if widget.consoleCursorPushed then
+            g_window.restoreMouseCursor()
+            widget.consoleCursorPushed = false
+        end
     end
 end
 

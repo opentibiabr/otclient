@@ -1259,10 +1259,22 @@ void UITextEdit::updateText()
 void UITextEdit::onHoverChange(const bool hovered)
 {
     if (getProp(PropChangeCursorImage)) {
-        if (hovered && !g_mouse.isCursorChanged())
-            g_mouse.pushCursor("text");
-        else
-            g_mouse.popCursor("text");
+        const bool nativeCursor = g_mouse.isUsingNativeCursor();
+        
+        // Check isCursorChanged only when NOT using native cursor
+        if (hovered && (nativeCursor || !g_mouse.isCursorChanged())) {
+            if (nativeCursor) {
+                g_window.setSystemCursor("text");
+            } else {
+                g_mouse.pushCursor("text");
+            }
+        } else {
+            if (nativeCursor) {
+                g_window.restoreMouseCursor();
+            } else {
+                g_mouse.popCursor("text");
+            }
+        }
     }
 }
 

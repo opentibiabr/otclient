@@ -486,7 +486,12 @@ function onMouseGrabberRelease(self, mousePosition, mouseButton)
     end
 
     selectedThing = nil
-    g_mouse.popCursor('target')
+    -- Restore cursor
+    if modules.client_options and modules.client_options.getOption('nativeCursor') then
+        g_window.restoreMouseCursor()
+    else
+        g_mouse.popCursor('target')
+    end
     self:ungrabMouse()
     return true
 end
@@ -539,7 +544,12 @@ function startUseWith(thing)
     selectedType = 'use'
     selectedThing = thing
     mouseGrabberWidget:grabMouse()
-    g_mouse.pushCursor('target')
+    -- Use native cursor when enabled, otherwise use custom cursor
+    if modules.client_options and modules.client_options.getOption('nativeCursor') then
+        g_window.setSystemCursor('cross')
+    else
+        g_mouse.pushCursor('target')
+    end
 end
 
 function startTradeWith(thing)
@@ -556,7 +566,12 @@ function startTradeWith(thing)
     selectedType = 'trade'
     selectedThing = thing
     mouseGrabberWidget:grabMouse()
-    g_mouse.pushCursor('target')
+    -- Use native cursor when enabled, otherwise use custom cursor
+    if modules.client_options and modules.client_options.getOption('nativeCursor') then
+        g_window.setSystemCursor('cross')
+    else
+        g_mouse.pushCursor('target')
+    end
 end
 
 function isMenuHookCategoryEmpty(category)
