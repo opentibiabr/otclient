@@ -1,0 +1,9 @@
+Module
+  name: client_claydemo
+  description: Clay Layout Demo
+  author: OTClient
+  website: https://github.com/edubart/otclient
+  sandboxed: true
+  scripts: [ claydemo ]
+  @onLoad: init()
+  @onUnload: terminate()

@@ -880,6 +880,7 @@ void Application::registerLuaFunctions()
     g_lua.bindClassMemberFunction<UILayout>("isUIHorizontalLayout", &UILayout::isUIHorizontalLayout);
     g_lua.bindClassMemberFunction<UILayout>("isUIVerticalLayout", &UILayout::isUIVerticalLayout);
     g_lua.bindClassMemberFunction<UILayout>("isUIGridLayout", &UILayout::isUIGridLayout);
+    g_lua.bindClassMemberFunction<UILayout>("isUIClayLayout", &UILayout::isUIClayLayout);
 
     // UIBoxLayout
     g_lua.registerClass<UIBoxLayout, UILayout>();
@@ -919,6 +920,21 @@ void Application::registerLuaFunctions()
     g_lua.bindClassMemberFunction<UIAnchorLayout>("removeAnchors", &UIAnchorLayout::removeAnchors);
     g_lua.bindClassMemberFunction<UIAnchorLayout>("centerIn", &UIAnchorLayout::centerIn);
     g_lua.bindClassMemberFunction<UIAnchorLayout>("fill", &UIAnchorLayout::fill);
+
+#ifdef FRAMEWORK_CLAY
+    // UIClayLayout
+    g_lua.registerClass<UIClayLayout, UILayout>();
+    g_lua.bindClassStaticFunction<UIClayLayout>("create", [](const UIWidgetPtr& parent) { return std::make_shared<UIClayLayout>(parent); });
+    g_lua.bindClassMemberFunction<UIClayLayout>("setDirection", &UIClayLayout::setDirection);
+    g_lua.bindClassMemberFunction<UIClayLayout>("getDirection", &UIClayLayout::getDirection);
+    g_lua.bindClassMemberFunction<UIClayLayout>("setChildGap", &UIClayLayout::setChildGap);
+    g_lua.bindClassMemberFunction<UIClayLayout>("getChildGap", &UIClayLayout::getChildGap);
+    g_lua.bindClassMemberFunction<UIClayLayout>("setAlignX", &UIClayLayout::setAlignX);
+    g_lua.bindClassMemberFunction<UIClayLayout>("getAlignX", &UIClayLayout::getAlignX);
+    g_lua.bindClassMemberFunction<UIClayLayout>("setAlignY", &UIClayLayout::setAlignY);
+    g_lua.bindClassMemberFunction<UIClayLayout>("getAlignY", &UIClayLayout::getAlignY);
+    g_lua.bindClassMemberFunction<UIClayLayout>("isUIClayLayout", &UIClayLayout::isUIClayLayout);
+#endif
 
     // UITextEdit
     g_lua.registerClass<UITextEdit, UIWidget>();

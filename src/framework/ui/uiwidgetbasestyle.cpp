@@ -22,6 +22,9 @@
 #include <framework/graphics/drawpoolmanager.h>
 
 #include "uianchorlayout.h"
+#ifdef FRAMEWORK_CLAY
+#include "uiclaylayout.h"
+#endif
 #include "uigridlayout.h"
 #include "uihorizontallayout.h"
 #include "uilayout.h"
@@ -699,6 +702,10 @@ void UIWidget::parseBaseStyle(const OTMLNodePtr& styleNode)
                     layout = std::make_shared<UIGridLayout>(static_self_cast<UIWidget>());
                 else if (layoutType == "anchor")
                     layout = std::make_shared<UIAnchorLayout>(static_self_cast<UIWidget>());
+#ifdef FRAMEWORK_CLAY
+                else if (layoutType == "clay")
+                    layout = std::make_shared<UIClayLayout>(static_self_cast<UIWidget>());
+#endif
                 else
                     throw OTMLException(node, "cannot determine layout type");
                 setLayout(layout);

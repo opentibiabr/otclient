@@ -10,6 +10,7 @@ option(TOGGLE_FRAMEWORK_XML "Use XML " ON)
 option(TOGGLE_FRAMEWORK_NET "Use NET " ON)
 option(TOGGLE_FRAMEWORK_PROTOBUF "Use Protobuf" ON)
 option(TOGGLE_FRAMEWORK_EDITOR "Use Editor " OFF)
+option(TOGGLE_FRAMEWORK_CLAY "Use Clay Layout Library" ON)
 option(TOGGLE_DIRECTX "Use DX9 support" OFF)
 option(ENABLE_DISCORD_RPC "Use Discord Rich Presence" OFF)
 option(TOGGLE_BIN_FOLDER "Use build/bin folder for generate compilation files" OFF)
@@ -75,6 +76,9 @@ endif()
 
 if (TOGGLE_FRAMEWORK_EDITOR)
   set(FRAMEWORK_DEFINITIONS ${FRAMEWORK_DEFINITIONS} -DFRAMEWORK_EDITOR)
+endif()
+if (TOGGLE_FRAMEWORK_CLAY)
+  set(FRAMEWORK_DEFINITIONS ${FRAMEWORK_DEFINITIONS} -DFRAMEWORK_CLAY)
 endif()
 if (ANDROID OR WASM)
   set(FRAMEWORK_DEFINITIONS ${FRAMEWORK_DEFINITIONS} -DOPENGL_ES=2)
@@ -378,6 +382,11 @@ if (TOGGLE_FRAMEWORK_GRAPHICS)
           framework/ui/uiwidgethtml.cpp
           framework/ui/uiqrcode.cpp
   )
+  if (TOGGLE_FRAMEWORK_CLAY)
+    set(SOURCE_FILES ${SOURCE_FILES}
+            framework/ui/uiclaylayout.cpp
+    )
+  endif()
 endif()
 
 if (TOGGLE_FRAMEWORK_SOUND)

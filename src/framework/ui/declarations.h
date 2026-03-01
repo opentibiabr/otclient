@@ -64,5 +64,10 @@ using UIAnchorPtr = std::shared_ptr<UIAnchor>;
 using UIAnchorGroupPtr = std::shared_ptr<UIAnchorGroup>;
 using UIAnchorLayoutPtr = std::shared_ptr<UIAnchorLayout>;
 
+#ifdef FRAMEWORK_CLAY
+class UIClayLayout;
+using UIClayLayoutPtr = std::shared_ptr<UIClayLayout>;
+#endif
+
 using UIWidgetList = std::deque<UIWidgetPtr>;
 using UIAnchorList = std::vector<UIAnchorPtr>;

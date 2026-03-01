@@ -31,4 +31,7 @@
 #include "uiqrcode.h"
 #include "uitextedit.h"
 #include "uiverticallayout.h"
+#ifdef FRAMEWORK_CLAY
+#include "uiclaylayout.h"
+#endif
 #include "uiwidget.h"

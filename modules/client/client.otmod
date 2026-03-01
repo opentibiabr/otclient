@@ -20,3 +20,4 @@ Module
     - client_terminal
     - client_debug_info
     - client_serverlist
+    - client_claydemo

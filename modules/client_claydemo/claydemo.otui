@@ -1,0 +1,113 @@
+ClayDemoWindow < MainWindow
+  id: clayDemoWindow
+  !text: tr('Clay Layout Demo')
+  size: 500 400
+
+  Panel
+    id: mainContent
+    anchors.fill: parent
+    layout:
+      type: clay
+      direction: vertical
+      child-gap: 8
+      align-x: left
+
+    Label
+      id: titleLabel
+      !text: tr('Vertical Layout (Clay)')
+      height: 20
+      width: 460
+      text-align: center
+      color: #00ccff
+
+    Panel
+      id: horizontalSection
+      height: 80
+      width: 460
+      background: #222222
+      layout:
+        type: clay
+        direction: horizontal
+        child-gap: 6
+        align-y: center
+
+      Panel
+        id: box1
+        height: 60
+        flex-grow: 1
+        background: #cc3333
+
+      Panel
+        id: box2
+        height: 60
+        flex-grow: 2
+        background: #33cc33
+
+      Panel
+        id: box3
+        height: 60
+        flex-grow: 1
+        background: #3333cc
+
+    Label
+      id: infoLabel
+      !text: tr('Red=grow:1 | Green=grow:2 | Blue=grow:1')
+      height: 16
+      width: 460
+      text-align: center
+      color: #aaaaaa
+
+    Panel
+      id: fixedSection
+      height: 100
+      width: 460
+      background: #1a1a2e
+      layout:
+        type: clay
+        direction: horizontal
+        child-gap: 8
+        align-x: center
+        align-y: center
+
+      Panel
+        id: fixedBox1
+        width: 80
+        height: 80
+        background: #e94560
+
+      Panel
+        id: fixedBox2
+        width: 120
+        height: 60
+        background: #0f3460
+
+      Panel
+        id: fixedBox3
+        width: 80
+        height: 80
+        background: #533483
+
+    Label
+      id: fixedInfoLabel
+      !text: tr('Fixed sizes: 80x80, 120x60, 80x80 (centered)')
+      height: 16
+      width: 460
+      text-align: center
+      color: #aaaaaa
+
+    Panel
+      id: buttonRow
+      height: 30
+      width: 460
+      layout:
+        type: clay
+        direction: horizontal
+        child-gap: 8
+        align-x: right
+        align-y: center
+
+      Button
+        id: closeButton
+        !text: tr('Close')
+        width: 64
+        height: 28
