@@ -79,6 +79,7 @@ function controllerCyclopedia:onGameStart()
         g_ui.importStyle("cyclopedia_pages")
 
         controllerCyclopedia:registerEvents(g_game, {
+            onResourcesBalanceChange = Cyclopedia.onResourcesBalanceChange,
             -- bestiary
             onParseBestiaryRaces = Cyclopedia.loadBestiaryCategories,
             onParseBestiaryOverview = Cyclopedia.loadBestiaryOverview,
@@ -98,7 +99,7 @@ function controllerCyclopedia:onGameStart()
             onUpdateCyclopediaCharacterItemSummary = Cyclopedia.loadCharacterItems,
             onParseCyclopediaCharacterAppearances = Cyclopedia.loadCharacterAppearances,
             onParseCyclopediaStoreSummary = Cyclopedia.onParseCyclopediaStoreSummary,
--- character 14.10
+            -- character 14.10
             onCyclopediaCharacterOffenceStats = Cyclopedia.onCyclopediaCharacterOffenceStats,
             onCyclopediaCharacterDefenceStats = Cyclopedia.onCyclopediaCharacterDefenceStats,
             onCyclopediaCharacterMiscStats = Cyclopedia.onCyclopediaCharacterMiscStats,
@@ -493,7 +494,7 @@ function show(defaultWindow)
     controllerCyclopedia.ui:raise()
     controllerCyclopedia.ui:focus()
     SelectWindow(defaultWindow, false)
-    controllerCyclopedia.ui.GoldBase.Value:setText(Cyclopedia.formatGold(g_game.getLocalPlayer():getResourceBalance()))
+    controllerCyclopedia.ui.GoldBase.Value:setText(Cyclopedia.formatGold(g_game.getLocalPlayer():getTotalMoney()))
 end
 
 function toggleBack()
@@ -524,5 +525,31 @@ function SelectWindow(type, isBackButtonPress)
         if window.func then
             window.func(contentContainer)
         end
+    end
+end
+
+function Cyclopedia.onResourcesBalanceChange()
+    if not controllerCyclopedia.ui or not controllerCyclopedia.ui:isVisible() then
+        return
+    end
+
+    local player = g_game.getLocalPlayer()
+    if not player then
+        return
+    end
+
+    controllerCyclopedia.ui.GoldBase.Value:setText(Cyclopedia.formatGold(player:getTotalMoney()))
+
+    local formatResourceBalance = function(resourceType, maxResourceType)
+        return string.format("%d/%d", player:getResourceBalance(resourceType),
+            player:getResourceBalance(maxResourceType))
+    end
+
+    controllerCyclopedia.ui.CharmsBase.Value:setText(formatResourceBalance(ResourceTypes.CHARM,
+        ResourceTypes.MAX_CHARM))
+
+    if controllerCyclopedia.ui.CharmsBase1410:isVisible() then
+        controllerCyclopedia.ui.CharmsBase1410.Value:setText(formatResourceBalance(
+            ResourceTypes.MINOR_CHARM, ResourceTypes.MAX_MINOR_CHARM))
     end
 end
