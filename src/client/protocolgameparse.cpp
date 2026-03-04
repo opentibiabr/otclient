@@ -4344,6 +4344,9 @@ void ProtocolGame::parseTaskHuntingData(const InputMessagePtr& msg)
             msg->getU8(); // Upgraded
             msg->getU16(); // Required kills
             msg->getU16(); // Current kills
+            if (msg->getUnreadSize() > 4) { // unknown g_game.getProtocolVersion()
+                msg->getU8(); // Stars / Extra info
+            }
             break;
         }
     }
