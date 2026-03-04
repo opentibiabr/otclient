@@ -529,7 +529,7 @@ function SelectWindow(type, isBackButtonPress)
 end
 
 function Cyclopedia.onResourcesBalanceChange()
-    if not controllerCyclopedia.ui:isVisible() then
+    if not controllerCyclopedia.ui or not controllerCyclopedia.ui:isVisible() then
         return
     end
 
