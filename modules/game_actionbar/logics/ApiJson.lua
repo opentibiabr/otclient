@@ -954,7 +954,19 @@ function ApiJson.removeHotkeySet(name)
 
     local currentName = options.currentHotkeySetName or hotkeyOptions.currentHotkeySetName
     if currentName == name then
-        local fallback = profiles[1]
+        local fallback = nil
+        for _, profileName in ipairs(profiles) do
+            if hotkeySets[profileName] then
+                fallback = profileName
+                break
+            end
+        end
+        if not fallback then
+            for profileName, _ in pairs(hotkeySets) do
+                fallback = profileName
+                break
+            end
+        end
         hotkeyOptions.currentHotkeySetName = fallback
         options.currentHotkeySetName = fallback
         options.currentHotkeySet = fallback and hotkeySets[fallback] or nil
