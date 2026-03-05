@@ -67,6 +67,7 @@ public:
     virtual int loadMouseCursor(const std::string& file, const Point& hotSpot);
     virtual void setMouseCursor(int cursorId) = 0;
     virtual void restoreMouseCursor() = 0;
+    virtual void setSystemCursor(const std::string& cursorName) {}
 
     virtual void setTitle(std::string_view title) = 0;
     virtual void setMinimumSize(const Size& minimumSize) = 0;

@@ -25,9 +25,11 @@
 #include <framework/core/declarations.h>
 #include <framework/core/timer.h>
 
+#ifdef FRAMEWORK_PROTOBUF
 #include <appearances.pb.h>
 
 using namespace otclient::protobuf;
+#endif
 
 enum AnimationPhase : int16_t
 {
@@ -45,7 +47,9 @@ enum AnimationDirection : uint8_t
 class Animator : public std::enable_shared_from_this<Animator>
 {
 public:
+#ifdef FRAMEWORK_PROTOBUF
     void unserializeAppearance(const appearances::SpriteAnimation& animation);
+#endif
     void unserialize(int animationPhases, const FileStreamPtr& fin);
     void serialize(const FileStreamPtr& fin) const;
     void setPhase(int phase);

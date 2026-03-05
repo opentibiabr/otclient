@@ -23,7 +23,9 @@
 #pragma once
 
 #include "declarations.h"
+#ifdef FRAMEWORK_PROTOBUF
 #include <appearances.pb.h>
+#endif
 
 #include "staticdata.h"
 #include "const.h"
@@ -32,7 +34,9 @@
 #include "framework/graphics/declarations.h"
 #include "framework/luaengine/luaobject.h"
 
+#ifdef FRAMEWORK_PROTOBUF
 using namespace otclient::protobuf;
+#endif
 
 class ThingType final : public LuaObject
 {
@@ -45,10 +49,12 @@ public:
         uint32_t getGemQualityId() { return gem_quality_id; }
         uint32_t getVocationId() { return vocation_id; }
     };
+#ifdef FRAMEWORK_PROTOBUF
+    void applyAppearanceFlags(const appearances::AppearanceFlags& flags);
     void unserializeAppearance(uint16_t clientId, ThingCategory category, const appearances::Appearance& appearance);
+#endif
     void unserialize(uint16_t clientId, ThingCategory category, const FileStreamPtr& fin);
     void unserializeOtml(const OTMLNodePtr& node);
-    void applyAppearanceFlags(const appearances::AppearanceFlags& flags);
 
 #ifdef FRAMEWORK_EDITOR
     void serialize(const FileStreamPtr& fin);
