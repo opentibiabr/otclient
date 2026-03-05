@@ -246,6 +246,9 @@ bool luavalue_cast(int index, std::unordered_map<K, V, H>& map);
 
 // pair
 template<class K, class V>
+int push_luavalue(const std::pair<K, V>& pair);
+
+template<class K, class V>
 bool luavalue_cast(int index, std::pair<K, V>& pair);
 
 // tuple
@@ -585,26 +588,39 @@ bool luavalue_cast(const int index, std::unordered_map<K, V, H>& map)
 }
 
 template<class K, class V>
+int push_luavalue(const std::pair<K, V>& pair)
+{
+    g_lua.createTable(2, 0);
+    push_internal_luavalue(pair.first);
+    g_lua.rawSeti(1);
+    push_internal_luavalue(pair.second);
+    g_lua.rawSeti(2);
+    return 1;
+}
+
+template<class K, class V>
 bool luavalue_cast(const int index, std::pair<K, V>& pair)
 {
     if (g_lua.isTable(index)) {
-        g_lua.pushNil();
-        if (g_lua.next(index < 0 ? index - 1 : index)) {
-            K value;
-            if (!luavalue_cast(-1, value))
-                pair.first = value;
+        // Get first element (index 1 in Lua)
+        g_lua.rawGeti(1, index);
+        K firstValue;
+        if (!luavalue_cast(-1, firstValue)) {
             g_lua.pop();
-        } else {
             return false;
         }
-        if (g_lua.next(index < 0 ? index - 1 : index)) {
-            V value;
-            if (!luavalue_cast(-1, value))
-                pair.second = value;
+        pair.first = firstValue;
+        g_lua.pop();
+        
+        // Get second element (index 2 in Lua)
+        g_lua.rawGeti(2, index);
+        V secondValue;
+        if (!luavalue_cast(-1, secondValue)) {
             g_lua.pop();
-        } else {
             return false;
         }
+        pair.second = secondValue;
+        g_lua.pop();
 
         return true;
     }
