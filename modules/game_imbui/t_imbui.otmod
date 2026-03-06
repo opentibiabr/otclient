@@ -1,0 +1,6 @@
+Module
+  name: game_imbui
+  sandboxed: true
+  scripts: [ t_imbui, classes/imbuementselection, classes/imbuementitem, classes/imbuementscroll ]
+  @onLoad: Imbuement.init()
+  @onUnload: Imbuement.terminate()
