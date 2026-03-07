@@ -141,6 +141,16 @@ BrowserWindow::BrowserWindow() {
     web_keymap.push_back({ "Backslash", Fw::KeyBackslash });
     web_keymap.push_back({ "BracketRight", Fw::KeyRightBracket });
     web_keymap.push_back({ "Quote", Fw::KeyQuote });
+    web_keymap.push_back({ "BrowserBack", Fw::KeyBrowserBack });
+    web_keymap.push_back({ "BrowserSearch", Fw::KeyBrowserSearch });
+    web_keymap.push_back({ "BrowserHome", Fw::KeyBrowserHome });
+    web_keymap.push_back({ "Mute", Fw::KeyVolumeMute });
+    web_keymap.push_back({ "Volume-", Fw::KeyVolumeDown });
+    web_keymap.push_back({ "Volume+", Fw::KeyVolumeUp });
+    web_keymap.push_back({ "MediaNext", Fw::KeyMediaNext });
+    web_keymap.push_back({ "MediaPrev", Fw::KeyMediaPrev });
+    web_keymap.push_back({ "PlayPause", Fw::KeyMediaPlayPause });
+    web_keymap.push_back({ "MediaLaunch", Fw::KeyLaunchMediaSelect });
     web_keymap.push_back({ 0, Fw::KeyUnknown });
 }
 

@@ -170,6 +170,16 @@ namespace Fw
         KeyNumpad7 = 148,
         KeyNumpad8 = 149,
         KeyNumpad9 = 150,
+        KeyBrowserBack = 166,
+        KeyBrowserSearch = 170,
+        KeyBrowserHome = 172,
+        KeyVolumeMute = 173,
+        KeyVolumeDown = 174,
+        KeyVolumeUp = 175,
+        KeyMediaNext = 176,
+        KeyMediaPrev = 177,
+        KeyMediaPlayPause = 179,
+        KeyLaunchMediaSelect = 181,
         KeyLast
     };
 

@@ -217,6 +217,16 @@ WIN32Window::WIN32Window()
     m_keyMap[VK_F10] = Fw::KeyF10;
     m_keyMap[VK_F11] = Fw::KeyF11;
     m_keyMap[VK_F12] = Fw::KeyF12;
+    m_keyMap[VK_BROWSER_BACK] = Fw::KeyBrowserBack;
+    m_keyMap[VK_BROWSER_SEARCH] = Fw::KeyBrowserSearch;
+    m_keyMap[VK_BROWSER_HOME] = Fw::KeyBrowserHome;
+    m_keyMap[VK_VOLUME_MUTE] = Fw::KeyVolumeMute;
+    m_keyMap[VK_VOLUME_DOWN] = Fw::KeyVolumeDown;
+    m_keyMap[VK_VOLUME_UP] = Fw::KeyVolumeUp;
+    m_keyMap[VK_MEDIA_NEXT_TRACK] = Fw::KeyMediaNext;
+    m_keyMap[VK_MEDIA_PREV_TRACK] = Fw::KeyMediaPrev;
+    m_keyMap[VK_MEDIA_PLAY_PAUSE] = Fw::KeyMediaPlayPause;
+    m_keyMap[VK_LAUNCH_MEDIA_SELECT] = Fw::KeyLaunchMediaSelect;
 }
 
 void WIN32Window::init()
