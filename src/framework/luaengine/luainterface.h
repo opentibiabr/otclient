@@ -25,7 +25,15 @@
 #include "declarations.h"
 #include <framework/util/stats.h>
 
-#ifdef __has_include
+#ifdef ANDROID
+// On Android we ship a static Lua 5.1 library, not LuaJIT. Use C headers directly.
+extern "C" {
+#include <lua.h>
+#include <lualib.h>
+#include <lauxlib.h>
+}
+#define LUAJIT_VERSION "LUA 5.1"
+#elif defined(__has_include)
 
 #if __has_include("luajit/lua.hpp")
 #include <luajit/lua.hpp>
@@ -37,7 +45,7 @@ extern "C" {
 #include <lua51/lualib.h>
 #include <lua51/lauxlib.h>
 }
-#define LUAJIT_VERSION = "LUA 5.1"
+#define LUAJIT_VERSION "LUA 5.1"
 #else
 #error "Cannot detect luajit library"
 #endif

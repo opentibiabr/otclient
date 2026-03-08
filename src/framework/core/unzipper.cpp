@@ -21,6 +21,9 @@
  */
 
 #ifdef ANDROID
+#include "unzipper.h"
+void unzipper::extract(const char* /*fileBuffer*/, uint /*fileLength*/, std::string& /*destinationPath*/) {}
+#else
 
 #include "unzipper.h"
 #include "logger.h"

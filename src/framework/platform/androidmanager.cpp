@@ -26,6 +26,10 @@
 #include <framework/core/unzipper.h>
 #include <framework/core/resourcemanager.h>
 #include <framework/sound/soundmanager.h>
+#include <physfs.h>
+#include <filesystem>
+#include <android/log.h>
+#define ALOG(...) __android_log_print(ANDROID_LOG_INFO, "OTClientMobile", __VA_ARGS__)
 
 AndroidManager g_androidManager;
 
@@ -92,27 +96,101 @@ void AndroidManager::hideInputPreview() {
 }
 
 void AndroidManager::unZipAssetData() {
-    std::string destFolder = getAppBaseDir() + "/game_data/";
+    std::string destZip = getAppBaseDir() + "/data.zip";
 
-    const std::filesystem::path initLua { destFolder + "init.lua" };
-    if (std::filesystem::exists(initLua)) {
+    // If data.zip already exists on disk, skip copying from assets
+    if (std::filesystem::exists(destZip)) {
         return;
     }
 
+    // Use AASSET_MODE_STREAMING to avoid loading the entire large file into
+    // contiguous RAM (AASSET_MODE_BUFFER's AAsset_getBuffer can return NULL
+    // for files >~50MB, causing a crash on fwrite).
     AAsset* dataAsset = AAssetManager_open(
             m_app->activity->assetManager,
             "data.zip",
-            AASSET_MODE_BUFFER);
+            AASSET_MODE_STREAMING);
 
-    auto dataFileLength = AAsset_getLength(dataAsset);
-    char* dataContent = (char *) malloc(dataFileLength + 1);
-    AAsset_read(dataAsset, dataContent, dataFileLength);
-    dataContent[dataFileLength] = '\0';
+    if (!dataAsset) {
+        g_logger.fatal("Failed to open data.zip from Android assets");
+        return;
+    }
 
-    unzipper::extract(dataContent, dataFileLength, destFolder);
+    FILE* out = fopen(destZip.c_str(), "wb");
+    if (!out) {
+        AAsset_close(dataAsset);
+        g_logger.fatal("Failed to write data.zip to internal storage");
+        return;
+    }
 
+    char buf[65536];
+    int bytesRead;
+    while ((bytesRead = AAsset_read(dataAsset, buf, sizeof(buf))) > 0) {
+        fwrite(buf, 1, static_cast<size_t>(bytesRead), out);
+    }
+
+    fclose(out);
     AAsset_close(dataAsset);
-    delete [] dataContent;
+}
+
+static void extractPhysFSDir(const std::string& virtualDir, const std::string& destRoot) {
+    char** files = PHYSFS_enumerateFiles(virtualDir.c_str());
+    if (!files) return;
+
+    for (char** i = files; *i; i++) {
+        std::string name = *i;
+        std::string virtualPath = virtualDir.empty() ? name : virtualDir + "/" + name;
+        std::string realPath = destRoot + virtualPath;
+
+        PHYSFS_Stat stat;
+        if (!PHYSFS_stat(virtualPath.c_str(), &stat)) continue;
+
+        if (stat.filetype == PHYSFS_FILETYPE_DIRECTORY) {
+            std::filesystem::create_directories(realPath);
+            extractPhysFSDir(virtualPath, destRoot);
+        } else if (stat.filetype == PHYSFS_FILETYPE_REGULAR) {
+            std::filesystem::create_directories(std::filesystem::path(realPath).parent_path());
+            PHYSFS_File* src = PHYSFS_openRead(virtualPath.c_str());
+            if (!src) continue;
+            FILE* dst = fopen(realPath.c_str(), "wb");
+            if (dst) {
+                char buf[8192];
+                PHYSFS_sint64 n;
+                while ((n = PHYSFS_readBytes(src, buf, sizeof(buf))) > 0)
+                    fwrite(buf, 1, static_cast<size_t>(n), dst);
+                fclose(dst);
+            }
+            PHYSFS_close(src);
+        }
+    }
+    PHYSFS_freeList(files);
+}
+
+void AndroidManager::extractZipToFilesystem() {
+    std::string destZip = getAppBaseDir() + "/data.zip";
+    std::string destDir = getAppBaseDir() + "/";
+
+    ALOG("extractZipToFilesystem: destZip=%s destDir=%s", destZip.c_str(), destDir.c_str());
+
+    if (std::filesystem::exists(destDir + "init.lua")) {
+        ALOG("extractZipToFilesystem: init.lua already exists, skipping extraction");
+        return;
+    }
+
+    bool zipExists = std::filesystem::exists(destZip);
+    ALOG("extractZipToFilesystem: data.zip exists=%d", (int)zipExists);
+
+    if (!PHYSFS_mount(destZip.c_str(), nullptr, 0)) {
+        ALOG("extractZipToFilesystem: PHYSFS_mount failed: %s", PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
+        g_logger.fatal("Failed to mount data.zip for extraction");
+        return;
+    }
+
+    ALOG("extractZipToFilesystem: mounted zip, starting extraction to %s", destDir.c_str());
+    extractPhysFSDir("", destDir);
+    ALOG("extractZipToFilesystem: extraction complete");
+
+    PHYSFS_unmount(destZip.c_str());
 }
 
 std::string AndroidManager::getAppBaseDir() {

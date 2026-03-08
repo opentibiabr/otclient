@@ -42,6 +42,7 @@ public:
     void hideInputPreview();
 
     void unZipAssetData();
+    void extractZipToFilesystem();
 
     std::string getStringFromJString(jstring);
     std::string getAppBaseDir();

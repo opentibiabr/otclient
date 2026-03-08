@@ -23,13 +23,27 @@ if (VCPKG_TARGET_ANDROID)
     include("cmake/vcpkg_android.cmake")
 	set(Android_INCLUDES ${Android_INCLUDES} ${CMAKE_SOURCE_DIR}/android/app/libs/include)
 	set(Android_LIBRARIES ${Android_LIBRARIES} ${CMAKE_SOURCE_DIR}/android/app/libs/lib/${CMAKE_ANDROID_ARCH_ABI})
-	include_directories(Android_INCLUDES)
+	include_directories(${Android_INCLUDES})
 endif()
 
 # *****************************************************************************
 # Project otclient
 # *****************************************************************************
 project(otclient)
+
+# Remove unsupported linker flags when targeting Android
+# The NDK may add -fuse-ld=gold despite our efforts to prevent it
+# This aggressive cleanup runs immediately after project() declaration
+if(ANDROID)
+    foreach(flag_var CMAKE_CXX_FLAGS CMAKE_C_FLAGS CMAKE_EXE_LINKER_FLAGS CMAKE_SHARED_LINKER_FLAGS CMAKE_MODULE_LINKER_FLAGS
+                       CMAKE_CXX_FLAGS_DEBUG CMAKE_C_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE CMAKE_C_FLAGS_RELEASE
+                       CMAKE_CXX_FLAGS_RELWITHDEBINFO CMAKE_C_FLAGS_RELWITHDEBINFO CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_C_FLAGS_MINSIZEREL)
+        if(DEFINED ${flag_var})
+            string(REPLACE "-fuse-ld=gold" "" ${flag_var} "${${flag_var}}")
+        endif()
+    endforeach()
+endif()
+
 
 # *****************************************************************************
 # Append cmake search path

@@ -83,6 +83,7 @@ void printHelp(const std::string& executableName)
     // Unzip Android assets/data.zip
         g_androidManager.unZipAssetData();
         g_resources.init(nullptr);
+        g_androidManager.extractZipToFilesystem();
 #else
         g_resources.init(args[0].data());
 #endif

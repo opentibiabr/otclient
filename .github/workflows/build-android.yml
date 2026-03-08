@@ -1,0 +1,154 @@
+name: Build - Android APK
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - "src/**"
+      - "android/**"
+      - "cmake/**"
+      - "CMakeLists.txt"
+      - "vcpkg.json"
+      - ".github/workflows/build-android.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "src/**"
+      - "android/**"
+      - "cmake/**"
+      - "CMakeLists.txt"
+      - "vcpkg.json"
+      - ".github/workflows/build-android.yml"
+
+permissions:
+  contents: read
+  pull-requests: read
+
+env:
+  NDK_VERSION: "29.0.13599879"
+  JAVA_VERSION: "17"
+
+jobs:
+  cancel-runs:
+    if: github.event_name == 'pull_request' && github.ref != 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@main
+        with:
+          access_token: ${{ github.token }}
+
+  build:
+    if: ${{ github.event_name == 'push' || !github.event.pull_request.draft }}
+    name: android-${{ matrix.build_type }}
+    runs-on: ubuntu-latest
+
+    concurrency:
+      group: otclient-${{ github.workflow }}-${{ github.ref }}-${{ matrix.build_type }}
+      cancel-in-progress: true
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - build_type: releaseSkinDebug
+            gradle_task: assembleReleaseSkinDebug
+            apk_dir: releaseSkinDebug
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK platform and NDK
+        run: |
+          sdkmanager --install "platforms;android-36"
+          sdkmanager --install "ndk;${{ env.NDK_VERSION }}" || \
+          sdkmanager --install "ndk-bundle"
+          # The installed NDK directory may include a suffix (e.g. " rc2"), find it dynamically
+          NDK_DIR=$(ls -d "$ANDROID_SDK_ROOT/ndk/${{ env.NDK_VERSION }}"* 2>/dev/null | head -1)
+          if [ -z "$NDK_DIR" ]; then
+            NDK_DIR="$ANDROID_SDK_ROOT/ndk-bundle"
+          fi
+          echo "ANDROID_NDK_HOME=$NDK_DIR" >> $GITHUB_ENV
+
+      - name: Get vcpkg commit ID
+        id: vcpkg-step
+        run: |
+          vcpkgCommitId=$(grep '.builtin-baseline' vcpkg.json | awk -F: '{print $2}' | tr -d '," ')
+          echo "vcpkgGitCommitId=$vcpkgCommitId" >> $GITHUB_OUTPUT
+
+      - name: Validate vcpkg baseline SHA
+        run: |
+          SHAS="${{ steps.vcpkg-step.outputs.vcpkgGitCommitId }}"
+          if [ -z "${SHAS}" ]; then
+            echo "::error title=Missing vcpkg baseline::Provide a full 40-char vcpkgGitCommitId."
+            exit 1
+          fi
+          if ! echo "${SHAS}" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "::error title=Invalid vcpkg baseline::vcpkgGitCommitId must be a full 40-char commit SHA."
+            exit 1
+          fi
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@a400452f634fe49e9f18d388aeb1809dcc642136
+        with:
+          vcpkgGitCommitId: ${{ steps.vcpkg-step.outputs.vcpkgGitCommitId }}
+
+      - name: Export vcpkg GHA binary cache environment variables
+        uses: actions/github-script@v7
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+
+      - name: Build Lua 5.1.5 static library for ARM64 Android
+        run: |
+          curl -fsSL https://www.lua.org/ftp/lua-5.1.5.tar.gz | tar xz
+          cd lua-5.1.5/src
+          NDK_TOOLCHAIN="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          $NDK_TOOLCHAIN/aarch64-linux-android21-clang \
+            -O2 -DLUA_USE_LINUX \
+            -c lapi.c lauxlib.c lbaselib.c lcode.c ldblib.c ldebug.c \
+               ldo.c ldump.c lfunc.c lgc.c linit.c liolib.c llex.c \
+               lmathlib.c lmem.c loadlib.c lobject.c lopcodes.c loslib.c \
+               lparser.c lstate.c lstring.c lstrlib.c ltable.c ltablib.c \
+               ltm.c lundump.c lvm.c lzio.c
+          $NDK_TOOLCHAIN/llvm-ar rcs liblua.a *.o
+          mkdir -p ${{ github.workspace }}/android/libs/arm64-v8a
+          cp liblua.a ${{ github.workspace }}/android/libs/arm64-v8a/liblua.a
+
+      - name: Assemble data.zip from split parts
+        run: |
+          mkdir -p android/app/src/main/assets
+          cat android/data/data.zip.partaa \
+              android/data/data.zip.partab \
+              > android/app/src/main/assets/data.zip
+
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
+      - name: Build APK (${{ matrix.build_type }})
+        working-directory: android
+        env:
+          VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+        run: ./gradlew ${{ matrix.gradle_task }} --no-daemon --stacktrace
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: otclient-android-${{ matrix.build_type }}-${{ github.sha }}
+          path: android/app/build/outputs/apk/${{ matrix.apk_dir }}/*.apk
+          if-no-files-found: error

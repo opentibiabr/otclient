@@ -16,16 +16,28 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         ndk {
-            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+            // Single ABI (arm64-v8a) for release to simplify build; add others as needed
+            abiFilters += listOf("arm64-v8a")
         }
 
         externalNativeBuild {
             cmake {
-                cppFlags += listOf("-std=c++20", "-flto")
+                cppFlags += listOf("-std=c++20")
 
                 arguments += listOf(
                     "-DVCPKG_TARGET_ANDROID=ON",
-                    "-DANDROID_STL=c++_shared"
+                    "-DANDROID_STL=c++_shared",
+                    "-DCMAKE_TOOLCHAIN_FILE=${projectDir}/../../cmake/android-ndk-no-gold.toolchain.cmake",
+                    "-DCMAKE_CXX_COMPILER=${projectDir}/../../cmake/clang-no-gold.sh",
+                    "-DCMAKE_C_COMPILER=${projectDir}/../../cmake/clang-no-gold.sh",
+                    "-DCMAKE_CXX_FLAGS_INIT=-fuse-ld=lld",
+                    "-DCMAKE_C_FLAGS_INIT=-fuse-ld=lld",
+                    "-DCMAKE_EXE_LINKER_FLAGS_INIT=-fuse-ld=lld",
+                    "-DCMAKE_SHARED_LINKER_FLAGS_INIT=-fuse-ld=lld",
+                    "-DCMAKE_MODULE_LINKER_FLAGS_INIT=-fuse-ld=lld",
+                    "-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld",
+                    "-DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld",
+                    "-DCMAKE_MODULE_LINKER_FLAGS=-fuse-ld=lld"
                 )
             }
         }
@@ -34,8 +46,12 @@ android {
     externalNativeBuild {
         cmake {
             path = file("../../CMakeLists.txt")
-            version = "4.0.2"
+            version = "3.22.1"
         }
+    }
+
+    signingConfigs {
+        // Use the existing debug signing config
     }
 
     buildTypes {
@@ -46,6 +62,18 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 file("proguard-rules.pro")
             )
+            // Use debug signing for release builds to allow installation
+            // TODO: Configure proper release signing for production
+            signingConfig = signingConfigs.getByName("debug")
+        }
+        create("releaseSkinDebug") {
+            initWith(getByName("release"))
+            isDebuggable = true
+            externalNativeBuild {
+                cmake {
+                    arguments += "-DCMAKE_BUILD_TYPE=RelWithDebInfo"
+                }
+            }
         }
     }
 
@@ -61,6 +89,13 @@ android {
     buildFeatures {
         viewBinding = true
         prefab = true
+    }
+
+    androidResources {
+        // Store data.zip uncompressed in the APK — it is already a compressed
+        // zip, so re-compressing wastes build time and forces Android to
+        // decompress the whole file into RAM before AAsset_read can stream it.
+        noCompress += "zip"
     }
 
     ndkVersion = "29.0.13599879 rc2"

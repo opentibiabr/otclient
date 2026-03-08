@@ -63,6 +63,7 @@ bool ResourceManager::discoverWorkDir(const std::string& existentFile)
     // search for modules directory
     std::string possiblePaths[] = { g_platform.getCurrentDir(),
                                     g_resources.getBaseDir(),
+                                    g_resources.getBaseDir() + "/data.zip",
                                     g_resources.getBaseDir() + "/game_data/",
                                     g_resources.getBaseDir() + "../",
                                     g_resources.getBaseDir() + "../share/" + g_app.getCompactName() + "/" };
@@ -73,8 +74,10 @@ bool ResourceManager::discoverWorkDir(const std::string& existentFile)
             continue;
 
         if (PHYSFS_exists(existentFile.c_str())) {
-            g_logger.debug("Found work dir at '{}'", dir);
             m_workDir = dir;
+            if (!m_workDir.empty() && m_workDir.back() != '/')
+                m_workDir += '/';
+            g_logger.info("Found work dir at '{}'", m_workDir);
             found = true;
             break;
         }

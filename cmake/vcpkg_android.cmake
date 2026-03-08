@@ -17,9 +17,11 @@
 # Note: VCPKG_TARGET_ANDROID is not an official Vcpkg variable. 
 # it is introduced for the need of this script
 
-if (VCPKG_TARGET_ANDROID)
+# If we're using the unified Android toolchain wrapper, skip this legacy logic
+if (CUSTOM_ANDROID_TOOLCHAIN)
+    message(STATUS "vcpkg_android.cmake: Skipping legacy Android logic (using unified toolchain wrapper)")
+else()
 
-    #
     # 1. Check the presence of environment variable ANDROID_NDK_HOME
     #
     if (NOT DEFINED ENV{ANDROID_NDK_HOME})
@@ -80,7 +82,7 @@ if (VCPKG_TARGET_ANDROID)
 
 
     #
-    # 4. Combine vcpkg and Android toolchains
+    # 4. Combine vcpkg and Android toolchains with gold linker removal for macOS NDK
     #
 
     # vcpkg and android both provide dedicated toolchains:
@@ -91,9 +93,15 @@ if (VCPKG_TARGET_ANDROID)
     # When using vcpkg, the vcpkg toolchain shall be specified first. 
     # However, vcpkg provides a way to preload and additional toolchain, 
     # with the VCPKG_CHAINLOAD_TOOLCHAIN_FILE option.
-    set(VCPKG_CHAINLOAD_TOOLCHAIN_FILE $ENV{ANDROID_NDK_HOME}/build/cmake/android.toolchain.cmake)
+    #
+    # Chainload our custom toolchain which strips the gold linker flag
+    set(VCPKG_CHAINLOAD_TOOLCHAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/cmake/android-ndk-no-gold.toolchain.cmake)
     set(CMAKE_TOOLCHAIN_FILE $ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake)
     message("vcpkg_android.cmake: CMAKE_TOOLCHAIN_FILE was set to ${CMAKE_TOOLCHAIN_FILE}")
     message("vcpkg_android.cmake: VCPKG_CHAINLOAD_TOOLCHAIN_FILE was set to ${VCPKG_CHAINLOAD_TOOLCHAIN_FILE}")
+    
+    # Add initial flags to prefer lld over gold (extra safety)
+    string(APPEND CMAKE_CXX_FLAGS_INIT " -fuse-ld=lld")
+    string(APPEND CMAKE_C_FLAGS_INIT " -fuse-ld=lld")
 
-endif(VCPKG_TARGET_ANDROID)
+endif()
