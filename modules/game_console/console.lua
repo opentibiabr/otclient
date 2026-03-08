@@ -1678,6 +1678,10 @@ function onTalk(name, level, mode, message, channelId, creaturePos)
     if (mode == MessageModes.Say or mode == MessageModes.Whisper or mode == MessageModes.Yell or mode == MessageModes.Spell or
         mode == MessageModes.MonsterSay or mode == MessageModes.MonsterYell or mode == MessageModes.NpcFrom or mode ==
         MessageModes.BarkLow or mode == MessageModes.BarkLoud or mode == MessageModes.NpcFromStartBlock) and creaturePos then
+        -- Oculta palavras de spells acima do personagem se opcao desativada
+        if mode == MessageModes.Spell and not modules.client_options.getOption('showSelfSpellOnScreen') then
+            -- nao renderiza o staticText no mapa
+        else
         local staticText = StaticText.create()
         local staticMessage = message
         if isNpcMode then
@@ -1700,7 +1704,8 @@ function onTalk(name, level, mode, message, channelId, creaturePos)
 
         staticText:addMessage(name, mode, staticMessage)
         g_map.addStaticText(staticText, creaturePos)
-    end
+        end -- end else (showSelfSpellOnScreen)
+    end -- end if creaturePos
 
     local defaultMessage = mode <= 3 and true or false
 

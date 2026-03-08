@@ -166,6 +166,8 @@ return {
     showOthersStatusMessagesInConsole = false,
     showPrivateMessagesOnScreen       = true,
     showLootMessagesOnScreen          = true,
+    showSelfSpellOnScreen             = true,
+    showHotkeyUseOnScreen             = true,
     showHighlightedUnderline          = {
         value = false,
         action = function(value, options, controller, panels, extraWidgets)
