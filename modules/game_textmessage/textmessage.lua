@@ -250,6 +250,10 @@ function displayMessage(mode, text)
         return
     end
 
+    if mode == MessageModes.HotkeyUse and not modules.client_options.getOption('showHotkeyUseOnScreen') then
+        return
+    end
+
     if msgtype.consoleTab ~= nil and
         (msgtype.consoleOption == nil or modules.client_options.getOption(msgtype.consoleOption)) then
         if msgtype == MessageSettings.loot or msgtype == MessageSettings.valuableLoot then
