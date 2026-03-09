@@ -182,6 +182,7 @@ namespace Proto
         GameServerCyclopediaHousesInfo = 198,
         GameServerCyclopediaHouseList = 199,
         GameServerChooseOutfit = 200,
+        GameServerExivaRestrictions = 202,
         GameServerSendUpdateImpactTracker = 204,
         GameServerSendItemsPrice = 205,
         GameServerSendUpdateSupplyTracker = 206,

@@ -305,6 +305,7 @@ private:
     void parseQuestTracker(const InputMessagePtr& msg);
     void parseKillTracker(const InputMessagePtr& msg);
     void parseOpenOutfitWindow(const InputMessagePtr& msg) const;
+    void parseExivaRestrictions(const InputMessagePtr& msg);
     void parseVipAdd(const InputMessagePtr& msg);
     void parseVipState(const InputMessagePtr& msg);
     void parseVipLogout(const InputMessagePtr& msg);

@@ -485,6 +485,9 @@ void ProtocolGame::parseMessage(const InputMessagePtr& msg)
                 case Proto::GameServerChooseOutfit:
                     parseOpenOutfitWindow(msg);
                     break;
+                case Proto::GameServerExivaRestrictions:
+                    parseExivaRestrictions(msg);
+                    break;
                 case Proto::GameServerSendUpdateImpactTracker:
                     parseUpdateImpactTracker(msg);
                     break;
@@ -3113,6 +3116,36 @@ void ProtocolGame::parseOpenOutfitWindow(const InputMessagePtr& msg) const
     }
 
     g_game.processOpenOutfitWindow(currentOutfit, outfitList, mountList, familiarList, wingList, auraList, effectList, shaderList);
+}
+
+void ProtocolGame::parseExivaRestrictions(const InputMessagePtr& msg)
+{
+    msg->getU8(); // allowAll
+    msg->getU8(); // allowOwnGuild
+    msg->getU8(); // allowOwnParty
+    msg->getU8(); // allowVipList
+    msg->getU8(); // allowPlayerWhitelist
+    msg->getU8(); // allowGuildWhitelist
+
+    const uint16_t addedPlayersSize = msg->getU16();
+    for (auto i = 0; std::cmp_less(i, addedPlayersSize); ++i) {
+        msg->getString();
+    }
+
+    const uint16_t removedPlayersSize = msg->getU16();
+    for (auto i = 0; std::cmp_less(i, removedPlayersSize); ++i) {
+        msg->getString();
+    }
+
+    const uint16_t addedGuildsSize = msg->getU16();
+    for (auto i = 0; std::cmp_less(i, addedGuildsSize); ++i) {
+        msg->getString();
+    }
+
+    const uint16_t removedGuildsSize = msg->getU16();
+    for (auto i = 0; std::cmp_less(i, removedGuildsSize); ++i) {
+        msg->getString();
+    }
 }
 
 void ProtocolGame::parseQuestTracker(const InputMessagePtr& msg)
