@@ -330,7 +330,7 @@ namespace Proto
         ClientForgeEnter = 191,
         ClientForgeBrowseHistory = 192,
         ClientUpdateTile = 201,
-        ClientRefreshContainer = 202,
+        ClientRefreshContainer = 202, // > 11.00 ClientExivaRestrictions 
         ClientBrowseField = 203,
         ClientSeekInContainer = 204,
         ClientInspectionObject = 205,

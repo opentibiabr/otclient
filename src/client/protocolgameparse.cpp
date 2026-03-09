@@ -738,7 +738,8 @@ void ProtocolGame::parseLogin(const InputMessagePtr& msg) const
     }
 
     if (g_game.getClientVersion() >= 1281) {
-        msg->getU8(); // exiva button enabled (bool)
+        const bool exivaEnabled = static_cast<bool>(msg->getU8());// exiva button enabled (bool)
+        g_game.setCanExivaOptions(exivaEnabled);
         if (g_game.getFeature(Otc::GameTournamentPackets)) {
             msg->getU8(); // Tournament button (bool)
         }
@@ -3120,32 +3121,45 @@ void ProtocolGame::parseOpenOutfitWindow(const InputMessagePtr& msg) const
 
 void ProtocolGame::parseExivaRestrictions(const InputMessagePtr& msg)
 {
-    msg->getU8(); // allowAll
-    msg->getU8(); // allowOwnGuild
-    msg->getU8(); // allowOwnParty
-    msg->getU8(); // allowVipList
-    msg->getU8(); // allowPlayerWhitelist
-    msg->getU8(); // allowGuildWhitelist
+    const bool allowAll = static_cast<bool>(msg->getU8());
+    const bool allowOwnGuild = static_cast<bool>(msg->getU8());
+    const bool allowOwnParty = static_cast<bool>(msg->getU8());
+    const bool allowVipList = static_cast<bool>(msg->getU8());
+    const bool allowPlayerWhitelist = static_cast<bool>(msg->getU8());
+    const bool allowGuildWhitelist = static_cast<bool>(msg->getU8());
 
+    std::vector<std::string> characterWhiteList;
     const uint16_t addedPlayersSize = msg->getU16();
+    characterWhiteList.reserve(addedPlayersSize);
     for (auto i = 0; std::cmp_less(i, addedPlayersSize); ++i) {
-        msg->getString();
+        characterWhiteList.emplace_back(msg->getString());
     }
 
+    std::vector<std::string> removeCharacter;
     const uint16_t removedPlayersSize = msg->getU16();
+    removeCharacter.reserve(removedPlayersSize);
     for (auto i = 0; std::cmp_less(i, removedPlayersSize); ++i) {
-        msg->getString();
+        removeCharacter.emplace_back(msg->getString());
     }
 
+    std::vector<std::string> guildWhiteList;
     const uint16_t addedGuildsSize = msg->getU16();
+    guildWhiteList.reserve(addedGuildsSize);
     for (auto i = 0; std::cmp_less(i, addedGuildsSize); ++i) {
-        msg->getString();
+        guildWhiteList.emplace_back(msg->getString());
     }
 
+    std::vector<std::string> removeGuild;
     const uint16_t removedGuildsSize = msg->getU16();
+    removeGuild.reserve(removedGuildsSize);
     for (auto i = 0; std::cmp_less(i, removedGuildsSize); ++i) {
-        msg->getString();
+        removeGuild.emplace_back(msg->getString());
     }
+
+    g_lua.callGlobalField("g_game", "onReceiveExivaOptions",
+        allowAll, allowOwnGuild, allowOwnParty, allowVipList,
+        allowPlayerWhitelist, allowGuildWhitelist,
+        characterWhiteList, removeCharacter, guildWhiteList, removeGuild);
 }
 
 void ProtocolGame::parseQuestTracker(const InputMessagePtr& msg)

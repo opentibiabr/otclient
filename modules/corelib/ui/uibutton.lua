@@ -63,4 +63,5 @@ function UIButton:onHoverChange(hovered)
     end
     -- When both are disabled, use default Tibia cursors (no animation)
     -- The cursor is already set to default, so we don't need to change it
+    UIWidget.onHoverChange(self, hovered)
 end
