@@ -67,6 +67,8 @@ if g_game.getLocalPlayer():isDead() then return end
                 specOutfit.type = 130
               elseif voc == 4 then
                 specOutfit.type = 144
+              elseif voc == 5 then
+                specOutfit.type = 152
               end
             end
             spec:setOutfit(specOutfit)
@@ -112,6 +114,8 @@ local checkStatus = function(creature)
             specOutfit.type = 130
           elseif voc == 4 then
             specOutfit.type = 144
+          elseif voc == 5 then
+            specOutfit.type = 152
           end
         end
         creature:setOutfit(specOutfit)
