@@ -1473,6 +1473,7 @@ void ProtocolGame::sendExivaRestrictions(
         return;
 
     const auto& msg = std::make_shared<OutputMessage>();
+    // Opcode 202 is ClientExivaRestrictions in protocol > 11.00
     msg->addU8(Proto::ClientRefreshContainer);
 
     msg->addU8(allowAll ? 1 : 0);
