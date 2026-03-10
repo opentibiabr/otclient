@@ -1469,6 +1469,9 @@ void ProtocolGame::sendExivaRestrictions(
     const std::vector<std::string>& guildWhiteList,
     const std::vector<std::string>& removeGuild)
 {
+    if (!g_game.canExivaOptions())
+        return;
+
     const auto& msg = std::make_shared<OutputMessage>();
     msg->addU8(Proto::ClientRefreshContainer);
 

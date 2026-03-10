@@ -26,6 +26,7 @@ end
 
 function UIButton:onHoverChange(hovered)
     if not modules.client_options then
+        UIWidget.onHoverChange(self, hovered)
         return
     end
     

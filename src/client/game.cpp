@@ -63,6 +63,7 @@ void Game::resetGameStates()
     m_mapUpdatedAt = 0;
     m_mapUpdateTimer = { true, Timer{} };
     setCanReportBugs(false);
+    setCanExivaOptions(false);
     m_fightMode = Otc::FightBalanced;
     m_chaseMode = Otc::DontChase;
     m_pvpMode = Otc::WhiteDove;
@@ -1844,7 +1845,7 @@ void Game::sendExivaOptions(
     const std::vector<std::string>& guildWhiteList,
     const std::vector<std::string>& removeGuild)
 {
-    if (!canPerformGameAction())
+    if (!canPerformGameAction() || !canExivaOptions())
         return;
 
     m_protocolGame->sendExivaRestrictions(

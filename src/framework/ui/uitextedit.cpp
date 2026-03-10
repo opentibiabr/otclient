@@ -1333,7 +1333,11 @@ void UITextEdit::onStyleApply(const std::string_view styleName, const OTMLNodePt
     if (getProp(PropMultiline)) {
         if ((m_textAlign & Fw::AlignVerticalCenter) || (m_textAlign & Fw::AlignBottom)) {
             m_textAlign = static_cast<Fw::AlignmentFlag>((m_textAlign & ~Fw::AlignVerticalCenter & ~Fw::AlignBottom) | Fw::AlignTop);
+            const int selStart = m_selectionStart;
+            const int selEnd = m_selectionEnd;
             updateText();
+            m_selectionStart = selStart;
+            m_selectionEnd = selEnd;
         }
     }
 }

@@ -41,12 +41,17 @@ end
 
 local function parseWhiteList(text, oldList)
     local newList, count = {}, 0
+    local overflow = false
     for line in text:gmatch("[^\r\n]+") do
         if count >= 200 then
+            overflow = true
             break
         end
         newList[#newList + 1] = line
         count = count + 1
+    end
+    if overflow then
+        return nil, nil, true
     end
     local lookup = {}
     for _, v in ipairs(newList) do
@@ -58,14 +63,22 @@ local function parseWhiteList(text, oldList)
             removed[#removed + 1] = v
         end
     end
-    return newList, removed
+    return newList, removed, false
 end
 
 local function collectData()
-    local newChars, removedChars = parseWhiteList(W.charText:getText(), ExivaData.characterWhiteList)
+    local newChars, removedChars, errChars = parseWhiteList(W.charText:getText(), ExivaData.characterWhiteList)
+    if errChars then
+        return false, "Character whitelist exceeds the maximum allowed 200 lines."
+    end
+
+    local newGuilds, removedGuilds, errGuilds = parseWhiteList(W.guildText:getText(), ExivaData.guildWhiteList)
+    if errGuilds then
+        return false, "Guild whitelist exceeds the maximum allowed 200 lines."
+    end
+
     ExivaData.characterWhiteList = newChars
     ExivaData.removeCharacter = removedChars
-    local newGuilds, removedGuilds = parseWhiteList(W.guildText:getText(), ExivaData.guildWhiteList)
     ExivaData.guildWhiteList = newGuilds
     ExivaData.removeGuild = removedGuilds
     ExivaData.allowGuildMember = W.guild:isChecked()
@@ -75,6 +88,7 @@ local function collectData()
     ExivaData.allowGuildWhiteList = W.guildBox:isChecked()
     local sel = radioAllowType:getSelectedWidget()
     ExivaData.allowAllExiva = sel == W.allowAll
+    return true
 end
 
 local function sendExiva()
@@ -133,12 +147,20 @@ function consoleController:toggle()
 end
 
 function consoleController:onApply()
-    collectData()
+    local success, err = collectData()
+    if not success then
+        displayErrorBox(tr("Error"), tr(err))
+        return
+    end
     sendExiva()
 end
 
 function consoleController:onOkay()
-    collectData()
+    local success, err = collectData()
+    if not success then
+        displayErrorBox(tr("Error"), tr(err))
+        return
+    end
     sendExiva()
     self:closeWindowExiva()
 end
