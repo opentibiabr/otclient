@@ -58,6 +58,10 @@ if g_game.getLocalPlayer():isDead() then return end
             specOutfit.feet = 88
             if storage.BOTserver.outfit then
               local voc = vBot.BotServerMembers[spec:getName()]
+              -- normalize promoted vocation ids (11-15 -> 1-5)
+              if voc and voc > 10 then
+                  voc = voc - 10
+              end
               specOutfit.addons = 3
               if voc == 1 then
                 specOutfit.type = 131
@@ -105,6 +109,10 @@ local checkStatus = function(creature)
         specOutfit.feet = 88
         if storage.BOTserver.outfit then
           local voc = vBot.BotServerMembers[creature:getName()]
+          -- normalize promoted vocation ids (11-15 -> 1-5)
+          if voc and voc > 10 then
+              voc = voc - 10
+          end
           specOutfit.addons = 3
           if voc == 1 then
             specOutfit.type = 131

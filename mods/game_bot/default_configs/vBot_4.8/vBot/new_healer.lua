@@ -29,6 +29,11 @@ if not storage[panelName] or not storage[panelName].priorities then
     storage[panelName] = nil
 end
 
+-- backfill monks condition for existing configs
+if storage[panelName] and storage[panelName].conditions and storage[panelName].conditions.monks == nil then
+    storage[panelName].conditions.monks = true
+end
+
 if not storage[panelName] then
     storage[panelName] = {
         enabled = false,
