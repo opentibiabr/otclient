@@ -384,8 +384,13 @@ std::vector<uint8_t> SatelliteMap::decompressLzma(const std::string& fileData)
               0xFFu);
 
     lzma_stream strm = LZMA_STREAM_INIT;
-    if (lzma_alone_decoder(&strm, UINT64_MAX) != LZMA_OK) {
-        g_logger.warning("SatelliteMap: failed to init LZMA decoder");
+    constexpr size_t LZMA_MEMORY_LIMIT_BYTES = 64ull * 1024 * 1024;
+    const lzma_ret initRet = lzma_alone_decoder(&strm, LZMA_MEMORY_LIMIT_BYTES);
+    if (initRet != LZMA_OK) {
+        if (initRet == LZMA_MEMLIMIT_ERROR)
+            g_logger.warning("SatelliteMap: LZMA decoder init failed: memory limit exceeded");
+        else
+            g_logger.warning("SatelliteMap: failed to init LZMA decoder");
         return {};
     }
 
