@@ -186,9 +186,19 @@ KeyNumpad6                   = 147
 KeyNumpad7                   = 148
 KeyNumpad8                   = 149
 KeyNumpad9                   = 150
+KeyBrowserBack               = 166
+KeyBrowserSearch             = 170
+KeyBrowserHome               = 172
+KeyVolumeMute                = 173
+KeyVolumeDown                = 174
+KeyVolumeUp                  = 175
+KeyMediaNext                 = 176
+KeyMediaPrev                 = 177
+KeyMediaPlayPause            = 179
+KeyLaunchMediaSelect         = 181
 
 FirstKey                     = KeyUnknown
-LastKey                      = KeyNumpad9
+LastKey                      = KeyLaunchMediaSelect
 
 ExtendedActivate             = 0
 ExtendedLocales              = 1
@@ -312,7 +322,18 @@ KeyCodeDescs                 = {
     [KeyNumpad6] = 'Numpad6',
     [KeyNumpad7] = 'Numpad7',
     [KeyNumpad8] = 'Numpad8',
-    [KeyNumpad9] = 'Numpad9'
+    [KeyNumpad9] = 'Numpad9',
+    [KeyBrowserBack] = 'BrowserBack',
+    [KeyBrowserSearch] = 'BrowserSearch',
+    [KeyBrowserHome] = 'BrowserHome',
+    [KeyVolumeMute] = 'Mute',
+    [KeyVolumeDown] = 'VolumeDown',
+    [KeyVolumeUp] = 'VolumeUp',
+    [KeyMediaNext] = 'MediaNext',
+    [KeyMediaPrev] = 'MediaPrev',
+    [KeyMediaPlayPause] = 'PlayPause',
+    [KeyLaunchMediaSelect] = 'MediaLaunch'
+}
 }
 
 NetworkMessageTypes          = {
