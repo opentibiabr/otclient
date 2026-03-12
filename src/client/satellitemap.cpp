@@ -35,6 +35,7 @@ SatelliteMap g_satelliteMap;
 
 static constexpr std::string_view PREFIX_SATELLITE = "satellite";
 static constexpr std::string_view PREFIX_MINIMAP   = "minimap";
+static constexpr int SURFACE_FLOOR = 7;
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -148,7 +149,6 @@ void SatelliteMap::draw(const Rect& screenRect, const Position& cameraPos, float
     // Floor 7 is the solid base; higher floors (lower z) paint structures on top
     // with alpha transparency so the surface remains visible through empty areas.
     // Render the best LOD for the current scale plus one coarser for smooth transitions.
-    static constexpr int SURFACE_FLOOR = 7;
     const int targetFloor = cameraPos.z;
     const int bestLod    = pickLod(scale);
     const int coarserLod = (bestLod == 16) ? 32 : 64;
@@ -302,7 +302,6 @@ bool SatelliteMap::hasChunksForView(const int floor) const
 {
     // Surface view composites floors [floor, SURFACE_FLOOR].
     // Returns true if any floor in that range has satellite chunks.
-    static constexpr int SURFACE_FLOOR = 7;
     if (floor > SURFACE_FLOOR)
         return false;
     for (int f = floor; f <= SURFACE_FLOOR; ++f) {
