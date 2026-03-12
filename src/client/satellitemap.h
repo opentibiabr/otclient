@@ -103,7 +103,8 @@ private:
     struct ChunkInfo
     {
         std::string path;
-        TexturePtr  texture; // nullptr until first draw
+        TexturePtr  texture;    // nullptr until first successful load
+        bool        loadFailed{ false }; // set on first load failure; skips retries
     };
 
     // Selects the best LOD for a given scale (pixels per tile).

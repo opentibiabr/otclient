@@ -48,6 +48,14 @@ int SatelliteMap::loadDirectory(const std::string& dir)
 
 int SatelliteMap::loadFloors(const std::string& dir, const int floorMin, const int floorMax)
 {
+    // Clear stale chunk data whenever the source directory changes.
+    if (dir != m_fileCacheDir) {
+        m_chunks.clear();
+        m_index.clear();
+        m_mmChunks.clear();
+        m_mmIndex.clear();
+    }
+
     // Build the file list exactly once per directory — reused on every subsequent call.
     buildFileCache(dir);
 
@@ -160,7 +168,10 @@ void SatelliteMap::draw(const Rect& screenRect, const Position& cameraPos, float
                 g_drawPool.setOpacity(floorSeparatorOpacity);
         }
 
+        int seenLod = -1;
         for (const int lod : { coarserLod, bestLod }) {
+            if (lod == seenLod) continue;
+            seenLod = lod;
             const int indexKey = floor * 100 + lod;
             const auto it = m_index.find(indexKey);
             if (it == m_index.end())
@@ -192,9 +203,14 @@ void SatelliteMap::draw(const Rect& screenRect, const Position& cameraPos, float
                 // Lazy-load texture only for visible chunks.
                 ChunkInfo& info = m_chunks.at(key);
                 if (!info.texture) {
-                    info.texture = loadChunkTexture(info.path);
-                    if (!info.texture)
+                    if (info.loadFailed)
                         continue;
+                    info.texture = loadChunkTexture(info.path);
+                    if (!info.texture) {
+                        info.loadFailed = true;
+                        g_logger.warning("SatelliteMap: failed to load chunk '{}'", info.path);
+                        continue;
+                    }
                 }
 
                 g_drawPool.addTexturedRect(dest, info.texture, Rect(0, 0, 512, 512));
@@ -223,7 +239,10 @@ void SatelliteMap::drawStaticMinimap(const Rect& screenRect, const Position& cam
     // Single-floor rendering — coarser LOD first so finer detail paints on top.
     const int bestLod    = pickLod(scale);
     const int coarserLod = (bestLod == 16) ? 32 : 64;
+    int seenLod = -1;
     for (const int lod : { coarserLod, bestLod }) {
+        if (lod == seenLod) continue;
+        seenLod = lod;
         const int indexKey = floor * 100 + lod;
         const auto it = m_mmIndex.find(indexKey);
         if (it == m_mmIndex.end())
@@ -252,9 +271,14 @@ void SatelliteMap::drawStaticMinimap(const Rect& screenRect, const Position& cam
 
             ChunkInfo& info = m_mmChunks.at(key);
             if (!info.texture) {
-                info.texture = loadChunkTexture(info.path);
-                if (!info.texture)
+                if (info.loadFailed)
                     continue;
+                info.texture = loadChunkTexture(info.path);
+                if (!info.texture) {
+                    info.loadFailed = true;
+                    g_logger.warning("SatelliteMap: failed to load minimap chunk '{}'", info.path);
+                    continue;
+                }
             }
 
             g_drawPool.addTexturedRect(dest, info.texture, Rect(0, 0, 512, 512));
@@ -371,6 +395,12 @@ std::vector<uint8_t> SatelliteMap::decompressLzma(const std::string& fileData)
     std::vector<uint8_t> output;
     output.reserve(512 * 512 * 4 + 2048); // typical 32-bpp BMP for 512×512
 
+    // Hard cap: parseBmp rejects images wider/taller than 4096 px, so
+    // 4096×4096×4 bpp + 2 KB header is the largest valid payload (~67 MB).
+    // Abort decompression if output would exceed this to prevent memory exhaustion
+    // from malformed/malicious .bmp.lzma files.
+    constexpr size_t MAX_DECOMPRESSED = 4096ULL * 4096 * 4 + 2048;
+
     std::array<uint8_t, 65536> buf{};
     lzma_ret ret = LZMA_OK;
 
@@ -384,6 +414,13 @@ std::vector<uint8_t> SatelliteMap::decompressLzma(const std::string& fileData)
         ret = lzma_code(&strm, action);
 
         const size_t got = buf.size() - strm.avail_out;
+
+        if (output.size() + got > MAX_DECOMPRESSED) {
+            g_logger.warning("SatelliteMap: decompressed size exceeds limit, aborting '{}'", "chunk");
+            lzma_end(&strm);
+            return {};
+        }
+
         output.insert(output.end(), buf.begin(), buf.begin() + got);
 
         if (ret == LZMA_STREAM_END)
@@ -436,11 +473,11 @@ ImagePtr SatelliteMap::parseBmp(const std::vector<uint8_t>& data)
     int32_t        height      = readI32(22);
     const uint16_t bpp         = readU16(28);
 
-    if (width <= 0 || width > 4096 || height == 0 || std::abs(height) > 4096)
-        return nullptr;
-
     const bool topDown = (height < 0);
-    if (topDown) height = -height;
+    const int64_t mag = topDown ? -(int64_t)height : (int64_t)height;
+    if (width <= 0 || width > 4096 || mag == 0 || mag > 4096)
+        return nullptr;
+    height = static_cast<int32_t>(mag);
 
     const uint32_t compression = readU32(30);
 
