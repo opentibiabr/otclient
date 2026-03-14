@@ -379,19 +379,19 @@ BitmapFontPtr TTFLoader::load(const std::string &file, int fontSize,
           const int strokeLeft = strokeBitmapGlyph->left;
           const int strokeTop = strokeBitmapGlyph->top;
 
-          const int copyWidth =
-              std::min((int)strokeBitmap.width, glyphsSize[i].width());
-          const int copyHeight =
-              std::min((int)strokeBitmap.rows, glyphsSize[i].height());
-
           // Draw stroke
           if (strokeBitmap.buffer && strokeBitmap.pitch != 0) {
             const int pitch = (int)strokeBitmap.pitch;
             const int bmpRows = (int)strokeBitmap.rows;
+            const int absPitch = std::abs(pitch);
+
+            // Constrain by actual buffer size per row (pitch) and destination size
+            const int copyWidth = std::min({absPitch, (int)strokeBitmap.width, glyphsSize[i].width()});
+            const int copyHeight = std::min((int)strokeBitmap.rows, glyphsSize[i].height());
 
             for (int y = 0; y < copyHeight; ++y) {
               const int rowOffset = (pitch > 0) ? (y * pitch)
-                                               : ((bmpRows - 1 - y) * -pitch);
+                                               : ((bmpRows - 1 - y) * absPitch);
               for (int x = 0; x < copyWidth; ++x) {
                 const int srcIdx = rowOffset + x;
                 const int dstX = atlasX + x;
@@ -487,18 +487,18 @@ BitmapFontPtr TTFLoader::load(const std::string &file, int fontSize,
         if (FT_Render_Glyph(slot, FT_RENDER_MODE_NORMAL) == 0) {
           const FT_Bitmap &bitmap = slot->bitmap;
 
-          const int copyWidth =
-              std::min((int)bitmap.width, glyphsSize[i].width());
-          const int copyHeight =
-              std::min((int)bitmap.rows, glyphsSize[i].height());
-
           if (bitmap.buffer && bitmap.pitch != 0) {
             const int pitch = (int)bitmap.pitch;
             const int bmpRows = (int)bitmap.rows;
+            const int absPitch = std::abs(pitch);
+
+            // Constrain by actual buffer size per row (pitch) and destination size
+            const int copyWidth = std::min({absPitch, (int)bitmap.width, glyphsSize[i].width()});
+            const int copyHeight = std::min((int)bitmap.rows, glyphsSize[i].height());
 
             for (int y = 0; y < copyHeight; ++y) {
               const int rowOffset = (pitch > 0) ? (y * pitch)
-                                               : ((bmpRows - 1 - y) * -pitch);
+                                               : ((bmpRows - 1 - y) * absPitch);
               for (int x = 0; x < copyWidth; ++x) {
                 const int srcIdx = rowOffset + x;
                 const int dstX = atlasX + x;

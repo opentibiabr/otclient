@@ -485,6 +485,9 @@ void ProtocolGame::parseMessage(const InputMessagePtr& msg)
                 case Proto::GameServerChooseOutfit:
                     parseOpenOutfitWindow(msg);
                     break;
+                case Proto::GameServerExivaRestrictions:
+                    parseExivaRestrictions(msg);
+                    break;
                 case Proto::GameServerSendUpdateImpactTracker:
                     parseUpdateImpactTracker(msg);
                     break;
@@ -651,8 +654,8 @@ void ProtocolGame::parseMessage(const InputMessagePtr& msg)
                     }
 
                     g_logger.warning(
-                        "Unhandled opcode 0x{:02X} ({}) with {} unread bytes; previous opcode: 0x{:02X} ({}); next bytes: {}",
-                        opcode, opcode, unreadSize, prevOpcode, prevOpcode, hexDump.str());
+                        "[{}] Unhandled opcode 0x{:02X} ({}) with {} unread bytes; previous opcode: 0x{:02X} ({}); next bytes: {}",
+                        g_game.getClientVersion(), opcode, opcode, unreadSize, prevOpcode, prevOpcode, hexDump.str());
                     msg->setReadPos(msg->getMessageSize());
                     break;
                 }
@@ -735,7 +738,8 @@ void ProtocolGame::parseLogin(const InputMessagePtr& msg) const
     }
 
     if (g_game.getClientVersion() >= 1281) {
-        msg->getU8(); // exiva button enabled (bool)
+        const bool exivaEnabled = static_cast<bool>(msg->getU8());// exiva button enabled (bool)
+        g_game.setCanExivaOptions(exivaEnabled);
         if (g_game.getFeature(Otc::GameTournamentPackets)) {
             msg->getU8(); // Tournament button (bool)
         }
@@ -2166,23 +2170,18 @@ void ProtocolGame::parseOpenForge(const InputMessagePtr& msg)
 
 void ProtocolGame::setCreatureVocation(const InputMessagePtr& msg, const uint32_t creatureId) const
 {
+    const uint8_t vocationId = msg->getU8();
+
     const auto& creature = g_map.getCreatureById(creatureId);
     if (!creature) {
         return;
     }
 
-    const uint8_t vocationId = msg->getU8();
     creature->setVocation(vocationId);
 }
 
 void ProtocolGame::addCreatureIcon(const InputMessagePtr& msg, const uint32_t creatureId) const
 {
-    const auto& creature = g_map.getCreatureById(creatureId);
-    if (!creature) {
-        g_logger.traceDebug("ProtocolGame::addCreatureIcon: could not get creature with id {}", creatureId);
-        return;
-    }
-
     const uint8_t sizeIcons = msg->getU8();
     std::vector<std::tuple<uint8_t, uint8_t, uint16_t>> icons; // icon, category, count
     for (auto i = 0; i < sizeIcons; ++i) {
@@ -2191,6 +2190,13 @@ void ProtocolGame::addCreatureIcon(const InputMessagePtr& msg, const uint32_t cr
         const uint16_t count = msg->getU16(); // icon.count
         icons.emplace_back(icon, category, count);
     }
+
+    const auto& creature = g_map.getCreatureById(creatureId);
+    if (!creature) {
+        g_logger.traceDebug("ProtocolGame::addCreatureIcon: could not get creature with id {}", creatureId);
+        return;
+    }
+
     creature->setIcons(icons);
 }
 
@@ -3111,6 +3117,49 @@ void ProtocolGame::parseOpenOutfitWindow(const InputMessagePtr& msg) const
     }
 
     g_game.processOpenOutfitWindow(currentOutfit, outfitList, mountList, familiarList, wingList, auraList, effectList, shaderList);
+}
+
+void ProtocolGame::parseExivaRestrictions(const InputMessagePtr& msg)
+{
+    const bool allowAll = static_cast<bool>(msg->getU8());
+    const bool allowOwnGuild = static_cast<bool>(msg->getU8());
+    const bool allowOwnParty = static_cast<bool>(msg->getU8());
+    const bool allowVipList = static_cast<bool>(msg->getU8());
+    const bool allowPlayerWhitelist = static_cast<bool>(msg->getU8());
+    const bool allowGuildWhitelist = static_cast<bool>(msg->getU8());
+
+    std::vector<std::string> characterWhiteList;
+    const uint16_t addedPlayersSize = msg->getU16();
+    characterWhiteList.reserve(addedPlayersSize);
+    for (auto i = 0; std::cmp_less(i, addedPlayersSize); ++i) {
+        characterWhiteList.emplace_back(msg->getString());
+    }
+
+    std::vector<std::string> removeCharacter;
+    const uint16_t removedPlayersSize = msg->getU16();
+    removeCharacter.reserve(removedPlayersSize);
+    for (auto i = 0; std::cmp_less(i, removedPlayersSize); ++i) {
+        removeCharacter.emplace_back(msg->getString());
+    }
+
+    std::vector<std::string> guildWhiteList;
+    const uint16_t addedGuildsSize = msg->getU16();
+    guildWhiteList.reserve(addedGuildsSize);
+    for (auto i = 0; std::cmp_less(i, addedGuildsSize); ++i) {
+        guildWhiteList.emplace_back(msg->getString());
+    }
+
+    std::vector<std::string> removeGuild;
+    const uint16_t removedGuildsSize = msg->getU16();
+    removeGuild.reserve(removedGuildsSize);
+    for (auto i = 0; std::cmp_less(i, removedGuildsSize); ++i) {
+        removeGuild.emplace_back(msg->getString());
+    }
+
+    g_lua.callGlobalField("g_game", "onReceiveExivaOptions",
+        allowAll, allowOwnGuild, allowOwnParty, allowVipList,
+        allowPlayerWhitelist, allowGuildWhitelist,
+        characterWhiteList, removeCharacter, guildWhiteList, removeGuild);
 }
 
 void ProtocolGame::parseQuestTracker(const InputMessagePtr& msg)
@@ -4342,6 +4391,9 @@ void ProtocolGame::parseTaskHuntingData(const InputMessagePtr& msg)
             msg->getU8(); // Upgraded
             msg->getU16(); // Required kills
             msg->getU16(); // Current kills
+            if (g_game.getClientVersion() >= 1285) {
+                msg->getU8(); // rarity
+            }
             break;
         }
     }

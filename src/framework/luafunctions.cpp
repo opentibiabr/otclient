@@ -390,6 +390,7 @@ void Application::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_window", "poll", &PlatformWindow::poll, &g_window);
     g_lua.bindSingletonFunction("g_window", "maximize", &PlatformWindow::maximize, &g_window);
     g_lua.bindSingletonFunction("g_window", "restoreMouseCursor", &PlatformWindow::restoreMouseCursor, &g_window);
+    g_lua.bindSingletonFunction("g_window", "setSystemCursor", &PlatformWindow::setSystemCursor, &g_window);
     g_lua.bindSingletonFunction("g_window", "showMouse", &PlatformWindow::showMouse, &g_window);
     g_lua.bindSingletonFunction("g_window", "hideMouse", &PlatformWindow::hideMouse, &g_window);
     g_lua.bindSingletonFunction("g_window", "setTitle", &PlatformWindow::setTitle, &g_window);
@@ -430,7 +431,10 @@ void Application::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_mouse", "pushCursor", &Mouse::pushCursor, &g_mouse);
     g_lua.bindSingletonFunction("g_mouse", "popCursor", &Mouse::popCursor, &g_mouse);
     g_lua.bindSingletonFunction("g_mouse", "isCursorChanged", &Mouse::isCursorChanged, &g_mouse);
+    g_lua.bindSingletonFunction("g_mouse", "setUseNativeCursor", &Mouse::setUseNativeCursor, &g_mouse);
+    g_lua.bindSingletonFunction("g_mouse", "isUsingNativeCursor", &Mouse::isUsingNativeCursor, &g_mouse);
     g_lua.bindSingletonFunction("g_mouse", "isPressed", &Mouse::isPressed, &g_mouse);
+    g_lua.bindSingletonFunction("g_mouse", "getCursorId", &Mouse::getCursorId, &g_mouse);
 
     // Graphics
     g_lua.registerSingletonClass("g_graphics");
