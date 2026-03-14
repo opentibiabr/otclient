@@ -3,8 +3,8 @@ NewMainWindow
   !text: tr('Wheel Of Destiny')
   anchors.horizontalCenter: parent.horizontalCenter
   size: 1000 645
-  @onEscape: hide()
-  @onEnter: onWheelOfDestinyApply(true)
+  @onEscape: modules.game_wheel.hide()
+  @onEnter: modules.game_wheel.onWheelOfDestinyApply(true)
 
   Panel
     id: optionsTabBar
@@ -33,7 +33,7 @@ NewMainWindow
         image-clip: 0 34 322 34
       $checked:
         image-clip: 0 34 322 34
-      @onClick: loadMenu('wheelMenu')
+      @onClick: modules.game_wheel.loadMenu('wheelMenu')
 
     Button
       id: gemMenu
@@ -50,7 +50,7 @@ NewMainWindow
         image-clip: 0 34 322 34
       $checked:
         image-clip: 0 34 322 34
-      @onClick: loadMenu('gemMenu')
+      @onClick: modules.game_wheel.loadMenu('gemMenu')
 
     Button
       id: fragmentMenu
@@ -67,7 +67,7 @@ NewMainWindow
         image-clip: 0 34 322 34
       $checked:
         image-clip: 0 34 322 34
-      @onClick: loadMenu('fragmentMenu')
+      @onClick: modules.game_wheel.loadMenu('fragmentMenu')
 
   Panel
     id: mainPanel
@@ -207,7 +207,7 @@ NewMainWindow
     size: 43 20
     margin-bottom: 12
     margin-right: 12
-    @onClick: hide()
+    @onClick: modules.game_wheel.hide()
 
   Button
     id: reset
@@ -217,7 +217,7 @@ NewMainWindow
     size: 43 20
     margin-bottom: 12
     margin-right: 5
-    @onClick: resetWheel()
+    @onClick: modules.game_wheel.resetWheel()
 
   Button
     id: apply
@@ -227,7 +227,7 @@ NewMainWindow
     size: 43 20
     margin-bottom: 12
     margin-right: 5
-    @onClick: onWheelOfDestinyApply(false)
+    @onClick: modules.game_wheel.onWheelOfDestinyApply(false)
 
   Button
     id: ok
@@ -237,4 +237,4 @@ NewMainWindow
     size: 43 20
     margin-bottom: 12
     margin-right: 5
-    @onClick: onWheelOfDestinyApply(true)
+    @onClick: modules.game_wheel.onWheelOfDestinyApply(true)

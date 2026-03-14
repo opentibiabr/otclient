@@ -415,7 +415,7 @@ Panel
           image-clip: 0 0 174 34
         $hover:
           image-clip: 0 0 174 34
-        @onClick: toggleTabBarButtons('informationButton')
+        @onClick: modules.game_wheel.toggleTabBarButtons('informationButton')
 
       Button
         id: managePresetsButton
@@ -435,7 +435,7 @@ Panel
           image-clip: 0 0 174 34
         $disabled:
           image-clip: 0 68 174 34
-        @onClick: toggleTabBarButtons('managePresetsButton')
+        @onClick: modules.game_wheel.toggleTabBarButtons('managePresetsButton')
 
     Panel
       id: tabContent
@@ -704,7 +704,7 @@ Panel
         image-clip: 0 0 14 14
       $hover:
         image-clip: 0 14 14 14
-      @onClick: toggleSummary()
+      @onClick: modules.game_wheel.toggleSummary()
     Label
       anchors.horizontalCenter: parent.horizontalCenter
       anchors.top: parent.top
@@ -760,7 +760,7 @@ Panel
         image-clip: 0 14 14 14
       $hover:
         image-clip: 0 0 14 14
-      @onClick: toggleSummary()
+      @onClick: modules.game_wheel.toggleSummary()
     Label
       anchors.horizontalCenter: parent.horizontalCenter
       anchors.top: parent.top

@@ -18,6 +18,28 @@ if not SkillwheelStringsLibrary then
 end
 
 function init()
+  loadConfigJson()
+
+  connect(g_game, {
+    onGameEnd = onGameEnd,
+    onGameStart = WheelOfDestiny.loadWheelPresets,
+    onDestinyWheel = function(...) load() WheelOfDestiny.onDestinyWheel(...) end,
+    --onUnlockGem = GemAtelier.onUnlockGem, --disabled because it's in TODO
+    onResourceBalance = onResourceBalance,
+  })
+  
+  if g_game.getClientVersion() >= 1310 then
+    wheelButton = modules.game_mainpanel.addToggleButton('wheelButton', tr('Wheel of Destiny'),   
+      '/images/options/button_skillwheeldialog', toggle, false, 10)  
+    wheelButton:setOn(false)
+  end
+end
+
+function load()
+  if wheelWindow then
+    return
+  end
+
   wheelWindow = g_ui.displayUI('wheel')
   mainPanel = wheelWindow:getChildById('mainPanel')
 
@@ -55,8 +77,6 @@ function init()
   renamePresetWindow = g_ui.displayUI('styles/renamePreset')
   renamePresetWindow:hide()
 
-  loadConfigJson()
-
   selectedNewPresetRadio = UIRadioGroup.create()
   selectedNewPresetRadio:addWidget(newPresetWindow.contentPanel.useEmpty)
   selectedNewPresetRadio:addWidget(newPresetWindow.contentPanel.copyPreset)
@@ -77,20 +97,7 @@ function init()
 
   loadMenu('wheelMenu')
   toggleTabBarButtons('informationButton')
-  hide()
-  connect(g_game, {
-    onGameEnd = onGameEnd,
-    onGameStart = WheelOfDestiny.loadWheelPresets,
-    onDestinyWheel = WheelOfDestiny.onDestinyWheel,
-    --onUnlockGem = GemAtelier.onUnlockGem, --disabled because it's in TODO
-    onResourceBalance = onResourceBalance,
-  })
-  
-  if modules.game_mainpanel then
-    wheelButton = modules.game_mainpanel.addToggleButton('wheelButton', tr('Wheel of Destiny'),   
-      '/images/options/button_skillwheeldialog', toggle, false, 10)  
-    wheelButton:setOn(false)
-  end
+  wheelWindow:hide()
 end
 
 function terminate()
@@ -155,6 +162,7 @@ function terminate()
 end
 
 function toggle()
+  load()
   if wheelWindow:isVisible() then
     wheelWindow:hide()
     wheelWindow:ungrabMouse()
@@ -176,6 +184,9 @@ function toggle()
 end
 
 function hide()
+  if not wheelWindow then
+    return
+  end
   wheelWindow:ungrabMouse()
   wheelWindow:ungrabKeyboard()
   wheelWindow:hide()
@@ -330,7 +341,7 @@ function toggleTabBarButtons(selectedButtonId)
 end
 
 function onResourceBalance()
-  if not wheelWindow:isVisible() then
+  if not wheelWindow or not wheelWindow:isVisible() then
     return true
   end
   local player = g_game.getLocalPlayer()
