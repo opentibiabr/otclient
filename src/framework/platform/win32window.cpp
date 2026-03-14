@@ -238,8 +238,10 @@ void WIN32Window::terminate()
         m_defaultCursor = nullptr;
     }
 
-    for (const HCURSOR& cursor : m_cursors)
-        DestroyCursor(cursor);
+    for (const auto& cursorState : m_cursors) {
+        for (const HCURSOR& cursor : cursorState.cursors)
+            DestroyCursor(cursor);
+    }
     m_cursors.clear();
 
     internalDestroyGLContext();
@@ -526,6 +528,25 @@ void WIN32Window::poll()
     }
 
     updateUnmaximizedCoords();
+    updateCursor();
+}
+
+void WIN32Window::updateCursor()
+{
+    if (m_currentCursorId < 0 || m_currentCursorId >= static_cast<int>(m_cursors.size()))
+        return;
+
+    const auto& state = m_cursors[m_currentCursorId];
+    if (state.cursors.size() <= 1)
+        return;
+
+    const int delay = state.delays[m_cursorFrame];
+    if (m_cursorTimer.ticksElapsed() >= delay) {
+        m_cursorTimer.restart();
+        m_cursorFrame = (m_cursorFrame + 1) % state.cursors.size();
+        m_cursor = state.cursors[m_cursorFrame];
+        SetCursor(m_cursor);
+    }
 }
 
 Fw::Key WIN32Window::retranslateVirtualKey(const WPARAM wParam, const LPARAM lParam)
@@ -864,25 +885,54 @@ void WIN32Window::displayFatalError(const std::string_view message)
 
 int WIN32Window::internalLoadMouseCursor(const ImagePtr& image, const Point& hotSpot)
 {
-    const int width = image->getWidth();
-    const int height = image->getHeight();
-    const int numbits = width * height;
-    const int numbytes = (width * height) / 8;
+    CursorState cursorState;
+    std::vector<Image::AnimationFrame> frames;
 
-    std::vector<uint8_t> andMask(numbytes, 0);
-    std::vector<uint8_t> xorMask(numbytes, 0);
-
-    for (int i = 0; i < numbits; ++i) {
-        const uint32_t rgba = stdext::readULE32(image->getPixelData() + i * 4);
-        if (rgba == 0xffffffff) { //white
-            HSB_BIT_SET(xorMask, i);
-        } else if (rgba == 0x00000000) { //alpha
-            HSB_BIT_SET(andMask, i);
-        } // otherwise 0xff000000 => black
+    if (image->isAnimated()) {
+        frames = image->getAnimation();
+    } else {
+        frames.push_back({ image, 0 });
     }
 
-    const HCURSOR cursor = CreateCursor(m_instance, hotSpot.x, hotSpot.y, width, height, &andMask[0], &xorMask[0]);
-    m_cursors.push_back(cursor);
+    for (const auto& frame : frames) {
+        const auto& img = frame.image;
+        const int width = img->getWidth();
+        const int height = img->getHeight();
+        const int n = width * height;
+
+        std::vector<uint32_t> iconData(n);
+        for (int i = 0; i < n; ++i) {
+            auto* const pixel = (uint8_t*)&iconData[i];
+            pixel[2] = *(img->getPixelData() + (i * 4) + 0); // R
+            pixel[1] = *(img->getPixelData() + (i * 4) + 1); // G
+            pixel[0] = *(img->getPixelData() + (i * 4) + 2); // B
+            pixel[3] = *(img->getPixelData() + (i * 4) + 3); // A
+        }
+
+        const HBITMAP hbmColor = CreateBitmap(width, height, 1, 32, &iconData[0]);
+        const HBITMAP hbmMask = CreateBitmap(width, height, 1, 1, nullptr);
+
+        ICONINFO ii;
+        ii.fIcon = FALSE;
+        ii.xHotspot = hotSpot.x;
+        ii.yHotspot = hotSpot.y;
+        ii.hbmMask = hbmMask;
+        ii.hbmColor = hbmColor;
+
+        const HCURSOR cursor = static_cast<HCURSOR>(CreateIconIndirect(&ii));
+        DeleteObject(hbmMask);
+        DeleteObject(hbmColor);
+
+        if (!cursor) {
+            g_logger.error("Failed to create colored cursor");
+            return -1;
+        }
+
+        cursorState.cursors.push_back(cursor);
+        cursorState.delays.push_back(frame.delay);
+    }
+
+    m_cursors.push_back(cursorState);
     return m_cursors.size() - 1;
 }
 
@@ -892,7 +942,14 @@ void WIN32Window::setMouseCursor(int cursorId)
         if (cursorId >= static_cast<int>(m_cursors.size()) || cursorId < 0)
             return;
 
-        m_cursor = m_cursors[cursorId];
+        m_currentCursorId = cursorId;
+        m_cursorFrame = 0;
+        m_cursor = m_cursors[cursorId].cursors[0];
+        
+        if (m_cursors[cursorId].cursors.size() > 1) {
+            m_cursorTimer.restart();
+        }
+        
         SetCursor(m_cursor);
         ShowCursor(true);
     });
@@ -904,6 +961,50 @@ void WIN32Window::restoreMouseCursor()
         if (m_cursor) {
             m_cursor = nullptr;
             SetCursor(m_defaultCursor);
+            ShowCursor(true);
+        }
+    });
+}
+
+void WIN32Window::setSystemCursor(const std::string& cursorName)
+{
+    g_mainDispatcher.addEvent([this, cursorName] {
+        LPCTSTR cursorId = IDC_ARROW;
+        
+        if (cursorName == "arrow" || cursorName == "default") {
+            cursorId = IDC_ARROW;
+        } else if (cursorName == "horizontal" || cursorName == "sizewe") {
+            cursorId = IDC_SIZEWE;  // Horizontal resize cursor (↔)
+        } else if (cursorName == "vertical" || cursorName == "sizens") {
+            cursorId = IDC_SIZENS;  // Vertical resize cursor (↕)
+        } else if (cursorName == "diagonal1" || cursorName == "sizenwse") {
+            cursorId = IDC_SIZENWSE;  // Diagonal resize cursor (↖↘)
+        } else if (cursorName == "diagonal2" || cursorName == "sizenesw") {
+            cursorId = IDC_SIZENESW;  // Diagonal resize cursor (↗↙)
+        } else if (cursorName == "move" || cursorName == "sizeall") {
+            cursorId = IDC_SIZEALL;  // Move cursor (four-directional arrows)
+        } else if (cursorName == "text" || cursorName == "ibeam" || cursorName == "textselect") {
+            cursorId = IDC_IBEAM;   // Text cursor/Text Select
+        } else if (cursorName == "hand" || cursorName == "pointer" || cursorName == "link" || cursorName == "linkselect") {
+            cursorId = IDC_HAND;    // Hand/pointer cursor/Link Select
+        } else if (cursorName == "cross" || cursorName == "precision" || cursorName == "precisionselect") {
+            cursorId = IDC_CROSS;   // Crosshair cursor/Precision Select
+        } else if (cursorName == "wait" || cursorName == "hourglass") {
+            cursorId = IDC_WAIT;    // Wait/hourglass cursor
+        } else if (cursorName == "no" || cursorName == "forbidden" || cursorName == "unavailable") {
+            cursorId = IDC_NO;      // No/prohibited cursor
+        } else if (cursorName == "help") {
+            cursorId = IDC_HELP;    // Help cursor (arrow with question mark)
+        } else if (cursorName == "appstarting") {
+            cursorId = IDC_APPSTARTING;  // App starting cursor (arrow with hourglass)
+        } else if (cursorName == "uparrow") {
+            cursorId = IDC_UPARROW;  // Vertical arrow cursor
+        }
+        
+        const HCURSOR systemCursor = LoadCursor(nullptr, cursorId);
+        if (systemCursor) {
+            m_cursor = systemCursor;
+            SetCursor(systemCursor);
             ShowCursor(true);
         }
     });
@@ -995,7 +1096,9 @@ void WIN32Window::setIcon(const std::string& file)
         }
 
         const HBITMAP hbmColor = CreateBitmap(image->getWidth(), image->getHeight(), 1, 32, &iconData[0]);
-        const HBITMAP hbmMask = CreateCompatibleBitmap(GetDC(nullptr), image->getWidth(), image->getHeight());
+        const HDC screenDC = GetDC(nullptr);
+        const HBITMAP hbmMask = CreateCompatibleBitmap(screenDC, image->getWidth(), image->getHeight());
+        ReleaseDC(nullptr, screenDC);
 
         ICONINFO ii;
         ii.fIcon = TRUE;

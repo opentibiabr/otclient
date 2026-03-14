@@ -567,7 +567,7 @@ void UITextEdit::update(const bool focusCursor, bool disableAreaUpdate)
 
     Size totalSize = textBoxSize;
     if (totalSize.width() < m_textVirtualSize.width())
-        totalSize.setWidth(m_textVirtualSize.height());
+        totalSize.setWidth(m_textVirtualSize.width());
     if (totalSize.height() < m_textVirtualSize.height())
         totalSize.setHeight(m_textVirtualSize.height());
     if (m_textTotalSize != totalSize) {
@@ -1259,10 +1259,22 @@ void UITextEdit::updateText()
 void UITextEdit::onHoverChange(const bool hovered)
 {
     if (getProp(PropChangeCursorImage)) {
-        if (hovered && !g_mouse.isCursorChanged())
-            g_mouse.pushCursor("text");
-        else
-            g_mouse.popCursor("text");
+        const bool nativeCursor = g_mouse.isUsingNativeCursor();
+        
+        // Check isCursorChanged only when NOT using native cursor
+        if (hovered && (nativeCursor || !g_mouse.isCursorChanged())) {
+            if (nativeCursor) {
+                g_window.setSystemCursor("text");
+            } else {
+                g_mouse.pushCursor("text");
+            }
+        } else {
+            if (nativeCursor) {
+                g_window.restoreMouseCursor();
+            } else {
+                g_mouse.popCursor("text");
+            }
+        }
     }
 }
 
@@ -1316,6 +1328,17 @@ void UITextEdit::onStyleApply(const std::string_view styleName, const OTMLNodePt
             setPlaceholderAlign(Fw::translateAlignment(node->value()));
         else if (node->tag() == "placeholder-font")
             setPlaceholderFont(node->value());
+    }
+
+    if (getProp(PropMultiline)) {
+        if ((m_textAlign & Fw::AlignVerticalCenter) || (m_textAlign & Fw::AlignBottom)) {
+            m_textAlign = static_cast<Fw::AlignmentFlag>((m_textAlign & ~Fw::AlignVerticalCenter & ~Fw::AlignBottom) | Fw::AlignTop);
+            const int selStart = m_selectionStart;
+            const int selEnd = m_selectionEnd;
+            updateText();
+            m_selectionStart = selStart;
+            m_selectionEnd = selEnd;
+        }
     }
 }
 
