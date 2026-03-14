@@ -1126,7 +1126,8 @@ function onContainerOpen(container, previousContainer)
             local numLines = math.max(layout:getNumLines(), minRows)
             containerWindow:setContentHeight(numLines * step + chromeHeight)
         else
-            local filledLines = math.max(math.ceil(container:getItemsCount() / layout:getNumColumns()), minRows)
+            local numColumns = math.max(layout:getNumColumns(), 1)
+            local filledLines = math.max(math.ceil(container:getItemsCount() / numColumns), minRows)
             containerWindow:setContentHeight(filledLines * step + chromeHeight)
         end
     end
