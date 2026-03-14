@@ -1074,7 +1074,7 @@ function onContainerOpen(container, previousContainer)
     local layout = containerPanel:getLayout()
     local cellSize = layout:getCellSize()
     local step = cellSize.height + layout:getCellSpacing()
-    local numLines = layout:getNumLines()
+    local numLines = math.max(layout:getNumLines(), 1)
     local chromeHeight = container:hasPages() and 55 or 31
     containerWindow:setContentMinimumHeight(cellSize.height)
 
@@ -1089,6 +1089,9 @@ function onContainerOpen(container, previousContainer)
     local TOLERANCE_HORIZONTAL = 5
     local TOLERANCE_VERTICAL = 2
     containerWindow.onMousePress = function(widget, mousePos, mouseButton)
+        if mouseButton ~= MouseLeftButton then
+            return false
+        end
         local winX, winY = containerWindow:getX(), containerWindow:getY()
         local winW, winH = containerWindow:getWidth(), containerWindow:getHeight()
         local inBounds = mousePos.x >= winX + TOLERANCE_HORIZONTAL and 
