@@ -106,6 +106,52 @@ function terminate()
     wheelWindow:destroy()
     wheelWindow = nil
   end
+
+  if newPresetWindow then
+    newPresetWindow:destroy()
+    newPresetWindow = nil
+  end
+
+  if renamePresetWindow then
+    renamePresetWindow:destroy()
+    renamePresetWindow = nil
+  end
+
+  if exportCodeWindow then
+    exportCodeWindow:destroy()
+    exportCodeWindow = nil
+  end
+
+  if deletePresetWindow then
+    deletePresetWindow:destroy()
+    deletePresetWindow = nil
+  end
+
+  if checkSavePresetWindow then
+    checkSavePresetWindow:destroy()
+    checkSavePresetWindow = nil
+  end
+
+  if selectedNewPresetRadio then
+    selectedNewPresetRadio:destroy()
+    selectedNewPresetRadio = nil
+  end
+
+  if wheelButton then
+    wheelButton:destroy()
+    wheelButton = nil
+  end
+
+  wheelOfDestinyWindow = nil
+  gemAtelierWindow = nil
+  fragmentWindow = nil
+  mainPanel = nil
+  wheelPanel = nil
+  centerReferencePoint = nil
+  wheelMenuButton = nil
+  gemMenuButton = nil
+  fragmentMenuButton = nil
+  SkillwheelStringsLibrary = {}
 end
 
 function toggle()
@@ -147,9 +193,9 @@ function onGameEnd()
     exportCodeWindow = nil
   end
 
-  if exportCodeWindow then
-    exportCodeWindow:destroy()
-    exportCodeWindow = nil
+  if deletePresetWindow then
+    deletePresetWindow:destroy()
+    deletePresetWindow = nil
   end
 
   if checkSavePresetWindow then
