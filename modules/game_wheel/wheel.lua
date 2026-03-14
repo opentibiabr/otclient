@@ -28,11 +28,6 @@ function init()
     onResourceBalance = onResourceBalance,
   })
   
-  if g_game.getClientVersion() >= 1310 then
-    wheelButton = modules.game_mainpanel.addToggleButton('wheelButton', tr('Wheel of Destiny'),   
-      '/images/options/button_skillwheeldialog', toggle, false, 10)  
-    wheelButton:setOn(false)
-  end
 end
 
 function load()
