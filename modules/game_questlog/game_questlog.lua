@@ -1439,6 +1439,10 @@ function questLogController:onGameStart()
     else
         UICheckBox.showInQuestTracker:setVisible(false)
         questLogController.ui.buttonsPanel.trackerButton:setVisible(false)
+        if buttonQuestLogTrackerButton then
+            buttonQuestLogTrackerButton:destroy()
+            buttonQuestLogTrackerButton = nil
+        end
     end
 end
 

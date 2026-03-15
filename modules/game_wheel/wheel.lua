@@ -18,6 +18,23 @@ if not SkillwheelStringsLibrary then
 end
 
 function init()
+  loadConfigJson()
+
+  connect(g_game, {
+    onGameEnd = onGameEnd,
+    onGameStart = WheelOfDestiny.loadWheelPresets,
+    onDestinyWheel = function(...) load() WheelOfDestiny.onDestinyWheel(...) end,
+    --onUnlockGem = GemAtelier.onUnlockGem, --disabled because it's in TODO
+    onResourceBalance = onResourceBalance,
+  })
+  
+end
+
+function load()
+  if wheelWindow then
+    return
+  end
+
   wheelWindow = g_ui.displayUI('wheel')
   mainPanel = wheelWindow:getChildById('mainPanel')
 
@@ -55,8 +72,6 @@ function init()
   renamePresetWindow = g_ui.displayUI('styles/renamePreset')
   renamePresetWindow:hide()
 
-  loadConfigJson()
-
   selectedNewPresetRadio = UIRadioGroup.create()
   selectedNewPresetRadio:addWidget(newPresetWindow.contentPanel.useEmpty)
   selectedNewPresetRadio:addWidget(newPresetWindow.contentPanel.copyPreset)
@@ -77,20 +92,7 @@ function init()
 
   loadMenu('wheelMenu')
   toggleTabBarButtons('informationButton')
-  hide()
-  connect(g_game, {
-    onGameEnd = onGameEnd,
-    onGameStart = WheelOfDestiny.loadWheelPresets,
-    onDestinyWheel = WheelOfDestiny.onDestinyWheel,
-    --onUnlockGem = GemAtelier.onUnlockGem, --disabled because it's in TODO
-    onResourceBalance = onResourceBalance,
-  })
-  
-  if modules.game_mainpanel then
-    wheelButton = modules.game_mainpanel.addToggleButton('wheelButton', tr('Wheel of Destiny'),   
-      '/images/options/button_skillwheeldialog', toggle, false, 10)  
-    wheelButton:setOn(false)
-  end
+  wheelWindow:hide()
 end
 
 function terminate()
@@ -106,9 +108,56 @@ function terminate()
     wheelWindow:destroy()
     wheelWindow = nil
   end
+
+  if newPresetWindow then
+    newPresetWindow:destroy()
+    newPresetWindow = nil
+  end
+
+  if renamePresetWindow then
+    renamePresetWindow:destroy()
+    renamePresetWindow = nil
+  end
+
+  if exportCodeWindow then
+    exportCodeWindow:destroy()
+    exportCodeWindow = nil
+  end
+
+  if deletePresetWindow then
+    deletePresetWindow:destroy()
+    deletePresetWindow = nil
+  end
+
+  if checkSavePresetWindow then
+    checkSavePresetWindow:destroy()
+    checkSavePresetWindow = nil
+  end
+
+  if selectedNewPresetRadio then
+    selectedNewPresetRadio:destroy()
+    selectedNewPresetRadio = nil
+  end
+
+  if wheelButton then
+    wheelButton:destroy()
+    wheelButton = nil
+  end
+
+  wheelOfDestinyWindow = nil
+  gemAtelierWindow = nil
+  fragmentWindow = nil
+  mainPanel = nil
+  wheelPanel = nil
+  centerReferencePoint = nil
+  wheelMenuButton = nil
+  gemMenuButton = nil
+  fragmentMenuButton = nil
+  SkillwheelStringsLibrary = {}
 end
 
 function toggle()
+  load()
   if wheelWindow:isVisible() then
     wheelWindow:hide()
     wheelWindow:ungrabMouse()
@@ -130,6 +179,9 @@ function toggle()
 end
 
 function hide()
+  if not wheelWindow then
+    return
+  end
   wheelWindow:ungrabMouse()
   wheelWindow:ungrabKeyboard()
   wheelWindow:hide()
@@ -147,9 +199,9 @@ function onGameEnd()
     exportCodeWindow = nil
   end
 
-  if exportCodeWindow then
-    exportCodeWindow:destroy()
-    exportCodeWindow = nil
+  if deletePresetWindow then
+    deletePresetWindow:destroy()
+    deletePresetWindow = nil
   end
 
   if checkSavePresetWindow then
@@ -264,19 +316,19 @@ function toggleTabBarButtons(selectedButtonId)
 
   if selectedButtonId == 'informationButton' then
     informationButton:setSize(tosize("174 34"))
-    informationButton:setImageSource('/images/game/wheel/informationSelection')
+    informationButton:setImageSource('/game_wheel/images/informationSelection')
     informationButton:setImageClip(torect("0 0 174 34"))
     managePresetsButton:setSize(tosize("34 34"))
-    managePresetsButton:setImageSource('/images/game/wheel/small_manage_button')
+    managePresetsButton:setImageSource('/game_wheel/images/small_manage_button')
     managePresetsButton:setImageClip(torect("0 0 34 34"))
     tabContent.manage:setVisible(false)
     tabContent.information:setVisible(true)
   elseif selectedButtonId == 'managePresetsButton' then
     informationButton:setSize(tosize("34 34"))
-    informationButton:setImageSource('/images/game/wheel/small_information_button')
+    informationButton:setImageSource('/game_wheel/images/small_information_button')
     informationButton:setImageClip(torect("0 0 34 34"))
     managePresetsButton:setSize(tosize("174 34"))
-    managePresetsButton:setImageSource('/images/game/wheel/manageSelect')
+    managePresetsButton:setImageSource('/game_wheel/images/manageSelect')
     managePresetsButton:setImageClip(torect("0 0 174 34"))
     tabContent.information:setVisible(false)
     tabContent.manage:setVisible(true)
@@ -284,7 +336,7 @@ function toggleTabBarButtons(selectedButtonId)
 end
 
 function onResourceBalance()
-  if not wheelWindow:isVisible() then
+  if not wheelWindow or not wheelWindow:isVisible() then
     return true
   end
   local player = g_game.getLocalPlayer()
