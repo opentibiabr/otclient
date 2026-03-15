@@ -1572,6 +1572,29 @@ UIWidgetPtr UIWidget::getChildByStyleName(const std::string_view styleName) {
     return nullptr;
 }
 
+UIWidgetPtr UIWidget::getNearestChild(const Point& pos)
+{
+    if (m_children.empty())
+        return nullptr;
+
+    UIWidgetPtr nearestChild = nullptr;
+    float minDistance = (std::numeric_limits<float>::max)();
+    for (const auto& child : m_children) {
+        if (!child->isExplicitlyVisible())
+            continue;
+
+        const Point childCenter = child->getRect().center();
+        const auto dx = static_cast<float>(pos.x - childCenter.x);
+        const auto dy = static_cast<float>(pos.y - childCenter.y);
+        const float distance = std::sqrt(dx * dx + dy * dy);
+        if (distance < minDistance) {
+            minDistance = distance;
+            nearestChild = child;
+        }
+    }
+    return nearestChild;
+}
+
 UIWidgetList UIWidget::recursiveGetChildrenByState(const Fw::WidgetState state)
 {
     UIWidgetList children;
