@@ -280,10 +280,10 @@ Panel
     !tooltip: tr('Ignore players')
     image-source: /images/ui/console_buttons
     image-clip: 0 32 16 16
-    anchors.right: readOnlyButton.left
+    anchors.right: exivaOption.left
     anchors.bottom: consoleContentPanel.top
     margin-bottom: 5
-    margin-right: 5
+    margin-right: 1
     size: 16 16
     @onClick: onClickIgnoreButton()
 
@@ -293,6 +293,31 @@ Panel
     $pressed:
       image-clip: 16 32 16 16
 
+  TabButton
+    id: exivaOption
+    image-clip: 16 64 16 16
+    image-source: /images/ui/console_buttons
+    anchors.right: readOnlyButton.left
+    anchors.bottom: consoleContentPanel.top
+    margin-bottom: 5
+    margin-right: 5
+    size: 16 16
+    @onClick: |
+      if self:isOn() then
+        modules.game_console.onRequestExivaOptions()
+      end
+    !tooltip: tr('Exiva Options are only available on Optional Pvp game worlds')
+    $on:
+      image-clip: 0 95 16 16
+    $!on:
+      image-clip: 32 95 16 16
+    $pressed:
+      image-clip: 16 95 16 16
+    $pressed !on:
+      image-clip: 32 95 16 16
+    $disabled:
+      image-clip: 32 95 16 16
+      
   UIButton
     id: readOnlyButton
     text: ""

@@ -85,13 +85,13 @@ UIWidget
           image-source: /game_cyclopedia/images/monster-icon-bonuspoints
 
       QtButton
-        id: check
+        id: ClearButton
         anchors.top: prev.bottom
         anchors.left: parent.left
         anchors.right: parent.right
-        text: Addon 1
-        margin-top:3
         text: Clear Charm
+        margin-top: 3
+        @onClick: modules.game_cyclopedia.Cyclopedia.clearCharm()
 
 
       UIWidget
@@ -120,12 +120,38 @@ UIWidget
       id: PanelCreatureList
       width: 140
       margin-left: 5
-      TextEditQuestLog
-        id:SearchEdit
+      Panel
+        id: SearchPanel
         height: 20
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
+
+        TextEdit
+          id: SearchEdit
+          anchors.fill: parent
+          margin-left: 5
+          height: 17
+          placeholder: Type to search
+          placeholder-color: #6E706F
+          @onTextChange: modules.game_cyclopedia.Cyclopedia.onSearchTextChange(self:getText(), self:getParent():getParent())
+
+        UIWidget
+          id: SearchClearButton
+          anchors.right: SearchEdit.right
+          anchors.top: SearchEdit.top
+          margin-top: 1
+          margin-right: 2
+          image-source: /game_cyclopedia/images/button_clear_search
+          image-color: white
+          opacity: 0.8
+          @onClick: self:getParent():getChildById('SearchEdit'):clearText()
+          $hover:
+            opacity: 1.0
+            image-color: white
+          $pressed:
+            opacity: 1.0
+            image-color: gray
       BorderBox
         id: CreaturesBase
         anchors.top: prev.bottom
@@ -197,11 +223,13 @@ UIWidget
     margin-left: 5
 
     QtButton
+      id: resetAllButton
       text: Reset all charms
       anchors.left: parent.left
       anchors.right: parent.right
       anchors.verticalCenter: parent.verticalCenter
       margin-top: -15
+      @onClick: modules.game_cyclopedia.Cyclopedia.resetAllCharms()
 
     UIWidget
       id: CharmsBase1410

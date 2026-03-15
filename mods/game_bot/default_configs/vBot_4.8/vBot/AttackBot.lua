@@ -431,7 +431,7 @@ local spellPatterns = {
 }
 
 -- direction patterns
-local ek = (voc() == 1 or voc() == 11) and true
+local ek = (voc() == 1 or voc() == 11 or voc() == 5 or voc() == 15) and true
 
 local posN = ek and [[
   111
