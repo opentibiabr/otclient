@@ -87,6 +87,22 @@ OptionScaleScroll < Label
     @onValueChange: |
       modules.client_options.setOption(self:getParent():getId(), self:getValue())
 
+OptionLabelMarked < Label
+  anchors.left: parent.left
+  anchors.right: parent.right
+  anchors.top: parent.top
+  text-align: left
+  text-offset: 18 0
+  color: #c0c0c0ff
+
+  UIWidget
+    id: toolTipWidget
+    image-source: /images/icons/show_gui_help_grey
+    size: 12 12
+    anchors.right: parent.right
+    anchors.verticalCenter: parent.verticalCenter
+    margin-right: 3
+
 OptionScaleScrollMarked < Label
   anchors.left: parent.left
   anchors.right: parent.right

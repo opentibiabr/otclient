@@ -10,7 +10,7 @@ NPCItemBox < UICheckBox
   color: #aaaaaa
   text-align: center
   text-offset: 0 20
-  @onCheckChange: modules.game_npctrade.onItemBoxChecked(self)
+  @onCheckChange: modules.game_npctrader.controllerNpcTrader:onLegacyItemBoxChecked(self)
 
   Item
     id: item
@@ -34,7 +34,7 @@ MainWindow
   id: npcWindow
   !text: tr('NPC Trade')
   size: 550 515
-  @onEscape: modules.game_npctrade.closeNpcTrade()
+  @onEscape: modules.game_npctrader.controllerNpcTrader:legacy_hide()
 
   TabButton
     id: buyTab
@@ -169,7 +169,7 @@ MainWindow
       minimum: 1
       maximum: 100
       step: 1
-      @onValueChange: modules.game_npctrade.onQuantityValueChange(self:getValue())
+      @onValueChange: modules.game_npctrader.controllerNpcTrader:onQuantityValueChangeLegacy(self:getValue())
 
   FlatPanel
     id: buyOptions
@@ -197,7 +197,7 @@ MainWindow
       margin-top: -2
       margin-left: 5
       margin-right: 5
-      @onTextChange: modules.game_npctrade.onSearchTextChange()
+      @onTextChange: modules.game_npctrader.controllerNpcTrader:onSearchTextChangeLegacy()
 
     CheckBox
       id: buyWithBackpack
@@ -207,7 +207,7 @@ MainWindow
       anchors.right: parent.right
       margin-left: 5
       margin-top: 5
-      @onCheckChange: modules.game_npctrade.onBuyWithBackpackChange()
+      @onCheckChange: modules.game_npctrader.controllerNpcTrader:onBuyWithBackpackChangeLegacy()
 
     CheckBox
       id: ignoreCapacity
@@ -217,7 +217,7 @@ MainWindow
       anchors.right: parent.right
       margin-left: 5
       margin-top: 5
-      @onCheckChange: modules.game_npctrade.onIgnoreCapacityChange()
+      @onCheckChange: modules.game_npctrader.controllerNpcTrader:onIgnoreCapacityChangeLegacy()
 
     CheckBox
       id: ignoreEquipped
@@ -229,7 +229,7 @@ MainWindow
       margin-top: 5
       visible: false
       checked: true
-      @onCheckChange: modules.game_npctrade.onIgnoreEquippedChange()
+      @onCheckChange: modules.game_npctrader.controllerNpcTrader:onIgnoreEquippedChangeLegacy()
 
     CheckBox
       id: showAllItems
@@ -241,7 +241,7 @@ MainWindow
       margin-top: 5
       visible: false
       checked: true
-      @onCheckChange: modules.game_npctrade.onShowAllItemsChange()
+      @onCheckChange: modules.game_npctrader.controllerNpcTrader:onShowAllItemsChangeLegacy()
 
   Button
     id: sellAllButton
@@ -251,7 +251,7 @@ MainWindow
     anchors.bottom: parent.bottom
     margin-right: 10
     visible: false
-    @onClick: modules.game_npctrade.sellAll()
+    @onClick: modules.game_npctrader.controllerNpcTrader:sellAllLegacy()
 
   Button
     id: tradeButton
@@ -260,11 +260,11 @@ MainWindow
     anchors.right: next.left
     anchors.bottom: parent.bottom
     margin-right: 10
-    @onClick: modules.game_npctrade.onTradeClick()
+    @onClick: modules.game_npctrader.controllerNpcTrader:onTradeClickLegacy()
 
   Button
     !text: tr('Close')
     width: 64
     anchors.right: parent.right
     anchors.bottom: parent.bottom
-    @onClick: modules.game_npctrade.closeNpcTrade()
+    @onClick: modules.game_npctrader.controllerNpcTrader:legacy_hide()
