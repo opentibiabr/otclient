@@ -208,12 +208,18 @@ void Client::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_map", "setShadowPercent", &Map::setShadowPercent, &g_map);
     g_lua.bindSingletonFunction("g_map", "saveImage", &Map::saveImage, &g_map);
     g_lua.bindSingletonFunction("g_map", "generateMapForZ", &Map::generateMapForZ, &g_map);
+    // Satellite/minimap chunk generation
+    g_lua.bindSingletonFunction("g_map", "generateMinimapChunks", &Map::generateMinimapChunks, &g_map);
+    g_lua.bindSingletonFunction("g_map", "generateSatelliteChunks", &Map::generateSatelliteChunks, &g_map);
+    g_lua.bindSingletonFunction("g_map", "saveMapDat", &Map::saveMapDat, &g_map);
 #endif
     g_lua.bindSingletonFunction("g_map", "beginGhostMode", &Map::beginGhostMode, &g_map);
     g_lua.bindSingletonFunction("g_map", "endGhostMode", &Map::endGhostMode, &g_map);
     g_lua.bindSingletonFunction("g_map", "findItemsById", &Map::findItemsById, &g_map);
     g_lua.bindSingletonFunction("g_map", "setFloatingEffect", &Map::setFloatingEffect, &g_map);
     g_lua.bindSingletonFunction("g_map", "isDrawingFloatingEffects", &Map::isDrawingFloatingEffects, &g_map);
+    g_lua.bindSingletonFunction("g_map", "setOfflinePreview", &Map::setOfflinePreview, &g_map);
+    g_lua.bindSingletonFunction("g_map", "isOfflinePreview", &Map::isOfflinePreview, &g_map);
 
     g_lua.bindSingletonFunction("g_map", "getMinimapColor", &Map::getMinimapColor, &g_map);
     g_lua.bindSingletonFunction("g_map", "isSightClear", &Map::isSightClear, &g_map);

@@ -35,6 +35,7 @@ public:
     static ImagePtr fromQRCode(const std::string& code, int border);
 
     void savePNG(const std::string& fileName);
+    void saveBmpLzma(const std::string& fileName);
 
     // Map generator functions
     void cut();  // Removes 2-tile (64px) margin from map images

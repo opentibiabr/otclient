@@ -1,0 +1,55 @@
+syntax = "proto2";
+
+package otclient.protobuf.map;
+
+message Coordinate {
+    optional uint32 x = 1;
+    optional uint32 y = 2;
+    optional uint32 z = 3;
+}
+
+message Map {
+    repeated Area areas = 1;
+    repeated Npc npcs = 2;
+    repeated MapFile resource_files = 3;
+    optional Coordinate top_left_tile_coordinate = 4;
+    optional Coordinate bottom_right_tile_coordinate = 5;
+}
+
+message Area {
+    optional uint32 area_id = 1;
+    optional string name = 2;
+    optional AREA_TYPE area_type = 3;
+    repeated uint32 subarea_ids = 4;
+    optional Coordinate label_coordinate = 5;
+    optional bool reject_donations = 6;
+    optional string alias = 7;
+}
+
+message Npc {
+    optional string name = 1;
+    optional Coordinate tile_coordinate = 2;
+    optional uint32 subarea_id = 3;
+}
+
+message MapFile {
+    optional MAP_FILE_TYPE file_type = 1;
+    optional Coordinate top_left_coordinate = 2;
+    optional string file_name = 3;
+    optional uint32 fields_width = 4;
+    optional uint32 fields_height = 5;
+    optional uint32 area_id = 6;
+    optional double scale_factor = 7;
+}
+
+enum MAP_FILE_TYPE {
+    MAP_FILE_TYPE_SUBAREA = 0;
+    MAP_FILE_TYPE_SATELLITE = 1;
+    MAP_FILE_TYPE_MINIMAP = 2;
+}
+
+enum AREA_TYPE {
+    AREA_TYPE_NONE = 0;
+    AREA_TYPE_AREA = 1;
+    AREA_TYPE_SUBAREA = 2;
+}

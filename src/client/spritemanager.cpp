@@ -216,12 +216,28 @@ void SpriteManager::unload()
 
 ImagePtr SpriteManager::getSpriteImage(const int id, bool& isLoading)
 {
-    if (g_game.getProtocolVersion() >= 1281 && !g_game.getFeature(Otc::GameLoadSprInsteadProtobuf)) {
+    const bool protobufBackend =
+        g_game.isUsingProtobuf() ||
+        (g_game.getClientVersion() >= 1281 && !g_game.getFeature(Otc::GameLoadSprInsteadProtobuf) && g_spriteAppearances.getSpritesCount() > 0);
+
+    if (protobufBackend) {
         return g_spriteAppearances.getSpriteImage(id, isLoading);
+    }
+
+    if (m_spritesFiles.empty()) {
+        // Defensive fallback: if SPR backend isn't initialized but protobuf assets exist,
+        // serve sprites from appearances to avoid modulo-by-zero crashes.
+        if (g_spriteAppearances.getSpritesCount() > 0) {
+            return g_spriteAppearances.getSpriteImage(id, isLoading);
+        }
+        return nullptr;
     }
 
     const auto threadId = g_app.isLoadingAsyncTexture() ? stdext::getThreadId() : 0;
     if (const auto& sf = m_spritesFiles[threadId % m_spritesFiles.size()]) {
+        if (!sf || !sf->file) {
+            return nullptr;
+        }
         if (sf->m_loadingState.exchange(SpriteLoadState::LOADING, std::memory_order_acq_rel) == SpriteLoadState::LOADING) {
             isLoading = true;
             return nullptr;
@@ -374,17 +390,47 @@ public:
         }
     }
     
-    ImagePtr getSpriteImage(int id) const
+    ImagePtr getSpriteImage(int id)
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        if (id <= 0 || id > static_cast<int>(m_images.size())) {
+        if (id <= 0) {
             return nullptr;
         }
-        return m_images[id - 1]; // IDs start at 1
+
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            if (!m_images.empty()) {
+                if (id > static_cast<int>(m_images.size())) {
+                    return nullptr;
+                }
+                if (const auto& cached = m_images[id - 1]) {
+                    return cached;
+                }
+            } else if (const auto it = m_runtimeCache.find(id); it != m_runtimeCache.end()) {
+                return it->second;
+            }
+        }
+
+        // Protobuf path (and legacy cache misses): resolve on demand.
+        bool isLoading = false;
+        const auto& image = g_sprites.getSpriteImage(id, isLoading);
+        if (!image || isLoading) {
+            return image;
+        }
+
+        std::lock_guard<std::mutex> lock(m_mutex);
+        if (!m_images.empty()) {
+            if (id <= static_cast<int>(m_images.size())) {
+                m_images[id - 1] = image;
+            }
+        } else {
+            m_runtimeCache[id] = image;
+        }
+        return image;
     }
     
 private:
     std::vector<ImagePtr> m_images;
+    mutable std::unordered_map<int, ImagePtr> m_runtimeCache;
     mutable std::mutex m_mutex;
 };
 

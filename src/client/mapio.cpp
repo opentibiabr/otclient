@@ -23,10 +23,13 @@
 #ifdef FRAMEWORK_EDITOR
 
 #include "game.h"
+#include "gameconfig.h"
 #include "map.h"
+#include "minimap.h"
 #include "tile.h"
 #include "item.h"
 #include "spritemanager.h"
+#include "spriteappearances.h"
 
 #include <framework/core/application.h>
 #include <framework/core/asyncdispatcher.h>
@@ -39,6 +42,8 @@
 
 #include "houses.h"
 #include "towns.h"
+
+#include <map.pb.h>
 
 #include <condition_variable>
 #include <memory>
@@ -64,8 +69,8 @@ void Map::loadOtbm(const std::string& fileName)
         g_houses.clear();
         g_creatures.clearSpawns();
 
-        if (!g_things.isOtbLoaded())
-            throw Exception("OTB isn't loaded yet to load a map.");
+        if (!g_things.isOtbLoaded() && !g_things.isDatLoaded())
+            throw Exception("Item definitions are not loaded yet to load a map.");
 
         const FileStreamPtr fin = g_resources.openFile(fileName);
         if (!fin)
@@ -92,15 +97,24 @@ void Map::loadOtbm(const std::string& fileName)
         setHeight(root->getU16());
 
         const uint32_t headerMajorItems = root->getU8();
-        if (headerMajorItems > g_things.getOtbMajorVersion()) {
+        const bool useOtbItemIds = g_things.isOtbLoaded() && headerMajorItems > 0;
+        if (useOtbItemIds && headerMajorItems > g_things.getOtbMajorVersion()) {
             throw Exception("This map was saved with different OTB version. read {} what it's supposed to be: {}", headerMajorItems, g_things.getOtbMajorVersion());
         }
 
         root->skip(3);
         const uint32_t headerMinorItems = root->getU32();
-        if (headerMinorItems > g_things.getOtbMinorVersion()) {
+        if (useOtbItemIds && headerMinorItems > g_things.getOtbMinorVersion()) {
             g_logger.warning("This map needs an updated OTB. read {} what it's supposed to be: {} or less", headerMinorItems, g_things.getOtbMinorVersion());
         }
+
+        const auto createMapItem = [useOtbItemIds](const uint16_t rawId) {
+            if (useOtbItemIds && g_things.isValidOtbId(rawId))
+                return Item::createFromOtb(rawId);
+
+            // Protobuf/dat-only maps encode item ids directly as client ids.
+            return Item::create(rawId);
+        };
 
         const BinaryTreePtr node = root->getChildren()[0];
         if (node->getU8() != OTBM_MAP_DATA)
@@ -119,8 +133,14 @@ void Map::loadOtbm(const std::string& fileName)
                 case OTBM_ATTR_HOUSE_FILE:
                     setHouseFile(fileName.substr(0, fileName.rfind('/') + 1).c_str() + tmp);
                     break;
+                // Canary/RME protobuf extensions (npc spawns / zones files).
+                // OTClient map generator doesn't consume them, so ignore safely.
+                case 23:
+                case 24:
+                    break;
                 default:
-                    throw Exception("Invalid attribute '{}'", static_cast<int>(attribute));
+                    g_logger.warning("Ignoring unknown OTBM map header attribute '{}'", static_cast<int>(attribute));
+                    break;
             }
         }
 
@@ -157,11 +177,25 @@ void Map::loadOtbm(const std::string& fileName)
                         m_maxPosition.y = std::max(m_maxPosition.y, pos.y);
                         m_maxPosition.z = std::max(m_maxPosition.z, pos.z);
                         m_mapTilesPerX[pos.x]++;
+                        // Persist bounds — survive across part reloads
+                        if (pos.x < m_globalMinX) m_globalMinX = pos.x;
+                        if (pos.y < m_globalMinY) m_globalMinY = pos.y;
+                        if (pos.z < m_globalMinZ) m_globalMinZ = pos.z;
+                        if (pos.x > m_globalMaxX) m_globalMaxX = pos.x;
+                        if (pos.y > m_globalMaxY) m_globalMaxY = pos.y;
+                        if (pos.z > m_globalMaxZ) m_globalMaxZ = pos.z;
                     }
 
                     // Skip loading tile if outside X range
                     if (m_maxXToLoad != -1 && (pos.x < m_minXToLoad || pos.x > m_maxXToLoad)) {
                         continue;
+                    }
+
+                    // Some OTBM files may contain duplicated tile nodes for the same position.
+                    // Keep "last tile wins" semantics to avoid accumulating stale/phantom items.
+                    if (const TilePtr& existingTile = getTile(pos)) {
+                        //g_logger.warning("OTBM duplicate tile detected at {}, replacing previous contents", pos);
+                        existingTile->clean();
                     }
 
                     // Add to generator area list if within render range
@@ -212,8 +246,8 @@ void Map::loadOtbm(const std::string& fileName)
 
                                 if ((_flags & TILESTATE_REFRESH) == TILESTATE_REFRESH)
                                     flags |= TILESTATE_REFRESH;
-
-                                if (_flags & TILESTATE_ZONE_BRUSH) {
+                                // zones by oskar 
+                                if (_flags & TILESTATE_ZONE_BRUSH && !g_game.isUsingProtobuf()) {
                                     uint16_t zoneId = 0;
                                     do {
                                         zoneId = nodeTile->getU16();
@@ -223,7 +257,7 @@ void Map::loadOtbm(const std::string& fileName)
                             }
                             case OTBM_ATTR_ITEM:
                             {
-                                addThing(Item::createFromOtb(nodeTile->getU16()), pos);
+                                addThing(createMapItem(nodeTile->getU16()), pos);
                                 break;
                             }
                             default:
@@ -234,10 +268,15 @@ void Map::loadOtbm(const std::string& fileName)
                     }
 
                     for (const auto& nodeItem : nodeTile->getChildren()) {
-                        if (unlikely(nodeItem->getU8() != OTBM_ITEM))
-                            throw Exception("invalid item node");
+                        const uint8_t childType = nodeItem->getU8();
+                        if (childType != OTBM_ITEM) {
+                            // Forward compatibility (e.g. Canary/RME OTBM extensions like TILE_ZONE=19).
+                            if (childType != 19)
+                                g_logger.warning("Ignoring unknown tile child node type {} at pos {}", static_cast<int>(childType), pos);
+                            continue;
+                        }
 
-                        ItemPtr item = Item::createFromOtb(nodeItem->getU16());
+                        ItemPtr item = createMapItem(nodeItem->getU16());
                         item->unserializeItem(nodeItem);
 
                         if (item->isContainer()) {
@@ -245,7 +284,7 @@ void Map::loadOtbm(const std::string& fileName)
                                 if (containerItem->getU8() != OTBM_ITEM)
                                     throw Exception("invalid container item node");
 
-                                ItemPtr cItem = Item::createFromOtb(containerItem->getU16());
+                                ItemPtr cItem = createMapItem(containerItem->getU16());
                                 cItem->unserializeItem(containerItem);
                                 item->addContainerItem(cItem);
                             }
@@ -260,6 +299,22 @@ void Map::loadOtbm(const std::string& fileName)
                     }
 
                     if (const TilePtr& tile = getTile(pos)) {
+                        // Some protobuf/canary maps may carry duplicated ground entries.
+                        // Keep only the last parsed ground to match editor-visible result.
+                        ThingPtr lastGround = nullptr;
+                        std::vector<ThingPtr> duplicatedGrounds;
+                        for (const auto& thing : tile->getThings()) {
+                            if (!thing->isGround())
+                                continue;
+
+                            if (lastGround)
+                                duplicatedGrounds.emplace_back(lastGround);
+                            lastGround = thing;
+                        }
+
+                        for (const auto& groundThing : duplicatedGrounds)
+                            tile->removeThing(groundThing);
+
                         if (house)
                             tile->setFlag(TILESTATE_HOUSE);
                         tile->setFlag(flags);
@@ -298,8 +353,10 @@ void Map::loadOtbm(const std::string& fileName)
                     if (waypointPos.isValid() && !name.empty() && !m_waypoints.contains(waypointPos))
                         m_waypoints.emplace(waypointPos, name);
                 }
-            } else
-                throw Exception("Unknown map data node {}", static_cast<int>(mapDataType));
+            } else {
+                // Forward compatibility for newer OTBM node types (e.g. npc spawns/zones).
+                g_logger.warning("Ignoring unknown OTBM map data node {}", static_cast<int>(mapDataType));
+            }
         }
 
         fin->close();
@@ -423,7 +480,8 @@ void Map::saveOtbm(const std::string& fileName)
                                 if (!ground->isContainer() && !ground->isDepot()
                                     && !ground->isDoor() && !ground->isTeleport()) {
                                     root->addU8(OTBM_ATTR_ITEM);
-                                    root->addU16(ground->getServerId());
+                                    const uint16_t serializedId = ground->getServerId() != 0 ? ground->getServerId() : static_cast<uint16_t>(ground->getId());
+                                    root->addU16(serializedId);
                                 } else
                                     ground->serializeItem(root);
                             }
@@ -639,6 +697,14 @@ void Map::initializeMapGenerator(int threadsNumber)
     g_logger.info("Started {} map generator threads.", threadsNumber);
 }
 
+void Map::terminateMapGenerator()
+{
+    if (g_mapGeneratorThreadPool) {
+        g_logger.info("Stopping map generator thread pool...");
+        g_mapGeneratorThreadPool.reset();
+    }
+}
+
 void Map::increaseGeneratedAreasCount()
 {
     std::lock_guard<std::mutex> lock(m_generatedAreasCountMutex);
@@ -802,7 +868,8 @@ void Map::saveImage(const std::string& fileName, int minX, int minY, int maxX, i
         }
 
         const int squareSize = g_gameConfig.getSpriteSize();
-        g_logger.info("saveImage: spriteSize={}, sprites loaded={}", squareSize, g_sprites.isLoaded());
+        const bool protobufSpritesReady = g_game.isUsingProtobuf() && g_spriteAppearances.getSpritesCount() > 0;
+        g_logger.info("saveImage: spriteSize={}, sprites loaded={}, protobuf sprites ready={}", squareSize, g_sprites.isLoaded(), protobufSpritesReady);
 
         // Check for overflow in image size calculation
         if (width > MAX_DIMENSION / squareSize || height > MAX_DIMENSION / squareSize) {
@@ -879,5 +946,419 @@ void Map::saveImage(const std::string& fileName, int minX, int minY, int maxX, i
         g_logger.error("Failed to save map image: {}", e.what());
     }
 }
+
+// ---------------------------------------------------------------------------
+// Satellite / Minimap chunk generation
+// ---------------------------------------------------------------------------
+
+// Generates one "minimap-{lod}-{posX}-{posY}-{floor}-gen.bmp.lzma" chunk.
+// Each pixel represents tile minimap colors at the given LOD scale.
+static void generateMinimapChunk(const std::string& outputDir, int lod, int posX, int posY, int floor)
+{
+    const int tilesPerChunk = 512 * lod / 32;
+    const int tileOriginX = posX * 32;
+    const int tileOriginY = posY * 32;
+
+    auto image = std::make_shared<Image>(Size(512, 512));
+    bool hasContent = false;
+
+    for (int py = 0; py < 512; ++py) {
+        for (int px = 0; px < 512; ++px) {
+            uint8_t finalColor = 255; // transparent
+
+            if (lod == 16) {
+                // 2 pixels per tile: pixel (px,py) -> tile at origin + px/2, origin + py/2
+                const int tileX = tileOriginX + px / 2;
+                const int tileY = tileOriginY + py / 2;
+                Position pos(tileX, tileY, floor);
+                if (const auto& tile = g_map.getTile(pos))
+                    finalColor = tile->getMinimapColorByte();
+                else {
+                    auto [block, mt] = g_minimap.threadGetTile(pos);
+                    finalColor = mt.color;
+                }
+            } else if (lod == 32) {
+                // 1 pixel per tile
+                const int tileX = tileOriginX + px;
+                const int tileY = tileOriginY + py;
+                Position pos(tileX, tileY, floor);
+                if (const auto& tile = g_map.getTile(pos))
+                    finalColor = tile->getMinimapColorByte();
+                else {
+                    auto [block, mt] = g_minimap.threadGetTile(pos);
+                    finalColor = mt.color;
+                }
+            } else { // lod == 64
+                // 2x2 tiles averaged into 1 pixel
+                int rSum = 0, gSum = 0, bSum = 0;
+                int count = 0;
+                for (int dy = 0; dy < 2; ++dy) {
+                    for (int dx = 0; dx < 2; ++dx) {
+                        const int tileX = tileOriginX + px * 2 + dx;
+                        const int tileY = tileOriginY + py * 2 + dy;
+                        Position pos(tileX, tileY, floor);
+                        uint8_t c = 255;
+                        if (const auto& tile = g_map.getTile(pos))
+                            c = tile->getMinimapColorByte();
+                        else {
+                            auto [block, mt] = g_minimap.threadGetTile(pos);
+                            c = mt.color;
+                        }
+                        if (c != 255) {
+                            Color col = Color::from8bit(c);
+                            rSum += col.r();
+                            gSum += col.g();
+                            bSum += col.b();
+                            ++count;
+                        }
+                    }
+                }
+                if (count > 0) {
+                    uint8_t rgba[4] = {
+                        static_cast<uint8_t>(rSum / count),
+                        static_cast<uint8_t>(gSum / count),
+                        static_cast<uint8_t>(bSum / count),
+                        255
+                    };
+                    image->setPixel(px, py, rgba);
+                    hasContent = true;
+                    continue;
+                }
+                // else: transparent
+            }
+
+            if (finalColor != 255) {
+                Color col = Color::from8bit(finalColor);
+                uint8_t rgba[4] = { col.r(), col.g(), col.b(), 255 };
+                image->setPixel(px, py, rgba);
+                hasContent = true;
+            }
+            // else: pixel stays (0,0,0,0) = transparent
+        }
+    }
+
+    if (hasContent) {
+        std::stringstream ss;
+        ss << outputDir << "/minimap-" << lod << "-" << posX << "-" << posY
+           << "-" << floor << "-gen.bmp.lzma";
+        image->saveBmpLzma(ss.str());
+    }
+
+    g_map.increaseGeneratedAreasCount();
+}
+
+// Generates one "satellite-{lod}-{posX}-{posY}-{floor}-gen.bmp.lzma" chunk.
+// Renders actual tile sprites and samples center pixel as representative color.
+static void generateSatelliteChunk(const std::string& outputDir, int lod, int posX, int posY, int floor, int shadowPercent)
+{
+    const int tilesPerChunk = 512 * lod / 32;
+    const int tileOriginX = posX * 32;
+    const int tileOriginY = posY * 32;
+    const int spriteSize = g_gameConfig.getSpriteSize();
+
+    // Reusable temp image for rendering individual tiles
+    thread_local ImagePtr tempImage;
+    if (!tempImage || tempImage->getWidth() != spriteSize * 3 || tempImage->getHeight() != spriteSize * 3) {
+        tempImage = std::make_shared<Image>(Size(spriteSize * 3, spriteSize * 3));
+    }
+
+    auto image = std::make_shared<Image>(Size(512, 512));
+    bool hasContent = false;
+
+    // Helper: render a tile and return its center pixel color
+    auto renderTileColor = [&](int tileX, int tileY, int z) -> std::array<uint8_t, 4> {
+        Position pos(tileX, tileY, z);
+        const auto& tile = g_map.getTile(pos);
+        if (!tile || tile->isEmpty())
+            return { 0, 0, 0, 0 };
+
+        // Clear temp image
+        std::fill(tempImage->getPixels().begin(), tempImage->getPixels().end(), 0);
+
+        // Draw tile at center of temp image (offset by spriteSize to handle large sprites)
+        tile->drawToImage(Point(spriteSize, spriteSize), tempImage);
+
+        // Average all non-transparent pixels in the entire temp image.
+        // Elevated items (m_drawElevation up to 24px) draw ABOVE the nominal
+        // tile position, so we must scan the full image to capture them.
+        int rSum = 0, gSum = 0, bSum = 0, count = 0;
+        const int tw = tempImage->getWidth(), th = tempImage->getHeight();
+        for (int ty = 0; ty < th; ++ty) {
+            for (int tx = 0; tx < tw; ++tx) {
+                uint8_t* p = tempImage->getPixel(tx, ty);
+                if (p[3] > 0) {
+                    rSum += p[0]; gSum += p[1]; bSum += p[2];
+                    ++count;
+                }
+            }
+        }
+        if (count > 0)
+            return { static_cast<uint8_t>(rSum / count), static_cast<uint8_t>(gSum / count),
+                     static_cast<uint8_t>(bSum / count), 255 };
+        return { 0, 0, 0, 0 };
+    };
+
+    // Helper: composite multiple floors for surface view
+    auto renderCompositeColor = [&](int tileX, int tileY, int targetFloor) -> std::array<uint8_t, 4> {
+        // For surface floors (z <= 7): composite from floor 7 down to target
+        // For underground (z > 7): composite from floor 15 down to target
+        const int baseFloor = (targetFloor <= 7) ? 7 : 15;
+
+        uint8_t finalR = 0, finalG = 0, finalB = 0, finalA = 0;
+
+        for (int z = baseFloor; z >= targetFloor; --z) {
+            auto color = renderTileColor(tileX, tileY, z);
+            if (color[3] == 0)
+                continue;
+
+            uint8_t r = color[0], g = color[1], b = color[2], a = color[3];
+
+            // Apply shadow to lower floors (not the target floor)
+            if (z != targetFloor && shadowPercent > 0) {
+                const int brightness = 100 - shadowPercent;
+                r = static_cast<uint8_t>(r * brightness / 100);
+                g = static_cast<uint8_t>(g * brightness / 100);
+                b = static_cast<uint8_t>(b * brightness / 100);
+            }
+
+            // Alpha composite (source over)
+            if (finalA == 0) {
+                finalR = r;
+                finalG = g;
+                finalB = b;
+                finalA = a;
+            } else if (a == 255) {
+                finalR = r;
+                finalG = g;
+                finalB = b;
+                finalA = 255;
+            } else {
+                // Simple alpha blend
+                const int srcA = a;
+                const int dstA = finalA;
+                const int outA = srcA + dstA * (255 - srcA) / 255;
+                if (outA > 0) {
+                    finalR = static_cast<uint8_t>((r * srcA + finalR * dstA * (255 - srcA) / 255) / outA);
+                    finalG = static_cast<uint8_t>((g * srcA + finalG * dstA * (255 - srcA) / 255) / outA);
+                    finalB = static_cast<uint8_t>((b * srcA + finalB * dstA * (255 - srcA) / 255) / outA);
+                }
+                finalA = static_cast<uint8_t>(outA);
+            }
+        }
+
+        return { finalR, finalG, finalB, finalA };
+    };
+
+    for (int py = 0; py < 512; ++py) {
+        for (int px = 0; px < 512; ++px) {
+            std::array<uint8_t, 4> pixel = { 0, 0, 0, 0 };
+
+            if (lod == 16) {
+                // 2 pixels per tile
+                const int tileX = tileOriginX + px / 2;
+                const int tileY = tileOriginY + py / 2;
+                pixel = renderCompositeColor(tileX, tileY, floor);
+            } else if (lod == 32) {
+                // 1 pixel per tile
+                const int tileX = tileOriginX + px;
+                const int tileY = tileOriginY + py;
+                pixel = renderCompositeColor(tileX, tileY, floor);
+            } else { // lod == 64
+                // Average 2x2 tiles
+                int rSum = 0, gSum = 0, bSum = 0;
+                int count = 0;
+                for (int dy = 0; dy < 2; ++dy) {
+                    for (int dx = 0; dx < 2; ++dx) {
+                        const int tileX = tileOriginX + px * 2 + dx;
+                        const int tileY = tileOriginY + py * 2 + dy;
+                        auto c = renderCompositeColor(tileX, tileY, floor);
+                        if (c[3] > 0) {
+                            rSum += c[0];
+                            gSum += c[1];
+                            bSum += c[2];
+                            ++count;
+                        }
+                    }
+                }
+                if (count > 0) {
+                    pixel = {
+                        static_cast<uint8_t>(rSum / count),
+                        static_cast<uint8_t>(gSum / count),
+                        static_cast<uint8_t>(bSum / count),
+                        255
+                    };
+                }
+            }
+
+            if (pixel[3] > 0) {
+                image->setPixel(px, py, pixel.data());
+                hasContent = true;
+            }
+        }
+    }
+
+    if (hasContent) {
+        std::stringstream ss;
+        ss << outputDir << "/satellite-" << lod << "-" << posX << "-" << posY
+           << "-" << floor << "-gen.bmp.lzma";
+        image->saveBmpLzma(ss.str());
+    }
+
+    g_map.increaseGeneratedAreasCount();
+}
+
+void Map::generateMinimapChunks(const std::string& outputDir, int lod)
+{
+    if (!g_mapGeneratorThreadPool) {
+        g_logger.error("Map generator thread pool not initialized. Call initializeMapGenerator first.");
+        return;
+    }
+
+    if (lod != 16 && lod != 32 && lod != 64) {
+        g_logger.error("generateMinimapChunks: invalid LOD {}. Must be 16, 32, or 64.", lod);
+        return;
+    }
+
+    const int tilesPerChunk = 512 * lod / 32;
+    const int blocksPerChunk = tilesPerChunk / 32;
+
+    // Align chunk grid to blocksPerChunk boundaries
+    const int startBX = (m_globalMinX / tilesPerChunk) * blocksPerChunk;
+    const int endBX   = (m_globalMaxX / tilesPerChunk) * blocksPerChunk;
+    const int startBY = (m_globalMinY / tilesPerChunk) * blocksPerChunk;
+    const int endBY   = (m_globalMaxY / tilesPerChunk) * blocksPerChunk;
+
+    int queuedCount = 0;
+
+    for (int floor = m_globalMinZ; floor <= m_globalMaxZ; ++floor) {
+        for (int bx = startBX; bx <= endBX; bx += blocksPerChunk) {
+            for (int by = startBY; by <= endBY; by += blocksPerChunk) {
+                g_mapGeneratorThreadPool->detach_task(
+                    [outputDir, lod, bx, by, floor]() {
+                        generateMinimapChunk(outputDir, lod, bx, by, floor);
+                    }
+                );
+                ++queuedCount;
+            }
+        }
+    }
+
+    g_logger.info("generateMinimapChunks: queued {} chunks (LOD={}, floors {}-{})",
+                  queuedCount, lod, m_globalMinZ, m_globalMaxZ);
+}
+
+void Map::generateSatelliteChunks(const std::string& outputDir, int lod)
+{
+    if (!g_mapGeneratorThreadPool) {
+        g_logger.error("Map generator thread pool not initialized. Call initializeMapGenerator first.");
+        return;
+    }
+
+    if (lod != 16 && lod != 32 && lod != 64) {
+        g_logger.error("generateSatelliteChunks: invalid LOD {}. Must be 16, 32, or 64.", lod);
+        return;
+    }
+
+    const int tilesPerChunk = 512 * lod / 32;
+    const int blocksPerChunk = tilesPerChunk / 32;
+
+    const int startBX = (m_globalMinX / tilesPerChunk) * blocksPerChunk;
+    const int endBX   = (m_globalMaxX / tilesPerChunk) * blocksPerChunk;
+    const int startBY = (m_globalMinY / tilesPerChunk) * blocksPerChunk;
+    const int endBY   = (m_globalMaxY / tilesPerChunk) * blocksPerChunk;
+
+    const int shadow = m_shadowPercent;
+    int queuedCount = 0;
+
+    for (int floor = m_globalMinZ; floor <= m_globalMaxZ; ++floor) {
+        for (int bx = startBX; bx <= endBX; bx += blocksPerChunk) {
+            for (int by = startBY; by <= endBY; by += blocksPerChunk) {
+                g_mapGeneratorThreadPool->detach_task(
+                    [outputDir, lod, bx, by, floor, shadow]() {
+                        generateSatelliteChunk(outputDir, lod, bx, by, floor, shadow);
+                    }
+                );
+                ++queuedCount;
+            }
+        }
+    }
+
+    g_logger.info("generateSatelliteChunks: queued {} chunks (LOD={}, floors {}-{})",
+                  queuedCount, lod, m_globalMinZ, m_globalMaxZ);
+}
+
+void Map::saveMapDat(const std::string& outputDir)
+{
+    namespace pb = otclient::protobuf::map;
+
+    pb::Map mapMsg;
+
+    // Set map bounds
+    auto* topLeft = mapMsg.mutable_top_left_tile_coordinate();
+    topLeft->set_x(m_minPosition.x);
+    topLeft->set_y(m_minPosition.y);
+    topLeft->set_z(m_minPosition.z);
+
+    auto* bottomRight = mapMsg.mutable_bottom_right_tile_coordinate();
+    bottomRight->set_x(m_maxPosition.x);
+    bottomRight->set_y(m_maxPosition.y);
+    bottomRight->set_z(m_maxPosition.z);
+
+    // Scan output directory for generated .bmp.lzma files
+    const auto files = g_resources.listDirectoryFiles(outputDir, false);
+    for (const auto& name : files) {
+        if (name.find(".bmp.lzma") == std::string::npos)
+            continue;
+
+        char prefix[16]{};
+        int lod = 0, posX = 0, posY = 0, floor = 0;
+        if (std::sscanf(name.c_str(), "%15[a-z]-%d-%d-%d-%d-", prefix, &lod, &posX, &posY, &floor) != 5)
+            continue;
+
+        const std::string_view p{ prefix };
+        if (p != "satellite" && p != "minimap")
+            continue;
+
+        auto* entry = mapMsg.add_resource_files();
+
+        if (p == "satellite")
+            entry->set_file_type(pb::MAP_FILE_TYPE_SATELLITE);
+        else
+            entry->set_file_type(pb::MAP_FILE_TYPE_MINIMAP);
+
+        auto* coord = entry->mutable_top_left_coordinate();
+        coord->set_x(posX * 32);
+        coord->set_y(posY * 32);
+        coord->set_z(floor);
+
+        entry->set_file_name(name);
+        entry->set_fields_width(512);
+        entry->set_fields_height(512);
+        entry->set_scale_factor(static_cast<double>(lod) / 32.0);
+    }
+
+    // Serialize to file
+    std::string serialized;
+    if (!mapMsg.SerializeToString(&serialized)) {
+        g_logger.error("saveMapDat: failed to serialize protobuf");
+        return;
+    }
+
+    const std::string datPath = outputDir + "/map.dat";
+    const auto& fin = g_resources.createFile(datPath);
+    if (!fin) {
+        g_logger.error("saveMapDat: failed to create '{}'", datPath);
+        return;
+    }
+
+    fin->cache();
+    fin->write(serialized.data(), serialized.size());
+    fin->flush();
+    fin->close();
+
+    g_logger.info("saveMapDat: wrote {} resource_files entries to '{}'",
+                  mapMsg.resource_files_size(), datPath);
+}
+
 #endif
 /* vim: set ts=4 sw=4 et: */

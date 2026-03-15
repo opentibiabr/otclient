@@ -398,7 +398,7 @@ void Item::unserializeItem(const BinaryTreePtr& in)
 void Item::serializeItem(const OutputBinaryTreePtr& out)
 {
     out->startNode(OTBM_ITEM);
-    out->addU16(getServerId());
+    out->addU16(getServerId() != 0 ? getServerId() : static_cast<uint16_t>(getId()));
 
     out->addU8(ATTR_COUNT);
     out->addU8(getCount());
@@ -435,7 +435,7 @@ void Item::serializeItem(const OutputBinaryTreePtr& out)
     }
 
     const auto& text = getText();
-    if (g_things.getItemType(m_serverId)->isWritable() && !text.empty()) {
+    if (isWritable() && !text.empty()) {
         out->addU8(ATTR_TEXT);
         out->addString(text);
     }

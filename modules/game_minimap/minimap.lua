@@ -10,6 +10,60 @@ local currentDayTime = {
     m = 0
 }
 
+local loadedAssetsDir = nil
+local loadedFloorSet = {} -- floors already indexed for loadedAssetsDir
+
+-- Surface View is only available for floors 0-7 (surface and above).
+-- Underground floors (8-15) always use Map View.
+local SEA_FLOOR = 7
+
+local function ensureViewFloorsLoaded()
+    local assetsDir = "/data/things/1098"
+
+    -- Reset when switching game versions
+    if assetsDir ~= loadedAssetsDir then
+        g_satelliteMap.clear()
+        loadedFloorSet = {}
+        loadedAssetsDir = assetsDir
+    end
+
+    -- For surface floors: composite view needs [virtualFloor, SEA_FLOOR].
+    -- For underground: only the current floor is needed (static minimap, map view only).
+    local floorMax = (virtualFloor <= SEA_FLOOR) and SEA_FLOOR or virtualFloor
+
+    local minNeeded, maxNeeded
+    for f = virtualFloor, floorMax do
+        if not loadedFloorSet[f] then
+            if not minNeeded then
+                minNeeded = f
+            end
+            maxNeeded = f
+        end
+    end
+
+    if minNeeded then
+        print(assetsDir)
+        g_satelliteMap.loadFloors(assetsDir, minNeeded, maxNeeded)
+        for f = minNeeded, maxNeeded do
+            loadedFloorSet[f] = true
+        end
+    end
+end
+
+local function updateSatelliteMode()
+    local minimapWidget = mapController.ui.minimapBorder.minimap
+    if not minimapWidget then
+        return
+    end
+
+    local canUseSurface = virtualFloor <= SEA_FLOOR and g_satelliteMap.hasChunksForView(virtualFloor)
+    minimapWidget:setSatelliteMode(canUseSurface)
+
+    if canUseSurface then
+        minimapWidget:setFloorSeparatorOpacity(1.0)
+    end
+end
+
 local function refreshVirtualFloors()
     mapController.ui.layersPanel.layersMark:setMarginTop(((virtualFloor + 1) * 4) - 3)
     mapController.ui.layersPanel.automapLayers:setImageClip((virtualFloor * 14) .. ' 0 14 67')
@@ -37,6 +91,8 @@ local function onPositionChange()
 
     minimapWidget:setCrossPosition(pos)
     virtualFloor = pos.z
+    ensureViewFloorsLoaded()
+    updateSatelliteMode()
     refreshVirtualFloors()
 end
 
@@ -131,6 +187,9 @@ function mapController:onGameStart()
     end
 
     self.ui.minimapBorder.minimap:load()
+
+    ensureViewFloorsLoaded()
+    updateSatelliteMode()
 end
 
 function mapController:onGameEnd()
@@ -209,6 +268,8 @@ function upLayer()
 
     mapController.ui.minimapBorder.minimap:floorUp(1)
     virtualFloor = virtualFloor - 1
+    ensureViewFloorsLoaded()
+    updateSatelliteMode()
     refreshVirtualFloors()
 end
 
@@ -219,6 +280,8 @@ function downLayer()
 
     mapController.ui.minimapBorder.minimap:floorDown(1)
     virtualFloor = virtualFloor + 1
+    ensureViewFloorsLoaded()
+    updateSatelliteMode()
     refreshVirtualFloors()
 end
 
@@ -247,6 +310,8 @@ function resetMap()
     local player = g_game.getLocalPlayer()
     if player then
         virtualFloor = player:getPosition().z
+        ensureViewFloorsLoaded()
+        updateSatelliteMode()
         refreshVirtualFloors()
     end
 end

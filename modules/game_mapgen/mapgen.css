@@ -1,0 +1,320 @@
+/* =========================================================================
+   Map Generator Studio — Stylesheet
+   OTML CSS rules: border requires "width color". No border-left/bottom/etc.
+   ========================================================================= */
+
+.mg-window {
+  position: relative;
+  width: 920;
+  height: 820;
+  padding-top: 36;
+  padding-left: 10;
+  padding-right: 10;
+  padding-bottom: 10;
+}
+
+/* --- Header --- */
+.mg-header {
+  display: block;
+  padding: 5 10;
+  margin-bottom: 4;
+  background-color: #1e1e38ff;
+  border: 1 red;
+}
+
+.mg-header-title {
+  color: #88ccffff;
+  font: terminus-14px-bold;
+}
+
+.mg-header-version {
+  color: #55aa77ff;
+  float: right;
+}
+
+/* --- Tab Bar --- */
+.mg-tabbar {
+  display: block;
+  height: 26;
+  margin-bottom: 2;
+}
+
+.mg-tab {
+  display: inline-block;
+  height: 26;
+  padding: 4 12;
+  border: 1 black;
+  margin-right: 1;
+}
+
+.mg-tab:hover {
+  background-color: #303055ff;
+  color: #aaccffff;
+}
+
+/* --- Content area: must be position relative so absolute children anchor here --- */
+.mg-content {
+  position: relative;
+  height: 700;
+  background-color: #1a1a2eff;
+  border: 1 black;
+}
+
+/* --- Each tab panel: absolutely fills the content area --- */
+.mg-tabpanel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 8;
+  overflow: scroll;
+}
+
+/* --- Section titles (colored background to suggest left-accent, no border-left) --- */
+.mg-section-title {
+  display: block;
+  padding: 3 8 3 12;
+  margin: 6 0 5 0;
+  background-color: #252548ff;
+  color: #88ccffff;
+  font: terminus-14px-bold;
+}
+
+/* --- Rows / form layout --- */
+.mg-row {
+  display: block;
+  padding: 3 0;
+}
+
+.mg-label {
+  display: inline-block;
+  width: 130;
+  text-align: right;
+  color: #aaaacc;
+  padding-right: 6;
+}
+
+.mg-hint {
+  color: #555577ff;
+  margin-left: 8;
+}
+
+/* --- Path inputs with browse button --- */
+.mg-path-input {
+  width: 320;
+  height: 20;
+}
+
+.mg-browse-btn {
+  display: inline-block;
+  padding: 2 8;
+  background-color: #2a3a5aff;
+  border: 1 blue;
+  color: #aaccffff;
+  margin-left: 4;
+}
+
+.mg-browse-btn:hover {
+  background-color: #3a4a7aff;
+}
+
+.mg-browse-btn:pressed {
+  background-color: #1a2a4aff;
+}
+
+/* --- Coordinate bar --- */
+.mg-coordbar {
+  display: block;
+  padding: 5 6;
+  margin-bottom: 4;
+  background-color: #14142aff;
+  border: 1 black;
+}
+
+.mg-coordlabel {
+  color: #7799bbff;
+  margin-right: 2;
+  margin-left: 8;
+}
+
+.mg-coord-input {
+  width: 64;
+  height: 20;
+}
+
+/* --- Buttons (each class has its own full border spec) --- */
+.mg-btn {
+  display: inline-block;
+  padding: 5 14;
+  margin-right: 4;
+}
+
+.mg-btn-primary {
+  background-color: #2a559aff;
+  border: 1 blue;
+  color: white;
+}
+.mg-btn-primary:hover   { background-color: #3a66bbff; }
+.mg-btn-primary:pressed { background-color: #1a3a7aff; }
+
+.mg-btn-success {
+  background-color: #236632ff;
+  border: 1 green;
+  color: white;
+}
+.mg-btn-success:hover   { background-color: #33884aff; }
+.mg-btn-success:pressed { background-color: #155522ff; }
+
+.mg-btn-danger {
+  background-color: #7a2222ff;
+  border: 1 red;
+  color: white;
+}
+.mg-btn-danger:hover { background-color: #aa3333ff; }
+
+.mg-btn-warning {
+  background-color: #7a6622ff;
+  border: 1 yellow;
+  color: white;
+}
+.mg-btn-warning:hover { background-color: #aa9933ff; }
+
+.mg-btn-secondary {
+  background-color: #2e2e4eff;
+  border: 1 black;
+  color: #9999bbff;
+}
+.mg-btn-secondary:hover { background-color: #3e3e5eff; color: #ccccffff; }
+
+.mg-btn-info {
+  background-color: #224466ff;
+  border: 1 blue;
+  color: #aaccffff;
+}
+.mg-btn-info:hover { background-color: #336688ff; }
+
+.mg-btn-close {
+  background-color: #5a2222ff;
+  border: 1 #882222ff;
+  color: #ff8888ff;
+  padding: 2 6;
+}
+.mg-btn-close:hover { background-color: #882222ff; }
+
+/* --- Info / warn boxes --- */
+.mg-infobox {
+  display: block;
+  padding: 5 10;
+  margin: 4 0;
+  background-color: #182030ff;
+  border: 1 #2a3a5aff;
+  color: #7799aaff;
+}
+
+.mg-warnbox {
+  display: block;
+  padding: 6 10;
+  margin: 4 0;
+  background-color: #302010ff;
+  border: 1 #554422ff;
+  color: #ccaa55ff;
+}
+
+/* --- Command preview box --- */
+.mg-cmdpreview {
+  display: block;
+  padding: 6 10;
+  margin: 6 0;
+  background-color: #0c0c1eff;
+  border: 1 #222244ff;
+  color: #8888aaff;
+}
+
+/* --- Card --- */
+.mg-card {
+  display: block;
+  padding: 6 10;
+  margin: 4 0;
+  background-color: #181828ff;
+  border: 1 #2a2a4aff;
+}
+
+/* --- Progress bar --- */
+.mg-progress-outer {
+  display: block;
+  height: 20;
+  background-color: #111122ff;
+  border: 1 #2a2a5aff;
+  margin: 6 0;
+  position: relative;
+}
+
+.mg-progress-inner {
+  display: block;
+  height: 18;
+  background-color: #2a6abaff;
+  min-width: 0;
+}
+
+.mg-progress-text {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 2;
+  text-align: center;
+  color: #ffffffff;
+}
+
+/* --- Map preview host --- */
+.mg-maphost {
+  display: block;
+  height: 430;
+  background-color: #080816ff;
+  border: 2 #2a2a5aff;
+  margin: 2 0;
+}
+
+/* --- Log panel --- */
+.mg-log {
+  display: block;
+  height: 380;
+  background-color: #080810ff;
+  border: 1 #1a1a3aff;
+  padding: 4;
+  overflow: scroll;
+  color: #778877ff;
+}
+
+/* --- Badges --- */
+.mg-badge-ok {
+  display: inline-block;
+  padding: 2 8;
+  background-color: #1a4a2aff;
+  border: 1 #2a6a3aff;
+  color: #44ee88ff;
+  margin-right: 8;
+}
+
+.mg-badge-info {
+  display: inline-block;
+  padding: 2 8;
+  background-color: #1a2a3aff;
+  border: 1 #2a3a5aff;
+  color: #6699aaff;
+  margin-left: 8;
+}
+
+/* --- Status bar --- */
+.mg-statusbar {
+  display: block;
+  padding: 3 8;
+  margin-top: 3;
+  background-color: #111122ff;
+  border: 1 #1e1e3aff;
+  height: 22;
+}
+
+.mg-select2 {
+  width: 170;
+}

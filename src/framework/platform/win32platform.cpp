@@ -27,6 +27,10 @@
 #include <framework/core/eventdispatcher.h>
 
 #include <shellapi.h>
+#include <commdlg.h>
+#include <shlobj.h>
+#include <psapi.h>
+#pragma comment(lib, "psapi.lib")
 
 void Platform::init(std::vector<std::string>& args)
 {
@@ -438,6 +442,75 @@ std::string Platform::getOSName()
         ret = "Windows";
     }
     return ret;
+}
+
+std::string Platform::openFileDialog(std::vector<std::string> extensions)
+{
+    char filename[MAX_PATH] = { 0 };
+    std::string filter;
+
+    for (const auto& ext : extensions) {
+        filter += ext + " files";
+        filter.push_back('\0');
+        filter += "*." + ext;
+        filter.push_back('\0');
+    }
+    filter.push_back('\0');
+
+    OPENFILENAMEA ofn;
+    ZeroMemory(&ofn, sizeof(ofn));
+    ofn.lStructSize = sizeof(ofn);
+    ofn.hwndOwner   = nullptr;
+    ofn.lpstrFile   = filename;
+    ofn.nMaxFile    = sizeof(filename);
+    ofn.lpstrFilter = filter.c_str();
+    ofn.nFilterIndex = 1;
+    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+
+    if (!GetOpenFileNameA(&ofn))
+        return "";
+
+    std::string result = filename;
+    stdext::replace_all(result, "\\", "/");
+    return result;
+}
+
+std::string Platform::openDirectoryDialog()
+{
+    CoInitialize(nullptr);
+    std::string result;
+
+    IFileDialog* pfd = nullptr;
+    if (SUCCEEDED(CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_ALL, IID_PPV_ARGS(&pfd)))) {
+        DWORD dwOptions;
+        if (SUCCEEDED(pfd->GetOptions(&dwOptions)))
+            pfd->SetOptions(dwOptions | FOS_PICKFOLDERS);
+
+        if (SUCCEEDED(pfd->Show(nullptr))) {
+            IShellItem* psi = nullptr;
+            if (SUCCEEDED(pfd->GetResult(&psi))) {
+                PWSTR folderPath = nullptr;
+                if (SUCCEEDED(psi->GetDisplayName(SIGDN_FILESYSPATH, &folderPath))) {
+                    result = stdext::utf16_to_utf8(folderPath);
+                    stdext::replace_all(result, "\\", "/");
+                    CoTaskMemFree(folderPath);
+                }
+                psi->Release();
+            }
+        }
+        pfd->Release();
+    }
+
+    CoUninitialize();
+    return result;
+}
+
+double Platform::getMemoryUsage()
+{
+    PROCESS_MEMORY_COUNTERS pmc;
+    if (GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc)))
+        return static_cast<double>(pmc.WorkingSetSize);
+    return 0.0;
 }
 
 std::string Platform::traceback(const std::string_view where, int, int)

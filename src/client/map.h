@@ -226,6 +226,9 @@ public:
     void setFloatingEffect(const bool enable) { m_floatingEffect = enable; }
     bool isDrawingFloatingEffects() { return m_floatingEffect; }
 
+    void setOfflinePreview(bool enable) { m_offlinePreviewEnabled = enable; }
+    bool isOfflinePreview() const { return m_offlinePreviewEnabled; }
+
     std::map<std::string, std::tuple<int, int, int, std::string>> findEveryPath(const Position& start, int maxDistance, const std::map<std::string, std::string>& params);
     std::vector<CreaturePtr> getSpectatorsByPattern(const Position& centerPos, const std::string& pattern, Otc::Direction direction);
 
@@ -236,6 +239,8 @@ public:
 
     // Map image generation functions
     void initializeMapGenerator(int threadsNumber);
+    void terminateMapGenerator();
+    void setTerminating(bool terminating) { m_isTerminating = terminating; }
     uint64_t getAreasCount() { return m_mapAreas.size(); }
     int getGeneratedAreasCount() { return m_generatedAreasCount; }
     void setGeneratedAreasCount(int countOfAreas) { m_generatedAreasCount = countOfAreas; }
@@ -244,6 +249,8 @@ public:
     void drawMap(std::string fileName, int sx, int sy, int16_t sz, int size, uint32_t houseId = 0);
     Position getMinPosition() { return m_minPosition; }
     Position getMaxPosition() { return m_maxPosition; }
+    int getGlobalMinZ() { return m_globalMinZ; }
+    int getGlobalMaxZ() { return m_globalMaxZ; }
     int getMaxXToLoad() { return m_maxXToLoad; }
     void setMaxXToLoad(int newMaxXToLoad) { m_maxXToLoad = newMaxXToLoad; }
     int getMinXToLoad() { return m_minXToLoad; }
@@ -268,6 +275,11 @@ public:
     }
     void saveImage(const std::string& fileName, int minX, int minY, int maxX, int maxY, short z, bool drawLowerFloors);
     void generateMapForZ(int16_t targetZ, uint8_t shadowPercent);
+
+    // Satellite/minimap chunk generation (produces .bmp.lzma files)
+    void generateMinimapChunks(const std::string& outputDir, int lod);
+    void generateSatelliteChunks(const std::string& outputDir, int lod);
+    void saveMapDat(const std::string& outputDir);
 private:
     struct FloorData
     {
@@ -312,6 +324,7 @@ private:
     AwareRange m_awareRange;
 
     bool m_floatingEffect{ true };
+    bool m_offlinePreviewEnabled{ false };
 
     // Map generator member variables
     int m_generatedAreasCount{ 0 };
@@ -319,6 +332,13 @@ private:
     std::map<uint32_t, uint32_t> m_mapTilesPerX;
     Position m_minPosition;
     Position m_maxPosition;
+    // Set once during scan pass (m_maxXToLoad == -1) and preserved across part reloads.
+    uint16_t m_globalMinX{ 65535 };
+    uint16_t m_globalMinY{ 65535 };
+    uint8_t  m_globalMinZ{ 255 };
+    uint16_t m_globalMaxX{ 0 };
+    uint16_t m_globalMaxY{ 0 };
+    uint8_t  m_globalMaxZ{ 0 };
     int m_maxXToLoad{ -1 };  // -1 means load all tiles (no X filter)
     int m_minXToLoad{ 0 };
     int m_maxXToRender{ 0 };
@@ -326,6 +346,7 @@ private:
     int16_t m_shadowPercent{ 0 };
     uint8_t m_lowerFloorsShadowPercent{ 50 };
     std::mutex m_generatedAreasCountMutex;
+    bool m_isTerminating{ false };
 };
 
 extern Map g_map;

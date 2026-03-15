@@ -903,6 +903,35 @@ bool ThingType::drawToImage(const Point& dest, int xPattern, int yPattern, int z
     const int animationPhase = 0;
     const int spriteSize = g_gameConfig.getSpriteSize();
     bool drewAnySprite = false;
+    const bool protobufSupported =
+        g_game.isUsingProtobuf() ||
+        (g_game.getClientVersion() >= 1281 && !g_game.getFeature(Otc::GameLoadSprInsteadProtobuf));
+
+    if (protobufSupported) {
+        // Protobuf appearances store one sprite entry per layer/frame (not split into 32x32 cells).
+        // Anchor to the same tile origin used by legacy rendering (bottom-right alignment).
+        const int dx = dest.x - spriteSize * (m_size.width() - 1);
+        const int dy = dest.y - spriteSize * (m_size.height() - 1);
+
+        for (int l = 0; l < m_layers; ++l) {
+            const uint32_t spriteIndex = getSpriteIndex(-1, -1, l, xPattern, yPattern, zPattern, animationPhase);
+            if (spriteIndex >= m_spritesIndex.size())
+                continue;
+
+            const uint32_t spriteId = m_spritesIndex[spriteIndex];
+            if (spriteId == 0)
+                continue;
+
+            const auto& spriteImage = g_sprites.getSpriteImageCached(spriteId);
+            if (!spriteImage)
+                continue;
+
+            image->blit(Point(dx, dy), spriteImage);
+            drewAnySprite = true;
+        }
+
+        return drewAnySprite;
+    }
 
     // Draw sprite parts in correct order (layers, then width, then height)
     for (int l = 0; l < m_layers; ++l) {

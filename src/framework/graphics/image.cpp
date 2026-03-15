@@ -26,6 +26,8 @@
 #include "framework/core/filestream.h"
 #include "framework/core/resourcemanager.h"
 
+#include <lzma.h>
+
 using namespace qrcodegen;
 
 Image::Image(const Size& size, const int bpp, const uint8_t* pixels) : m_size(size), m_bpp(bpp)
@@ -89,6 +91,122 @@ void Image::savePNG(const std::string& fileName)
     std::stringstream data;
     save_png(data, m_size.width(), m_size.height(), 4, getPixelData());
     fin->write(data.str().c_str(), data.str().length());
+    fin->flush();
+    fin->close();
+}
+
+void Image::saveBmpLzma(const std::string& fileName)
+{
+    // Produces a CIP-format .bmp.lzma file compatible with SatelliteMap::loadChunkTexture():
+    // [32-byte zero header] + [LZMA-alone stream of a 32-bpp BI_BITFIELDS BMP]
+
+    const int w = m_size.width();
+    const int h = m_size.height();
+    const uint32_t rowBytes = static_cast<uint32_t>(w) * 4; // 32-bpp, already 4-byte aligned
+    const uint32_t pixelDataSize = rowBytes * h;
+    const uint32_t pixelDataOffset = 66; // 14 (file hdr) + 40 (DIB hdr) + 12 (3 masks)
+    const uint32_t bmpSize = pixelDataOffset + pixelDataSize;
+
+    // --- Build BMP in memory ---
+    std::vector<uint8_t> bmp(bmpSize, 0);
+
+    auto writeU16 = [&](size_t off, uint16_t v) {
+        bmp[off]     = static_cast<uint8_t>(v);
+        bmp[off + 1] = static_cast<uint8_t>(v >> 8);
+    };
+    auto writeU32 = [&](size_t off, uint32_t v) {
+        bmp[off]     = static_cast<uint8_t>(v);
+        bmp[off + 1] = static_cast<uint8_t>(v >> 8);
+        bmp[off + 2] = static_cast<uint8_t>(v >> 16);
+        bmp[off + 3] = static_cast<uint8_t>(v >> 24);
+    };
+    auto writeI32 = [&](size_t off, int32_t v) { writeU32(off, static_cast<uint32_t>(v)); };
+
+    // BMP File Header (14 bytes)
+    bmp[0] = 'B'; bmp[1] = 'M';
+    writeU32(2, bmpSize);          // file size
+    // bytes 6-9: reserved = 0
+    writeU32(10, pixelDataOffset); // pixel data offset
+
+    // BITMAPINFOHEADER (40 bytes) at offset 14
+    writeU32(14, 40);              // DIB header size
+    writeI32(18, w);               // width
+    writeI32(22, -h);              // height (negative = top-down)
+    writeU16(26, 1);               // planes
+    writeU16(28, 32);              // bits per pixel
+    writeU32(30, 3);               // compression = BI_BITFIELDS
+    writeU32(34, pixelDataSize);   // image size
+
+    // Channel masks (12 bytes) at offset 54 — standard BGRA
+    writeU32(54, 0x00FF0000u);     // R mask
+    writeU32(58, 0x0000FF00u);     // G mask
+    writeU32(62, 0x000000FFu);     // B mask
+
+    // Pixel data at offset 66: convert RGBA → BGRA
+    uint8_t* dst = bmp.data() + pixelDataOffset;
+    for (int y = 0; y < h; ++y) {
+        for (int x = 0; x < w; ++x) {
+            const uint8_t* src = &m_pixels[static_cast<size_t>(y * w + x) * 4];
+            dst[0] = src[2]; // B
+            dst[1] = src[1]; // G
+            dst[2] = src[0]; // R
+            dst[3] = src[3]; // A
+            dst += 4;
+        }
+    }
+
+    // --- LZMA-alone compress ---
+    lzma_options_lzma options;
+    lzma_lzma_preset(&options, 6);
+
+    lzma_stream strm = LZMA_STREAM_INIT;
+    if (lzma_alone_encoder(&strm, &options) != LZMA_OK) {
+        g_logger.error("saveBmpLzma: failed to init LZMA encoder for '{}'", fileName);
+        return;
+    }
+
+    strm.next_in  = bmp.data();
+    strm.avail_in = bmp.size();
+
+    std::vector<uint8_t> lzmaOut;
+    lzmaOut.reserve(bmp.size() / 2); // compressed should be smaller
+
+    std::array<uint8_t, 65536> buf{};
+    lzma_ret ret = LZMA_OK;
+    while (ret != LZMA_STREAM_END) {
+        strm.next_out  = buf.data();
+        strm.avail_out = buf.size();
+
+        const lzma_action action = (strm.avail_in == 0) ? LZMA_FINISH : LZMA_RUN;
+        ret = lzma_code(&strm, action);
+
+        if (ret != LZMA_OK && ret != LZMA_STREAM_END) {
+            g_logger.error("saveBmpLzma: LZMA compression error ({}) for '{}'", static_cast<int>(ret), fileName);
+            lzma_end(&strm);
+            return;
+        }
+
+        const size_t got = buf.size() - strm.avail_out;
+        lzmaOut.insert(lzmaOut.end(), buf.begin(), buf.begin() + got);
+    }
+    lzma_end(&strm);
+
+    // --- Write CIP file: 32-byte header + LZMA data ---
+    const auto& fin = g_resources.createFile(fileName);
+    if (!fin) {
+        g_logger.error("saveBmpLzma: failed to open '{}' for write", fileName);
+        return;
+    }
+
+    fin->cache();
+
+    // 32-byte CIP header (zeros — reader skips it entirely)
+    std::array<uint8_t, 32> cipHeader{};
+    fin->write(cipHeader.data(), cipHeader.size());
+
+    // LZMA-alone data
+    fin->write(lzmaOut.data(), lzmaOut.size());
+
     fin->flush();
     fin->close();
 }

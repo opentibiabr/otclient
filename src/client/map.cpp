@@ -68,6 +68,7 @@ Map g_map;
 
 void Map::init()
 {
+    m_isTerminating = false;
     g_window.addKeyListener([this](const InputEvent& inputEvent) {
         notificateKeyRelease(inputEvent);
     });
@@ -83,6 +84,11 @@ void Map::init()
 
 void Map::terminate()
 {
+    // Fast shutdown path for huge editor maps: avoid synchronous full map cleanup.
+    // Process teardown will reclaim memory and this prevents multi-minute exits.
+    if (m_isTerminating)
+        return;
+
     clean();
 }
 
@@ -547,6 +553,9 @@ void Map::removeCreatureById(const uint32_t  id)
 
 void Map::removeUnawareThings()
 {
+    if (m_isTerminating)
+        return;
+
     // remove creatures from tiles that we are not aware of anymore
     for (const auto& [uid, creature] : m_knownCreatures) {
         if (!isAwareOfPosition(creature->getPosition()))

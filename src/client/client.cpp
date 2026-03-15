@@ -63,6 +63,8 @@ void Client::terminate()
 
 #ifdef FRAMEWORK_EDITOR
     g_creatures.terminate();
+    g_map.setTerminating(true);
+    g_map.terminateMapGenerator();
 #endif
     g_game.terminate();
     g_map.terminate();
@@ -90,12 +92,12 @@ void Client::draw(const DrawPoolType type)
 {
     if (type == DrawPoolType::FOREGROUND) {
         g_ui.render(DrawPoolType::FOREGROUND);
-        if (!g_game.isOnline())
+        if (!g_game.isOnline() && !g_map.isOfflinePreview())
             m_mapWidget = nullptr;
         return;
     }
 
-    if (!g_game.isOnline()) {
+    if (!g_game.isOnline() && !g_map.isOfflinePreview()) {
         m_mapWidget = nullptr;
         return;
     }
@@ -120,7 +122,7 @@ bool Client::canDraw(const DrawPoolType type) const
 {
     switch (type) {
         case DrawPoolType::MAP:
-            return g_game.isOnline();
+            return g_game.isOnline() || g_map.isOfflinePreview();
 
         case DrawPoolType::FOREGROUND:
             return g_drawPool.get(type)->canRepaint();

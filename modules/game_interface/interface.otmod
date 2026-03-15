@@ -52,5 +52,6 @@ Module
     - game_cyclopedia
     - game_creatureinformation
     - game_rewardwall
+    - game_mapgen
   @onLoad: init()
   @onUnload: terminate()
