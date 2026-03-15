@@ -63,6 +63,7 @@ void Game::resetGameStates()
     m_mapUpdatedAt = 0;
     m_mapUpdateTimer = { true, Timer{} };
     setCanReportBugs(false);
+    setCanExivaOptions(false);
     m_fightMode = Otc::FightBalanced;
     m_chaseMode = Otc::DontChase;
     m_pvpMode = Otc::WhiteDove;
@@ -1834,6 +1835,23 @@ void Game::sendForgeBrowseHistoryRequest(uint16_t page)
     if (!canPerformGameAction())
         return;
     m_protocolGame->sendForgeBrowseHistoryRequest(page);
+}
+
+void Game::sendExivaOptions(
+    const bool allowAll, const bool allowOwnGuild, const bool allowOwnParty,
+    const bool allowVipList, const bool allowPlayerWhitelist, const bool allowGuildWhitelist,
+    const std::vector<std::string>& characterWhiteList,
+    const std::vector<std::string>& removeCharacter,
+    const std::vector<std::string>& guildWhiteList,
+    const std::vector<std::string>& removeGuild)
+{
+    if (!canPerformGameAction() || !canExivaOptions())
+        return;
+
+    m_protocolGame->sendExivaRestrictions(
+        allowAll, allowOwnGuild, allowOwnParty, allowVipList,
+        allowPlayerWhitelist, allowGuildWhitelist,
+        characterWhiteList, removeCharacter, guildWhiteList, removeGuild);
 }
 
 void Game::applyImbuement(const uint8_t slot, const uint32_t imbuementId, const bool protectionCharm)

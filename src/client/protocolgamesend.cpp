@@ -1461,6 +1461,47 @@ void ProtocolGame::sendForgeBrowseHistoryRequest(uint16_t page) {
     send(msg);
 }
 
+void ProtocolGame::sendExivaRestrictions(
+    const bool allowAll, const bool allowOwnGuild, const bool allowOwnParty,
+    const bool allowVipList, const bool allowPlayerWhitelist, const bool allowGuildWhitelist,
+    const std::vector<std::string>& characterWhiteList,
+    const std::vector<std::string>& removeCharacter,
+    const std::vector<std::string>& guildWhiteList,
+    const std::vector<std::string>& removeGuild)
+{
+    if (!g_game.canExivaOptions())
+        return;
+
+    const auto& msg = std::make_shared<OutputMessage>();
+    // Opcode 202 is ClientExivaRestrictions in protocol > 11.00
+    msg->addU8(Proto::ClientRefreshContainer);
+
+    msg->addU8(allowAll ? 1 : 0);
+    msg->addU8(allowOwnGuild ? 1 : 0);
+    msg->addU8(allowOwnParty ? 1 : 0);
+    msg->addU8(allowVipList ? 1 : 0);
+    msg->addU8(allowPlayerWhitelist ? 1 : 0);
+    msg->addU8(allowGuildWhitelist ? 1 : 0);
+
+    msg->addU16(static_cast<uint16_t>(characterWhiteList.size()));
+    for (const auto& name : characterWhiteList)
+        msg->addString(name);
+
+    msg->addU16(static_cast<uint16_t>(removeCharacter.size()));
+    for (const auto& name : removeCharacter)
+        msg->addString(name);
+
+    msg->addU16(static_cast<uint16_t>(guildWhiteList.size()));
+    for (const auto& name : guildWhiteList)
+        msg->addString(name);
+
+    msg->addU16(static_cast<uint16_t>(removeGuild.size()));
+    for (const auto& name : removeGuild)
+        msg->addString(name);
+
+    send(msg);
+}
+
 void ProtocolGame::sendApplyImbuement(const uint8_t slot, const uint32_t imbuementId, const bool protectionCharm)
 {
     const auto& msg = std::make_shared<OutputMessage>();
