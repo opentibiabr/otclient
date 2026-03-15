@@ -294,6 +294,7 @@ set(SOURCE_FILES
         client/mapio.cpp
         client/mapview.cpp
         client/minimap.cpp
+        client/satellitemap.cpp
         client/missile.cpp
         client/outfit.cpp
         client/player.cpp

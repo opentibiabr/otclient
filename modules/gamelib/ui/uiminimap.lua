@@ -202,7 +202,7 @@ function UIMinimap:onZoomChange(zoom)
         self.zoomMinimap = zoom
     end
 
-    for _, widget in pairs(self.alternatives) do
+    for _, widget in pairs(self.alternatives or {}) do
         if (not widget.minZoom or widget.minZoom >= zoom) and widget.maxZoom <= zoom then
             widget:show()
         else

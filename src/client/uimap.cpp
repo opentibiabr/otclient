@@ -22,6 +22,7 @@
 
 #include "uimap.h"
 
+#include "gameconfig.h"
 #include "lightview.h"
 #include "map.h"
 #include "mapview.h"
@@ -56,7 +57,8 @@ void UIMap::draw(const DrawPoolType drawPane) {
             m_mapView->drawFloor();
         }, [this] {
             m_mapView->registerEvents();
-        }, m_mapView->m_posInfo.rect, m_mapView->m_posInfo.srcRect, Color::black);
+        }, m_mapView->m_posInfo.rect, m_mapView->m_posInfo.srcRect,
+           m_mapView->getCameraPosition().z == g_gameConfig.getMapSeaFloor() ? Color(0xFFA54C27U) : Color::black);
     } else if (drawPane == DrawPoolType::LIGHT) {
         g_drawPool.preDraw(drawPane, [this] {
             m_mapView->m_lightView->clear();
