@@ -41,7 +41,7 @@ StaticMainWindow
     margin-top: 5
     margin-bottom: 10
     !text: tr('Change updater URL')
-    @onClick: Updater.changeUrl()
+    @onClick: if Updater.enableChangeUrl then Updater.changeUrl() end
     $!mobile:
       visible: false
 
