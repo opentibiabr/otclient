@@ -34,6 +34,7 @@
 #include "luavaluecasts_client.h"
 #include "map.h"
 #include "minimap.h"
+#include "satellitemap.h"
 #include "missile.h"
 #include "outfit.h"
 #include "player.h"
@@ -226,6 +227,14 @@ void Client::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_minimap", "saveImage", &Minimap::saveImage, &g_minimap);
     g_lua.bindSingletonFunction("g_minimap", "loadOtmm", &Minimap::loadOtmm, &g_minimap);
     g_lua.bindSingletonFunction("g_minimap", "saveOtmm", &Minimap::saveOtmm, &g_minimap);
+
+    g_lua.registerSingletonClass("g_satelliteMap");
+    g_lua.bindSingletonFunction("g_satelliteMap", "loadDirectory", &SatelliteMap::loadDirectory, &g_satelliteMap);
+    g_lua.bindSingletonFunction("g_satelliteMap", "loadFloors", &SatelliteMap::loadFloors, &g_satelliteMap);
+    g_lua.bindSingletonFunction("g_satelliteMap", "clear", &SatelliteMap::clear, &g_satelliteMap);
+    g_lua.bindSingletonFunction("g_satelliteMap", "hasChunksForFloor", &SatelliteMap::hasChunksForFloor, &g_satelliteMap);
+    g_lua.bindSingletonFunction("g_satelliteMap", "hasChunksForView", &SatelliteMap::hasChunksForView, &g_satelliteMap);
+    g_lua.bindSingletonFunction("g_satelliteMap", "hasMinimapChunksForFloor", &SatelliteMap::hasMinimapChunksForFloor, &g_satelliteMap);
 
 #ifdef FRAMEWORK_EDITOR
     g_lua.registerSingletonClass("g_creatures");
@@ -1184,6 +1193,12 @@ void Client::registerLuaFunctions()
     g_lua.bindClassMemberFunction<UIMinimap>("anchorPosition", &UIMinimap::anchorPosition);
     g_lua.bindClassMemberFunction<UIMinimap>("fillPosition", &UIMinimap::fillPosition);
     g_lua.bindClassMemberFunction<UIMinimap>("centerInPosition", &UIMinimap::centerInPosition);
+    g_lua.bindClassMemberFunction<UIMinimap>("setSatelliteMode", &UIMinimap::setSatelliteMode);
+    g_lua.bindClassMemberFunction<UIMinimap>("setUseStaticMinimap", &UIMinimap::setUseStaticMinimap);
+    g_lua.bindClassMemberFunction<UIMinimap>("isUseStaticMinimap", &UIMinimap::isUseStaticMinimap);
+    g_lua.bindClassMemberFunction<UIMinimap>("isSatelliteMode", &UIMinimap::isSatelliteMode);
+    g_lua.bindClassMemberFunction<UIMinimap>("setFloorSeparatorOpacity", &UIMinimap::setFloorSeparatorOpacity);
+    g_lua.bindClassMemberFunction<UIMinimap>("getFloorSeparatorOpacity", &UIMinimap::getFloorSeparatorOpacity);
 
     g_lua.registerClass<UIProgressRect, UIWidget>();
     g_lua.bindClassStaticFunction<UIProgressRect>("create", [] { return std::make_shared<UIProgressRect>(); });
