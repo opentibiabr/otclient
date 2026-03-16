@@ -516,14 +516,6 @@ std::string Platform::openDirectoryDialog()
     return result;
 }
 
-double Platform::getMemoryUsage()
-{
-    PROCESS_MEMORY_COUNTERS pmc;
-    if (GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc)))
-        return static_cast<double>(pmc.WorkingSetSize);
-    return 0.0;
-}
-
 std::string Platform::traceback(const std::string_view where, int, int)
 {
     std::stringstream ss;
