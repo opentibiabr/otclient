@@ -329,6 +329,9 @@ end
 
 function MapGenUI:switchTab(tab)
     self.activeTab = tab
+    for k, v in pairs(self.tabState) do
+        self.tabState[k] = (k == tab)
+    end
 end
 
 
