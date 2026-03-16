@@ -589,8 +589,10 @@ end
 
 local satelliteGenerating = false
 local satelliteOutputDir = ''
-local satelliteLod = 32
 local satellitePhase = '' -- 'satellite', 'minimap', or 'done'
+local satelliteLodQueue = {}     -- list of satellite LODs to generate (e.g. {16, 32})
+local satelliteLodQueueIdx = 1   -- current index into satelliteLodQueue
+local satelliteMinimapLod = 32   -- LOD used for minimap generation
 local satelliteStartTime = 0
 local satelliteLastCount = -1
 local satelliteStableTicks = 0
@@ -602,8 +604,12 @@ function generateSatelliteData(outputDir, lod, shadowPercent, mapPathOverride)
     end
 
     outputDir = outputDir or '/satellite_output'
-    lod = lod or 32
     shadowPercent = shadowPercent or 30
+
+    -- Native CIP format always has satellite at LOD 16 + LOD 32, minimap at LOD 32
+    satelliteLodQueue    = {16, 32}
+    satelliteLodQueueIdx = 1
+    satelliteMinimapLod  = 32
 
     satelliteGenerating = true
     SATELLITE_UI_STATUS.active = true
@@ -612,7 +618,6 @@ function generateSatelliteData(outputDir, lod, shadowPercent, mapPathOverride)
     SATELLITE_UI_STATUS.total = 0
     SATELLITE_UI_STATUS.message = 'Generating satellite chunks'
     satelliteOutputDir = outputDir
-    satelliteLod = lod
     satelliteStartTime = os.time()
 
     g_resources.makeDir(outputDir)
@@ -628,15 +633,16 @@ function generateSatelliteData(outputDir, lod, shadowPercent, mapPathOverride)
         g_map.loadOtbm(effectiveMapPath)
     end
 
-    -- Phase 1: Generate satellite chunks
+    -- Phase 1: satellite at first LOD (16)
+    local firstLod = satelliteLodQueue[1]
     satellitePhase = 'satellite'
     satelliteLastCount = -1
     satelliteStableTicks = 0
     g_map.setGeneratedAreasCount(0)
-    g_map.generateSatelliteChunks(outputDir, lod)
+    g_map.generateSatelliteChunks(outputDir, firstLod)
     SATELLITE_UI_STATUS.total = g_map.getAreasCount()
 
-    print('Starting satellite chunk generation (LOD=' .. lod .. ')...')
+    print('Starting satellite chunk generation (LOD=' .. firstLod .. ')...')
 
     g_dispatcher.scheduleEvent(satelliteProgressManager, 1000)
 end
@@ -669,17 +675,30 @@ function satelliteProgressManager()
     if (total > 0 and count >= total) or satelliteStableTicks >= 4 then
         print('[' .. satellitePhase .. '] Complete: ' .. format_int(count) .. ' chunks.')
         if satellitePhase == 'satellite' then
-            satellitePhase = 'minimap'
+            -- Advance to next satellite LOD, or to minimap if all LODs done
+            satelliteLodQueueIdx = satelliteLodQueueIdx + 1
             satelliteLastCount = -1
             satelliteStableTicks = 0
-            SATELLITE_UI_STATUS.phase = 'minimap'
-            SATELLITE_UI_STATUS.done = 0
-            SATELLITE_UI_STATUS.message = 'Generating minimap chunks'
-            g_map.setGeneratedAreasCount(0)
-            g_map.generateMinimapChunks(satelliteOutputDir, satelliteLod)
-            SATELLITE_UI_STATUS.total = g_map.getAreasCount()
-            print('Starting minimap chunk generation (LOD=' .. satelliteLod .. ')...')
-            g_dispatcher.scheduleEvent(satelliteProgressManager, 1000)
+            if satelliteLodQueueIdx <= #satelliteLodQueue then
+                local nextLod = satelliteLodQueue[satelliteLodQueueIdx]
+                SATELLITE_UI_STATUS.done = 0
+                SATELLITE_UI_STATUS.message = 'Generating satellite chunks (LOD=' .. nextLod .. ')'
+                g_map.setGeneratedAreasCount(0)
+                g_map.generateSatelliteChunks(satelliteOutputDir, nextLod)
+                SATELLITE_UI_STATUS.total = g_map.getAreasCount()
+                print('Starting satellite chunk generation (LOD=' .. nextLod .. ')...')
+                g_dispatcher.scheduleEvent(satelliteProgressManager, 1000)
+            else
+                satellitePhase = 'minimap'
+                SATELLITE_UI_STATUS.phase = 'minimap'
+                SATELLITE_UI_STATUS.done = 0
+                SATELLITE_UI_STATUS.message = 'Generating minimap chunks'
+                g_map.setGeneratedAreasCount(0)
+                g_map.generateMinimapChunks(satelliteOutputDir, satelliteMinimapLod)
+                SATELLITE_UI_STATUS.total = g_map.getAreasCount()
+                print('Starting minimap chunk generation (LOD=' .. satelliteMinimapLod .. ')...')
+                g_dispatcher.scheduleEvent(satelliteProgressManager, 1000)
+            end
         else
             satellitePhase = 'done'
             g_map.saveMapDat(satelliteOutputDir)

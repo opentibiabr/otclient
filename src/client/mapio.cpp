@@ -1331,10 +1331,13 @@ void Map::saveMapDat(const std::string& outputDir)
         coord->set_y(posY * 32);
         coord->set_z(floor);
 
+        // tiles covered per chunk: 512px × (lod/32) tiles/px
+        const int tilesPerChunk = 512 * lod / 32;
         entry->set_file_name(name);
-        entry->set_fields_width(512);
-        entry->set_fields_height(512);
-        entry->set_scale_factor(static_cast<double>(lod) / 32.0);
+        entry->set_fields_width(tilesPerChunk);
+        entry->set_fields_height(tilesPerChunk);
+        // scale_factor = image_px / (tiles × 32 px/tile) = 512 / (tilesPerChunk × 32) = 1/lod
+        entry->set_scale_factor(1.0 / static_cast<double>(lod));
     }
 
     // Serialize to file
