@@ -102,7 +102,7 @@
       <uibutton class="mg-tab" onclick="self:switchTab('export')" *checked="self.tabState.export">Export PNG</uibutton>
       <uibutton class="mg-tab" onclick="self:switchTab('generate')" *checked="self.tabState.generate">Full Generate</uibutton>
       <uibutton class="mg-tab" onclick="self:switchTab('satellite')" *checked="self.tabState.satellite">Satellite</uibutton>
-      <uibutton class="mg-tab" onclick="self:switchTab('minimap')" *checked="self.tabState.minimap">Minimap</uibutton>
+      <uibutton class="mg-tab" onclick="self:switchTab('minimap')" *checked="self.tabState.minimap">Minimap(.otmm)</uibutton>
       <uibutton class="mg-tab" onclick="self:switchTab('log')" *checked="self.tabState.log">Log</uibutton>
       <uibutton class="mg-btn mg-btn-close" onclick="self:unloadHtml()" style="float: right; margin-right: 2; margin-top: 1">X</uibutton>
     </div>
@@ -189,29 +189,29 @@
 
         <div class="mg-section-title">File Paths</div>
         <div class="mg-row" style="padding: 0">
-          <div style="display: inline-block; width: 590; vertical-align: top; margin-top: 0">
+          <div style="display: inline-block; width: 660; vertical-align: top; margin-top: 0">
             <!-- Legacy OTB path (hidden when protobuf) -->
 
-            <div *visible="not self.isProtobuf" style="width: 590">
-              <div class="mg-row">
+            <div *visible="not self.isProtobuf" style="width: 660">
+              <div class="mg-row" style="width: 660">
                 <label class="mg-label">items.otb:</label>
                 <input type="text" *value="self.definitionsPath" class="mg-path-input" />
                 <button class="mg-browse-btn" onclick="self:browseFile({'otb'}, 'definitionsPath')">Browse...</button>
                 <button class="mg-open-dir-btn" onclick="self:openPathDir('definitionsPath')">Open Dir</button>
               </div>
-              <div class="mg-row">
+              <div class="mg-row"  style="width: 660">
                 <label class="mg-label">Map (.otbm):</label>
                 <input type="text" *value="self.mapPath" class="mg-path-input" />
                 <button class="mg-browse-btn" onclick="self:browseFile({'otbm'}, 'mapPath')">Browse...</button>
                 <button class="mg-open-dir-btn" onclick="self:openPathDir('mapPath')">Open Dir</button>
               </div>
-              <div class="mg-row">
+              <div class="mg-row" style="width: 660">
                 <label class="mg-label">Tibia.dat:</label>
                 <input type="text" *value="self.datPath" class="mg-path-input" />
                 <button class="mg-browse-btn" onclick="self:browseFile({'dat'}, 'datPath')">Browse...</button>
                 <button class="mg-open-dir-btn" onclick="self:openPathDir('datPath')">Open Dir</button>
               </div>
-              <div class="mg-row">
+              <div class="mg-row" style="width: 660">
                 <label class="mg-label">Tibia.spr:</label>
                 <input type="text" *value="self.sprPath" class="mg-path-input" />
                 <button class="mg-browse-btn" onclick="self:browseFile({'spr'}, 'sprPath')">Browse...</button>
@@ -220,20 +220,20 @@
             </div>
 
             <!-- Protobuf path (hidden when legacy) -->
-            <div *visible="self.isProtobuf" style="width: 590; margin-top: -92px">
-              <div class="mg-row">
+            <div *visible="self.isProtobuf" style="width: 660; margin-top: -80px">
+              <div class="mg-row" style="width: 660">
                 <label class="mg-label">Assets Directory:</label>
                 <input type="text" *value="self.assetsPath" class="mg-path-input" />
                 <button class="mg-browse-btn" onclick="self:browseDir('assetsPath')">Browse...</button>
                 <button class="mg-open-dir-btn" onclick="self:openPathDir('assetsPath')">Open Dir</button>
               </div>
-              <div class="mg-row">
+              <div class="mg-row" style="width: 660">
                 <label class="mg-label">Map (.otbm):</label>
                 <input type="text" *value="self.mapPath" class="mg-path-input" />
                 <button class="mg-browse-btn" onclick="self:browseFile({'otbm'}, 'mapPath')">Browse...</button>
                 <button class="mg-open-dir-btn" onclick="self:openPathDir('mapPath')">Open Dir</button>
               </div>
-              <div class="mg-infobox" style="margin: 2 0 0 0; height: 50; width: 500;">
+              <div class="mg-infobox" style="margin: 2 0 0 0; height: 25; width: 600;">
                 Protobuf: catalog-content.json auto-detected. items.otb used for id-mapping if found.
               </div>
             </div>
@@ -261,11 +261,11 @@
 
         <div class="mg-row">
           <label class="mg-label">Threads:</label>
-          <spinbox *value="self.threads" onchange="self:updateGenerateWarning()" style="width: 75" minimum="1" maximum="64" step="1" />
+          <input type="text" *value="self.threads" onchange="self:updateGenerateWarning()" style="width: 75" />
           <label class="mg-label" style="width: 60; margin-left: 10">Parts:</label>
-          <spinbox *value="self.parts" onchange="self:updateGenerateWarning()" style="width: 75" minimum="1" maximum="1000" step="1" />
+          <input type="text" *value="self.parts" onchange="self:updateGenerateWarning()" style="width: 75" />
           <label class="mg-label" style="width: 80; margin-left: 10">Shadow %:</label>
-          <spinbox *value="self.shadowPercent" onchange="self:updateGenerateWarning()" style="width: 75" minimum="0" maximum="100" step="1" />
+          <input type="text" *value="self.shadowPercent" onchange="self:updateGenerateWarning()" style="width: 75" />
         </div>
         <div class="mg-row">
           <label class="mg-label">Export Dir:</label>
@@ -423,7 +423,7 @@
 
           <div class="mg-row">
             <label class="mg-label">Shadow %:</label>
-            <spinbox *value="self.shadowPercent" onchange="self:updateGenerateWarning()" style="width: 75" minimum="0" maximum="100" step="1" />
+            <input type="text" *value="self.shadowPercent" onchange="self:updateGenerateWarning()" style="width: 75" />
           </div>
           <div class="mg-row">
             <input id="chkSatIntegratedFull" type="checkbox" *checked="self.satIntegrated" />
@@ -467,7 +467,7 @@
 
           <!-- ---- generateMapArea ---- -->
           <div class="mg-section-title" style="margin-top: 8">generateMapArea Specific Region</div>
-          <div class="mg-card">
+          <div class="mg-card" style="height: 130px">
             <div class="mg-row">
               <span class="mg-coordlabel" style="margin-left: 0">From X</span>
               <spinbox id="areaFromXInput" *value="self.areaFromX" onchange="self:onPositionInputChanged('areaFrom'); self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
@@ -496,7 +496,7 @@
           <!-- ---- generateMapFloor ---- -->
           <div class="mg-section-title">generateMapFloor Full Map Single Floor</div>
           <div class="mg-card">
-            <div class="mg-row">
+            <div class="mg-row" >
               <label class="mg-label" style="width: 60">Floor:</label>
               <spinbox *value="self.floorNum" onchange="self:updateGenerateWarning()" style="width: 75" minimum="0" maximum="15" step="1" />
               <label class="mg-label" style="width: 60; margin-left: 10">Name:</label>

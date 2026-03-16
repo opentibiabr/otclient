@@ -143,7 +143,7 @@ function MapGenUI:onInit()
 
     -- State tables for RadioGroup-like behavior in HTML
     self.threads = self.threads or 9
-    self.parts = self.parts or 1
+    self.parts = self.parts or 10
     self.shadowPercent = self.shadowPercent or 30
     self.exportDir = self.exportDir or getVersionedExportDir(self.clientVersion or '1098')
 
@@ -468,7 +468,7 @@ end
 
 function MapGenUI:updateExportFilenames()
     if self.filenameUpdateEvent then
-        g_dispatcher.removeEvent(self.filenameUpdateEvent)
+        removeEvent(self.filenameUpdateEvent)
     end
     self.filenameUpdateEvent = self:scheduleEvent(function()
         self:_performUpdateExportFilenames()
@@ -759,7 +759,7 @@ function MapGenUI:onVersionChanged(v)
 end
 
 function MapGenUI:onVersionComboChange()
-    g_dispatcher.scheduleEvent(function()
+    scheduleEvent(function()
         self:onVersionChanged(self.clientVersion)
         -- Ensure state tables are synced after version change defaults
         self:satSetForcedLod(self.satForceLod)
@@ -876,7 +876,7 @@ function MapGenUI:doPrepare()
     local startPrepare = function()
         self:addLog('Preparing client v' .. cv .. ' ...', '#88ccff')
         self.statusText = 'Preparing client... (may freeze briefly)'
-        g_dispatcher.scheduleEvent(function()
+        scheduleEvent(function()
             self:_doPrepareAction(cv)
         end, 150)
     end
@@ -1093,7 +1093,7 @@ function MapGenUI:doPreview()
     g_map.setMinXToRender(minX)
     g_map.setMaxXToRender(maxX)
 
-    g_dispatcher.scheduleEvent(function()
+    scheduleEvent(function()
         local ok, err = pcall(function() g_map.loadOtbm(_mapPath) end)
         if not ok then
             self:addLog('ERROR loading tiles: ' .. tostring(err), '#ff6666')
@@ -1273,7 +1273,7 @@ function MapGenUI:doExportPng()
     g_map.setMinXToRender(minX)
     g_map.setMaxXToRender(maxX)
 
-    g_dispatcher.scheduleEvent(function()
+    scheduleEvent(function()
         local ok, err = pcall(function()
             g_map.loadOtbm(_mapPath)
             g_map.saveImage(fname, minX, minY, maxX, maxY, floor, lower)
@@ -1324,7 +1324,7 @@ function MapGenUI:doExportMinimap()
     g_map.setMinXToRender(minX)
     g_map.setMaxXToRender(maxX)
 
-    g_dispatcher.scheduleEvent(function()
+    scheduleEvent(function()
         local ok, err = pcall(function()
             g_map.loadOtbm(_mapPath)
             g_minimap.saveImage(fname, minX, minY, maxX, maxY, floor)
@@ -1385,7 +1385,7 @@ function MapGenUI:doExportOtmmFull()
     end
 
     self.statusText = 'Exporting OTMM full...'
-    g_dispatcher.scheduleEvent(function()
+    scheduleEvent(function()
         local ok, err = pcall(function()
             if not self:_ensureMapLoadedForMinimap() then
                 error('prepare required')
@@ -1413,7 +1413,7 @@ function MapGenUI:doExportOtmmFloorRange()
     end
 
     self.statusText = 'Exporting OTMM floor range...'
-    g_dispatcher.scheduleEvent(function()
+    scheduleEvent(function()
         local ok, err = pcall(function()
             if not self:_ensureMapLoadedForMinimap() then
                 error('prepare required')
@@ -1448,7 +1448,7 @@ function MapGenUI:doExportMinimapPngFloorRange()
     local maxY = tonumber(self.imgMaxY) or (_preparedMaxPos and _preparedMaxPos.y or 500)
 
     self.statusText = 'Exporting minimap PNG floor range...'
-    g_dispatcher.scheduleEvent(function()
+    scheduleEvent(function()
         local count = 0
         local ok, err = pcall(function()
             if not self:_ensureMapLoadedForMinimap() then
