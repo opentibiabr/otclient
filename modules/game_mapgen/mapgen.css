@@ -220,27 +220,15 @@
 }
 .mg-btn-close:hover { background-color: #882222ff; }
 
-/* --- Option Buttons (Radio behavior as buttons) --- */
-.mg-option-btn {
-  display: inline-block;
-  height: 22;
-  padding: 3 14;
-  margin-right: 4;
-  background-color: #1b1b2eff;
-  border: 1 black;
-  color: #8b8ba1ff;
-  text-align: center;
+/* --- Row option styling --- */
+.mg-checkbox-label {
+  margin-left: 4;
+  margin-right: 12;
+  color: #aaaabb;
 }
 
-.mg-option-btn:hover {
-  background-color: #2a2a4aff;
-  color: #aaccffff;
-}
-
-.mg-option-btn:checked {
-  background-color: #5b3f16ff;
-  color: #ffe4a3ff;
-  border: 1 #7f5821ff;
+.mg-checkbox-label:hover {
+  color: #ccccff;
 }
 
 /* --- Info / warn boxes --- */

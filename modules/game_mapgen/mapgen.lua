@@ -452,9 +452,11 @@ end
 function MapGenUI:_updateOptionState(tableName, activeKey)
     local tbl = self[tableName]
     if not tbl then return end
+    local newTbl = {}
     for k, _ in pairs(tbl) do
-        tbl[k] = (k == activeKey)
+        newTbl[k] = (k == activeKey)
     end
+    self[tableName] = newTbl
 end
 
 

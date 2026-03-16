@@ -584,21 +584,30 @@
             </div>
             <div class="mg-row">
               <label class="mg-label">Force LOD:</label>
-              <uibutton class="mg-option-btn" onclick="self:satSetForcedLod('auto')" *checked="self.satLodState.auto">Auto</uibutton>
-              <uibutton class="mg-option-btn" onclick="self:satSetForcedLod('16')" *checked="self.satLodState['16']">16</uibutton>
-              <uibutton class="mg-option-btn" onclick="self:satSetForcedLod('32')" *checked="self.satLodState['32']">32</uibutton>
-              <uibutton class="mg-option-btn" onclick="self:satSetForcedLod('64')" *checked="self.satLodState['64']">64</uibutton>
+              <input type="checkbox" *checked="self.satLodState.auto" onclick="self:satSetForcedLod('auto')" />
+              <label class="mg-checkbox-label">Auto</label>
+              <input type="checkbox" *checked="self.satLodState['16']" onclick="self:satSetForcedLod('16')" />
+              <label class="mg-checkbox-label">16</label>
+              <input type="checkbox" *checked="self.satLodState['32']" onclick="self:satSetForcedLod('32')" />
+              <label class="mg-checkbox-label">32</label>
+              <input type="checkbox" *checked="self.satLodState['64']" onclick="self:satSetForcedLod('64')" />
+              <label class="mg-checkbox-label">64</label>
             </div>
             <div class="mg-row">
               <label class="mg-label">Force Fields:</label>
-              <uibutton class="mg-option-btn" onclick="self:satSetForcedFields('auto')" *checked="self.satFieldsState.auto">Auto</uibutton>
-              <uibutton class="mg-option-btn" onclick="self:satSetForcedFields('256')" *checked="self.satFieldsState['256']">256</uibutton>
-              <uibutton class="mg-option-btn" onclick="self:satSetForcedFields('512')" *checked="self.satFieldsState['512']">512</uibutton>
+              <input type="checkbox" *checked="self.satFieldsState.auto" onclick="self:satSetForcedFields('auto')" />
+              <label class="mg-checkbox-label">Auto</label>
+              <input type="checkbox" *checked="self.satFieldsState['256']" onclick="self:satSetForcedFields('256')" />
+              <label class="mg-checkbox-label">256</label>
+              <input type="checkbox" *checked="self.satFieldsState['512']" onclick="self:satSetForcedFields('512')" />
+              <label class="mg-checkbox-label">512</label>
             </div>
             <div class="mg-row">
               <label class="mg-label">View Mode:</label>
-              <uibutton class="mg-option-btn" onclick="self:satSetViewMode('surface')" *checked="self.satViewState.surface">Surface</uibutton>
-              <uibutton class="mg-option-btn" onclick="self:satSetViewMode('map')" *checked="self.satViewState.map">Map</uibutton>
+              <input type="checkbox" *checked="self.satViewState.surface" onclick="self:satSetViewMode('surface')" />
+              <label class="mg-checkbox-label">Surface</label>
+              <input type="checkbox" *checked="self.satViewState.map" onclick="self:satSetViewMode('map')" />
+              <label class="mg-checkbox-label">Map</label>
             </div>
             <div id="satMinimapHost" class="mg-maphost" style="height: 220"></div>
             <div class="mg-section-title" style="margin-top: 8">Chunk Index Preview (map.dat/chunks)</div>
