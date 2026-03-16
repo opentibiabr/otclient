@@ -91,7 +91,7 @@ void Map::loadOtbm(const std::string& fileName)
 
         const uint32_t headerVersion = root->getU32();
         if (headerVersion > 3)
-            throw Exception("Unknown OTBM version detected: {}.", headerVersion);
+            //throw Exception("Unknown OTBM version detected: {}.", headerVersion);
 
         setWidth(root->getU16());
         setHeight(root->getU16());
