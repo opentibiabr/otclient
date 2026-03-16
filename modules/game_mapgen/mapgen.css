@@ -45,11 +45,33 @@
   padding: 4 12;
   border: 1 black;
   margin-right: 1;
+  background-color: #1b1b2eff;
+  color: #8b8ba1ff;
 }
 
 .mg-tab:hover {
   background-color: #303055ff;
   color: #aaccffff;
+}
+
+.mg-tab:pressed {
+  background-color: #262640ff;
+  color: #d8e6ffff;
+}
+
+.mg-tab:focus {
+  border: 1 #5a88c8ff;
+}
+
+.mg-tab-active {
+  background-color: #5b3f16ff;
+  color: #ffe4a3ff;
+  border: 1 #7f5821ff;
+}
+
+.mg-tab-active:hover {
+  background-color: #6b4a19ff;
+  color: #fff0beff;
 }
 
 /* --- Content area: must be position relative so absolute children anchor here --- */

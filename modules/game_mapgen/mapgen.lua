@@ -32,11 +32,97 @@ local function formatMemoryDeltaFromMb(deltaMb)
     return string.format("%s%.0f MB", sign, absMb)
 end
 
+local function trimText(s)
+    if not s then
+        return ''
+    end
+    return tostring(s):gsub('^%s+', ''):gsub('%s+$', '')
+end
+
+local function getVersionedExportDir(versionValue)
+    local cv = tonumber(versionValue) or 0
+    if cv > 0 then
+        return 'exported_images_' .. tostring(cv)
+    end
+    return 'exported_images'
+end
+
+local function normalizeSearchText(s)
+    return tostring(s or ''):lower():gsub('%s+', ''):gsub('[^%w%-_%.]', '')
+end
+
+local function parsePositionText(raw)
+    local text = trimText(raw)
+    if text == '' then
+        return nil
+    end
+
+    local x = tonumber(text:match('["\']?[xX]["\']?%s*[:=]%s*([%+%-]?%d+)'))
+    local y = tonumber(text:match('["\']?[yY]["\']?%s*[:=]%s*([%+%-]?%d+)'))
+    local z = tonumber(text:match('["\']?[zZ]["\']?%s*[:=]%s*([%+%-]?%d+)'))
+    if x and y then
+        return { x = x, y = y, z = z }
+    end
+
+    local values = {}
+    for n in text:gmatch('[%+%-]?%d+') do
+        table.insert(values, tonumber(n))
+        if #values >= 3 then
+            break
+        end
+    end
+
+    if #values >= 2 then
+        return { x = values[1], y = values[2], z = values[3] }
+    end
+    return nil
+end
+
+local function parseChunkRowFromFileName(fileName)
+    local prefix, lodStr, posXStr, posYStr, floorStr =
+        fileName:match('^([a-z]+)%-(%d+)%-(%-?%d+)%-(%-?%d+)%-(%-?%d+)%-.*%.bmp%.lzma$')
+    if not prefix then
+        return nil
+    end
+
+    prefix = prefix:lower()
+    if prefix ~= 'satellite' and prefix ~= 'minimap' then
+        return nil
+    end
+
+    local lod = tonumber(lodStr)
+    local posX = tonumber(posXStr)
+    local posY = tonumber(posYStr)
+    local floor = tonumber(floorStr)
+    if not lod or not posX or not posY or not floor then
+        return nil
+    end
+
+    local typeId = (prefix == 'satellite') and 1 or 2
+    local coordX = posX * 32
+    local coordY = posY * 32
+    local fields = math.floor((512 * lod) / 32)
+
+    return {
+        file = fileName,
+        typeId = typeId,
+        typeName = prefix,
+        coordX = coordX,
+        coordY = coordY,
+        coordZ = floor,
+        width = fields,
+        height = fields,
+        area = 0,
+        scale = 1.0 / lod
+    }
+end
+
 -- =========================================================================
 -- Lifecycle
 -- =========================================================================
 
 function MapGenUI:onInit()
+    math.randomseed(os.time())
     self.ramText = 'RAM: --'
     self.warningText = 'Warning: estimates unavailable until coordinates are valid.'
     self.fullGenerateWarnText = 'Warning: prepare client to compute generation estimates.'
@@ -44,8 +130,19 @@ function MapGenUI:onInit()
     self.floorGenerateWarnText = 'Warning (approx.): Single floor PNG -- MB, RAM +-- MB, ETA ~--s'
     self.previewInfoText = 'Map info: prepare client first.'
     self.satViewMode = self.satViewMode or 'surface'
+    self.fullSatLod = tostring(tonumber(self.fullSatLod or self.satLod) or 32)
+    self.satLod = self.fullSatLod
+    self.satDatQuery = self.satDatQuery or ''
+    self.satDatStatus = self.satDatStatus or 'No chunk index loaded.'
+    self.satDatDisplayRows = self.satDatDisplayRows or {}
+    self.satDatTotalRows = tonumber(self.satDatTotalRows) or 0
+    self.satForceLod = self.satForceLod or 'auto'
+    self.satForceFields = self.satForceFields or 'auto'
+    self.satDatRows = {}
+    self.satDatFilteredRows = {}
     self.progressBarWidth = 0
     self:loadHtml('mapgen.html')
+    self:syncFeatureCheckboxes()
     self:addLog('Map Generator Studio loaded. Configure and press Prepare Client.', '#88ccff')
     self:onVersionChanged(self.clientVersion or '1098')
 
@@ -146,7 +243,7 @@ function MapGenUI:updateGenerateWarning()
     local satChunkRam = 0
     local satChunkEta = 0
     if self.satIntegrated then
-        local lod = tonumber(self.satLod) or 32
+        local lod = tonumber(self.fullSatLod or self.satLod) or 32
         local mapW = math.max(1, selectedWidth)
         local mapH = math.max(1, _preparedMaxPos.y - _preparedMinPos.y + 1)
         local chunks = math.max(1, math.ceil(mapW / lod) * math.ceil(mapH / lod))
@@ -229,9 +326,157 @@ end
 
 function MapGenUI:tabStyle(tab)
     if self.activeTab == tab then
-        return 'background-color: #5b3f16ff; color: #ffe4a3ff'
+        return 'background-color: #5b3f16ff; color: #ffe4a3ff; border: 1 #7f5821ff'
     end
-    return 'background-color: #1b1b2eff; color: #8b8ba1ff'
+    return 'background-color: #1b1b2eff; color: #8b8ba1ff; border: 1 black'
+end
+
+function MapGenUI:_applyPastedPosition(target, pos)
+    if not pos or not pos.x or not pos.y then
+        return false
+    end
+
+    if target == 'previewMin' then
+        self.prevMinX = tostring(pos.x)
+        self.prevMinY = tostring(pos.y)
+        if pos.z ~= nil then
+            self.prevFloor = tostring(pos.z)
+        end
+    elseif target == 'exportMin' then
+        self.imgMinX = tostring(pos.x)
+        self.imgMinY = tostring(pos.y)
+        if pos.z ~= nil then
+            self.imgFloor = tostring(pos.z)
+        end
+    elseif target == 'areaFrom' then
+        self.areaFromX = tostring(pos.x)
+        self.areaFromY = tostring(pos.y)
+        if pos.z ~= nil then
+            self.areaFloors = tostring(pos.z)
+        end
+    elseif target == 'areaTo' then
+        self.areaToX = tostring(pos.x)
+        self.areaToY = tostring(pos.y)
+        if pos.z ~= nil then
+            self.areaFloors = tostring(pos.z)
+        end
+    elseif target == 'satPos' then
+        self.satPosX = tostring(pos.x)
+        self.satPosY = tostring(pos.y)
+        if pos.z ~= nil then
+            self.satPreviewFloor = tostring(pos.z)
+        end
+    else
+        return false
+    end
+
+    self:updateGenerateWarning()
+    return true
+end
+
+function MapGenUI:onPositionInputChanged(target)
+    local raw = ''
+    if target == 'previewMin' then
+        raw = self.prevMinX or ''
+    elseif target == 'exportMin' then
+        raw = self.imgMinX or ''
+    elseif target == 'areaFrom' then
+        raw = self.areaFromX or ''
+    elseif target == 'areaTo' then
+        raw = self.areaToX or ''
+    elseif target == 'satPos' then
+        raw = self.satPosX or ''
+    else
+        return
+    end
+
+    local pos = parsePositionText(raw)
+    if not pos then
+        return
+    end
+
+    if pos.x and pos.x > 65535 then
+        local sx = tostring(math.floor(math.abs(pos.x)))
+        if #sx >= 5 then pos.x = tonumber(sx:sub(-5)) or pos.x end
+    end
+    if pos.y and pos.y > 65535 then
+        local sy = tostring(math.floor(math.abs(pos.y)))
+        if #sy >= 5 then pos.y = tonumber(sy:sub(-5)) or pos.y end
+    end
+    if pos.z and (pos.z < 0 or pos.z > 15) then
+        local sz = tostring(math.floor(math.abs(pos.z)))
+        local firstDigit = tonumber(sz:sub(1, 1))
+        if firstDigit and firstDigit <= 15 then
+            pos.z = firstDigit
+        end
+    end
+
+    if self:_applyPastedPosition(target, pos) then
+        self:addLog(string.format('Detected position for %s: (%d,%d,%s)',
+            target, pos.x, pos.y, tostring(pos.z or '-')), '#88ccff')
+    end
+end
+
+function MapGenUI:satSetForcedLod(value)
+    self.satForceLod = tostring(value or 'auto')
+    if not g_satelliteMap then
+        return
+    end
+    if self.satForceLod == 'auto' then
+        g_satelliteMap.setForcedLod(0)
+    else
+        local lod = tonumber(self.satForceLod) or 0
+        if lod ~= 16 and lod ~= 32 and lod ~= 64 then
+            lod = 0
+            self.satForceLod = 'auto'
+        end
+        g_satelliteMap.setForcedLod(lod)
+    end
+end
+
+function MapGenUI:satSetForcedFields(value)
+    self.satForceFields = tostring(value or 'auto')
+    if not g_satelliteMap then
+        return
+    end
+    if self.satForceFields == 'auto' then
+        g_satelliteMap.setForcedFields(0)
+    else
+        local fields = tonumber(self.satForceFields) or 0
+        if fields ~= 256 and fields ~= 512 then
+            fields = 0
+            self.satForceFields = 'auto'
+        end
+        g_satelliteMap.setForcedFields(fields)
+    end
+end
+
+function MapGenUI:syncFeatureCheckboxes()
+    local chkProto = self:findWidget('#chkProto')
+    local chkU32 = self:findWidget('#chkSpritesU32')
+    local chkAlpha = self:findWidget('#chkSpritesAlpha')
+    local chkEnh = self:findWidget('#chkEnhancedAnim')
+    local chkIdle = self:findWidget('#chkIdleAnim')
+
+    if chkProto then chkProto:setChecked(self.isProtobuf and true or false) end
+    if chkU32 then chkU32:setChecked(self.featSpritesU32 and true or false) end
+    if chkAlpha then chkAlpha:setChecked(self.featSpritesAlphaChannel and true or false) end
+    if chkEnh then chkEnh:setChecked(self.featEnhancedAnimations and true or false) end
+    if chkIdle then chkIdle:setChecked(self.featIdleAnimations and true or false) end
+end
+
+function MapGenUI:onFeatureCheckChanged()
+    local chkProto = self:findWidget('#chkProto')
+    local chkU32 = self:findWidget('#chkSpritesU32')
+    local chkAlpha = self:findWidget('#chkSpritesAlpha')
+    local chkEnh = self:findWidget('#chkEnhancedAnim')
+    local chkIdle = self:findWidget('#chkIdleAnim')
+
+    self.isProtobuf = chkProto and chkProto:isChecked() or false
+    self.featSpritesU32 = chkU32 and chkU32:isChecked() or false
+    self.featSpritesAlphaChannel = chkAlpha and chkAlpha:isChecked() or false
+    self.featEnhancedAnimations = chkEnh and chkEnh:isChecked() or false
+    self.featIdleAnimations = chkIdle and chkIdle:isChecked() or false
 end
 
 -- =========================================================================
@@ -355,12 +600,30 @@ function MapGenUI:onVersionChanged(v)
     local satDir = '/satellite_output_' .. tostring(v)
     self.satOutputDir = satDir
     self.satPreviewDir = satDir
+    self.exportDir = getVersionedExportDir(v)
+    self.satLod = tostring(tonumber(self.satLod or self.fullSatLod) or 32)
+    self.fullSatLod = self.satLod
+    self:syncFeatureCheckboxes()
 end
 
 function MapGenUI:onVersionComboChange()
     g_dispatcher.scheduleEvent(function()
         self:onVersionChanged(self.clientVersion)
     end, 1)
+end
+
+function MapGenUI:onSatLodChanged()
+    local lod = tostring(tonumber(self.satLod) or 32)
+    self.satLod = lod
+    self.fullSatLod = lod
+    self:updateGenerateWarning()
+end
+
+function MapGenUI:onFullSatLodChange()
+    local lod = tostring(tonumber(self.fullSatLod) or 32)
+    self.fullSatLod = lod
+    self.satLod = lod
+    self:updateGenerateWarning()
 end
 
 -- Returns the export command as a single string (avoids multi-line template rendering)
@@ -469,13 +732,15 @@ function MapGenUI:_doPrepareAction(cv)
     local mpRaw  = self.mapPath
     local thr = tonumber(self.threads) or 8
     local pts = tonumber(self.parts)   or 5
+    local exportBase = getVersionedExportDir(cv)
+    self.exportDir = exportBase
 
     local ok, err = pcall(function()
         -- Threads & directories
         g_map.initializeMapGenerator(thr)
         g_resources.makeDir('house')
-        g_resources.makeDir('exported_images')
-        g_resources.makeDir('exported_images/map')
+        g_resources.makeDir(exportBase)
+        g_resources.makeDir(exportBase .. '/map')
 
         -- Protocol / client version
         g_game.setProtocolVersion(cv)
@@ -752,6 +1017,42 @@ function MapGenUI:centerPreview()
     end
 end
 
+function MapGenUI:previewRandomArea()
+    if not self.isPrepared or not _preparedMinPos or not _preparedMaxPos then
+        self:addLog('Cannot random preview: prepare client first.', '#ddaa44')
+        return
+    end
+
+    local currentW = math.max(32, math.abs((tonumber(self.prevMaxX) or 0) - (tonumber(self.prevMinX) or 0)) + 1)
+    local currentH = math.max(32, math.abs((tonumber(self.prevMaxY) or 0) - (tonumber(self.prevMinY) or 0)) + 1)
+    local fullW = math.max(1, _preparedMaxPos.x - _preparedMinPos.x + 1)
+    local fullH = math.max(1, _preparedMaxPos.y - _preparedMinPos.y + 1)
+    local width = math.min(currentW, fullW)
+    local height = math.min(currentH, fullH)
+
+    local minX = _preparedMinPos.x
+    local maxX = math.max(minX, _preparedMaxPos.x - width + 1)
+    local minY = _preparedMinPos.y
+    local maxY = math.max(minY, _preparedMaxPos.y - height + 1)
+
+    local rx = minX
+    local ry = minY
+    if maxX > minX then rx = math.random(minX, maxX) end
+    if maxY > minY then ry = math.random(minY, maxY) end
+
+    local minZ = math.max(0, _preparedMinPos.z or 7)
+    local maxZ = math.min(15, _preparedMaxPos.z or minZ)
+    local rz = minZ
+    if maxZ > minZ then rz = math.random(minZ, maxZ) end
+
+    self.prevMinX = tostring(rx)
+    self.prevMinY = tostring(ry)
+    self.prevMaxX = tostring(rx + width - 1)
+    self.prevMaxY = tostring(ry + height - 1)
+    self.prevFloor = tostring(rz)
+    self:doPreview()
+end
+
 -- =========================================================================
 -- Export PNG
 -- =========================================================================
@@ -868,7 +1169,9 @@ function MapGenUI:doGenerate()
 
     if self.satIntegrated then
         local sdir = self.satOutputDir or '/satellite_output'
-        local slod = tonumber(self.satLod) or 32
+        local slod = tonumber(self.fullSatLod or self.satLod) or 32
+        self.satLod = tostring(slod)
+        self.fullSatLod = self.satLod
         prepareSatelliteGeneration(sdir, slod)
         self:addLog('Satellite per-part enabled: ' .. sdir .. ' LOD=' .. slod, '#88ccff')
     end
@@ -1182,6 +1485,19 @@ function MapGenUI:doLoadSatPreview()
         end
         satMinimapWidget.onMouseRelease = function(widget, mousePos, button)
             widget.previewDragging = false
+            if button == MouseRightButton then
+                local pos = widget:getTilePosition(mousePos)
+                if pos then
+                    local z = pos.z or (tonumber(self.satPreviewFloor) or 7)
+                    local msg = string.format('Satellite right-click at (%d,%d,%d)', pos.x, pos.y, z)
+                    print(msg)
+                    self:addLog(msg, '#88ccff')
+                    self.statusText = msg
+                    self.satPosX = tostring(pos.x)
+                    self.satPosY = tostring(pos.y)
+                    self.satPreviewFloor = tostring(z)
+                end
+            end
             return true
         end
         satMinimapWidget.onMouseWheel = function(widget, mousePos, direction)
@@ -1206,6 +1522,8 @@ function MapGenUI:doLoadSatPreview()
     end
 
     self:satApplyViewMode()
+    self:satSetForcedLod(self.satForceLod or 'auto')
+    self:satSetForcedFields(self.satForceFields or 'auto')
 
     local floor = tonumber(self.satPreviewFloor) or 7
     -- Center camera on actual map bounds if available, else default to 32000
@@ -1218,6 +1536,7 @@ function MapGenUI:doLoadSatPreview()
 
     self:addLog('Satellite preview loaded from: ' .. dir, '#44dd88')
     self.statusText = 'Satellite preview active. Floor ' .. floor
+    self:satDatLoadIndex()
 end
 
 function MapGenUI:satSetViewMode(mode)
@@ -1287,6 +1606,155 @@ function MapGenUI:satGoToPosition()
     local z = tonumber(self.satPreviewFloor) or 7
     satMinimapWidget:setCameraPosition({ x = x, y = y, z = z })
     self.statusText = string.format('Satellite view moved to [%d,%d,%d]', x, y, z)
+end
+
+function MapGenUI:satPreviewRandomLoadedChunk()
+    if not satMinimapWidget or satMinimapWidget:isDestroyed() then
+        self:addLog('Load a satellite preview first.', '#ddaa44')
+        return
+    end
+
+    local rows = self.satDatRows or {}
+    if #rows == 0 then
+        self:satDatLoadIndex()
+        rows = self.satDatRows or {}
+    end
+    if #rows == 0 then
+        self:addLog('No chunk rows available for random navigation.', '#ddaa44')
+        return
+    end
+
+    local row = rows[math.random(1, #rows)]
+    satMinimapWidget:setCameraPosition({ x = row.coordX, y = row.coordY, z = row.coordZ })
+    self.satPosX = tostring(row.coordX)
+    self.satPosY = tostring(row.coordY)
+    self.satPreviewFloor = tostring(row.coordZ)
+    self.statusText = string.format('Satellite random chunk #%d at [%d,%d,%d]', row.id or 0, row.coordX, row.coordY, row.coordZ)
+end
+
+function MapGenUI:satDatLoadIndex()
+    local dir = trimText(self.satPreviewDir or self.satOutputDir or '')
+    if dir == '' then
+        self.satDatRows = {}
+        self.satDatFilteredRows = {}
+        self.satDatDisplayRows = {}
+        self.satDatTotalRows = 0
+        self.satDatStatus = 'No directory selected for chunk index.'
+        return
+    end
+
+    local ok, files = pcall(function()
+        return g_resources.listDirectoryFiles(dir, false)
+    end)
+    if not ok or type(files) ~= 'table' then
+        self.satDatRows = {}
+        self.satDatFilteredRows = {}
+        self.satDatDisplayRows = {}
+        self.satDatTotalRows = 0
+        self.satDatStatus = 'Failed to index files in "' .. dir .. '".'
+        self:addLog('Chunk index error: cannot list files in ' .. dir, '#ddaa44')
+        return
+    end
+
+    local rows = {}
+    for _, fileName in ipairs(files) do
+        local row = parseChunkRowFromFileName(fileName)
+        if row then
+            table.insert(rows, row)
+        end
+    end
+
+    table.sort(rows, function(a, b)
+        if a.coordZ ~= b.coordZ then return a.coordZ < b.coordZ end
+        if a.coordY ~= b.coordY then return a.coordY < b.coordY end
+        if a.coordX ~= b.coordX then return a.coordX < b.coordX end
+        return a.file < b.file
+    end)
+
+    for i, row in ipairs(rows) do
+        row.id = i
+        row.coordText = string.format('(%d,%d,%d)', row.coordX, row.coordY, row.coordZ)
+        row.typeLabel = row.typeName
+        row.scaleText = string.format('%.6f', row.scale)
+        local searchBlob = string.format('%d %s %s %s %d %d %d %s',
+            row.id, row.typeLabel, row.coordText, row.file, row.width, row.height, row.area, row.scaleText)
+        row.searchRaw = searchBlob:lower()
+        row.searchNorm = normalizeSearchText(searchBlob)
+    end
+
+    self.satDatRows = rows
+    self.satDatFilteredRows = rows
+    self.satDatTotalRows = #rows
+    self:satDatShowFirstSample()
+
+    local datPath = dir:gsub('/$', '') .. '/map.dat'
+    local datStatus = g_resources.fileExists(datPath) and 'map.dat found' or 'map.dat missing'
+    self.satDatStatus = string.format('%d rows indexed (%s). Showing %d of %d.',
+        #rows, datStatus, #self.satDatDisplayRows, #rows)
+end
+
+function MapGenUI:satDatShowFirstSample()
+    local source = self.satDatFilteredRows or {}
+    local result = {}
+    for i = 1, math.min(5, #source) do
+        table.insert(result, source[i])
+    end
+    self.satDatDisplayRows = result
+end
+
+function MapGenUI:satDatRandomSample()
+    local source = self.satDatFilteredRows or {}
+    if #source <= 5 then
+        self:satDatShowFirstSample()
+        return
+    end
+
+    local indices = {}
+    for i = 1, #source do
+        indices[i] = i
+    end
+    for i = #indices, 2, -1 do
+        local j = math.random(i)
+        indices[i], indices[j] = indices[j], indices[i]
+    end
+
+    local result = {}
+    for i = 1, 5 do
+        table.insert(result, source[indices[i]])
+    end
+    table.sort(result, function(a, b) return a.id < b.id end)
+    self.satDatDisplayRows = result
+    self.satDatStatus = string.format('%d rows matched. Random sample: 5 rows.', #source)
+end
+
+function MapGenUI:satDatApplySearch()
+    local rows = self.satDatRows or {}
+    local query = trimText(self.satDatQuery or '')
+    if query == '' then
+        self.satDatFilteredRows = rows
+        self:satDatShowFirstSample()
+        self.satDatStatus = string.format('%d rows indexed. Showing first %d.', #rows, #self.satDatDisplayRows)
+        return
+    end
+
+    local qLower = query:lower()
+    local qNorm = normalizeSearchText(query)
+    local filtered = {}
+    for _, row in ipairs(rows) do
+        if row.searchRaw:find(qLower, 1, true) or (qNorm ~= '' and row.searchNorm:find(qNorm, 1, true)) then
+            table.insert(filtered, row)
+        end
+    end
+
+    self.satDatFilteredRows = filtered
+    self:satDatShowFirstSample()
+    self.satDatStatus = string.format('Search "%s": %d matches. Showing %d.',
+        query, #filtered, #self.satDatDisplayRows)
+end
+
+function MapGenUI:satDatClearSearch()
+    self.satDatQuery = ''
+    self:satDatApplySearch()
 end
 
 -- =========================================================================

@@ -40,6 +40,23 @@ SATELLITE_UI_STATUS = {
     message = ''
 }
 
+local function getExportBaseDir()
+    local cv = tonumber(g_game.getClientVersion()) or tonumber(clientVersion) or 0
+    if cv > 0 then
+        return "exported_images_" .. tostring(cv)
+    end
+    return "exported_images"
+end
+
+local function getExportMapDir()
+    return getExportBaseDir() .. "/map"
+end
+
+local function ensureExportDirs()
+    g_resources.makeDir(getExportBaseDir())
+    g_resources.makeDir(getExportMapDir())
+end
+
 -- Legacy example:   prepareClient(1076, '/things/1076/items.otb', '/map.otbm', 8, 5)
 -- Protobuf example: prepareClient(1412, '/things/1412/assets/', '/things/1412/forgotten.otbm', 8, 5)
 function prepareClient(cv, dp, mp, ttr, mpc)
@@ -57,8 +74,7 @@ function prepareClient_action()
 
     g_map.initializeMapGenerator(threadsToRun);
     g_resources.makeDir('house');
-    g_resources.makeDir('exported_images');
-    g_resources.makeDir('exported_images/map');
+    ensureExportDirs()
     
     g_logger.info("Loading client Tibia.dat and Tibia.spr...")
     g_game.setProtocolVersion(clientVersion)
@@ -439,7 +455,7 @@ function generateMapArea(a1, a2, a3, a4, a5, a6, a7, a8)
             if partMinX <= partMaxX then
                 loadMapForXRange(partMinX, partMaxX)
                 for _, floor in ipairs(floors) do
-                    local fileName = string.format("exported_images/map/%s_z%d_part_%d.png", outputPrefix, floor, partId)
+                    local fileName = string.format("%s/%s_z%d_part_%d.png", getExportMapDir(), outputPrefix, floor, partId)
                     g_map.saveImage(fileName, partMinX, minY, partMaxX, maxY, floor, false)
                     print("Area map part saved: " .. fileName)
                 end
@@ -498,7 +514,7 @@ function generateMapFloor(a1, a2, a3, a4)
             local partMinX = math.max(minPos.x, part.minXrender)
             local partMaxX = math.min(maxPos.x, part.maxXrender)
             if partMinX <= partMaxX then
-                local fileName = string.format("exported_images/map/%s_part_%d.png", outputPrefix, partId)
+                local fileName = string.format("%s/%s_part_%d.png", getExportMapDir(), outputPrefix, partId)
                 g_map.saveImage(fileName, partMinX, minPos.y, partMaxX, maxPos.y, floor, false)
                 print("Floor map part saved: " .. fileName)
             end
@@ -517,7 +533,7 @@ function generateMapFloorFull(floor, shadowPercent, outputFileName)
 
     outputFileName = outputFileName or string.format("full_floor_%d.png", floor)
     if not outputFileName:find("/") then
-        outputFileName = "exported_images/map/" .. outputFileName
+        outputFileName = getExportMapDir() .. "/" .. outputFileName
     end
 
     g_map.setShadowPercent(shadowPercent)
