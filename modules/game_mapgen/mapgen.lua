@@ -142,24 +142,24 @@ function MapGenUI:onInit()
     self.satDatFilteredRows = {}
 
     -- State tables for RadioGroup-like behavior in HTML
-    self.threads = self.threads or 9
-    self.parts = self.parts or 1
-    self.shadowPercent = self.shadowPercent or 30
+    self.threads = '8'
+    self.parts = '5'
+    self.shadowPercent = '30'
     self.exportDir = self.exportDir or getVersionedExportDir(self.clientVersion or '1098')
 
     -- Default Coords (Map centerish)
-    self.prevMinX = self.prevMinX or '32278'
-    self.prevMinY = self.prevMinY or '32129'
-    self.prevMaxX = self.prevMaxX or '32478'
-    self.prevMaxY = self.prevMaxY or '32329'
-    self.prevFloor = self.prevFloor or '7'
+    self.prevMinX = '32000'
+    self.prevMinY = '32000'
+    self.prevMaxX = '32100'
+    self.prevMaxY = '32100'
+    self.prevFloor = '7'
     self.prevDrawLower = (self.prevDrawLower ~= false)
 
-    self.imgMinX = self.imgMinX or '32278'
-    self.imgMinY = self.imgMinY or '32129'
-    self.imgMaxX = self.imgMaxX or '32478'
-    self.imgMaxY = self.imgMaxY or '32329'
-    self.imgFloor = self.imgFloor or '7'
+    self.imgMinX = '32000'
+    self.imgMinY = '32000'
+    self.imgMaxX = '32100'
+    self.imgMaxY = '32100'
+    self.imgFloor = '7'
     self.imgDrawLower = (self.imgDrawLower ~= false)
 
     self.areaFromX = self.areaFromX or '32000'
@@ -468,7 +468,7 @@ end
 
 function MapGenUI:updateExportFilenames()
     if self.filenameUpdateEvent then
-        g_dispatcher.removeEvent(self.filenameUpdateEvent)
+        removeEvent(self.filenameUpdateEvent)
     end
     self.filenameUpdateEvent = self:scheduleEvent(function()
         self:_performUpdateExportFilenames()
