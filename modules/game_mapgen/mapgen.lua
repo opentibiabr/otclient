@@ -352,7 +352,7 @@ function MapGenUI:onVersionChanged(v)
     self.featIdleAnimations = (cv >= 1057)
     self.featSpritesAlphaChannel = (cv >= 1281)
 
-    local satDir = 'satellite_output_' .. tostring(v)
+    local satDir = '/satellite_output_' .. tostring(v)
     self.satOutputDir = satDir
     self.satPreviewDir = satDir
 end
@@ -867,7 +867,7 @@ function MapGenUI:doGenerate()
     self:addLog('Starting generation. Parts: {' .. table.concat(partsIds, ',') .. '} shadow=' .. shadow .. '%', '#88ccff')
 
     if self.satIntegrated then
-        local sdir = self.satOutputDir or 'satellite_output'
+        local sdir = self.satOutputDir or '/satellite_output'
         local slod = tonumber(self.satLod) or 32
         prepareSatelliteGeneration(sdir, slod)
         self:addLog('Satellite per-part enabled: ' .. sdir .. ' LOD=' .. slod, '#88ccff')
@@ -1081,7 +1081,7 @@ function MapGenUI:doGenerateSatellite()
         return
     end
 
-    local odir   = self.satOutputDir or 'satellite_output'
+    local odir   = self.satOutputDir or '/satellite_output'
     local lod    = tonumber(self.satLod)    or 32
     local shadow = tonumber(self.satShadow) or 30
 
@@ -1091,7 +1091,7 @@ function MapGenUI:doGenerateSatellite()
     self.progressLabel   = 'Initialising...'
     self.statusText      = 'Generating satellite data...'
 
-    generateSatelliteData(odir, lod, shadow)
+    generateSatelliteData(odir, lod, shadow, _mapPath)
 
     self:cycleEvent(function()
         local s = SATELLITE_UI_STATUS
@@ -1125,7 +1125,7 @@ function MapGenUI:doGenerateSatellite()
 end
 
 function MapGenUI:doEnableSatellitePerPart()
-    local odir = self.satOutputDir or 'satellite_output'
+    local odir = self.satOutputDir or '/satellite_output'
     local lod  = tonumber(self.satLod) or 32
     prepareSatelliteGeneration(odir, lod)
     self:addLog('Satellite per-part armed: ' .. odir .. ' LOD=' .. lod .. '. Go to Full Generate tab.', '#44dd88')
@@ -1208,7 +1208,13 @@ function MapGenUI:doLoadSatPreview()
     self:satApplyViewMode()
 
     local floor = tonumber(self.satPreviewFloor) or 7
-    satMinimapWidget:setCameraPosition({ x = 32000, y = 32000, z = floor })
+    -- Center camera on actual map bounds if available, else default to 32000
+    local cx, cy = 32000, 32000
+    if _preparedMinPos and _preparedMaxPos then
+        cx = math.floor((_preparedMinPos.x + _preparedMaxPos.x) / 2)
+        cy = math.floor((_preparedMinPos.y + _preparedMaxPos.y) / 2)
+    end
+    satMinimapWidget:setCameraPosition({ x = cx, y = cy, z = floor })
 
     self:addLog('Satellite preview loaded from: ' .. dir, '#44dd88')
     self.statusText = 'Satellite preview active. Floor ' .. floor
@@ -1239,7 +1245,7 @@ function MapGenUI:satApplyViewMode()
 end
 
 function MapGenUI:satPreviewLoadOutputDir()
-    self.satPreviewDir = self.satOutputDir or 'satellite_output'
+    self.satPreviewDir = self.satOutputDir or '/satellite_output'
     self:doLoadSatPreview()
 end
 

@@ -178,119 +178,48 @@ function prepareClient_action()
     end
 end
 
--- Per-part satellite generation state
--- Phase 0 = PNG images, 1 = satellite chunks, 2 = minimap chunks
-local partSatellitePhase = 0
-local partSatelliteLastCount = -1
-local partSatelliteStableTicks = 0
-
--- Set before calling generateMap() to enable satellite data generation per part.
+-- Set before calling generateMap() to enable satellite data generation after all parts.
 -- outputDir: directory for .bmp.lzma output
 -- lod: 16, 32, or 64
+local _satelliteFromFullGenerate = false
 local satelliteOutputDir_perPart = nil
 local satelliteLod_perPart = 32
 
 function prepareSatelliteGeneration(outputDir, lod)
-    satelliteOutputDir_perPart = outputDir or 'satellite_output'
+    satelliteOutputDir_perPart = outputDir or '/satellite_output'
     satelliteLod_perPart = lod or 32
     g_resources.makeDir(satelliteOutputDir_perPart)
     print('Satellite generation enabled: ' .. satelliteOutputDir_perPart .. '  LOD=' .. satelliteLod_perPart)
 end
 
 function generateManager()
-    if partSatellitePhase == 0 then
-        local done = g_map.getGeneratedAreasCount()
-        local total = g_map.getAreasCount()
-        MAPGEN_UI_STATUS.active = true
-        MAPGEN_UI_STATUS.phase = 'png'
-        MAPGEN_UI_STATUS.done = done
-        MAPGEN_UI_STATUS.total = total
-        MAPGEN_UI_STATUS.part = mapPartsCurrentId
-        MAPGEN_UI_STATUS.parts = #mapPartsToGenerate
-        MAPGEN_UI_STATUS.message = 'Generating PNG images'
-
-        if (done / 1000) + 1 > areasAdded then
-            g_map.addAreasToGenerator(areasAdded * 1000, areasAdded * 1000 + 999)
-            areasAdded = areasAdded + 1
-        end
-
-        if lastPrintStatus ~= os.time() and total > 0 then
-            print(math.floor(done / total * 100) .. '%, ' .. format_int(done) .. ' of ' .. format_int(total) .. ' PNG images - PART ' .. mapPartsCurrentId .. ' OF ' .. #mapPartsToGenerate)
-            lastPrintStatus = os.time()
-        end
-
-        if total > 0 and done >= total then
-            mapImagesGenerated = mapImagesGenerated + done
-            if satelliteOutputDir_perPart then
-                partSatellitePhase = 1
-                partSatelliteLastCount = -1
-                partSatelliteStableTicks = 0
-                g_map.setGeneratedAreasCount(0)
-                MAPGEN_UI_STATUS.phase = 'satellite'
-                MAPGEN_UI_STATUS.done = 0
-                MAPGEN_UI_STATUS.total = 0
-                MAPGEN_UI_STATUS.message = 'Generating satellite chunks'
-                g_map.generateSatelliteChunks(satelliteOutputDir_perPart, satelliteLod_perPart)
-                MAPGEN_UI_STATUS.total = g_map.getAreasCount()
-                print('  [Part ' .. mapPartsCurrentId .. '] Generating satellite chunks...')
-                g_dispatcher.scheduleEvent(generateManager, 1000)
-                return
-            end
-            advanceToNextPart()
-            return
-        end
-
-        g_dispatcher.scheduleEvent(generateManager, 100)
-        return
-    end
-
     local done = g_map.getGeneratedAreasCount()
     local total = g_map.getAreasCount()
-    local phaseLabel = (partSatellitePhase == 1) and 'satellite' or 'minimap'
     MAPGEN_UI_STATUS.active = true
-    MAPGEN_UI_STATUS.phase = phaseLabel
+    MAPGEN_UI_STATUS.phase = 'png'
     MAPGEN_UI_STATUS.done = done
     MAPGEN_UI_STATUS.total = total
     MAPGEN_UI_STATUS.part = mapPartsCurrentId
     MAPGEN_UI_STATUS.parts = #mapPartsToGenerate
-    MAPGEN_UI_STATUS.message = (partSatellitePhase == 1) and 'Generating satellite chunks' or 'Generating minimap chunks'
+    MAPGEN_UI_STATUS.message = 'Generating PNG images'
 
-    if lastPrintStatus ~= os.time() then
-        print('  [Part ' .. mapPartsCurrentId .. '] ' .. phaseLabel .. ' chunks: ' .. format_int(done) .. ' of ' .. format_int(total))
+    if (done / 1000) + 1 > areasAdded then
+        g_map.addAreasToGenerator(areasAdded * 1000, areasAdded * 1000 + 999)
+        areasAdded = areasAdded + 1
+    end
+
+    if lastPrintStatus ~= os.time() and total > 0 then
+        print(math.floor(done / total * 100) .. '%, ' .. format_int(done) .. ' of ' .. format_int(total) .. ' PNG images - PART ' .. mapPartsCurrentId .. ' OF ' .. #mapPartsToGenerate)
         lastPrintStatus = os.time()
     end
 
-    if done == partSatelliteLastCount and done > 0 then
-        partSatelliteStableTicks = partSatelliteStableTicks + 1
-    else
-        partSatelliteStableTicks = 0
-        partSatelliteLastCount = done
-    end
-
-    if (total > 0 and done >= total) or partSatelliteStableTicks >= 4 then
-        if partSatellitePhase == 1 then
-            partSatellitePhase = 2
-            partSatelliteLastCount = -1
-            partSatelliteStableTicks = 0
-            g_map.setGeneratedAreasCount(0)
-            MAPGEN_UI_STATUS.phase = 'minimap'
-            MAPGEN_UI_STATUS.done = 0
-            MAPGEN_UI_STATUS.total = 0
-            MAPGEN_UI_STATUS.message = 'Generating minimap chunks'
-            g_map.generateMinimapChunks(satelliteOutputDir_perPart, satelliteLod_perPart)
-            MAPGEN_UI_STATUS.total = g_map.getAreasCount()
-            print('  [Part ' .. mapPartsCurrentId .. '] Generating minimap chunks...')
-            g_dispatcher.scheduleEvent(generateManager, 1000)
-        else
-            partSatellitePhase = 0
-            partSatelliteLastCount = -1
-            partSatelliteStableTicks = 0
-            advanceToNextPart()
-        end
+    if total > 0 and done >= total then
+        mapImagesGenerated = mapImagesGenerated + done
+        advanceToNextPart()
         return
     end
 
-    g_dispatcher.scheduleEvent(generateManager, 1000)
+    g_dispatcher.scheduleEvent(generateManager, 100)
 end
 
 function advanceToNextPart()
@@ -299,22 +228,38 @@ function advanceToNextPart()
         startMapPartGenerator()
         g_dispatcher.scheduleEvent(generateManager, 100)
     else
-        -- All parts done
+        -- All PNG parts done
         if satelliteOutputDir_perPart then
-            g_map.saveMapDat(satelliteOutputDir_perPart)
-            print('map.dat saved to ' .. satelliteOutputDir_perPart .. '/map.dat')
+            -- Satellite/minimap requires ALL tiles loaded at once.
+            -- Reload the full map before generating.
+            print('Reloading full map for satellite generation...')
+            MAPGEN_UI_STATUS.phase = 'satellite'
+            MAPGEN_UI_STATUS.message = 'Reloading map for satellite...'
+            g_dispatcher.scheduleEvent(function()
+                g_map.setMinXToLoad(0)
+                g_map.setMaxXToLoad(65535)
+                g_map.loadOtbm(mapPath)
+                -- Use standalone satellite generator (handles satellite → minimap → map.dat)
+                _satelliteFromFullGenerate = true
+                generateSatelliteData(satelliteOutputDir_perPart, satelliteLod_perPart, g_map.getShadowPercent(), mapPath)
+            end, 100)
+        else
+            finishFullGeneration()
         end
-        isGenerating = false
-        MAPGEN_UI_STATUS.active = false
-        MAPGEN_UI_STATUS.phase = 'done'
-        MAPGEN_UI_STATUS.done = mapImagesGenerated
-        MAPGEN_UI_STATUS.total = mapImagesGenerated
-        MAPGEN_UI_STATUS.part = #mapPartsToGenerate
-        MAPGEN_UI_STATUS.parts = #mapPartsToGenerate
-        MAPGEN_UI_STATUS.message = 'Generation complete'
-        print('Map generation finished.')
-        print(mapImagesGenerated .. ' PNG images generated in ' .. (os.time() - startTime) .. ' seconds.')
     end
+end
+
+function finishFullGeneration()
+    isGenerating = false
+    MAPGEN_UI_STATUS.active = false
+    MAPGEN_UI_STATUS.phase = 'done'
+    MAPGEN_UI_STATUS.done = mapImagesGenerated
+    MAPGEN_UI_STATUS.total = mapImagesGenerated
+    MAPGEN_UI_STATUS.part = #mapPartsToGenerate
+    MAPGEN_UI_STATUS.parts = #mapPartsToGenerate
+    MAPGEN_UI_STATUS.message = 'Generation complete'
+    print('Map generation finished.')
+    print(mapImagesGenerated .. ' PNG images generated in ' .. (os.time() - startTime) .. ' seconds.')
 end
 
 function startMapPartGenerator()
@@ -333,7 +278,6 @@ function startMapPartGenerator()
     g_map.loadOtbm(mapPath)
 
     areasAdded = 0
-    partSatellitePhase = 0
     g_map.setGeneratedAreasCount(0)
     MAPGEN_UI_STATUS.active = true
     MAPGEN_UI_STATUS.phase = 'png'
@@ -651,13 +595,13 @@ local satelliteStartTime = 0
 local satelliteLastCount = -1
 local satelliteStableTicks = 0
 
-function generateSatelliteData(outputDir, lod, shadowPercent)
+function generateSatelliteData(outputDir, lod, shadowPercent, mapPathOverride)
     if satelliteGenerating then
         print('Satellite generation is already running.')
         return
     end
 
-    outputDir = outputDir or 'satellite_output'
+    outputDir = outputDir or '/satellite_output'
     lod = lod or 32
     shadowPercent = shadowPercent or 30
 
@@ -673,6 +617,16 @@ function generateSatelliteData(outputDir, lod, shadowPercent)
 
     g_resources.makeDir(outputDir)
     g_map.setShadowPercent(shadowPercent)
+
+    -- Reload full map so all tiles are available for rendering.
+    -- Without this, only the last loaded part's tiles exist in memory.
+    local effectiveMapPath = mapPathOverride or mapPath
+    if effectiveMapPath and effectiveMapPath ~= '' then
+        print('Reloading full map for satellite generation...')
+        g_map.setMinXToLoad(0)
+        g_map.setMaxXToLoad(65535)
+        g_map.loadOtbm(effectiveMapPath)
+    end
 
     -- Phase 1: Generate satellite chunks
     satellitePhase = 'satellite'
@@ -695,6 +649,14 @@ function satelliteProgressManager()
     SATELLITE_UI_STATUS.done = count
     SATELLITE_UI_STATUS.total = total
     SATELLITE_UI_STATUS.message = 'Generating ' .. tostring(satellitePhase) .. ' chunks'
+    -- Mirror progress to MAPGEN_UI_STATUS for full generate UI
+    if _satelliteFromFullGenerate then
+        MAPGEN_UI_STATUS.active = true
+        MAPGEN_UI_STATUS.phase = satellitePhase
+        MAPGEN_UI_STATUS.done = count
+        MAPGEN_UI_STATUS.total = total
+        MAPGEN_UI_STATUS.message = 'Generating ' .. tostring(satellitePhase) .. ' chunks'
+    end
     print('[' .. satellitePhase .. '] ' .. format_int(count) .. ' chunks generated...')
 
     if count == satelliteLastCount and count > 0 then
@@ -731,6 +693,11 @@ function satelliteProgressManager()
             SATELLITE_UI_STATUS.message = 'Satellite generation complete'
             satelliteLastCount = -1
             satelliteStableTicks = 0
+            -- If triggered from full generate, finalize the overall generation
+            if _satelliteFromFullGenerate then
+                _satelliteFromFullGenerate = false
+                finishFullGeneration()
+            end
         end
     else
         g_dispatcher.scheduleEvent(satelliteProgressManager, 1000)
@@ -747,5 +714,5 @@ g_logger.info("   - 'all' or {1,2,3} for parts, shadow percent")
 g_logger.info("   - area by floors+parts: generateMapArea('all', 30, fromX, fromY, toX, toY, {7,8,9}, 'area_name')")
 g_logger.info("   - one floor by parts: generateMapFloor('all', 30, 7, 'f7') or generateMapFloor({2,3}, 30, 7, 'f7')")
 g_logger.info("   - optional full one floor: generateMapFloorFull(7, 30, 'full_floor_7.png')")
-g_logger.info("3. generateSatelliteData('satellite_output', 32, 30)")
+g_logger.info("3. generateSatelliteData('/satellite_output', 32, 30)")
 g_logger.info("   - output dir, LOD (16/32/64), shadow percent")
