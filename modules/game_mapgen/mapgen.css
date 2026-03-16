@@ -19,7 +19,7 @@
   padding: 5 10;
   margin-bottom: 4;
   background-color: #1e1e38ff;
-  border: 1 red;
+  border: 1 #2a2a4aff;
 }
 
 .mg-header-title {
@@ -45,33 +45,27 @@
   padding: 4 12;
   border: 1 black;
   margin-right: 1;
-  background-color: rgb(0, 0, 255);
+  background-color: #1a1a2eff;
   color: #8b8ba1ff;
 }
 
 .mg-tab:hover {
-  background-color: #303055ff;
+  background-color: #2a2a4aff;
   color: #aaccffff;
 }
 
 .mg-tab:pressed {
-  background-color: #262640ff;
+  background-color: #21213aff;
   color: #d8e6ffff;
 }
 
 .mg-tab:checked {
-  border: 1 #5a88c8ff;
-  background-color: rgb(255, 0, 0);
-
-}
-
-.mg-tab-active {
   background-color: #5b3f16ff;
   color: #ffe4a3ff;
   border: 1 #7f5821ff;
 }
 
-.mg-tab-active:hover {
+.mg-tab:checked:hover {
   background-color: #6b4a19ff;
   color: #fff0beff;
 }
@@ -176,7 +170,7 @@
 
 .mg-btn-primary {
   background-color: #2a559aff;
-  border: 1 blue;
+  border: 1 #4a75baff;
   color: white;
 }
 .mg-btn-primary:hover   { background-color: #3a66bbff; }
@@ -184,7 +178,7 @@
 
 .mg-btn-success {
   background-color: #236632ff;
-  border: 1 green;
+  border: 1 #33884aff;
   color: white;
 }
 .mg-btn-success:hover   { background-color: #33884aff; }
@@ -192,14 +186,14 @@
 
 .mg-btn-danger {
   background-color: #7a2222ff;
-  border: 1 red;
+  border: 1 #9a3333ff;
   color: white;
 }
 .mg-btn-danger:hover { background-color: #aa3333ff; }
 
 .mg-btn-warning {
   background-color: #7a6622ff;
-  border: 1 yellow;
+  border: 1 #9a8833ff;
   color: white;
 }
 .mg-btn-warning:hover { background-color: #aa9933ff; }
@@ -213,7 +207,7 @@
 
 .mg-btn-info {
   background-color: #224466ff;
-  border: 1 blue;
+  border: 1 #336688ff;
   color: #aaccffff;
 }
 .mg-btn-info:hover { background-color: #336688ff; }

@@ -140,13 +140,7 @@ function MapGenUI:onInit()
     self.satForceFields = self.satForceFields or 'auto'
     self.satDatRows = {}
     self.satDatFilteredRows = {}
-    self.tabStyleConfig = ''
-    self.tabStylePreview = ''
-    self.tabStyleExport = ''
-    self.tabStyleGenerate = ''
-    self.tabStyleSatellite = ''
-    self.tabStyleMinimap = ''
-    self.tabStyleLog = ''
+
     self.minimapOtmmPath = self.minimapOtmmPath or ('/minimap_' .. tostring(self.clientVersion or '1098') .. '.otmm')
     self.minimapPngBase = self.minimapPngBase or 'minimap_floor'
     self.minimapFloorFrom = self.minimapFloorFrom or '0'
@@ -154,7 +148,7 @@ function MapGenUI:onInit()
     self.minimapResultText = self.minimapResultText or 'No exports yet.'
     self.progressBarWidth = 0
     self:loadHtml('mapgen.html')
-    self:updateTabStyles()
+
     self:syncFeatureCheckboxes()
     self:addLog('Map Generator Studio loaded. Configure and press Prepare Client.', '#88ccff')
     self:onVersionChanged(self.clientVersion or '1098')
@@ -333,29 +327,10 @@ end
 -- Tab switching
 -- =========================================================================
 
-function MapGenUI:switchTab(tab, event)
+function MapGenUI:switchTab(tab)
     self.activeTab = tab
-    self:updateTabStyles()
-    pdump(event)
-    event.target:setChecked(true)
 end
 
-function MapGenUI:tabStyle(tab)
-    if self.activeTab == tab then
-        return 'background-color: #5b3f16ff; color: #ffe4a3ff; border: 1 #7f5821ff'
-    end
-    return 'background-color: #1b1b2eff; color: #8b8ba1ff; border: 1 black'
-end
-
-function MapGenUI:updateTabStyles()
-    self.tabStyleConfig = self:tabStyle('config')
-    self.tabStylePreview = self:tabStyle('preview')
-    self.tabStyleExport = self:tabStyle('export')
-    self.tabStyleGenerate = self:tabStyle('generate')
-    self.tabStyleSatellite = self:tabStyle('satellite')
-    self.tabStyleMinimap = self:tabStyle('minimap')
-    self.tabStyleLog = self:tabStyle('log')
-end
 
 function MapGenUI:_applyPastedPosition(target, pos)
     if not pos or not pos.x or not pos.y then

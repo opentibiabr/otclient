@@ -96,20 +96,13 @@
 
     <!-- TAB BAR — active tab highlighted via background-color only (no border-bottom) -->
     <div class="mg-tabbar">
-      <uibutton class="mg-tab" onclick="self:switchTab('config',event)"
-        >Config</uibutton>
-      <uibutton class="mg-tab" onclick="self:switchTab('preview', event)"
-        >Preview</uibutton>
-      <uibutton class="mg-tab" onclick="self:switchTab('export', event)"
-        >Export PNG</uibutton>
-      <uibutton class="mg-tab" onclick="self:switchTab('generate', event)"
-        *style="self.tabStyleGenerate">Full Generate</uibutton>
-      <uibutton class="mg-tab" onclick="self:switchTab('satellite', event)"
-        *style="self.tabStyleSatellite">Satellite</uibutton>
-      <uibutton class="mg-tab" onclick="self:switchTab('minimap', event)"
-        *style="self.tabStyleMinimap">Minimap</uibutton>
-      <uibutton class="mg-tab" onclick="self:switchTab('log', event)"
-        *style="self.tabStyleLog">Log</uibutton>
+      <uibutton class="mg-tab" onclick="self:switchTab('config')" *checked="self.activeTab == 'config'">Config</uibutton>
+      <uibutton class="mg-tab" onclick="self:switchTab('preview')" *checked="self.activeTab == 'preview'">Preview</uibutton>
+      <uibutton class="mg-tab" onclick="self:switchTab('export')" *checked="self.activeTab == 'export'">Export PNG</uibutton>
+      <uibutton class="mg-tab" onclick="self:switchTab('generate')" *checked="self.activeTab == 'generate'">Full Generate</uibutton>
+      <uibutton class="mg-tab" onclick="self:switchTab('satellite')" *checked="self.activeTab == 'satellite'">Satellite</uibutton>
+      <uibutton class="mg-tab" onclick="self:switchTab('minimap')" *checked="self.activeTab == 'minimap'">Minimap</uibutton>
+      <uibutton class="mg-tab" onclick="self:switchTab('log')" *checked="self.activeTab == 'log'">Log</uibutton>
       <uibutton class="mg-btn mg-btn-close" onclick="self:unloadHtml()" style="float: right; margin-right: 2; margin-top: 1">X</uibutton>
     </div>
 
