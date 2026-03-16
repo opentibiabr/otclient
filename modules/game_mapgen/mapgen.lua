@@ -141,6 +141,12 @@ function MapGenUI:onInit()
     self.satDatRows = {}
     self.satDatFilteredRows = {}
 
+    -- State tables for RadioGroup-like behavior in HTML
+    self.satLodState = { ["auto"] = true, ["16"] = false, ["32"] = false, ["64"] = false }
+    self.satFieldsState = { ["auto"] = true, ["256"] = false, ["512"] = false }
+    self.satViewState = { ["surface"] = true, ["map"] = false }
+
+
     self.minimapOtmmPath = self.minimapOtmmPath or ('/minimap_' .. tostring(self.clientVersion or '1098') .. '.otmm')
     self.minimapPngBase = self.minimapPngBase or 'minimap_floor'
     self.minimapFloorFrom = self.minimapFloorFrom or '0'
@@ -423,37 +429,35 @@ end
 
 function MapGenUI:satSetForcedLod(value)
     self.satForceLod = tostring(value or 'auto')
-    if not g_satelliteMap then
-        return
-    end
-    if self.satForceLod == 'auto' then
-        g_satelliteMap.setForcedLod(0)
-    else
-        local lod = tonumber(self.satForceLod) or 0
-        if lod ~= 16 and lod ~= 32 and lod ~= 64 then
-            lod = 0
-            self.satForceLod = 'auto'
-        end
-        g_satelliteMap.setForcedLod(lod)
-    end
+    self:_updateOptionState('satLodState', self.satForceLod)
+
+    if not g_satelliteMap then return end
+    g_satelliteMap.setForcedLod(self.satForceLod == 'auto' and 0 or (tonumber(self.satForceLod) or 0))
 end
 
 function MapGenUI:satSetForcedFields(value)
     self.satForceFields = tostring(value or 'auto')
-    if not g_satelliteMap then
-        return
-    end
-    if self.satForceFields == 'auto' then
-        g_satelliteMap.setForcedFields(0)
-    else
-        local fields = tonumber(self.satForceFields) or 0
-        if fields ~= 256 and fields ~= 512 then
-            fields = 0
-            self.satForceFields = 'auto'
-        end
-        g_satelliteMap.setForcedFields(fields)
+    self:_updateOptionState('satFieldsState', self.satForceFields)
+
+    if not g_satelliteMap then return end
+    g_satelliteMap.setForcedFields(self.satForceFields == 'auto' and 0 or (tonumber(self.satForceFields) or 0))
+end
+
+function MapGenUI:satSetViewMode(mode)
+    self.satViewMode = mode or 'surface'
+    self:_updateOptionState('satViewState', self.satViewMode)
+    self:satApplyViewMode()
+end
+
+function MapGenUI:_updateOptionState(tableName, activeKey)
+    local tbl = self[tableName]
+    if not tbl then return end
+    for k, _ in pairs(tbl) do
+        tbl[k] = (k == activeKey)
     end
 end
+
+
 
 function MapGenUI:syncFeatureCheckboxes()
     local chkProto = self:findWidget('#chkProto')
@@ -655,8 +659,13 @@ end
 function MapGenUI:onVersionComboChange()
     g_dispatcher.scheduleEvent(function()
         self:onVersionChanged(self.clientVersion)
+        -- Ensure state tables are synced after version change defaults
+        self:satSetForcedLod(self.satForceLod)
+        self:satSetForcedFields(self.satForceFields)
+        self:satSetViewMode(self.satViewMode)
     end, 1)
 end
+
 
 function MapGenUI:onSatLodChanged()
     local lod = tostring(tonumber(self.satLod) or 32)
@@ -1762,6 +1771,14 @@ function MapGenUI:satSetViewMode(mode)
         return
     end
     self.satViewMode = mode
+
+    -- Update state table for HTML
+    if self.satViewState then
+        for k, _ in pairs(self.satViewState) do
+            self.satViewState[k] = (k == mode)
+        end
+    end
+
     self:satApplyViewMode()
 end
 

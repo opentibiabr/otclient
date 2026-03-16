@@ -584,33 +584,21 @@
             </div>
             <div class="mg-row">
               <label class="mg-label">Force LOD:</label>
-              <button class="mg-btn" onclick="self:satSetForcedLod('auto')"
-                *style="self.satForceLod == 'auto' and 'background-color: #2a559aff; border: 1 blue; color: white; padding: 3 10' or 'background-color: #2e2e4eff; border: 1 black; color: #9999bbff; padding: 3 10'">Auto</button>
-              <button class="mg-btn" onclick="self:satSetForcedLod('16')"
-                *style="self.satForceLod == '16' and 'background-color: #2a559aff; border: 1 blue; color: white; padding: 3 10' or 'background-color: #2e2e4eff; border: 1 black; color: #9999bbff; padding: 3 10'">16</button>
-              <button class="mg-btn" onclick="self:satSetForcedLod('32')"
-                *style="self.satForceLod == '32' and 'background-color: #2a559aff; border: 1 blue; color: white; padding: 3 10' or 'background-color: #2e2e4eff; border: 1 black; color: #9999bbff; padding: 3 10'">32</button>
-              <button class="mg-btn" onclick="self:satSetForcedLod('64')"
-                *style="self.satForceLod == '64' and 'background-color: #2a559aff; border: 1 blue; color: white; padding: 3 10' or 'background-color: #2e2e4eff; border: 1 black; color: #9999bbff; padding: 3 10'">64</button>
+              <uibutton class="mg-option-btn" onclick="self:satSetForcedLod('auto')" *checked="self.satLodState.auto">Auto</uibutton>
+              <uibutton class="mg-option-btn" onclick="self:satSetForcedLod('16')" *checked="self.satLodState['16']">16</uibutton>
+              <uibutton class="mg-option-btn" onclick="self:satSetForcedLod('32')" *checked="self.satLodState['32']">32</uibutton>
+              <uibutton class="mg-option-btn" onclick="self:satSetForcedLod('64')" *checked="self.satLodState['64']">64</uibutton>
             </div>
             <div class="mg-row">
               <label class="mg-label">Force Fields:</label>
-              <button class="mg-btn" onclick="self:satSetForcedFields('auto')"
-                *style="self.satForceFields == 'auto' and 'background-color: #2a559aff; border: 1 blue; color: white; padding: 3 10' or 'background-color: #2e2e4eff; border: 1 black; color: #9999bbff; padding: 3 10'">Auto</button>
-              <button class="mg-btn" onclick="self:satSetForcedFields('256')"
-                *style="self.satForceFields == '256' and 'background-color: #2a559aff; border: 1 blue; color: white; padding: 3 10' or 'background-color: #2e2e4eff; border: 1 black; color: #9999bbff; padding: 3 10'">256</button>
-              <button class="mg-btn" onclick="self:satSetForcedFields('512')"
-                *style="self.satForceFields == '512' and 'background-color: #2a559aff; border: 1 blue; color: white; padding: 3 10' or 'background-color: #2e2e4eff; border: 1 black; color: #9999bbff; padding: 3 10'">512</button>
+              <uibutton class="mg-option-btn" onclick="self:satSetForcedFields('auto')" *checked="self.satFieldsState.auto">Auto</uibutton>
+              <uibutton class="mg-option-btn" onclick="self:satSetForcedFields('256')" *checked="self.satFieldsState['256']">256</uibutton>
+              <uibutton class="mg-option-btn" onclick="self:satSetForcedFields('512')" *checked="self.satFieldsState['512']">512</uibutton>
             </div>
             <div class="mg-row">
-              <button class="mg-btn" onclick="self:satSetViewMode('surface')"
-                *style="self.satViewMode == 'surface' and 'background-color: #2a559aff; border: 1 blue; color: white; padding: 3 10' or 'background-color: #2e2e4eff; border: 1 black; color: #9999bbff; padding: 3 10'">
-                Surface
-              </button>
-              <button class="mg-btn" onclick="self:satSetViewMode('map')"
-                *style="self.satViewMode == 'map' and 'background-color: #2a559aff; border: 1 blue; color: white; padding: 3 10' or 'background-color: #2e2e4eff; border: 1 black; color: #9999bbff; padding: 3 10'">
-                Map
-              </button>
+              <label class="mg-label">View Mode:</label>
+              <uibutton class="mg-option-btn" onclick="self:satSetViewMode('surface')" *checked="self.satViewState.surface">Surface</uibutton>
+              <uibutton class="mg-option-btn" onclick="self:satSetViewMode('map')" *checked="self.satViewState.map">Map</uibutton>
             </div>
             <div id="satMinimapHost" class="mg-maphost" style="height: 220"></div>
             <div class="mg-section-title" style="margin-top: 8">Chunk Index Preview (map.dat/chunks)</div>
