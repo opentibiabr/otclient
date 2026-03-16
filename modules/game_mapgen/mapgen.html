@@ -12,17 +12,17 @@
   self.sprPath = "/things/1098/Tibia.spr"
   self.assetsPath = "/data/things/1098"
   self.mapPath = "/data/things/1098/forgotten.otbm"
-  self.threads = 8
-  self.parts = 5
-  self.shadowPercent = 30
+  self.threads = self.threads or 9
+  self.parts = self.parts or 10
+  self.shadowPercent = self.shadowPercent or 30
   self.exportDir = "exported_images_1098"
 
-  self.prevMinX = 32000
-  self.prevMinY = 32000
-  self.prevMaxX = 32100
-  self.prevMaxY = 32100
-  self.prevFloor = 7
-  self.prevDrawLower = true
+  self.prevMinX = self.prevMinX or 32278
+  self.prevMinY = self.prevMinY or 32129
+  self.prevMaxX = self.prevMaxX or 32478
+  self.prevMaxY = self.prevMaxY or 32329
+  self.prevFloor = self.prevFloor or 7
+  self.prevDrawLower = (self.prevDrawLower ~= false)
 
   self.satOutputDir = "satellite_output_1098"
   self.satLod = self.satLod or 32
@@ -47,12 +47,12 @@
   self.minimapFloorTo = "15"
   self.minimapResultText = "No exports yet."
 
-  self.imgMinX = 32000
-  self.imgMinY = 32000
-  self.imgMaxX = 32100
-  self.imgMaxY = 32100
-  self.imgFloor = 7
-  self.imgDrawLower = false
+  self.imgMinX = self.imgMinX or 32278
+  self.imgMinY = self.imgMinY or 32129
+  self.imgMaxX = self.imgMaxX or 32478
+  self.imgMaxY = self.imgMaxY or 32329
+  self.imgFloor = self.imgFloor or 7
+  self.imgDrawLower = (self.imgDrawLower == true)
   self.imgFilename = self.imgFilename or "map_export.png"
   self.minimapFilename = self.minimapFilename or "minimap_export.png"
   self.featSpritesU32 = (self.featSpritesU32 == true)
@@ -261,11 +261,11 @@
 
         <div class="mg-row">
           <label class="mg-label">Threads:</label>
-          <input type="text" *value="self.threads" onchange="self:updateGenerateWarning()" style="width: 75" />
+          <spinbox *value="self.threads" onchange="self:updateGenerateWarning()" style="width: 75" minimum="1" maximum="64" step="1" />
           <label class="mg-label" style="width: 60; margin-left: 10">Parts:</label>
-          <input type="text" *value="self.parts" onchange="self:updateGenerateWarning()" style="width: 75" />
+          <spinbox *value="self.parts" onchange="self:updateGenerateWarning()" style="width: 75" minimum="1" maximum="1000" step="1" />
           <label class="mg-label" style="width: 80; margin-left: 10">Shadow %:</label>
-          <input type="text" *value="self.shadowPercent" onchange="self:updateGenerateWarning()" style="width: 75" />
+          <spinbox *value="self.shadowPercent" onchange="self:updateGenerateWarning()" style="width: 75" minimum="0" maximum="100" step="1" />
         </div>
         <div class="mg-row">
           <label class="mg-label">Export Dir:</label>
@@ -290,17 +290,19 @@
           Client not prepared. Go to Config tab and click "Prepare Client" first.
         </div>
 
+        <div *visible="self.isPrepared">
+          <div class="mg-section-title">Area Coordinates</div>
           <div class="mg-coordbar">
             <span class="mg-coordlabel">Min X</span>
-            <input type="text" id="prevMinXInput" *value="self.prevMinX" onchange="self:onPositionInputChanged('previewMin')" style="width: 110" />
+            <spinbox id="prevMinXInput" *value="self.prevMinX" onchange="self:onPositionInputChanged('previewMin')" style="width: 110" minimum="0" maximum="65535" step="1" />
             <span class="mg-coordlabel">Min Y</span>
-            <input type="text" *value="self.prevMinY" onchange="self:updateGenerateWarning()" style="width: 110" />
+            <spinbox *value="self.prevMinY" onchange="self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
             <span class="mg-coordlabel">Max X</span>
-            <input type="text" *value="self.prevMaxX" onchange="self:updateGenerateWarning()" style="width: 110" />
+            <spinbox *value="self.prevMaxX" onchange="self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
             <span class="mg-coordlabel">Max Y</span>
-            <input type="text" *value="self.prevMaxY" onchange="self:updateGenerateWarning()" style="width: 110" />
+            <spinbox *value="self.prevMaxY" onchange="self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
             <span class="mg-coordlabel">Floor</span>
-            <input type="text" *value="self.prevFloor" onchange="self:updateGenerateWarning()" style="width: 75" />
+            <spinbox *value="self.prevFloor" onchange="self:updateGenerateWarning()" style="width: 75" minimum="0" maximum="15" step="1" />
             <input id="chkLower" type="checkbox" *checked="self.prevDrawLower" style="margin-left: 10" />
             <label for="chkLower" style="color: #aaaacc; margin-left: 3">Lower floors</label>
           </div>
@@ -340,15 +342,15 @@
 
           <div class="mg-coordbar">
             <span class="mg-coordlabel">Min X</span>
-            <input type="text" id="imgMinXInput" *value="self.imgMinX" onchange="self:onPositionInputChanged('exportMin'); self:updateExportFilenames()" style="width: 110" />
+            <spinbox id="imgMinXInput" *value="self.imgMinX" onchange="self:onPositionInputChanged('exportMin'); self:updateExportFilenames()" style="width: 110" minimum="0" maximum="65535" step="1" />
             <span class="mg-coordlabel">Min Y</span>
-            <input type="text" *value="self.imgMinY" onchange="self:updateExportFilenames()" style="width: 110" />
+            <spinbox *value="self.imgMinY" onchange="self:updateExportFilenames()" style="width: 110" minimum="0" maximum="65535" step="1" />
             <span class="mg-coordlabel">Max X</span>
-            <input type="text" *value="self.imgMaxX" onchange="self:updateExportFilenames()" style="width: 110" />
+            <spinbox *value="self.imgMaxX" onchange="self:updateExportFilenames()" style="width: 110" minimum="0" maximum="65535" step="1" />
             <span class="mg-coordlabel">Max Y</span>
-            <input type="text" *value="self.imgMaxY" onchange="self:updateExportFilenames()" style="width: 110" />
+            <spinbox *value="self.imgMaxY" onchange="self:updateExportFilenames()" style="width: 110" minimum="0" maximum="65535" step="1" />
             <span class="mg-coordlabel">Floor</span>
-            <input type="text" *value="self.imgFloor" onchange="self:updateExportFilenames()" style="width: 75" />
+            <spinbox *value="self.imgFloor" onchange="self:updateExportFilenames()" style="width: 75" minimum="0" maximum="15" step="1" />
           </div>
 
           <div class="mg-row">
@@ -421,7 +423,7 @@
 
           <div class="mg-row">
             <label class="mg-label">Shadow %:</label>
-            <input type="text" *value="self.shadowPercent" onchange="self:updateGenerateWarning()" style="width: 75" />
+            <spinbox *value="self.shadowPercent" onchange="self:updateGenerateWarning()" style="width: 75" minimum="0" maximum="100" step="1" />
           </div>
           <div class="mg-row">
             <input id="chkSatIntegratedFull" type="checkbox" *checked="self.satIntegrated" />
@@ -467,21 +469,19 @@
           <div class="mg-section-title" style="margin-top: 8">generateMapArea Specific Region</div>
           <div class="mg-card">
             <div class="mg-row">
-            <label class="mg-label">From X:</label>
-            <input type="text" *value="self.areaFromX" onchange="self:onPositionInputChanged('areaFrom')" style="width: 110" />
-            <label class="mg-label" style="width: 60; margin-left: 10">From Y:</label>
-            <input type="text" *value="self.areaFromY" onchange="self:updateGenerateWarning()" style="width: 110" />
-          </div>
-          <div class="mg-row">
-            <label class="mg-label">To X:</label>
-            <input type="text" *value="self.areaToX" onchange="self:onPositionInputChanged('areaTo')" style="width: 110" />
-            <label class="mg-label" style="width: 60; margin-left: 10">To Y:</label>
-            <input type="text" *value="self.areaToY" onchange="self:updateGenerateWarning()" style="width: 110" />
-          </div>
-          <div class="mg-row">
-            <label class="mg-label">Floors (list):</label>
-            <input type="text" *value="self.areaFloors" style="width: 110" />
-            <span class="mg-hint">e.g. 7 or 7,8,9</span>
+              <span class="mg-coordlabel" style="margin-left: 0">From X</span>
+              <spinbox id="areaFromXInput" *value="self.areaFromX" onchange="self:onPositionInputChanged('areaFrom'); self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
+              <span class="mg-coordlabel">From Y</span>
+              <spinbox *value="self.areaFromY" onchange="self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
+              <span class="mg-coordlabel">To X</span>
+              <spinbox id="areaToXInput" *value="self.areaToX" onchange="self:onPositionInputChanged('areaTo'); self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
+              <span class="mg-coordlabel">To Y</span>
+              <spinbox *value="self.areaToY" onchange="self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
+            </div>
+            <div class="mg-row">
+              <label class="mg-label" style="width: 80">Floors:</label>
+              <input type="text" *value="self.areaFloors" style="width: 100" />
+              <span class="mg-hint">e.g. 7,8,9</span>
               <label class="mg-label" style="width: 60; margin-left: 10">Name:</label>
               <input type="text" *value="self.areaName" style="width: 120" />
             </div>
@@ -497,11 +497,11 @@
           <div class="mg-section-title">generateMapFloor Full Map Single Floor</div>
           <div class="mg-card">
             <div class="mg-row">
-            <label class="mg-label">Floor (0-15):</label>
-            <input type="text" *value="self.floorNum" onchange="self:updateGenerateWarning()" style="width: 75" />
-            <label class="mg-label" style="width: 80; margin-left: 10">Output ID:</label>
-            <input type="text" *value="self.floorName" style="width: 110" />
-            <span class="mg-hint">output prefix, e.g. "f7"</span>
+              <label class="mg-label" style="width: 60">Floor:</label>
+              <spinbox *value="self.floorNum" onchange="self:updateGenerateWarning()" style="width: 75" minimum="0" maximum="15" step="1" />
+              <label class="mg-label" style="width: 60; margin-left: 10">Name:</label>
+              <input type="text" *value="self.floorName" style="width: 120" />
+              <span class="mg-hint">output prefix, e.g. "f7"</span>
             </div>
             <div class="mg-row">
               <button class="mg-btn mg-btn-success" onclick="self:doGenerateMapFloor()" *visible="not self.isGenerating">Run generateMapFloor</button>
@@ -544,11 +544,7 @@
 
           <div class="mg-row">
             <label class="mg-label">Shadow %:</label>
-            <input type="text" *value="self.satShadow" onchange="self:updateGenerateWarning()" style="width: 75" />
-            <label class="mg-label" style="width: 60; margin-left: 10">Floor:</label>
-            <input type="text" *value="self.satPreviewFloor" onchange="self:updateGenerateWarning()" style="width: 75" />
-            <input type="checkbox" *checked="self.satIntegrated" style="margin-left: 20" />
-            <label style="color: #aaaacc; margin-left: 3">Integrated PNG Generation</label>
+            <spinbox *value="self.satShadow" onchange="self:updateGenerateWarning()" style="width: 75" minimum="0" maximum="100" step="1" />
           </div>
           <div class="mg-infobox">
             Standalone satellite generation (without full PNG run).
@@ -580,7 +576,7 @@
             </div>
             <div class="mg-row">
               <label class="mg-label" style="width: 60">Floor:</label>
-              <input type="text" *value="self.satPreviewFloor" onchange="self:updateGenerateWarning()" style="width: 75" />
+              <spinbox *value="self.satPreviewFloor" onchange="self:updateGenerateWarning()" style="width: 75" minimum="0" maximum="15" step="1" />
               <button class="mg-btn mg-btn-secondary" onclick="self:satFloorUp()" style="padding: 3 8">Floor -</button>
               <button class="mg-btn mg-btn-secondary" onclick="self:satFloorDown()" style="padding: 3 8">Floor +</button>
               <button class="mg-btn mg-btn-secondary" onclick="self:satZoomIn()" style="padding: 3 8">Zoom +</button>
@@ -588,9 +584,9 @@
             </div>
             <div class="mg-row">
               <label class="mg-label" style="width: 60">Go to X:</label>
-              <input type="text" id="satPosXInput" *value="self.satPosX" onchange="self:onPositionInputChanged('satPos'); self:updateGenerateWarning()" style="width: 110" />
+              <spinbox id="satPosXInput" *value="self.satPosX" onchange="self:onPositionInputChanged('satPos'); self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
               <label class="mg-label" style="width: 20; margin-left: 4">Y:</label>
-              <input type="text" *value="self.satPosY" onchange="self:updateGenerateWarning()" style="width: 110" />
+              <spinbox *value="self.satPosY" onchange="self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
               <button class="mg-btn mg-btn-secondary" onclick="self:satGoToPosition()" style="padding: 3 10">Go</button>
             </div>
             <div class="mg-row">
