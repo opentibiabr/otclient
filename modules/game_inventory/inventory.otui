@@ -388,6 +388,7 @@ PhantomMiniWindow
     id: offPanel
     anchors.fill: parent
     phantom: true
+    visible: false
 
     Button
       id: changeSize

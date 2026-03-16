@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +23,7 @@
 #pragma once
 
 #include "declarations.h"
+#include <framework/util/stats.h>
 
 #ifdef __has_include
 
@@ -498,6 +499,8 @@ T LuaInterface::castValue(int index)
 template<typename... T>
 int LuaInterface::luaCallGlobalField(const std::string_view global, const std::string_view field, const T&... args)
 {
+    AutoStat s(STATS_LUA, std::string(global) + ":" + std::string(field));
+
     g_lua.getGlobalField(global, field);
     if (!g_lua.isNil()) {
         const int numArgs = g_lua.polymorphicPush(args...);

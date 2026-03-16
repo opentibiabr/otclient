@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -80,6 +80,8 @@ public:
     void setTargetFps(const uint16_t targetFps) { m_graphicFrameCounter.setTargetFps(targetFps); }
 
     uint16_t getFps() { return m_graphicFrameCounter.getFps(); }
+    uint16_t getGraphicsFps() { return m_graphicFrameCounter.getFps(); }
+    uint16_t getProcessingFps() { return m_mapProcessFrameCounter.getFps(); }
     uint8_t getMaxFps() { return m_graphicFrameCounter.getMaxFps(); }
     uint8_t getTargetFps() { return m_graphicFrameCounter.getTargetFps(); }
 

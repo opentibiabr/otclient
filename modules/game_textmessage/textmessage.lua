@@ -1,5 +1,9 @@
 MessageSettings = {
     none = {},
+    consoleYellow = {
+        color = TextColors.yellow,
+        consoleTab = 'Local Chat'
+    },
     consoleRed = {
         color = TextColors.red,
         consoleTab = 'Local Chat'
@@ -23,6 +27,12 @@ MessageSettings = {
         screenTarget = 'highCenterLabel',
         consoleOption = 'showInfoMessagesInConsole'
     },
+    centerHKGreen = {
+        color = TextColors.green,
+        consoleTab = 'Server Log',
+        screenTarget = 'highCenterLabel',
+        consoleOption = 'showHotkeyMessagesInConsole'
+    },
     centerWhite = {
         color = TextColors.white,
         consoleTab = 'Server Log',
@@ -41,6 +51,17 @@ MessageSettings = {
         screenTarget = 'statusLabel',
         consoleOption = 'showStatusMessagesInConsole'
     },
+    statusOwn = {
+        color = TextColors.white,
+        consoleTab = 'Server Log',
+        consoleOption = 'showStatusMessagesInConsole'
+    },
+    statusBoosted = {
+        color = TextColors.white,
+        consoleTab = 'Server Log',
+        screenTarget = 'statusLabel',
+        consoleOption = 'showBoostedMessagesInConsole'
+    },
     othersStatus = {
         color = TextColors.white,
         consoleTab = 'Server Log',
@@ -52,7 +73,54 @@ MessageSettings = {
     },
     private = {
         color = TextColors.lightblue,
+        consoleTab = 'Local Chat',
         screenTarget = 'privateLabel'
+    },
+    privateRed = {
+        color = TextColors.red,
+        consoleTab = 'Local Chat',
+        private = true
+    },
+    privatePlayerToPlayer = {
+        color = TextColors.blue,
+        consoleTab = 'Local Chat',
+        private = true
+    },
+    privatePlayerToNpc = {
+        color = TextColors.blue,
+        consoleTab = 'Local Chat',
+        private = true,
+        npcChat = true
+    },
+    privateNpcToPlayer = {
+        color = TextColors.lightblue,
+        consoleTab = 'Local Chat',
+        private = true,
+        npcChat = true
+    },
+    channelYellow = {
+        color = TextColors.yellow
+    },
+    channelWhite = {
+        color = TextColors.white
+    },
+    channelRed = {
+        color = TextColors.red
+    },
+    channelOrange = {
+        color = TextColors.orange
+    },
+    monsterSay = {
+        color = TextColors.orange,
+        hideInConsole = true
+    },
+    monsterYell = {
+        color = TextColors.orange,
+        hideInConsole = true
+    },
+    potion = {
+        color = TextColors.orange,
+        hideInConsole = true
     },
     loot = {
         color = TextColors.white,
@@ -71,8 +139,11 @@ MessageSettings = {
 }
 
 MessageTypes = {
-    [MessageModes.MonsterSay] = MessageSettings.consoleOrange,
-    [MessageModes.MonsterYell] = MessageSettings.consoleOrange,
+    [MessageModes.Say] = MessageSettings.consoleYellow,
+    [MessageModes.Whisper] = MessageSettings.consoleYellow,
+    [MessageModes.Yell] = MessageSettings.consoleYellow,
+    [MessageModes.MonsterSay] = MessageSettings.monsterSay,
+    [MessageModes.MonsterYell] = MessageSettings.monsterYell,
     [MessageModes.BarkLow] = MessageSettings.consoleOrange,
     [MessageModes.BarkLoud] = MessageSettings.consoleOrange,
     [MessageModes.Failure] = MessageSettings.statusSmall,
@@ -84,27 +155,39 @@ MessageTypes = {
     [MessageModes.Loot] = MessageSettings.loot,
     [MessageModes.Red] = MessageSettings.consoleRed,
     [MessageModes.Blue] = MessageSettings.consoleBlue,
-    [MessageModes.PrivateFrom] = MessageSettings.consoleBlue,
+    [MessageModes.PrivateFrom] = MessageSettings.private,
+    [MessageModes.PrivateTo] = MessageSettings.privatePlayerToPlayer,
+    [MessageModes.GamemasterPrivateFrom] = MessageSettings.privateRed,
+    [MessageModes.NpcTo] = MessageSettings.privatePlayerToNpc,
+    [MessageModes.NpcFrom] = MessageSettings.privateNpcToPlayer,
+    [MessageModes.NpcFromStartBlock] = MessageSettings.privateNpcToPlayer,
+    [MessageModes.Channel] = MessageSettings.channelYellow,
+    [MessageModes.ChannelManagement] = MessageSettings.channelWhite,
+    [MessageModes.GamemasterChannel] = MessageSettings.channelRed,
+    [MessageModes.ChannelHighlight] = MessageSettings.channelOrange,
+    [MessageModes.Spell] = MessageSettings.consoleYellow,
+    [MessageModes.RVRChannel] = MessageSettings.channelWhite,
+    [MessageModes.RVRContinue] = MessageSettings.consoleYellow,
 
     [MessageModes.GamemasterBroadcast] = MessageSettings.consoleRed,
 
-    [MessageModes.DamageDealed] = MessageSettings.status,
-    [MessageModes.DamageReceived] = MessageSettings.status,
-    [MessageModes.Heal] = MessageSettings.status,
-    [MessageModes.Exp] = MessageSettings.status,
+    [MessageModes.DamageDealed] = MessageSettings.statusOwn,
+    [MessageModes.DamageReceived] = MessageSettings.statusOwn,
+    [MessageModes.Heal] = MessageSettings.statusOwn,
+    [MessageModes.Exp] = MessageSettings.statusOwn,
 
-    [MessageModes.DamageOthers] = MessageSettings.othersStatus,
-    [MessageModes.HealOthers] = MessageSettings.othersStatus,
-    [MessageModes.ExpOthers] = MessageSettings.othersStatus,
-    [MessageModes.Potion] = MessageSettings.othersStatus,
+    [MessageModes.DamageOthers] = MessageSettings.statusOwn,
+    [MessageModes.HealOthers] = MessageSettings.statusOwn,
+    [MessageModes.ExpOthers] = MessageSettings.statusOwn,
+    [MessageModes.Potion] = MessageSettings.potion,
 
-    [MessageModes.TradeNpc] = MessageSettings.centerWhite,
-    [MessageModes.Guild] = MessageSettings.centerWhite,
-    [MessageModes.Party] = MessageSettings.centerGreen,
-    [MessageModes.PartyManagement] = MessageSettings.centerWhite,
-    [MessageModes.TutorialHint] = MessageSettings.centerWhite,
+    [MessageModes.TradeNpc] = MessageSettings.centerGreen,
+    [MessageModes.Guild] = MessageSettings.statusOwn,
+    [MessageModes.Party] = MessageSettings.statusOwn,
+    [MessageModes.PartyManagement] = MessageSettings.centerGreen,
+    [MessageModes.TutorialHint] = MessageSettings.statusSmall,
     [MessageModes.BeyondLast] = MessageSettings.centerWhite,
-    [MessageModes.Report] = MessageSettings.consoleRed,
+    [MessageModes.Report] = MessageSettings.centerWhite,
     [MessageModes.GameHighlight] = MessageSettings.centerRed,
     [MessageModes.HotkeyUse] = MessageSettings.centerGreen,
     [MessageModes.Attention] = MessageSettings.bottomWhite,
@@ -147,7 +230,19 @@ function displayMessage(mode, text)
     if not g_game.isOnline() then
         return
     end
-
+    if g_game.getClientVersion() >= 1300 then
+        MessageTypes[MessageModes.Loot] = MessageSettings.loot
+        MessageTypes[MessageModes.ValuableLoot] = MessageSettings.valuableLoot
+        MessageTypes[MessageModes.Guild] = MessageSettings.statusOwn
+        MessageTypes[MessageModes.Party] = MessageSettings.statusOwn
+    else
+        MessageTypes[MessageModes.Loot] = MessageSettings.centerGreen
+        MessageTypes[MessageModes.ValuableLoot] = MessageSettings.centerGreen
+        MessageTypes[MessageModes.Guild] = MessageSettings.centerGreen
+        MessageTypes[MessageModes.Party] = MessageSettings.centerGreen
+        MessageTypes[MessageModes.MonsterSay] = MessageSettings.consoleOrange
+        MessageTypes[MessageModes.MonsterYell] = MessageSettings.consoleOrange
+    end
     local msgtype = MessageTypes[mode]
     if not msgtype then
         return
@@ -189,7 +284,27 @@ function displayMessage(mode, text)
 end
 
 function displayPrivateMessage(text)
-    displayMessage(254, text)
+    if not g_game.isOnline() then
+        return
+    end
+    
+    local msgtype = MessageSettings.private
+    if not msgtype or not msgtype.screenTarget then
+        return
+    end
+    
+    local label = messagesPanel:recursiveGetChildById(msgtype.screenTarget)
+    if not label then
+        return
+    end
+    
+    label:setText(text)
+    label:setColor(msgtype.color)
+    label:setVisible(true)
+    removeEvent(label.hideEvent)
+    label.hideEvent = scheduleEvent(function()
+        label:setVisible(false)
+    end, calculateVisibleTime(text))
 end
 
 function displayStatusMessage(text)

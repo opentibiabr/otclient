@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -63,6 +63,7 @@ void Game::resetGameStates()
     m_mapUpdatedAt = 0;
     m_mapUpdateTimer = { true, Timer{} };
     setCanReportBugs(false);
+    setCanExivaOptions(false);
     m_fightMode = Otc::FightBalanced;
     m_chaseMode = Otc::DontChase;
     m_pvpMode = Otc::WhiteDove;
@@ -186,7 +187,7 @@ void Game::processGameStart()
         }
     }, 1000);
 
-    g_dispatcher.addEvent([] { g_lua.callGlobalField("g_game", "onGameStart"); });
+    g_lua.callGlobalField("g_game", "onGameStart");
 }
 
 void Game::processGameEnd()
@@ -1758,17 +1759,21 @@ Otc::OperatingSystem_t Game::getOs()
 
 void Game::leaveMarket()
 {
+    if (!canPerformGameAction())
+        return;
+
     m_protocolGame->sendMarketLeave();
 
     g_lua.callGlobalField("g_game", "onMarketLeave");
 }
 
-void Game::browseMarket(const uint8_t browseId, const uint8_t browseType)
+void Game::browseMarket(const uint8_t browseId, const uint16_t browseType, const uint8_t tier)
 {
-    if (!canPerformGameAction())
+    if (!canPerformGameAction()) {
         return;
+    }
 
-    m_protocolGame->sendMarketBrowse(browseId, browseType);
+    m_protocolGame->sendMarketBrowse(browseId, browseType, tier);
 }
 
 void Game::createMarketOffer(const uint8_t type, const uint16_t itemId, const uint8_t itemTier, const uint16_t amount, const uint64_t price, const uint8_t anonymous)
@@ -1811,6 +1816,44 @@ void Game::preyRequest()
     m_protocolGame->sendPreyRequest();
 }
 
+void Game::openPortableForgeRequest()
+{
+    if (!canPerformGameAction())
+        return;
+    m_protocolGame->sendOpenPortableForge();
+}
+
+void Game::forgeRequest(Otc::ForgeAction_t actionType, bool convergence, uint16_t firstItemid, uint8_t firstItemTier, uint16_t secondItemId, bool improveChance, bool tierLoss)
+{
+    if (!canPerformGameAction())
+        return;
+    m_protocolGame->sendForgeRequest(actionType, convergence, firstItemid, firstItemTier, secondItemId, improveChance, tierLoss);
+}
+
+void Game::sendForgeBrowseHistoryRequest(uint16_t page)
+{
+    if (!canPerformGameAction())
+        return;
+    m_protocolGame->sendForgeBrowseHistoryRequest(page);
+}
+
+void Game::sendExivaOptions(
+    const bool allowAll, const bool allowOwnGuild, const bool allowOwnParty,
+    const bool allowVipList, const bool allowPlayerWhitelist, const bool allowGuildWhitelist,
+    const std::vector<std::string>& characterWhiteList,
+    const std::vector<std::string>& removeCharacter,
+    const std::vector<std::string>& guildWhiteList,
+    const std::vector<std::string>& removeGuild)
+{
+    if (!canPerformGameAction() || !canExivaOptions())
+        return;
+
+    m_protocolGame->sendExivaRestrictions(
+        allowAll, allowOwnGuild, allowOwnParty, allowVipList,
+        allowPlayerWhitelist, allowGuildWhitelist,
+        characterWhiteList, removeCharacter, guildWhiteList, removeGuild);
+}
+
 void Game::applyImbuement(const uint8_t slot, const uint32_t imbuementId, const bool protectionCharm)
 {
     if (!canPerformGameAction())
@@ -1841,6 +1884,22 @@ void Game::imbuementDurations(const bool isOpen)
         return;
 
     m_protocolGame->sendImbuementDurations(isOpen);
+}
+
+void Game::openWheelOfDestiny(uint32_t playerId)
+{
+    if (!playerId || !canPerformGameAction())
+        return;
+
+    m_protocolGame->sendOpenWheelOfDestiny(playerId);
+}
+
+void Game::applyWheelOfDestiny(const std::vector<uint16_t>& wheelPointsVec, const std::vector<uint16_t>& activeGemsVec)
+{
+    if (!canPerformGameAction())
+        return;
+
+    m_protocolGame->sendApplyWheelOfDestiny(wheelPointsVec, activeGemsVec);
 }
 
 void Game::stashWithdraw(const uint16_t itemId, const uint32_t count, const uint8_t stackpos)
@@ -2059,4 +2118,25 @@ void Game::processCyclopediaCharacterDefenceStats(const CyclopediaCharacterDefen
 void Game::processCyclopediaCharacterMiscStats(const CyclopediaCharacterMiscStats& data)
 {
     g_lua.callGlobalField("g_game", "onCyclopediaCharacterMiscStats", data);
+}
+
+void Game::openWheel(uint32_t playerId)
+{
+    if (!canPerformGameAction())
+        return;
+    m_protocolGame->sendOpenWheel(playerId);
+}
+
+void Game::gemAction(const uint8_t actionType, const uint8_t param, const uint8_t pos)
+{
+    if (!canPerformGameAction())
+        return;
+    m_protocolGame->sendWheelGemAction(actionType, param, pos);
+}
+
+void Game::sendApplyWheelPoints(const std::vector<uint16_t>& slotPoints,uint16_t greenGem,uint16_t redGem,uint16_t acquaGem,uint16_t purpleGem)
+{
+    if (!canPerformGameAction())
+        return;
+    m_protocolGame->sendApplyWheelPoints(slotPoints, greenGem, redGem, acquaGem, purpleGem);
 }

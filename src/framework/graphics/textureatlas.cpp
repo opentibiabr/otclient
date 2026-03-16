@@ -1,10 +1,32 @@
+/*
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
 #include "framebuffer.h"
 #include "textureatlas.h"
 
 #include "painter.h"
 #include <framework/core/configmanager.h>
 
-// Extra padding around smooth textures to avoid sampling artifacts (in pixels)
+ // Extra padding around smooth textures to avoid sampling artifacts (in pixels)
 static constexpr uint8_t SMOOTH_PADDING = 2;
 
 // Limit texture size based on atlas size (Default: 35%)
@@ -173,4 +195,26 @@ void TextureAtlas::flush() {
             }
         }
     }
+}
+
+std::string TextureAtlas::getStats() const
+{
+    std::stringstream ss;
+    ss << "size=" << m_size.width() << "x" << m_size.height()
+        << " cached=" << m_texturesCached.size();
+
+    for (int i = 0; i < ATLAS_FILTER_COUNT; ++i) {
+        const auto& group = m_filterGroups[i];
+        size_t textures = 0;
+        for (const auto& layer : group.layers) {
+            textures += layer.textures.size();
+        }
+        ss << " | " << (i == ATLAS_FILTER_LINEAR ? "linear" : "nearest")
+            << ":layers=" << group.layers.size()
+            << " textures=" << textures
+            << " free=" << group.freeRegions.size()
+            << " inactive=" << group.inactiveTextures.size();
+    }
+
+    return ss.str();
 }

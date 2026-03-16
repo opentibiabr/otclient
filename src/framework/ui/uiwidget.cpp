@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,10 +30,12 @@
 #include "framework/graphics/drawpool.h"
 #include "framework/graphics/drawpoolmanager.h"
 #include "framework/graphics/shadermanager.h"
+#include <framework/graphics/bitmapfont.h>
 #include "framework/html/htmlmanager.h"
 #include "framework/html/htmlnode.h"
 #include "framework/otml/otmlnode.h"
 #include <framework/platform/platformwindow.h>
+#include <framework/util/stats.h>
 
 UIWidget::UIWidget()
 {
@@ -58,6 +60,8 @@ UIWidget::UIWidget()
     initBaseStyle();
     initText();
     initImage();
+
+    g_stats.addWidget(this);
 }
 
 UIWidget::~UIWidget()
@@ -67,6 +71,8 @@ UIWidget::~UIWidget()
     if (!isDestroyed())
         g_logger.warning("widget '{}' was not explicitly destroyed", m_id);
 #endif
+
+    g_stats.removeWidget(this);
 }
 
 void UIWidget::draw(const Rect& visibleRect, const DrawPoolType drawPane)
@@ -1566,6 +1572,29 @@ UIWidgetPtr UIWidget::getChildByStyleName(const std::string_view styleName) {
     return nullptr;
 }
 
+UIWidgetPtr UIWidget::getNearestChild(const Point& pos)
+{
+    if (m_children.empty())
+        return nullptr;
+
+    UIWidgetPtr nearestChild = nullptr;
+    float minDistance = (std::numeric_limits<float>::max)();
+    for (const auto& child : m_children) {
+        if (!child->isExplicitlyVisible())
+            continue;
+
+        const Point childCenter = child->getRect().center();
+        const auto dx = static_cast<float>(pos.x - childCenter.x);
+        const auto dy = static_cast<float>(pos.y - childCenter.y);
+        const float distance = std::sqrt(dx * dx + dy * dy);
+        if (distance < minDistance) {
+            minDistance = distance;
+            nearestChild = child;
+        }
+    }
+    return nearestChild;
+}
+
 UIWidgetList UIWidget::recursiveGetChildrenByState(const Fw::WidgetState state)
 {
     UIWidgetList children;
@@ -1878,6 +1907,11 @@ void UIWidget::onHoverChange(const bool hovered)
     callLuaField("onHoverChange", hovered);
 }
 
+void UIWidget::onTextHoverChange(const std::string& text, bool hovered)
+{
+    callLuaField("onTextHoverChange", text, hovered);
+}
+
 void UIWidget::onVisibilityChange(const bool visible)
 {
     if (!isAnchored())
@@ -1957,6 +1991,12 @@ bool UIWidget::onMouseWheel(const Point& mousePos, const Fw::MouseWheelDirection
 
 bool UIWidget::onClick(const Point& mousePos)
 {
+    if (hasEventListener(EVENT_TEXT_CLICK)) {
+        std::string clickedText = getTextByPos(mousePos);
+        if (!clickedText.empty()) {
+            callLuaField("onTextClick", clickedText, mousePos);
+        }
+    }
     return callLuaField<bool>("onClick", mousePos);
 }
 
@@ -2364,4 +2404,153 @@ void UIWidget::setAlignSelf(AlignSelf align)
 void UIWidget::setPlacement(const std::string& placement) {
     m_placement = Fw::translatePlacement(placement);
     scheduleHtmlTask(PropApplyAnchorAlignment);
+}
+
+std::string UIWidget::getTextByPos(const Point& mousePos)
+{
+    for (const auto& pair : m_rectToWord) {
+        if (pair.first.contains(mousePos))
+            return pair.second;
+    }
+
+    return "";
+}
+
+void UIWidget::setEventListener(WidgetEvents event)
+{
+    if (hasEventListener(event))
+        return;
+
+    m_events |= event;
+
+    if ((event == EVENT_TEXT_CLICK || event == EVENT_TEXT_HOVER) && m_rectToWord.empty())
+        cacheRectToWord();
+}
+
+void UIWidget::removeEventListener(WidgetEvents event)
+{
+    if (!hasEventListener(event))
+        return;
+
+    m_events &= ~event;
+
+    if (event == EVENT_TEXT_CLICK || event == EVENT_TEXT_HOVER) {
+        m_rectToWord.clear();
+        m_rectToWord.shrink_to_fit();
+        m_textUnderline = std::make_shared<CoordsBuffer>();
+    }
+}
+
+void UIWidget::cacheRectToWord()
+{
+    if (m_rect.isEmpty())
+        return;
+
+    const auto& text = m_drawText;
+    const int textLength = text.length();
+
+    // map glyphs positions
+    Size textBoxSize;
+    m_font->calculateGlyphsPositions(text, m_textAlign, m_glyphsPositionsCache, &textBoxSize);
+    if (m_glyphsCoordsCache.size() != static_cast<size_t>(textLength))
+        m_glyphsCoordsCache.resize(textLength);
+
+    auto& glyphsCoords = m_glyphsCoordsCache;
+    const auto& glyphsPositions = m_glyphsPositionsCache;
+    const Rect* glyphsTextureCoords = m_font->getGlyphsTextureCoords();
+    const Size* glyphsSize = m_font->getGlyphsSize();
+    int glyph;
+
+    // update rect size
+    if (!m_rect.isValid() || hasProp(PropTextHorizontalAutoResize) || hasProp(PropTextVerticalAutoResize)) {
+        textBoxSize += Size(m_padding.left + m_padding.right, m_padding.top + m_padding.bottom) + m_textOffset.toSize();
+        Size size = getSize();
+        if (size.width() <= 0 || (hasProp(PropTextHorizontalAutoResize) && !hasProp(PropTextWrap)))
+            size.setWidth(textBoxSize.width());
+        if (size.height() <= 0 || hasProp(PropTextVerticalAutoResize))
+            size.setHeight(textBoxSize.height());
+        setSize(size);
+    }
+
+    Rect textScreenCoords = m_rect;
+    textScreenCoords.expandLeft(-m_padding.left);
+    textScreenCoords.expandRight(-m_padding.right);
+    textScreenCoords.expandBottom(-m_padding.bottom);
+    textScreenCoords.expandTop(-m_padding.top);
+
+    for (int i = 0; i < textLength; ++i) {
+        glyph = (uchar)text[i];
+        glyphsCoords[i].clear();
+
+        // skip invalid glyphs
+        if (glyph < 32)
+            continue;
+
+        // calculate initial glyph rect and texture coords
+        Rect glyphScreenCoords(glyphsPositions[i], glyphsSize[glyph]);
+        Rect glyphTextureCoords = glyphsTextureCoords[glyph];
+
+        // first translate to align position
+        if (m_textAlign & Fw::AlignBottom) {
+            glyphScreenCoords.translate(0, textScreenCoords.height() - textBoxSize.height());
+        } else if (m_textAlign & Fw::AlignVerticalCenter) {
+            glyphScreenCoords.translate(0, (textScreenCoords.height() - textBoxSize.height()) / 2);
+        } else { // AlignTop
+            // nothing to do
+        }
+
+        if (m_textAlign & Fw::AlignRight) {
+            glyphScreenCoords.translate(textScreenCoords.width() - textBoxSize.width(), 0);
+        } else if (m_textAlign & Fw::AlignHorizontalCenter) {
+            glyphScreenCoords.translate((textScreenCoords.width() - textBoxSize.width()) / 2, 0);
+        } else { // AlignLeft
+            // nothing to do
+        }
+
+        // translate rect to screen coords
+        glyphScreenCoords.translate(textScreenCoords.topLeft());
+
+        // only render if glyph rect is visible on screenCoords
+        if (!textScreenCoords.intersects(glyphScreenCoords))
+            continue;
+
+        // bound glyph bottomRight to screenCoords bottomRight
+        if (glyphScreenCoords.bottom() > textScreenCoords.bottom()) {
+            glyphTextureCoords.setBottom(glyphTextureCoords.bottom() + (textScreenCoords.bottom() - glyphScreenCoords.bottom()));
+            glyphScreenCoords.setBottom(textScreenCoords.bottom());
+        }
+        if (glyphScreenCoords.right() > textScreenCoords.right()) {
+            glyphTextureCoords.setRight(glyphTextureCoords.right() + (textScreenCoords.right() - glyphScreenCoords.right()));
+            glyphScreenCoords.setRight(textScreenCoords.right());
+        }
+
+        // render glyph
+        glyphsCoords[i] = glyphScreenCoords;
+    }
+
+    updateRectToWord(glyphsCoords);
+}
+
+void UIWidget::setColor(const Color& color)
+{
+    if (m_color == color)
+        return;
+
+    if (!m_textColors.empty()) {
+        for (auto& pair : m_textColors) {
+            if (pair.second == m_baseTextColor)
+                pair.second = color;
+        }
+        for (auto& pair : m_drawTextColors) {
+            if (pair.second == m_baseTextColor)
+                pair.second = color;
+        }
+        m_baseTextColor = color;
+        m_colorCoordsBuffer.clear();
+        m_coordsBuffer->clear();
+        m_textCachedScreenCoords = {};
+    }
+
+    m_color = color;
+    repaint();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -53,7 +53,7 @@ void UIItem::drawSelf(const DrawPoolType drawPane)
         g_drawPool.bindFrameBuffer(exactSize);
         m_item->setColor(m_color);
         m_item->draw(Point(exactSize - g_gameConfig.getSpriteSize()) + m_item->getDisplacement());
-        g_drawPool.releaseFrameBuffer(getPaddingRect());
+        g_drawPool.releaseFrameBuffer(getPaddingRect(), m_flipDirection);
 
         if (m_font && (m_alwaysShowCount && (m_item->isStackable() || m_item->isChargeable())) && m_item->getCountOrSubType() > 1) {
             static constexpr Color STACK_COLOR(231, 231, 231);
@@ -128,6 +128,8 @@ void UIItem::onStyleApply(const std::string_view styleName, const OTMLNodePtr& s
             m_showId = node->value<bool>();
         else if (node->tag() == "always-show-count")
             m_alwaysShowCount = node->value<bool>();
+        else if (node->tag() == "flip-direction")
+            setFlipDirection(node->value<uint8_t>());
     }
 
     UIWidget::onStyleApply(styleName, styleNode);

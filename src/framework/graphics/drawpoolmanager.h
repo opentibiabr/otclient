@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -56,6 +56,7 @@ public:
 
     void bindFrameBuffer(const Size& size, const Color& color = Color::white) const { getCurrentPool()->bindFrameBuffer(size, color); }
     void releaseFrameBuffer(const Rect& dest) const { getCurrentPool()->releaseFrameBuffer(dest); };
+    void releaseFrameBuffer(const Rect& dest, uint8_t flipDirection) const { getCurrentPool()->releaseFrameBuffer(dest, flipDirection); };
 
     void setOpacity(const float opacity, const bool onlyOnce = false) const { getCurrentPool()->setOpacity(opacity, onlyOnce); }
     void setClipRect(const Rect& clipRect, const bool onlyOnce = false) const { getCurrentPool()->setClipRect(clipRect, onlyOnce); }
@@ -76,6 +77,7 @@ public:
     void resetShaderProgram() const { getCurrentPool()->resetShaderProgram(); }
     void resetCompositionMode() const { getCurrentPool()->resetCompositionMode(); }
     void resetDrawOrder() const { getCurrentPool()->resetDrawOrder(); }
+    void resetOnlyOnceParameters() const { getCurrentPool()->resetOnlyOnceParameters(); }
 
     void pushTransformMatrix() const { getCurrentPool()->pushTransformMatrix(); }
     void popTransformMatrix() const { getCurrentPool()->popTransformMatrix(); }
@@ -113,6 +115,7 @@ public:
     bool isPreDrawing() const;
 
     void removeTextureFromAtlas(uint32_t id, bool smooth);
+    std::string getAtlasStats() const;
 
 private:
     DrawPool* getCurrentPool() const;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -237,7 +237,17 @@ void UIWidget::initBaseStyle()
 
 void UIWidget::parseBaseStyle(const OTMLNodePtr& styleNode)
 {
-    // parse lua variables and callbacks first
+    // Parse Lua variables and callbacks first
+    // 
+    // IMPORTANT: These &-prefixed nodes serve dual purpose:
+    //   1. They are processed here as Lua fields/callbacks for script access
+    //   2. They were already processed by OTML parser as variable definitions (see otmlparser.cpp)
+    //
+    // This dual behavior means widget properties like &minimizedHeight, &save, &onClick are:
+    //   - Set as Lua fields (accessible via widget.fieldName in scripts)
+    //   - Available as OTML variables (usable with $fieldName in descendant nodes)
+    //
+    // For detailed documentation, see docs/otml-variables.md
     for (const auto& node : styleNode->children()) {
         // lua functions
         if (node->tag().starts_with("@")) {
@@ -253,7 +263,15 @@ void UIWidget::parseBaseStyle(const OTMLNodePtr& styleNode)
             std::string fieldName = node->tag().substr(1);
             std::string fieldOrigin = "@" + node->source() + ": [" + node->tag() + "]";
 
-            g_lua.evaluateExpression(node->value(), fieldOrigin);
+            std::string fieldValue = node->value();
+            stdext::trim(fieldValue);
+
+            if (!fieldValue.empty() && fieldValue.front() == '#') {
+                g_lua.pushString(fieldValue);
+            } else {
+                g_lua.evaluateExpression(fieldValue, fieldOrigin);
+            }
+
             luaSetField(fieldName);
         }
     }
@@ -731,6 +749,15 @@ void UIWidget::parseBaseStyle(const OTMLNodePtr& styleNode)
                         throw OTMLException(node, "invalid anchor target edge");
 
                     addAnchor(anchoredEdge, hookedWidgetId, hookedEdge);
+                }
+            }
+        }
+        else if (node->tag() == "events") {
+            auto split = stdext::split(node->value(), " ");
+            for (const auto& event : split) {
+                auto it = eventMap.find(event);
+                if (it != eventMap.end()) {
+                    setEventListener(it->second);
                 }
             }
         }

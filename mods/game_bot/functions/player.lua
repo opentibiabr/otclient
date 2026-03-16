@@ -159,6 +159,10 @@ context.findItem = function(itemId, subType)
   if subType == nil then
     subType = -1
   end
+  local ammo = context.player:getInventoryItem(InventorySlotAmmo)
+  if ammo and ammo:getId() == itemId and (subType == -1 or ammo:getSubType() == subType) then
+    return ammo
+  end
   return g_game.findItemInContainers(itemId, subType)
 end
 

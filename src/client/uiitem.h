@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -38,6 +38,7 @@ public:
     void setItem(const ItemPtr& item);
     void setShowCount(const bool value) { m_alwaysShowCount = value; }
     void setVirtual(const bool virt) { m_virtual = virt; }
+    void setFlipDirection(const uint8_t direction) { m_flipDirection = direction; repaint(); }
     void clearItem() { setItemId(0); }
 
     int getItemId();
@@ -47,6 +48,7 @@ public:
     ItemPtr getItem() { return m_item; }
     bool isVirtual() { return m_virtual; }
     bool isItemVisible() { return m_itemVisible; }
+    uint8_t getFlipDirection() { return m_flipDirection; }
 
     void setShader(std::string_view name) override;
     bool hasShader() override;
@@ -61,4 +63,5 @@ protected:
     bool m_showId{ false };
     bool m_itemVisible{ true };
     bool m_alwaysShowCount{ true };
+    uint8_t m_flipDirection{ 0 }; // 0 = none, 1 = horizontal, 2 = vertical
 };

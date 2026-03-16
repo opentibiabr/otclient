@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -754,6 +754,59 @@ struct ForgeTransferData
     std::vector<ForgeItemInfo> receivers;
 };
 
+struct ForgeGradeData
+{
+    uint8_t tier{ 0 };
+    uint8_t exaltedCores{ 0 };
+};
+
+struct ForgeTierPrice
+{
+    uint8_t tier{ 0 };
+    uint64_t price{ 0 };
+};
+
+struct ForgeClassTierPrices
+{
+    uint8_t classId{ 0 };
+    std::vector<ForgeTierPrice> tiers;
+};
+
+struct ForgeResultData
+{
+    uint8_t actionType{ 0 };
+    bool convergence{ false };
+    bool success{ false };
+    uint16_t leftItemId{ 0 };
+    uint8_t leftTier{ 0 };
+    uint16_t rightItemId{ 0 };
+    uint8_t rightTier{ 0 };
+    uint8_t bonus{ 0 };
+    uint8_t coreCount{ 0 };
+};
+
+struct ForgeConfigData
+{
+    std::vector<ForgeClassTierPrices> classPrices;
+    std::vector<ForgeGradeData> fusionGrades;
+    std::vector<ForgeTierPrice> convergenceFusionPrices;
+    std::vector<ForgeTierPrice> convergenceTransferPrices;
+    uint8_t dustPercent{ 0 };
+    uint8_t dustToSliver{ 0 };
+    uint8_t sliverToCore{ 0 };
+    uint8_t dustPercentUpgrade{ 0 };
+    uint16_t maxDustLevel{ 0 };
+    uint16_t maxDustCap{ 0 };
+    uint8_t normalDustFusion{ 0 };
+    uint8_t convergenceDustFusion{ 0 };
+    uint8_t normalDustTransfer{ 0 };
+    uint8_t convergenceDustTransfer{ 0 };
+    uint8_t fusionChanceBase{ 0 };
+    uint8_t fusionChanceImproved{ 0 };
+    uint8_t fusionReduceTierLoss{ 0 };
+    bool hasConvergence{ false };
+};
+
 struct ForgeOpenData
 {
     std::vector<ForgeItemInfo> fusionItems;
@@ -761,4 +814,43 @@ struct ForgeOpenData
     std::vector<ForgeTransferData> transfers;
     std::vector<ForgeTransferData> convergenceTransfers;
     uint16_t dustLevel{ 0 };
+};
+
+struct GemData {
+    uint16_t gemID = 0;
+    uint8_t locked = 0;
+    uint8_t gemDomain = 0;
+    uint8_t gemType = 0;
+    uint8_t lesserBonus = 0;
+    uint8_t regularBonus = 0;
+    uint8_t supremeBonus = 0;
+};
+
+struct WheelData
+{
+    uint32_t ownerId;
+    uint8_t canUse;
+    uint8_t options;     // 0=cannot change, 1=can inc/dec, 2=only inc
+    uint8_t vocationId;
+    uint16_t points;
+    uint16_t extraPoints;
+
+    std::array<uint16_t, static_cast<size_t>(Otc::WheelSlots_t::SLOT_LAST)> wheelPoints;
+
+    std::vector<std::pair<uint16_t, uint8_t>> promotionScrolls;
+    uint8_t extraPointsForMonkQuest;
+
+    std::vector<uint16_t> activeGems;
+
+    std::unordered_map<uint16_t, GemData> revealedGems;
+
+    std::unordered_map<uint8_t, uint8_t> basicGrades;
+    std::unordered_map<uint8_t, uint8_t> supremeGrades;
+};
+struct ForgeHistory
+{
+    uint32_t createdAt;
+    uint8_t actionType;
+    std::string description;
+    uint8_t bonus;
 };

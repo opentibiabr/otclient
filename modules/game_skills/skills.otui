@@ -286,10 +286,10 @@ MiniWindow
         image-source: /images/icons/icon_fishing
         image-size: 9 9
       SkillPercentPanel
+      margin-bottom: 5
         
     HorizontalSeparator
       id: separadorOnOffenceInfoChange
-      margin-top: 5
       margin-bottom: 5
 
     SmallSkillButton

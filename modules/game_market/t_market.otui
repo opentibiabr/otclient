@@ -1,0 +1,2619 @@
+DatailsLabel < UILabel
+  width: 520
+  color: #c0c0c0
+  font: Verdana Bold-11px
+  margin-left: 6
+  margin-top: 1
+  text-wrap: true
+  text-auto-resize: true
+
+CategoryItemListLabel < Label
+  font: Verdana Bold-11px
+  height: 16
+  background-color: alpha
+  text-offset: 1 -1
+  focusable: true
+  color: #c0c0c0
+
+StatisticWidget < UIWidget
+  size: 300 65
+  margin-top: 3
+
+  Label
+    id: header
+    anchors.top: parent.top
+    anchors.left: parent.left
+    color: #c0c0c0
+    font: Verdana Bold-11px
+    text-auto-resize: true
+    margin-left: 3
+
+  Label
+    id: transactions
+    !text: tr("Number of Transactions: 0")
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    margin-left: 11
+    color: #c0c0c0
+    font: Verdana Bold-11px
+    text-auto-resize: true
+    margin-top: -1
+
+  Label
+    id: highestPrice
+    !text: tr("Highest Price: 0 gold")
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    margin-left: 11
+    color: #c0c0c0
+    font: Verdana Bold-11px
+    text-auto-resize: true
+    margin-top: -1
+
+  Label
+    id: avgPrice
+    !text: tr("Average Price: 0 gold")
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    margin-left: 11
+    color: #c0c0c0
+    font: Verdana Bold-11px
+    text-auto-resize: true
+    margin-top: -1
+
+  Label
+    id: lowPrice
+    !text: tr("Lowest Price: 0 gold")
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    margin-left: 11
+    color: #c0c0c0
+    font: Verdana Bold-11px
+    text-auto-resize: true
+    margin-top: -1
+
+MarketHistoryWidget < UIWidget
+  height: 16
+
+  UIWidget
+    id: name
+    width: 502
+    anchors.top: parent.top
+    anchors.left: parent.left
+    text-align: left
+    text-offset: 1 -1
+    color: #c0c0c0
+    font: Verdana Bold-11px
+
+  UIWidget
+    id: separator1
+    anchors.left: prev.right
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    image-source: /images/ui/separator_vertical
+
+  UIWidget
+    id: amount
+    size: 54 16
+    text-align: right
+    color: #c0c0c0
+    font: Verdana Bold-11px
+    anchors.top: parent.top
+    anchors.left: prev.right
+    margin-left: 2
+
+  UIWidget
+    width: 60
+    anchors.top: parent.top
+    anchors.left: separator1.right
+
+  UIWidget
+    id: separator2
+    anchors.left: prev.right
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    image-source: /images/ui/separator_vertical
+
+  UIWidget
+    id: piecePrice
+    size: 78 16
+    text-align: right
+    color: #c0c0c0
+    font: Verdana Bold-11px
+    anchors.top: parent.top
+    anchors.left: prev.right
+    margin-left: 2
+
+  UIWidget
+    width: 86
+    anchors.top: parent.top
+    anchors.left: separator2.right
+
+  UIWidget
+    id: separator3
+    anchors.left: prev.right
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    image-source: /images/ui/separator_vertical
+
+  UIWidget
+    id: totalPrice
+    size: 78 16
+    text-align: right
+    color: #c0c0c0
+    font: Verdana Bold-11px
+    anchors.top: parent.top
+    anchors.left: prev.right
+    margin-left: 2
+
+  UIWidget
+    width: 87
+    anchors.top: parent.top
+    anchors.left: separator3.right
+
+  UIWidget
+    anchors.left: prev.right
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    image-source: /images/ui/separator_vertical
+
+  UIWidget
+    id: endAt
+    width: 150
+    anchors.top: parent.top
+    anchors.left: prev.right
+    text-align: left
+    text-offset: 2 -1
+    color: #c0c0c0
+    font: Verdana Bold-11px
+
+  UIWidget
+    anchors.left: prev.right
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    margin-left: 1
+    image-source: /images/ui/separator_vertical
+
+  UIWidget
+    id: status
+    width: 70
+    anchors.top: parent.top
+    anchors.left: prev.right
+    text-align: left
+    text-offset: 2 -1
+    color: #c0c0c0
+    font: Verdana Bold-11px
+
+MarketCurrentWidget < UIWidget
+  height: 16
+
+  UIWidget
+    id: name
+    width: 502
+    anchors.top: parent.top
+    anchors.left: parent.left
+    text-align: left
+    text-offset: 1 -1
+    color: #c0c0c0
+    font: Verdana Bold-11px
+
+  UIWidget
+    id: separator1
+    anchors.left: prev.right
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    image-source: /images/ui/separator_vertical
+
+  UIWidget
+    id: amount
+    size: 54 16
+    text-align: right
+    color: #c0c0c0
+    font: Verdana Bold-11px
+    anchors.top: parent.top
+    anchors.left: prev.right
+    margin-left: 2
+
+  UIWidget
+    width: 60
+    anchors.top: parent.top
+    anchors.left: separator1.right
+
+  UIWidget
+    id: separator2
+    anchors.left: prev.right
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    image-source: /images/ui/separator_vertical
+
+  UIWidget
+    id: piecePrice
+    size: 78 16
+    text-align: right
+    color: #c0c0c0
+    font: Verdana Bold-11px
+    anchors.top: parent.top
+    anchors.left: prev.right
+    margin-left: 2
+
+  UIWidget
+    width: 86
+    anchors.top: parent.top
+    anchors.left: separator2.right
+
+  UIWidget
+    id: separator3
+    anchors.left: prev.right
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    image-source: /images/ui/separator_vertical
+
+  UIWidget
+    id: totalPrice
+    size: 78 16
+    text-align: right
+    color: #c0c0c0
+    font: Verdana Bold-11px
+    anchors.top: parent.top
+    anchors.left: prev.right
+    margin-left: 2
+
+  UIWidget
+    width: 87
+    anchors.top: parent.top
+    anchors.left: separator3.right
+
+  UIWidget
+    anchors.left: prev.right
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    image-source: /images/ui/separator_vertical
+
+  UIWidget
+    id: endAt
+    width: 150
+    anchors.top: parent.top
+    anchors.left: prev.right
+    text-align: left
+    text-offset: 2 -1
+    color: #c0c0c0
+    font: Verdana Bold-11px
+
+MarketOfferWidget < UIWidget
+  height: 16
+  UIWidget
+    id: name
+    width: 243
+    anchors.top: parent.top
+    anchors.left: parent.left
+    text-align: left
+    text-offset: 1 -1
+    color: #c0c0c0
+    font: Verdana Bold-11px
+
+  UIWidget
+    id: separator1
+    anchors.left: prev.right
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    image-source: /images/ui/separator_vertical
+
+  UIWidget
+    id: amount
+    size: 122 16
+    text-align: right
+    color: #c0c0c0
+    font: Verdana Bold-11px
+    anchors.top: parent.top
+    anchors.left: prev.right
+    margin-left: 2
+
+  UIWidget
+    width: 130
+    anchors.top: parent.top
+    anchors.left: separator1.right
+
+  UIWidget
+    id: separator2
+    anchors.left: prev.right
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    image-source: /images/ui/separator_vertical
+
+  UIWidget
+    id: piecePrice
+    size: 122 16
+    text-align: right
+    color: #c0c0c0
+    font: Verdana Bold-11px
+    anchors.top: parent.top
+    anchors.left: prev.right
+    margin-left: 2
+
+  UIWidget
+    width: 130
+    anchors.top: parent.top
+    anchors.left: separator2.right
+
+  UIWidget
+    id: separator3
+    anchors.left: prev.right
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    image-source: /images/ui/separator_vertical
+
+  UIWidget
+    id: totalPrice
+    size: 122 16
+    text-align: right
+    color: #c0c0c0
+    font: Verdana Bold-11px
+    anchors.top: parent.top
+    anchors.left: prev.right
+    margin-left: 2
+
+  UIWidget
+    width: 130
+    anchors.top: parent.top
+    anchors.left: separator3.right
+
+  UIWidget
+    anchors.left: prev.right
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    image-source: /images/ui/separator_vertical
+
+  UIWidget
+    id: endAt
+    width: 150
+    anchors.top: parent.top
+    anchors.left: prev.right
+    text-align: left
+    text-offset: 2 -1
+    color: #c0c0c0
+    font: Verdana Bold-11px
+
+MarketItemList < UIWidget
+  size: 36 36
+  focusable: true
+
+  UIWidget
+    id: itemBackground
+    size: 34 34
+    image-source: /images/ui/item
+    anchors.top: parent.top
+    anchors.left: parent.left
+    margin-left: 1
+    anchors.verticalCenter: parent.verticalCenter
+
+  UIItem
+    size: 32 32
+    id: item
+    virtual: true
+    priceable: true
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 2
+    font: verdana-11px-rounded
+    always-show-count: true
+    focusable: true
+    draggable: false
+
+    UIWidget
+      id: tier
+      size: 10 9
+      image-source: /images/inventory/tiers-strip
+      image-clip: 0 0 10 9
+      image-size: 10 9
+      anchors.top: parent.top
+      anchors.right: parent.right
+      phantom: true
+      focusable: false
+      visible: false
+      image-smooth: true
+
+  Label
+    id: name
+    size: 108 32
+    !text: tr("Unknow")
+    font: Verdana Bold-11px
+    color: #c0c0c0
+    anchors.top: parent.top
+    anchors.left: prev.right
+    text-wrap: true
+    text-align: left
+    text-auto-reduce: true
+    margin-left: 5
+    margin-top: 2
+
+  UIWidget
+    id: grayHover
+    size: 146 36
+    background-color: #363636
+    opacity: 0.5
+    anchors.left: parent.left
+    phantom: true
+
+MarketMainWindow < Panel
+  id: contentPanel
+  anchors.bottom: parent.bottom
+  anchors.top: parent.top
+  anchors.left: parent.left
+  anchors.right: parent.right
+  margin: 12 12 12 12
+
+  TextList
+    id: category
+    size: 160 137
+    anchors.top: parent.top
+    anchors.left: parent.left
+    vertical-scrollbar: categoryScroll
+    background-color: #404040
+    border-width: 1
+    border-color-top: #141414
+    border-color-left: #141414
+    border-color-bottom: #747575
+    border-color-right: #747575
+    text-wrap: true
+    @onSetup: |
+      g_keyboard.bindKeyPress('Up', function() self:focusPreviousChild(KeyboardFocusReason) self:ensureChildVisible(self:getFocusedChild()) end, self)
+      g_keyboard.bindKeyPress('Down', function() self:focusNextChild(KeyboardFocusReason) self:ensureChildVisible(self:getFocusedChild()) end, self)
+
+  VerticalScrollBar
+    id: categoryScroll
+    anchors.top: prev.top
+    anchors.bottom: prev.bottom
+    anchors.right: prev.right
+    margin-right: 1
+    margin-top: 1
+    margin-bottom: 1
+    step: 16
+    pixels-scroll: true
+
+  Button
+    id: levelButton
+    size: 37 20
+    anchors.top: category.bottom
+    anchors.left: parent.left
+    margin-top: 30
+    !text: tr('Level')
+    font: cipsoftFont
+    color: #dfdfdfff
+    @onClick: modules.game_market.onSortMarketFields(self, self:isChecked())
+
+  Button
+    id: vocButton
+    size: 37 20
+    anchors.top: prev.top
+    anchors.left: prev.right
+    margin-left: 5
+    !text: tr('Voc.')
+    font: cipsoftFont
+    color: #dfdfdfff
+    @onClick: modules.game_market.onSortMarketFields(self, self:isChecked())
+
+  Button
+    id: oneButton
+    size: 37 20
+    anchors.top: prev.top
+    anchors.left: prev.right
+    margin-left: 5
+    !text: tr('1H')
+    font: cipsoftFont
+    color: #dfdfdfff
+    enabled: false
+    @onClick: modules.game_market.onSortMarketFields(self, self:isChecked())
+
+  Button
+    id: twoButton
+    size: 37 20
+    anchors.top: prev.top
+    anchors.left: prev.right
+    margin-left: 5
+    !text: tr('2H')
+    font: cipsoftFont
+    color: #dfdfdfff
+    enabled: false
+    @onClick: modules.game_market.onSortMarketFields(self, self:isChecked())
+
+  ComboBox
+    id: classFilter
+    size: 77 20
+    !text: tr('All')
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    margin-top: 5
+    @onOptionChange: modules.game_market.onSortMarketFields(self, self.currentIndex)
+
+  ComboBox
+    id: tierFilter
+    size: 79 20
+    !text: tr('Tier 0')
+    anchors.top: prev.top
+    anchors.left: prev.right
+    margin-left: 5
+    @onOptionChange: modules.game_market.onSortMarketFields(self, self.currentIndex)
+
+  CheckBox
+    id: lockerOnly
+    size: 12 12
+    !text: tr('Show Locker only')
+    font: Verdana Bold-11px
+    text-auto-resize: true
+    color: #C0C0C0
+    text-offset: 14 -2
+    anchors.left: parent.left
+    anchors.top: prev.bottom
+    margin-top: 6
+    image-source: /images/ui/checkbox
+    image-clip: 0 0 12 12
+    change-cursor-image: false
+
+    $hover !disabled:
+      color: #c0c0c0
+
+  Label
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    margin-top: 10
+    !text: tr('Items:')
+    text-auto-resize: true
+    font: Verdana Bold-11px
+    color: #C0C0C0
+
+  TextList
+    id: itemList
+    size: 160 263
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    margin-top: 3
+    text-wrap: true
+    vertical-scrollbar: itemListScroll
+    background-color: #404040
+    border-width: 1
+    border-color-top: #141414
+    border-color-left: #141414
+    border-color-bottom: #747575
+    border-color-right: #747575
+    @onSetup: |
+      g_keyboard.bindKeyPress('Up', function() focusPrevItemWidget(self) end, self)
+      g_keyboard.bindKeyPress('Down', function() focusNextItemWidget(self) end, self)
+
+  VerticalScrollBar
+    id: itemListScroll
+    anchors.top: prev.top
+    anchors.bottom: prev.bottom
+    anchors.right: prev.right
+    margin-right: 1
+    margin-top: 1
+    margin-bottom: 1
+    step: 1
+    pixels-scroll: true
+
+  UIWidget
+    size: 34 34
+    image-source: /images/ui/item
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    margin-top: 7
+
+  UIItem
+    id: selectedItem
+    size: 32 32
+    virtual: true
+    priceable: true
+    font: verdana-11px-rounded
+    anchors.top: prev.top
+    anchors.left: parent.left
+    margin-top: 1
+    margin-left: 1
+    show-count: false
+    virtual-count: true
+    draggable: false
+
+  Label
+    anchors.top: selectedItem.top
+    anchors.left: selectedItem.right
+    margin-top: -1
+    margin-left: 7
+    !text: tr('Search:')
+    text-auto-resize: true
+    font: Verdana Bold-11px
+    color: #C0C0C0
+
+  TextEdit
+    id: searchText
+    size: 121 16
+    focusable: true
+    anchors.top: prev.bottom
+    anchors.left: selectedItem.right
+    margin-left: 8
+    margin-top: 5
+    @onTextChange: modules.game_market.onSearchItem(self)
+    !placeholder: tr('Type to search')
+
+  Button
+    id: clearSearchButton
+    anchors.top: prev.top
+    anchors.right: prev.right
+    margin-top: 1
+    margin-right: 1
+    size: 14 14
+    image-source: /images/ui/erase-small
+    image-clip: 0 0 14 14
+    $pressed:
+      image-clip: 0 14 14 14
+    @onClick: modules.game_market.onClearSearch()
+
+  Panel
+    id: detailsMarket
+    anchors.top: category.top
+    anchors.left: prev.right
+    anchors.right: parent.right
+    anchors.bottom: separator.top
+    margin-left: 11
+    margin-bottom: 10
+    visible: false
+
+    Label
+      anchors.top: parent.top
+      anchors.left: parent.left
+      margin-top: 1
+      margin-left: 1
+      !text: tr('Details:')
+      text-auto-resize: true
+      font: Verdana Bold-11px
+      color: #C0C0C0
+
+    TextList
+      id: detailsList
+      size: 798 180
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 12
+      vertical-scrollbar: detailsListScroll
+      background-color: #404040
+      border-width: 1
+      border-color-top: #141414
+      border-color-left: #141414
+      border-color-bottom: #747575
+      border-color-right: #747575
+      text-wrap: true
+
+    VerticalScrollBar
+      id: detailsListScroll
+      anchors.top: prev.top
+      anchors.bottom: prev.bottom
+      anchors.right: prev.right
+      margin-right: 1
+      margin-top: 1
+      margin-bottom: 1
+      step: 16
+      pixels-scroll: true
+
+    Label
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 12
+      margin-left: 1
+      !text: tr('Statistics:')
+      text-auto-resize: true
+      font: Verdana Bold-11px
+      color: #C0C0C0
+
+    TextList
+      id: statisticsList
+      size: 798 180
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 12
+      vertical-scrollbar: statisticsListScroll
+      background-color: #404040
+      border-width: 1
+      border-color-top: #141414
+      border-color-left: #141414
+      border-color-bottom: #747575
+      border-color-right: #747575
+      text-wrap: true
+
+    VerticalScrollBar
+      id: statisticsListScroll
+      anchors.top: prev.top
+      anchors.bottom: prev.bottom
+      anchors.right: prev.right
+      margin-right: 1
+      margin-top: 1
+      margin-bottom: 1
+      step: 16
+      pixels-scroll: true
+
+  Panel
+    id: mainMarket
+    anchors.top: category.top
+    anchors.left: category.right
+    anchors.right: parent.right
+    anchors.bottom: separator.top
+    margin-left: 11
+    margin-bottom: 10
+    visible: true
+
+    Label
+      anchors.top: parent.top
+      anchors.left: parent.left
+      margin-top: 3
+      margin-left: -1
+      !text: tr('Sell Offers:')
+      text-auto-resize: true
+      font: Verdana Bold-11px
+      color: #C0C0C0
+
+    Label
+      id: amountLabel
+      anchors.top: prev.top
+      anchors.left: prev.right
+      margin-left: 277
+      !text: tr('Amount:')
+      text-auto-resize: true
+      font: Verdana Bold-11px
+      color: #C0C0C0
+
+    Label
+      id: amountSell
+      anchors.top: prev.top
+      anchors.left: prev.right
+      anchors.right: parent.right
+      margin-right: 344
+      !text: tr('0')
+      text-auto-resize: true
+      font: Verdana Bold-11px
+      color: #C0C0C0
+      text-align: right
+      text-auto-resize: true
+
+    HorizontalScrollBar
+      id: amountSellScrollBar
+      width: 150
+      anchors.top: amountLabel.top
+      anchors.left: amountLabel.right
+      step: 1
+      margin-left: 56
+      margin-top: 1
+      minimum: 0
+      maximum: 0
+      default-scroll: true
+      @onValueChange: modules.game_market.updateSellCount(self, self:getValue())
+
+    Label
+      anchors.top: prev.top
+      anchors.left: amountSellScrollBar.right
+      margin-left: 15
+      margin-top: -1
+      !text: tr('Total:')
+      text-auto-resize: true
+      font: Verdana Bold-11px
+      color: #C0C0C0
+
+    Label
+      id: totalValue
+      anchors.top: goldCoin.top
+      anchors.right: parent.right
+      margin-right: 60
+      margin-top: -3
+      !text: tr('0')
+      text-auto-resize: true
+      font: Verdana Bold-11px
+      color: #C0C0C0
+
+    Button
+      id: sellAcceptButton
+      size: 43 20
+      anchors.top: parent.top
+      anchors.right: parent.right
+      !text: tr('Accept')
+      font: cipsoftFont
+      color: #dfdfdfff
+      enabled: false
+      @onClick: modules.game_market.onAcceptSellOffer()
+
+    Panel
+      id: goldCoin
+      image-source: /images/game/cyclopedia/icons/icon-goldcoin
+      anchors.top: prev.top
+      anchors.right: prev.left
+      margin-right: 6
+      margin-top: 6
+
+    TextList
+      id: sellOffersList
+      size: 798 196
+      anchors.top: sellAcceptButton.bottom
+      anchors.right: parent.right
+      margin-top: 5
+      padding-top: 17
+      vertical-scrollbar: sellOffersListScroll
+      text-wrap: true
+      keep-scroll-range: true
+      background-color: #404040
+      border-width: 1
+      border-color-top: #141414
+      border-color-left: #141414
+      border-color-bottom: #747575
+      border-color-right: #747575
+      @onSetup: |
+        g_keyboard.bindKeyPress('Up', function() focusPrevSellLabel(self) end, self)
+        g_keyboard.bindKeyPress('Down', function() focusNextSellLabel(self) end, self)
+
+    // HEADER
+    UIWidget
+      size: 784 17
+      anchors.top: sellOffersList.top
+      anchors.left: sellOffersList.left
+      margin-left: 1
+      border-width-bottom: 1
+      border-color-bottom: #757575
+
+    UIWidget
+      id: nameButton
+      size: 243 15
+      text: Name
+      color: #C0C0C0
+      font: Verdana Bold-11px
+      text-offset: 1 -1
+      text-align: leftCenter
+      anchors.top: sellOffersList.top
+      anchors.left: sellOffersList.left
+      margin-top: 1
+      margin-left: 1
+      border-width-bottom: 1
+      border-color-bottom: #292a29
+      background-color: #363636
+      opacity: 1.0
+      $pressed:
+        color: #dfdfdf88
+        opacity: 0.8
+
+    UIWidget
+      height: 14
+      anchors.left: prev.right
+      anchors.top: sellOffersList.top
+      image-source: /images/ui/separator_vertical
+      margin-top: 1
+
+    UIWidget
+      id: amountButton
+      size: 128 15
+      text: Amount
+      font: Verdana Bold-11px
+      color: #C0C0C0
+      text-offset: 34 -1
+      anchors.top: sellOffersList.top
+      anchors.left: prev.right
+      margin-top: 1
+      margin-left: 2
+      border-width-bottom: 1
+      border-color-bottom: #292a29
+      background-color: #363636
+      opacity: 1.0
+      $pressed:
+        color: #dfdfdf88
+        opacity: 0.8
+
+    UIWidget
+      height: 14
+      anchors.left: prev.right
+      anchors.top: sellOffersList.top
+      image-source: /images/ui/separator_vertical
+      margin-top: 1
+
+    UIWidget
+      id: piecepriceButton
+      size: 128 15
+      text: Piece Price
+      font: Verdana Bold-11px
+      color: #C0C0C0
+      text-offset: 23 -1
+      anchors.top: sellOffersList.top
+      anchors.left: prev.right
+      margin-top: 1
+      margin-left: 2
+      border-width-bottom: 1
+      border-color-bottom: #292a29
+      background-color: #363636
+      opacity: 1.0
+      $pressed:
+        color: #dfdfdf88
+        opacity: 0.8
+
+    UIWidget
+      height: 14
+      anchors.left: prev.right
+      anchors.top: sellOffersList.top
+      image-source: /images/ui/separator_vertical
+      margin-top: 1
+
+    UIWidget
+      id: totalpriceButton
+      size: 128 15
+      text: Total Price
+      font: Verdana Bold-11px
+      color: #C0C0C0
+      text-offset: 24 -1
+      anchors.top: sellOffersList.top
+      anchors.left: prev.right
+      margin-top: 1
+      margin-left: 2
+      border-width-bottom: 1
+      border-color-bottom: #292a29
+      background-color: #363636
+      opacity: 1.0
+      $pressed:
+        color: #dfdfdf88
+        opacity: 0.8
+
+    UIWidget
+      height: 14
+      anchors.left: prev.right
+      anchors.top: sellOffersList.top
+      image-source: /images/ui/separator_vertical
+      margin-top: 1
+
+    UIWidget
+      id: endButton
+      size: 150 15
+      text: Ends At
+      font: Verdana Bold-11px
+      color: #C0C0C0
+      text-offset: 1 -1
+      text-align: leftCenter
+      anchors.top: sellOffersList.top
+      anchors.left: prev.right
+      margin-top: 1
+      margin-left: 2
+      border-width-bottom: 1
+      border-color-bottom: #292a29
+      background-color: #363636
+      opacity: 1.0
+      $pressed:
+        color: #dfdfdf88
+        opacity: 0.8
+    // HEADER
+    VerticalScrollBar
+      id: sellOffersListScroll
+      anchors.top: sellOffersList.top
+      anchors.bottom: sellOffersList.bottom
+      anchors.right: sellOffersList.right
+      margin-right: 1
+      margin-top: 1
+      margin-bottom: 1
+      step: 1
+      pixels-scroll: true
+
+    // BUY OFFERS
+    Label
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 16
+      margin-left: -1
+      !text: tr('Buy Offers:')
+      text-auto-resize: true
+      font: Verdana Bold-11px
+      color: #C0C0C0
+
+    Label
+      id: amountBuyLabel
+      anchors.top: prev.top
+      anchors.left: prev.right
+      margin-left: 277
+      !text: tr('Amount:')
+      text-auto-resize: true
+      font: Verdana Bold-11px
+      color: #C0C0C0
+
+    Label
+      id: amountBuy
+      anchors.top: prev.top
+      anchors.left: prev.right
+      anchors.right: parent.right
+      margin-right: 344
+      !text: tr('0')
+      text-align: right
+      text-auto-resize: true
+      font: Verdana Bold-11px
+      color: #C0C0C0
+
+    HorizontalScrollBar
+      id: amountBuyScrollBar
+      width: 150
+      anchors.top: amountBuyLabel.top
+      anchors.left: amountBuyLabel.right
+      step: 1
+      margin-left: 56
+      margin-top: 1
+      minimum: 0
+      maximum: 0
+      default-scroll: true
+      @onValueChange: modules.game_market.updateBuyCount(self, self:getValue())
+
+    Label
+      anchors.top: prev.top
+      anchors.left: amountBuyScrollBar.right
+      margin-left: 13
+      margin-top: -1
+      !text: tr('Total:')
+      text-auto-resize: true
+      font: Verdana Bold-11px
+      color: #C0C0C0
+
+    Label
+      id: totalSellValue
+      anchors.top: bGoldCoin.top
+      anchors.right: parent.right
+      margin-right: 60
+      margin-top: -3
+      !text: tr('0')
+      text-auto-resize: true
+      font: Verdana Bold-11px
+      color: #C0C0C0
+
+    Button
+      id: buyAcceptButton
+      size: 43 20
+      anchors.top: sellOffersList.bottom
+      anchors.right: parent.right
+      margin-top: 12
+      !text: tr('Accept')
+      font: cipsoftFont
+      color: #dfdfdfff
+      enabled: false
+      @onClick: modules.game_market.onAcceptBuyOffer()
+
+    Panel
+      id: bGoldCoin
+      image-source: /images/game/cyclopedia/icons/icon-goldcoin
+      anchors.top: prev.top
+      anchors.right: prev.left
+      margin-right: 6
+      margin-top: 6
+
+    TextList
+      id: buyOffersList
+      size: 798 195
+      anchors.top: buyAcceptButton.bottom
+      anchors.right: parent.right
+      margin-top: 5
+      padding-top: 17
+      vertical-scrollbar: buyOffersListScroll
+      keep-scroll-range: true
+      text-wrap: true
+      background-color: #404040
+      border-width: 1
+      border-color-top: #141414
+      border-color-left: #141414
+      border-color-bottom: #747575
+      border-color-right: #747575
+      @onSetup: |
+        g_keyboard.bindKeyPress('Up', function() focusPrevBuyLabel(self) end, self)
+        g_keyboard.bindKeyPress('Down', function() focusNextBuyLabel(self) end, self)
+
+    // HEADER
+    UIWidget
+      size: 784 17
+      anchors.top: buyOffersList.top
+      anchors.left: buyOffersList.left
+      margin-left: 1
+      border-width-bottom: 1
+      border-color-bottom: #757575
+
+    UIWidget
+      id: nameButton
+      size: 243 15
+      text: Name
+      color: #C0C0C0
+      font: Verdana Bold-11px
+      text-offset: 1 -1
+      text-align: leftCenter
+      anchors.top: buyOffersList.top
+      anchors.left: buyOffersList.left
+      margin-top: 1
+      margin-left: 1
+      border-width-bottom: 1
+      border-color-bottom: #292a29
+      background-color: #363636
+      opacity: 1.0
+      $pressed:
+        color: #dfdfdf88
+        opacity: 0.8
+
+    UIWidget
+      height: 14
+      anchors.left: prev.right
+      anchors.top: buyOffersList.top
+      image-source: /images/ui/separator_vertical
+      margin-top: 1
+
+    UIWidget
+      id: amountButton
+      size: 128 15
+      text: Amount
+      font: Verdana Bold-11px
+      color: #C0C0C0
+      text-offset: 34 -1
+      anchors.top: buyOffersList.top
+      anchors.left: prev.right
+      margin-top: 1
+      margin-left: 2
+      border-width-bottom: 1
+      border-color-bottom: #292a29
+      background-color: #363636
+      opacity: 1.0
+      $pressed:
+        color: #dfdfdf88
+        opacity: 0.8
+
+    UIWidget
+      height: 14
+      anchors.left: prev.right
+      anchors.top: buyOffersList.top
+      image-source: /images/ui/separator_vertical
+      margin-top: 1
+
+    UIWidget
+      id: piecepriceButton
+      size: 128 15
+      text: Piece Price
+      font: Verdana Bold-11px
+      color: #C0C0C0
+      text-offset: 23 -1
+      anchors.top: buyOffersList.top
+      anchors.left: prev.right
+      margin-top: 1
+      margin-left: 2
+      border-width-bottom: 1
+      border-color-bottom: #292a29
+      background-color: #363636
+      opacity: 1.0
+      $pressed:
+        color: #dfdfdf88
+        opacity: 0.8
+
+    UIWidget
+      height: 14
+      anchors.left: prev.right
+      anchors.top: buyOffersList.top
+      image-source: /images/ui/separator_vertical
+      margin-top: 1
+
+    UIWidget
+      id: totalpriceButton
+      size: 128 15
+      text: Total Price
+      font: Verdana Bold-11px
+      color: #C0C0C0
+      text-offset: 24 -1
+      anchors.top: buyOffersList.top
+      anchors.left: prev.right
+      margin-top: 1
+      margin-left: 2
+      border-width-bottom: 1
+      border-color-bottom: #292a29
+      background-color: #363636
+      opacity: 1.0
+      $pressed:
+        color: #dfdfdf88
+        opacity: 0.8
+
+    UIWidget
+      height: 14
+      anchors.left: prev.right
+      anchors.top: buyOffersList.top
+      image-source: /images/ui/separator_vertical
+      margin-top: 1
+
+    UIWidget
+      id: endButton
+      size: 150 15
+      text: Ends At
+      font: Verdana Bold-11px
+      color: #C0C0C0
+      text-offset: 1 -1
+      text-align: leftCenter
+      anchors.top: buyOffersList.top
+      anchors.left: prev.right
+      margin-top: 1
+      margin-left: 2
+      border-width-bottom: 1
+      border-color-bottom: #292a29
+      background-color: #363636
+      opacity: 1.0
+      $pressed:
+        color: #dfdfdf88
+        opacity: 0.8
+
+    VerticalScrollBar
+      id: buyOffersListScroll
+      anchors.top: prev.top
+      anchors.bottom: buyOffersList.bottom
+      anchors.right: buyOffersList.right
+      margin-right: 1
+      margin-top: 1
+      margin-bottom: 1
+      step: 1
+      pixels-scroll: true
+
+    Label
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 10
+      !text: tr('Create Offer:')
+      text-auto-resize: true
+      font: Verdana Bold-11px
+      color: #C0C0C0
+
+    CheckBox
+      id: createOfferSell
+      size: 12 12
+      !text: tr('Sell')
+      font: Verdana Bold-11px
+      text-auto-resize: true
+      color: #C0C0C0
+      text-offset: 16 -2
+      anchors.left: parent.left
+      anchors.top: prev.bottom
+      margin-top: 7
+      image-source: /images/ui/checkboxcircle
+      image-clip: 0 0 12 12
+      change-cursor-image: false
+      @onClick: modules.game_market.changeOfferType(self, true)
+
+      $hover !disabled:
+        color: #c0c0c0
+
+    CheckBox
+      id: createOfferBuy
+      size: 12 12
+      !text: tr('Buy')
+      font: Verdana Bold-11px
+      text-auto-resize: true
+      color: #C0C0C0
+      text-offset: 16 -2
+      anchors.left: parent.left
+      anchors.top: prev.bottom
+      margin-top: 6
+      image-source: /images/ui/checkboxcircle
+      image-clip: 0 0 12 12
+      change-cursor-image: false
+      @onClick: modules.game_market.changeOfferType(self, false)
+
+      $hover !disabled:
+        color: #c0c0c0
+
+    Label
+      id: createOfferAmount
+      anchors.top: createOfferSell.top
+      anchors.left: createOfferSell.right
+      margin-left: 336
+      !text: tr('Amount: 0')
+      text-auto-resize: true
+      font: Verdana Bold-11px
+      color: #C0C0C0
+
+    HorizontalScrollBar
+      id: amountCreateScrollBar
+      width: 150
+      anchors.top: createOfferAmount.bottom
+      anchors.left: prev.left
+      step: 1
+      margin-left: 60
+      margin-top: 5
+      minimum: 0
+      maximum: 0
+      default-scroll: true
+      @onValueChange: modules.game_market.updateCreateCount(self, self:getValue())
+
+    Label
+      id: piecePrice
+      anchors.top: amountCreateScrollBar.bottom
+      anchors.left: createOfferBuy.right
+      margin-left: 314
+      margin-top: 4
+      !text: tr('Piece Price:')
+      text-auto-resize: true
+      font: Verdana Bold-11px
+      color: #C0C0C0
+
+    TextEdit
+      id: piecePriceCreate
+      size: 150 16
+      anchors.top: piecePrice.top
+      anchors.left: piecePrice.right
+      margin-left: 8
+      only-number: true
+      @onTextChange: modules.game_market.onPiecePriceEdit(self)
+      Panel
+        image-source: /images/game/cyclopedia/icons/icon-goldcoin
+        anchors.top: parent.top
+        anchors.right: parent.right
+        margin-right: 3
+        margin-top: 4
+
+    Label
+      id: grossProfit
+      anchors.top: createOfferAmount.top
+      anchors.right: parent.right
+      margin-right: 115
+      text-align: right
+      !text: tr('Gross Profit:')
+      text-auto-resize: true
+      font: Verdana Bold-11px
+      color: #C0C0C0
+
+    Label
+      id: grossAmount
+      anchors.top: grossProfit.top
+      anchors.right: grossCoin.left
+      margin-right: 5
+      !text: tr('0')
+      text-auto-resize: true
+      font: Verdana Bold-11px
+      color: #C0C0C0
+
+    Panel
+      id: grossCoin
+      image-source: /images/game/cyclopedia/icons/icon-goldcoin
+      anchors.top: grossProfit.top
+      anchors.right: parent.right
+      margin-top: 3
+
+    Label
+      id: feeLabel
+      anchors.top: grossProfit.bottom
+      anchors.right: grossProfit.right
+      margin-top: 5
+      !text: tr('Fee:')
+      text-auto-resize: true
+      font: Verdana Bold-11px
+      color: #C0C0C0
+
+    Label
+      id: feeAmount
+      anchors.top: feeLabel.top
+      anchors.right: feeCoin.left
+      margin-right: 5
+      !text: tr('0')
+      text-auto-resize: true
+      font: Verdana Bold-11px
+      color: #C0C0C0
+
+    Panel
+      id: feeCoin
+      image-source: /images/game/cyclopedia/icons/icon-goldcoin
+      anchors.top: feeLabel.top
+      anchors.right: parent.right
+      margin-top: 3
+
+    HorizontalSeparator
+      id: offerSeparator
+      anchors.top: feeLabel.bottom
+      anchors.left: piecePriceCreate.right
+      anchors.right: parent.right
+      margin-top: 4
+      margin-left: 15
+
+    Label
+      id: profitLabel
+      anchors.top: offerSeparator.bottom
+      anchors.right: parent.right
+      margin-right: 115
+      margin-top: 5
+      !text: tr('Total Profit:')
+      text-auto-resize: true
+      font: Verdana Bold-11px
+      color: #C0C0C0
+
+    Label
+      id: profitAmount
+      anchors.top: profitLabel.top
+      anchors.right: profitCoin.left
+      margin-right: 5
+      !text: tr('0')
+      text-auto-resize: true
+      font: Verdana Bold-11px
+      color: #C0C0C0
+
+    Panel
+      id: profitCoin
+      image-source: /images/game/cyclopedia/icons/icon-goldcoin
+      anchors.top: profitLabel.top
+      anchors.right: parent.right
+      margin-top: 3
+
+    CheckBox
+      id: anonymous
+      size: 12 12
+      !text: tr('Anonymous')
+      font: Verdana Bold-11px
+      text-auto-resize: true
+      color: #C0C0C0
+      text-offset: 14 -2
+      anchors.left: profitLabel.right
+      anchors.top: profitLabel.bottom
+      margin-top: 8
+      margin-left: -22
+      image-source: /images/ui/checkbox
+      image-clip: 0 0 12 12
+      change-cursor-image: false
+
+      $hover !disabled:
+        color: #c0c0c0
+
+    Button
+      id: createButton
+      size: 43 20
+      anchors.bottom: parent.bottom
+      anchors.right: parent.right
+      enabled: false
+      !text: tr('Create')
+      font: cipsoftFont
+      color: #dfdfdfff
+      @onClick: modules.game_market.createMarketOffer()
+
+    Button
+      id: getPotionsButton
+      size: 108 20
+      anchors.bottom: parent.bottom
+      anchors.left: parent.left
+      image-source: /images/ui/buy-potions-button
+      image-clip: 0 0 108 20
+      visible: false
+      @onClick: modules.game_market.openStorePotions()
+      $hover !pressed:
+        image-clip: 0 0 108 20
+      $pressed:
+        image-clip: 0 20 108 20
+
+  HorizontalSeparator
+    id: separator
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-bottom: 30
+
+  Panel
+    id: moneyPanel
+    size: 130 20
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    image-source: /images/ui/progress
+    image-border: 7
+    Panel
+      image-source: /images/game/cyclopedia/icons/icon-goldcoin
+      anchors.right: parent.right
+      anchors.top: parent.top
+      margin-top: 5
+      margin-right: 3
+    UIWidget
+      id: gold
+      !text: tr('0')
+      anchors.top: parent.top
+      anchors.right: prev.left
+      margin-right: 5
+      margin-top: 3
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+      tooltip-font: Verdana Bold-11px-wheel
+
+  Panel
+    id: coinPanel
+    size: 130 20
+    anchors.bottom: parent.bottom
+    anchors.left: prev.right
+    margin-left: 5
+    image-source: /images/ui/progress
+    image-border: 7
+    Panel
+      image-source: /images/store/icon-tibiacointransferable
+      anchors.right: parent.right
+      anchors.top: parent.top
+      margin-top: 5
+      margin-right: 3
+    UIWidget
+      id: gold
+      !text: tr('0')
+      anchors.top: parent.top
+      anchors.right: prev.left
+      margin-right: 5
+      margin-top: 3
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+      tooltip-font: Verdana Bold-11px-wheel
+
+  Button
+    id: getCoins
+    size: 64 20
+    anchors.bottom: parent.bottom
+    anchors.left: prev.right
+    margin-left: 5
+    image-source: /images/ui/getCoins
+    image-clip: 0 0 64 20
+    $hover !pressed:
+      image-clip: 0 0 64 20
+    $pressed:
+      image-clip: 0 20 64 20
+    @onClick: modules.game_market.buyPoints()
+
+  Button
+    id: marketButton
+    anchors.bottom: parent.bottom
+    anchors.right: parent.right
+    visible: false
+    !text: tr('Market')
+    size: 75 20
+    @onClick: offersButton()
+
+  Button
+    id: closeButton
+    anchors.bottom: parent.bottom
+    anchors.right: parent.right
+    visible: true
+    !text: tr('Close')
+    font: cipsoftFont
+    color: #dfdfdfff
+    size: 75 20
+    @onClick: closeMarket()
+
+  Button
+    id: myOffers
+    anchors.bottom: parent.bottom
+    anchors.right: prev.left
+    !text: tr('My Offers')
+    font: cipsoftFont
+    color: #dfdfdfff
+    size: 75 20
+    margin-right: 5
+    @onClick: myOffersButton(self)
+
+  Button
+    id: details
+    anchors.bottom: parent.bottom
+    anchors.right: prev.left
+    !text: tr('Details')
+    font: cipsoftFont
+    color: #dfdfdfff
+    size: 75 20
+    margin-right: 5
+    @onClick: detailsButton()
+
+  Button
+    id: offers
+    anchors.bottom: parent.bottom
+    anchors.right: prev.left
+    !text: tr('Offers')
+    font: cipsoftFont
+    color: #dfdfdfff
+    size: 75 20
+    margin-right: 5
+    @onClick: offersButton()
+
+MarketHistory < Panel
+  anchors.fill: parent
+
+  Panel
+    id: currentOffers
+    anchors.bottom: parent.bottom
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin: 12 12 12 12
+    visible: true
+
+    Button
+      id: sellCancelOffer
+      anchors.top: parent.top
+      anchors.right: parent.right
+      !text: tr('Cancel Offer')
+      size: 75 20
+      enabled: false
+      @onClick: modules.game_market.MarketOwnOffers.cancelMarketOffer(true)
+
+    Label
+      id: sellOffersLabel
+      anchors.top: parent.top
+      anchors.left: parent.left
+      margin-top: 7
+      margin-left: 1
+      !text: tr('Sell Offers (0):')
+      font: Verdana Bold-11px
+      text-auto-resize: true
+      color: #C0C0C0
+
+    // começo
+    TextList
+      id: sellOffersList
+      size: 968 244
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 12
+      padding-top: 17
+      vertical-scrollbar: sellOffersListScroll
+      text-wrap: true
+      keep-scroll-range: true
+      background-color: #404040
+      border-width: 1
+      border-color-top: #141414
+      border-color-left: #141414
+      border-color-bottom: #747575
+      border-color-right: #747575
+
+    UIWidget
+      id: sellHolder
+      size: 954 17
+      anchors.top: sellOffersList.top
+      anchors.left: sellOffersList.left
+      margin-left: 1
+      border-width-bottom: 1
+      border-color-bottom: #757575
+
+    UIWidget
+      id: itemButton
+      size: 502 15
+      text: Item
+      color: #C0C0C0
+      font: Verdana Bold-11px
+      text-offset: 1 -1
+      text-align: leftCenter
+      anchors.top: sellOffersList.top
+      anchors.left: sellOffersList.left
+      margin-top: 1
+      margin-left: 1
+      border-width-bottom: 1
+      border-color-bottom: #292a29
+      background-color: #363636
+      opacity: 1.0
+      $pressed:
+        color: #dfdfdf88
+        opacity: 0.8
+
+    UIWidget
+      height: 14
+      anchors.left: prev.right
+      anchors.top: sellOffersList.top
+      image-source: /images/ui/separator_vertical
+      margin-top: 1
+
+    UIWidget
+      id: amountButton
+      size: 59 15
+      text: Amount
+      font: Verdana Bold-11px
+      color: #C0C0C0
+      text-offset: 4 -1
+      text-align: leftCenter
+      anchors.top: sellOffersList.top
+      anchors.left: prev.right
+      margin-top: 1
+      margin-left: 2
+      border-width-bottom: 1
+      border-color-bottom: #292a29
+      background-color: #363636
+      opacity: 1.0
+      $pressed:
+        color: #dfdfdf88
+        opacity: 0.8
+
+    UIWidget
+      height: 14
+      anchors.left: prev.right
+      anchors.top: sellOffersList.top
+      image-source: /images/ui/separator_vertical
+      margin-top: 1
+
+    UIWidget
+      id: piecepriceButton
+      size: 84 15
+      text: Piece Price
+      font: Verdana Bold-11px
+      color: #C0C0C0
+      text-offset: 7 -1
+      text-align: leftCenter
+      anchors.top: sellOffersList.top
+      anchors.left: prev.right
+      margin-top: 1
+      margin-left: 2
+      border-width-bottom: 1
+      border-color-bottom: #292a29
+      background-color: #363636
+      opacity: 1.0
+      $pressed:
+        color: #dfdfdf88
+        opacity: 0.8
+
+    UIWidget
+      height: 14
+      anchors.left: prev.right
+      anchors.top: sellOffersList.top
+      image-source: /images/ui/separator_vertical
+      margin-top: 1
+
+    UIWidget
+      id: totalpriceButton
+      size: 84 15
+      text: Total Price
+      font: Verdana Bold-11px
+      color: #C0C0C0
+      text-offset: 7 -1
+      text-align: leftCenter
+      anchors.top: sellOffersList.top
+      anchors.left: prev.right
+      margin-top: 1
+      margin-left: 2
+      border-width-bottom: 1
+      border-color-bottom: #292a29
+      background-color: #363636
+      opacity: 1.0
+      $pressed:
+        color: #dfdfdf88
+        opacity: 0.8
+
+    UIWidget
+      height: 14
+      anchors.left: prev.right
+      anchors.top: sellOffersList.top
+      image-source: /images/ui/separator_vertical
+      margin-top: 1
+
+    UIWidget
+      id: sellEndButton
+      size: 220 15
+      //220 tela 1 - 149 tela 2
+      text: Ended At
+      font: Verdana Bold-11px
+      color: #C0C0C0
+      text-offset: 1 -1
+      text-align: leftCenter
+      anchors.top: sellOffersList.top
+      anchors.left: prev.right
+      margin-top: 1
+      margin-left: 2
+      border-width-bottom: 1
+      border-color-bottom: #292a29
+      background-color: #363636
+      opacity: 1.0
+      $pressed:
+        color: #dfdfdf88
+        opacity: 0.8
+
+    UIWidget
+      id: sellSeparator
+      height: 14
+      anchors.left: prev.right
+      anchors.top: sellOffersList.top
+      image-source: /images/ui/separator_vertical
+      margin-top: 1
+      margin-left: 0
+      visible: false
+
+    UIWidget
+      id: sellStatusButton
+      size: 70 15
+      text: Status
+      font: Verdana Bold-11px
+      color: #C0C0C0
+      text-offset: 1 -1
+      text-align: leftCenter
+      anchors.top: sellOffersList.top
+      anchors.left: prev.right
+      margin-top: 1
+      margin-left: 152
+      border-width-bottom: 1
+      border-color-bottom: #292a29
+      background-color: #363636
+      opacity: 1.0
+      visible: false
+      $pressed:
+        color: #dfdfdf88
+        opacity: 0.8
+
+    VerticalScrollBar
+      id: sellOffersListScroll
+      anchors.top: sellOffersList.top
+      anchors.bottom: sellOffersList.bottom
+      anchors.right: sellOffersList.right
+      margin-right: 1
+      margin-top: 1
+      margin-bottom: 1
+      step: 1
+
+// fim
+    Label
+      id: buyOffersLabel
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 12
+      margin-left: 1
+      !text: tr('Buy Offers (0):')
+      text-auto-resize: true
+      font: Verdana Bold-11px
+      color: #C0C0C0
+
+    Button
+      id: buyCancelOffer
+      anchors.top: prev.top
+      anchors.right: parent.right
+      !text: tr('Cancel Offer')
+      size: 75 20
+      enabled: false
+      @onClick: modules.game_market.MarketOwnOffers.cancelMarketOffer(false)
+
+    TextList
+      id: buyOffersList
+      size: 968 244
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 9
+      padding-top: 17
+      vertical-scrollbar: buyOffersListScroll
+      text-wrap: true
+      keep-scroll-range: true
+      background-color: #404040
+      border-width: 1
+      border-color-top: #141414
+      border-color-left: #141414
+      border-color-bottom: #747575
+      border-color-right: #747575
+
+    UIWidget
+      size: 954 17
+      anchors.top: buyOffersList.top
+      anchors.left: buyOffersList.left
+      margin-left: 1
+      border-width-bottom: 1
+      border-color-bottom: #757575
+
+    UIWidget
+      id: itemButton
+      size: 502 15
+      text: Item
+      color: #C0C0C0
+      font: Verdana Bold-11px
+      text-offset: 1 -1
+      text-align: leftCenter
+      anchors.top: buyOffersList.top
+      anchors.left: buyOffersList.left
+      margin-top: 1
+      margin-left: 1
+      border-width-bottom: 1
+      border-color-bottom: #292a29
+      background-color: #363636
+      opacity: 1.0
+      $pressed:
+        color: #dfdfdf88
+        opacity: 0.8
+
+    UIWidget
+      height: 14
+      anchors.left: prev.right
+      anchors.top: buyOffersList.top
+      image-source: /images/ui/separator_vertical
+      margin-top: 1
+
+    UIWidget
+      id: amountButton
+      size: 59 15
+      text: Amount
+      font: Verdana Bold-11px
+      color: #C0C0C0
+      text-offset: 4 -1
+      text-align: leftCenter
+      anchors.top: buyOffersList.top
+      anchors.left: prev.right
+      margin-top: 1
+      margin-left: 2
+      border-width-bottom: 1
+      border-color-bottom: #292a29
+      background-color: #363636
+      opacity: 1.0
+      $pressed:
+        color: #dfdfdf88
+        opacity: 0.8
+
+    UIWidget
+      height: 14
+      anchors.left: prev.right
+      anchors.top: buyOffersList.top
+      image-source: /images/ui/separator_vertical
+      margin-top: 1
+
+    UIWidget
+      id: piecepriceButton
+      size: 84 15
+      text: Piece Price
+      font: Verdana Bold-11px
+      color: #C0C0C0
+      text-offset: 7 -1
+      text-align: leftCenter
+      anchors.top: buyOffersList.top
+      anchors.left: prev.right
+      margin-top: 1
+      margin-left: 2
+      border-width-bottom: 1
+      border-color-bottom: #292a29
+      background-color: #363636
+      opacity: 1.0
+      $pressed:
+        color: #dfdfdf88
+        opacity: 0.8
+
+    UIWidget
+      height: 14
+      anchors.left: prev.right
+      anchors.top: buyOffersList.top
+      image-source: /images/ui/separator_vertical
+      margin-top: 1
+
+    UIWidget
+      id: totalpriceButton
+      size: 84 15
+      text: Total Price
+      font: Verdana Bold-11px
+      color: #C0C0C0
+      text-offset: 7 -1
+      text-align: leftCenter
+      anchors.top: buyOffersList.top
+      anchors.left: prev.right
+      margin-top: 1
+      margin-left: 2
+      border-width-bottom: 1
+      border-color-bottom: #292a29
+      background-color: #363636
+      opacity: 1.0
+      $pressed:
+        color: #dfdfdf88
+        opacity: 0.8
+
+    UIWidget
+      height: 14
+      anchors.left: prev.right
+      anchors.top: buyOffersList.top
+      image-source: /images/ui/separator_vertical
+      margin-top: 1
+
+    UIWidget
+      id: buyEndButton
+      size: 220 15
+      text: Ended At
+      font: Verdana Bold-11px
+      color: #C0C0C0
+      text-offset: 1 -1
+      text-align: leftCenter
+      anchors.top: buyOffersList.top
+      anchors.left: prev.right
+      margin-top: 1
+      margin-left: 2
+      border-width-bottom: 1
+      border-color-bottom: #292a29
+      background-color: #363636
+      opacity: 1.0
+      $pressed:
+        color: #dfdfdf88
+        opacity: 0.8
+
+    UIWidget
+      id: buySeparator
+      height: 14
+      anchors.left: prev.right
+      anchors.top: buyOffersList.top
+      image-source: /images/ui/separator_vertical
+      margin-top: 1
+      margin-left: 0
+      visible: false
+
+    UIWidget
+      id: buyStatusButton
+      size: 70 15
+      text: Status
+      font: Verdana Bold-11px
+      color: #C0C0C0
+      text-offset: 1 -1
+      text-align: leftCenter
+      anchors.top: buyOffersList.top
+      anchors.left: prev.right
+      margin-top: 1
+      margin-left: 152
+      border-width-bottom: 1
+      border-color-bottom: #292a29
+      background-color: #363636
+      opacity: 1.0
+      visible: false
+      $pressed:
+        color: #dfdfdf88
+        opacity: 0.8
+
+    VerticalScrollBar
+      id: buyOffersListScroll
+      anchors.top: buyOffersList.top
+      anchors.bottom: buyOffersList.bottom
+      anchors.right: buyOffersList.right
+      margin-right: 1
+      margin-top: 1
+      margin-bottom: 1
+      step: 1
+      pixels-scroll: true
+
+    HorizontalSeparator
+      id: separator
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 10
+
+    Panel
+      id: moneyPanel
+      size: 130 20
+      anchors.bottom: parent.bottom
+      anchors.left: parent.left
+      image-source: /images/ui/progress
+      image-border: 7
+      Panel
+        image-source: /images/game/cyclopedia/icons/icon-goldcoin
+        anchors.right: parent.right
+        anchors.top: parent.top
+        margin-top: 5
+        margin-right: 3
+      Label
+        id: gold
+        !text: tr('0')
+        anchors.top: parent.top
+        anchors.right: prev.left
+        margin-right: 5
+        margin-top: 3
+        text-auto-resize: true
+        color: #c0c0c0
+        font: Verdana Bold-11px
+
+    Panel
+      id: coinPanel
+      size: 130 20
+      anchors.bottom: parent.bottom
+      anchors.left: prev.right
+      margin-left: 5
+      image-source: /images/ui/progress
+      image-border: 7
+      Panel
+        image-source: /images/store/icon-tibiacointransferable
+        anchors.right: parent.right
+        anchors.top: parent.top
+        margin-top: 5
+        margin-right: 3
+      Label
+        id: gold
+        !text: tr('0')
+        anchors.top: parent.top
+        anchors.right: prev.left
+        margin-right: 5
+        margin-top: 3
+        text-auto-resize: true
+        color: #c0c0c0
+        font: Verdana Bold-11px
+
+    Button
+      id: getCoins
+      size: 64 20
+      anchors.bottom: parent.bottom
+      anchors.left: prev.right
+      margin-left: 5
+      image-source: /images/ui/getCoins
+      image-clip: 0 0 64 20
+      $hover !pressed:
+        image-clip: 0 0 64 20
+      $pressed:
+        image-clip: 0 20 64 20
+      @onClick: modules.game_market.buyPoints()
+
+    Button
+      id: marketButton
+      anchors.bottom: parent.bottom
+      anchors.right: parent.right
+      !text: tr('Market')
+      size: 75 20
+      @onClick: myOffersButton(self)
+
+    Button
+      id: historyButton
+      anchors.bottom: parent.bottom
+      anchors.right: prev.left
+      !text: tr('Offer History')
+      size: 75 20
+      margin-right: 5
+      @onClick: myOffersButton(self)
+
+    Button
+      id: currentOffers
+      anchors.bottom: parent.bottom
+      anchors.right: prev.left
+      !text: tr('Current Offers')
+      size: 75 20
+      margin-right: 5
+      @onClick: myOffersButton(self)
+
+  Panel
+    id: offerHistory
+    anchors.bottom: parent.bottom
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin: 12 12 12 12
+    visible: false
+
+    Label
+      id: sellOffersLabel
+      anchors.top: parent.top
+      anchors.left: parent.left
+      margin-top: 7
+      margin-left: 1
+      !text: tr('Sell Offers (0):')
+      font: Verdana Bold-11px
+      text-auto-resize: true
+      color: #C0C0C0
+
+    TextList
+      id: sellOffersList
+      size: 968 244
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 12
+      padding-top: 17
+      vertical-scrollbar: sellOffersListScroll
+      text-wrap: true
+      keep-scroll-range: true
+      background-color: #404040
+      border-width: 1
+      border-color-top: #141414
+      border-color-left: #141414
+      border-color-bottom: #747575
+      border-color-right: #747575
+
+    UIWidget
+      id: sellHolder
+      size: 954 17
+      anchors.top: sellOffersList.top
+      anchors.left: sellOffersList.left
+      margin-left: 1
+      border-width-bottom: 1
+      border-color-bottom: #757575
+
+    UIWidget
+      id: itemButton
+      size: 502 15
+      text: Item
+      color: #C0C0C0
+      font: Verdana Bold-11px
+      text-offset: 1 -1
+      text-align: leftCenter
+      anchors.top: sellOffersList.top
+      anchors.left: sellOffersList.left
+      margin-top: 1
+      margin-left: 1
+      border-width-bottom: 1
+      border-color-bottom: #292a29
+      background-color: #363636
+
+    UIWidget
+      height: 14
+      anchors.left: prev.right
+      anchors.top: sellOffersList.top
+      image-source: /images/ui/separator_vertical
+      margin-top: 1
+
+    UIWidget
+      id: amountButton
+      size: 59 15
+      text: Amount
+      font: Verdana Bold-11px
+      color: #C0C0C0
+      text-offset: 4 -1
+      text-align: leftCenter
+      anchors.top: sellOffersList.top
+      anchors.left: prev.right
+      margin-top: 1
+      margin-left: 2
+      border-width-bottom: 1
+      border-color-bottom: #292a29
+      background-color: #363636
+
+    UIWidget
+      height: 14
+      anchors.left: prev.right
+      anchors.top: sellOffersList.top
+      image-source: /images/ui/separator_vertical
+      margin-top: 1
+
+    UIWidget
+      id: piecepriceButton
+      size: 84 15
+      text: Piece Price
+      font: Verdana Bold-11px
+      color: #C0C0C0
+      text-offset: 7 -1
+      text-align: leftCenter
+      anchors.top: sellOffersList.top
+      anchors.left: prev.right
+      margin-top: 1
+      margin-left: 2
+      border-width-bottom: 1
+      border-color-bottom: #292a29
+      background-color: #363636
+
+    UIWidget
+      height: 14
+      anchors.left: prev.right
+      anchors.top: sellOffersList.top
+      image-source: /images/ui/separator_vertical
+      margin-top: 1
+
+    UIWidget
+      id: totalpriceButton
+      size: 84 15
+      text: Total Price
+      font: Verdana Bold-11px
+      color: #C0C0C0
+      text-offset: 7 -1
+      text-align: leftCenter
+      anchors.top: sellOffersList.top
+      anchors.left: prev.right
+      margin-top: 1
+      margin-left: 2
+      border-width-bottom: 1
+      border-color-bottom: #292a29
+      background-color: #363636
+
+    UIWidget
+      height: 14
+      anchors.left: prev.right
+      anchors.top: sellOffersList.top
+      image-source: /images/ui/separator_vertical
+      margin-top: 1
+
+    UIWidget
+      id: sellEndButton
+      size: 149 15
+      text: Ended At
+      font: Verdana Bold-11px
+      color: #C0C0C0
+      text-offset: 1 -1
+      text-align: leftCenter
+      anchors.top: sellOffersList.top
+      anchors.left: prev.right
+      margin-top: 1
+      margin-left: 2
+      border-width-bottom: 1
+      border-color-bottom: #292a29
+      background-color: #363636
+
+    UIWidget
+      height: 14
+      anchors.left: prev.right
+      anchors.top: sellOffersList.top
+      image-source: /images/ui/separator_vertical
+      margin-top: 1
+
+    UIWidget
+      id: sellStatusButton
+      size: 70 15
+      text: Status
+      font: Verdana Bold-11px
+      color: #C0C0C0
+      text-offset: 1 -1
+      text-align: leftCenter
+      anchors.top: sellOffersList.top
+      anchors.left: prev.right
+      margin-top: 1
+      margin-left: 2
+      border-width-bottom: 1
+      border-color-bottom: #292a29
+      background-color: #363636
+
+    VerticalScrollBar
+      id: sellOffersListScroll
+      anchors.top: sellOffersList.top
+      anchors.bottom: sellOffersList.bottom
+      anchors.right: sellOffersList.right
+      margin-right: 1
+      margin-top: 1
+      margin-bottom: 1
+      step: 16
+      pixels-scroll: true
+
+    Label
+      id: buyOffersLabel
+      anchors.top: sellOffersList.bottom
+      anchors.left: parent.left
+      margin-top: 12
+      margin-left: 1
+      !text: tr('Buy Offers (0):')
+      text-auto-resize: true
+      font: Verdana Bold-11px
+      color: #C0C0C0
+
+    TextList
+      id: buyOffersList
+      size: 968 244
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 12
+      padding-top: 17
+      vertical-scrollbar: buyOffersListScroll
+      text-wrap: true
+      keep-scroll-range: true
+      background-color: #404040
+      border-width: 1
+      border-color-top: #141414
+      border-color-left: #141414
+      border-color-bottom: #747575
+      border-color-right: #747575
+
+    UIWidget
+      id: buyHolder
+      size: 954 17
+      anchors.top: buyOffersList.top
+      anchors.left: buyOffersList.left
+      margin-left: 1
+      border-width-bottom: 1
+      border-color-bottom: #757575
+
+    UIWidget
+      id: itemButton
+      size: 502 15
+      text: Item
+      color: #C0C0C0
+      font: Verdana Bold-11px
+      text-offset: 1 -1
+      text-align: leftCenter
+      anchors.top: buyOffersList.top
+      anchors.left: buyOffersList.left
+      margin-top: 1
+      margin-left: 1
+      border-width-bottom: 1
+      border-color-bottom: #292a29
+      background-color: #363636
+
+    UIWidget
+      height: 14
+      anchors.left: prev.right
+      anchors.top: buyOffersList.top
+      image-source: /images/ui/separator_vertical
+      margin-top: 1
+
+    UIWidget
+      id: amountButton
+      size: 59 15
+      text: Amount
+      font: Verdana Bold-11px
+      color: #C0C0C0
+      text-offset: 4 -1
+      text-align: leftCenter
+      anchors.top: buyOffersList.top
+      anchors.left: prev.right
+      margin-top: 1
+      margin-left: 2
+      border-width-bottom: 1
+      border-color-bottom: #292a29
+      background-color: #363636
+
+    UIWidget
+      height: 14
+      anchors.left: prev.right
+      anchors.top: buyOffersList.top
+      image-source: /images/ui/separator_vertical
+      margin-top: 1
+
+    UIWidget
+      id: piecepriceButton
+      size: 84 15
+      text: Piece Price
+      font: Verdana Bold-11px
+      color: #C0C0C0
+      text-offset: 7 -1
+      text-align: leftCenter
+      anchors.top: buyOffersList.top
+      anchors.left: prev.right
+      margin-top: 1
+      margin-left: 2
+      border-width-bottom: 1
+      border-color-bottom: #292a29
+      background-color: #363636
+
+    UIWidget
+      height: 14
+      anchors.left: prev.right
+      anchors.top: buyOffersList.top
+      image-source: /images/ui/separator_vertical
+      margin-top: 1
+
+    UIWidget
+      id: totalpriceButton
+      size: 84 15
+      text: Total Price
+      font: Verdana Bold-11px
+      color: #C0C0C0
+      text-offset: 7 -1
+      text-align: leftCenter
+      anchors.top: buyOffersList.top
+      anchors.left: prev.right
+      margin-top: 1
+      margin-left: 2
+      border-width-bottom: 1
+      border-color-bottom: #292a29
+      background-color: #363636
+
+    UIWidget
+      height: 14
+      anchors.left: prev.right
+      anchors.top: buyOffersList.top
+      image-source: /images/ui/separator_vertical
+      margin-top: 1
+
+    UIWidget
+      id: buyEndButton
+      size: 149 15
+      text: Ended At
+      font: Verdana Bold-11px
+      color: #C0C0C0
+      text-offset: 1 -1
+      text-align: leftCenter
+      anchors.top: buyOffersList.top
+      anchors.left: prev.right
+      margin-top: 1
+      margin-left: 2
+      border-width-bottom: 1
+      border-color-bottom: #292a29
+      background-color: #363636
+
+    UIWidget
+      height: 14
+      anchors.left: prev.right
+      anchors.top: buyOffersList.top
+      image-source: /images/ui/separator_vertical
+      margin-top: 1
+
+    UIWidget
+      id: buyStatusButton
+      size: 70 15
+      text: Status
+      font: Verdana Bold-11px
+      color: #C0C0C0
+      text-offset: 1 -1
+      text-align: leftCenter
+      anchors.top: buyOffersList.top
+      anchors.left: prev.right
+      margin-top: 1
+      margin-left: 2
+      border-width-bottom: 1
+      border-color-bottom: #292a29
+      background-color: #363636
+
+    VerticalScrollBar
+      id: buyOffersListScroll
+      anchors.top: buyOffersList.top
+      anchors.bottom: buyOffersList.bottom
+      anchors.right: buyOffersList.right
+      margin-right: 1
+      margin-top: 1
+      margin-bottom: 1
+      step: 16
+      pixels-scroll: true
+
+    HorizontalSeparator
+      id: separator
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 10
+
+    Panel
+      id: moneyPanel
+      size: 130 20
+      anchors.bottom: parent.bottom
+      anchors.left: parent.left
+      image-source: /images/ui/progress
+      image-border: 7
+      Panel
+        image-source: /images/game/cyclopedia/icons/icon-goldcoin
+        anchors.right: parent.right
+        anchors.top: parent.top
+        margin-top: 5
+        margin-right: 3
+      Label
+        id: gold
+        !text: tr('0')
+        anchors.top: parent.top
+        anchors.right: prev.left
+        margin-right: 5
+        margin-top: 3
+        text-auto-resize: true
+        color: #c0c0c0
+        font: Verdana Bold-11px
+
+    Panel
+      id: coinPanel
+      size: 130 20
+      anchors.bottom: parent.bottom
+      anchors.left: prev.right
+      margin-left: 5
+      image-source: /images/ui/progress
+      image-border: 7
+      Panel
+        image-source: /images/store/icon-tibiacointransferable
+        anchors.right: parent.right
+        anchors.top: parent.top
+        margin-top: 5
+        margin-right: 3
+      Label
+        id: gold
+        !text: tr('0')
+        anchors.top: parent.top
+        anchors.right: prev.left
+        margin-right: 5
+        margin-top: 3
+        text-auto-resize: true
+        color: #c0c0c0
+        font: Verdana Bold-11px
+
+    Button
+      id: getCoins
+      size: 64 20
+      anchors.bottom: parent.bottom
+      anchors.left: prev.right
+      margin-left: 5
+      image-source: /images/ui/getCoins
+      image-clip: 0 0 64 20
+      $hover !pressed:
+        image-clip: 0 0 64 20
+      $pressed:
+        image-clip: 0 20 64 20
+      @onClick: openPlataform(self)
+
+    Button
+      id: marketButton
+      anchors.bottom: parent.bottom
+      anchors.right: parent.right
+      !text: tr('Market')
+      size: 75 20
+      @onClick: myOffersButton(self)
+
+    Button
+      id: historyButton
+      anchors.bottom: parent.bottom
+      anchors.right: prev.left
+      !text: tr('Offer History')
+      size: 75 20
+      margin-right: 5
+      @onClick: myOffersButton(self)
+
+    Button
+      id: currentOffers
+      anchors.bottom: parent.bottom
+      anchors.right: prev.left
+      !text: tr('Current Offers')
+      size: 75 20
+      margin-right: 5
+      @onClick: myOffersButton(self)
+
+NewMainWindow
+  id: marketWindow
+  !text: tr('Market')
+  font: Verdana Bold-11-px-lowspace
+  color: #909090
+  text-offset: 0 2
+  anchors.horizontalCenter: parent.horizontalCenter
+  size: 1000 645
+  @onEscape: modules.game_market.hide()
+
+  MarketMainWindow
+    visible: true
+
+  MarketHistory
+    id: MarketHistory
+    visible: false

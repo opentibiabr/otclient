@@ -42,12 +42,8 @@ enum ITEM_CATEGORY {
 	ITEM_CATEGORY_TIBIA_COINS = 23;
 	ITEM_CATEGORY_CREATURE_PRODUCTS = 24;
 	ITEM_CATEGORY_QUIVER = 25;
-	ITEM_CATEGORY_TWOHANDWEAPON = 26;
-	ITEM_CATEGORY_HELMETS = 27;
-	ITEM_CATEGORY_BACKPACK = 28;
-	ITEM_CATEGORY_ONEHANDWEAPON = 29;
-	ITEM_CATEGORY_ARROW = 30;
-	ITEM_CATEGORY_SOULCORES = 31;
+	ITEM_CATEGORY_SOUL_CORES = 26;
+	ITEM_CATEGORY_FIST_WEAPONS = 27;
 }
 
 enum PLAYER_PROFESSION {
@@ -185,12 +181,12 @@ message AppearanceFlags {
 	optional bool expire = 55;
 	optional bool expirestop = 56;
 	optional bool deco_kit = 57;
+	optional AppearanceFlagSkillWheelGem skillwheel_gem = 58;
 	optional bool dual_wielding = 59;
-	reserved 58, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69;
+	reserved 60, 61, 62, 63, 64, 65, 66, 67, 68, 69;
 	optional bool hook_south = 70;
 	optional bool hook_east = 71;
 	optional AppearanceFlagTransparencyLevel transparencylevel = 72;
-	optional bool floorchange = 73;
 }
 
 message AppearanceFlagUpgradeClassification {
@@ -272,6 +268,11 @@ message AppearanceFlagChangedToExpire {
 
 message AppearanceFlagCyclopedia {
 	optional uint32 cyclopedia_type = 1;
+}
+
+message AppearanceFlagSkillWheelGem {
+  optional uint32 gem_quality_id = 1;
+  optional uint32 vocation_id = 2;
 }
 
 message SpecialMeaningAppearanceIds {

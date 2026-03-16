@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,9 @@
 #include "framework/core/filestream.h"
 #include "framework/core/resourcemanager.h"
 #include "framework/otml/otmldocument.h"
+#ifdef FRAMEWORK_PROTOBUF
 #include <staticdata.pb.h>
+#endif
 
 #ifdef FRAMEWORK_EDITOR
 #include "itemtype.h"
@@ -144,6 +146,7 @@ bool ThingTypeManager::loadOtml(std::string file)
 
 bool ThingTypeManager::loadAppearances(const std::string& file)
 {
+#ifdef FRAMEWORK_PROTOBUF
     try {
         if (!g_game.getFeature(Otc::GameLoadSprInsteadProtobuf)) {
             g_spriteAppearances.unload();
@@ -222,8 +225,13 @@ bool ThingTypeManager::loadAppearances(const std::string& file)
         g_logger.error("Failed to load '{}' (Appearances): {}", file, e.what());
         return false;
     }
+#else
+    g_logger.error("Protobuf not supported in this build. Enable FRAMEWORK_PROTOBUF");
+    return false;
+#endif
 }
 
+#ifdef FRAMEWORK_PROTOBUF
 namespace {
     using RaceBank = google::protobuf::RepeatedPtrField<staticdata::Creature>;
 
@@ -299,6 +307,13 @@ bool ThingTypeManager::loadStaticData(const std::string& file)
 
     return false;
 }
+#else
+bool ThingTypeManager::loadStaticData(const std::string& file)
+{
+    g_logger.error("Protobuf not supported in this build. Enable FRAMEWORK_PROTOBUF");
+    return false;
+}
+#endif
 
 const ThingTypeList& ThingTypeManager::getThingTypes(const ThingCategory category)
 {

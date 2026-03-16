@@ -833,6 +833,10 @@ end
 
 
 
+function getUI()
+    return controllerShop.ui
+end
+
 function getCoinsWebsite()
     if GameStore.website.WEBSITE_GETCOINS ~= "" then
         g_platform.openUrl(GameStore.website.WEBSITE_GETCOINS)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,11 +26,14 @@
 
 #include "animatedtext.h"
 #include "creature.h"
+#include "game.h"
 #include "gameconfig.h"
 #include "lightview.h"
 #include "map.h"
 #include "missile.h"
 #include "tile.h"
+#include "item.h"
+#include <framework/input/mouse.h>
 #include "framework/core/asyncdispatcher.h"
 #include "framework/core/eventdispatcher.h"
 #include <framework/core/graphicalapplication.h>
@@ -216,6 +219,7 @@ void MapView::drawCreatureInformation() {
     if (m_drawNames) { flags |= Otc::DrawNames; }
     if (m_drawHealthBars) { flags |= Otc::DrawBars; }
     if (m_drawManaBar) { flags |= Otc::DrawManaBar; }
+    if (m_drawHarmony) { flags |= Otc::DrawHarmony; }
 
     Position _camera = m_posInfo.camera;
     const bool alwaysTransparent = m_floorViewMode == Otc::ALWAYS_WITH_TRANSPARENCY && _camera.coveredUp(m_posInfo.camera.z - m_floorMin);
@@ -565,6 +569,75 @@ void MapView::onMouseMove(const Position& mousePos, const bool /*isVirtualMove*/
     { // Highlight Target System
         destroyHighlightTile();
         updateHighlightTile(mousePos);
+    }
+
+    if (!g_mouse.isCursorChanged()) {
+        bool cursorSet = false;
+        if (m_cursorAnimations) {
+            if (const auto& tile = getTopTile(mousePos)) {
+                if (const auto& creature = tile->getTopCreature()) {
+                    if (creature->isMonster()) {
+                        int id = g_mouse.getCursorId("attack");
+                        if (id != -1) {
+                            g_window.setMouseCursor(id);
+                            cursorSet = true;
+                        }
+                    } else if (creature->isNpc()) {
+                        int id = g_mouse.getCursorId("talk");
+                        if (id != -1) {
+                            g_window.setMouseCursor(id);
+                            cursorSet = true;
+                        }
+                    }
+                }
+                
+                if (!cursorSet) {
+                    if (const auto& thing = tile->getTopUseThing()) {
+                        // Check for both containers and corpses (corpses might not always be containers)
+                        if (thing->isContainer() || thing->isLyingCorpse()) {
+                            // Use quicklootcursor for dead creatures when quickloot is active
+                            const bool isDeadCreature = thing->isLyingCorpse();
+                            const bool quickLootActive = g_game.getFeature(Otc::GameThingQuickLoot);
+                            const char* cursorName = (isDeadCreature && quickLootActive) ? "quicklootcursor" : "containercursor";
+                            
+                            int id = g_mouse.getCursorId(cursorName);
+                            if (id != -1) {
+                                g_window.setMouseCursor(id);
+                                cursorSet = true;
+                            }
+                        }
+                    }
+                }
+
+                if (!cursorSet) {
+                    if (const auto& thing = tile->getTopUseThing()) {
+                        if (thing->isUsable()) {
+                            int id = g_mouse.getCursorId("pointinghand");
+                            if (id != -1) {
+                                g_window.setMouseCursor(id);
+                                cursorSet = true;
+                            }
+                        }
+                    }
+                }
+
+                if (!cursorSet && tile->isWalkable()) {
+                    int id = g_mouse.getCursorId("walk");
+                    if (id != -1) {
+                        g_window.setMouseCursor(id);
+                        cursorSet = true;
+                    }
+                }
+            }
+        }
+
+        if (!cursorSet) {
+            int id = g_mouse.getCursorId("default");
+            if (id != -1)
+                g_window.setMouseCursor(id);
+            else
+                g_window.restoreMouseCursor();
+        }
     }
 }
 

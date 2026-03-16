@@ -124,12 +124,13 @@ UIWidget
       &state: 1
       @onClick: modules.game_cyclopedia.Cyclopedia.characterButton(self)
     Button
-      id: WheelButton
-      anchors.left: CharacterButton.right
-      anchors.top: CharacterButton.top
-      margin-left: 5
-      size: 34 34
-      icon-source: /game_cyclopedia/images/button_wheel
+      id: WheelButton  
+      anchors.left: CharacterButton.right  
+      anchors.top: CharacterButton.top  
+      margin-left: 5  
+      size: 34 34  
+      icon-source: /game_cyclopedia/images/button_wheel  
+      @onClick: modules.game_wheel.toggle()
     BorderBox
       id: DetailsBase
       anchors.top: inventoryPanel.bottom
@@ -1099,7 +1100,7 @@ UIWidget
       anchors.left: achievements.right
       margin-bottom: 6
       margin-left: 10
-      RoundCheckBox
+      CheckBoxCircle
         id: all
         width: 85
         text: All
@@ -1110,7 +1111,7 @@ UIWidget
         margin-left: 5
         margin-top: 10
         @onClick: modules.game_cyclopedia.Cyclopedia.achievementFilter(self)
-      RoundCheckBox
+      CheckBoxCircle
         id: locked
         width: 85
         text: Locked
@@ -1120,7 +1121,7 @@ UIWidget
         anchors.left: all.left
         margin-top: 5
         @onClick: modules.game_cyclopedia.Cyclopedia.achievementFilter(self)
-      RoundCheckBox
+      CheckBoxCircle
         id: accomplished
         width: 100
         text: Accomplished
@@ -1321,7 +1322,7 @@ UIWidget
       anchors.right: parent.right
       image-source: /images/ui/2pixel_up_frame_borderimage
       image-border: 5
-      CheckBox
+      CheckBoxCircle
         id: inventory
         width: 85
         text: Inventory
@@ -1332,7 +1333,7 @@ UIWidget
         margin-left: 8
         margin-top: 8
         @onCheckChange: modules.game_cyclopedia.Cyclopedia.characterItemsFilter(self)
-      CheckBox
+      CheckBoxCircle
         id: depot
         width: 85
         text: Depot
@@ -1342,7 +1343,7 @@ UIWidget
         anchors.left: inventory.right
         margin-left: 10
         @onCheckChange: modules.game_cyclopedia.Cyclopedia.characterItemsFilter(self)
-      CheckBox
+      CheckBoxCircle
         id: stash
         width: 100
         text: Supply Stash
@@ -1352,7 +1353,7 @@ UIWidget
         anchors.left: depot.left
         margin-top: 8
         @onCheckChange: modules.game_cyclopedia.Cyclopedia.characterItemsFilter(self)
-      CheckBox
+      CheckBoxCircle
         id: inbox
         width: 100
         text: Inbox
@@ -1362,7 +1363,7 @@ UIWidget
         anchors.left: depot.right
         margin-left: 30
         @onCheckChange: modules.game_cyclopedia.Cyclopedia.characterItemsFilter(self)
-      CheckBox
+      CheckBoxCircle
         id: store
         width: 100
         text: Store Inbox
@@ -1393,7 +1394,7 @@ UIWidget
       image-source: /images/ui/2pixel_up_frame_borderimage
       image-border: 5
       margin-top: 5
-      RoundCheckBox
+      CheckBoxCircle
         id: list
         width: 85
         text: show as list
@@ -1402,7 +1403,7 @@ UIWidget
         anchors.centerIn: parent
         margin-right: 70
         @onClick: modules.game_cyclopedia.Cyclopedia.characterItemListFilter(self)
-      RoundCheckBox
+      CheckBoxCircle
         id: grid
         width: 100
         text: show as grid
@@ -1411,7 +1412,6 @@ UIWidget
         anchors.verticalCenter: parent.verticalCenter
         anchors.left: list.right
         margin-left: 20
-        margin-bottom: 3
         @onClick: modules.game_cyclopedia.Cyclopedia.characterItemListFilter(self)
   UIWidget
     id: CharacterAppearances
@@ -1429,7 +1429,7 @@ UIWidget
       anchors.right: parent.right
       image-source: /images/ui/2pixel_up_frame_borderimage
       image-border: 5
-      RoundCheckBox
+      CheckBoxCircle
         id: outfits
         width: 85
         text: Outfits
@@ -1439,24 +1439,22 @@ UIWidget
         anchors.left: parent.left
         margin-left: 10
         @onClick: modules.game_cyclopedia.Cyclopedia.characterAppearancesFilter(self)
-      RoundCheckBox
+      CheckBoxCircle
         id: mounts
         width: 85
         text: Mounts
         color: #C0C0C0
         text-offset: 15 0
-        margin-bottom: 3
         anchors.verticalCenter: parent.verticalCenter
         anchors.left: outfits.right
         @onClick: modules.game_cyclopedia.Cyclopedia.characterAppearancesFilter(self)
-      RoundCheckBox
+      CheckBoxCircle
         id: familiars
         width: 85
         text: Familiars
         color: #C0C0C0
         text-offset: 15 0
         anchors.verticalCenter: parent.verticalCenter
-        margin-bottom: 3
         anchors.left: mounts.right
         @onClick: modules.game_cyclopedia.Cyclopedia.characterAppearancesFilter(self)
       ComboBox

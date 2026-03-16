@@ -1,9 +1,0 @@
-Module
-  name: game_market
-  description: Global item market system
-  author: BeniS
-  website: https://github.com/edubart/otclient
-  sandboxed: true
-  scripts: [ offerstatistic, marketoffer, marketprotocol, market ]
-  @onLoad: init()
-  @onUnload: terminate()

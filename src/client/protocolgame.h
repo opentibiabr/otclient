@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -130,12 +130,21 @@ public:
     void sendTransferCoins(std::string_view recipient, uint16_t amount);
     void sendOpenTransactionHistory(uint8_t entriesPerPage);
     void sendMarketLeave();
-    void sendMarketBrowse(uint8_t browseId, uint16_t browseType);
+    void sendMarketBrowse(uint8_t browseId, uint16_t browseType, uint8_t tier = 0);
     void sendMarketCreateOffer(uint8_t type, uint16_t itemId, uint8_t itemTier, uint16_t amount, uint64_t price, uint8_t anonymous);
     void sendMarketCancelOffer(uint32_t timestamp, uint16_t counter);
     void sendMarketAcceptOffer(uint32_t timestamp, uint16_t counter, uint16_t amount);
     void sendPreyAction(uint8_t slot, uint8_t actionType, uint16_t index);
     void sendPreyRequest();
+    void sendOpenPortableForge();
+    void sendForgeRequest(Otc::ForgeAction_t actionType, bool convergence = false, uint16_t firstItemid = 0, uint8_t firstItemTier = 0, uint16_t secondItemId = 0, bool improveChance = false, bool tierLoss = false);
+    void sendForgeBrowseHistoryRequest(uint16_t page);
+    void sendExivaRestrictions(bool allowAll, bool allowOwnGuild, bool allowOwnParty, bool allowVipList,
+                               bool allowPlayerWhitelist, bool allowGuildWhitelist,
+                               const std::vector<std::string>& characterWhiteList,
+                               const std::vector<std::string>& removeCharacter,
+                               const std::vector<std::string>& guildWhiteList,
+                               const std::vector<std::string>& removeGuild);
     void sendApplyImbuement(uint8_t slot, uint32_t imbuementId, bool protectionCharm);
     void sendClearImbuement(uint8_t slot);
     void sendCloseImbuingWindow();
@@ -146,6 +155,8 @@ public:
     void sendStashStow(const Position& position, const uint16_t itemId, const uint32_t count, const uint8_t stackpos, const uint8_t action);
     void sendHighscoreInfo(uint8_t action, uint8_t category, uint32_t vocation, std::string_view world, uint8_t worldType, uint8_t battlEye, uint16_t page, uint8_t totalPages);
     void sendImbuementDurations(bool isOpen = false);
+    void sendOpenWheelOfDestiny(uint32_t playerId);
+    void sendApplyWheelOfDestiny(const std::vector<uint16_t>& wheelPointsVec, const std::vector<uint16_t>& activeGemsVec);
     void sendRequestBestiary();
     void sendRequestBestiaryOverview(std::string_view catName, bool search = false, std::vector<uint16_t> raceIds = {});
     void sendRequestBestiarySearch(uint16_t raceId);
@@ -162,6 +173,11 @@ public:
     void sendInspectionNormalObject(const Position& position);
     void sendInspectionObject(Otc::InspectObjectTypes inspectionType, uint16_t itemId, uint8_t itemCount);
 
+    // Wheel of Destiny
+    void sendOpenWheel(uint32_t playerId);
+    void sendApplyWheelPoints(const std::vector<uint16_t>& slotPoints,uint16_t greenGem,uint16_t redGem,uint16_t acquaGem,uint16_t purpleGem);
+    void sendWheelGemAction(const uint8_t actionType, const uint8_t param, const uint8_t pos);
+
     // otclient only
     void sendChangeMapAwareRange(uint8_t xrange, uint8_t yrange);
 
@@ -175,6 +191,9 @@ protected:
 
 public:
     void addPosition(const OutputMessagePtr& msg, const Position& position);
+
+    int getRecivedPacketsCount() { return m_recivedPackeds; }
+    int getRecivedPacketsSize() { return m_recivedPackedsSize; }
 
 private:
     void parseStoreButtonIndicators(const InputMessagePtr& msg);
@@ -243,11 +262,13 @@ private:
     void parseDistanceMissile(const InputMessagePtr& msg);
     void parseAnthem(const InputMessagePtr& msg);
     void parseItemClasses(const InputMessagePtr& msg);
+    void parseForgeResult(const InputMessagePtr& msg);
     void parseCreatureMark(const InputMessagePtr& msg);
     void parseTrappers(const InputMessagePtr& msg);
     void parseOpenForge(const InputMessagePtr& msg);
     void setCreatureVocation(const InputMessagePtr& msg, const uint32_t creatureId) const;
     void addCreatureIcon(const InputMessagePtr& msg, const uint32_t creatureId) const;
+    void parseBrowseForgeHistory(const InputMessagePtr& msg);
     void parseCloseForgeWindow(const InputMessagePtr& msg);
     void parseCreatureData(const InputMessagePtr& msg);
     void parseCreatureHealth(const InputMessagePtr& msg);
@@ -290,6 +311,7 @@ private:
     void parseQuestTracker(const InputMessagePtr& msg);
     void parseKillTracker(const InputMessagePtr& msg);
     void parseOpenOutfitWindow(const InputMessagePtr& msg) const;
+    void parseExivaRestrictions(const InputMessagePtr& msg);
     void parseVipAdd(const InputMessagePtr& msg);
     void parseVipState(const InputMessagePtr& msg);
     void parseVipLogout(const InputMessagePtr& msg);
@@ -311,7 +333,7 @@ private:
     void parseTaskHuntingData(const InputMessagePtr& msg);
     void parseExperienceTracker(const InputMessagePtr& msg);
     void parseLootContainers(const InputMessagePtr& msg);
-    void parseVirtue(const InputMessagePtr& msg);
+    void parseMonkData(const InputMessagePtr& msg);
     void parseCyclopediaHouseAuctionMessage(const InputMessagePtr& msg);
     void parseCyclopediaHousesInfo(const InputMessagePtr& msg);
     void parseCyclopediaHouseList(const InputMessagePtr& msg);
@@ -366,6 +388,7 @@ private:
     void parseDetachEffect(const InputMessagePtr& msg);
     void parseCreatureShader(const InputMessagePtr& msg);
     void parseMapShader(const InputMessagePtr& msg);
+    void parseOpenWheelWindow(const InputMessagePtr& msg);
 
     void parseAttachedPaperdoll(const InputMessagePtr& msg);
     void parseDetachPaperdoll(const InputMessagePtr& msg);
@@ -398,6 +421,8 @@ private:
     bool m_record{ false };
 
     ticks_t m_lastPartyAnalyzerCall{ 0 };
+    int m_recivedPackeds = 0;
+    int m_recivedPackedsSize = 0;
 
     std::string m_accountName;
     std::string m_accountPassword;

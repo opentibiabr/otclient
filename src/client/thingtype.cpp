@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -50,6 +50,7 @@ namespace {
     }
 }
 
+#ifdef FRAMEWORK_PROTOBUF
 void ThingType::unserializeAppearance(const uint16_t clientId, const ThingCategory category, const appearances::Appearance& appearance)
 {
     m_null = false;
@@ -113,10 +114,6 @@ void ThingType::unserializeAppearance(const uint16_t clientId, const ThingCatego
 
 void ThingType::applyAppearanceFlags(const appearances::AppearanceFlags& flags)
 {
-    if (flags.floorchange()) {
-        m_flags |= ThingFlagAttrFloorChange;
-    }
-
     if (flags.has_bank()) {
         m_groundSpeed = flags.bank().waypoints();
         m_flags |= ThingFlagAttrGround;
@@ -369,7 +366,18 @@ void ThingType::applyAppearanceFlags(const appearances::AppearanceFlags& flags)
     if (flags.has_deco_kit() && flags.deco_kit()) {
         m_flags |= ThingFlagAttrExpireStop;
     }
+
+    if (flags.has_skillwheel_gem()) {
+        m_skillWheelGem.gem_quality_id = flags.skillwheel_gem().gem_quality_id();
+        m_skillWheelGem.vocation_id = flags.skillwheel_gem().vocation_id();
+        m_flags |= ThingFlagAttrSkillWheelGem;
+    }
+
+    if (flags.has_dual_wielding() && flags.dual_wielding()) {
+        m_flags |= ThingFlagAttrDualWield;
+    }
 }
+#endif
 
 void ThingType::unserialize(const uint16_t clientId, const ThingCategory category, const FileStreamPtr& fin)
 {
@@ -662,14 +670,19 @@ void ThingType::draw(const Point& dest, const int layer, const int xPattern, con
 
     const auto& texture = getTexture(animationFrameId);
     if (!texture) {
+        // Reset any pending onlyOnce state to prevent stale opacity/shader
+        // from affecting subsequent draws when texture is still loading
+        g_drawPool.resetOnlyOnceParameters();
         return; // texture might not exists, neither its rects.
     }
 
     const auto& textureData = m_textureData[animationFrameId];
 
     const uint32_t frameIndex = getTextureIndex(layer, xPattern, yPattern, zPattern);
-    if (frameIndex >= textureData.pos.size())
+    if (frameIndex >= textureData.pos.size()) {
+        g_drawPool.resetOnlyOnceParameters();
         return;
+    }
 
     const auto& textureOffset = textureData.pos[frameIndex].offsets;
     const auto& textureRect = textureData.pos[frameIndex].rects;
@@ -683,6 +696,10 @@ void ThingType::draw(const Point& dest, const int layer, const int xPattern, con
             drawWithFrameBuffer(texture, screenRect, textureRect, newColor);
         else
             g_drawPool.addTexturedRect(screenRect, texture, textureRect, newColor);
+    } else {
+        // Reset any pending onlyOnce state when not drawing things
+        // to prevent stale opacity/shader from affecting subsequent draws
+        g_drawPool.resetOnlyOnceParameters();
     }
 
     if (lightView && hasLight()) {
@@ -770,25 +787,23 @@ void ThingType::loadTexture(const int animationPhase)
                                 return;
 
                             if (!spriteImage) {
-                                if (spriteId != 0) {
-                                    g_logger.error("Failed to fetch sprite id {} for thing {} ({}, {}), layer {}, pattern {}x{}x{}, frame {}", spriteId, m_name, m_id, categoryName(m_category), l, x, y, z, animationPhase);
-                                    return;
-                                }
-                            } else {
-                                // verifies that the first block in the lower right corner is transparent.
-                                if (spriteImage->hasTransparentPixel()) {
-                                    fullImage->setTransparentPixel(true);
-                                }
-
-                                if (spriteMask) {
-                                    spriteImage->overwriteMask(maskColors[(l - 1)]);
-                                }
-
-                                auto spriteSize = spriteImage->getSize() / g_gameConfig.getSpriteSize();
-
-                                const Point& spritePos = Point(m_size.width() - spriteSize.width(), m_size.height() - spriteSize.height()) * g_gameConfig.getSpriteSize();
-                                fullImage->blit(framePos + spritePos, spriteImage);
+                                g_logger.error("Failed to fetch sprite id {} for thing {} ({}, {}), layer {}, pattern {}x{}x{}, frame {}", spriteId, m_name, m_id, categoryName(m_category), l, x, y, z, animationPhase);
+                                return;
                             }
+
+                            // verifies that the first block in the lower right corner is transparent.
+                            if (!spriteImage || spriteImage->hasTransparentPixel()) {
+                                fullImage->setTransparentPixel(true);
+                            }
+
+                            if (spriteMask) {
+                                spriteImage->overwriteMask(maskColors[(l - 1)]);
+                            }
+
+                            auto spriteSize = spriteImage->getSize() / g_gameConfig.getSpriteSize();
+
+                            const Point& spritePos = Point(m_size.width() - spriteSize.width(), m_size.height() - spriteSize.height()) * g_gameConfig.getSpriteSize();
+                            fullImage->blit(framePos + spritePos, spriteImage);
                         } else {
                             for (int h = 0; h < m_size.height(); ++h) {
                                 for (int w = 0; w < m_size.width(); ++w) {
@@ -801,23 +816,21 @@ void ThingType::loadTexture(const int animationPhase)
                                         return;
 
                                     if (!spriteImage) {
-                                        if (spriteId != 0) {
-                                            g_logger.error("Failed to fetch sprite id {} for thing {} ({}, {}), layer {}, pattern {}x{}x{}, frame {}, offset {}x{}", spriteId, m_name, m_id, categoryName(m_category), l, x, y, z, framePos, w, h);
-                                            return;
-                                        }
-                                    } else {
-                                        // verifies that the first block in the lower right corner is transparent.
-                                        if (h == 0 && w == 0 && spriteImage->hasTransparentPixel()) {
-                                            fullImage->setTransparentPixel(true);
-                                        }
-
-                                        if (spriteMask) {
-                                            spriteImage->overwriteMask(maskColors[(l - 1)]);
-                                        }
-
-                                        const Point& spritePos = Point(m_size.width() - w - 1, m_size.height() - h - 1) * g_gameConfig.getSpriteSize();
-                                        fullImage->blit(framePos + spritePos, spriteImage);
+                                        // Skip blank sprites silently (clients converted with Assets Editor have blank sprites with non-zero IDs)
+                                        continue;
                                     }
+
+                                    // verifies that the first block in the lower right corner is transparent.
+                                    if (h == 0 && w == 0 && (!spriteImage || spriteImage->hasTransparentPixel())) {
+                                        fullImage->setTransparentPixel(true);
+                                    }
+
+                                    if (spriteMask) {
+                                        spriteImage->overwriteMask(maskColors[(l - 1)]);
+                                    }
+
+                                    const Point& spritePos = Point(m_size.width() - w - 1, m_size.height() - h - 1) * g_gameConfig.getSpriteSize();
+                                    fullImage->blit(framePos + spritePos, spriteImage);
                                 }
                             }
                         }
@@ -1091,7 +1104,7 @@ ThingFlagAttr ThingType::thingAttrToThingFlagAttr(const ThingAttr attr) {
 }
 
 bool ThingType::isTall(const bool useRealSize) { return useRealSize ? getRealSize() > g_gameConfig.getSpriteSize() : getHeight() > 1; }
-int ThingType::getAnimationPhases() { return m_animator ? m_animator->getAnimationPhases() : m_animationPhases; }
+int ThingType::getAnimationPhases() const { return m_animator ? m_animator->getAnimationPhases() : m_animationPhases; }
 
 int ThingType::getMeanPrice() {
     static constexpr std::array<std::pair<uint32_t, uint32_t>, 3> forcedPrices = { {

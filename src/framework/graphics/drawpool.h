@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,7 @@
 #include "framework/core/timer.h"
 
 #include "../stdext/storage.h"
+#include <framework/util/spinlock.h>
 
 struct DrawHashController
 {
@@ -120,10 +121,12 @@ public:
     }
 
     bool shouldRepaint() const {
-        return m_shouldRepaint.load(std::memory_order_acquire);
+        return m_shouldRepaint.load(std::memory_order_relaxed);
     }
 
     void release();
+
+    auto& getThreadLock() { return m_threadLock; }
 
 protected:
 
@@ -201,6 +204,7 @@ private:
     void addAction(const std::function<void()>& action, size_t hash = 0);
     void bindFrameBuffer(const Size& size, const Color& color = Color::white);
     void releaseFrameBuffer(const Rect& dest);
+    void releaseFrameBuffer(const Rect& dest, uint8_t flipDirection);
 
     void setFPS(const uint16_t fps) { m_refreshDelay = 1000 / fps; }
 
@@ -274,20 +278,23 @@ private:
 
     void resetOnlyOnceParameters() {
         if (m_onlyOnceStateFlag > 0) { // Only Once State
+            // Restore previous values instead of resetting to defaults
             if (m_onlyOnceStateFlag & STATE_OPACITY)
-                resetOpacity();
+                getCurrentState().opacity = m_previousOpacity;
 
             if (m_onlyOnceStateFlag & STATE_BLEND_EQUATION)
-                resetBlendEquation();
+                getCurrentState().blendEquation = m_previousBlendEquation;
 
             if (m_onlyOnceStateFlag & STATE_CLIP_RECT)
-                resetClipRect();
+                getCurrentState().clipRect = m_previousClipRect;
 
             if (m_onlyOnceStateFlag & STATE_COMPOSITE_MODE)
-                resetCompositionMode();
+                getCurrentState().compositionMode = m_previousCompositionMode;
 
-            if (m_onlyOnceStateFlag & STATE_SHADER_PROGRAM)
-                resetShaderProgram();
+            if (m_onlyOnceStateFlag & STATE_SHADER_PROGRAM) {
+                getCurrentState().shaderProgram = m_previousShaderProgram;
+                getCurrentState().action = m_previousShaderAction;
+            }
 
             m_onlyOnceStateFlag = 0;
         }
@@ -311,6 +318,14 @@ private:
     uint16_t m_refreshDelay{ 0 }, m_shaderRefreshDelay{ 0 };
     uint32_t m_onlyOnceStateFlag{ 0 };
     uint_fast64_t m_lastFramebufferId{ 0 };
+
+    // Store previous values before onlyOnce override to restore them correctly
+    float m_previousOpacity{ 1.f };
+    BlendEquation m_previousBlendEquation{ BlendEquation::ADD };
+    CompositionMode m_previousCompositionMode{ CompositionMode::NORMAL };
+    Rect m_previousClipRect;
+    PainterShaderProgram* m_previousShaderProgram{ nullptr };
+    std::function<void()> m_previousShaderAction{ nullptr };
 
     PoolState m_states[10];
     uint_fast8_t m_lastStateIndex{ 0 };
@@ -343,6 +358,8 @@ private:
 
     TextureAtlasPtr m_atlas;
     std::atomic_bool m_shouldRepaint{ false };
+
+    SpinLock m_threadLock;
 
     friend class DrawPoolManager;
 };

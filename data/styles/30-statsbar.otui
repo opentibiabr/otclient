@@ -319,6 +319,71 @@ TopStatsSkillElement < UIWidget
     margin-left: 5
     height: 7
 
+HarmonyIcon < UIWidget
+  size: 13 13
+  !tooltip: 'Harmoney'
+  image-source: /images/game/vocations/monk/icon-combopoint-empty
+  $on:
+    image-source: /images/game/vocations/monk/icon-combopoint-filled
+
+MonkStats < UIWidget
+  id: monkStats
+  enabled: false
+  $disabled:
+    visible: false
+    margin-left: 0
+    margin-top: 0
+    size: 0 0
+  $!disabled:
+    visible: true
+    margin-left: 7
+    width: 103
+
+  Panel
+    id: harmonies
+    anchors.left: parent.left
+    anchors.top: parent.top
+    margin-top: -1
+    padding: 2
+    size: 80 18
+    layout:
+      type: horizontalBox
+      spacing: 3
+    HarmonyIcon
+    HarmonyIcon
+    HarmonyIcon
+    HarmonyIcon
+    HarmonyIcon
+
+  VerticalSeparator
+    id: separatorHarmoniesSerene
+    anchors.left: harmonies.right
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    margin-left: 5
+    margin-top: 2
+    margin-bottom: 2
+    width: 2
+
+  UIWidget
+    id: serene
+    anchors.left: separatorHarmoniesSerene.right
+    anchors.top: parent.top
+    margin-left: 3
+    margin-top: 1
+    size: 13 13
+    !tooltip: 'Serene'
+    image-source: /images/game/vocations/monk/icon-serene-off
+    $on:
+      image-source: /images/game/vocations/monk/icon-serene-on
+    @onSetup: self:setOn(true)
+    $disabled:
+      visible: false
+      size: 0 0
+    $!disabled:
+      visible: true
+      size: 13 13
+
 TopStatsBarLargeOnTop < UIWidget
   StatsBarTopWithShrink
     anchors.fill: parent
@@ -347,11 +412,16 @@ TopStatsBarLargeOnTop < UIWidget
     margin-right: 7
     height: 27
 
+  MonkStats
+    anchors.top: icons.top
+    anchors.bottom: icons.bottom
+    anchors.left: icons.right
+
   StatsBarUp
     id: mana
     anchors.top: icons.top
     anchors.right: parent.right
-    anchors.left: icons.right
+    anchors.left: monkStats.right
     !statsbar-type: 'mana'
     !statsbar-size: 'large'
     !statsbar-orientation: 'horizontal'
@@ -362,9 +432,10 @@ TopStatsBarLargeOnTop < UIWidget
 
   StatsBarUp
     id: manashield
-    anchors.top: mana.bottom
+    anchors.top: icons.bottom
     anchors.right: parent.right
-    anchors.left: icons.right
+    anchors.left: monkStats.right
+
     !statsbar-type: 'manashield'
     !statsbar-size: 'large'
     !statsbar-orientation: 'horizontal'
@@ -445,6 +516,12 @@ TopStatsBarParallelOnTop < UIWidget
     layout:
       type: horizontalBox
 
+  MonkStats
+    anchors.top: skills.bottom
+    anchors.left: icons.right
+    anchors.bottom: parent.bottom
+
+
 TopStatsBarDefaultOnTop < UIWidget
   StatsBarTopWithShrink
     anchors.fill: parent
@@ -508,6 +585,12 @@ TopStatsBarDefaultOnTop < UIWidget
     layout:
       type: horizontalBox
 
+  MonkStats
+    anchors.top: skills.bottom
+    anchors.left: icons.right
+    anchors.bottom: parent.bottom
+
+
 TopStatsBarCompactOnTop < UIWidget
   StatsBarTopWithShrink
     anchors.fill: parent
@@ -522,6 +605,11 @@ TopStatsBarCompactOnTop < UIWidget
     size: 103 14
     layout:
       type: horizontalBox
+
+  MonkStats
+    anchors.top: icons.top
+    anchors.left: icons.right
+    anchors.bottom: skills.top
 
   StatsBarUp
     id: health
@@ -540,7 +628,8 @@ TopStatsBarCompactOnTop < UIWidget
     id: mana
     anchors.top: icons.top
     anchors.right: parent.right
-    anchors.left: icons.right
+    anchors.left: monkStats.right
+
     !statsbar-type: 'mana'
     !statsbar-size: 'small'
     !statsbar-orientation: 'horizontal'
@@ -551,7 +640,7 @@ TopStatsBarCompactOnTop < UIWidget
 
   StatsBarUp
     id: manashield
-    anchors.top: mana.bottom
+    anchors.top: icons.bottom
     anchors.right: parent.right
     anchors.left: icons.right
     !statsbar-type: 'manashield'

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,6 +30,9 @@
 class Thing : public AttachableObject
 {
 public:
+    Thing();
+    ~Thing() override;
+
     virtual void draw(const Point& /*dest*/, bool /*drawThings*/ = true, LightView* = nullptr) {}
     virtual void drawToImage(Point /*dest*/, ImagePtr /*image*/) {}  // For map image generation
     virtual void drawLight(const Point& /*dest*/, LightView*) {}
@@ -158,6 +161,7 @@ public:
     bool hasAnimationPhases() const;
     bool isDecoKit() const;
     bool isAmmo();
+    bool isDualWield();
 
     PLAYER_ACTION getDefaultAction();
     uint16_t getClassification();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,7 @@
 class ScheduledEvent final : public Event
 {
 public:
-    ScheduledEvent(const std::function<void()>& callback, int delay, int maxCycles = 0);
+    ScheduledEvent(const std::string& function, const std::function<void()>& callback, int delay, int maxCycles = 0);
     void execute() override;
     void postpone();
     bool nextCycle();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -67,6 +67,7 @@ public:
     virtual int loadMouseCursor(const std::string& file, const Point& hotSpot);
     virtual void setMouseCursor(int cursorId) = 0;
     virtual void restoreMouseCursor() = 0;
+    virtual void setSystemCursor(const std::string& cursorName) {}
 
     virtual void setTitle(std::string_view title) = 0;
     virtual void setMinimumSize(const Size& minimumSize) = 0;

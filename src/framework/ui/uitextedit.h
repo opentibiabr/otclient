@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -161,6 +161,7 @@ private:
     std::vector<std::pair<Rect, Rect>> m_glyphsCoords;
 
     std::vector<std::pair<Rect, Rect>> m_glyphsSelectRectCache;
+    std::vector<Rect> m_glyphsSelectBgRectCache;
 
     std::string m_displayedText;
 

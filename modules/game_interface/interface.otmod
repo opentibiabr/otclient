@@ -53,5 +53,6 @@ Module
     - game_creatureinformation
     - game_rewardwall
     - game_mapgen
+    - game_forge
   @onLoad: init()
   @onUnload: terminate()

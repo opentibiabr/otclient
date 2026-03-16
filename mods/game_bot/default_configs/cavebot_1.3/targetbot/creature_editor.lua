@@ -80,7 +80,7 @@ TargetBot.Creature.edit = function(config, callback) -- callback = function(newC
   addScrollBar("danger", "Danger", 0, 10, 1)
   addScrollBar("maxDistance", "Max distance", 1, 10, 10)
   addScrollBar("keepDistanceRange", "Keep distance", 1, 5, 1)
-  addScrollBar("lureCount", "Lure", 0, 5, 1)
+  addScrollBar("lureCount", "Lure", 0, 30, 1)
 
   addScrollBar("minMana", "Min. mana for attack spell", 0, 3000, 200)
   addScrollBar("attackSpellDelay", "Attack spell delay", 200, 5000, 2500)

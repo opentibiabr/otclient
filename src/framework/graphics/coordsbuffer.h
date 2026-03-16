@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -66,6 +66,18 @@ public:
     {
         m_vertexArray.addUpsideDownQuad(dest);
         m_textureCoordArray.addQuad(src);
+    }
+
+    void addHorizontallyFlippedQuad(const Rect& dest, const Rect& src)
+    {
+        m_vertexArray.addQuad(dest);
+        m_textureCoordArray.addHorizontallyFlippedQuad(src);
+    }
+
+    void addVerticallyFlippedQuad(const Rect& dest, const Rect& src)
+    {
+        m_vertexArray.addQuad(dest);
+        m_textureCoordArray.addVerticallyFlippedQuad(src);
     }
 
     void addUpsideDownRect(const Rect& dest, const Rect& src)

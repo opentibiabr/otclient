@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -43,6 +43,10 @@ public:
     /// Save this document to a file
     bool save(std::string_view fileName);
 
+    void addGlobalAlias(const std::string& name, const std::string& value);
+    const std::unordered_map<std::string, std::string>& globalAliases() const;
+
 private:
     OTMLDocument() = default;
+    std::unordered_map<std::string, std::string> m_globalAliases;
 };

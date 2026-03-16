@@ -1183,16 +1183,7 @@ RuneSlot < InventoryItemCyclopedia
   id: slot18
 
   &position: {x=65535, y=18, z=0}
-
-RoundCheckBox < CheckBox
-  image-source: /images/ui/outfits/checkbox_round
   
-  $first:
-    margin-top: 2
-
-  $!first:
-    margin-top: 5
-
 TrackerButton < Panel
   height: 34
   margin-bottom: 5

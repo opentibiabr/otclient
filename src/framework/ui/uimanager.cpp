@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -31,6 +31,7 @@
 #include "framework/otml/otmlexception.h"
 #include "framework/otml/otmlnode.h"
 #include <framework/platform/platformwindow.h>
+#include <framework/util/stats.h>
 
 UIManager g_ui;
 
@@ -59,6 +60,7 @@ void UIManager::terminate()
     m_checkEvent = nullptr;
     m_hoveredWidgets.clear();
     m_pressedWidgets.clear();
+    m_hoveredText.clear();
 }
 
 void UIManager::render(DrawPoolType drawPane) const
@@ -159,6 +161,7 @@ void UIManager::inputEvent(const InputEvent& event)
 
             // mouse move can change hovered widgets
             updateHoveredWidget(true);
+            updateHoveredText(true);
 
             // first fire dragging move
             if (m_draggingWidget) {
@@ -318,6 +321,10 @@ void UIManager::updateHoveredWidget(const bool now)
             if (oldHovered) {
                 oldHovered->updateState(Fw::HoverState);
                 oldHovered->onHoverChange(false);
+                if (oldHovered->hasEventListener(EVENT_TEXT_HOVER) && m_hoveredText.length() > 0) {
+                    oldHovered->onTextHoverChange(m_hoveredText, false);
+                    m_hoveredText.clear();
+                }
             }
             if (hoveredWidget) {
                 hoveredWidget->updateState(Fw::HoverState);
@@ -336,18 +343,27 @@ void UIManager::updateHoveredWidget(const bool now)
 
 void UIManager::onWidgetAppear(const UIWidgetPtr& widget)
 {
-    if (widget->containsPoint(g_window.getMousePosition()))
+    if (widget->containsPoint(g_window.getMousePosition())) {
         updateHoveredWidget();
+        updateHoveredText();
+    }
 }
 
 void UIManager::onWidgetDisappear(const UIWidgetPtr& widget)
 {
-    if (widget->containsPoint(g_window.getMousePosition()))
+    if (widget->containsPoint(g_window.getMousePosition())) {
         updateHoveredWidget();
+        updateHoveredText();
+    }
 }
 
 void UIManager::onWidgetDestroy(const UIWidgetPtr& widget)
 {
+    std::string extra = widget->getId();
+    if (widget->getParent())
+        extra += " (" + widget->getParent()->getId() + ")";
+    AutoStat s(STATS_MAIN, "UIManager::onWidgetDestroy", extra);
+
     // release input grabs
     if (m_keyboardReceiver == widget)
         resetKeyboardReceiver();
@@ -355,8 +371,10 @@ void UIManager::onWidgetDestroy(const UIWidgetPtr& widget)
     if (m_mouseReceiver == widget)
         resetMouseReceiver();
 
-    if (m_hoveredWidget == widget)
+    if (m_hoveredWidget == widget) {
         updateHoveredWidget();
+        updateHoveredText();
+    }
 
     if (m_pressedWidget == widget) {
         updatePressedWidget(nullptr);
@@ -417,8 +435,14 @@ bool UIManager::importStyle(const std::string& fl, const bool checkDeviceStyles)
     try {
         const auto& doc = OTMLDocument::parse(file);
 
-        for (const auto& styleNode : doc->children())
+        for (const auto& styleNode : doc->children()) {
+            const std::string tag = styleNode->tag();
+            if (!tag.empty() && tag.front() == '&')
+                continue;
+            if (tag.find('<') == std::string::npos)
+                continue;
             importStyleFromOTML(styleNode);
+        }
     } catch (stdext::exception& e) {
         g_logger.error("Failed to import UI styles from '{}': {}", file, e.what());
         return false;
@@ -545,6 +569,9 @@ OTMLNodePtr UIManager::findMainWidgetNode(const OTMLDocumentPtr& doc)
     for (const auto& node : doc->children()) {
         std::string tag = node->tag();
 
+        if (!tag.empty() && tag.front() == '&')
+            continue;
+
         if (tag.find('<') == std::string::npos) {
             if (mainNode)
                 throw Exception("cannot have multiple main widgets in otui files");
@@ -590,6 +617,9 @@ UIWidgetPtr UIManager::loadUI(const std::string& file, const UIWidgetPtr& parent
 
         for (const auto& node : doc->children()) {
             std::string tag = node->tag();
+
+            if (!tag.empty() && tag.front() == '&')
+                continue;
 
             // import styles in these files too
             if (tag.find('<') != std::string::npos)
@@ -642,8 +672,11 @@ UIWidgetPtr UIManager::loadUIFromString(const std::string& data, const UIWidgetP
         for (const OTMLNodePtr& node : doc->children()) {
             std::string tag = node->tag();
 
+            if (!tag.empty() && tag.front() == '&')
+                continue;
+
             // import styles in these files too
-            if (tag.find("<") != std::string::npos)
+            if (tag.find('<') != std::string::npos)
                 importStyleFromOTML(node);
             else {
                 if (widget)
@@ -707,4 +740,39 @@ UIWidgetPtr UIManager::createWidgetFromOTML(const OTMLNodePtr& widgetNode, const
 
     widget->callLuaField("onSetup");
     return widget;
+}
+
+void UIManager::updateHoveredText(bool now)
+{
+    if (m_hoverTextUpdateScheduled && !now || !m_hoveredWidget)
+        return;
+
+    auto func = [this] {
+        if (!m_rootWidget || !m_hoveredWidget)
+            return;
+
+        m_hoverTextUpdateScheduled = false;
+
+        if (m_hoveredWidget->hasEventListener(EVENT_TEXT_HOVER)) {
+            std::string hoveredText = m_hoveredWidget->getTextByPos(g_window.getMousePosition());
+
+            if (hoveredText != m_hoveredText) {
+                std::string oldHovered = m_hoveredText;
+                m_hoveredText = hoveredText;
+
+                if (oldHovered.length() > 0)
+                    m_hoveredWidget->onTextHoverChange(oldHovered, false);
+
+                if (m_hoveredText.length() > 0)
+                    m_hoveredWidget->onTextHoverChange(m_hoveredText, true);
+            }
+        }
+    };
+
+    if (now)
+        func();
+    else {
+        m_hoverTextUpdateScheduled = true;
+        g_dispatcher.deferEvent(func);
+    }
 }

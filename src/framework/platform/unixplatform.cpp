@@ -223,17 +223,7 @@ std::string Platform::openDirectoryDialog()
 
 double Platform::getMemoryUsage()
 {
-    // Read RSS from /proc/self/status
-    std::ifstream status("/proc/self/status");
-    std::string line;
-    while (std::getline(status, line)) {
-        if (line.compare(0, 6, "VmRSS:") == 0) {
-            long kb = 0;
-            sscanf(line.c_str(), "VmRSS: %ld kB", &kb);
-            return static_cast<double>(kb) * 1024.0;
-        }
-    }
-    return 0.0;
+    return 0;
 }
 
 std::string Platform::getOSName()

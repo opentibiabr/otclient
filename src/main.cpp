@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,9 @@
 #include "framework/core/resourcemanager.h"
 #include "framework/luaengine/luainterface.h"
 #include "framework/platform/platform.h"
+#ifdef FRAMEWORK_EDITOR
 #include "tools/datdump.h"
+#endif
 
 #ifndef ANDROID
 #if ENABLE_DISCORD_RPC == 1
@@ -60,12 +62,11 @@ void printHelp(const std::string& executableName)
     std::cout << "Usage: " << executableName << " [options]\n\n"
                  "General options:\n"
                  "  --help, -h, /?              Show this help message and exit\n"
-                 "  --encrypt <password>        Encrypt assets (requires builder build)\n\n"
+                 "  --encrypt <password>        Encrypt assets (requires ENABLE_ENCRYPTION == 1 && ENABLE_ENCRYPTION_BUILDER == 1 build)\n\n"
                  "DAT debugging:\n"
-                 "  --dump-dat-to-json=<path>   Dump the specified Tibia DAT file as JSON\n"
-                 "    --dump-dat-output=<path>  Write JSON to file instead of stdout\n"
-                 "    --dump-dat-client-version=<ver>  Decode flags using that client version\n"
-                 "    --dump-dat-compact        Emit compact (single-line) JSON\n";
+                 "  --dump-dat-to-json=<path|ver> Dump the specified Tibia DAT file or version as JSON (requires FRAMEWORK_EDITOR build)\n"
+                 "    --dump-dat-output=<path>    Write JSON to file instead of stdout\n"
+                 "    --dump-dat-compact          Emit compact (single-line) JSON\n";
 }
 
 } // namespace
@@ -76,7 +77,6 @@ void printHelp(const std::string& executableName)
 
         // process args encoding
         g_platform.init(args);
-
 
         // initialize resources
 #ifdef ANDROID
@@ -112,9 +112,11 @@ void printHelp(const std::string& executableName)
             return 0;
         }
 
+#ifdef FRAMEWORK_EDITOR
         if (const auto dumpRequest = datdump::parseRequest(args); dumpRequest) {
             return datdump::run(*dumpRequest) ? 0 : 1;
         }
+#endif
 
         // initialize application framework and otclient
         const auto drawEvents = ApplicationDrawEventsPtr(&g_client, [](ApplicationDrawEvents*) {});

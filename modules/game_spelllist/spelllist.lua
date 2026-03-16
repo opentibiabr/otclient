@@ -203,7 +203,13 @@ function terminate()
 end
 
 function initializeSpelllist()
+    local spells = {}
     for spellName, info in pairs(SpellInfo[SpelllistProfile]) do
+        table.insert(spells, spellName)
+    end
+    table.sort(spells)
+    for _, spellName in ipairs(spells) do
+        local info = SpellInfo[SpelllistProfile][spellName]
         if info then
             local tmpLabel = g_ui.createWidget('SpellListLabel', spellList)
             tmpLabel:setId(spellName)
@@ -250,14 +256,23 @@ function changeSpelllistProfile(oldProfile)
     resetWindow()
 end
 
+local function vocationMatches(vocations, filterId)
+    if filterId == FILTER_VOCATION_ANY then
+        return true
+    end
+    if filterId == FILTER_VOCATION_MONK then
+        return table.find(vocations, VocationsServer.Monk) or table.find(vocations, VocationsServer.ExaltedMonk)
+    end
+    return table.find(vocations, filterId) or table.find(vocations, filterId + 4)
+end
+
 function updateSpelllist()
     for spellName, info in pairs(SpellInfo[SpelllistProfile]) do
         local tmpLabel = spellList:getChildById(spellName)
         local localPlayer = g_game.getLocalPlayer()
         if (not (filters.level) or info.level <= localPlayer:getLevel()) and
             (not (filters.vocation) or table.find(info.vocations, localPlayer:getVocation())) and
-            (filters.vocationId == FILTER_VOCATION_ANY or table.find(info.vocations, filters.vocationId) or
-                table.find(info.vocations, filters.vocationId + 4)) and
+            (filters.vocationId == FILTER_VOCATION_ANY or vocationMatches(info.vocations, filters.vocationId)) and
             (filters.groupId == FILTER_GROUP_ANY or info.group[filters.groupId]) and
             (filters.premium == FILTER_PREMIUM_ANY or (info.premium and filters.premium == FILTER_PREMIUM_YES) or
                 (not (info.premium) and filters.premium == FILTER_PREMIUM_NO)) then
@@ -322,12 +337,34 @@ function updateSpellInformation(widget)
     descriptionValueLabel:setText(description)
 end
 
+function selectDefaultVocation()
+    local player = g_game.getLocalPlayer()
+    if not player then 
+        return
+    end
+    local vocation = player:getVocation()
+    local widget = vocationBoxAny
+    if vocation == VocationsClient.Knight or vocation == VocationsClient.EliteKnight then
+        widget = vocationBoxKnight
+    elseif vocation == VocationsClient.Paladin or vocation == VocationsClient.RoyalPaladin then
+        widget = vocationBoxPaladin
+    elseif vocation == VocationsClient.Sorcerer or vocation == VocationsClient.MasterSorcerer then
+        widget= vocationBoxSorcerer
+    elseif vocation == VocationsClient.Druid or vocation == VocationsClient.ElderDruid then
+        widget = vocationBoxDruid
+    elseif vocation == VocationsClient.Monk or vocation == VocationsClient.ExaltedMonk then
+        widget = vocationBoxMonk
+    end
+    vocationRadioGroup:selectWidget(widget)
+end
+
 function toggle()
     if spelllistButton:isOn() then
         spelllistButton:setOn(false)
         spelllistWindow:hide()
     else
         spelllistButton:setOn(true)
+        selectDefaultVocation()
         spelllistWindow:show()
         spelllistWindow:raise()
         spelllistWindow:focus()

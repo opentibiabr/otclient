@@ -224,13 +224,13 @@ MainWindow
           spacing:26
         Label
           text: Character Sex:
-        RadioBox
+        CheckBoxCircle
           id: Male
           text-horizontal-auto-resize: true
           !text: tr("male")
           margin-bottom: -5
           text-offset: 20 -3
-        RadioBox
+        CheckBoxCircle
           id: Female
           text-horizontal-auto-resize: true
           !text: tr("female")

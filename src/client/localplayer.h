@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -70,6 +70,8 @@ public:
     void setForgeBonuses(double momentum, double transcendence, double amplification);
     void setExperienceRate(Otc::ExperienceRate_t type, uint16_t value);
     void setStoreExpBoostTime(uint16_t value);
+    void setHarmony(uint8_t harmony);
+    void setSerene(bool serene);
 
     uint32_t getFreeCapacity() { return m_freeCapacity; }
     uint32_t getTotalCapacity() { return m_totalCapacity; }
@@ -79,6 +81,7 @@ public:
     uint16_t getBaseMagicLevel() { return m_baseMagicLevel; }
     uint8_t getSoul() { return m_soul; }
     uint8_t getLevelPercent() { return m_levelPercent; }
+    uint8_t getHarmony() { return m_harmony; }
 
     uint16_t getLevel() { return m_level; }
     uint16_t getSkillLevel(const Otc::Skill skill) { return m_skills[skill].level; }
@@ -131,6 +134,7 @@ public:
     bool isPremium() { return m_premium; }
     bool isPendingGame() const { return m_pending; }
     bool isParalyzed() const { return (m_states & Otc::IconParalyze) == Otc::IconParalyze; }
+    bool isSerene() { return m_serene; }
 
     LocalPlayerPtr asLocalPlayer() { return static_self_cast<LocalPlayer>(); }
     bool isLocalPlayer() const override { return true; }
@@ -142,6 +146,7 @@ public:
     Position getPosition() override { return isPreWalking() ? m_preWalks.back() : m_position; }
     void resetPreWalk() { m_preWalks.clear(); }
     auto getPreWalkingSize() { return m_preWalks.size(); }
+
 
 private:
     struct Skill
@@ -175,6 +180,7 @@ private:
     bool m_known{ false };
     bool m_pending{ false };
     bool m_serverWalk{ false };
+    bool m_serene{ false };
 
     bool m_isSupplyStashAvailable{ false };
 
@@ -217,6 +223,7 @@ private:
 
     uint8_t m_attackElement{ 0 };
     uint8_t m_convertedElement{ 0 };
+    uint8_t m_harmony{ 0 };
 
     uint16_t m_flatDamageHealing{ 0 };
     uint16_t m_attackValue{ 0 };

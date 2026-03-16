@@ -1,0 +1,511 @@
+.forge-window {
+  position: relative;
+  width: 470px;
+  height: 405px;
+}
+
+.tabs {
+  display: flex;
+  width: 464px;
+  height: 34px;
+}
+.tabs-img {
+  width: 116px;
+  height: 34px;
+}
+
+.tabs-img-history {
+  width: 118px;
+  height: 34px;
+}
+
+.content {
+  width: 465px;
+  height: 320px;
+  margin-top: 8px;
+  color: #c0c0c0;
+}
+
+.content UIItem {
+  color: white;
+}
+
+.item-to-select {
+  height: 34px;
+  width: 34px;
+  position: relative;
+  align-items: center;
+}
+.preview-item {
+  height: 64px;
+  width: 64px;
+  position: relative;
+  align-items: center;
+}
+.item-rarity {
+  width: 34px;
+  height: 34px;
+}
+.item-tier-strip {
+  position: absolute;
+  right: 0px;
+  top: 0px;
+  height: 9px;
+  width: 12px;
+}
+.item-count {
+  position: absolute;
+  right: 2px;
+  bottom: 0px;
+  color: #c0c0c0;
+  font-size: 10;
+}
+
+/* FUSION MENU */
+.fusion-buttons-container {
+  margin-left: 8px;
+  width: 140px;
+  height: 90px;
+}
+.fusion-buttons-improve {
+  padding: 3px 5px !important;
+  --image-source: "/modules/game_forge/images/button";
+  --image-size: 107 21;
+  --image-border: 3;
+}
+.fusion-buttons-text-container {
+  display: flex;
+  width: 150px;
+  height: 20px;
+}
+.fusion-text-chance {
+  margin-left: 30px;
+  color: #d33c3c;
+}
+.fusion-text-chance-cost {
+  --image-source: "/modules/game_forge/images/cardBg";
+  --image-size: 25 20;
+  --image-border: 3;
+  text-align: center;
+  align-items: center;
+  display: block;
+  height: 20px;
+  width: 25px;
+}
+
+/* FUSION MENU */
+
+/* TRANSFER MENU */
+.transfer-container {
+  height: 310px;
+  width: 465px;
+}
+.transfer-select-container {
+  --image-source: "/modules/game_forge/images/window-upper";
+  --image-size: 466 115;
+  --image-border: 30;
+  position: relative;
+  padding-top: 20px;
+  height: 115px;
+  width: 465px;
+}
+.transfer-header {
+  position: absolute;
+  top: 2;
+  text-align: center;
+  left: 0;
+  right: 0;
+  width: 465px;
+}
+.transfer-select-wrapper {
+  display: flex;
+  width: 450px;
+  height: 80px;
+  margin-left: 8px;
+  margin-top: 4px;
+}
+.transfer-select-donnor-container {
+  --image-border: 1;
+  display: block;
+  --image-source: "/modules/game_forge/images/scrollarea";
+  --image-size: 155 80;
+  width: 155px;
+  height: 80px;
+  overflow: scroll;
+  padding: 2px;
+}
+.transfer-select-donnor-center {
+  width: 133px;
+}
+.transfer-select-arrows-container {
+  padding-left: 35px;
+  padding-top: 20px;
+  width: 115px;
+  height: 50px;
+}
+.transfer-select-convergence {
+  padding-left: 8px;
+  margin-top: 15px;
+  width: 100px;
+}
+.transfer-requirements-wrapper {
+  display: flex;
+  padding-left: 8px;
+  padding-top: 2px;
+  height: 90px;
+  width: 465px;
+}
+.transfer-requirement-item-container {
+  width: 66px;
+  height: 66px;
+}
+.transfer-requirement {
+  --image-source: "/modules/game_forge/images/item66";
+  --image-size: 66 66;
+  width: 66px;
+  height: 66px;
+}
+.transfer-requirement UIItem {
+  width: 64px;
+  height: 64px;
+}
+.transfer-requirement-item-cost {
+  --image-source: "/modules/game_forge/images/info-bg";
+  --image-size: 66 20;
+  width: 66px;
+  height: 20px;
+  text-align: center;
+  align-items: center;
+  margin-top: 2px;
+  color: #d33c3c;
+}
+.transfer-requirement-arrow {
+  height: 90px;
+  width: 110px;
+  text-align: center;
+  align-items: center;
+}
+.transfer-button-container {
+  height: 90px;
+  width: 128px;
+}
+.transfer-button {
+  height: 65px;
+  width: 128px;
+  --image-source: "/modules/game_forge/images/bigger-button";
+  --image-size: 128 66;
+  --image-clip: 0 0 128 66;
+  width: 128px;
+  height: 66px;
+  text-align: center;
+  align-items: center;
+}
+.transfer-button:pressed {
+  --image-clip: 0 66 128 66;
+}
+.transfer-button:disabled {
+  opacity: 0.5;
+}
+.transfer-button-items {
+  display: flex;
+  height: 66px;
+  width: 128px;
+}
+.transfer-description {
+  --image-size: 465 75;
+  height: 75px;
+  --image-source: "/images/ui/2pixel_up_frame_borderimage";
+  --image-border: 3;
+  margin-top: 10px;
+  text-align: left;
+  padding: 4px;
+}
+
+/* TRANSFER MENU */
+
+/* CONVERSION MENU */
+.conversion-container {
+  height: 310px;
+  width: 465px;
+}
+.conversion-wrapper {
+  display: flex;
+  width: 465px;
+  height: 252px;
+}
+.conversion-column {
+  width: 151px;
+  height: 252px;
+  text-align: center;
+  position: relative;
+}
+.conversion-column-img {
+  --image-size: 151 235;
+  --image-source: "/modules/game_forge/images/conversion-column";
+  text-align: center;
+  --image-border: 2;
+}
+.conversion-column-header {
+  --image-source: "/modules/game_forge/images/conversion-column-header";
+  width: 151px;
+  height: 18px;
+  --image-size: 151 18;
+  text-align: center;
+  align-items: center;
+  --image-border: 2;
+}
+.conversion-column-item-container {
+  --image-source: "/modules/game_forge/images/item66";
+  --image-size: 66 66;
+  width: 66px;
+  height: 66px;
+  text-align: center;
+  align-items: center;
+  margin-left: 45px;
+  margin-top: 8px;
+}
+.conversion-column-item-container UIItem {
+  width: 64px;
+  height: 64px;
+}
+.conversion-column-item-cost {
+  --image-source: "/modules/game_forge/images/info-bg";
+  --image-size: 66 20;
+  width: 66px;
+  height: 20px;
+  text-align: center;
+  align-items: center;
+  margin-left: 45px;
+  margin-top: 2px;
+}
+.conversion-column-item-conversion-button {
+  --image-source: "/modules/game_forge/images/bigger-button";
+  --image-size: 83 66;
+  --image-clip: 0 0 128 66;
+  width: 83px;
+  height: 66px;
+  margin-left: 33px;
+  margin-top: 20px;
+  --image-border: 3;
+}
+.conversion-column-item-conversion-button UIItem {
+  width: 64px;
+  height: 64px;
+}
+.conversion-column-item-conversion-button:pressed {
+  --image-clip: 0 66 128 66;
+}
+.conversion-column-item-conversion-button:disabled {
+  opacity: 0.5;
+}
+.conversion-column-item-increase-button {
+  --image-source: "/modules/game_forge/images/bigger-button";
+  --image-size: 128 66;
+  text-align: center;
+  align-items: center;
+  --image-clip: 0 0 128 66;
+  margin-top: 20px;
+  height: 66px;
+  width: 128px;
+  margin-left: 11px;
+}
+.conversion-column-item-increase-button:pressed {
+  --image-clip: 0 66 128 66;
+}
+.conversion-column-item-increase-button UIItem {
+  width: 64px;
+  height: 64px;
+}
+.conversion-column-item-increase-button:disabled {
+  opacity: 0.5;
+}
+.description {
+  --image-size: 465 50;
+  height: 50px;
+  --image-source: "/images/ui/2pixel_up_frame_borderimage";
+  --image-border: 3;
+  margin-top: 10px;
+  color: #c0c0c0;
+  text-align: left;
+  padding: 4px;
+}
+/* CONVERSION MENU */
+
+/* HISTORY MENU */
+.history-container {
+  height: 290px;
+  background-color: #404040;
+  width: 465px;
+  --border-width-top: 1;
+  --border-color-top: black;
+  --border-width-left: 1;
+  --border-color-left: black;
+  --border-width-bottom: 1;
+  --border-color-bottom: #747474;
+  --border-width-right: 1;
+  --border-color-right: #747474;
+}
+
+.history-list {
+  height: 100%;
+  width: 100%;
+  max-height: 290px;
+}
+
+.history-table {
+  width: 100%;
+  text-align: left;
+  height: 100%;
+  padding-left: 1px;
+  padding-top: 1px;
+  padding-right: 1px;
+}
+
+.history-table tbody tr:nth-child(odd) {
+  background-color: #484848;
+  color: white;
+}
+
+.history-table tbody tr:nth-child(even) {
+  background-color: #414141;
+  color: white;
+}
+
+.history-footer {
+  height: 20px;
+  width: 465px;
+  display: flex;
+}
+
+.history-footer-previous {
+  width: 80px;
+}
+
+.history-footer-next {
+  width: 80px;
+}
+
+.history-page-label {
+  text-align: center;
+  width: 265px;
+  align-items: center;
+  height: 20px;
+}
+
+/* HISTORY MENU */
+
+.base-gold-bg {
+  --image-source: "/modules/game_forge/images/balanceBg";
+  width: 130px;
+  height: 20px;
+  align-items: center;
+  text-align: center;
+}
+
+.base-resource-bg {
+  --image-source: "/modules/game_forge/images/cardBg";
+  width: 52px;
+  height: 20px;
+  align-items: center;
+  text-align: center;
+}
+.base-dust-resource-bg {
+  width: 80px;
+  height: 20px;
+}
+
+.footer {
+  display: flex;
+  height: 20px;
+  width: 415px;
+  justify-content: space-between;
+}
+
+.footer-content {
+  display: flex;
+  height: 20px;
+}
+
+.footer-content img {
+  margin-left: 4px;
+}
+
+.close-btn {
+  padding: 3px 10px !important;
+}
+
+.close-btn:pressed {
+  padding: 3px 10px !important;
+}
+
+.result-window {
+  width: 400px;
+  height: 220px;
+  position: relative;
+  display: block;
+  overflow: hidden;
+  --image-repeated: false;
+}
+
+.result-title {
+  position: absolute;
+  top: 72px;
+  left: 0;
+  right: 0;
+  width: 390px;
+  text-align: center;
+  color: #c0c0c0;
+  height: 20px;
+}
+
+.result-content {
+  display: block;
+  top: 0px;
+  width: 390px;
+  height: 90px;
+  margin-top: 80px;
+}
+
+.result-center {
+  height: 80px;
+  position: absolute;
+  left: 0;
+  right: 0;
+  width: 400px;
+  text-align: center;
+}
+
+.result-arrows {
+  justify-content: center;
+  align-items: center;
+  height: 25px;
+}
+
+.result-arrows img:first-child {
+  margin-left: 0px;
+}
+
+.result-arrows img {
+  margin-left: 4px;
+}
+
+.result-text {
+  position: absolute;
+  bottom: 70px;
+  left: 20px;
+  right: 20px;
+  width: 400px;
+  text-align: center;
+  color: #c0c0c0;
+  height: 15px;
+}
+
+.result-separator {
+  position: absolute;
+  bottom: 40px;
+  left: 10px;
+  right: 10px;
+  width: 380px;
+  height: 2px;
+  margin: 0;
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -36,6 +36,13 @@ void Missile::draw(const Point& dest, const bool drawThings, LightView* lightVie
     if (!canDraw() || isHided())
         return;
 
+    // Check if the missile can actually be drawn before setting opacity/shader
+    // This prevents stale state from affecting subsequent draws when this missile
+    // returns early due to missing texture or invalid state
+    auto* thingType = getThingType();
+    if (!thingType || thingType->isNull() || thingType->getAnimationPhases() == 0)
+        return;
+
     const float fraction = m_duration > 0 ? m_animationTimer.ticksElapsed() / m_duration : 1;
 
     if (g_drawPool.getCurrentType() == DrawPoolType::MAP) {
@@ -44,10 +51,10 @@ void Missile::draw(const Point& dest, const bool drawThings, LightView* lightVie
             g_drawPool.setOpacity(g_client.getMissileAlpha(), true);
     }
 
-    if (hasShader())
+    if (drawThings && hasShader())
         g_drawPool.setShaderProgram(g_shaders.getShaderById(m_shaderId), true/*, shaderAction*/);
 
-    getThingType()->draw(dest + m_delta * fraction * g_drawPool.getScaleFactor(), 0, m_numPatternX, m_numPatternY, 0, 0, Color::white, drawThings, lightView);
+    thingType->draw(dest + m_delta * fraction * g_drawPool.getScaleFactor(), 0, m_numPatternX, m_numPatternY, 0, 0, Color::white, drawThings, lightView);
     g_drawPool.resetDrawOrder();
 }
 

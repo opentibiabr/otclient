@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +22,7 @@
 
 #include "asyncdispatcher.h"
 #include "eventdispatcher.h"
+#include <framework/util/stats.h>
 
 thread_local DispatcherContext EventDispatcher::dispacherContext;
 
@@ -51,6 +52,7 @@ void EventDispatcher::shutdown()
 
 void EventDispatcher::poll()
 {
+    AutoStat s(this == &g_dispatcher ? STATS_MAIN : STATS_RENDER, "PollDispatcher");
     mergeEvents();
     executeEvents();
     executeScheduledEvents();
@@ -59,29 +61,44 @@ void EventDispatcher::poll()
 
 ScheduledEventPtr EventDispatcher::scheduleEvent(const std::function<void()>& callback, int delay)
 {
+    return scheduleEventEx("ScheduledEvent", callback, delay);
+}
+
+ScheduledEventPtr EventDispatcher::scheduleEventEx(const std::string& function, const std::function<void()>& callback, int delay)
+{
     if (m_disabled)
-        return std::make_shared<ScheduledEvent>(nullptr, delay, 1);
+        return std::make_shared<ScheduledEvent>(function, nullptr, delay, 1);
 
     assert(delay >= 0);
 
     return pushThreadTask<ScheduledEventPtr>([&](const std::unique_ptr<ThreadTask>& thread) {
-        return thread->scheduledEventList.emplace_back(std::make_shared<ScheduledEvent>(callback, delay, 1));
+        return thread->scheduledEventList.emplace_back(std::make_shared<ScheduledEvent>(function, callback, delay, 1));
     });
 }
 
 ScheduledEventPtr EventDispatcher::cycleEvent(const std::function<void()>& callback, int delay)
 {
+    return cycleEventEx("CycleEvent", callback, delay);
+}
+
+ScheduledEventPtr EventDispatcher::cycleEventEx(const std::string& function, const std::function<void()>& callback, int delay)
+{
     if (m_disabled)
-        return std::make_shared<ScheduledEvent>(nullptr, delay, 0);
+        return std::make_shared<ScheduledEvent>(function, nullptr, delay, 0);
 
     assert(delay > 0);
 
     return pushThreadTask<ScheduledEventPtr>([&](const std::unique_ptr<ThreadTask>& thread) {
-        return thread->scheduledEventList.emplace_back(std::make_shared<ScheduledEvent>(callback, delay, 0));
+        return thread->scheduledEventList.emplace_back(std::make_shared<ScheduledEvent>(function, callback, delay, 0));
     });
 }
 
 EventPtr EventDispatcher::addEvent(const std::function<void()>& callback)
+{
+    return addEventEx("Event", callback);
+}
+
+EventPtr EventDispatcher::addEventEx(const std::string& function, const std::function<void()>& callback)
 {
     if (m_disabled)
         return std::make_shared<Event>(nullptr);
@@ -92,16 +109,20 @@ EventPtr EventDispatcher::addEvent(const std::function<void()>& callback)
     }
 
     return pushThreadTask<EventPtr>([&](const std::unique_ptr<ThreadTask>& thread) {
-        return thread->events.emplace_back(std::make_shared<Event>(callback));
+        return thread->events.emplace_back(std::make_shared<Event>(callback, function));
     });
 }
 
 void EventDispatcher::deferEvent(const std::function<void()>& callback) {
+    deferEventEx("DeferEvent", callback);
+}
+
+void EventDispatcher::deferEventEx(const std::string& function, const std::function<void()>& callback) {
     if (m_disabled)
         return;
 
     pushThreadTask([&](const std::unique_ptr<ThreadTask>& thread) {
-        thread->deferEvents.emplace_back(callback);
+        thread->deferEvents.emplace_back(callback, function);
     });
 }
 
@@ -113,8 +134,10 @@ void EventDispatcher::executeEvents() {
     dispacherContext.group = TaskGroup::Serial;
     dispacherContext.type = DispatcherType::Event;
 
-    for (const auto& event : m_eventList)
+    for (const auto& event : m_eventList) {
+        AutoStat s(STATS_DISPATCHER, event->getFunction());
         event->execute();
+    }
 
     m_eventList.clear();
     dispacherContext.reset();
@@ -125,8 +148,10 @@ void EventDispatcher::executeDeferEvents() {
     dispacherContext.type = DispatcherType::DeferEvent;
 
     do {
-        for (auto& event : m_deferEventList)
+        for (auto& event : m_deferEventList) {
+            AutoStat s(STATS_DISPATCHER, event.getFunction());
             event.execute();
+        }
         m_deferEventList.clear();
 
         for (const auto& thread : m_threads) {
@@ -155,6 +180,7 @@ void EventDispatcher::executeScheduledEvents() {
         dispacherContext.type = scheduledEvent->maxCycles() > 0 ? DispatcherType::CycleEvent : DispatcherType::ScheduledEvent;
         dispacherContext.group = TaskGroup::Serial;
 
+        AutoStat s(STATS_DISPATCHER, scheduledEvent->getFunction());
         scheduledEvent->execute();
 
         if (scheduledEvent->nextCycle())

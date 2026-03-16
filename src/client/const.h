@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -44,8 +44,9 @@ namespace Otc
         DrawBars = 1 << 2,
         DrawNames = 1 << 3,
         DrawManaBar = 1 << 4,
+        DrawHarmony = 1 << 5,
         DrawThingsAndLights = DrawThings | DrawLights,
-        DrawCreatureInfo = DrawBars | DrawNames | DrawManaBar,
+        DrawCreatureInfo = DrawBars | DrawNames | DrawManaBar | DrawHarmony,
     };
 
     enum DatOpts : uint8_t
@@ -438,6 +439,14 @@ namespace Otc
         PREY_UNLOCK_STORE = 1,
         PREY_UNLOCK_NONE = 2,
     };
+    enum class ForgeAction_t : uint8_t
+    {
+        FUSION = 0,
+        TRANSFER = 1,
+        DUST2SLIVER = 2,
+        SLIVER2CORE = 3,
+        INCREASELIMIT = 4,
+    };
 
     enum GameFeature : uint8_t
     {
@@ -568,6 +577,8 @@ namespace Otc
         GameForgeSkillStats = 126,
         GameCharacterSkillStats = 127,
         GameCreaturePaperdoll = 128,
+        GameMultiSpr = 129,
+        GameVocationMonk = 130,
         LastGameFeature
     };
 
@@ -692,6 +703,8 @@ namespace Otc
         RESOURCE_LESSER_GEMS = 81,
         RESOURCE_REGULAR_GEMS = 82,
         RESOURCE_GREATER_GEMS = 83,
+        RESOURCE_LESSER_FRAGMENTS = 84,
+        RESOURCE_GREATER_FRAGMENTS = 85,
         RESOURCE_WHEEL_OF_DESTINY = 86,
         RESOURE_COIN_NORMAL = 90,
         RESOURE_COIN_TRANSFERRABLE = 91,
@@ -896,6 +909,14 @@ namespace Otc
         PARTYANALYZERACTION_PRICEVALUE = 2,
     };
 
+    enum VocationMonkTypes_t : uint8_t
+    {
+        TYPES_MONK_HARMONY = 0,
+        TYPES_MONK_SERENE = 1,
+        TYPES_MONK_VIRTUE = 2,
+        TYPES_MONK_LAST
+    };
+
     enum FloorViewMode
     {
         NORMAL,
@@ -910,6 +931,67 @@ namespace Otc
         ANTIALIASING_DISABLED,
         ANTIALIASING_ENABLED,
         ANTIALIASING_SMOOTH_RETRO
+    };
+
+    enum class WheelSlots_t : uint8_t
+    {
+        SLOT_GREEN_200 = 1,
+        SLOT_GREEN_TOP_150 = 2,
+        SLOT_GREEN_TOP_100 = 3,
+
+        SLOT_RED_TOP_100 = 4,
+        SLOT_RED_TOP_150 = 5,
+        SLOT_RED_200 = 6,
+
+        SLOT_GREEN_BOTTOM_150 = 7,
+        SLOT_GREEN_MIDDLE_100 = 8,
+        SLOT_GREEN_TOP_75 = 9,
+
+        SLOT_RED_TOP_75 = 10,
+        SLOT_RED_MIDDLE_100 = 11,
+        SLOT_RED_BOTTOM_150 = 12,
+
+        SLOT_GREEN_BOTTOM_100 = 13,
+        SLOT_GREEN_BOTTOM_75 = 14,
+        SLOT_GREEN_50 = 15,
+
+        SLOT_RED_50 = 16,
+        SLOT_RED_BOTTOM_75 = 17,
+        SLOT_RED_BOTTOM_100 = 18,
+
+        SLOT_BLUE_TOP_100 = 19,
+        SLOT_BLUE_TOP_75 = 20,
+        SLOT_BLUE_50 = 21,
+
+        SLOT_PURPLE_50 = 22,
+        SLOT_PURPLE_TOP_75 = 23,
+        SLOT_PURPLE_TOP_100 = 24,
+
+        SLOT_BLUE_TOP_150 = 25,
+        SLOT_BLUE_MIDDLE_100 = 26,
+        SLOT_BLUE_BOTTOM_75 = 27,
+
+        SLOT_PURPLE_BOTTOM_75 = 28,
+        SLOT_PURPLE_MIDDLE_100 = 29,
+        SLOT_PURPLE_TOP_150 = 30,
+
+        SLOT_BLUE_200 = 31,
+        SLOT_BLUE_BOTTOM_150 = 32,
+        SLOT_BLUE_BOTTOM_100 = 33,
+
+        SLOT_PURPLE_BOTTOM_100 = 34,
+        SLOT_PURPLE_BOTTOM_150 = 35,
+        SLOT_PURPLE_200 = 36,
+
+        SLOT_FIRST = SLOT_GREEN_200,
+        SLOT_LAST = SLOT_PURPLE_200
+    };
+    // Qualidade das gemas
+    enum WheelGemQuality_t : uint8_t {
+        WheelGemQuality_Lesser   = 0,
+        WheelGemQuality_Regular  = 1,
+        WheelGemQuality_Greater  = 2,
+        WheelGemQuality_Supreme  = 3
     };
 }
 
@@ -1053,6 +1135,8 @@ enum ThingFlagAttr :uint64_t
     ThingFlagAttrNPC = static_cast<uint64_t>(1) << 46,
     ThingFlagAttrAmmo = static_cast<uint64_t>(1) << 47,
     ThingFlagAttrFloorChange = static_cast<uint64_t>(1) << 48,
+    ThingFlagAttrDualWield = static_cast<uint64_t>(1) << 49,
+    ThingFlagAttrSkillWheelGem = static_cast<uint64_t>(1) << 50,
 };
 
 enum STACK_PRIORITY : uint8_t
@@ -1101,11 +1185,8 @@ enum ITEM_CATEGORY : uint8_t
     ITEM_CATEGORY_TIBIA_COINS = 23,
     ITEM_CATEGORY_CREATURE_PRODUCTS = 24,
     ITEM_CATEGORY_QUIVER = 25,
-    ITEM_CATEGORY_TWOHANDWEAPON = 26,
-    ITEM_CATEGORY_HELMETS = 27,
-    ITEM_CATEGORY_BACKPACK = 28,
-    ITEM_CATEGORY_ONEHANDWEAPON = 29,
-    ITEM_CATEGORY_ARROW = 30
+    ITEM_CATEGORY_SOUL_CORES = 26,
+    ITEM_CATEGORY_FIST_WEAPONS = 27,
 };
 
 enum SpriteMask :uint8_t

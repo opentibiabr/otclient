@@ -41,6 +41,18 @@ UIWidget
     margin-top: 7
     height: 22
 
+    OptionCheckBoxMarked
+      id: displayHarmony
+      !text: tr('Display player Harmony bar')
+      !tooltip: tr('Can be enabled only in version 15.00 or higher')
+
+  SmallReversedQtPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    margin-top: 7
+    height: 22
+
     $!mobile:
       height: 0
       margin-top: 0

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -832,8 +832,10 @@ void UIWidget::refreshHtml(bool siblingsTo) {
         parent_fitHeight->applyDimension(false, parent_fitHeight->m_height.unit, parent_fitHeight->m_height.value);
 
     if (siblingsTo) {
-        for (const auto& child : m_parent->m_children) {
-            child->scheduleHtmlTask(PropApplyAnchorAlignment);
+        if (m_parent.get() != g_ui.getRootWidget().get()) {
+            for (const auto& child : m_parent->m_children) {
+                child->scheduleHtmlTask(PropApplyAnchorAlignment);
+            }
         }
     }
 }

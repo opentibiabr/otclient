@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -52,11 +52,6 @@ int PlatformWindow::loadMouseCursor(const std::string& file, const Point& hotSpo
 
     if (image->getBpp() != 4) {
         g_logger.error("the cursor image must have 4 channels");
-        return -1;
-    }
-
-    if (image->getWidth() != 32 || image->getHeight() != 32) {
-        g_logger.error("the cursor image must have 32x32 dimension");
         return -1;
     }
 

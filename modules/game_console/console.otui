@@ -62,12 +62,15 @@ ConsoleTabBarButton < UIButton
   image-source: /images/ui/console_button
   image-clip: 0 18 96 18
   color: #7f7f7fff
+  text-offset: 0 -1
   font: verdana-11px-rounded
-  &ignoreTextResize: true
   anchors.top: parent.top
   anchors.left: parent.left
   padding: 5
   tab-spacing: 0
+  padding-left: 20
+  padding-right: 20
+  &tabWidth: 95
 
   $checked:
     image-clip: 0 0 96 18
@@ -277,10 +280,10 @@ Panel
     !tooltip: tr('Ignore players')
     image-source: /images/ui/console_buttons
     image-clip: 0 32 16 16
-    anchors.right: readOnlyButton.left
+    anchors.right: exivaOption.left
     anchors.bottom: consoleContentPanel.top
     margin-bottom: 5
-    margin-right: 5
+    margin-right: 1
     size: 16 16
     @onClick: onClickIgnoreButton()
 
@@ -290,6 +293,31 @@ Panel
     $pressed:
       image-clip: 16 32 16 16
 
+  TabButton
+    id: exivaOption
+    image-clip: 16 64 16 16
+    image-source: /images/ui/console_buttons
+    anchors.right: readOnlyButton.left
+    anchors.bottom: consoleContentPanel.top
+    margin-bottom: 5
+    margin-right: 5
+    size: 16 16
+    @onClick: |
+      if self:isOn() then
+        modules.game_console.onRequestExivaOptions()
+      end
+    !tooltip: tr('Exiva Options are only available on Optional Pvp game worlds')
+    $on:
+      image-clip: 0 95 16 16
+    $!on:
+      image-clip: 32 95 16 16
+    $pressed:
+      image-clip: 16 95 16 16
+    $pressed !on:
+      image-clip: 32 95 16 16
+    $disabled:
+      image-clip: 32 95 16 16
+      
   UIButton
     id: readOnlyButton
     text: ""
@@ -303,8 +331,9 @@ Panel
     font: verdana-11px-rounded
     padding: 5
     tab-spacing: 0
-    &ignoreTextResize: true
-    text-auto-resize: false
+    &tabWidth: 95
+    padding-left: 20
+    padding-right: 20
     $checked:
       image-clip: 0 0 96 18
       color: #dfdfdfff
@@ -317,7 +346,8 @@ Panel
     id: sayModeButton
     anchors.left: parent.left
     anchors.bottom: parent.bottom
-    margin-bottom: 3
+    margin-bottom: 4
+    margin-left: 5
     size: 18 18
     image-source: /images/ui/console_say
     image-clip: 0 0 18 18
@@ -349,6 +379,7 @@ Panel
     anchors.right: parent.right
     anchors.bottom: parent.bottom
     margin-bottom: 3
+    margin-right: 3
     size: 64 18
     color: #c0c0c0ff
     font: cipsoftFont

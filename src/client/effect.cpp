@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -81,15 +81,22 @@ void Effect::draw(const Point& dest, const bool drawThings, LightView* lightView
             yPattern += getNumPatternY();
     }
 
+    // Check if the effect can actually be drawn before setting opacity/shader
+    // This prevents stale state from affecting subsequent draws when this effect
+    // returns early due to missing texture or invalid state
+    auto* thingType = getThingType();
+    if (!thingType || thingType->isNull() || thingType->getAnimationPhases() == 0)
+        return;
+
     if (g_drawPool.getCurrentType() == DrawPoolType::MAP) {
         if (drawThings && g_client.getEffectAlpha() < 1.f)
             g_drawPool.setOpacity(g_client.getEffectAlpha(), true);
     }
 
-    if (hasShader())
+    if (drawThings && hasShader())
         g_drawPool.setShaderProgram(g_shaders.getShaderById(m_shaderId), true/*, shaderAction*/);
 
-    getThingType()->draw(dest, 0, xPattern, yPattern, 0, animationPhase, Color::white, drawThings, lightView);
+    thingType->draw(dest, 0, xPattern, yPattern, 0, animationPhase, Color::white, drawThings, lightView);
 }
 
 void Effect::onAppear()

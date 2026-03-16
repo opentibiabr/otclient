@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +23,7 @@
 #pragma once
 
 #include "declarations.h"
+#include "protocolgame.h"
 #include "staticdata.h"
 
 #include "framework/core/declarations.h"
@@ -325,7 +326,13 @@ public:
     void setProtocolVersion(uint16_t version);
     int getProtocolVersion() { return m_protocolVersion; }
 
-    bool isUsingProtobuf() { return getProtocolVersion() >= 1281 && !getFeature(Otc::GameLoadSprInsteadProtobuf); }
+    bool isUsingProtobuf() {
+#ifdef FRAMEWORK_PROTOBUF
+        return getProtocolVersion() >= 1281 && !getFeature(Otc::GameLoadSprInsteadProtobuf);
+#else
+        return false;
+#endif
+    }
 
     void setClientVersion(uint16_t version);
     int getClientVersion() { return m_clientVersion; }
@@ -345,6 +352,8 @@ public:
     void resetMapUpdatedAt() { m_mapUpdatedAt = 0; }
 
     int getPing() { return m_ping; }
+    int getRecivedPacketsCount() { return m_protocolGame ? m_protocolGame->getRecivedPacketsCount() : 0; }
+    int getRecivedPacketsSize() { return m_protocolGame ? m_protocolGame->getRecivedPacketsSize() : 0; }
     ContainerPtr getContainer(const int index) { return m_containers[index]; }
     stdext::map<int, ContainerPtr> getContainers() { return m_containers; }
     stdext::map<int, Vip> getVips() { return m_vips; }
@@ -353,7 +362,9 @@ public:
     void setServerBeat(const int beat) { m_serverBeat = beat; }
     int getServerBeat() { return m_serverBeat; }
     void setCanReportBugs(const bool enable) { m_canReportBugs = enable; }
+    void setCanExivaOptions(const bool enable) { m_CanExivaOptions = enable; }
     bool canReportBugs() { return m_canReportBugs; }
+    bool canExivaOptions() { return m_CanExivaOptions; }
     void setExpertPvpMode(const bool enable) { m_expertPvpMode = enable; }
     bool getExpertPvpMode() { return m_expertPvpMode; }
     LocalPlayerPtr getLocalPlayer() { return m_localPlayer; }
@@ -368,7 +379,7 @@ public:
 
     // market related
     void leaveMarket();
-    void browseMarket(uint8_t browseId, uint8_t browseType);
+    void browseMarket(uint8_t browseId, uint16_t browseType, uint8_t tier = 0);
     void createMarketOffer(uint8_t type, uint16_t itemId, uint8_t itemTier, uint16_t amount, uint64_t price, uint8_t anonymous);
     void cancelMarketOffer(uint32_t timestamp, uint16_t counter);
     void acceptMarketOffer(uint32_t timestamp, uint16_t counter, uint16_t amount);
@@ -377,11 +388,26 @@ public:
     void preyAction(uint8_t slot, uint8_t actionType, uint16_t index);
     void preyRequest();
 
+    // exiva related
+    void sendExivaOptions(bool allowAll, bool allowOwnGuild, bool allowOwnParty, bool allowVipList,
+                          bool allowPlayerWhitelist, bool allowGuildWhitelist,
+                          const std::vector<std::string>& characterWhiteList,
+                          const std::vector<std::string>& removeCharacter,
+                          const std::vector<std::string>& guildWhiteList,
+                          const std::vector<std::string>& removeGuild);
+
+    // forge related
+    void openPortableForgeRequest();
+    void forgeRequest(Otc::ForgeAction_t actionType, bool convergence = false, uint16_t firstItemid = 0, uint8_t firstItemTier = 0, uint16_t secondItemId = 0, bool improveChance = false, bool tierLoss = false);
+    void sendForgeBrowseHistoryRequest(uint16_t page);
+
     // imbuing related
     void applyImbuement(uint8_t slot, uint32_t imbuementId, bool protectionCharm);
     void clearImbuement(uint8_t slot);
     void closeImbuingWindow();
     void imbuementDurations(bool isOpen = false);
+    void openWheelOfDestiny(uint32_t playerId);
+    void applyWheelOfDestiny(const std::vector<uint16_t>& wheelPointsVec, const std::vector<uint16_t>& activeGemsVec);
 
     void enableTileThingLuaCallback(const bool value) { m_tileThingsLuaCallback = value; }
     bool isTileThingLuaCallbackEnabled() { return m_tileThingsLuaCallback; }
@@ -428,6 +454,11 @@ public:
     void processCyclopediaCharacterDefenceStats(const CyclopediaCharacterDefenceStats& data);
     void processCyclopediaCharacterMiscStats(const CyclopediaCharacterMiscStats& data);
 
+    //whell of destiny 
+    void openWheel(uint32_t playerId);
+    void sendApplyWheelPoints(const std::vector<uint16_t>& slotPoints,uint16_t greenGem,uint16_t redGem,uint16_t acquaGem,uint16_t purpleGem);
+    void gemAction(uint8_t actionType, uint8_t param, uint8_t pos);
+
     void updateMapLatency() {
         if (!m_mapUpdateTimer.first) {
             m_mapUpdatedAt = m_mapUpdateTimer.second.ticksElapsed();
@@ -463,6 +494,7 @@ private:
     bool m_scheduleLastWalk{ false };
     bool m_safeFight{ true };
     bool m_canReportBugs{ false };
+    bool m_CanExivaOptions{ false };
 
     uint16_t m_mapUpdatedAt{ 0 };
     std::pair<uint16_t, Timer> m_mapUpdateTimer = { true, Timer{} };

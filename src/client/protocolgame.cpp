@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -60,6 +60,9 @@ void ProtocolGame::onConnect()
 
 void ProtocolGame::onRecv(const InputMessagePtr& inputMessage)
 {
+    m_recivedPackeds += 1;
+    m_recivedPackedsSize += inputMessage->getMessageSize();
+
     if (m_firstRecv) {
         m_firstRecv = false;
 

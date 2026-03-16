@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +23,7 @@
 #pragma once
 
 #include "declarations.h"
+#include <framework/util/stats.h>
 
  /// LuaObject, all script-able classes have it as base
  // @bindclass
@@ -80,6 +81,10 @@ public:
     std::string getClassName();
 
     LuaObjectPtr asLuaObject() { return shared_from_this(); }
+
+    /// Returns the number of references of this object
+    /// @note each shared_ptr reference counts as a reference
+    int getUseCount();
 
     template<typename T>
     std::shared_ptr<T> static_self_cast() { return std::static_pointer_cast<T>(shared_from_this()); }
@@ -178,6 +183,8 @@ int LuaObject::luaCallLuaField(const std::string_view field, const T&... args)
         g_logger.warning("({}):luaCallLuaField: Calling lua during object construction is not allowed.", getClassName());
         return -1;
     }
+
+    AutoStat s(STATS_LUA, getClassName() + ":" + std::string{ field });
 
     // note that the field must be retrieved from this object lua value
     // to force using the __index metamethod of it's metatable

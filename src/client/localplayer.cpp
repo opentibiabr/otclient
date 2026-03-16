@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -260,8 +260,8 @@ void LocalPlayer::setStates(const uint64_t states)
     const uint64_t oldStates = m_states;
     m_states = states;
 
-    if (isParalyzed())
-        m_walkTimer.update(-getStepDuration());
+    if (isParalyzed() && isWalking() && m_serverWalk)
+        updateWalk();
 
     callLuaField("onStatesChange", states, oldStates);
 }
@@ -717,4 +717,20 @@ void LocalPlayer::setStoreExpBoostTime(uint16_t value)
         return;
 
     m_storeExpBoostTime = value;
+}
+
+void LocalPlayer::setHarmony(const uint8_t harmony)
+{
+    const uint8_t oldHarmony = m_harmony;
+    m_harmony = harmony;
+
+    callLuaField("onHarmonyChange", harmony, oldHarmony);
+}
+
+void LocalPlayer::setSerene(const bool serene)
+{
+    const bool oldSerene = m_serene;
+    m_serene = serene;
+
+    callLuaField("onSereneChange", serene, oldSerene);
 }

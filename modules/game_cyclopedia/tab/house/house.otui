@@ -35,26 +35,30 @@ UIWidget
       anchors.top: StatesOption.top
       margin-left: 5
       text-align: center
-    CheckBox
+    CheckBoxCircle
       id: GuildhallsCheck
       anchors.bottom: parent.bottom
       anchors.left: parent.horizontalCenter
       margin-bottom: 5
       margin-left: 20
-      image-source: /images/ui/outfits/checkbox_round
+      image-source: /images/ui/checkboxcircle
       text-offset: 15 0
       !text: tr('Guildhalls')
+      size: 12 12
+      font: Verdana Bold-11px
       color: #C0C0C0
       text-auto-resize: true
       @onClick: modules.game_cyclopedia.Cyclopedia.houseFilter(self)
-    CheckBox
+    CheckBoxCircle
       id: HousesCheck
       anchors.bottom: GuildhallsCheck.bottom
       anchors.right: GuildhallsCheck.left
       margin-right: 20
-      image-source: /images/ui/outfits/checkbox_round
+      image-source: /images/ui/checkboxcircle
       text-offset: 15 0
       !text: tr('Houses and Flats')
+      size: 12 12
+      font: Verdana Bold-11px
       color: #C0C0C0
       text-auto-resize: true
       @onClick: modules.game_cyclopedia.Cyclopedia.houseFilter(self)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -102,6 +102,50 @@ public:
         const size_t size = sizeof(arr) / sizeof(float);
         m_buffer.insert(m_buffer.end(), &arr[0], &arr[size]);
     }
+
+
+    void addHorizontallyFlippedQuad(const Rect& rect)
+    {
+        const float top = rect.top();
+        const float right = rect.right() + 1;
+        const float bottom = rect.bottom() + 1;
+        const float left = rect.left();
+
+        // Inverte left e right para flip horizontal
+        float arr[] = {
+            right, top,
+            left, top,
+            right, bottom,
+            right, bottom,
+            left, top,
+            left, bottom
+        };
+
+        const size_t size = sizeof(arr) / sizeof(float);
+        m_buffer.insert(m_buffer.end(), &arr[0], &arr[size]);
+    }
+
+    void addVerticallyFlippedQuad(const Rect& rect)
+    {
+        const float top = rect.top();
+        const float right = rect.right() + 1;
+        const float bottom = rect.bottom() + 1;
+        const float left = rect.left();
+
+        // Inverte top e bottom para flip vertical
+        float arr[] = {
+            left, bottom,
+            right, bottom,
+            left, top,
+            left, top,
+            right, bottom,
+            right, top
+        };
+
+        const size_t size = sizeof(arr) / sizeof(float);
+        m_buffer.insert(m_buffer.end(), &arr[0], &arr[size]);
+    }
+
 
     void addUpsideDownQuad(const Rect& rect)
     {

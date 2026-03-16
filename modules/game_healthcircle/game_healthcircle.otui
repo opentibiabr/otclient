@@ -51,3 +51,22 @@ SkillCircleFront < UIProgressBar
   opacity: 0.7
   image-color: #FC8CFF
   phantom: true
+
+MonkCircleBackground < UIWidget
+  image-source: /data/images/game/healthcircle/left/default-bg-full-monk
+  opacity: 0.5
+  phantom: true
+
+MonkHealthCircle < UIProgressBar
+  image-source: /data/images/game/healthcircle/left/default-maximal-monk
+  opacity: 0.7
+  phantom: true
+
+MonkSereneCircle < UIWidget
+  image-source: /data/images/game/healthcircle/left/default-circle-purple-monk
+  opacity: 0.7
+  phantom: true
+
+MonkHarmonySlot < UIWidget
+  opacity: 0.7
+  phantom: true

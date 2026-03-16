@@ -446,7 +446,7 @@ function create(player, outfitList, creatureMount, mountList, familiarList, wing
         for i = 0, 18 do
             local colorBox = g_ui.createWidget("ColorBox", window.appearance.colorBoxPanel)
             local outfitColor = getOutfitColor(j * 19 + i)
-            colorBox:setImageColor(outfitColor)
+            colorBox:setBackgroundColor(outfitColor)
             colorBox:setId("colorBox" .. j * 19 + i)
             colorBox.colorId = j * 19 + i
 
@@ -1739,6 +1739,7 @@ end
 
 function onFilterSearch()
     addEvent(function()
+        if not window then return end
         local searchText = window.listSearch.search:getText():lower():trim()
         local children = window.selectionList:getChildren()
         if searchText:len() >= 1 then

@@ -1,22 +1,33 @@
 Button < UIButton
-  font: verdana-11px-antialised
+  font: cipsoftFont
   color: #dfdfdfff
-  size: 106 23
-  text-offset: 0 0
-  image-source: /images/ui/button
-  image-color: #dfdfdf
-  image-clip: 0 0 22 23
-  image-border: 3
-  padding: 5 10 5 10
+  size: 43 20
+  text-offset: 0 2
+  image-source: /images/ui/buttons
+  image-clip: 0 0 43 20
+  image-border: 1
+  padding: 10
   opacity: 1.0
 
+  $hover !disabled:
+    image-clip: 0 0 43 20
+
   $pressed:
-    image-clip: 0 46 22 23
+    image-clip: 0 20 43 20
+    text-offset: 1 1
+  
+  $on:
+    image-clip: 0 20 43 20
+    text-offset: 1 1
+
+  $checked:
+    image-clip: 0 20 43 20
     text-offset: 1 1
 
   $disabled:
     color: #dfdfdf88
     opacity: 0.8
+    change-cursor-image: false
 
 TabButton < UIButton
   size: 22 23
@@ -24,8 +35,11 @@ TabButton < UIButton
   image-color: #dfdfdf
   image-clip: 0 0 22 23
   image-border: 3
+  text-offset: 0 1
   icon-color: #dfdfdf
   color: #dfdfdf
+  change-cursor-image: true
+  cursor: pointer
 
   $hover !on:
     image-clip: 0 23 22 23
@@ -34,6 +48,7 @@ TabButton < UIButton
   $disabled:
     image-color: #dfdfdf66
     icon-color: #dfdfdf
+    change-cursor-image: false
 
   $on:
     image-clip: 0 46 22 23
@@ -44,6 +59,9 @@ NextButton < UIButton
   image-source: /images/ui/arrow_horizontal
   image-clip: 12 0 12 21
   image-color: #ffffff
+  text-offset: 0 1
+  change-cursor-image: true
+  cursor: pointer
 
   $hover !disabled:
     image-clip: 12 21 12 21
@@ -53,12 +71,16 @@ NextButton < UIButton
 
   $disabled:
     image-color: #dfdfdf88
+    change-cursor-image: false
 
 PreviousButton < UIButton
   size: 12 21
   image-source: /images/ui/arrow_horizontal
   image-clip: 0 0 12 21
   image-color: #ffffff
+  text-offset: 0 1
+  change-cursor-image: true
+  cursor: pointer
 
   $hover !disabled:
     image-clip: 0 21 12 21
@@ -68,11 +90,15 @@ PreviousButton < UIButton
 
   $disabled:
     image-color: #dfdfdf88
+    change-cursor-image: false
 
 AddButton < UIButton
   size: 20 20
   image-source: /images/ui/icon_add
-  image-color: #dfdfdfff
+  image-color: #fafafa
+  text-offset: 0 1
+  change-cursor-image: true
+  cursor: pointer
 
   $hover !disabled:
     image-color: #dfdfdf99
@@ -82,6 +108,23 @@ AddButton < UIButton
 
   $disabled:
     image-color: #dfdfdf55
+    change-cursor-image: false
+
+TextButton < UIButton
+  size: 22 23
+  image-source: /images/ui/panel_map
+  image-clip: 0 0 22 23
+  image-border: 3
+  text-offset: 0 1
+  color: #e0e0e0
+
+ImageButton < UIButton
+  size: 22 23
+  image-source: /images/ui/panel_map
+  image-clip: 0 0 22 23
+  image-border: 3
+  text-offset: 0 1
+  color: #e0e0e0
 
 PreviousConsoleQtButton < UIButton
   size: 18 16

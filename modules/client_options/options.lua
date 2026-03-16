@@ -88,17 +88,19 @@ local extraWidgets = {
 }
 
 local function toggleDisplays()
-    if options['displayNames'].value and options['displayHealth'].value and options['displayMana'].value then
+    if options['displayNames'].value and options['displayHealth'].value and options['displayMana'].value and options['displayHarmony'].value then
         setOption('displayNames', false)
     elseif options['displayHealth'].value then
         setOption('displayHealth', false)
         setOption('displayMana', false)
+        setOption('displayHarmony', false)
     else
         if not options['displayNames'].value and not options['displayHealth'].value then
             setOption('displayNames', true)
         else
             setOption('displayHealth', true)
             setOption('displayMana', true)
+            setOption('displayHarmony', true)
         end
     end
 end
@@ -117,7 +119,7 @@ local function setupComboBox()
     local mouseControlModeCombobox = panels.generalPanel:recursiveGetChildById('mouseControlMode')
     local lootControlModeCombobox = panels.generalPanel:recursiveGetChildById('lootControlMode')
 
-    for k, v in pairs({ { 'Disabled', 'disabled' }, { 'Default', 'default' }, { 'Full', 'full' } }) do
+    for k, v in pairs({ { 'Disabled', 'disabled' }, { 'Default', 'default' }, { 'Full', 'full' }, { 'Animation', 'animation' } }) do
         crosshairCombo:addOption(v[1], v[2])
     end
 
@@ -262,6 +264,16 @@ local function setup()
             end
         end
     end, 100)
+
+    local talkOnRightClick = panels.generalPanel:recursiveGetChildById('talkOnRightClick')
+    if talkOnRightClick then
+        local parent = talkOnRightClick:getParent()
+       if g_game.getClientVersion() > 1511 then
+            parent:setVisible(false)
+            parent:setHeight(0)
+            parent:setMarginTop(0)
+        end
+    end
 end
 
 

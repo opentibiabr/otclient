@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,6 +29,7 @@
 #include "framework/graphics/drawpoolmanager.h"
 #include "framework/otml/otmlnode.h"
 #include <framework/platform/platformwindow.h>
+#include <framework/input/mouse.h>
 
 UIMap::UIMap()
 {
@@ -115,6 +116,8 @@ void UIMap::setLimitVisibleDimension(const bool enable) { m_mapView->setLimitVis
 
 void UIMap::setDrawManaBar(const bool enable) { m_mapView->setDrawManaBar(enable); }
 
+void UIMap::setDrawHarmony(const bool enable) { m_mapView->setDrawHarmony(enable); }
+
 void UIMap::setShader(std::string_view name, float fadein, float fadeout) { m_mapView->setShader(name, fadein, fadeout); }
 
 void UIMap::setMinimumAmbientLight(const float intensity) { m_mapView->setMinimumAmbientLight(intensity); }
@@ -162,6 +165,8 @@ float UIMap::getMinimumAmbientLight() { return m_mapView->getMinimumAmbientLight
 void UIMap::setCrosshairTexture(const std::string& texturePath) { m_mapView->setCrosshairTexture(texturePath); }
 
 void UIMap::setDrawHighlightTarget(const bool enable) { m_mapView->setDrawHighlightTarget(enable); }
+
+void UIMap::setCursorAnimations(const bool enable) { m_mapView->setCursorAnimations(enable); }
 
 void UIMap::setAntiAliasingMode(const Otc::AntialiasingMode mode) { m_mapView->setAntiAliasingMode(mode); }
 
@@ -249,6 +254,14 @@ void UIMap::onGeometryChange(const Rect& oldRect, const Rect& newRect)
 {
     UIWidget::onGeometryChange(oldRect, newRect);
     updateMapSize();
+}
+
+void UIMap::onHoverChange(bool hovered)
+{
+    UIWidget::onHoverChange(hovered);
+    if (!hovered && m_mapView->hasCursorAnimations() && !g_mouse.isCursorChanged()) {
+        g_window.restoreMouseCursor();
+    }
 }
 
 bool UIMap::onMouseMove(const Point& mousePos, const Point& mouseMoved)

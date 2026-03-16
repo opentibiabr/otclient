@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,7 @@
 #include "framework/graphics/texturemanager.h"
 #include "framework/input/mouse.h"
 #include "framework/ui/uimanager.h"
+#include <framework/util/stats.h>
 
 #ifdef FRAMEWORK_SOUND
 #include <framework/sound/soundmanager.h>
@@ -147,7 +148,10 @@ void GraphicalApplication::mainLoop() {
         return m_graphicFrameCounter.getFps();
     };
 
-    g_drawPool.draw();
+    {
+        AutoStat s(STATS_RENDER, "DrawPool");
+        g_drawPool.draw();
+    }
 
     if (m_graphicFrameCounter.update()) {
         g_dispatcher.addEvent([this, fps = FPS()] {
@@ -211,26 +215,34 @@ void GraphicalApplication::run()
             if (canDrawMap()) {
                 if (canDrawForeground) {
                     tasks.emplace_back(g_asyncDispatcher.submit_task([] {
+                        AutoStat s(STATS_RENDER, "DrawForegroundUI");
                         g_ui.render(DrawPoolType::FOREGROUND);
                     }));
                 }
 
-                m_drawEvents->preLoad();
-
+                {
+                    AutoStat s(STATS_RENDER, "DrawPreload");
+                    m_drawEvents->preLoad();
+                }
                 static constexpr std::array<DrawPoolType, 2> types{ DrawPoolType::LIGHT, DrawPoolType::FOREGROUND_MAP };
                 for (const auto type : types) {
                     if (m_drawEvents->canDraw(type)) {
                         tasks.emplace_back(g_asyncDispatcher.submit_task([this, type] {
+                            AutoStat s(STATS_RENDER, type == DrawPoolType::LIGHT ? "DrawLight" : "DrawForegroundMap");
                             m_drawEvents->draw(type);
                         }));
                     }
                 }
 
-                m_drawEvents->draw(DrawPoolType::MAP);
+                {
+                    AutoStat s(STATS_RENDER, "DrawMap");
+                    m_drawEvents->draw(DrawPoolType::MAP);
+                }
 
                 tasks.wait();
                 tasks.clear();
             } else if (canDrawForeground) {
+                AutoStat s(STATS_RENDER, "DrawForegroundUI");
                 g_ui.render(DrawPoolType::FOREGROUND);
             }
 
@@ -251,10 +263,16 @@ void GraphicalApplication::run()
             continue;
         }
 
-        g_drawPool.draw();
+        {
+            AutoStat s(STATS_RENDER, "DrawPool");
+            g_drawPool.draw();
+        }
 
         // update screen pixels
-        g_window.swapBuffers();
+        {
+            AutoStat s(STATS_RENDER, "SwapBuffers");
+            g_window.swapBuffers();
+        }
 
         if (m_graphicFrameCounter.update()) {
             g_dispatcher.addEvent([this, fps = FPS()] {
@@ -289,10 +307,23 @@ void GraphicalApplication::poll()
 }
 void GraphicalApplication::mainPoll()
 {
-    g_clock.update();
-    g_mainDispatcher.poll();
-    g_window.poll();
-    g_textures.poll();
+    AutoStat s(STATS_MAIN, "MainPoll");
+    {
+        AutoStat s2(STATS_MAIN, "ClockUpdate");
+        g_clock.update();
+    }
+    {
+        AutoStat s2(STATS_MAIN, "DispatcherPoll");
+        g_mainDispatcher.poll();
+    }
+    {
+        AutoStat s2(STATS_MAIN, "WindowPoll");
+        g_window.poll();
+    }
+    {
+        AutoStat s2(STATS_MAIN, "TexturePoll");
+        g_textures.poll();
+    }
 }
 
 void GraphicalApplication::close()

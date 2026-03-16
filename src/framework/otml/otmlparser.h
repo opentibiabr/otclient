@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +23,17 @@
 #pragma once
 
 #include "declarations.h"
+
+// OTML Variable System (& and $ syntax)
+// =====================================
+// The parser supports variables using ampersand (&) for definitions and dollar ($) for references.
+//
+// IMPORTANT: The & prefix has dual purpose in OTUI files:
+//   1. OTML variable definition - values stored for $variable substitution
+//   2. Lua field assignment - nodes processed by UIWidget::parseBaseStyle for Lua access
+//
+// Root-level & nodes are global variables. Nested & nodes are local to their scope.
+// See docs/otml-variables.md for comprehensive documentation and best practices.
 
 class OTMLParser
 {

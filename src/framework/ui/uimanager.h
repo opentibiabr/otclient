@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -42,6 +42,7 @@ public:
     void updatePressedWidgetHTML(const UIWidgetList& widgets, const Point& clickedPos = {}, bool fireClicks = true);
     bool updateDraggingWidget(const UIWidgetPtr& draggingWidget, const Point& clickedPos = {});
     void updateHoveredWidget(bool now = false);
+    void updateHoveredText(bool now = false);
 
     void clearStyles();
     bool importStyle(const std::string& fl, bool checkDeviceStyles = true);
@@ -96,7 +97,9 @@ private:
     UIWidgetList m_pressedWidgets;
     bool m_hoverUpdateScheduled{ false };
     bool m_drawDebugBoxes{ false };
+    bool m_hoverTextUpdateScheduled{ false };
     stdext::map<std::string, OTMLNodePtr> m_styles;
+    std::string m_hoveredText;
     UIWidgetList m_destroyedWidgets;
     ScheduledEventPtr m_checkEvent;
 };
