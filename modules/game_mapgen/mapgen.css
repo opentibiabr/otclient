@@ -45,7 +45,7 @@
   padding: 4 12;
   border: 1 black;
   margin-right: 1;
-  background-color: #1b1b2eff;
+  background-color: rgb(0, 0, 255);
   color: #8b8ba1ff;
 }
 
@@ -59,8 +59,10 @@
   color: #d8e6ffff;
 }
 
-.mg-tab:focus {
+.mg-tab:checked {
   border: 1 #5a88c8ff;
+  background-color: rgb(255, 0, 0);
+
 }
 
 .mg-tab-active {

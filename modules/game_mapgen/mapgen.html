@@ -40,6 +40,11 @@
   self.satDatStatus = "No chunk index loaded."
   self.satDatDisplayRows = {}
   self.satDatTotalRows = 0
+  self.minimapOtmmPath = "/minimap_1098.otmm"
+  self.minimapPngBase = "minimap_floor"
+  self.minimapFloorFrom = "0"
+  self.minimapFloorTo = "15"
+  self.minimapResultText = "No exports yet."
 
   self.imgMinX = "32000"
   self.imgMinY = "32000"
@@ -91,13 +96,21 @@
 
     <!-- TAB BAR — active tab highlighted via background-color only (no border-bottom) -->
     <div class="mg-tabbar">
-      <button class="mg-tab" onclick="self:switchTab('config')" *style="self.activeTab == 'config' and 'background-color: #5b3f16ff; color: #ffe4a3ff; border: 1 #7f5821ff' or 'background-color: #1b1b2eff; color: #8b8ba1ff; border: 1 black'">Config</button>
-      <button class="mg-tab" onclick="self:switchTab('preview')" *style="self.activeTab == 'preview' and 'background-color: #5b3f16ff; color: #ffe4a3ff; border: 1 #7f5821ff' or 'background-color: #1b1b2eff; color: #8b8ba1ff; border: 1 black'">Preview</button>
-      <button class="mg-tab" onclick="self:switchTab('export')" *style="self.activeTab == 'export' and 'background-color: #5b3f16ff; color: #ffe4a3ff; border: 1 #7f5821ff' or 'background-color: #1b1b2eff; color: #8b8ba1ff; border: 1 black'">Export PNG</button>
-      <button class="mg-tab" onclick="self:switchTab('generate')" *style="self.activeTab == 'generate' and 'background-color: #5b3f16ff; color: #ffe4a3ff; border: 1 #7f5821ff' or 'background-color: #1b1b2eff; color: #8b8ba1ff; border: 1 black'">Full Generate</button>
-      <button class="mg-tab" onclick="self:switchTab('satellite')" *style="self.activeTab == 'satellite' and 'background-color: #5b3f16ff; color: #ffe4a3ff; border: 1 #7f5821ff' or 'background-color: #1b1b2eff; color: #8b8ba1ff; border: 1 black'">Satellite</button>
-      <button class="mg-tab" onclick="self:switchTab('log')" *style="self.activeTab == 'log' and 'background-color: #5b3f16ff; color: #ffe4a3ff; border: 1 #7f5821ff' or 'background-color: #1b1b2eff; color: #8b8ba1ff; border: 1 black'">Log</button>
-      <button class="mg-btn mg-btn-close" onclick="self:unloadHtml()" style="float: right; margin-right: 2; margin-top: 1">X</button>
+      <uibutton class="mg-tab" onclick="self:switchTab('config',event)"
+        >Config</uibutton>
+      <uibutton class="mg-tab" onclick="self:switchTab('preview', event)"
+        >Preview</uibutton>
+      <uibutton class="mg-tab" onclick="self:switchTab('export', event)"
+        >Export PNG</uibutton>
+      <uibutton class="mg-tab" onclick="self:switchTab('generate', event)"
+        *style="self.tabStyleGenerate">Full Generate</uibutton>
+      <uibutton class="mg-tab" onclick="self:switchTab('satellite', event)"
+        *style="self.tabStyleSatellite">Satellite</uibutton>
+      <uibutton class="mg-tab" onclick="self:switchTab('minimap', event)"
+        *style="self.tabStyleMinimap">Minimap</uibutton>
+      <uibutton class="mg-tab" onclick="self:switchTab('log', event)"
+        *style="self.tabStyleLog">Log</uibutton>
+      <uibutton class="mg-btn mg-btn-close" onclick="self:unloadHtml()" style="float: right; margin-right: 2; margin-top: 1">X</uibutton>
     </div>
 
     <!-- CONTENT WRAPPER (position:relative so absolute children anchor here) -->
@@ -176,16 +189,16 @@
 
         <div class="mg-row">
           <label class="mg-label">Asset Format:</label>
-          <input id="chkProto" type="checkbox" onchange="self:onFeatureCheckChanged()" />
+          <input id="chkProto" type="checkbox" *checked="self.isProtobuf" onchange="self:onFeatureCheckChanged()" />
           <label for="chkProto" style="color: #bbbbddff; margin-left: 4">Protobuf / Assets folder (v1281+)</label>
         </div>
 
         <div class="mg-section-title">File Paths</div>
-        <div class="mg-row" style="padding: 0; height: 200px;">
+        <div class="mg-row" style="padding: 0">
           <div style="display: inline-block; width: 590; vertical-align: top; margin-top: 0">
             <!-- Legacy OTB path (hidden when protobuf) -->
 
-            <div *visible="not self.isProtobuf">
+            <div *visible="not self.isProtobuf" style="width: 590">
               <div class="mg-row">
                 <label class="mg-label">items.otb:</label>
                 <input type="text" *value="self.definitionsPath" class="mg-path-input" />
@@ -209,7 +222,7 @@
             </div>
 
             <!-- Protobuf path (hidden when legacy) -->
-            <div *visible="self.isProtobuf">
+            <div *visible="self.isProtobuf" style="width: 590; margin-top: -92px">
               <div class="mg-row">
                 <label class="mg-label">Assets Directory:</label>
                 <input type="text" *value="self.assetsPath" class="mg-path-input" />
@@ -220,7 +233,7 @@
                 <input type="text" *value="self.mapPath" class="mg-path-input" />
                 <button class="mg-browse-btn" onclick="self:browseFile({'otbm'}, 'mapPath')">Browse...</button>
               </div>
-              <div class="mg-infobox" style="margin: 2 0 0 0; height: 50; width: 600;">
+              <div class="mg-infobox" style="margin: 2 0 0 0; height: 50; width: 500;">
                 Protobuf: catalog-content.json auto-detected. items.otb used for id-mapping if found.
               </div>
             </div>
@@ -229,16 +242,16 @@
           <div style="display: inline-block; width: 250; vertical-align: top; margin-left: 8; margin-top: 0">
             <div class="mg-card" style="padding: 4 8; margin: 0">
               <div class="mg-row" style="padding: 0; height: 18; ">
-                <input id="chkSpritesU32" type="checkbox" onchange="self:onFeatureCheckChanged()" text="GameSpritesU32" style="width:200;"/>
+                <input id="chkSpritesU32" type="checkbox" *checked="self.featSpritesU32" onchange="self:onFeatureCheckChanged()" text="GameSpritesU32" style="width: 200px" />
               </div>
               <div class="mg-row" style="padding: 0; height: 18">
-                <input id="chkSpritesAlpha" type="checkbox" onchange="self:onFeatureCheckChanged()" text="GameSpritesAlphaChannel" style="width:200;"/>
+                <input id="chkSpritesAlpha" type="checkbox" *checked="self.featSpritesAlphaChannel" onchange="self:onFeatureCheckChanged()" text="GameSpritesAlphaChannel" style="width: 200px" />
               </div>
               <div class="mg-row" style="padding: 0; height: 18">
-                  <input id="chkEnhancedAnim" type="checkbox" onchange="self:onFeatureCheckChanged()" text="GameEnhancedAnimations" style="width:200;" />
+                  <input id="chkEnhancedAnim" type="checkbox" *checked="self.featEnhancedAnimations" onchange="self:onFeatureCheckChanged()" text="GameEnhancedAnimations" style="width: 200px" />
                 </div>
               <div class="mg-row" style="padding: 0; height: 18">
-                <input id="chkIdleAnim" type="checkbox" onchange="self:onFeatureCheckChanged()" text="GameIdleAnimations"  style="width:200;"/>
+                <input id="chkIdleAnim" type="checkbox" *checked="self.featIdleAnimations" onchange="self:onFeatureCheckChanged()" text="GameIdleAnimations" style="width: 200px" />
               </div>
             </div>
           </div>
@@ -280,7 +293,7 @@
           <div class="mg-section-title">Area Coordinates</div>
           <div class="mg-coordbar">
             <span class="mg-coordlabel">Min X</span>
-            <input id="prevMinXInput" type="number" *value="self.prevMinX" onchange="self:onPositionInputChanged('previewMin')" class="mg-coord-input" min="0" max="65535" step="1" />
+            <input id="prevMinXInput" type="text" *value="self.prevMinX" onchange="self:onPositionInputChanged('previewMin')" class="mg-coord-input" />
             <span class="mg-coordlabel">Min Y</span>
             <input type="number" *value="self.prevMinY" class="mg-coord-input" min="0" max="65535" step="1" />
             <span class="mg-coordlabel">Max X</span>
@@ -328,7 +341,7 @@
 
           <div class="mg-coordbar">
             <span class="mg-coordlabel">Min X</span>
-            <input id="imgMinXInput" type="number" *value="self.imgMinX" onchange="self:onPositionInputChanged('exportMin')" class="mg-coord-input" min="0" max="65535" step="1" />
+            <input id="imgMinXInput" type="text" *value="self.imgMinX" onchange="self:onPositionInputChanged('exportMin')" class="mg-coord-input" />
             <span class="mg-coordlabel">Min Y</span>
             <input type="number" *value="self.imgMinY" class="mg-coord-input" min="0" max="65535" step="1" />
             <span class="mg-coordlabel">Max X</span>
@@ -453,11 +466,11 @@
           <div class="mg-card">
             <div class="mg-row">
               <span class="mg-coordlabel" style="margin-left: 0">From X</span>
-              <input id="areaFromXInput" type="number" *value="self.areaFromX" onchange="self:onPositionInputChanged('areaFrom')" class="mg-coord-input" min="0" max="65535" />
+              <input id="areaFromXInput" type="text" *value="self.areaFromX" onchange="self:onPositionInputChanged('areaFrom')" class="mg-coord-input" />
               <span class="mg-coordlabel">From Y</span>
               <input type="number" *value="self.areaFromY" class="mg-coord-input" min="0" max="65535" />
               <span class="mg-coordlabel">To X</span>
-              <input id="areaToXInput" type="number" *value="self.areaToX" onchange="self:onPositionInputChanged('areaTo')" class="mg-coord-input" min="0" max="65535" />
+              <input id="areaToXInput" type="text" *value="self.areaToX" onchange="self:onPositionInputChanged('areaTo')" class="mg-coord-input" />
               <span class="mg-coordlabel">To Y</span>
               <input type="number" *value="self.areaToY" class="mg-coord-input" min="0" max="65535" />
             </div>
@@ -503,7 +516,7 @@
       <!-- ============================================================ -->
       <div class="mg-tabpanel" *visible="self.activeTab == 'satellite'">
 
-        <div *visible="self.isPrepared">
+        <div *visible="self.isPrepared" style="margin-bottom: 18">
           <div class="mg-section-title">Satellite and Minimap Chunk Generation</div>
           <div class="mg-infobox">
             Generates satellite .bmp.lzma chunks, minimap chunks and map.dat protobuf for external viewers.
@@ -539,7 +552,7 @@
             </div>
           </div>
 
-          <div class="mg-row" style="margin-top: 10">
+          <div class="mg-row" style="margin-top: -28; margin-bottom: 10">
             <button class="mg-btn mg-btn-success" onclick="self:doGenerateSatellite()"
               *visible="not self.isGenerating">
               Generate Satellite Data
@@ -548,7 +561,7 @@
         </div>
 
         <!-- ---- Satellite Preview ---- -->
-        <div class="mg-section-title" style="margin-top: 8">Satellite Preview (UIMinimap)</div>
+        <div class="mg-section-title" style="margin-top: 22">Satellite Preview (UIMinimap)</div>
         <div class="mg-card">
             <div class="mg-row">
               <label class="mg-label">Preview Dir:</label>
@@ -565,7 +578,7 @@
             </div>
             <div class="mg-row">
               <label class="mg-label" style="width: 60">Go to X:</label>
-              <input id="satPosXInput" type="number" *value="self.satPosX" onchange="self:onPositionInputChanged('satPos')" class="mg-coord-input" min="0" max="65535" />
+              <input id="satPosXInput" type="text" *value="self.satPosX" onchange="self:onPositionInputChanged('satPos')" class="mg-coord-input" />
               <label class="mg-label" style="width: 20; margin-left: 4">Y:</label>
               <input type="number" *value="self.satPosY" class="mg-coord-input" min="0" max="65535" />
               <button class="mg-btn mg-btn-secondary" onclick="self:satGoToPosition()" style="padding: 3 10">Go</button>
@@ -617,9 +630,8 @@
             </div>
             <div class="mg-infobox" style="padding: 4 8">
               {{self.satDatStatus}}
-              <span style="margin-left: 10; color: #99bbccff">Type: satellite / minimap</span>
             </div>
-            <div class="mg-log" style="height: 170; font: terminus-11px">
+            <div class="mg-log" style="height: 170">
               <div style="display: block; padding: 1 0; color: #88ccffff">
                 <span style="display: inline-block; width: 22">#</span>
                 <span style="display: inline-block; width: 70">Type</span>
@@ -644,6 +656,39 @@
         </div>
 
       </div><!-- /satellite -->
+
+      <!-- ============================================================ -->
+      <!-- TAB: MINIMAP -->
+      <!-- ============================================================ -->
+      <div class="mg-tabpanel" *visible="self.activeTab == 'minimap'">
+        <div class="mg-section-title">Save OTMM desde map importado</div>
+        <div class="mg-infobox">Exporta OTMM y PNG de minimap por rango de pisos.</div>
+
+        <div class="mg-row">
+          <label class="mg-label">OTMM Path:</label>
+          <input type="text" *value="self.minimapOtmmPath" class="mg-path-input" />
+        </div>
+        <div class="mg-row">
+          <label class="mg-label">PNG Base Name:</label>
+          <input type="text" *value="self.minimapPngBase" class="mg-path-input" />
+        </div>
+        <div class="mg-row">
+          <label class="mg-label">Floors:</label>
+          <span class="mg-coordlabel">From</span>
+          <input type="number" *value="self.minimapFloorFrom" style="width: 48" min="0" max="15" step="1" />
+          <span class="mg-coordlabel">To</span>
+          <input type="number" *value="self.minimapFloorTo" style="width: 48" min="0" max="15" step="1" />
+        </div>
+        <div class="mg-row">
+          <button class="mg-btn mg-btn-success" onclick="self:doExportOtmmFull()">Export OTMM Full</button>
+          <button class="mg-btn mg-btn-warning" onclick="self:doExportOtmmFloorRange()">Export OTMM Floor Range</button>
+          <button class="mg-btn mg-btn-info" onclick="self:doExportMinimapPngFloorRange()">Save PNG minimap</button>
+        </div>
+        <div class="mg-section-title">Preview rapido del resultado</div>
+        <div class="mg-card">
+          <span style="color: #99bbccff">{{self.minimapResultText}}</span>
+        </div>
+      </div><!-- /minimap -->
 
       <!-- ============================================================ -->
       <!-- TAB: LOG -->

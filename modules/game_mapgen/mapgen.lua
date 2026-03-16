@@ -140,8 +140,21 @@ function MapGenUI:onInit()
     self.satForceFields = self.satForceFields or 'auto'
     self.satDatRows = {}
     self.satDatFilteredRows = {}
+    self.tabStyleConfig = ''
+    self.tabStylePreview = ''
+    self.tabStyleExport = ''
+    self.tabStyleGenerate = ''
+    self.tabStyleSatellite = ''
+    self.tabStyleMinimap = ''
+    self.tabStyleLog = ''
+    self.minimapOtmmPath = self.minimapOtmmPath or ('/minimap_' .. tostring(self.clientVersion or '1098') .. '.otmm')
+    self.minimapPngBase = self.minimapPngBase or 'minimap_floor'
+    self.minimapFloorFrom = self.minimapFloorFrom or '0'
+    self.minimapFloorTo = self.minimapFloorTo or '15'
+    self.minimapResultText = self.minimapResultText or 'No exports yet.'
     self.progressBarWidth = 0
     self:loadHtml('mapgen.html')
+    self:updateTabStyles()
     self:syncFeatureCheckboxes()
     self:addLog('Map Generator Studio loaded. Configure and press Prepare Client.', '#88ccff')
     self:onVersionChanged(self.clientVersion or '1098')
@@ -320,8 +333,11 @@ end
 -- Tab switching
 -- =========================================================================
 
-function MapGenUI:switchTab(tab)
+function MapGenUI:switchTab(tab, event)
     self.activeTab = tab
+    self:updateTabStyles()
+    pdump(event)
+    event.target:setChecked(true)
 end
 
 function MapGenUI:tabStyle(tab)
@@ -329,6 +345,16 @@ function MapGenUI:tabStyle(tab)
         return 'background-color: #5b3f16ff; color: #ffe4a3ff; border: 1 #7f5821ff'
     end
     return 'background-color: #1b1b2eff; color: #8b8ba1ff; border: 1 black'
+end
+
+function MapGenUI:updateTabStyles()
+    self.tabStyleConfig = self:tabStyle('config')
+    self.tabStylePreview = self:tabStyle('preview')
+    self.tabStyleExport = self:tabStyle('export')
+    self.tabStyleGenerate = self:tabStyle('generate')
+    self.tabStyleSatellite = self:tabStyle('satellite')
+    self.tabStyleMinimap = self:tabStyle('minimap')
+    self.tabStyleLog = self:tabStyle('log')
 end
 
 function MapGenUI:_applyPastedPosition(target, pos)
@@ -547,6 +573,47 @@ local function resolveLoadPath(path, logFn)
     return normalized
 end
 
+local function getFileSizeBytesFromPath(rawPath)
+    if not rawPath or rawPath == '' then
+        return nil
+    end
+
+    local candidates = {}
+    local normalized = tostring(rawPath):gsub('\\', '/')
+
+    local function pushCandidate(path)
+        if not path or path == '' then
+            return
+        end
+        path = tostring(path):gsub('\\', '/')
+        for _, existing in ipairs(candidates) do
+            if existing == path then
+                return
+            end
+        end
+        table.insert(candidates, path)
+    end
+
+    pushCandidate(normalized)
+    if normalized:sub(1, 1) == '/' then
+        local rel = normalized:sub(2)
+        pushCandidate((g_resources.getWriteDir() or ''):gsub('\\', '/') .. rel)
+        pushCandidate((g_resources.getWorkDir() or ''):gsub('\\', '/') .. rel)
+    end
+
+    for _, filePath in ipairs(candidates) do
+        local file = io.open(filePath, 'rb')
+        if file then
+            local size = file:seek('end')
+            file:close()
+            if size and size >= 0 then
+                return size
+            end
+        end
+    end
+    return nil
+end
+
 function MapGenUI:browseFile(extensions, targetProp)
     if not g_platform.openFileDialog then
         self.statusText = 'Browse unavailable: recompile needed. Enter path manually.'
@@ -601,6 +668,7 @@ function MapGenUI:onVersionChanged(v)
     self.satOutputDir = satDir
     self.satPreviewDir = satDir
     self.exportDir = getVersionedExportDir(v)
+    self.minimapOtmmPath = '/minimap_' .. tostring(v) .. '.otmm'
     self.satLod = tostring(tonumber(self.satLod or self.fullSatLod) or 32)
     self.fullSatLod = self.satLod
     self:syncFeatureCheckboxes()
@@ -716,13 +784,49 @@ function MapGenUI:doPrepare()
         return
     end
 
-    self:addLog('Preparing client v' .. cv .. ' ...', '#88ccff')
-    self.statusText = 'Preparing client... (may freeze briefly)'
+    local startPrepare = function()
+        self:addLog('Preparing client v' .. cv .. ' ...', '#88ccff')
+        self.statusText = 'Preparing client... (may freeze briefly)'
+        g_dispatcher.scheduleEvent(function()
+            self:_doPrepareAction(cv)
+        end, 150)
+    end
 
-    -- Small delay so UI can redraw before the potential freeze
-    g_dispatcher.scheduleEvent(function()
-        self:_doPrepareAction(cv)
-    end, 150)
+    local resolvedMapPath = resolveLoadPath(self.mapPath or '', function() end)
+    local mapSize = getFileSizeBytesFromPath(resolvedMapPath) or getFileSizeBytesFromPath(self.mapPath or '')
+    local limitBytes = 20 * 1024 * 1024
+    if mapSize and mapSize > limitBytes then
+        local sizeMb = string.format('%.2f', mapSize / (1024 * 1024))
+        local dialog
+        local continuePrepare = function()
+            if dialog then
+                dialog:destroy()
+                dialog = nil
+            end
+            startPrepare()
+        end
+        local abortPrepare = function()
+            if dialog then
+                dialog:destroy()
+                dialog = nil
+            end
+            self:addLog('Prepare aborted by user (heavy map).', '#ddaa44')
+            self.statusText = 'Prepare aborted.'
+        end
+        dialog = displayGeneralBox(
+            'Mapa pesado',
+            'Estas seguro que quieres abrir un mapa tan pesado? (' .. sizeMb .. ' MB)',
+            {
+                { text = 'Yes', callback = continuePrepare },
+                { text = 'Abort', callback = abortPrepare }
+            },
+            continuePrepare,
+            abortPrepare
+        )
+        return
+    end
+
+    startPrepare()
 end
 
 function MapGenUI:_doPrepareAction(cv)
@@ -1145,6 +1249,142 @@ function MapGenUI:doExportMinimap()
             self.statusText = 'Minimap export failed. See log.'
         end
     end, 250)
+end
+
+function MapGenUI:_minimapFloorRange()
+    local fromZ = tonumber(self.minimapFloorFrom) or 0
+    local toZ = tonumber(self.minimapFloorTo) or 15
+    fromZ = math.max(0, math.min(15, fromZ))
+    toZ = math.max(0, math.min(15, toZ))
+    if fromZ > toZ then
+        fromZ, toZ = toZ, fromZ
+    end
+    return fromZ, toZ
+end
+
+function MapGenUI:_ensureMapLoadedForMinimap()
+    if not self.isPrepared then
+        self:addLog('Cannot export minimap data: client not prepared.', '#ff6666')
+        self.statusText = 'Prepare client first.'
+        return false
+    end
+
+    if not _mapPath or _mapPath == '' then
+        self:addLog('Cannot export minimap data: map path missing.', '#ff6666')
+        self.statusText = 'Map path missing.'
+        return false
+    end
+
+    local minX, maxX = 0, 70000
+    if _preparedMinPos and _preparedMaxPos then
+        minX = math.max(0, _preparedMinPos.x - 32)
+        maxX = _preparedMaxPos.x + 32
+    end
+    g_map.setMinXToLoad(minX)
+    g_map.setMaxXToLoad(maxX)
+    g_map.setMinXToRender(minX)
+    g_map.setMaxXToRender(maxX)
+    g_map.loadOtbm(_mapPath)
+    return true
+end
+
+function MapGenUI:doExportOtmmFull()
+    local outPath = trimText(self.minimapOtmmPath or '')
+    if outPath == '' then
+        outPath = '/minimap_export.otmm'
+        self.minimapOtmmPath = outPath
+    end
+
+    self.statusText = 'Exporting OTMM full...'
+    g_dispatcher.scheduleEvent(function()
+        local ok, err = pcall(function()
+            if not self:_ensureMapLoadedForMinimap() then
+                error('prepare required')
+            end
+            g_minimap.saveOtmm(outPath)
+        end)
+
+        if ok then
+            self.minimapResultText = 'OTMM Full: ' .. outPath .. ' | floors: 0-15 | tiles: full map'
+            self:addLog('OTMM full exported: ' .. outPath, '#44dd88')
+            self.statusText = 'OTMM full exported.'
+        else
+            self:addLog('ERROR OTMM full: ' .. tostring(err), '#ff6666')
+            self.statusText = 'OTMM full export failed.'
+        end
+    end, 50)
+end
+
+function MapGenUI:doExportOtmmFloorRange()
+    local fromZ, toZ = self:_minimapFloorRange()
+    local outPath = trimText(self.minimapOtmmPath or '')
+    if outPath == '' then
+        outPath = '/minimap_export.otmm'
+        self.minimapOtmmPath = outPath
+    end
+
+    self.statusText = 'Exporting OTMM floor range...'
+    g_dispatcher.scheduleEvent(function()
+        local ok, err = pcall(function()
+            if not self:_ensureMapLoadedForMinimap() then
+                error('prepare required')
+            end
+            g_minimap.saveOtmm(outPath)
+        end)
+
+        if ok then
+            self.minimapResultText = string.format(
+                'OTMM Range request %d-%d exported to %s (engine OTMM exports full data).',
+                fromZ, toZ, outPath)
+            self:addLog(string.format('OTMM floor range requested %d-%d; exported full OTMM: %s', fromZ, toZ, outPath), '#ddaa44')
+            self.statusText = 'OTMM range exported (full file).'
+        else
+            self:addLog('ERROR OTMM range: ' .. tostring(err), '#ff6666')
+            self.statusText = 'OTMM range export failed.'
+        end
+    end, 50)
+end
+
+function MapGenUI:doExportMinimapPngFloorRange()
+    local fromZ, toZ = self:_minimapFloorRange()
+    local baseName = trimText(self.minimapPngBase or '')
+    if baseName == '' then
+        baseName = 'minimap_floor'
+        self.minimapPngBase = baseName
+    end
+
+    local minX = tonumber(self.imgMinX) or (_preparedMinPos and _preparedMinPos.x or 0)
+    local minY = tonumber(self.imgMinY) or (_preparedMinPos and _preparedMinPos.y or 0)
+    local maxX = tonumber(self.imgMaxX) or (_preparedMaxPos and _preparedMaxPos.x or 500)
+    local maxY = tonumber(self.imgMaxY) or (_preparedMaxPos and _preparedMaxPos.y or 500)
+
+    self.statusText = 'Exporting minimap PNG floor range...'
+    g_dispatcher.scheduleEvent(function()
+        local count = 0
+        local ok, err = pcall(function()
+            if not self:_ensureMapLoadedForMinimap() then
+                error('prepare required')
+            end
+            for z = fromZ, toZ do
+                local fileName = string.format('%s_z%d.png', baseName, z)
+                g_minimap.saveImage(fileName, minX, minY, maxX, maxY, z)
+                count = count + 1
+            end
+        end)
+
+        if ok then
+            local width = math.max(1, maxX - minX + 1)
+            local height = math.max(1, maxY - minY + 1)
+            self.minimapResultText = string.format(
+                'PNG floors exported: %d | area: %dx%d tiles | floors: %d-%d | base: %s',
+                count, width, height, fromZ, toZ, baseName)
+            self:addLog(string.format('Minimap PNG floors exported: %d (%d-%d) base=%s', count, fromZ, toZ, baseName), '#44dd88')
+            self.statusText = 'Minimap PNG floor range exported.'
+        else
+            self:addLog('ERROR PNG floor range: ' .. tostring(err), '#ff6666')
+            self.statusText = 'PNG floor range export failed.'
+        end
+    end, 50)
 end
 
 -- =========================================================================
