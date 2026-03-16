@@ -200,8 +200,30 @@ void Image::saveBmpLzma(const std::string& fileName)
 
     fin->cache();
 
-    // 32-byte CIP header (zeros — reader skips it entirely)
-    std::array<uint8_t, 32> cipHeader{};
+    // Build proper 32-byte CIP header:
+    //   [0x00 padding...] [0x70 0x0A 0xFA 0x80 0x24] [7-bit varint: LZMA data size]
+    // Total must be exactly 32 bytes.
+    std::array<uint8_t, 32> cipHeader{};  // zero-initialized
+
+    // Encode LZMA data size as 7-bit varint
+    std::vector<uint8_t> varintBytes;
+    size_t tmpSize = lzmaOut.size();
+    do {
+        uint8_t b = static_cast<uint8_t>(tmpSize & 0x7F);
+        tmpSize >>= 7;
+        if (tmpSize > 0)
+            b |= 0x80;
+        varintBytes.push_back(b);
+    } while (tmpSize > 0);
+
+    constexpr uint8_t magic[] = { 0x70, 0x0A, 0xFA, 0x80, 0x24 };
+    constexpr size_t magicLen = sizeof(magic);
+
+    // Layout: [zeros] [magic(5)] [varint(N)] = 32
+    const size_t magicOffset = 32 - magicLen - varintBytes.size();
+    memcpy(&cipHeader[magicOffset], magic, magicLen);
+    memcpy(&cipHeader[magicOffset + magicLen], varintBytes.data(), varintBytes.size());
+
     fin->write(cipHeader.data(), cipHeader.size());
 
     // LZMA-alone data
