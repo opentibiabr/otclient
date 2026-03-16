@@ -142,6 +142,40 @@ function MapGenUI:onInit()
     self.satDatFilteredRows = {}
 
     -- State tables for RadioGroup-like behavior in HTML
+    self.threads = self.threads or 9
+    self.parts = self.parts or 1
+    self.shadowPercent = self.shadowPercent or 30
+    self.exportDir = self.exportDir or getVersionedExportDir(self.clientVersion or '1098')
+
+    -- Default Coords (Map centerish)
+    self.prevMinX = self.prevMinX or '32278'
+    self.prevMinY = self.prevMinY or '32129'
+    self.prevMaxX = self.prevMaxX or '32478'
+    self.prevMaxY = self.prevMaxY or '32329'
+    self.prevFloor = self.prevFloor or '7'
+    self.prevDrawLower = (self.prevDrawLower ~= false)
+
+    self.imgMinX = self.imgMinX or '32278'
+    self.imgMinY = self.imgMinY or '32129'
+    self.imgMaxX = self.imgMaxX or '32478'
+    self.imgMaxY = self.imgMaxY or '32329'
+    self.imgFloor = self.imgFloor or '7'
+    self.imgDrawLower = (self.imgDrawLower ~= false)
+
+    self.areaFromX = self.areaFromX or '32000'
+    self.areaFromY = self.areaFromY or '32000'
+    self.areaToX = self.areaToX or '32500'
+    self.areaToY = self.areaToY or '32500'
+    self.areaFloors = self.areaFloors or '7'
+    self.floorNum = self.floorNum or '7'
+
+    self.satOutputDir = self.satOutputDir or '/satellite_output'
+    self.satShadow = self.satShadow or '30'
+    self.satPreviewDir = self.satPreviewDir or ''
+    self.satPreviewFloor = self.satPreviewFloor or '7'
+    self.satPosX = self.satPosX or '32000'
+    self.satPosY = self.satPosY or '32000'
+
     self.satLodState = { ["auto"] = true, ["16"] = false, ["32"] = false, ["64"] = false }
     self.satFieldsState = { ["auto"] = true, ["256"] = false, ["512"] = false }
     self.satViewState = { ["surface"] = true, ["map"] = false }
@@ -158,6 +192,7 @@ function MapGenUI:onInit()
     self:syncFeatureCheckboxes()
     self:addLog('Map Generator Studio loaded. Configure and press Prepare Client.', '#88ccff')
     self:onVersionChanged(self.clientVersion or '1098')
+    self:updateExportFilenames()
 
     -- Update RAM display every 2 seconds using process working-set
     self:cycleEvent(function()
@@ -361,6 +396,7 @@ function MapGenUI:_applyPastedPosition(target, pos)
         if pos.z ~= nil then
             self.imgFloor = tostring(pos.z)
         end
+        self:updateExportFilenames()
     elseif target == 'areaFrom' then
         self.areaFromX = tostring(pos.x)
         self.areaFromY = tostring(pos.y)
@@ -428,6 +464,27 @@ function MapGenUI:onPositionInputChanged(target)
         self:addLog(string.format('Detected position for %s: (%d,%d,%s)',
             target, pos.x, pos.y, tostring(pos.z or '-')), '#88ccff')
     end
+end
+
+function MapGenUI:updateExportFilenames()
+    if self.filenameUpdateEvent then
+        g_dispatcher.removeEvent(self.filenameUpdateEvent)
+    end
+    self.filenameUpdateEvent = self:scheduleEvent(function()
+        self:_performUpdateExportFilenames()
+        self.filenameUpdateEvent = nil
+    end, 10)
+end
+
+function MapGenUI:_performUpdateExportFilenames()
+    local x1 = tostring(math.floor(tonumber(self.imgMinX) or 0))
+    local y1 = tostring(math.floor(tonumber(self.imgMinY) or 0))
+    local x2 = tostring(math.floor(tonumber(self.imgMaxX) or 0))
+    local y2 = tostring(math.floor(tonumber(self.imgMaxY) or 0))
+    local z  = tostring(math.floor(tonumber(self.imgFloor) or 7))
+
+    self.imgFilename = string.format("map_export_%s_%s_%s_%s_%s.png", x1, y1, x2, y2, z)
+    self.minimapFilename = string.format("minimap_export_%s_%s_%s_%s_%s.png", x1, y1, x2, y2, z)
 end
 
 function MapGenUI:satSetForcedLod(value)
