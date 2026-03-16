@@ -90,14 +90,14 @@ void Map::loadOtbm(const std::string& fileName)
             throw Exception("could not read root property!");
 
         const uint32_t headerVersion = root->getU32();
-        if (headerVersion > 3)
-            //throw Exception("Unknown OTBM version detected: {}.", headerVersion);
 
         setWidth(root->getU16());
         setHeight(root->getU16());
 
         const uint32_t headerMajorItems = root->getU8();
         const bool useOtbItemIds = g_things.isOtbLoaded() && headerMajorItems > 0;
+        const bool classicOtbm = headerMajorItems > 0;
+        const bool strictClassicOtbm = classicOtbm && headerVersion <= 3;
         if (useOtbItemIds && headerMajorItems > g_things.getOtbMajorVersion()) {
             throw Exception("This map was saved with different OTB version. read {} what it's supposed to be: {}", headerMajorItems, g_things.getOtbMajorVersion());
         }
@@ -109,10 +109,12 @@ void Map::loadOtbm(const std::string& fileName)
         }
 
         const auto createMapItem = [useOtbItemIds](const uint16_t rawId) {
-            if (useOtbItemIds && g_things.isValidOtbId(rawId))
+            // OTBM maps with item major > 0 are server-id based.
+            // Never reinterpret unknown server ids as client ids; that creates wrong items.
+            if (useOtbItemIds)
                 return Item::createFromOtb(rawId);
 
-            // Protobuf/dat-only maps encode item ids directly as client ids.
+            // Dat-only/protobuf maps encode item ids directly as client ids.
             return Item::create(rawId);
         };
 
@@ -133,12 +135,14 @@ void Map::loadOtbm(const std::string& fileName)
                 case OTBM_ATTR_HOUSE_FILE:
                     setHouseFile(fileName.substr(0, fileName.rfind('/') + 1).c_str() + tmp);
                     break;
-                // Canary/RME protobuf extensions (npc spawns / zones files).
-                // OTClient map generator doesn't consume them, so ignore safely.
+                // Protobuf/RME extensions (e.g. npc spawns / zones files).
+                // Parser doesn't consume them in the map generator pipeline.
                 case 23:
                 case 24:
                     break;
                 default:
+                    if (strictClassicOtbm)
+                        throw Exception("Invalid attribute '{}'", static_cast<int>(attribute));
                     g_logger.warning("Ignoring unknown OTBM map header attribute '{}'", static_cast<int>(attribute));
                     break;
             }
@@ -149,6 +153,8 @@ void Map::loadOtbm(const std::string& fileName)
         m_mapTilesPerX.clear();
         m_minPosition = Position(65535, 65535, 255);
         m_maxPosition = Position(0, 0, 0);
+
+        bool warnedMoveableHouseItems = false;
 
         for (const auto& nodeMapData : node->getChildren()) {
             const uint8_t mapDataType = nodeMapData->getU8();
@@ -191,11 +197,13 @@ void Map::loadOtbm(const std::string& fileName)
                         continue;
                     }
 
-                    // Some OTBM files may contain duplicated tile nodes for the same position.
-                    // Keep "last tile wins" semantics to avoid accumulating stale/phantom items.
-                    if (const TilePtr& existingTile = getTile(pos)) {
-                        //g_logger.warning("OTBM duplicate tile detected at {}, replacing previous contents", pos);
-                        existingTile->clean();
+                    if (!strictClassicOtbm) {
+                        // Some OTBM files may contain duplicated tile nodes for the same position.
+                        // Keep "last tile wins" semantics to avoid accumulating stale/phantom items.
+                        if (const TilePtr& existingTile = getTile(pos)) {
+                            //g_logger.warning("OTBM duplicate tile detected at {}, replacing previous contents", pos);
+                            existingTile->clean();
+                        }
                     }
 
                     // Add to generator area list if within render range
@@ -246,8 +254,9 @@ void Map::loadOtbm(const std::string& fileName)
 
                                 if ((_flags & TILESTATE_REFRESH) == TILESTATE_REFRESH)
                                     flags |= TILESTATE_REFRESH;
-                                // zones by oskar 
-                                if (_flags & TILESTATE_ZONE_BRUSH && !g_game.isUsingProtobuf()) {
+                                // OTBM stores zone brush payload inline after tile flags.
+                                // Always consume it to keep node stream aligned.
+                                if (_flags & TILESTATE_ZONE_BRUSH) {
                                     uint16_t zoneId = 0;
                                     do {
                                         zoneId = nodeTile->getU16();
@@ -270,6 +279,8 @@ void Map::loadOtbm(const std::string& fileName)
                     for (const auto& nodeItem : nodeTile->getChildren()) {
                         const uint8_t childType = nodeItem->getU8();
                         if (childType != OTBM_ITEM) {
+                            if (strictClassicOtbm)
+                                throw Exception("invalid item node");
                             // Forward compatibility (e.g. Canary/RME OTBM extensions like TILE_ZONE=19).
                             if (childType != 19)
                                 g_logger.warning("Ignoring unknown tile child node type {} at pos {}", static_cast<int>(childType), pos);
@@ -291,29 +302,35 @@ void Map::loadOtbm(const std::string& fileName)
                         }
 
                         if (house && item->isMoveable()) {
-                            g_logger.warning("Moveable item found in house: {} at pos {} - escaping...", item->getId(), pos);
-                            item.reset();
+                            if (!strictClassicOtbm && !warnedMoveableHouseItems) {
+                                warnedMoveableHouseItems = true;
+                                g_logger.warning("Moveable items were found inside house tiles while loading '{}'. Keeping them to preserve map contents (common in 10.98 maps).", fileName);
+                            }
+                            if (strictClassicOtbm)
+                                item.reset();
                         }
 
                         addThing(item, pos);
                     }
 
                     if (const TilePtr& tile = getTile(pos)) {
-                        // Some protobuf/canary maps may carry duplicated ground entries.
-                        // Keep only the last parsed ground to match editor-visible result.
-                        ThingPtr lastGround = nullptr;
-                        std::vector<ThingPtr> duplicatedGrounds;
-                        for (const auto& thing : tile->getThings()) {
-                            if (!thing->isGround())
-                                continue;
+                        if (!strictClassicOtbm) {
+                            // Some protobuf/canary maps may carry duplicated ground entries.
+                            // Keep only the last parsed ground to match editor-visible result.
+                            ThingPtr lastGround = nullptr;
+                            std::vector<ThingPtr> duplicatedGrounds;
+                            for (const auto& thing : tile->getThings()) {
+                                if (!thing->isGround())
+                                    continue;
 
-                            if (lastGround)
-                                duplicatedGrounds.emplace_back(lastGround);
-                            lastGround = thing;
+                                if (lastGround)
+                                    duplicatedGrounds.emplace_back(lastGround);
+                                lastGround = thing;
+                            }
+
+                            for (const auto& groundThing : duplicatedGrounds)
+                                tile->removeThing(groundThing);
                         }
-
-                        for (const auto& groundThing : duplicatedGrounds)
-                            tile->removeThing(groundThing);
 
                         if (house)
                             tile->setFlag(TILESTATE_HOUSE);
@@ -354,6 +371,8 @@ void Map::loadOtbm(const std::string& fileName)
                         m_waypoints.emplace(waypointPos, name);
                 }
             } else {
+                if (strictClassicOtbm)
+                    throw Exception("Unknown map data node {}", static_cast<int>(mapDataType));
                 // Forward compatibility for newer OTBM node types (e.g. npc spawns/zones).
                 g_logger.warning("Ignoring unknown OTBM map data node {}", static_cast<int>(mapDataType));
             }
