@@ -184,6 +184,9 @@ function MapGenUI:onInit()
 
         self:updateGenerateWarning()
     end, 2000, 'ramMonitor')
+    self:scheduleEvent(function()
+        EnterGame.hide()
+    end, 2000, "hideEntergame")
 end
 
 local function estimatePngMbFromImageCount(imagesCount)
@@ -625,6 +628,46 @@ function MapGenUI:browseDir(targetProp)
     local vpath = toVirtualPath(result):gsub('/$', '')
     self[targetProp] = vpath
     self:addLog('Selected: ' .. vpath, '#aaccff')
+end
+
+function MapGenUI:openPathDir(targetProp)
+    local vpath = self[targetProp]
+    if not vpath or vpath == '' then
+        self:addLog('Open Dir: No path set.', '#ddaa44')
+        return
+    end
+
+    local dir = vpath
+    -- If it looks like a file (has extension), get the parent dir
+    if vpath:match('%.%w+$') then
+        dir = vpath:match('^(.*)/[^/]+$') or '/'
+    end
+
+    local fullPath = dir
+    -- If it's not an absolute Windows path (e.g. D:\ or C:\)
+    if not dir:match('^%a:') then
+        local workDir = g_resources.getWorkDir()
+        local writeDir = g_resources.getWriteDir()
+        local subPath = dir:gsub('^/+', '')
+
+        -- Heuristic: /data, /things, /modules belong to WorkDir (installation)
+        -- Others (exports, logs, etc.) belong to WriteDir (AppData)
+        if dir:match('^/data') or dir:match('^/things') or dir:match('^/modules') then
+            fullPath = workDir .. '/' .. subPath
+        else
+            fullPath = writeDir .. '/' .. subPath
+        end
+    end
+
+    -- Final normalization for Windows Explorer
+    local finalPath = fullPath:gsub("[/\\]+", "\\"):gsub("\\$", "")
+
+    if g_platform.openDir then
+        self:addLog('Opening: ' .. finalPath, '#aaccff')
+        g_platform.openDir(finalPath)
+    else
+        self:addLog('g_platform.openDir not bound.', '#ffaa44')
+    end
 end
 
 -- Auto-switch protobuf mode when a version >= 1281 is chosen from the combobox

@@ -141,6 +141,24 @@
   background-color: #1a2a4aff;
 }
 
+.mg-open-dir-btn {
+  display: inline-block;
+  padding: 2 8;
+  background-color: #3b3516ff;
+  border: 1 #4a451aff;
+  color: #e4cc83ff;
+  margin-left: 4;
+}
+
+.mg-open-dir-btn:hover {
+  background-color: #4b4526ff;
+  color: #ffffffff;
+}
+
+.mg-open-dir-btn:pressed {
+  background-color: #2b2506ff;
+}
+
 /* --- Coordinate bar --- */
 .mg-coordbar {
   display: block;

@@ -197,21 +197,25 @@
                 <label class="mg-label">items.otb:</label>
                 <input type="text" *value="self.definitionsPath" class="mg-path-input" />
                 <button class="mg-browse-btn" onclick="self:browseFile({'otb'}, 'definitionsPath')">Browse...</button>
+                <button class="mg-open-dir-btn" onclick="self:openPathDir('definitionsPath')">Open Dir</button>
               </div>
               <div class="mg-row">
                 <label class="mg-label">Map (.otbm):</label>
                 <input type="text" *value="self.mapPath" class="mg-path-input" />
                 <button class="mg-browse-btn" onclick="self:browseFile({'otbm'}, 'mapPath')">Browse...</button>
+                <button class="mg-open-dir-btn" onclick="self:openPathDir('mapPath')">Open Dir</button>
               </div>
               <div class="mg-row">
                 <label class="mg-label">Tibia.dat:</label>
                 <input type="text" *value="self.datPath" class="mg-path-input" />
                 <button class="mg-browse-btn" onclick="self:browseFile({'dat'}, 'datPath')">Browse...</button>
+                <button class="mg-open-dir-btn" onclick="self:openPathDir('datPath')">Open Dir</button>
               </div>
               <div class="mg-row">
                 <label class="mg-label">Tibia.spr:</label>
                 <input type="text" *value="self.sprPath" class="mg-path-input" />
                 <button class="mg-browse-btn" onclick="self:browseFile({'spr'}, 'sprPath')">Browse...</button>
+                <button class="mg-open-dir-btn" onclick="self:openPathDir('sprPath')">Open Dir</button>
               </div>
             </div>
 
@@ -221,11 +225,13 @@
                 <label class="mg-label">Assets Directory:</label>
                 <input type="text" *value="self.assetsPath" class="mg-path-input" />
                 <button class="mg-browse-btn" onclick="self:browseDir('assetsPath')">Browse...</button>
+                <button class="mg-open-dir-btn" onclick="self:openPathDir('assetsPath')">Open Dir</button>
               </div>
               <div class="mg-row">
                 <label class="mg-label">Map (.otbm):</label>
                 <input type="text" *value="self.mapPath" class="mg-path-input" />
                 <button class="mg-browse-btn" onclick="self:browseFile({'otbm'}, 'mapPath')">Browse...</button>
+                <button class="mg-open-dir-btn" onclick="self:openPathDir('mapPath')">Open Dir</button>
               </div>
               <div class="mg-infobox" style="margin: 2 0 0 0; height: 50; width: 500;">
                 Protobuf: catalog-content.json auto-detected. items.otb used for id-mapping if found.
@@ -265,6 +271,7 @@
           <label class="mg-label">Export Dir:</label>
           <input type="text" *value="self.exportDir" class="mg-path-input" />
           <button class="mg-browse-btn" onclick="self:browseDir('exportDir')">Browse...</button>
+          <button class="mg-open-dir-btn" onclick="self:openPathDir('exportDir')">Open Dir</button>
         </div>
 
         <div class="mg-row" style="margin-top: 12">
@@ -426,6 +433,7 @@
             <label class="mg-label">Sat Output Dir:</label>
             <input type="text" *value="self.satOutputDir" class="mg-path-input" />
             <button class="mg-browse-btn" onclick="self:browseDir('satOutputDir')">Browse...</button>
+            <button class="mg-open-dir-btn" onclick="self:openPathDir('satOutputDir')">Open Dir</button>
           </div>
           <div class="mg-row" *visible="self.satIntegrated">
             <label class="mg-label">Sat LOD:</label>
@@ -520,6 +528,7 @@
             <label class="mg-label">Output Directory:</label>
             <input type="text" *value="self.satOutputDir" class="mg-path-input" />
             <button class="mg-browse-btn" onclick="self:browseDir('satOutputDir')">Browse...</button>
+            <button class="mg-open-dir-btn" onclick="self:openPathDir('satOutputDir')">Open Dir</button>
           </div>
 
           <div class="mg-row">
@@ -561,6 +570,7 @@
               <label class="mg-label">Preview Dir:</label>
               <input type="text" *value="self.satPreviewDir" class="mg-path-input" />
               <button class="mg-browse-btn" onclick="self:browseDir('satPreviewDir')">Browse...</button>
+              <button class="mg-open-dir-btn" onclick="self:openPathDir('satPreviewDir')">Open Dir</button>
             </div>
             <div class="mg-row">
               <label class="mg-label" style="width: 60">Floor:</label>
