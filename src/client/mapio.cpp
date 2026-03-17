@@ -52,6 +52,7 @@
 #include <thread>
 #include <atomic>
 #include <set>
+#include <unordered_map>
 
 void Map::loadOtbm(const std::string& fileName)
 {
@@ -334,21 +335,28 @@ void Map::loadOtbm(const std::string& fileName)
 
                     if (const TilePtr& tile = getTile(pos)) {
                         if (!strictClassicOtbm) {
-                            // Some protobuf/canary maps may carry duplicated ground entries.
-                            // Keep only the last parsed ground to match editor-visible result.
-                            ThingPtr lastGround = nullptr;
-                            std::vector<ThingPtr> duplicatedGrounds;
+                            // Protobuf/canary maps may carry duplicated entries for fixed-position
+                            // items (ground, borders, walls, on-top). These item types can't
+                            // legitimately appear more than once per ID on the same tile.
+                            // Keep only the last instance to match editor-visible result.
+                            // Moveable items (CREATURE/COMMON_ITEMS priority) are left alone.
+                            std::unordered_map<uint16_t, ThingPtr> lastById;
+                            std::vector<ThingPtr> duplicates;
                             for (const auto& thing : tile->getThings()) {
-                                if (!thing->isGround())
+                                if (!thing->isItem())
                                     continue;
-
-                                if (lastGround)
-                                    duplicatedGrounds.emplace_back(lastGround);
-                                lastGround = thing;
+                                const int priority = thing->getStackPriority();
+                                if (priority > ON_TOP) // skip CREATURE and COMMON_ITEMS
+                                    continue;
+                                const uint16_t id = thing->static_self_cast<Item>()->getId();
+                                auto [it, inserted] = lastById.try_emplace(id, thing);
+                                if (!inserted) {
+                                    duplicates.emplace_back(it->second);
+                                    it->second = thing;
+                                }
                             }
-
-                            for (const auto& groundThing : duplicatedGrounds)
-                                tile->removeThing(groundThing);
+                            for (const auto& dup : duplicates)
+                                tile->removeThing(dup);
                         }
 
                         if (type == OTBM_HOUSETILE) {
