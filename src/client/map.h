@@ -255,10 +255,16 @@ public:
     void setMaxXToLoad(int newMaxXToLoad) { m_maxXToLoad = newMaxXToLoad; }
     int getMinXToLoad() { return m_minXToLoad; }
     void setMinXToLoad(int newMinXToLoad) { m_minXToLoad = newMinXToLoad; }
+    int getMaxYToLoad() { return m_maxYToLoad; }
+    void setMaxYToLoad(int newMaxYToLoad) { m_maxYToLoad = newMaxYToLoad; }
+    int getMinYToLoad() { return m_minYToLoad; }
+    void setMinYToLoad(int newMinYToLoad) { m_minYToLoad = newMinYToLoad; }
     int getMaxXToRender() { return m_maxXToRender; }
     void setMaxXToRender(int newMaxXToRender) { m_maxXToRender = newMaxXToRender; }
     int getMinXToRender() { return m_minXToRender; }
     void setMinXToRender(int newMinXToRender) { m_minXToRender = newMinXToRender; }
+    bool isMapGenOptimizedLoad() const { return m_mapGenOptimizedLoad; }
+    void setMapGenOptimizedLoad(const bool enable) { m_mapGenOptimizedLoad = enable; }
     const std::map<uint32_t, uint32_t>& getMapTilesPerX() { return m_mapTilesPerX; }
     int getShadowPercent() { return m_shadowPercent; }
     // -1 = single layer mode (no lower floors), 0-100 = shadow percentage for lower floors
@@ -339,10 +345,13 @@ private:
     uint16_t m_globalMaxX{ 0 };
     uint16_t m_globalMaxY{ 0 };
     uint8_t  m_globalMaxZ{ 0 };
-    int m_maxXToLoad{ -1 };  // -1 means load all tiles (no X filter)
+    int m_maxXToLoad{ -1 };  // -1 means load all tiles, or scan-only when m_mapGenOptimizedLoad is true
     int m_minXToLoad{ 0 };
+    int m_maxYToLoad{ 65535 };
+    int m_minYToLoad{ 0 };
     int m_maxXToRender{ 0 };
     int m_minXToRender{ 0 };
+    bool m_mapGenOptimizedLoad{ false };
     int16_t m_shadowPercent{ 0 };
     uint8_t m_lowerFloorsShadowPercent{ 50 };
     std::mutex m_generatedAreasCountMutex;

@@ -39,6 +39,41 @@ local function trimText(s)
     return tostring(s):gsub('^%s+', ''):gsub('%s+$', '')
 end
 
+local function clampMapCoord(v)
+    return math.max(0, math.min(65535, math.floor(tonumber(v) or 0)))
+end
+
+local function setMapGenOptimizedLoad(enable)
+    if g_map.setMapGenOptimizedLoad then
+        g_map.setMapGenOptimizedLoad(enable and true or false)
+    end
+end
+
+local function setYLoadRange(minY, maxY)
+    if g_map.setMinYToLoad then
+        g_map.setMinYToLoad(clampMapCoord(minY))
+    end
+    if g_map.setMaxYToLoad then
+        g_map.setMaxYToLoad(clampMapCoord(maxY))
+    end
+end
+
+local function setLoadWindow(minX, minY, maxX, maxY, margin)
+    margin = margin or 16
+    local fromX = clampMapCoord(math.min(minX, maxX))
+    local toX = clampMapCoord(math.max(minX, maxX))
+    local fromY = clampMapCoord(math.min(minY, maxY))
+    local toY = clampMapCoord(math.max(minY, maxY))
+
+    g_map.setMinXToLoad(clampMapCoord(fromX - margin))
+    g_map.setMaxXToLoad(clampMapCoord(toX + margin))
+    setYLoadRange(fromY - margin, toY + margin)
+    g_map.setMinXToRender(fromX)
+    g_map.setMaxXToRender(toX)
+
+    return fromX, fromY, toX, toY
+end
+
 local function getVersionedExportDir(versionValue)
     local cv = tonumber(versionValue) or 0
     if cv > 0 then
@@ -188,6 +223,16 @@ function MapGenUI:onInit()
     self.minimapResultText = self.minimapResultText or 'No exports yet.'
     self.progressBarWidth = 0
     self:loadHtml('mapgen.html')
+    
+    local clientBox = self:findWidget('clientComboBox')
+    if clientBox then
+        self:loadClientVersions()
+        connect(clientBox, {
+            onOptionChange = function(combo, text, data)
+                self:onVersionComboChange(combo, text, data)
+            end
+        })
+    end
 
     self:syncFeatureCheckboxes()
     self:addLog('Map Generator Studio loaded. Configure and press Prepare Client.', '#88ccff')
@@ -223,6 +268,37 @@ function MapGenUI:onInit()
         EnterGame.hide()
     end, 2000, "hideEntergame")
 end
+
+function MapGenUI:loadClientVersions()
+    local combo = self:findWidget('clientComboBox')
+    if not combo then return end
+
+    local installedClients = {}
+    local amountInstalledClients = 0
+    local files = g_resources.listDirectoryFiles('/data/things/')
+    if files then
+        for _, dirItem in ipairs(files) do
+            if tonumber(dirItem) then
+                installedClients[dirItem] = true
+                amountInstalledClients = amountInstalledClients + 1
+            end
+        end
+    end
+
+    combo:clearOptions()
+    local versions = g_game.getSupportedClients()
+    table.sort(versions, function(a, b) return tonumber(a) < tonumber(b) end)
+
+    for _, proto in ipairs(versions) do
+        local protoStr = tostring(proto)
+        if installedClients[protoStr] or amountInstalledClients == 0 then
+            combo:addOption(protoStr)
+        end
+    end
+
+    combo:setCurrentOption(tostring(self.clientVersion or 1098))
+end
+
 
 local function estimatePngMbFromImageCount(imagesCount)
     -- Empirical average from user runs: ~42KB per generated PNG.
@@ -352,6 +428,7 @@ function MapGenUI:onTerminate()
     if g_map.setOfflinePreview then
         g_map.setOfflinePreview(false)
     end
+    setMapGenOptimizedLoad(false)
     if mapPreviewWidget and not mapPreviewWidget:isDestroyed() then
         mapPreviewWidget:setId('mapGenPreviewMap')
         mapPreviewWidget:destroy()
@@ -491,7 +568,7 @@ function MapGenUI:satSetForcedLod(value)
     self.satForceLod = tostring(value or 'auto')
     self:_updateOptionState('satLodState', self.satForceLod)
 
-    if not g_satelliteMap then return end
+    if not g_satelliteMap or not g_satelliteMap.setForcedLod then return end
     g_satelliteMap.setForcedLod(self.satForceLod == 'auto' and 0 or (tonumber(self.satForceLod) or 0))
 end
 
@@ -499,7 +576,7 @@ function MapGenUI:satSetForcedFields(value)
     self.satForceFields = tostring(value or 'auto')
     self:_updateOptionState('satFieldsState', self.satForceFields)
 
-    if not g_satelliteMap then return end
+    if not g_satelliteMap or not g_satelliteMap.setForcedFields then return end
     g_satelliteMap.setForcedFields(self.satForceFields == 'auto' and 0 or (tonumber(self.satForceFields) or 0))
 end
 
@@ -758,7 +835,8 @@ function MapGenUI:onVersionChanged(v)
     self:syncFeatureCheckboxes()
 end
 
-function MapGenUI:onVersionComboChange()
+function MapGenUI:onVersionComboChange(combo, text, data)
+    self.clientVersion = text or self.clientVersion
     scheduleEvent(function()
         self:onVersionChanged(self.clientVersion)
         -- Ensure state tables are synced after version change defaults
@@ -987,7 +1065,10 @@ function MapGenUI:_doPrepareAction(cv)
         -- Scan map for bounds (do NOT load tiles yet)
         local mp = resolveLoadPath(mpRaw, function(msg, color) self:addLog(msg, color) end)
         self:addLog('Scanning map bounds: ' .. mpRaw, '#aaaacc')
+        setMapGenOptimizedLoad(true)
+        g_map.setMinXToLoad(0)
         g_map.setMaxXToLoad(-1)
+        setYLoadRange(0, 65535)
         g_map.loadOtbm(mp)
 
         local minPos = g_map.getMinPosition()
@@ -999,8 +1080,8 @@ function MapGenUI:_doPrepareAction(cv)
         -- Update bound display
         self.mapBoundsText = string.format('[%d,%d,%d] - [%d,%d,%d]',
             minPos.x, minPos.y, minPos.z, maxPos.x, maxPos.y, maxPos.z)
-        _preparedMinPos = minPos
-        _preparedMaxPos = maxPos
+        _preparedMinPos = { x = minPos.x, y = minPos.y, z = minPos.z }
+        _preparedMaxPos = { x = maxPos.x, y = maxPos.y, z = maxPos.z }
 
         -- Default preview / export coords to map centre
         local cx = math.floor((minPos.x + maxPos.x) / 2)
@@ -1061,6 +1142,8 @@ function MapGenUI:_doPrepareAction(cv)
         self:updateGenerateWarning()
     else
         self.isPrepared  = false
+        _preparedMinPos = nil
+        _preparedMaxPos = nil
         self.statusText  = 'Preparation failed. See log.'
         self:addLog('ERROR: ' .. tostring(err), '#ff6666')
         self.previewInfoText = 'Map info: unavailable (prepare failed).'
@@ -1085,13 +1168,9 @@ function MapGenUI:doPreview()
     local maxX  = tonumber(self.prevMaxX) or 32100
     local maxY  = tonumber(self.prevMaxY) or 32100
     local floor = tonumber(self.prevFloor) or 7
+    minX, minY, maxX, maxY = setLoadWindow(minX, minY, maxX, maxY, 16)
     self:addLog(string.format('Loading preview tiles [%d,%d]-[%d,%d] z=%d', minX, minY, maxX, maxY, floor), '#88ccff')
     self.statusText = 'Loading map tiles for preview...'
-
-    g_map.setMinXToLoad(math.max(0, minX - 16))
-    g_map.setMaxXToLoad(maxX + 16)
-    g_map.setMinXToRender(minX)
-    g_map.setMaxXToRender(maxX)
 
     scheduleEvent(function()
         local ok, err = pcall(function() g_map.loadOtbm(_mapPath) end)
@@ -1263,15 +1342,11 @@ function MapGenUI:doExportPng()
     local floor = tonumber(self.imgFloor) or 7
     local lower = self.imgDrawLower
     local fname = self.imgFilename or 'map_export.png'
+    minX, minY, maxX, maxY = setLoadWindow(minX, minY, maxX, maxY, 16)
 
     self:addLog(string.format('Exporting PNG "%s" area [%d,%d]-[%d,%d] z=%d lower=%s',
         fname, minX, minY, maxX, maxY, floor, tostring(lower)), '#88ccff')
     self.statusText = 'Exporting PNG...'
-
-    g_map.setMinXToLoad(math.max(0, minX - 16))
-    g_map.setMaxXToLoad(maxX + 16)
-    g_map.setMinXToRender(minX)
-    g_map.setMaxXToRender(maxX)
 
     scheduleEvent(function()
         local ok, err = pcall(function()
@@ -1314,15 +1389,11 @@ function MapGenUI:doExportMinimap()
     local maxY  = tonumber(self.imgMaxY)  or 500
     local floor = tonumber(self.imgFloor) or 7
     local fname = self.minimapFilename or 'minimap_export.png'
+    minX, minY, maxX, maxY = setLoadWindow(minX, minY, maxX, maxY, 16)
 
     self:addLog(string.format('Exporting minimap "%s" area [%d,%d]-[%d,%d] z=%d',
         fname, minX, minY, maxX, maxY, floor), '#88ccff')
     self.statusText = 'Exporting minimap...'
-
-    g_map.setMinXToLoad(math.max(0, minX - 16))
-    g_map.setMaxXToLoad(maxX + 16)
-    g_map.setMinXToRender(minX)
-    g_map.setMaxXToRender(maxX)
 
     scheduleEvent(function()
         local ok, err = pcall(function()
@@ -1364,15 +1435,14 @@ function MapGenUI:_ensureMapLoadedForMinimap()
         return false
     end
 
-    local minX, maxX = 0, 70000
+    local minX, minY, maxX, maxY = 0, 0, 65535, 65535
     if _preparedMinPos and _preparedMaxPos then
-        minX = math.max(0, _preparedMinPos.x - 32)
+        minX = _preparedMinPos.x - 32
         maxX = _preparedMaxPos.x + 32
+        minY = _preparedMinPos.y - 32
+        maxY = _preparedMaxPos.y + 32
     end
-    g_map.setMinXToLoad(minX)
-    g_map.setMaxXToLoad(maxX)
-    g_map.setMinXToRender(minX)
-    g_map.setMaxXToRender(maxX)
+    minX, minY, maxX, maxY = setLoadWindow(minX, minY, maxX, maxY, 0)
     g_map.loadOtbm(_mapPath)
     return true
 end

@@ -200,10 +200,16 @@ void Client::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_map", "setMinXToLoad", &Map::setMinXToLoad, &g_map);
     g_lua.bindSingletonFunction("g_map", "getMaxXToLoad", &Map::getMaxXToLoad, &g_map);
     g_lua.bindSingletonFunction("g_map", "setMaxXToLoad", &Map::setMaxXToLoad, &g_map);
+    g_lua.bindSingletonFunction("g_map", "getMinYToLoad", &Map::getMinYToLoad, &g_map);
+    g_lua.bindSingletonFunction("g_map", "setMinYToLoad", &Map::setMinYToLoad, &g_map);
+    g_lua.bindSingletonFunction("g_map", "getMaxYToLoad", &Map::getMaxYToLoad, &g_map);
+    g_lua.bindSingletonFunction("g_map", "setMaxYToLoad", &Map::setMaxYToLoad, &g_map);
     g_lua.bindSingletonFunction("g_map", "getMinXToRender", &Map::getMinXToRender, &g_map);
     g_lua.bindSingletonFunction("g_map", "setMinXToRender", &Map::setMinXToRender, &g_map);
     g_lua.bindSingletonFunction("g_map", "getMaxXToRender", &Map::getMaxXToRender, &g_map);
     g_lua.bindSingletonFunction("g_map", "setMaxXToRender", &Map::setMaxXToRender, &g_map);
+    g_lua.bindSingletonFunction("g_map", "isMapGenOptimizedLoad", &Map::isMapGenOptimizedLoad, &g_map);
+    g_lua.bindSingletonFunction("g_map", "setMapGenOptimizedLoad", &Map::setMapGenOptimizedLoad, &g_map);
     g_lua.bindSingletonFunction("g_map", "getShadowPercent", &Map::getShadowPercent, &g_map);
     g_lua.bindSingletonFunction("g_map", "setShadowPercent", &Map::setShadowPercent, &g_map);
     g_lua.bindSingletonFunction("g_map", "saveImage", &Map::saveImage, &g_map);

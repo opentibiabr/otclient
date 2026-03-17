@@ -22,6 +22,8 @@ local mapPartsToGenerate = {}
 local mapPartsCount = 0
 local mapPartsCurrentId = 0
 local mapImagesGenerated = 0
+local preparedMinPos = nil
+local preparedMaxPos = nil
 _uiPendingGenerate = nil
 MAPGEN_UI_STATUS = {
     active = false,
@@ -57,6 +59,41 @@ local function ensureExportDirs()
     g_resources.makeDir(getExportMapDir())
 end
 
+local function clampMapCoord(v)
+    return math.max(0, math.min(65535, v))
+end
+
+local function setYLoadRange(minY, maxY)
+    if g_map.setMinYToLoad then
+        g_map.setMinYToLoad(clampMapCoord(minY))
+    end
+    if g_map.setMaxYToLoad then
+        g_map.setMaxYToLoad(clampMapCoord(maxY))
+    end
+end
+
+local function setPreparedYLoadRange(margin)
+    margin = margin or 0
+    if preparedMinPos and preparedMaxPos then
+        setYLoadRange(preparedMinPos.y - margin, preparedMaxPos.y + margin)
+    else
+        setYLoadRange(0, 65535)
+    end
+end
+
+local function setPreparedFullLoadRange(margin)
+    margin = margin or 0
+    if preparedMinPos and preparedMaxPos then
+        g_map.setMinXToLoad(clampMapCoord(preparedMinPos.x - margin))
+        g_map.setMaxXToLoad(clampMapCoord(preparedMaxPos.x + margin))
+        setYLoadRange(preparedMinPos.y - margin, preparedMaxPos.y + margin)
+    else
+        g_map.setMinXToLoad(0)
+        g_map.setMaxXToLoad(65535)
+        setYLoadRange(0, 65535)
+    end
+end
+
 -- Legacy example:   prepareClient(1076, '/things/1076/items.otb', '/map.otbm', 8, 5)
 -- Protobuf example: prepareClient(1412, '/things/1412/assets/', '/things/1412/forgotten.otbm', 8, 5)
 function prepareClient(cv, dp, mp, ttr, mpc)
@@ -65,6 +102,8 @@ function prepareClient(cv, dp, mp, ttr, mpc)
     mapPath = mp
     threadsToRun = ttr or 3
     mapPartsCount = mpc
+    preparedMinPos = nil
+    preparedMaxPos = nil
     g_logger.info("Loading client data... (it will freeze client for a few seconds)")
     g_dispatcher.scheduleEvent(prepareClient_action, 1000)
 end
@@ -111,15 +150,25 @@ function prepareClient_action()
         g_things.loadOtb(definitionsPath)
     end
     g_logger.info("Loading server map information...")
+    if g_map.setMapGenOptimizedLoad then
+        g_map.setMapGenOptimizedLoad(true)
+    end
+    g_map.setMinXToLoad(0)
     g_map.setMaxXToLoad(-1) -- do not load tiles, just save map min/max position
+    setYLoadRange(0, 65535)
     g_map.loadOtbm(mapPath)
 
     local minPos = g_map.getMinPosition()
     local maxPos = g_map.getMaxPosition()
     if not minPos or not maxPos then
+        preparedMinPos = nil
+        preparedMaxPos = nil
         g_logger.error("Map load failed (invalid bounds). Check OTBM compatibility and paths.")
         return
     end
+
+    preparedMinPos = { x = minPos.x, y = minPos.y, z = minPos.z }
+    preparedMaxPos = { x = maxPos.x, y = maxPos.y, z = maxPos.z }
 
     g_logger.info("Loaded map positions. Minimum [X: " .. minPos.x .. ", Y: " .. minPos.y .. ", Z: " .. minPos.z .. "] Maximum [X: " .. maxPos.x .. ", Y: " .. maxPos.y .. ", Z: " .. maxPos.z .. "]")
     g_logger.info("Loaded client data.")
@@ -252,8 +301,9 @@ function advanceToNextPart()
             MAPGEN_UI_STATUS.phase = 'satellite'
             MAPGEN_UI_STATUS.message = 'Reloading map for satellite...'
             g_dispatcher.scheduleEvent(function()
-                g_map.setMinXToLoad(0)
-                g_map.setMaxXToLoad(65535)
+                setPreparedFullLoadRange(16)
+                g_map.setMinXToRender(0)
+                g_map.setMaxXToRender(70000)
                 g_map.loadOtbm(mapPath)
                 -- Use standalone satellite generator (handles satellite → minimap → map.dat)
                 _satelliteFromFullGenerate = true
@@ -287,6 +337,7 @@ function startMapPartGenerator()
     g_logger.info("Set max X to render: " .. currentMapPart.maxXrender)
     g_map.setMinXToLoad(currentMapPart.minXload)
     g_map.setMaxXToLoad(currentMapPart.maxXload)
+    setPreparedYLoadRange(16)
     g_map.setMinXToRender(currentMapPart.minXrender)
     g_map.setMaxXToRender(currentMapPart.maxXrender)
 
@@ -364,7 +415,7 @@ local function normalizeAreaBounds(fromX, fromY, toX, toY)
     return minX, minY, maxX, maxY
 end
 
-local function loadMapForXRange(minX, maxX)
+local function loadMapForXRange(minX, maxX, minY, maxY)
     local minXRender = math.max(0, math.floor((minX - 8) / 8) * 8)
     local maxXRender = math.floor((maxX + 8) / 8) * 8
     local minXLoad = math.max(0, math.floor((minXRender - 16) / 8) * 8)
@@ -372,10 +423,19 @@ local function loadMapForXRange(minX, maxX)
 
     g_map.setMinXToLoad(minXLoad)
     g_map.setMaxXToLoad(maxXLoad)
+    if minY ~= nil and maxY ~= nil then
+        local minYNorm = math.min(minY, maxY)
+        local maxYNorm = math.max(minY, maxY)
+        setYLoadRange(minYNorm - 16, maxYNorm + 16)
+    else
+        setPreparedYLoadRange(16)
+    end
     g_map.setMinXToRender(minXRender)
     g_map.setMaxXToRender(maxXRender)
 
-    g_logger.info("Loading map for X range [" .. minXLoad .. ", " .. maxXLoad .. "]...")
+    local minYLoad = g_map.getMinYToLoad and g_map.getMinYToLoad() or 0
+    local maxYLoad = g_map.getMaxYToLoad and g_map.getMaxYToLoad() or 65535
+    g_logger.info("Loading map for X/Y range [" .. minXLoad .. ", " .. maxXLoad .. "] / [" .. minYLoad .. ", " .. maxYLoad .. "]...")
     g_map.loadOtbm(mapPath)
 end
 
@@ -453,7 +513,7 @@ function generateMapArea(a1, a2, a3, a4, a5, a6, a7, a8)
             local partMinX = math.max(minX, part.minXrender)
             local partMaxX = math.min(maxX, part.maxXrender)
             if partMinX <= partMaxX then
-                loadMapForXRange(partMinX, partMaxX)
+                loadMapForXRange(partMinX, partMaxX, minY, maxY)
                 for _, floor in ipairs(floors) do
                     local fileName = string.format("%s/%s_z%d_part_%d.png", getExportMapDir(), outputPrefix, floor, partId)
                     g_map.saveImage(fileName, partMinX, minY, partMaxX, maxY, floor, false)
@@ -491,8 +551,8 @@ function generateMapFloor(a1, a2, a3, a4)
         outputPrefix = a4
     end
 
-    local minPos = g_map.getMinPosition()
-    local maxPos = g_map.getMaxPosition()
+    local minPos = preparedMinPos or g_map.getMinPosition()
+    local maxPos = preparedMaxPos or g_map.getMaxPosition()
     if not minPos or not maxPos then
         print("generateMapFloor: invalid map bounds. Run prepareClient() first.")
         return
@@ -507,6 +567,7 @@ function generateMapFloor(a1, a2, a3, a4)
             g_logger.info("Loading map part " .. partId .. " for floor " .. floor .. "...")
             g_map.setMinXToLoad(part.minXload)
             g_map.setMaxXToLoad(part.maxXload)
+            setPreparedYLoadRange(16)
             g_map.setMinXToRender(part.minXrender)
             g_map.setMaxXToRender(part.maxXrender)
             g_map.loadOtbm(mapPath)
@@ -524,8 +585,8 @@ end
 
 -- Optional: generate a single full PNG for one floor.
 function generateMapFloorFull(floor, shadowPercent, outputFileName)
-    local minPos = g_map.getMinPosition()
-    local maxPos = g_map.getMaxPosition()
+    local minPos = preparedMinPos or g_map.getMinPosition()
+    local maxPos = preparedMaxPos or g_map.getMaxPosition()
     if not minPos or not maxPos then
         print("generateMapFloorFull: invalid map bounds. Run prepareClient() first.")
         return
@@ -537,9 +598,11 @@ function generateMapFloorFull(floor, shadowPercent, outputFileName)
     end
 
     g_map.setShadowPercent(shadowPercent)
-    g_map.setMinXToLoad(-1)
-    g_map.setMinXToRender(0)
-    g_map.setMaxXToRender(70000)
+    g_map.setMinXToLoad(clampMapCoord(minPos.x - 16))
+    g_map.setMaxXToLoad(clampMapCoord(maxPos.x + 16))
+    setYLoadRange(minPos.y - 16, maxPos.y + 16)
+    g_map.setMinXToRender(minPos.x)
+    g_map.setMaxXToRender(maxPos.x)
     g_map.loadOtbm(mapPath)
     g_map.saveImage(outputFileName, minPos.x, minPos.y, maxPos.x, maxPos.y, floor, false)
     print("Full floor map saved: " .. outputFileName)
@@ -644,8 +707,9 @@ function generateSatelliteData(outputDir, lod, shadowPercent, mapPathOverride)
     local effectiveMapPath = mapPathOverride or mapPath
     if effectiveMapPath and effectiveMapPath ~= '' then
         print('Reloading full map for satellite generation...')
-        g_map.setMinXToLoad(0)
-        g_map.setMaxXToLoad(65535)
+        setPreparedFullLoadRange(16)
+        g_map.setMinXToRender(0)
+        g_map.setMaxXToRender(70000)
         g_map.loadOtbm(effectiveMapPath)
     end
 

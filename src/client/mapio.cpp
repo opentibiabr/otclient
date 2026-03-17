@@ -56,15 +56,19 @@
 void Map::loadOtbm(const std::string& fileName)
 {
     try {
+        const bool optimizedMapGenLoad = m_mapGenOptimizedLoad;
+        const bool trackBounds = m_maxXToLoad == -1;
+        const bool scanOnly = optimizedMapGenLoad && trackBounds;
+
         // Clear map at load - we want to load map part and limit RAM usage
         // This prevents stale tiles from previous map parts appearing in generated images
         cleanDynamicThings();
-        
+
         for (auto& floor : m_floors) {
-            floor.tileBlocks.clear();
+            decltype(floor.tileBlocks){}.swap(floor.tileBlocks);
         }
-        
-        m_waypoints.clear();
+
+        decltype(m_waypoints){}.swap(m_waypoints);
         g_towns.clear();
         g_houses.clear();
         g_creatures.clearSpawns();
@@ -148,11 +152,20 @@ void Map::loadOtbm(const std::string& fileName)
             }
         }
 
-        // Reset map generator data structures
-        m_mapAreas.clear();
+        // Reset map generator data structures.
+        // Use swap to release retained bucket capacity between reloads.
+        decltype(m_mapAreas){}.swap(m_mapAreas);
         m_mapTilesPerX.clear();
         m_minPosition = Position(65535, 65535, 255);
         m_maxPosition = Position(0, 0, 0);
+        if (scanOnly) {
+            m_globalMinX = 65535;
+            m_globalMinY = 65535;
+            m_globalMinZ = 255;
+            m_globalMaxX = 0;
+            m_globalMaxY = 0;
+            m_globalMaxZ = 0;
+        }
 
         bool warnedMoveableHouseItems = false;
 
@@ -173,9 +186,9 @@ void Map::loadOtbm(const std::string& fileName)
                     uint32_t flags = TILESTATE_NONE;
                     Position pos = basePos + nodeTile->getPoint();
 
-                    // Track min/max position and tiles per X for map generator
-                    if (m_maxXToLoad == -1) {
-                        // Only tracking map bounds, not loading tiles
+                    // Track bounds/tiles-per-X for full-map loads.
+                    if (trackBounds) {
+                        // In scan-only mode this is the only work done for each tile.
                         m_minPosition.x = std::min(m_minPosition.x, pos.x);
                         m_minPosition.y = std::min(m_minPosition.y, pos.y);
                         m_minPosition.z = std::min(m_minPosition.z, pos.z);
@@ -183,17 +196,20 @@ void Map::loadOtbm(const std::string& fileName)
                         m_maxPosition.y = std::max(m_maxPosition.y, pos.y);
                         m_maxPosition.z = std::max(m_maxPosition.z, pos.z);
                         m_mapTilesPerX[pos.x]++;
-                        // Persist bounds — survive across part reloads
+                        // Persist bounds to survive across part reloads.
                         if (pos.x < m_globalMinX) m_globalMinX = pos.x;
                         if (pos.y < m_globalMinY) m_globalMinY = pos.y;
                         if (pos.z < m_globalMinZ) m_globalMinZ = pos.z;
                         if (pos.x > m_globalMaxX) m_globalMaxX = pos.x;
                         if (pos.y > m_globalMaxY) m_globalMaxY = pos.y;
                         if (pos.z > m_globalMaxZ) m_globalMaxZ = pos.z;
+                        if (scanOnly)
+                            continue;
                     }
 
-                    // Skip loading tile if outside X range
-                    if (m_maxXToLoad != -1 && (pos.x < m_minXToLoad || pos.x > m_maxXToLoad)) {
+                    // Skip loading tile if outside X/Y load window.
+                    if (m_maxXToLoad != -1 && (pos.x < m_minXToLoad || pos.x > m_maxXToLoad
+                            || pos.y < m_minYToLoad || pos.y > m_maxYToLoad)) {
                         continue;
                     }
 
@@ -226,14 +242,17 @@ void Map::loadOtbm(const std::string& fileName)
                         zLevelsLogged.insert(pos.z);
                     }
 
+                    uint32_t houseId = 0;
                     if (type == OTBM_HOUSETILE) {
-                        const uint32_t hId = nodeTile->getU32();
-                        TilePtr tile = getOrCreateTile(pos);
-                        if (!(house = g_houses.getHouse(hId))) {
-                            house = std::make_shared<House>(hId);
-                            g_houses.addHouse(house);
+                        houseId = nodeTile->getU32();
+                        if (!optimizedMapGenLoad) {
+                            TilePtr tile = getOrCreateTile(pos);
+                            if (!(house = g_houses.getHouse(houseId))) {
+                                house = std::make_shared<House>(houseId);
+                                g_houses.addHouse(house);
+                            }
+                            house->setTile(tile);
                         }
-                        house->setTile(tile);
                     }
 
                     while (nodeTile->canRead()) {
@@ -290,7 +309,7 @@ void Map::loadOtbm(const std::string& fileName)
                         ItemPtr item = createMapItem(nodeItem->getU16());
                         item->unserializeItem(nodeItem);
 
-                        if (item->isContainer()) {
+                        if (!optimizedMapGenLoad && item->isContainer()) {
                             for (const auto& containerItem : nodeItem->getChildren()) {
                                 if (containerItem->getU8() != OTBM_ITEM)
                                     throw Exception("invalid container item node");
@@ -332,12 +351,21 @@ void Map::loadOtbm(const std::string& fileName)
                                 tile->removeThing(groundThing);
                         }
 
+                        if (type == OTBM_HOUSETILE) {
+                            tile->setFlag(TILESTATE_HOUSE);
+                            if (houseId != 0)
+                                tile->setHouseId(houseId);
+                        }
+
                         if (house)
                             tile->setFlag(TILESTATE_HOUSE);
                         tile->setFlag(flags);
                     }
                 }
             } else if (mapDataType == OTBM_TOWNS) {
+                if (optimizedMapGenLoad)
+                    continue;
+
                 TownPtr town = nullptr;
                 for (const auto& nodeTown : nodeMapData->getChildren()) {
                     if (nodeTown->getU8() != OTBM_TOWN)
@@ -356,6 +384,9 @@ void Map::loadOtbm(const std::string& fileName)
                 }
                 g_towns.sort();
             } else if (mapDataType == OTBM_WAYPOINTS && headerVersion > 1) {
+                if (optimizedMapGenLoad)
+                    continue;
+
                 for (const auto& nodeWaypoint : nodeMapData->getChildren()) {
                     if (nodeWaypoint->getU8() != OTBM_WAYPOINT)
                         throw Exception("invalid waypoint node.");
