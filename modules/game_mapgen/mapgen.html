@@ -37,6 +37,10 @@
   self.satViewMode = self.satViewMode or "surface"
   self.satForceLod = "auto"
   self.satForceFields = "auto"
+  self.satGenMode = self.satGenMode or "all"
+  self.satGenModeState = self.satGenModeState or { all = true, satellite = false, minimap = false }
+  self.satGenFloorsMode = self.satGenFloorsMode or "all"
+  self.satGenCustomFloors = self.satGenCustomFloors or "7"
   self.satDatQuery = ""
   self.satDatStatus = "No chunk index loaded."
   self.satDatDisplayRows = {}
@@ -546,6 +550,28 @@
             <label class="mg-label">Shadow %:</label>
             <spinbox focusable="true" *value="self.satShadow" onchange="self:updateGenerateWarning()" style="width: 75" minimum="0" maximum="100" step="1" />
           </div>
+
+          <div class="mg-row">
+            <label class="mg-label">Generate:</label>
+            <input type="checkbox" *checked="self.satGenModeState.all" onclick="self:satSetGenMode('all')" />
+            <label class="mg-checkbox-label">All (Satellite + Minimap)</label>
+            <input type="checkbox" *checked="self.satGenModeState.satellite" onclick="self:satSetGenMode('satellite')" />
+            <label class="mg-checkbox-label">Satellite only</label>
+            <input type="checkbox" *checked="self.satGenModeState.minimap" onclick="self:satSetGenMode('minimap')" />
+            <label class="mg-checkbox-label">Minimap only</label>
+          </div>
+
+          <div class="mg-row">
+            <label class="mg-label">Floors:</label>
+            <select *value="self.satGenFloorsMode" style="width: 140">
+              <option value="all">All Floors</option>
+              <option value="custom">Custom</option>
+            </select>
+            <input type="text" *value="self.satGenCustomFloors" style="width: 110; margin-left: 6"
+                   *visible="self.satGenFloorsMode == 'custom'" />
+            <span class="mg-hint" *visible="self.satGenFloorsMode == 'custom'">(comma-separated, e.g. 7,8,9)</span>
+          </div>
+
           <div class="mg-infobox">
             Standalone satellite generation (without full PNG run).
           </div>

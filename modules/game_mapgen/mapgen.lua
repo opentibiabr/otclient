@@ -216,6 +216,13 @@ function MapGenUI:onInit()
     self.satFieldsState = { ["auto"] = true, ["256"] = false, ["512"] = false }
     self.satViewState = { ["surface"] = true, ["map"] = false }
 
+    -- Generate mode: all = satellite+minimap, satellite = only satellite, minimap = only minimap
+    self.satGenMode = self.satGenMode or 'all'
+    self.satGenModeState = self.satGenModeState or { all = true, satellite = false, minimap = false }
+    -- Floor filter for generation: all = global bounds, custom = comma-separated floors
+    self.satGenFloorsMode = self.satGenFloorsMode or 'all'
+    self.satGenCustomFloors = self.satGenCustomFloors or '7'
+
     -- Ensure 1098 features are true by default
     self.featSpritesU32 = true
     self.featEnhancedAnimations = true
@@ -1812,6 +1819,11 @@ end
 -- Satellite Generation (standalone)
 -- =========================================================================
 
+function MapGenUI:satSetGenMode(mode)
+    self.satGenMode = mode or 'all'
+    self:_updateOptionState('satGenModeState', self.satGenMode)
+end
+
 function MapGenUI:doGenerateSatellite()
     if not self.isPrepared then
         self:addLog('Cannot generate: client not prepared.', '#ff6666')
@@ -1825,14 +1837,36 @@ function MapGenUI:doGenerateSatellite()
     local odir   = self.satOutputDir or '/satellite_output'
     local lod    = tonumber(self.satLod)    or 32
     local shadow = tonumber(self.satShadow) or 30
+    local mode   = self.satGenMode or 'all'
 
-    self:addLog(string.format('Starting satellite gen: %s  LOD=%d  shadow=%d%%', odir, lod, shadow), '#88ccff')
+    -- Apply floor range filter
+    if self.satGenFloorsMode == 'custom' and g_map.setGenerateFloorRange then
+        local floors = {}
+        for s in (self.satGenCustomFloors or '7'):gmatch('[^,]+') do
+            local n = tonumber(s:match('^%s*(.-)%s*$'))
+            if n then table.insert(floors, n) end
+        end
+        if #floors > 0 then
+            local minF = math.max(0, math.min(unpack(floors)))
+            local maxF = math.min(15, math.max(unpack(floors)))
+            g_map.setGenerateFloorRange(minF, maxF)
+            self:addLog(string.format('Floor filter: %d-%d', minF, maxF), '#aaaacc')
+        else
+            if g_map.clearGenerateFloorRange then g_map.clearGenerateFloorRange() end
+        end
+    else
+        if g_map.clearGenerateFloorRange then g_map.clearGenerateFloorRange() end
+    end
+
+    self:addLog(string.format('Starting satellite gen: %s  LOD=%d  shadow=%d%%  mode=%s  floors=%s',
+        odir, lod, shadow, mode,
+        self.satGenFloorsMode == 'custom' and (self.satGenCustomFloors or '?') or 'all'), '#88ccff')
     self.isGenerating    = true
     self.progressPercent = 0
     self.progressLabel   = 'Initialising...'
     self.statusText      = 'Generating satellite data...'
 
-    generateSatelliteData(odir, lod, shadow, _mapPath)
+    generateSatelliteData(odir, lod, shadow, _mapPath, mode)
 
     self:cycleEvent(function()
         local s = SATELLITE_UI_STATUS

@@ -675,8 +675,10 @@ local satelliteMinimapLod = 32   -- LOD used for minimap generation
 local satelliteStartTime = 0
 local satelliteLastCount = -1
 local satelliteStableTicks = 0
+-- 'all' | 'satellite' | 'minimap'  (set per-call, read in progress manager)
+local satelliteGenerateMode = 'all'
 
-function generateSatelliteData(outputDir, lod, shadowPercent, mapPathOverride)
+function generateSatelliteData(outputDir, lod, shadowPercent, mapPathOverride, mode)
     if satelliteGenerating then
         print('Satellite generation is already running.')
         return
@@ -684,6 +686,7 @@ function generateSatelliteData(outputDir, lod, shadowPercent, mapPathOverride)
 
     outputDir = outputDir or '/satellite_output'
     shadowPercent = shadowPercent or 30
+    satelliteGenerateMode = mode or 'all'
 
     -- Native CIP format always has satellite at LOD 16 + LOD 32, minimap at LOD 32
     satelliteLodQueue    = {16, 32}
@@ -691,13 +694,14 @@ function generateSatelliteData(outputDir, lod, shadowPercent, mapPathOverride)
     satelliteMinimapLod  = 32
 
     satelliteGenerating = true
-    SATELLITE_UI_STATUS.active = true
-    SATELLITE_UI_STATUS.phase = 'satellite'
-    SATELLITE_UI_STATUS.done = 0
-    SATELLITE_UI_STATUS.total = 0
-    SATELLITE_UI_STATUS.message = 'Generating satellite chunks'
     satelliteOutputDir = outputDir
     satelliteStartTime = os.time()
+    satelliteLastCount = -1
+    satelliteStableTicks = 0
+
+    SATELLITE_UI_STATUS.active = true
+    SATELLITE_UI_STATUS.done = 0
+    SATELLITE_UI_STATUS.total = 0
 
     g_resources.makeDir(outputDir)
     g_map.setShadowPercent(shadowPercent)
@@ -713,16 +717,26 @@ function generateSatelliteData(outputDir, lod, shadowPercent, mapPathOverride)
         g_map.loadOtbm(effectiveMapPath)
     end
 
-    -- Phase 1: satellite at first LOD (16)
-    local firstLod = satelliteLodQueue[1]
-    satellitePhase = 'satellite'
-    satelliteLastCount = -1
-    satelliteStableTicks = 0
-    g_map.setGeneratedAreasCount(0)
-    g_map.generateSatelliteChunks(outputDir, firstLod)
-    SATELLITE_UI_STATUS.total = g_map.getAreasCount()
-
-    print('Starting satellite chunk generation (LOD=' .. firstLod .. ')...')
+    if satelliteGenerateMode == 'minimap' then
+        -- Skip satellite phase, go straight to minimap
+        satellitePhase = 'minimap'
+        SATELLITE_UI_STATUS.phase = 'minimap'
+        SATELLITE_UI_STATUS.message = 'Generating minimap chunks'
+        g_map.setGeneratedAreasCount(0)
+        g_map.generateMinimapChunks(outputDir, satelliteMinimapLod)
+        SATELLITE_UI_STATUS.total = g_map.getAreasCount()
+        print('Starting minimap chunk generation (LOD=' .. satelliteMinimapLod .. ')...')
+    else
+        -- Phase 1: satellite at first LOD (16)
+        local firstLod = satelliteLodQueue[1]
+        satellitePhase = 'satellite'
+        SATELLITE_UI_STATUS.phase = 'satellite'
+        SATELLITE_UI_STATUS.message = 'Generating satellite chunks'
+        g_map.setGeneratedAreasCount(0)
+        g_map.generateSatelliteChunks(outputDir, firstLod)
+        SATELLITE_UI_STATUS.total = g_map.getAreasCount()
+        print('Starting satellite chunk generation (LOD=' .. firstLod .. ')...')
+    end
 
     g_dispatcher.scheduleEvent(satelliteProgressManager, 1000)
 end
@@ -768,6 +782,25 @@ function satelliteProgressManager()
                 SATELLITE_UI_STATUS.total = g_map.getAreasCount()
                 print('Starting satellite chunk generation (LOD=' .. nextLod .. ')...')
                 g_dispatcher.scheduleEvent(satelliteProgressManager, 1000)
+            elseif satelliteGenerateMode == 'satellite' then
+                -- satellite-only mode: skip minimap, go straight to done
+                satellitePhase = 'done'
+                g_map.saveMapDat(satelliteOutputDir)
+                print('map.dat saved to ' .. satelliteOutputDir .. '/map.dat')
+                print('Satellite-only generation finished in ' .. (os.time() - satelliteStartTime) .. ' seconds.')
+                satelliteGenerating = false
+                if g_map.clearGenerateFloorRange then g_map.clearGenerateFloorRange() end
+                SATELLITE_UI_STATUS.active = false
+                SATELLITE_UI_STATUS.phase = 'done'
+                SATELLITE_UI_STATUS.done = count
+                SATELLITE_UI_STATUS.total = total
+                SATELLITE_UI_STATUS.message = 'Satellite generation complete'
+                satelliteLastCount = -1
+                satelliteStableTicks = 0
+                if _satelliteFromFullGenerate then
+                    _satelliteFromFullGenerate = false
+                    finishFullGeneration()
+                end
             else
                 satellitePhase = 'minimap'
                 SATELLITE_UI_STATUS.phase = 'minimap'
@@ -785,6 +818,7 @@ function satelliteProgressManager()
             print('map.dat saved to ' .. satelliteOutputDir .. '/map.dat')
             print('Satellite data generation finished in ' .. (os.time() - satelliteStartTime) .. ' seconds.')
             satelliteGenerating = false
+            if g_map.clearGenerateFloorRange then g_map.clearGenerateFloorRange() end
             SATELLITE_UI_STATUS.active = false
             SATELLITE_UI_STATUS.phase = 'done'
             SATELLITE_UI_STATUS.done = count

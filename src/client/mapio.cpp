@@ -1278,9 +1278,11 @@ void Map::generateMinimapChunks(const std::string& outputDir, int lod)
     const int startBY = (m_globalMinY / tilesPerChunk) * blocksPerChunk;
     const int endBY   = (m_globalMaxY / tilesPerChunk) * blocksPerChunk;
 
+    const int genMinZ = (m_generateMinZ >= 0) ? m_generateMinZ : static_cast<int>(m_globalMinZ);
+    const int genMaxZ = (m_generateMaxZ >= 0) ? m_generateMaxZ : static_cast<int>(m_globalMaxZ);
     int queuedCount = 0;
 
-    for (int floor = m_globalMinZ; floor <= m_globalMaxZ; ++floor) {
+    for (int floor = genMinZ; floor <= genMaxZ; ++floor) {
         for (int bx = startBX; bx <= endBX; bx += blocksPerChunk) {
             for (int by = startBY; by <= endBY; by += blocksPerChunk) {
                 g_mapGeneratorThreadPool->detach_task(
@@ -1294,7 +1296,7 @@ void Map::generateMinimapChunks(const std::string& outputDir, int lod)
     }
 
     g_logger.info("generateMinimapChunks: queued {} chunks (LOD={}, floors {}-{})",
-                  queuedCount, lod, m_globalMinZ, m_globalMaxZ);
+                  queuedCount, lod, genMinZ, genMaxZ);
 }
 
 void Map::generateSatelliteChunks(const std::string& outputDir, int lod)
@@ -1318,9 +1320,11 @@ void Map::generateSatelliteChunks(const std::string& outputDir, int lod)
     const int endBY   = (m_globalMaxY / tilesPerChunk) * blocksPerChunk;
 
     const int shadow = m_shadowPercent;
+    const int genMinZ = (m_generateMinZ >= 0) ? m_generateMinZ : static_cast<int>(m_globalMinZ);
+    const int genMaxZ = (m_generateMaxZ >= 0) ? m_generateMaxZ : static_cast<int>(m_globalMaxZ);
     int queuedCount = 0;
 
-    for (int floor = m_globalMinZ; floor <= m_globalMaxZ; ++floor) {
+    for (int floor = genMinZ; floor <= genMaxZ; ++floor) {
         for (int bx = startBX; bx <= endBX; bx += blocksPerChunk) {
             for (int by = startBY; by <= endBY; by += blocksPerChunk) {
                 g_mapGeneratorThreadPool->detach_task(
@@ -1334,7 +1338,7 @@ void Map::generateSatelliteChunks(const std::string& outputDir, int lod)
     }
 
     g_logger.info("generateSatelliteChunks: queued {} chunks (LOD={}, floors {}-{})",
-                  queuedCount, lod, m_globalMinZ, m_globalMaxZ);
+                  queuedCount, lod, genMinZ, genMaxZ);
 }
 
 void Map::saveMapDat(const std::string& outputDir)

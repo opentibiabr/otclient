@@ -286,6 +286,12 @@ public:
     void generateMinimapChunks(const std::string& outputDir, int lod);
     void generateSatelliteChunks(const std::string& outputDir, int lod);
     void saveMapDat(const std::string& outputDir);
+    // Floor range filter for satellite/minimap chunk generation (-1 = use global bounds)
+    void setGenerateFloorRange(int minZ, int maxZ) {
+        m_generateMinZ = std::max(0, minZ);
+        m_generateMaxZ = std::min(15, maxZ);
+    }
+    void clearGenerateFloorRange() { m_generateMinZ = -1; m_generateMaxZ = -1; }
 private:
     struct FloorData
     {
@@ -352,6 +358,8 @@ private:
     int m_maxXToRender{ 0 };
     int m_minXToRender{ 0 };
     bool m_mapGenOptimizedLoad{ false };
+    int m_generateMinZ{ -1 };  // -1 = use m_globalMinZ
+    int m_generateMaxZ{ -1 };  // -1 = use m_globalMaxZ
     int16_t m_shadowPercent{ 0 };
     uint8_t m_lowerFloorsShadowPercent{ 50 };
     std::mutex m_generatedAreasCountMutex;
