@@ -241,6 +241,9 @@ void Client::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_minimap", "saveImage", &Minimap::saveImage, &g_minimap);
     g_lua.bindSingletonFunction("g_minimap", "loadOtmm", &Minimap::loadOtmm, &g_minimap);
     g_lua.bindSingletonFunction("g_minimap", "saveOtmm", &Minimap::saveOtmm, &g_minimap);
+#ifdef FRAMEWORK_EDITOR
+    g_lua.bindSingletonFunction("g_minimap", "findRandomValidPosition", &Minimap::findRandomValidPosition, &g_minimap);
+#endif
 
     g_lua.registerSingletonClass("g_satelliteMap");
     g_lua.bindSingletonFunction("g_satelliteMap", "loadDirectory", &SatelliteMap::loadDirectory, &g_satelliteMap);
@@ -249,6 +252,9 @@ void Client::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_satelliteMap", "hasChunksForFloor", &SatelliteMap::hasChunksForFloor, &g_satelliteMap);
     g_lua.bindSingletonFunction("g_satelliteMap", "hasChunksForView", &SatelliteMap::hasChunksForView, &g_satelliteMap);
     g_lua.bindSingletonFunction("g_satelliteMap", "hasMinimapChunksForFloor", &SatelliteMap::hasMinimapChunksForFloor, &g_satelliteMap);
+#ifdef FRAMEWORK_EDITOR
+    g_lua.bindSingletonFunction("g_satelliteMap", "findRandomValidPosition", &SatelliteMap::findRandomValidPosition, &g_satelliteMap);
+#endif
 
 #ifdef FRAMEWORK_EDITOR
     g_lua.registerSingletonClass("g_creatures");
@@ -1227,6 +1233,7 @@ void Client::registerLuaFunctions()
     g_lua.bindClassMemberFunction<UIMinimap>("getTilePoint", &UIMinimap::getTilePoint);
     g_lua.bindClassMemberFunction<UIMinimap>("getTilePosition", &UIMinimap::getTilePosition);
     g_lua.bindClassMemberFunction<UIMinimap>("getTileRect", &UIMinimap::getTileRect);
+    g_lua.bindClassMemberFunction<UIMinimap>("selectRandomPosition", &UIMinimap::selectRandomPosition);
     g_lua.bindClassMemberFunction<UIMinimap>("getCameraPosition", &UIMinimap::getCameraPosition);
     g_lua.bindClassMemberFunction<UIMinimap>("getMinZoom", &UIMinimap::getMinZoom);
     g_lua.bindClassMemberFunction<UIMinimap>("getMaxZoom", &UIMinimap::getMaxZoom);

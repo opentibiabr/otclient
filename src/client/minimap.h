@@ -102,6 +102,8 @@ public:
     bool loadOtmm(const std::string& fileName);
     void saveOtmm(const std::string& fileName);
 
+    Position findRandomValidPosition(int z);
+
 private:
     Rect calcMapRect(const Rect& screenRect, const Position& mapCenter, float scale) const;
     bool hasBlock(const Position& pos) { return m_tileBlocks[pos.z].contains(getBlockIndex(pos)); }

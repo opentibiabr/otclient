@@ -44,6 +44,8 @@ public:
     Rect getTileRect(const Position& pos);
     Position getTilePosition(const Point& mousePos);
 
+    void selectRandomPosition();
+
     Position getCameraPosition() { return m_cameraPosition; }
     int8_t getZoom() { return m_zoom; }
     int8_t getMinZoom() { return m_minZoom; }

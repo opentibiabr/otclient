@@ -165,3 +165,17 @@ void UIMinimap::onStyleApply(const std::string_view styleName, const OTMLNodePtr
             setMinZoom(node->value<int>());
     }
 }
+
+void UIMinimap::selectRandomPosition()
+{
+    Position pos;
+    if (m_satelliteMode || m_useStaticMinimap) {
+        pos = g_satelliteMap.findRandomValidPosition(m_cameraPosition.z);
+    } else {
+        pos = g_minimap.findRandomValidPosition(m_cameraPosition.z);
+    }
+
+    if (pos.isValid()) {
+        setCameraPosition(pos);
+    }
+}

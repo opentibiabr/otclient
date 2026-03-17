@@ -29,6 +29,8 @@
 #include "framework/graphics/drawpoolmanager.h"
 #include "framework/graphics/image.h"
 #include "framework/graphics/texture.h"
+#include <algorithm>
+#include <random>
 
 Minimap g_minimap;
 static MinimapTile nulltile;
@@ -446,4 +448,45 @@ void Minimap::saveOtmm(const std::string& fileName)
     } catch (const stdext::exception& e) {
         g_logger.error("failed to save OTMM minimap: {}", e.what());
     }
+}
+
+Position Minimap::findRandomValidPosition(int z)
+{
+    if (z < 0 || z > g_gameConfig.getMapMaxZ() || m_tileBlocks[z].empty())
+        return Position();
+
+    // Collect all seen blocks for this floor
+    std::vector<uint32_t> seenBlocks;
+    for (auto& [index, block] : m_tileBlocks[z]) {
+        if (block->wasSeen()) {
+            seenBlocks.push_back(index);
+        }
+    }
+
+    if (seenBlocks.empty())
+        return Position();
+
+    // Shuffle and pick a block that actually has colors
+    std::shuffle(seenBlocks.begin(), seenBlocks.end(), std::mt19937(std::random_device()()));
+
+    for (uint32_t index : seenBlocks) {
+        MinimapBlock_ptr block = m_tileBlocks[z][index];
+        Position blockPos = getIndexPosition(index, z);
+
+        std::vector<Point> candidates;
+        for (int y = 0; y < MMBLOCK_SIZE; ++y) {
+            for (int x = 0; x < MMBLOCK_SIZE; ++x) {
+                if (block->getTile(x, y).color != 255) {
+                    candidates.push_back({ x, y });
+                }
+            }
+        }
+
+        if (!candidates.empty()) {
+            Point p = candidates[std::rand() % candidates.size()];
+            return { static_cast<uint16_t>(blockPos.x + p.x), static_cast<uint16_t>(blockPos.y + p.y), static_cast<uint8_t>(z) };
+        }
+    }
+
+    return Position();
 }

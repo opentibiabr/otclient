@@ -2094,22 +2094,13 @@ function MapGenUI:satPreviewRandomLoadedChunk()
         return
     end
 
-    local rows = self.satDatRows or {}
-    if #rows == 0 then
-        self:satDatLoadIndex()
-        rows = self.satDatRows or {}
-    end
-    if #rows == 0 then
-        self:addLog('No chunk rows available for random navigation.', '#ddaa44')
-        return
-    end
-
-    local row = rows[math.random(1, #rows)]
-    satMinimapWidget:setCameraPosition({ x = row.coordX, y = row.coordY, z = row.coordZ })
-    self.satPosX = tostring(row.coordX)
-    self.satPosY = tostring(row.coordY)
-    self.satPreviewFloor = tostring(row.coordZ)
-    self.statusText = string.format('Satellite random chunk #%d at [%d,%d,%d]', row.id or 0, row.coordX, row.coordY, row.coordZ)
+    satMinimapWidget:selectRandomPosition()
+    
+    local pos = satMinimapWidget:getCameraPosition()
+    self.satPosX = tostring(pos.x)
+    self.satPosY = tostring(pos.y)
+    self.satPreviewFloor = tostring(pos.z)
+    self.statusText = string.format('Satellite random position at [%d,%d,%d]', pos.x, pos.y, pos.z)
 end
 
 function MapGenUI:satDatLoadIndex()

@@ -77,6 +77,8 @@ public:
     // Falls back gracefully when no chunks exist for that floor.
     void drawStaticMinimap(const Rect& screenRect, const Position& cameraPos, float scale, const Color& color);
 
+    Position findRandomValidPosition(int z);
+
 private:
     struct ChunkKey
     {

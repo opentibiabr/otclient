@@ -575,3 +575,18 @@ ImagePtr SatelliteMap::parseBmp(const std::vector<uint8_t>& data)
 
     return image;
 }
+
+Position SatelliteMap::findRandomValidPosition(int z)
+{
+    // Try to find any chunk for this floor across available LODs
+    for (int lod : { 16, 32, 64 }) {
+        const int indexKey = z * 100 + lod;
+        const auto it = m_index.find(indexKey);
+        if (it != m_index.end() && !it->second.empty()) {
+            const ChunkKey& key = it->second[std::rand() % it->second.size()];
+            // Origin is key.posX * 32; center it (+16)
+            return { static_cast<uint16_t>(key.posX * 32 + 16), static_cast<uint16_t>(key.posY * 32 + 16), static_cast<uint8_t>(z) };
+        }
+    }
+    return Position();
+}
