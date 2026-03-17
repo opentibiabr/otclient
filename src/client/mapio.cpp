@@ -100,7 +100,7 @@ void Map::loadOtbm(const std::string& fileName)
 
         const uint32_t headerMajorItems = root->getU8();
         const bool useOtbItemIds = g_things.isOtbLoaded() && headerMajorItems > 0;
-        const bool classicOtbm = headerMajorItems > 0;
+        const bool classicOtbm = useOtbItemIds;
         const bool strictClassicOtbm = classicOtbm && headerVersion <= 3;
         if (useOtbItemIds && headerMajorItems > g_things.getOtbMajorVersion()) {
             throw Exception("This map was saved with different OTB version. read {} what it's supposed to be: {}", headerMajorItems, g_things.getOtbMajorVersion());
