@@ -2402,6 +2402,30 @@ function MapGenUI:otmmGoToPosition()
     self.statusText = string.format('OTMM view moved to [%d,%d,%d]', x, y, z)
 end
 
+function MapGenUI:otmmSelectRandomPosition()
+    if not otmmMinimapWidget or otmmMinimapWidget:isDestroyed() then
+        self:addLog('Load an OTMM preview first.', '#ddaa44')
+        return
+    end
+    
+    -- Clear current pos to see if it changes
+    local oldPos = otmmMinimapWidget:getCameraPosition()
+    
+    -- This uses the improved C++ logic we added to UIMinimap
+    otmmMinimapWidget:selectRandomPosition()
+    
+    local pos = otmmMinimapWidget:getCameraPosition()
+    if pos and (pos.x ~= oldPos.x or pos.y ~= oldPos.y or pos.z ~= oldPos.z) then
+        self.otmmPosX = tostring(math.floor(pos.x))
+        self.otmmPosY = tostring(math.floor(pos.y))
+        self.otmmPreviewFloor = tostring(math.floor(pos.z))
+        self.statusText = string.format('OTMM random position: [%d,%d,%d]', pos.x, pos.y, pos.z)
+        self:addLog(string.format('Jumped to random OTMM position: %d, %d, %d', pos.x, pos.y, pos.z), '#44dd88')
+    else
+        self:addLog('Could not find a new valid random position in this OTMM.', '#ffbb66')
+    end
+end
+
 function MapGenUI:_fmtInt(n)
     if not n then return '0' end
     local s = tostring(math.floor(n))

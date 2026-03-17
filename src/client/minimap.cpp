@@ -452,39 +452,54 @@ void Minimap::saveOtmm(const std::string& fileName)
 
 Position Minimap::findRandomValidPosition(int z)
 {
-    if (z < 0 || z > g_gameConfig.getMapMaxZ() || m_tileBlocks[z].empty())
-        return Position();
+    if (z < 0 || z > g_gameConfig.getMapMaxZ())
+        z = 7;
 
-    // Collect all seen blocks for this floor
-    std::vector<uint32_t> seenBlocks;
-    for (auto& [index, block] : m_tileBlocks[z]) {
-        if (block->wasSeen()) {
-            seenBlocks.push_back(index);
-        }
+    // We will search starting from the requested floor, then others if empty
+    std::vector<int> floorsToSearch;
+    floorsToSearch.push_back(z);
+    for (int i = 0; i <= g_gameConfig.getMapMaxZ(); ++i) {
+        if (i != z) floorsToSearch.push_back(i);
     }
 
-    if (seenBlocks.empty())
-        return Position();
+    std::mt19937 rng(std::random_device{}());
 
-    // Shuffle and pick a block that actually has colors
-    std::shuffle(seenBlocks.begin(), seenBlocks.end(), std::mt19937(std::random_device()()));
+    for (int currentZ : floorsToSearch) {
+        if (m_tileBlocks[currentZ].empty())
+            continue;
 
-    for (uint32_t index : seenBlocks) {
-        MinimapBlock_ptr block = m_tileBlocks[z][index];
-        Position blockPos = getIndexPosition(index, z);
-
-        std::vector<Point> candidates;
-        for (int y = 0; y < MMBLOCK_SIZE; ++y) {
-            for (int x = 0; x < MMBLOCK_SIZE; ++x) {
-                if (block->getTile(x, y).color != 255) {
-                    candidates.push_back({ x, y });
-                }
+        // Collect all seen blocks for this floor
+        std::vector<uint32_t> seenBlocks;
+        for (auto& [index, block] : m_tileBlocks[currentZ]) {
+            if (block->wasSeen()) {
+                seenBlocks.push_back(index);
             }
         }
 
-        if (!candidates.empty()) {
-            Point p = candidates[std::rand() % candidates.size()];
-            return { static_cast<uint16_t>(blockPos.x + p.x), static_cast<uint16_t>(blockPos.y + p.y), static_cast<uint8_t>(z) };
+        if (seenBlocks.empty())
+            continue;
+
+        // Shuffle and pick a block that actually has colors
+        std::shuffle(seenBlocks.begin(), seenBlocks.end(), rng);
+
+        for (uint32_t index : seenBlocks) {
+            MinimapBlock_ptr block = m_tileBlocks[currentZ][index];
+            Position blockPos = getIndexPosition(index, currentZ);
+
+            std::vector<Point> candidates;
+            for (int y = 0; y < MMBLOCK_SIZE; ++y) {
+                for (int x = 0; x < MMBLOCK_SIZE; ++x) {
+                    if (block->getTile(x, y).color != 255) {
+                        candidates.push_back({ x, y });
+                    }
+                }
+            }
+
+            if (!candidates.empty()) {
+                std::uniform_int_distribution<size_t> dist(0, candidates.size() - 1);
+                Point p = candidates[dist(rng)];
+                return { static_cast<uint16_t>(blockPos.x + p.x), static_cast<uint16_t>(blockPos.y + p.y), static_cast<uint8_t>(currentZ) };
+            }
         }
     }
 
