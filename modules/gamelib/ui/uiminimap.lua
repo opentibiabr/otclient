@@ -282,9 +282,6 @@ function UIMinimap:onMouseRelease(pos, button)
 
     if button == MouseLeftButton then
         local player = g_game.getLocalPlayer()
-        if not player then
-            return
-        end
         if g_game.getClientVersion() > 1288 and g_keyboard.isCtrlPressed() and g_keyboard.isShiftPressed() then
             return g_game.sendGmTeleport(mapPos)
         end
