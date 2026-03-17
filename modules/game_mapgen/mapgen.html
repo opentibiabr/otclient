@@ -91,7 +91,7 @@
 </script>
 
 <html>
-  <window class="mg-window" placement="center" *title="self.title">
+  <window id="mapGenWindow" class="mg-window" placement="center" *title="self.title">
 
     <!-- HEADER -->
     <div class="mg-header">
@@ -102,9 +102,9 @@
     <!-- TAB BAR active tab highlighted via background-color only (no border-bottom) -->
     <div class="mg-tabbar">
       <uibutton class="mg-tab" onclick="self:switchTab('config')" *checked="self.tabState.config">Config</uibutton>
-      <uibutton class="mg-tab" onclick="self:switchTab('preview')" *checked="self.tabState.preview">Preview</uibutton>
-      <uibutton class="mg-tab" onclick="self:switchTab('export')" *checked="self.tabState.export">Export PNG</uibutton>
-      <uibutton class="mg-tab" onclick="self:switchTab('generate')" *checked="self.tabState.generate">Full Generate</uibutton>
+      <uibutton class="mg-tab" onclick="self:switchTab('preview')" *checked="self.tabState.preview">Preview Otbm</uibutton>
+      <uibutton class="mg-tab" onclick="self:switchTab('export')" *checked="self.tabState.export">Export Areas PNG</uibutton>
+      <uibutton class="mg-tab" onclick="self:switchTab('generate')" *checked="self.tabState.generate">MapGen By Gesior</uibutton>
       <uibutton class="mg-tab" onclick="self:switchTab('satellite')" *checked="self.tabState.satellite">Satellite</uibutton>
       <uibutton class="mg-tab" onclick="self:switchTab('minimap')" *checked="self.tabState.minimap">Minimap(.otmm)</uibutton>
       <uibutton class="mg-tab" onclick="self:switchTab('log')" *checked="self.tabState.log">Log</uibutton>

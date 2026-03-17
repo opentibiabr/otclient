@@ -440,6 +440,13 @@ function MapGenUI:updateGenerateWarning()
     )
 end
 
+function MapGenUI:setHighLoad(enabled)
+    local window = MapGenUI.ui
+    if window then
+        window:setImageColor(enabled and '#ff0000' or '#ffffff')
+    end
+end
+
 function MapGenUI:onTerminate()
     -- Disable offline preview draw mode so game rendering is not affected
     if g_map.setOfflinePreview then
@@ -994,6 +1001,8 @@ function MapGenUI:doPrepare()
     local startPrepare = function()
         self:addLog('Preparing client v' .. cv .. ' ...', '#88ccff')
         self.statusText = 'Preparing client... (may freeze briefly)'
+        -- Indicate high load (red tint)
+        self:setHighLoad(true)
         scheduleEvent(function()
             self:_doPrepareAction(cv)
         end, 150)
@@ -1177,6 +1186,7 @@ function MapGenUI:_doPrepareAction(cv)
     end)
 
     if ok then
+        self:setHighLoad(false)
         self.isPrepared  = true
         self.statusText  = 'Client ready. Bounds: ' .. self.mapBoundsText
         self:addLog('Client prepared successfully. Parts: ' .. #_mapParts, '#44dd88')
@@ -1187,6 +1197,7 @@ function MapGenUI:_doPrepareAction(cv)
         )
         self:updateGenerateWarning()
     else
+        self:setHighLoad(false)
         self.isPrepared  = false
         _preparedMinPos = nil
         _preparedMaxPos = nil
@@ -1217,10 +1228,12 @@ function MapGenUI:doPreview()
     minX, minY, maxX, maxY = setLoadWindow(minX, minY, maxX, maxY, 16)
     self:addLog(string.format('Loading preview tiles [%d,%d]-[%d,%d] z=%d', minX, minY, maxX, maxY, floor), '#88ccff')
     self.statusText = 'Loading map tiles for preview...'
+    self:setHighLoad(true)
 
     scheduleEvent(function()
         local ok, err = pcall(function() g_map.loadOtbm(_mapPath) end)
         if not ok then
+            self:setHighLoad(false)
             self:addLog('ERROR loading tiles: ' .. tostring(err), '#ff6666')
             self.statusText = 'Error loading tiles for preview.'
             return
@@ -1310,6 +1323,7 @@ function MapGenUI:doPreview()
         mapPreviewWidget:setVisibleDimension({ width = dim, height = dim })
 
         self:addLog(string.format('Preview ready. Center [%d,%d,%d] (offline mode)', cx, cy, floor), '#44dd88')
+        self:setHighLoad(false)
         self.statusText = string.format('Preview active. Center [%d,%d,%d]', cx, cy, floor)
     end, 250)
 end
@@ -1393,6 +1407,7 @@ function MapGenUI:doExportPng()
     self:addLog(string.format('Exporting PNG "%s" area [%d,%d]-[%d,%d] z=%d lower=%s',
         fname, minX, minY, maxX, maxY, floor, tostring(lower)), '#88ccff')
     self.statusText = 'Exporting PNG...'
+    self:setHighLoad(true)
 
     scheduleEvent(function()
         local ok, err = pcall(function()
@@ -1401,9 +1416,11 @@ function MapGenUI:doExportPng()
         end)
 
         if ok then
+            self:setHighLoad(false)
             self:addLog('PNG exported: ' .. fname, '#44dd88')
             self.statusText = 'PNG exported: ' .. fname
         else
+            self:setHighLoad(false)
             self:addLog('ERROR: ' .. tostring(err), '#ff6666')
             self.statusText = 'PNG export failed. See log.'
         end
@@ -1440,6 +1457,7 @@ function MapGenUI:doExportMinimap()
     self:addLog(string.format('Exporting minimap "%s" area [%d,%d]-[%d,%d] z=%d',
         fname, minX, minY, maxX, maxY, floor), '#88ccff')
     self.statusText = 'Exporting minimap...'
+    self:setHighLoad(true)
 
     scheduleEvent(function()
         local ok, err = pcall(function()
@@ -1448,9 +1466,11 @@ function MapGenUI:doExportMinimap()
         end)
 
         if ok then
+            self:setHighLoad(false)
             self:addLog('Minimap exported: ' .. fname, '#44dd88')
             self.statusText = 'Minimap exported: ' .. fname
         else
+            self:setHighLoad(false)
             self:addLog('ERROR: ' .. tostring(err), '#ff6666')
             self.statusText = 'Minimap export failed. See log.'
         end
@@ -1501,6 +1521,7 @@ function MapGenUI:doExportOtmmFull()
     end
 
     self.statusText = 'Exporting OTMM full...'
+    self:setHighLoad(true)
     scheduleEvent(function()
         local ok, err = pcall(function()
             if not self:_ensureMapLoadedForMinimap() then
@@ -1510,10 +1531,12 @@ function MapGenUI:doExportOtmmFull()
         end)
 
         if ok then
+            self:setHighLoad(false)
             self.minimapResultText = 'OTMM Full: ' .. outPath .. ' | floors: 0-15 | tiles: full map'
             self:addLog('OTMM full exported: ' .. outPath, '#44dd88')
             self.statusText = 'OTMM full exported.'
         else
+            self:setHighLoad(false)
             self:addLog('ERROR OTMM full: ' .. tostring(err), '#ff6666')
             self.statusText = 'OTMM full export failed.'
         end
@@ -1529,6 +1552,7 @@ function MapGenUI:doExportOtmmFloorRange()
     end
 
     self.statusText = 'Exporting OTMM floor range...'
+    self:setHighLoad(true)
     scheduleEvent(function()
         local ok, err = pcall(function()
             if not self:_ensureMapLoadedForMinimap() then
@@ -1538,12 +1562,14 @@ function MapGenUI:doExportOtmmFloorRange()
         end)
 
         if ok then
+            self:setHighLoad(false)
             self.minimapResultText = string.format(
                 'OTMM Range request %d-%d exported to %s (engine OTMM exports full data).',
                 fromZ, toZ, outPath)
             self:addLog(string.format('OTMM floor range requested %d-%d; exported full OTMM: %s', fromZ, toZ, outPath), '#ddaa44')
             self.statusText = 'OTMM range exported (full file).'
         else
+            self:setHighLoad(false)
             self:addLog('ERROR OTMM range: ' .. tostring(err), '#ff6666')
             self.statusText = 'OTMM range export failed.'
         end
@@ -1564,6 +1590,7 @@ function MapGenUI:doExportMinimapPngFloorRange()
     local maxY = tonumber(self.imgMaxY) or (_preparedMaxPos and _preparedMaxPos.y or 500)
 
     self.statusText = 'Exporting minimap PNG floor range...'
+    self:setHighLoad(true)
     scheduleEvent(function()
         local count = 0
         local ok, err = pcall(function()
@@ -1578,6 +1605,7 @@ function MapGenUI:doExportMinimapPngFloorRange()
         end)
 
         if ok then
+            self:setHighLoad(false)
             local width = math.max(1, maxX - minX + 1)
             local height = math.max(1, maxY - minY + 1)
             self.minimapResultText = string.format(
@@ -1586,6 +1614,7 @@ function MapGenUI:doExportMinimapPngFloorRange()
             self:addLog(string.format('Minimap PNG floors exported: %d (%d-%d) base=%s', count, fromZ, toZ, baseName), '#44dd88')
             self.statusText = 'Minimap PNG floor range exported.'
         else
+            self:setHighLoad(false)
             self:addLog('ERROR PNG floor range: ' .. tostring(err), '#ff6666')
             self.statusText = 'PNG floor range export failed.'
         end
@@ -1622,6 +1651,7 @@ function MapGenUI:doGenerate()
     end
 
     self.isGenerating    = true
+    self:setHighLoad(true)
     self.progressPercent = 0
     self.progressBarWidth = 0
     self.progressLabel   = 'Preparing generation...'
@@ -1646,6 +1676,7 @@ function MapGenUI:doGenerate()
 end
 
 function MapGenUI:doStopGenerate()
+    self:setHighLoad(false)
     self.isGenerating = false
     self.statusText   = 'Stopped by user.'
     self:addLog('Generation stopped by user.', '#ddaa44')
@@ -1671,6 +1702,7 @@ function MapGenUI:_startProgressMonitor()
         end
 
         if not status.active and (status.phase == 'done' or not isGenerating) then
+            self:setHighLoad(false)
             self.isGenerating    = false
             self.progressPercent = 100
             self.progressBarWidth = 690
@@ -1742,6 +1774,7 @@ function MapGenUI:doGenerateMapArea()
     self:addLog(string.format('generateMapArea("%s", shadow=%d, [%d,%d]-[%d,%d], floors={%s})',
         name, shadow, fromX, fromY, toX, toY, table.concat(floors, ',')), '#88ccff')
     self.isGenerating    = true
+    self:setHighLoad(true)
     self.progressPercent = 0
     self.progressBarWidth = 0
     self.progressLabel   = 'Starting area generation...'
@@ -1751,6 +1784,7 @@ function MapGenUI:doGenerateMapArea()
 
     self:cycleEvent(function()
         if not isGenerating then
+            self:setHighLoad(false)
             self.isGenerating    = false
             self.progressPercent = 100
             self.progressLabel   = 'Area generation complete!'
@@ -1784,12 +1818,13 @@ function MapGenUI:doGenerateMapFloor()
 
     self:addLog(string.format('generateMapFloor("%s", shadow=%d, floor=%d)', name, shadow, floor), '#88ccff')
     self.isGenerating    = true
+    self:setHighLoad(true)
     self.progressPercent = 0
     self.progressLabel   = 'Starting floor generation...'
     self.statusText      = 'Generating floor ' .. floor .. '...'
 
     generateMapFloor(partsIds, shadow, floor, name)
-
+    self:setHighLoad(false)
     self.isGenerating    = false
     self.progressPercent = 100
     self.progressLabel   = 'Floor complete!'
@@ -1862,6 +1897,7 @@ function MapGenUI:doGenerateSatellite()
         odir, lod, shadow, mode,
         self.satGenFloorsMode == 'custom' and (self.satGenCustomFloors or '?') or 'all'), '#88ccff')
     self.isGenerating    = true
+    self:setHighLoad(true)
     self.progressPercent = 0
     self.progressLabel   = 'Initialising...'
     self.statusText      = 'Generating satellite data...'
@@ -1875,6 +1911,7 @@ function MapGenUI:doGenerateSatellite()
         end
 
         if not s.active and (s.phase == 'done' or not satelliteGenerating) then
+            self:setHighLoad(false)
             self.isGenerating    = false
             self.progressPercent = 100
             self.progressBarWidth = 690
@@ -1924,8 +1961,10 @@ function MapGenUI:doLoadSatPreview()
         return
     end
 
+    self:setHighLoad(true)
     local ok, err = pcall(function() g_satelliteMap.loadDirectory(dir) end)
     if not ok then
+        self:setHighLoad(false)
         self:addLog('ERROR loading satellite dir: ' .. tostring(err), '#ff6666')
         self.statusText = 'Failed to load satellite dir.'
         return
@@ -2007,6 +2046,7 @@ function MapGenUI:doLoadSatPreview()
     satMinimapWidget:setCameraPosition({ x = cx, y = cy, z = floor })
 
     self:addLog('Satellite preview loaded from: ' .. dir, '#44dd88')
+    self:setHighLoad(false)
     self.statusText = 'Satellite preview active. Floor ' .. floor
     self:satDatLoadIndex()
 end
@@ -2286,6 +2326,7 @@ function MapGenUI:doLoadOtmmPreview()
     otmmMinimapWidget:setUseStaticMinimap(true)
 
     self:addLog('Loading OTMM for preview: ' .. path, '#aaaacc')
+    self:setHighLoad(true)
     
     local ok, err = pcall(function()
         g_minimap.clean()
@@ -2312,7 +2353,9 @@ function MapGenUI:doLoadOtmmPreview()
         
         local z = tonumber(self.otmmPreviewFloor) or 7
         otmmMinimapWidget:setCameraPosition({ x = cx, y = cy, z = z })
+        self:setHighLoad(false)
     else
+        self:setHighLoad(false)
         self:addLog('ERROR loading OTMM: ' .. tostring(err), '#ff6666')
         self.minimapResultText = 'Load failed: ' .. tostring(err)
     end

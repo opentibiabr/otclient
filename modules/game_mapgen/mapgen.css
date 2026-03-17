@@ -11,8 +11,7 @@
   padding-left: 10;
   padding-right: 10;
   padding-bottom: 10;
-  background-color: #1a1a2eff;
-  --image-color: rgb(255, 0, 0);
+
 }
 
 /* --- Header --- */
@@ -20,7 +19,7 @@
   display: block;
   padding: 5 10;
   margin-bottom: 4;
-  background-color: #1e1e38ff;
+  background-color: rgb(56, 30, 30);
   border: 1 #2a2a4aff;
 }
 
