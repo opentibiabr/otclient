@@ -1,7 +1,3 @@
--- =========================================================================
--- Map Generator Studio - Controller
--- GUI wrapper for otclientrc.lua map generation pipeline.
--- =========================================================================
 
 MapGenUI = Controller:new()
 
@@ -152,10 +148,6 @@ local function parseChunkRowFromFileName(fileName)
         scale = 1.0 / lod
     }
 end
-
--- =========================================================================
--- Lifecycle
--- =========================================================================
 
 function MapGenUI:onInit()
     math.randomseed(os.time())
@@ -472,9 +464,6 @@ function MapGenUI:onTerminate()
     end
 end
 
--- =========================================================================
--- Tab switching
--- =========================================================================
 
 function MapGenUI:switchTab(tab)
     self.activeTab = tab
@@ -662,12 +651,7 @@ function MapGenUI:onFeatureCheckChanged()
     self.featIdleAnimations = chkIdle and chkIdle:isChecked() or false
 end
 
--- =========================================================================
--- File / Directory Dialogs
--- =========================================================================
 
--- Convert an absolute OS path returned by the dialog to a virtual path
--- that OTClient resources can use. Strips the write/work dir prefix.
 local function toVirtualPath(absPath)
     if not absPath or absPath == '' then return nil end
 
@@ -927,10 +911,6 @@ function MapGenUI:exportMinimapCmdText()
         self.imgFloor)
 end
 
--- =========================================================================
--- Logging
--- =========================================================================
-
 function MapGenUI:addLog(text, color)
     color = color or '#88aa88ff'
     table.insert(self.logEntries, {
@@ -946,10 +926,6 @@ function MapGenUI:clearLog()
     self.logEntries = {}
     self:addLog('Log cleared.', '#555577')
 end
-
--- =========================================================================
--- Presets
--- =========================================================================
 
 function MapGenUI:applyPreset(name)
     if name == 'legacy860' then
@@ -987,9 +963,6 @@ function MapGenUI:applyPreset(name)
     self.statusText = 'Preset "' .. name .. '" loaded.'
 end
 
--- =========================================================================
--- Prepare Client
--- =========================================================================
 
 function MapGenUI:doPrepare()
     local cv = tonumber(self.clientVersion)
@@ -1208,9 +1181,6 @@ function MapGenUI:_doPrepareAction(cv)
     end
 end
 
--- =========================================================================
--- Map Preview (UIMap)
--- =========================================================================
 
 -- Preview uses UIMap with g_map.setOfflinePreview(true) to bypass the
 -- g_game.isOnline() guard in client.cpp. The widget is given id "gameMapPanel"
@@ -1386,9 +1356,6 @@ function MapGenUI:previewRandomArea()
     self:doPreview()
 end
 
--- =========================================================================
--- Export PNG
--- =========================================================================
 
 function MapGenUI:doExportPng()
     if not self.isPrepared then
@@ -1622,9 +1589,6 @@ function MapGenUI:doExportMinimapPngFloorRange()
     end, 50)
 end
 
--- =========================================================================
--- Full Map Generation (delegates to otclientrc.lua globals)
--- =========================================================================
 
 function MapGenUI:doGenerate()
     if not self.isPrepared then
@@ -1737,9 +1701,6 @@ function MapGenUI:_startProgressMonitor()
     end, 1000, 'genMonitor')
 end
 
--- =========================================================================
--- generateMapArea — specific coordinate range + floors
--- =========================================================================
 
 function MapGenUI:doGenerateMapArea()
     if not self.isPrepared then
@@ -1796,9 +1757,6 @@ function MapGenUI:doGenerateMapArea()
     end, 1000, 'areaMonitor')
 end
 
--- =========================================================================
--- generateMapFloor — whole map, one floor at a time
--- =========================================================================
 
 function MapGenUI:doGenerateMapFloor()
     if not self.isPrepared then
@@ -1851,9 +1809,6 @@ function MapGenUI:_resolvePartsIds()
     return partsIds
 end
 
--- =========================================================================
--- Satellite Generation (standalone)
--- =========================================================================
 
 function MapGenUI:satSetGenMode(mode)
     self.satGenMode = mode or 'all'
@@ -1945,9 +1900,6 @@ function MapGenUI:doEnableSatellitePerPart()
     self.statusText = 'Satellite per-part armed. Run Full Generate to proceed.'
 end
 
--- =========================================================================
--- Satellite Minimap Preview
--- =========================================================================
 
 function MapGenUI:doLoadSatPreview()
     local dir = self.satPreviewDir or ''
@@ -2268,10 +2220,6 @@ function MapGenUI:satDatClearSearch()
     self.satDatQuery = ''
     self:satDatApplySearch()
 end
-
--- =========================================================================
--- Helpers
--- =========================================================================
 
 function MapGenUI:doLoadOtmmPreview()
     local path = trimText(self.importOtmmPath or '')

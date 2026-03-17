@@ -1,6 +1,6 @@
 Module
   name: game_mapgen
-  description: Map Generator GUI - Quality of Life interface for otclientrc map generation
+  description: Quality of Life for  map generation
   author: OTClient
   website: https://github.com/mehah/otclient
   scripts: [ mapgen.lua ]
