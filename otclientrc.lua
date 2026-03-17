@@ -57,6 +57,7 @@ end
 local function ensureExportDirs()
     g_resources.makeDir(getExportBaseDir())
     g_resources.makeDir(getExportMapDir())
+    g_map.setExportMapDir(getExportMapDir())
 end
 
 local function clampMapCoord(v)

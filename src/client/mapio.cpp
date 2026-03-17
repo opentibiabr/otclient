@@ -736,7 +736,7 @@ static std::unique_ptr<BS::thread_pool> g_mapGeneratorThreadPool;
 void mapPartGenerator(int x, int y, int z)
 {
     std::stringstream path;
-    path << "exported_images/map/" << x << "_" << y << "_" << z << ".png";
+    path << g_map.getExportMapDir() << "/" << x << "_" << y << "_" << z << ".png";
     g_map.drawMap(path.str(), x * 8, y * 8, z, 8);
     g_map.increaseGeneratedAreasCount();
 }

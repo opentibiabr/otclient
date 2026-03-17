@@ -266,6 +266,8 @@ public:
     bool isMapGenOptimizedLoad() const { return m_mapGenOptimizedLoad; }
     void setMapGenOptimizedLoad(const bool enable) { m_mapGenOptimizedLoad = enable; }
     const std::map<uint32_t, uint32_t>& getMapTilesPerX() { return m_mapTilesPerX; }
+    const std::string& getExportMapDir() const { return m_exportMapDir; }
+    void setExportMapDir(const std::string& dir) { m_exportMapDir = dir; }
     int getShadowPercent() { return m_shadowPercent; }
     // -1 = single layer mode (no lower floors), 0-100 = shadow percentage for lower floors
     void setShadowPercent(int newShadowPercent) { 
@@ -362,6 +364,7 @@ private:
     int m_generateMaxZ{ -1 };  // -1 = use m_globalMaxZ
     int16_t m_shadowPercent{ 0 };
     uint8_t m_lowerFloorsShadowPercent{ 50 };
+    std::string m_exportMapDir{ "exported_images/map" };
     std::mutex m_generatedAreasCountMutex;
     bool m_isTerminating{ false };
 };
