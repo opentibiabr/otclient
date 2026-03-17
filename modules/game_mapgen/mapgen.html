@@ -102,7 +102,6 @@
       <uibutton class="mg-tab" onclick="self:switchTab('satellite')" *checked="self.tabState.satellite">Satellite</uibutton>
       <uibutton class="mg-tab" onclick="self:switchTab('minimap')" *checked="self.tabState.minimap">Minimap(.otmm)</uibutton>
       <uibutton class="mg-tab" onclick="self:switchTab('log')" *checked="self.tabState.log">Log</uibutton>
-      <uibutton class="mg-btn mg-btn-close" onclick="self:unloadHtml()" style="float: right; margin-right: 2; margin-top: 1">CLOSE</uibutton>
     </div>
 
     <!-- CONTENT WRAPPER (position:relative so absolute children anchor here) -->
@@ -116,11 +115,11 @@
         <!-- Quick Presets first, at the top -->
         <div class="mg-row" style="margin-bottom: 4">
           <label class="mg-label" style="width: 90">Quick Preset:</label>
-          <button class="mg-btn mg-btn-info" onclick="self:applyPreset('legacy860')">860</button>
-          <button class="mg-btn mg-btn-info" onclick="self:applyPreset('legacy1098')">1098</button>
-          <button class="mg-btn mg-btn-info" onclick="self:applyPreset('proto1310')">1310</button>
-          <button class="mg-btn mg-btn-info" onclick="self:applyPreset('proto1412')">1412</button>
-          <button class="mg-btn mg-btn-info" onclick="self:applyPreset('proto1511')">1511</button>
+          <button class="mg-btn" onclick="self:applyPreset('legacy860')">8.60</button>
+          <button class="mg-btn" onclick="self:applyPreset('legacy1098')">10.98</button>
+          <button class="mg-btn" onclick="self:applyPreset('proto1310')">13.10</button>
+          <button class="mg-btn" onclick="self:applyPreset('proto1412')">14.12</button>
+          <button class="mg-btn" onclick="self:applyPreset('proto1511')">15.11</button>
         </div>
 
         <div class="mg-section-title">Client Version</div>
@@ -128,9 +127,8 @@
         <div class="mg-row" style="padding: 0">
           <label class="mg-label">Client Version:</label>
           <select *value="self.clientVersion" menu-scroll="true" menu-height="225" menu-scroll-step="25"  class="mg-select2" onchange="self:onVersionComboChange()">
-
-            <option value="710">710</option>
-            <option value="760">760</option>
+            <option value="710">740</option>
+            <option value="760">770</option>
             <option value="800">800</option>
             <option value="854">854</option>
             <option value="860">860</option>
@@ -162,18 +160,16 @@
             <option value="1270">1270</option>
             <option value="1281">1281</option>
             <option value="1300">1300</option>
+            <option value="1310">1310</option>
+            <option value="1316">1316</option>
             <option value="1320">1320</option>
             <option value="1340">1340</option>
-            <option value="1360">1360</option>
-            <option value="1386">1386</option>
-            <option value="1392">1392</option>
             <option value="1400">1400</option>
             <option value="1410">1410</option>
             <option value="1412">1412</option>
-            <option value="1430">1430</option>
-            <option value="1490">1490</option>
-            <option value="1510">1510</option>
-            <option value="1532">1532</option>
+            <option value="1500">1500</option>
+            <option value="1511">1511</option>
+            <option value="1521">1521</option>
           </select>
           <span class="mg-hint">or type custom:</span>
           <input type="text" *value="self.clientVersion" style="width: 60; margin-left: 4" onchange="self:onVersionComboChange()" />
@@ -306,7 +302,7 @@
           </div>
 
           <div class="mg-row">
-            <button class="mg-btn mg-btn-primary" onclick="self:doPreview()">Render Preview</button>
+            <button class="mg-btn mg-btn-success" onclick="self:doPreview()">Render Preview</button>
             <button class="mg-btn mg-btn-info" onclick="self:previewRandomArea()">Random</button>
             <button class="mg-btn mg-btn-secondary" onclick="self:zoomPreviewIn()">Zoom +</button>
             <button class="mg-btn mg-btn-secondary" onclick="self:zoomPreviewOut()">Zoom -</button>
@@ -610,7 +606,7 @@
               <button class="mg-btn mg-btn-secondary" onclick="self:satGoToPosition()" style="padding: 3 10">Go</button>
             </div>
             <div class="mg-row">
-              <button class="mg-btn mg-btn-primary" onclick="self:doLoadSatPreview()">Load &amp; Preview</button>
+              <button class="mg-btn mg-btn-success" onclick="self:doLoadSatPreview()">Load &amp; Preview</button>
               <button class="mg-btn mg-btn-info" onclick="self:satPreviewRandomLoadedChunk()">Random</button>
               <button class="mg-btn mg-btn-info" onclick="self:satPreviewLoadOutputDir()">Use Output Dir</button>
             </div>
@@ -705,7 +701,6 @@
         </div>
         <div class="mg-row">
           <button class="mg-btn mg-btn-success" onclick="self:doExportOtmmFull()">Export OTMM Full</button>
-          <button class="mg-btn mg-btn-warning" onclick="self:doExportOtmmFloorRange()">Export OTMM Floor Range</button>
           <button class="mg-btn mg-btn-info" onclick="self:doExportMinimapPngFloorRange()">Save PNG minimap</button>
         </div>
         <div class="mg-section-title">Import & Preview OTMM</div>
@@ -713,7 +708,7 @@
           <label class="mg-label">Import Path:</label>
           <input type="text" *value="self.importOtmmPath" class="mg-path-input" />
           <button class="mg-browse-btn" onclick="self:browseFile({'otmm'}, 'importOtmmPath')">Browse...</button>
-          <button class="mg-btn mg-btn-primary" onclick="self:doLoadOtmmPreview()">Load OTMM</button>
+          <button class="mg-btn mg-btn-success" onclick="self:doLoadOtmmPreview()">Load OTMM</button>
         </div>
 
         <div class="mg-section-title">OTMM Preview Controls</div>
@@ -731,7 +726,7 @@
             <spinbox id="otmmPosXInput" focusable="true" *value="self.otmmPosX" onchange="self:onPositionInputChanged('otmmPos'); self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
             <label class="mg-label" style="width: 20; margin-left: 4">Y:</label>
             <spinbox focusable="true" *value="self.otmmPosY" onchange="self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
-            <button class="mg-btn mg-btn-secondary" onclick="self:otmmGoToPosition()" style="padding: 3 10">Go</button>
+            <button class="mg-btn mg-btn-success" onclick="self:otmmGoToPosition()" style="padding: 3 10">Go</button>
             <button class="mg-btn mg-btn-info" onclick="self:otmmSelectRandomPosition()" style="padding: 3 10; margin-left: 4">Random</button>
           </div>
         </div>
@@ -768,7 +763,16 @@
       <span style="float: right; color: #556655ff; margin-right: 4">{{self.ramText}}</span>
     </div>
 
+    <!-- BOTTOM RIGHT BUTTONS -->
+    <div placement="bottom-right" style="width: 440; margin-bottom: 45; margin-right: 20">
+      <button class="mg-btn" style="float: right" onclick="self:unloadHtml()">Close</button>
+      <button class="mg-btn" style="float: right" onclick='g_platform.openDir(g_resources.getWriteDir():gsub("[/\\]+", "\\"))'>Open Cache</button>
+      <button class="mg-btn" style="float: right" onclick="EnterGame.show()">Show EnterGame</button>
+    </div>
+
+
   </window>
+
 </html>
 
 

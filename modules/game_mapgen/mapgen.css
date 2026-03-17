@@ -197,8 +197,8 @@ spinbox {
 .mg-btn-primary:pressed { background-color: #1a3a7aff; }
 
 .mg-btn-success {
-  background-color: #236632ff;
-  border: 1 #33884aff;
+  --image-color: #ff0000;
+  border: 1 #ff9100;
   color: white;
 }
 .mg-btn-success:hover   { background-color: #33884aff; }
@@ -234,9 +234,7 @@ spinbox {
 
 .mg-btn-close {
   background-color: #5a2222ff;
-  border: 1 #882222ff;
   color: #ff8888ff;
-  padding: 2 6;
 }
 .mg-btn-close:hover { background-color: #882222ff; }
 
