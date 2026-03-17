@@ -1004,8 +1004,8 @@ function MapGenUI:doPrepare()
             self.statusText = 'Prepare aborted.'
         end
         dialog = displayGeneralBox(
-            'Mapa pesado',
-            'Estas seguro que quieres abrir un mapa tan pesado? (' .. sizeMb .. ' MB)',
+            'Large map',
+            'Are you sure you want to open such a large map? (' .. sizeMb .. ' MB)',
             {
                 { text = 'Yes', callback = continuePrepare },
                 { text = 'Abort', callback = abortPrepare }
