@@ -178,8 +178,8 @@ function MapGenUI:onInit()
     self.satDatFilteredRows = {}
 
     -- State tables for RadioGroup-like behavior in HTML
-    self.threads = self.threads or 9
-    self.parts = self.parts or 10
+    self.threads = self.threads or 8
+    self.parts = self.parts or 5
     self.shadowPercent = self.shadowPercent or 30
     self.exportDir = self.exportDir or getVersionedExportDir(self.clientVersion or '1098')
 
@@ -865,6 +865,7 @@ function MapGenUI:onVersionChanged(v)
     self.satOutputDir = satDir
     self.satPreviewDir = satDir
     self.exportDir = getVersionedExportDir(v)
+    self.minimapOtmmPath = '/minimap_' .. tostring(v) .. '.otmm'
     self.satLod = tostring(tonumber(self.satLod or self.fullSatLod) or 32)
     self.fullSatLod = self.satLod
 

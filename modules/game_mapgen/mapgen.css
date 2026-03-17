@@ -23,11 +23,6 @@
   border: 1 #2a2a4aff;
 }
 
-.mg-header-title {
-  color: #88ccffff;
-  font: terminus-14px-bold;
-}
-
 .mg-header-version {
   color: #55aa77ff;
   float: right;
