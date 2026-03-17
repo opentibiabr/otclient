@@ -764,7 +764,11 @@
     </div>
 
     <!-- BOTTOM RIGHT BUTTONS -->
-    <div placement="bottom-right" style="width: 440; margin-bottom: 45; margin-right: 20">
+    <div placement="bottom-right" style="width: 100%;  ; margin-bottom: 45; margin-right: 20">
+        <div class="mg-warnbox" style="margin-left: 20;float: left; width: 30%">
+          Warning!. I wrote the original code in Python... the conversion to OTC was generated using AI.
+        </div>
+     
       <button class="mg-btn" style="float: right" onclick="self:unloadHtml()">Close</button>
       <button class="mg-btn" style="float: right" onclick='g_platform.openDir(g_resources.getWriteDir():gsub("[/\\]+", "\\"))'>Open Cache</button>
       <button class="mg-btn" style="float: right" onclick="EnterGame.show()">Show EnterGame</button>
