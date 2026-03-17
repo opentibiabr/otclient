@@ -215,6 +215,11 @@ function MapGenUI:onInit()
     self.satFieldsState = { ["auto"] = true, ["256"] = false, ["512"] = false }
     self.satViewState = { ["surface"] = true, ["map"] = false }
 
+    -- Ensure 1098 features are true by default
+    self.featSpritesU32 = true
+    self.featEnhancedAnimations = true
+    self.featIdleAnimations = true
+
 
     self.minimapOtmmPath = self.minimapOtmmPath or ('/minimap_' .. tostring(self.clientVersion or '1098') .. '.otmm')
     self.minimapPngBase = self.minimapPngBase or 'minimap_floor'
@@ -829,9 +834,20 @@ function MapGenUI:onVersionChanged(v)
     self.satOutputDir = satDir
     self.satPreviewDir = satDir
     self.exportDir = getVersionedExportDir(v)
-    self.minimapOtmmPath = '/minimap_' .. tostring(v) .. '.otmm'
     self.satLod = tostring(tonumber(self.satLod or self.fullSatLod) or 32)
     self.fullSatLod = self.satLod
+
+    -- Sync with otclientrc.lua globals
+    if _G.clientVersion ~= nil then
+        _G.clientVersion = cv
+    end
+    if _G.satelliteOutputDir_perPart ~= nil then
+        _G.satelliteOutputDir_perPart = self.satOutputDir
+    end
+    if _G.satelliteLod_perPart ~= nil then
+        _G.satelliteLod_perPart = tonumber(self.satLod) or 32
+    end
+
     self:syncFeatureCheckboxes()
 end
 
@@ -1016,6 +1032,12 @@ function MapGenUI:_doPrepareAction(cv)
         -- Protocol / client version
         g_game.setProtocolVersion(cv)
         g_game.setClientVersion(cv)
+
+        -- Sync with otclientrc.lua globals for current run
+        if _G.clientVersion ~= nil then _G.clientVersion = cv end
+        if _G.definitionsPath ~= nil then _G.definitionsPath = dpRaw end
+        if _G.mapPath ~= nil then _G.mapPath = mpRaw end
+
         if self.featSpritesU32 then g_game.enableFeature(GameSpritesU32) else g_game.disableFeature(GameSpritesU32) end
         if self.featSpritesAlphaChannel then g_game.enableFeature(GameSpritesAlphaChannel) else g_game.disableFeature(GameSpritesAlphaChannel) end
         if self.featEnhancedAnimations then g_game.enableFeature(GameEnhancedAnimations) else g_game.disableFeature(GameEnhancedAnimations) end

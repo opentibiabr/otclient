@@ -55,10 +55,10 @@
   self.imgDrawLower = (self.imgDrawLower == true)
   self.imgFilename = self.imgFilename or "map_export.png"
   self.minimapFilename = self.minimapFilename or "minimap_export.png"
-  self.featSpritesU32 = (self.featSpritesU32 == true)
+  self.featSpritesU32 = (self.featSpritesU32 ~= false)
   self.featSpritesAlphaChannel = (self.featSpritesAlphaChannel == true)
-  self.featEnhancedAnimations = (self.featEnhancedAnimations == true)
-  self.featIdleAnimations = (self.featIdleAnimations == true)
+  self.featEnhancedAnimations = (self.featEnhancedAnimations ~= false)
+  self.featIdleAnimations = (self.featIdleAnimations ~= false)
 
   self.genPartsMode = "all"
   self.genCustomParts = "1,2,3"

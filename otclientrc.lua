@@ -6,24 +6,24 @@ print 'Startup done :]'
 -- OTClient Map Generator
 -- Based on https://github.com/gesior/otclient_mapgen
 
-local clientVersion = 0
-local definitionsPath = ''
-local mapPath = ''
+clientVersion = 0
+definitionsPath = ''
+mapPath = ''
 
-local isGenerating = false
-local threadsToRun = 3
-local areasAdded = 0
+isGenerating = false
+threadsToRun = 3
+areasAdded = 0
 
-local startTime = os.time()
-local lastPrintStatus = os.time()
+startTime = os.time()
+lastPrintStatus = os.time()
 
-local mapParts = {}
-local mapPartsToGenerate = {}
-local mapPartsCount = 0
-local mapPartsCurrentId = 0
-local mapImagesGenerated = 0
-local preparedMinPos = nil
-local preparedMaxPos = nil
+mapParts = {}
+mapPartsToGenerate = {}
+mapPartsCount = 0
+mapPartsCurrentId = 0
+mapImagesGenerated = 0
+preparedMinPos = nil
+preparedMaxPos = nil
 _uiPendingGenerate = nil
 MAPGEN_UI_STATUS = {
     active = false,
@@ -246,9 +246,9 @@ end
 -- Set before calling generateMap() to enable satellite data generation after all parts.
 -- outputDir: directory for .bmp.lzma output
 -- lod: 16, 32, or 64
-local _satelliteFromFullGenerate = false
-local satelliteOutputDir_perPart = nil
-local satelliteLod_perPart = 32
+_satelliteFromFullGenerate = false
+satelliteOutputDir_perPart = nil
+satelliteLod_perPart = 32
 
 function prepareSatelliteGeneration(outputDir, lod)
     satelliteOutputDir_perPart = outputDir or '/satellite_output'
