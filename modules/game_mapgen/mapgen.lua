@@ -12,6 +12,7 @@ local _mapPath          = ''
 local _mapParts         = {}
 local mapPreviewWidget  = nil   -- UIMap widget for live tile preview
 local satMinimapWidget  = nil   -- UIMinimap for satellite preview
+local otmmMinimapWidget  = nil   -- UIMinimap for OTMM results preview
 local _previewIdx       = 0     -- cycles 0-9 for temp PNG filenames
 local _prevPreviewFile  = nil   -- last temp PNG to delete on next render
 local _ramBaseline      = 0     -- process RAM at time of last map load
@@ -226,6 +227,10 @@ function MapGenUI:onInit()
     self.minimapFloorFrom = self.minimapFloorFrom or '0'
     self.minimapFloorTo = self.minimapFloorTo or '15'
     self.minimapResultText = self.minimapResultText or 'No exports yet.'
+    self.importOtmmPath = self.importOtmmPath or ''
+    self.otmmPreviewFloor = self.otmmPreviewFloor or '7'
+    self.otmmPosX = self.otmmPosX or '0'
+    self.otmmPosY = self.otmmPosY or '0'
     self.progressBarWidth = 0
     self:loadHtml('mapgen.html')
     
@@ -447,6 +452,10 @@ function MapGenUI:onTerminate()
         satMinimapWidget:destroy()
         satMinimapWidget = nil
     end
+    if otmmMinimapWidget and not otmmMinimapWidget:isDestroyed() then
+        otmmMinimapWidget:destroy()
+        otmmMinimapWidget = nil
+    end
 end
 
 -- =========================================================================
@@ -497,6 +506,12 @@ function MapGenUI:_applyPastedPosition(target, pos)
         if pos.z ~= nil then
             self.satPreviewFloor = tostring(pos.z)
         end
+    elseif target == 'otmmPos' then
+        self.otmmPosX = tostring(pos.x)
+        self.otmmPosY = tostring(pos.y)
+        if pos.z ~= nil then
+            self.otmmPreviewFloor = tostring(pos.z)
+        end
     else
         return false
     end
@@ -517,6 +532,8 @@ function MapGenUI:onPositionInputChanged(target)
         raw = self.areaToX or ''
     elseif target == 'satPos' then
         raw = self.satPosX or ''
+    elseif target == 'otmmPos' then
+        raw = self.otmmPosX or ''
     else
         return
     end
@@ -2189,6 +2206,132 @@ end
 -- =========================================================================
 -- Helpers
 -- =========================================================================
+
+function MapGenUI:doLoadOtmmPreview()
+    local path = trimText(self.importOtmmPath or '')
+    if path == '' then
+        self:addLog('No import path set for OTMM preview.', '#ddaa44')
+        return
+    end
+
+    local host = self:findWidget('#otmmPreviewHost')
+    if not host then
+        self:addLog('ERROR: otmmPreviewHost not found.', '#ff6666')
+        return
+    end
+
+    if not otmmMinimapWidget or otmmMinimapWidget:isDestroyed() then
+        otmmMinimapWidget = g_ui.createWidget('UIMinimap', host)
+        otmmMinimapWidget:fill('parent')
+        otmmMinimapWidget.previewDragging = false
+        otmmMinimapWidget.onMousePress = function(widget, mousePos, button)
+            if button == MouseLeftButton or button == MouseRightButton or button == MouseMiddleButton then
+                widget.previewDragging = true
+                return true
+            end
+            return false
+        end
+        otmmMinimapWidget.onMouseMove = function(widget, mousePos, mouseMoved)
+            if widget.previewDragging then
+                widget:move(mouseMoved.x, mouseMoved.y)
+                return true
+            end
+            return false
+        end
+        otmmMinimapWidget.onMouseRelease = function(widget, mousePos, button)
+            widget.previewDragging = false
+            return true
+        end
+        otmmMinimapWidget.onMouseWheel = function(widget, mousePos, direction)
+            if direction == MouseWheelUp then
+                widget:zoomIn()
+            elseif direction == MouseWheelDown then
+                widget:zoomOut()
+            end
+            return true
+        end
+    end
+
+    -- Set background colors (blue)
+    host:setBackgroundColor('#0000FF')
+    otmmMinimapWidget:setBackgroundColor('#0000FF')
+
+    -- Force static map mode for OTMM data
+    otmmMinimapWidget:setSatelliteMode(false)
+    otmmMinimapWidget:setUseStaticMinimap(true)
+
+    self:addLog('Loading OTMM for preview: ' .. path, '#aaaacc')
+    
+    local ok, err = pcall(function()
+        g_minimap.clean()
+        g_minimap.loadOtmm(path)
+    end)
+
+    if ok then
+        self.minimapResultText = 'Loaded: ' .. path
+        self:addLog('OTMM loaded successfully.', '#44dd88')
+        
+        -- Smart positioning: Use player pos or 32000
+        local cx, cy = 32000, 32000
+        local player = g_game.getLocalPlayer()
+        if player then
+            local p = player:getPosition()
+            cx, cy = p.x, p.y
+        elseif tonumber(self.otmmPosX) ~= 0 then
+            cx = tonumber(self.otmmPosX)
+            cy = tonumber(self.otmmPosY)
+        end
+
+        self.otmmPosX = tostring(cx)
+        self.otmmPosY = tostring(cy)
+        
+        local z = tonumber(self.otmmPreviewFloor) or 7
+        otmmMinimapWidget:setCameraPosition({ x = cx, y = cy, z = z })
+    else
+        self:addLog('ERROR loading OTMM: ' .. tostring(err), '#ff6666')
+        self.minimapResultText = 'Load failed: ' .. tostring(err)
+    end
+end
+
+function MapGenUI:otmmFloorUp()
+    if otmmMinimapWidget and not otmmMinimapWidget:isDestroyed() then
+        otmmMinimapWidget:floorUp()
+        local f = tonumber(self.otmmPreviewFloor) or 7
+        self.otmmPreviewFloor = tostring(math.max(0, f - 1))
+    end
+end
+
+function MapGenUI:otmmFloorDown()
+    if otmmMinimapWidget and not otmmMinimapWidget:isDestroyed() then
+        otmmMinimapWidget:floorDown()
+        local f = tonumber(self.otmmPreviewFloor) or 7
+        self.otmmPreviewFloor = tostring(math.min(15, f + 1))
+    end
+end
+
+function MapGenUI:otmmZoomIn()
+    if otmmMinimapWidget and not otmmMinimapWidget:isDestroyed() then
+        otmmMinimapWidget:zoomIn()
+    end
+end
+
+function MapGenUI:otmmZoomOut()
+    if otmmMinimapWidget and not otmmMinimapWidget:isDestroyed() then
+        otmmMinimapWidget:zoomOut()
+    end
+end
+
+function MapGenUI:otmmGoToPosition()
+    if not otmmMinimapWidget or otmmMinimapWidget:isDestroyed() then
+        self:addLog('Load an OTMM preview first.', '#ddaa44')
+        return
+    end
+    local x = tonumber(self.otmmPosX) or 32000
+    local y = tonumber(self.otmmPosY) or 32000
+    local z = tonumber(self.otmmPreviewFloor) or 7
+    otmmMinimapWidget:setCameraPosition({ x = x, y = y, z = z })
+    self.statusText = string.format('OTMM view moved to [%d,%d,%d]', x, y, z)
+end
 
 function MapGenUI:_fmtInt(n)
     if not n then return '0' end

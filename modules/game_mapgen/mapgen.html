@@ -688,10 +688,38 @@
           <button class="mg-btn mg-btn-warning" onclick="self:doExportOtmmFloorRange()">Export OTMM Floor Range</button>
           <button class="mg-btn mg-btn-info" onclick="self:doExportMinimapPngFloorRange()">Save PNG minimap</button>
         </div>
-        <div class="mg-section-title">Preview rapido del resultado</div>
-        <div class="mg-card">
-          <span style="color: #99bbccff">{{self.minimapResultText}}</span>
+        <div class="mg-section-title">Import & Preview OTMM</div>
+        <div class="mg-row">
+          <label class="mg-label">Import Path:</label>
+          <input type="text" *value="self.importOtmmPath" class="mg-path-input" />
+          <button class="mg-browse-btn" onclick="self:browseFile({'otmm'}, 'importOtmmPath')">Browse...</button>
+          <button class="mg-btn mg-btn-primary" onclick="self:doLoadOtmmPreview()">Load OTMM</button>
         </div>
+
+        <div class="mg-section-title">OTMM Preview Controls</div>
+        <div class="mg-card">
+          <div class="mg-row">
+            <label class="mg-label" style="width: 60">Floor:</label>
+            <spinbox focusable="true" *value="self.otmmPreviewFloor" onchange="self:updateGenerateWarning()" style="width: 75" minimum="0" maximum="15" step="1" />
+            <button class="mg-btn mg-btn-secondary" onclick="self:otmmFloorUp()" style="padding: 3 8">Floor -</button>
+            <button class="mg-btn mg-btn-secondary" onclick="self:otmmFloorDown()" style="padding: 3 8">Floor +</button>
+            <button class="mg-btn mg-btn-secondary" onclick="self:otmmZoomIn()" style="padding: 3 8">Zoom +</button>
+            <button class="mg-btn mg-btn-secondary" onclick="self:otmmZoomOut()" style="padding: 3 8">Zoom -</button>
+          </div>
+          <div class="mg-row">
+            <label class="mg-label" style="width: 60">Go to X:</label>
+            <spinbox id="otmmPosXInput" focusable="true" *value="self.otmmPosX" onchange="self:onPositionInputChanged('otmmPos'); self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
+            <label class="mg-label" style="width: 20; margin-left: 4">Y:</label>
+            <spinbox focusable="true" *value="self.otmmPosY" onchange="self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
+            <button class="mg-btn mg-btn-secondary" onclick="self:otmmGoToPosition()" style="padding: 3 10">Go</button>
+          </div>
+        </div>
+
+        <div class="mg-section-title">Preview rapido del resultado</div>
+        <div class="mg-card" style="height: 25">
+          <span style="color: #99bbccff; font: verdana-11px-antialised">{{self.minimapResultText}}</span>
+        </div>
+        <div id="otmmPreviewHost" class="mg-maphost" style="height: 320"></div>
       </div><!-- /minimap -->
 
       <!-- ============================================================ -->

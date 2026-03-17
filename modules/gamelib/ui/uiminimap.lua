@@ -285,12 +285,12 @@ function UIMinimap:onMouseRelease(pos, button)
         if g_game.getClientVersion() > 1288 and g_keyboard.isCtrlPressed() and g_keyboard.isShiftPressed() then
             return g_game.sendGmTeleport(mapPos)
         end
-        if Position.distance(player:getPosition(), mapPos) > 250 then
+        if player and Position.distance(player:getPosition(), mapPos) > 250 then
             modules.game_textmessage.displayStatusMessage(tr('Destination is out of range.'))
             return false
         end
 
-        if self.autowalk then
+        if player and self.autowalk then
             player:autoWalk(mapPos)
         end
         return true
