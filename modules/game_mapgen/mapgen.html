@@ -294,15 +294,15 @@
           <div class="mg-section-title">Area Coordinates</div>
           <div class="mg-coordbar">
             <span class="mg-coordlabel">Min X</span>
-            <spinbox id="prevMinXInput" *value="self.prevMinX" onchange="self:onPositionInputChanged('previewMin')" style="width: 110" minimum="0" maximum="65535" step="1" />
+            <spinbox id="prevMinXInput" focusable="true" *value="self.prevMinX" onchange="self:onPositionInputChanged('previewMin')" style="width: 110" minimum="0" maximum="65535" step="1" />
             <span class="mg-coordlabel">Min Y</span>
-            <spinbox *value="self.prevMinY" onchange="self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
+            <spinbox focusable="true" *value="self.prevMinY" onchange="self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
             <span class="mg-coordlabel">Max X</span>
-            <spinbox *value="self.prevMaxX" onchange="self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
+            <spinbox focusable="true" *value="self.prevMaxX" onchange="self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
             <span class="mg-coordlabel">Max Y</span>
-            <spinbox *value="self.prevMaxY" onchange="self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
+            <spinbox focusable="true" *value="self.prevMaxY" onchange="self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
             <span class="mg-coordlabel">Floor</span>
-            <spinbox *value="self.prevFloor" onchange="self:updateGenerateWarning()" style="width: 75" minimum="0" maximum="15" step="1" />
+            <spinbox focusable="true" *value="self.prevFloor" onchange="self:updateGenerateWarning()" style="width: 75" minimum="0" maximum="15" step="1" />
             <input id="chkLower" type="checkbox" *checked="self.prevDrawLower" style="margin-left: 10" />
             <label for="chkLower" style="color: #aaaacc; margin-left: 3">Lower floors</label>
           </div>
@@ -342,15 +342,15 @@
 
           <div class="mg-coordbar">
             <span class="mg-coordlabel">Min X</span>
-            <spinbox id="imgMinXInput" *value="self.imgMinX" onchange="self:onPositionInputChanged('exportMin'); self:updateExportFilenames()" style="width: 110" minimum="0" maximum="65535" step="1" />
+            <spinbox id="imgMinXInput" focusable="true" *value="self.imgMinX" onchange="self:onPositionInputChanged('exportMin'); self:updateExportFilenames()" style="width: 110" minimum="0" maximum="65535" step="1" />
             <span class="mg-coordlabel">Min Y</span>
-            <spinbox *value="self.imgMinY" onchange="self:updateExportFilenames()" style="width: 110" minimum="0" maximum="65535" step="1" />
+            <spinbox focusable="true" *value="self.imgMinY" onchange="self:updateExportFilenames()" style="width: 110" minimum="0" maximum="65535" step="1" />
             <span class="mg-coordlabel">Max X</span>
-            <spinbox *value="self.imgMaxX" onchange="self:updateExportFilenames()" style="width: 110" minimum="0" maximum="65535" step="1" />
+            <spinbox focusable="true" *value="self.imgMaxX" onchange="self:updateExportFilenames()" style="width: 110" minimum="0" maximum="65535" step="1" />
             <span class="mg-coordlabel">Max Y</span>
-            <spinbox *value="self.imgMaxY" onchange="self:updateExportFilenames()" style="width: 110" minimum="0" maximum="65535" step="1" />
+            <spinbox focusable="true" *value="self.imgMaxY" onchange="self:updateExportFilenames()" style="width: 110" minimum="0" maximum="65535" step="1" />
             <span class="mg-coordlabel">Floor</span>
-            <spinbox *value="self.imgFloor" onchange="self:updateExportFilenames()" style="width: 75" minimum="0" maximum="15" step="1" />
+            <spinbox focusable="true" *value="self.imgFloor" onchange="self:updateExportFilenames()" style="width: 75" minimum="0" maximum="15" step="1" />
           </div>
 
           <div class="mg-row">
@@ -470,13 +470,13 @@
           <div class="mg-card" style="height: 130px">
             <div class="mg-row">
               <span class="mg-coordlabel" style="margin-left: 0">From X</span>
-              <spinbox id="areaFromXInput" *value="self.areaFromX" onchange="self:onPositionInputChanged('areaFrom'); self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
+              <spinbox id="areaFromXInput" focusable="true" *value="self.areaFromX" onchange="self:onPositionInputChanged('areaFrom'); self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
               <span class="mg-coordlabel">From Y</span>
-              <spinbox *value="self.areaFromY" onchange="self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
+              <spinbox focusable="true" *value="self.areaFromY" onchange="self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
               <span class="mg-coordlabel">To X</span>
-              <spinbox id="areaToXInput" *value="self.areaToX" onchange="self:onPositionInputChanged('areaTo'); self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
+              <spinbox id="areaToXInput" focusable="true" *value="self.areaToX" onchange="self:onPositionInputChanged('areaTo'); self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
               <span class="mg-coordlabel">To Y</span>
-              <spinbox *value="self.areaToY" onchange="self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
+              <spinbox focusable="true" *value="self.areaToY" onchange="self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
             </div>
             <div class="mg-row">
               <label class="mg-label" style="width: 80">Floors:</label>
@@ -498,7 +498,7 @@
           <div class="mg-card">
             <div class="mg-row" >
               <label class="mg-label" style="width: 60">Floor:</label>
-              <spinbox *value="self.floorNum" onchange="self:updateGenerateWarning()" style="width: 75" minimum="0" maximum="15" step="1" />
+              <spinbox focusable="true" *value="self.floorNum" onchange="self:updateGenerateWarning()" style="width: 75" minimum="0" maximum="15" step="1" />
               <label class="mg-label" style="width: 60; margin-left: 10">Name:</label>
               <input type="text" *value="self.floorName" style="width: 120" />
               <span class="mg-hint">output prefix, e.g. "f7"</span>
@@ -544,7 +544,7 @@
 
           <div class="mg-row">
             <label class="mg-label">Shadow %:</label>
-            <spinbox *value="self.satShadow" onchange="self:updateGenerateWarning()" style="width: 75" minimum="0" maximum="100" step="1" />
+            <spinbox focusable="true" *value="self.satShadow" onchange="self:updateGenerateWarning()" style="width: 75" minimum="0" maximum="100" step="1" />
           </div>
           <div class="mg-infobox">
             Standalone satellite generation (without full PNG run).
@@ -576,7 +576,7 @@
             </div>
             <div class="mg-row">
               <label class="mg-label" style="width: 60">Floor:</label>
-              <spinbox *value="self.satPreviewFloor" onchange="self:updateGenerateWarning()" style="width: 75" minimum="0" maximum="15" step="1" />
+              <spinbox focusable="true" *value="self.satPreviewFloor" onchange="self:updateGenerateWarning()" style="width: 75" minimum="0" maximum="15" step="1" />
               <button class="mg-btn mg-btn-secondary" onclick="self:satFloorUp()" style="padding: 3 8">Floor -</button>
               <button class="mg-btn mg-btn-secondary" onclick="self:satFloorDown()" style="padding: 3 8">Floor +</button>
               <button class="mg-btn mg-btn-secondary" onclick="self:satZoomIn()" style="padding: 3 8">Zoom +</button>
@@ -584,9 +584,9 @@
             </div>
             <div class="mg-row">
               <label class="mg-label" style="width: 60">Go to X:</label>
-              <spinbox id="satPosXInput" *value="self.satPosX" onchange="self:onPositionInputChanged('satPos'); self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
+              <spinbox id="satPosXInput" focusable="true" *value="self.satPosX" onchange="self:onPositionInputChanged('satPos'); self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
               <label class="mg-label" style="width: 20; margin-left: 4">Y:</label>
-              <spinbox *value="self.satPosY" onchange="self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
+              <spinbox focusable="true" *value="self.satPosY" onchange="self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
               <button class="mg-btn mg-btn-secondary" onclick="self:satGoToPosition()" style="padding: 3 10">Go</button>
             </div>
             <div class="mg-row">
@@ -679,9 +679,9 @@
         <div class="mg-row">
           <label class="mg-label">Floors:</label>
           <span class="mg-coordlabel">From</span>
-          <spinbox *value="self.minimapFloorFrom" onchange="self:updateGenerateWarning()" style="width: 75" minimum="0" maximum="15" step="1" />
+          <spinbox focusable="true" *value="self.minimapFloorFrom" onchange="self:updateGenerateWarning()" style="width: 75" minimum="0" maximum="15" step="1" />
           <span class="mg-coordlabel">To</span>
-          <spinbox *value="self.minimapFloorTo" onchange="self:updateGenerateWarning()" style="width: 75" minimum="0" maximum="15" step="1" />
+          <spinbox focusable="true" *value="self.minimapFloorTo" onchange="self:updateGenerateWarning()" style="width: 75" minimum="0" maximum="15" step="1" />
         </div>
         <div class="mg-row">
           <button class="mg-btn mg-btn-success" onclick="self:doExportOtmmFull()">Export OTMM Full</button>
