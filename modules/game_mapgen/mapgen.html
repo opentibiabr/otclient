@@ -285,20 +285,32 @@
         </div>
 
         <div *visible="self.isPrepared">
+          <div style="text-align: center; height: 73px;">
+            <img src="a.png" style="justify-content: center;width: 231px; height: 124px; margin-top: -50px;" />
+          </div>
           <div class="mg-section-title">Area Coordinates</div>
-          <div class="mg-coordbar">
-            <span class="mg-coordlabel">Min X</span>
-            <spinbox id="prevMinXInput" focusable="true" *value="self.prevMinX" onchange="self:onPositionInputChanged('previewMin')" style="width: 110" minimum="0" maximum="65535" step="1" />
-            <span class="mg-coordlabel">Min Y</span>
-            <spinbox focusable="true" *value="self.prevMinY" onchange="self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
-            <span class="mg-coordlabel">Max X</span>
-            <spinbox focusable="true" *value="self.prevMaxX" onchange="self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
-            <span class="mg-coordlabel">Max Y</span>
-            <spinbox focusable="true" *value="self.prevMaxY" onchange="self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
-            <span class="mg-coordlabel">Floor</span>
-            <spinbox focusable="true" *value="self.prevFloor" onchange="self:updateGenerateWarning()" style="width: 75" minimum="0" maximum="15" step="1" />
-            <input id="chkLower" type="checkbox" *checked="self.prevDrawLower" style="margin-left: 10" />
-            <label for="chkLower" style="color: #aaaacc; margin-left: 3">Lower floors</label>
+          <div class="mg-card">
+            <div class="mg-row">
+              <span class="mg-coordlabel">From X</span>
+              <spinbox id="prevMinXInput" focusable="true" *value="self.prevMinX" onchange="self:onPositionInputChanged('previewMin')" style="width: 110" minimum="0" maximum="65535" step="1" />
+              <span class="mg-coordlabel">From Y</span>
+              <spinbox focusable="true" *value="self.prevMinY" onchange="self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
+              <span class="mg-coordlabel">To X</span>
+              <spinbox focusable="true" *value="self.prevMaxX" onchange="self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
+              <span class="mg-coordlabel">To Y</span>
+              <spinbox focusable="true" *value="self.prevMaxY" onchange="self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
+            </div>
+            <div class="mg-row">
+              <span class="mg-coordlabel">Floor</span>
+              <spinbox focusable="true" *value="self.prevFloor" onchange="self:updateGenerateWarning()" style="width: 75" minimum="0" maximum="15" step="1" />
+              <input id="chkLower" type="checkbox" *checked="self.prevDrawLower" style="margin-left: 10" />
+              <label for="chkLower" style="color: #aaaacc; margin-left: 3">Lower floors</label>
+            </div>
+            <div class="mg-row" style="height: 35px;">
+              <button class="mg-btn mg-btn-secondary" onclick="self:pastePositionFromClipboard('previewMin')" style="padding: 3 8">Paste From</button>
+              <label class="mg-label" style="width: 515"></label>
+              <button class="mg-btn mg-btn-secondary" onclick="self:pastePositionFromClipboard('previewMax')" style="padding: 3 8;">Paste To</button>
+            </div>
           </div>
 
           <div class="mg-row">
@@ -332,24 +344,33 @@
         </div>
 
         <div *visible="self.isPrepared">
+          <div style="text-align: center; height: 73px;">
+            <img src="a.png" style="justify-content: center;width: 231px; height: 124px; margin-top: -50px;" />
+          </div>
           <div class="mg-section-title">Export Region to PNG g_map.saveImage</div>
 
-          <div class="mg-coordbar">
-            <span class="mg-coordlabel">Min X</span>
-            <spinbox id="imgMinXInput" focusable="true" *value="self.imgMinX" onchange="self:onPositionInputChanged('exportMin'); self:updateExportFilenames()" style="width: 110" minimum="0" maximum="65535" step="1" />
-            <span class="mg-coordlabel">Min Y</span>
-            <spinbox focusable="true" *value="self.imgMinY" onchange="self:updateExportFilenames()" style="width: 110" minimum="0" maximum="65535" step="1" />
-            <span class="mg-coordlabel">Max X</span>
-            <spinbox focusable="true" *value="self.imgMaxX" onchange="self:updateExportFilenames()" style="width: 110" minimum="0" maximum="65535" step="1" />
-            <span class="mg-coordlabel">Max Y</span>
-            <spinbox focusable="true" *value="self.imgMaxY" onchange="self:updateExportFilenames()" style="width: 110" minimum="0" maximum="65535" step="1" />
-            <span class="mg-coordlabel">Floor</span>
-            <spinbox focusable="true" *value="self.imgFloor" onchange="self:updateExportFilenames()" style="width: 75" minimum="0" maximum="15" step="1" />
-          </div>
-
-          <div class="mg-row">
-            <input id="chkImgLower" type="checkbox" *checked="self.imgDrawLower" />
-            <label for="chkImgLower" style="color: #aaaacc; margin-left: 4">Draw lower floors (shadow blend)</label>
+          <div class="mg-card">
+            <div class="mg-row">
+              <span class="mg-coordlabel">From X</span>
+              <spinbox id="imgMinXInput" focusable="true" *value="self.imgMinX" onchange="self:onPositionInputChanged('exportMin'); self:updateExportFilenames()" style="width: 110" minimum="0" maximum="65535" step="1" />
+              <span class="mg-coordlabel">From Y</span>
+              <spinbox focusable="true" *value="self.imgMinY" onchange="self:updateExportFilenames()" style="width: 110" minimum="0" maximum="65535" step="1" />
+              <span class="mg-coordlabel">To X</span>
+              <spinbox focusable="true" *value="self.imgMaxX" onchange="self:updateExportFilenames()" style="width: 110" minimum="0" maximum="65535" step="1" />
+              <span class="mg-coordlabel">To Y</span>
+              <spinbox focusable="true" *value="self.imgMaxY" onchange="self:updateExportFilenames()" style="width: 110" minimum="0" maximum="65535" step="1" />
+            </div>
+            <div class="mg-row">
+              <span class="mg-coordlabel">Floor</span>
+              <spinbox focusable="true" *value="self.imgFloor" onchange="self:updateExportFilenames()" style="width: 75" minimum="0" maximum="15" step="1" />
+              <input id="chkImgLower" type="checkbox" *checked="self.imgDrawLower" />
+              <label for="chkImgLower" style="color: #aaaacc; margin-left: 4">Draw lower floors (shadow blend)</label>
+            </div>
+            <div class="mg-row" style="height: 35px;">
+              <button class="mg-btn mg-btn-secondary" onclick="self:pastePositionFromClipboard('exportMin')" style="padding: 3 8">Paste From</button>
+              <label class="mg-label" style="width: 515"></label>
+              <button class="mg-btn mg-btn-secondary" onclick="self:pastePositionFromClipboard('exportMax')" style="padding: 3 8">Paste To</button>
+            </div>
           </div>
 
           <div class="mg-row">
@@ -480,6 +501,11 @@
               <input type="text" *value="self.areaName" style="width: 120" />
             </div>
             <div class="mg-row" disabled>
+              <button class="mg-btn mg-btn-secondary" onclick="self:pastePositionFromClipboard('areaFrom')" style="padding: 3 8">Paste From</button>
+              <label class="mg-label" style="width: 535"></label>
+              <button class="mg-btn mg-btn-secondary" onclick="self:pastePositionFromClipboard('areaTo')" style="padding: 3 8">Paste To</button>
+            </div>
+            <div class="mg-row" disabled>
               <button class="mg-btn mg-btn-success" onclick="self:doGenerateMapArea()" *visible="not self.isGenerating">Run generateMapArea</button>
             </div>
             <div class="mg-warnbox" style="background-color: #351515ff; border: 1 #aa3333ff; color: #ff8888ff; margin-top: 4" disabled>
@@ -606,6 +632,9 @@
               <button class="mg-btn mg-btn-secondary" onclick="self:satGoToPosition()" style="padding: 3 10">Go</button>
             </div>
             <div class="mg-row">
+              <button class="mg-btn mg-btn-secondary" onclick="self:pastePositionFromClipboard('satPos')" style="padding: 3 8">Paste Coordinate</button>
+            </div>
+            <div class="mg-row">
               <button class="mg-btn mg-btn-success" onclick="self:doLoadSatPreview()">Load &amp; Preview</button>
               <button class="mg-btn mg-btn-info" onclick="self:satPreviewRandomLoadedChunk()">Random</button>
               <button class="mg-btn mg-btn-info" onclick="self:satPreviewLoadOutputDir()">Use Output Dir</button>
@@ -712,7 +741,7 @@
         </div>
 
         <div class="mg-section-title">OTMM Preview Controls</div>
-        <div class="mg-card" style="height: 78px;">
+        <div class="mg-card" style="height: 104px;">
           <div class="mg-row">
             <label class="mg-label" style="width: 60">Floor:</label>
             <spinbox focusable="true" *value="self.otmmPreviewFloor" onchange="self:updateGenerateWarning()" style="width: 75" minimum="0" maximum="15" step="1" />
@@ -728,6 +757,9 @@
             <spinbox focusable="true" *value="self.otmmPosY" onchange="self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
             <button class="mg-btn mg-btn-success" onclick="self:otmmGoToPosition()" style="padding: 3 10">Go</button>
             <button class="mg-btn mg-btn-info" onclick="self:otmmSelectRandomPosition()" style="padding: 3 10; margin-left: 4">Random</button>
+          </div>
+          <div class="mg-row">
+            <button class="mg-btn mg-btn-secondary" onclick="self:pastePositionFromClipboard('otmmPos')" style="padding: 3 8">Paste Coordinate</button>
           </div>
         </div>
 

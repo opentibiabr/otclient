@@ -10,7 +10,6 @@ function UISpinBox.create()
     spinbox.maximum = 1
     spinbox.value = 0
     spinbox.step = 1
-    spinbox.firstchange = true
     spinbox.mouseScroll = true
     spinbox:setText('1')
     spinbox:setValue(1)
@@ -36,14 +35,6 @@ function UISpinBox:onMouseWheel(mousePos, direction)
         self:downSpin()
     end
     return true
-end
-
-function UISpinBox:onKeyPress()
-    if self.firstchange then
-        self.firstchange = false
-        self:setText('')
-    end
-    return false
 end
 
 function UISpinBox:onTextChange(text, oldText)

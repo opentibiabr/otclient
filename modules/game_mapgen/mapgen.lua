@@ -110,6 +110,30 @@ local function parsePositionText(raw)
     return nil
 end
 
+local function normalizeParsedPosition(pos)
+    if not pos then
+        return nil
+    end
+
+    if pos.x and pos.x > 65535 then
+        local sx = tostring(math.floor(math.abs(pos.x)))
+        if #sx >= 5 then pos.x = tonumber(sx:sub(-5)) or pos.x end
+    end
+    if pos.y and pos.y > 65535 then
+        local sy = tostring(math.floor(math.abs(pos.y)))
+        if #sy >= 5 then pos.y = tonumber(sy:sub(-5)) or pos.y end
+    end
+    if pos.z and (pos.z < 0 or pos.z > 15) then
+        local sz = tostring(math.floor(math.abs(pos.z)))
+        local firstDigit = tonumber(sz:sub(1, 1))
+        if firstDigit and firstDigit <= 15 then
+            pos.z = firstDigit
+        end
+    end
+
+    return pos
+end
+
 local function parseChunkRowFromFileName(fileName)
     local prefix, lodStr, posXStr, posYStr, floorStr =
         fileName:match('^([a-z]+)%-(%d+)%-(%-?%d+)%-(%-?%d+)%-(%-?%d+)%-.*%.bmp%.lzma$')
@@ -484,9 +508,22 @@ function MapGenUI:_applyPastedPosition(target, pos)
         if pos.z ~= nil then
             self.prevFloor = tostring(pos.z)
         end
+    elseif target == 'previewMax' then
+        self.prevMaxX = tostring(pos.x)
+        self.prevMaxY = tostring(pos.y)
+        if pos.z ~= nil then
+            self.prevFloor = tostring(pos.z)
+        end
     elseif target == 'exportMin' then
         self.imgMinX = tostring(pos.x)
         self.imgMinY = tostring(pos.y)
+        if pos.z ~= nil then
+            self.imgFloor = tostring(pos.z)
+        end
+        self:updateExportFilenames()
+    elseif target == 'exportMax' then
+        self.imgMaxX = tostring(pos.x)
+        self.imgMaxY = tostring(pos.y)
         if pos.z ~= nil then
             self.imgFloor = tostring(pos.z)
         end
@@ -523,6 +560,32 @@ function MapGenUI:_applyPastedPosition(target, pos)
     return true
 end
 
+function MapGenUI:pastePositionFromClipboard(target)
+    local raw = ''
+    if g_window and g_window.getClipboardText then
+        raw = g_window.getClipboardText() or ''
+    end
+
+    local text = trimText(raw)
+    if text == '' then
+        self:addLog('Clipboard is empty. Nothing to paste.', '#ddaa44')
+        return
+    end
+
+    local pos = normalizeParsedPosition(parsePositionText(text))
+    if not pos then
+        self:addLog('Clipboard format not recognized. Expected x,y,z position.', '#ff6666')
+        return
+    end
+
+    if self:_applyPastedPosition(target, pos) then
+        self:addLog(string.format('Clipboard pasted into %s: (%d,%d,%s)',
+            target, pos.x, pos.y, tostring(pos.z or '-')), '#88ccff')
+    else
+        self:addLog('Clipboard paste target is not valid: ' .. tostring(target), '#ff6666')
+    end
+end
+
 function MapGenUI:onPositionInputChanged(target)
     local raw = ''
     if target == 'previewMin' then
@@ -541,25 +604,9 @@ function MapGenUI:onPositionInputChanged(target)
         return
     end
 
-    local pos = parsePositionText(raw)
+    local pos = normalizeParsedPosition(parsePositionText(raw))
     if not pos then
         return
-    end
-
-    if pos.x and pos.x > 65535 then
-        local sx = tostring(math.floor(math.abs(pos.x)))
-        if #sx >= 5 then pos.x = tonumber(sx:sub(-5)) or pos.x end
-    end
-    if pos.y and pos.y > 65535 then
-        local sy = tostring(math.floor(math.abs(pos.y)))
-        if #sy >= 5 then pos.y = tonumber(sy:sub(-5)) or pos.y end
-    end
-    if pos.z and (pos.z < 0 or pos.z > 15) then
-        local sz = tostring(math.floor(math.abs(pos.z)))
-        local firstDigit = tonumber(sz:sub(1, 1))
-        if firstDigit and firstDigit <= 15 then
-            pos.z = firstDigit
-        end
     end
 
     if self:_applyPastedPosition(target, pos) then
@@ -1286,6 +1333,12 @@ function MapGenUI:doPreview()
         local widthTiles = math.max(1, maxX - minX + 1)
         local heightTiles = math.max(1, maxY - minY + 1)
         local dim = math.max(15, math.min(255, math.max(widthTiles, heightTiles)))
+        if dim % 2 == 0 then
+            dim = dim + 1
+            if dim > 255 then
+                dim = 255
+            end
+        end
 
         mapPreviewWidget:setCameraPosition({ x = cx, y = cy, z = floor })
         mapPreviewWidget:lockVisibleFloor(floor)
