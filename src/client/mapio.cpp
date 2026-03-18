@@ -224,12 +224,19 @@ void Map::loadOtbm(const std::string& fileName)
                     }
 
                     // Add to generator area list if within render range
-                    if (m_minXToRender <= pos.x && pos.x <= m_maxXToRender) {
+                    const bool inRenderX = (m_minXToRender <= pos.x && pos.x <= m_maxXToRender);
+                    const bool inGenerateArea = !m_generateAreaRangeEnabled
+                        || (m_generateAreaMinX <= pos.x && pos.x <= m_generateAreaMaxX
+                            && m_generateAreaMinY <= pos.y && pos.y <= m_generateAreaMaxY);
+                    if (inRenderX && inGenerateArea) {
+                        const bool floorFilterEnabled = m_generateMinZ >= 0 && m_generateMaxZ >= 0;
                         // For surface tiles (Z <= 7): generate areas from min loaded Z to tile Z
                         // For underground tiles (Z > 7): generate areas from 8 to tile Z
                         // This creates separate "view layers" - surface (0-7) and underground (8-15)
                         int16_t startFloor = (pos.z <= 7) ? 0 : 8;
                         for (int16_t allFloors = startFloor; allFloors <= pos.z; allFloors++) {
+                            if (floorFilterEnabled && (allFloors < m_generateMinZ || allFloors > m_generateMaxZ))
+                                continue;
                             uint32_t areaKey = allFloors + (pos.y / 8) * 16 + (pos.x / 8) * 262144;
                             uint32_t positionInt = allFloors + (pos.y << 4) + (pos.x << 18);
                             m_mapAreas[areaKey] = positionInt;
@@ -1281,10 +1288,15 @@ void Map::generateMinimapChunks(const std::string& outputDir, int lod)
     const int blocksPerChunk = tilesPerChunk / 32;
 
     // Align chunk grid to blocksPerChunk boundaries
-    const int startBX = (m_globalMinX / tilesPerChunk) * blocksPerChunk;
-    const int endBX   = (m_globalMaxX / tilesPerChunk) * blocksPerChunk;
-    const int startBY = (m_globalMinY / tilesPerChunk) * blocksPerChunk;
-    const int endBY   = (m_globalMaxY / tilesPerChunk) * blocksPerChunk;
+    const int minTileX = m_generateAreaRangeEnabled ? m_generateAreaMinX : static_cast<int>(m_globalMinX);
+    const int maxTileX = m_generateAreaRangeEnabled ? m_generateAreaMaxX : static_cast<int>(m_globalMaxX);
+    const int minTileY = m_generateAreaRangeEnabled ? m_generateAreaMinY : static_cast<int>(m_globalMinY);
+    const int maxTileY = m_generateAreaRangeEnabled ? m_generateAreaMaxY : static_cast<int>(m_globalMaxY);
+
+    const int startBX = (minTileX / tilesPerChunk) * blocksPerChunk;
+    const int endBX   = (maxTileX / tilesPerChunk) * blocksPerChunk;
+    const int startBY = (minTileY / tilesPerChunk) * blocksPerChunk;
+    const int endBY   = (maxTileY / tilesPerChunk) * blocksPerChunk;
 
     const int genMinZ = (m_generateMinZ >= 0) ? m_generateMinZ : static_cast<int>(m_globalMinZ);
     const int genMaxZ = (m_generateMaxZ >= 0) ? m_generateMaxZ : static_cast<int>(m_globalMaxZ);
@@ -1303,8 +1315,8 @@ void Map::generateMinimapChunks(const std::string& outputDir, int lod)
         }
     }
 
-    g_logger.info("generateMinimapChunks: queued {} chunks (LOD={}, floors {}-{})",
-                  queuedCount, lod, genMinZ, genMaxZ);
+    g_logger.info("generateMinimapChunks: queued {} chunks (LOD={}, floors {}-{}, area {}:{} -> {}:{})",
+                  queuedCount, lod, genMinZ, genMaxZ, minTileX, minTileY, maxTileX, maxTileY);
 }
 
 void Map::generateSatelliteChunks(const std::string& outputDir, int lod)
@@ -1322,10 +1334,15 @@ void Map::generateSatelliteChunks(const std::string& outputDir, int lod)
     const int tilesPerChunk = 512 * lod / 32;
     const int blocksPerChunk = tilesPerChunk / 32;
 
-    const int startBX = (m_globalMinX / tilesPerChunk) * blocksPerChunk;
-    const int endBX   = (m_globalMaxX / tilesPerChunk) * blocksPerChunk;
-    const int startBY = (m_globalMinY / tilesPerChunk) * blocksPerChunk;
-    const int endBY   = (m_globalMaxY / tilesPerChunk) * blocksPerChunk;
+    const int minTileX = m_generateAreaRangeEnabled ? m_generateAreaMinX : static_cast<int>(m_globalMinX);
+    const int maxTileX = m_generateAreaRangeEnabled ? m_generateAreaMaxX : static_cast<int>(m_globalMaxX);
+    const int minTileY = m_generateAreaRangeEnabled ? m_generateAreaMinY : static_cast<int>(m_globalMinY);
+    const int maxTileY = m_generateAreaRangeEnabled ? m_generateAreaMaxY : static_cast<int>(m_globalMaxY);
+
+    const int startBX = (minTileX / tilesPerChunk) * blocksPerChunk;
+    const int endBX   = (maxTileX / tilesPerChunk) * blocksPerChunk;
+    const int startBY = (minTileY / tilesPerChunk) * blocksPerChunk;
+    const int endBY   = (maxTileY / tilesPerChunk) * blocksPerChunk;
 
     const int shadow = m_shadowPercent;
     const int genMinZ = (m_generateMinZ >= 0) ? m_generateMinZ : static_cast<int>(m_globalMinZ);
@@ -1345,8 +1362,8 @@ void Map::generateSatelliteChunks(const std::string& outputDir, int lod)
         }
     }
 
-    g_logger.info("generateSatelliteChunks: queued {} chunks (LOD={}, floors {}-{})",
-                  queuedCount, lod, genMinZ, genMaxZ);
+    g_logger.info("generateSatelliteChunks: queued {} chunks (LOD={}, floors {}-{}, area {}:{} -> {}:{})",
+                  queuedCount, lod, genMinZ, genMaxZ, minTileX, minTileY, maxTileX, maxTileY);
 }
 
 void Map::saveMapDat(const std::string& outputDir)
@@ -1355,16 +1372,23 @@ void Map::saveMapDat(const std::string& outputDir)
 
     pb::Map mapMsg;
 
+    const int datMinX = m_generateAreaRangeEnabled ? m_generateAreaMinX : static_cast<int>(m_globalMinX);
+    const int datMinY = m_generateAreaRangeEnabled ? m_generateAreaMinY : static_cast<int>(m_globalMinY);
+    const int datMaxX = m_generateAreaRangeEnabled ? m_generateAreaMaxX : static_cast<int>(m_globalMaxX);
+    const int datMaxY = m_generateAreaRangeEnabled ? m_generateAreaMaxY : static_cast<int>(m_globalMaxY);
+    const int datMinZ = (m_generateMinZ >= 0) ? m_generateMinZ : static_cast<int>(m_globalMinZ);
+    const int datMaxZ = (m_generateMaxZ >= 0) ? m_generateMaxZ : static_cast<int>(m_globalMaxZ);
+
     // Set map bounds
     auto* topLeft = mapMsg.mutable_top_left_tile_coordinate();
-    topLeft->set_x(m_minPosition.x);
-    topLeft->set_y(m_minPosition.y);
-    topLeft->set_z(m_minPosition.z);
+    topLeft->set_x(datMinX);
+    topLeft->set_y(datMinY);
+    topLeft->set_z(datMinZ);
 
     auto* bottomRight = mapMsg.mutable_bottom_right_tile_coordinate();
-    bottomRight->set_x(m_maxPosition.x);
-    bottomRight->set_y(m_maxPosition.y);
-    bottomRight->set_z(m_maxPosition.z);
+    bottomRight->set_x(datMaxX);
+    bottomRight->set_y(datMaxY);
+    bottomRight->set_z(datMaxZ);
 
     // Scan output directory for generated .bmp.lzma files
     const auto files = g_resources.listDirectoryFiles(outputDir, false);

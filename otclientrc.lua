@@ -22,6 +22,13 @@ mapPartsToGenerate = {}
 mapPartsCount = 0
 mapPartsCurrentId = 0
 mapImagesGenerated = 0
+areaGenerationTasks = {}
+areaGenerationTaskIdx = 0
+areaGenerationAreasAdded = 0
+areaImagesGenerated = 0
+areaGenerationStartTime = 0
+areaGenerationOutputDir = nil
+areaGenerationPrevExportDir = nil
 preparedMinPos = nil
 preparedMaxPos = nil
 _uiPendingGenerate = nil
@@ -154,6 +161,8 @@ function prepareClient_action()
     if g_map.setMapGenOptimizedLoad then
         g_map.setMapGenOptimizedLoad(true)
     end
+    if g_map.clearGenerateFloorRange then g_map.clearGenerateFloorRange() end
+    if g_map.clearGenerateAreaRange then g_map.clearGenerateAreaRange() end
     g_map.setMinXToLoad(0)
     g_map.setMaxXToLoad(-1) -- do not load tiles, just save map min/max position
     setYLoadRange(0, 65535)
@@ -331,6 +340,8 @@ end
 
 function startMapPartGenerator()
     local currentMapPart = mapPartsToGenerate[mapPartsCurrentId]
+    if g_map.clearGenerateFloorRange then g_map.clearGenerateFloorRange() end
+    if g_map.clearGenerateAreaRange then g_map.clearGenerateAreaRange() end
 
     g_logger.info("Set min X to load: " .. currentMapPart.minXload)
     g_logger.info("Set max X to load: " .. currentMapPart.maxXload)
@@ -365,6 +376,8 @@ function generateMap(mapPartsToGenerateIds, shadowPercent)
     end
     
     isGenerating = true
+    if g_map.clearGenerateFloorRange then g_map.clearGenerateFloorRange() end
+    if g_map.clearGenerateAreaRange then g_map.clearGenerateAreaRange() end
     MAPGEN_UI_STATUS.active = true
     MAPGEN_UI_STATUS.phase = 'preparing'
     MAPGEN_UI_STATUS.done = 0
@@ -453,17 +466,123 @@ local function normalizePartsArg(partsArg)
     return parts
 end
 
--- Generate area PNGs per floor and per map part (same part logic as generateMap()).
--- Example:
--- Preferred style (same as generateMap parts+shadow):
--- generateMapArea('all', 30, 32364, 32231, 32374, 32243, {7,8,9}, "area_test")
--- generateMapArea({2,3}, 30, 32364, 32231, 32374, 32243, {7,8,9}, "area_test")
--- Legacy style (still supported):
--- generateMapArea(32364, 32231, 32374, 32243, {7,8,9}, 30, {2,3}, "area_test")
+local function sanitizeAreaOutputPrefix(prefix)
+    local name = tostring(prefix or 'area_map')
+    name = name:gsub('[^%w%-%_]', '_')
+    if name == '' then
+        name = 'area_map'
+    end
+    return name
+end
+
+local function finishAreaGeneration()
+    isGenerating = false
+    if g_map.clearGenerateFloorRange then g_map.clearGenerateFloorRange() end
+    if g_map.clearGenerateAreaRange then g_map.clearGenerateAreaRange() end
+
+    if areaGenerationPrevExportDir and areaGenerationPrevExportDir ~= '' then
+        g_map.setExportMapDir(areaGenerationPrevExportDir)
+    end
+
+    MAPGEN_UI_STATUS.active = false
+    MAPGEN_UI_STATUS.phase = 'done'
+    MAPGEN_UI_STATUS.done = areaImagesGenerated
+    MAPGEN_UI_STATUS.total = areaImagesGenerated
+    MAPGEN_UI_STATUS.part = #areaGenerationTasks
+    MAPGEN_UI_STATUS.parts = #areaGenerationTasks
+    MAPGEN_UI_STATUS.message = 'Area generation complete'
+
+    print('Area generation finished.')
+    print(areaImagesGenerated .. ' PNG images generated in ' .. (os.time() - areaGenerationStartTime) .. ' seconds.')
+
+    areaGenerationTasks = {}
+    areaGenerationTaskIdx = 0
+    areaGenerationAreasAdded = 0
+    areaImagesGenerated = 0
+    areaGenerationOutputDir = nil
+    areaGenerationPrevExportDir = nil
+end
+
+local function startAreaGenerationTask()
+    local task = areaGenerationTasks[areaGenerationTaskIdx]
+    if not task then
+        finishAreaGeneration()
+        return false
+    end
+
+    if g_map.setGenerateFloorRange then
+        g_map.setGenerateFloorRange(task.floor, task.floor)
+    end
+    if g_map.setGenerateAreaRange then
+        g_map.setGenerateAreaRange(task.minX, task.minY, task.maxX, task.maxY)
+    end
+
+    loadMapForXRange(task.minX, task.maxX, task.minY, task.maxY)
+
+    areaGenerationAreasAdded = 0
+    g_map.setGeneratedAreasCount(0)
+
+    local taskTotal = g_map.getAreasCount()
+    if taskTotal <= 0 then
+        print(string.format(
+            'Area task %d/%d skipped (no render areas) [X:%d-%d Y:%d-%d Z:%d, part=%d]',
+            areaGenerationTaskIdx, #areaGenerationTasks, task.minX, task.maxX, task.minY, task.maxY, task.floor, task.partId))
+        areaGenerationTaskIdx = areaGenerationTaskIdx + 1
+        return startAreaGenerationTask()
+    end
+
+    MAPGEN_UI_STATUS.active = true
+    MAPGEN_UI_STATUS.phase = 'png'
+    MAPGEN_UI_STATUS.done = areaImagesGenerated
+    MAPGEN_UI_STATUS.total = areaImagesGenerated + taskTotal
+    MAPGEN_UI_STATUS.part = areaGenerationTaskIdx
+    MAPGEN_UI_STATUS.parts = #areaGenerationTasks
+    MAPGEN_UI_STATUS.message = string.format('Generating area task %d/%d', areaGenerationTaskIdx, #areaGenerationTasks)
+
+    print(string.format(
+        'Starting area task %d/%d: part=%d floor=%d X:%d-%d Y:%d-%d (%s images)',
+        areaGenerationTaskIdx, #areaGenerationTasks, task.partId, task.floor,
+        task.minX, task.maxX, task.minY, task.maxY, format_int(taskTotal)))
+    return true
+end
+
+local function areaGenerateManager()
+    local done = g_map.getGeneratedAreasCount()
+    local total = g_map.getAreasCount()
+
+    MAPGEN_UI_STATUS.active = true
+    MAPGEN_UI_STATUS.phase = 'png'
+    MAPGEN_UI_STATUS.done = areaImagesGenerated + done
+    MAPGEN_UI_STATUS.total = areaImagesGenerated + total
+    MAPGEN_UI_STATUS.part = areaGenerationTaskIdx
+    MAPGEN_UI_STATUS.parts = #areaGenerationTasks
+    MAPGEN_UI_STATUS.message = string.format('Generating area task %d/%d', areaGenerationTaskIdx, #areaGenerationTasks)
+
+    if (done / 1000) + 1 > areaGenerationAreasAdded then
+        g_map.addAreasToGenerator(areaGenerationAreasAdded * 1000, areaGenerationAreasAdded * 1000 + 999)
+        areaGenerationAreasAdded = areaGenerationAreasAdded + 1
+    end
+
+    if total > 0 and done >= total then
+        areaImagesGenerated = areaImagesGenerated + done
+        areaGenerationTaskIdx = areaGenerationTaskIdx + 1
+        if startAreaGenerationTask() then
+            g_dispatcher.scheduleEvent(areaGenerateManager, 100)
+        end
+        return
+    end
+
+    g_dispatcher.scheduleEvent(areaGenerateManager, 100)
+end
+
+-- Generate area PNGs using the same chunk/image pipeline as full generate (x_y_z.png).
+-- Preferred style:
+-- generateMapArea('all', 30, fromX, fromY, toX, toY, {7,8,9}, 'area_name')
+-- generateMapArea({2,3}, 30, fromX, fromY, toX, toY, {7,8,9}, 'area_name')
 function generateMapArea(a1, a2, a3, a4, a5, a6, a7, a8)
     if isGenerating then
         print('Generating script is already running. Cannot start another generation')
-        return
+        return false
     end
 
     local mapPartsToGenerateIds
@@ -476,7 +595,6 @@ function generateMapArea(a1, a2, a3, a4, a5, a6, a7, a8)
     local outputPrefix
 
     if type(a1) == "string" or type(a1) == "table" then
-        -- New style: (parts, shadow, fromX, fromY, toX, toY, floors, prefix)
         mapPartsToGenerateIds = normalizePartsArg(a1)
         shadowPercent = a2
         fromX = a3
@@ -486,7 +604,6 @@ function generateMapArea(a1, a2, a3, a4, a5, a6, a7, a8)
         floors = a7
         outputPrefix = a8
     else
-        -- Legacy style: (fromX, fromY, toX, toY, floors, shadow, parts, prefix)
         fromX = a1
         fromY = a2
         toX = a3
@@ -499,30 +616,87 @@ function generateMapArea(a1, a2, a3, a4, a5, a6, a7, a8)
 
     if type(floors) ~= "table" or #floors == 0 then
         print('generateMapArea: floors must be a non-empty table, example {7,8,9}')
-        return
+        return false
     end
 
-    local minX, minY, maxX, maxY = normalizeAreaBounds(fromX, fromY, toX, toY)
+    local minX, minY, maxX, maxY = normalizeAreaBounds(tonumber(fromX) or 0, tonumber(fromY) or 0, tonumber(toX) or 0, tonumber(toY) or 0)
+    local uniqueFloors, floorSeen = {}, {}
+    for _, floor in ipairs(floors) do
+        local f = tonumber(floor)
+        if f then
+            f = math.max(0, math.min(15, math.floor(f)))
+            if not floorSeen[f] then
+                floorSeen[f] = true
+                table.insert(uniqueFloors, f)
+            end
+        end
+    end
+    table.sort(uniqueFloors)
+    if #uniqueFloors == 0 then
+        print('generateMapArea: no valid floors after normalization.')
+        return false
+    end
 
-    outputPrefix = outputPrefix or "area_map"
+    local normalizedPrefix = sanitizeAreaOutputPrefix(outputPrefix)
+    local previousExportMapDir = g_map.getExportMapDir()
+    local outputDir = previousExportMapDir .. '/' .. normalizedPrefix
+    g_resources.makeDir(outputDir)
+    g_map.setExportMapDir(outputDir)
 
-    g_map.setShadowPercent(shadowPercent)
-
+    local tasks = {}
     for _, partId in ipairs(mapPartsToGenerateIds) do
         local part = mapParts[partId]
         if part then
             local partMinX = math.max(minX, part.minXrender)
             local partMaxX = math.min(maxX, part.maxXrender)
             if partMinX <= partMaxX then
-                loadMapForXRange(partMinX, partMaxX, minY, maxY)
-                for _, floor in ipairs(floors) do
-                    local fileName = string.format("%s/%s_z%d_part_%d.png", getExportMapDir(), outputPrefix, floor, partId)
-                    g_map.saveImage(fileName, partMinX, minY, partMaxX, maxY, floor, false)
-                    print("Area map part saved: " .. fileName)
+                for _, floor in ipairs(uniqueFloors) do
+                    table.insert(tasks, {
+                        partId = partId,
+                        floor = floor,
+                        minX = partMinX,
+                        minY = minY,
+                        maxX = partMaxX,
+                        maxY = maxY
+                    })
                 end
             end
         end
     end
+
+    if #tasks == 0 then
+        print('generateMapArea: selected area does not intersect selected map parts.')
+        g_map.setExportMapDir(previousExportMapDir)
+        return false
+    end
+
+    isGenerating = true
+    g_map.setShadowPercent(shadowPercent)
+    areaGenerationTasks = tasks
+    areaGenerationTaskIdx = 1
+    areaGenerationAreasAdded = 0
+    areaImagesGenerated = 0
+    areaGenerationStartTime = os.time()
+    areaGenerationOutputDir = outputDir
+    areaGenerationPrevExportDir = previousExportMapDir
+
+    MAPGEN_UI_STATUS.active = true
+    MAPGEN_UI_STATUS.phase = 'preparing'
+    MAPGEN_UI_STATUS.done = 0
+    MAPGEN_UI_STATUS.total = 0
+    MAPGEN_UI_STATUS.part = 0
+    MAPGEN_UI_STATUS.parts = #tasks
+    MAPGEN_UI_STATUS.message = 'Preparing area generation'
+
+    print(string.format(
+        'generateMapArea: output=%s, tasks=%d, area=[%d,%d]-[%d,%d], floors={%s}',
+        outputDir, #tasks, minX, minY, maxX, maxY, table.concat(uniqueFloors, ',')))
+
+    if startAreaGenerationTask() then
+        g_dispatcher.scheduleEvent(areaGenerateManager, 100)
+        return true
+    end
+    return false
 end
 
 -- Generate one floor split by map parts (like generateMap parts flow).
@@ -678,8 +852,24 @@ local satelliteLastCount = -1
 local satelliteStableTicks = 0
 -- 'all' | 'satellite' | 'minimap'  (set per-call, read in progress manager)
 local satelliteGenerateMode = 'all'
+local satelliteAreaEnabled = false
+local satelliteAreaMinX = 0
+local satelliteAreaMinY = 0
+local satelliteAreaMaxX = 65535
+local satelliteAreaMaxY = 65535
 
-function generateSatelliteData(outputDir, lod, shadowPercent, mapPathOverride, mode)
+local function clearSatelliteOutputDirectory(outputDir)
+    local files = g_resources.listDirectoryFiles(outputDir, false) or {}
+    for _, name in ipairs(files) do
+        if name:find('%.bmp%.lzma$') or name == 'map.dat' then
+            pcall(function()
+                g_resources.deleteFile(outputDir .. '/' .. name)
+            end)
+        end
+    end
+end
+
+function generateSatelliteData(outputDir, lod, shadowPercent, mapPathOverride, mode, fromX, fromY, toX, toY)
     if satelliteGenerating then
         print('Satellite generation is already running.')
         return
@@ -705,16 +895,37 @@ function generateSatelliteData(outputDir, lod, shadowPercent, mapPathOverride, m
     SATELLITE_UI_STATUS.total = 0
 
     g_resources.makeDir(outputDir)
+    clearSatelliteOutputDirectory(outputDir)
     g_map.setShadowPercent(shadowPercent)
+
+    satelliteAreaEnabled = false
+    if tonumber(fromX) and tonumber(fromY) and tonumber(toX) and tonumber(toY) then
+        satelliteAreaEnabled = true
+        satelliteAreaMinX, satelliteAreaMinY, satelliteAreaMaxX, satelliteAreaMaxY =
+            normalizeAreaBounds(tonumber(fromX), tonumber(fromY), tonumber(toX), tonumber(toY))
+        if g_map.setGenerateAreaRange then
+            g_map.setGenerateAreaRange(satelliteAreaMinX, satelliteAreaMinY, satelliteAreaMaxX, satelliteAreaMaxY)
+        end
+    else
+        if g_map.clearGenerateAreaRange then
+            g_map.clearGenerateAreaRange()
+        end
+    end
 
     -- Reload full map so all tiles are available for rendering.
     -- Without this, only the last loaded part's tiles exist in memory.
     local effectiveMapPath = mapPathOverride or mapPath
     if effectiveMapPath and effectiveMapPath ~= '' then
-        print('Reloading full map for satellite generation...')
-        setPreparedFullLoadRange(16)
-        g_map.setMinXToRender(0)
-        g_map.setMaxXToRender(70000)
+        if satelliteAreaEnabled then
+            print(string.format('Reloading map area for satellite generation [%d,%d]-[%d,%d]...',
+                satelliteAreaMinX, satelliteAreaMinY, satelliteAreaMaxX, satelliteAreaMaxY))
+            loadMapForXRange(satelliteAreaMinX, satelliteAreaMaxX, satelliteAreaMinY, satelliteAreaMaxY)
+        else
+            print('Reloading full map for satellite generation...')
+            setPreparedFullLoadRange(16)
+            g_map.setMinXToRender(0)
+            g_map.setMaxXToRender(70000)
+        end
         g_map.loadOtbm(effectiveMapPath)
     end
 
@@ -791,6 +1002,7 @@ function satelliteProgressManager()
                 print('Satellite-only generation finished in ' .. (os.time() - satelliteStartTime) .. ' seconds.')
                 satelliteGenerating = false
                 if g_map.clearGenerateFloorRange then g_map.clearGenerateFloorRange() end
+                if g_map.clearGenerateAreaRange then g_map.clearGenerateAreaRange() end
                 SATELLITE_UI_STATUS.active = false
                 SATELLITE_UI_STATUS.phase = 'done'
                 SATELLITE_UI_STATUS.done = count
@@ -820,6 +1032,7 @@ function satelliteProgressManager()
             print('Satellite data generation finished in ' .. (os.time() - satelliteStartTime) .. ' seconds.')
             satelliteGenerating = false
             if g_map.clearGenerateFloorRange then g_map.clearGenerateFloorRange() end
+            if g_map.clearGenerateAreaRange then g_map.clearGenerateAreaRange() end
             SATELLITE_UI_STATUS.active = false
             SATELLITE_UI_STATUS.phase = 'done'
             SATELLITE_UI_STATUS.done = count

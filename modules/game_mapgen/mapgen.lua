@@ -238,6 +238,15 @@ function MapGenUI:onInit()
     -- Floor filter for generation: all = global bounds, custom = comma-separated floors
     self.satGenFloorsMode = self.satGenFloorsMode or 'all'
     self.satGenCustomFloors = self.satGenCustomFloors or '7'
+    self.satAreaFromX = self.satAreaFromX or '32000'
+    self.satAreaFromY = self.satAreaFromY or '32000'
+    self.satAreaToX = self.satAreaToX or '32500'
+    self.satAreaToY = self.satAreaToY or '32500'
+    self.satAreaFloor = self.satAreaFloor or '7'
+    self.satAreaLod = self.satAreaLod or self.satLod or '32'
+    self.satAreaShadow = self.satAreaShadow or self.satShadow or '30'
+    self.satAreaGenMode = self.satAreaGenMode or 'all'
+    self.satAreaGenModeState = self.satAreaGenModeState or { all = true, satellite = false, minimap = false }
 
     -- Ensure 1098 features are true by default
     self.featSpritesU32 = true
@@ -255,6 +264,8 @@ function MapGenUI:onInit()
     self.otmmPosX = self.otmmPosX or '0'
     self.otmmPosY = self.otmmPosY or '0'
     self.progressBarWidth = 0
+    self:_updateOptionState('satGenModeState', self.satGenMode)
+    self:_updateOptionState('satAreaGenModeState', self.satAreaGenMode)
     self:loadHtml('mapgen.html')
     
     local clientBox = self:findWidget('clientComboBox')
@@ -468,6 +479,12 @@ function MapGenUI:onTerminate()
     if g_map.setOfflinePreview then
         g_map.setOfflinePreview(false)
     end
+    if g_map.clearGenerateFloorRange then
+        g_map.clearGenerateFloorRange()
+    end
+    if g_map.clearGenerateAreaRange then
+        g_map.clearGenerateAreaRange()
+    end
     setMapGenOptimizedLoad(false)
     if mapPreviewWidget and not mapPreviewWidget:isDestroyed() then
         mapPreviewWidget:setId('mapGenPreviewMap')
@@ -540,6 +557,18 @@ function MapGenUI:_applyPastedPosition(target, pos)
         if pos.z ~= nil then
             self.areaFloors = tostring(pos.z)
         end
+    elseif target == 'satAreaFrom' then
+        self.satAreaFromX = tostring(pos.x)
+        self.satAreaFromY = tostring(pos.y)
+        if pos.z ~= nil then
+            self.satAreaFloor = tostring(pos.z)
+        end
+    elseif target == 'satAreaTo' then
+        self.satAreaToX = tostring(pos.x)
+        self.satAreaToY = tostring(pos.y)
+        if pos.z ~= nil then
+            self.satAreaFloor = tostring(pos.z)
+        end
     elseif target == 'satPos' then
         self.satPosX = tostring(pos.x)
         self.satPosY = tostring(pos.y)
@@ -596,6 +625,10 @@ function MapGenUI:onPositionInputChanged(target)
         raw = self.areaFromX or ''
     elseif target == 'areaTo' then
         raw = self.areaToX or ''
+    elseif target == 'satAreaFrom' then
+        raw = self.satAreaFromX or ''
+    elseif target == 'satAreaTo' then
+        raw = self.satAreaToX or ''
     elseif target == 'satPos' then
         raw = self.satPosX or ''
     elseif target == 'otmmPos' then
@@ -1082,6 +1115,7 @@ function MapGenUI:_doPrepareAction(cv)
         g_resources.makeDir('house')
         g_resources.makeDir(exportBase)
         g_resources.makeDir(exportBase .. '/map')
+        g_map.setExportMapDir(exportBase .. '/map')
 
         -- Protocol / client version
         g_game.setProtocolVersion(cv)
@@ -1158,6 +1192,8 @@ function MapGenUI:_doPrepareAction(cv)
             minPos.x, minPos.y, minPos.z, maxPos.x, maxPos.y, maxPos.z)
         _preparedMinPos = { x = minPos.x, y = minPos.y, z = minPos.z }
         _preparedMaxPos = { x = maxPos.x, y = maxPos.y, z = maxPos.z }
+        if _G.preparedMinPos ~= nil then _G.preparedMinPos = { x = minPos.x, y = minPos.y, z = minPos.z } end
+        if _G.preparedMaxPos ~= nil then _G.preparedMaxPos = { x = maxPos.x, y = maxPos.y, z = maxPos.z } end
 
         -- Default preview / export coords to map centre
         local cx = math.floor((minPos.x + maxPos.x) / 2)
@@ -1200,6 +1236,10 @@ function MapGenUI:_doPrepareAction(cv)
             p.maxXload   = math.floor((p.maxXrender + 16) / 8) * 8
             table.insert(infoLines, 'Part ' .. i .. ': X ' .. p.minXrender .. '-' .. p.maxXrender)
         end
+        if _G.mapParts ~= nil then _G.mapParts = _mapParts end
+        if _G.mapPartsCount ~= nil then _G.mapPartsCount = #_mapParts end
+        if _G.threadsToRun ~= nil then _G.threadsToRun = thr end
+        if _G.mapPath ~= nil then _G.mapPath = mp end
         self.mapPartsInfo = table.concat(infoLines, '  |  ')
         _preparedAreasCount = math.max(g_map.getAreasCount() or 0, totalTiles or 0)
 
@@ -1795,13 +1835,41 @@ function MapGenUI:doGenerateMapArea()
     self.progressLabel   = 'Starting area generation...'
     self.statusText      = 'Generating map area...'
 
-    generateMapArea(partsIds, shadow, fromX, fromY, toX, toY, floors, name)
+    local started = generateMapArea(partsIds, shadow, fromX, fromY, toX, toY, floors, name)
+    if not started then
+        self:setHighLoad(false)
+        self.isGenerating = false
+        self.progressPercent = 0
+        self.progressBarWidth = 0
+        self.progressLabel = 'Area generation not started.'
+        self.statusText = 'Area generation not started. See log.'
+        return
+    end
 
     self:cycleEvent(function()
+        local s = MAPGEN_UI_STATUS
+        if s and s.active then
+            local done = tonumber(s.done) or 0
+            local total = tonumber(s.total) or 0
+            local part = tonumber(s.part) or 0
+            local parts = tonumber(s.parts) or 0
+            if total > 0 then
+                self.progressPercent = math.floor(done / total * 100)
+                self.progressBarWidth = math.min(690, math.floor(self.progressPercent * 6.9))
+                self.progressLabel = string.format('%d%%, %s of %s PNG images - TASK %d OF %d',
+                    self.progressPercent, self:_fmtInt(done), self:_fmtInt(total), part, parts)
+            else
+                self.progressPercent = 0
+                self.progressBarWidth = 0
+                self.progressLabel = s.message ~= '' and s.message or 'Generating area...'
+            end
+        end
+
         if not isGenerating then
             self:setHighLoad(false)
             self.isGenerating    = false
             self.progressPercent = 100
+            self.progressBarWidth = 690
             self.progressLabel   = 'Area generation complete!'
             self.statusText      = 'generateMapArea finished.'
             self:addLog('generateMapArea finished!', '#44dd88')
@@ -1868,6 +1936,44 @@ function MapGenUI:satSetGenMode(mode)
     self:_updateOptionState('satGenModeState', self.satGenMode)
 end
 
+function MapGenUI:satSetAreaGenMode(mode)
+    self.satAreaGenMode = mode or 'all'
+    self:_updateOptionState('satAreaGenModeState', self.satAreaGenMode)
+end
+
+function MapGenUI:_startSatelliteGenerationMonitor()
+    self:cycleEvent(function()
+        local s = SATELLITE_UI_STATUS
+        if not s then
+            return
+        end
+
+        if not s.active and (s.phase == 'done' or not satelliteGenerating) then
+            self:setHighLoad(false)
+            self.isGenerating    = false
+            self.progressPercent = 100
+            self.progressBarWidth = 690
+            self.progressLabel   = 'Satellite complete!'
+            self.statusText      = 'Satellite generation complete.'
+            self:addLog('Satellite generation finished!', '#44dd88')
+            return false
+        end
+
+        local done = tonumber(s.done) or 0
+        local total = tonumber(s.total) or 0
+        local phase = s.phase or '?'
+        if total > 0 then
+            self.progressPercent = math.floor(done / total * 100)
+            self.progressBarWidth = math.min(690, math.floor(self.progressPercent * 6.9))
+            self.progressLabel = string.format('%d%%, %s of %s chunks [%s]', self.progressPercent, self:_fmtInt(done), self:_fmtInt(total), phase)
+        else
+            self.progressPercent = 0
+            self.progressBarWidth = 0
+            self.progressLabel = self:_fmtInt(done) .. ' chunks  [' .. phase .. ']'
+        end
+    end, 2000, 'satMonitor')
+end
+
 function MapGenUI:doGenerateSatellite()
     if not self.isPrepared then
         self:addLog('Cannot generate: client not prepared.', '#ff6666')
@@ -1902,7 +2008,7 @@ function MapGenUI:doGenerateSatellite()
         if g_map.clearGenerateFloorRange then g_map.clearGenerateFloorRange() end
     end
 
-    self:addLog(string.format('Starting satellite gen: %s  LOD=%d  shadow=%d%%  mode=%s  floors=%s',
+    self:addLog(string.format('Starting satellite gen (full map): %s  LOD=%d  shadow=%d%%  mode=%s  floors=%s',
         odir, lod, shadow, mode,
         self.satGenFloorsMode == 'custom' and (self.satGenCustomFloors or '?') or 'all'), '#88ccff')
     self.isGenerating    = true
@@ -1912,37 +2018,57 @@ function MapGenUI:doGenerateSatellite()
     self.statusText      = 'Generating satellite data...'
 
     generateSatelliteData(odir, lod, shadow, _mapPath, mode)
+    self:_startSatelliteGenerationMonitor()
+end
 
-    self:cycleEvent(function()
-        local s = SATELLITE_UI_STATUS
-        if not s then
-            return
-        end
+function MapGenUI:doGenerateSatelliteArea()
+    if not self.isPrepared then
+        self:addLog('Cannot generate: client not prepared.', '#ff6666')
+        return
+    end
+    if self.isGenerating then
+        self:addLog('Already generating.', '#ddaa44')
+        return
+    end
 
-        if not s.active and (s.phase == 'done' or not satelliteGenerating) then
-            self:setHighLoad(false)
-            self.isGenerating    = false
-            self.progressPercent = 100
-            self.progressBarWidth = 690
-            self.progressLabel   = 'Satellite complete!'
-            self.statusText      = 'Satellite generation complete.'
-            self:addLog('Satellite generation finished!', '#44dd88')
-            return false
-        end
+    local fromX = tonumber(self.satAreaFromX)
+    local fromY = tonumber(self.satAreaFromY)
+    local toX   = tonumber(self.satAreaToX)
+    local toY   = tonumber(self.satAreaToY)
+    local floor = tonumber(self.satAreaFloor)
+    if not fromX or not fromY or not toX or not toY then
+        self:addLog('ERROR: invalid area. Fill From/To coordinates.', '#ff6666')
+        return
+    end
+    if floor == nil then
+        self:addLog('ERROR: invalid floor for area generation.', '#ff6666')
+        return
+    end
 
-        local done = tonumber(s.done) or 0
-        local total = tonumber(s.total) or 0
-        local phase = s.phase or '?'
-        if total > 0 then
-            self.progressPercent = math.floor(done / total * 100)
-            self.progressBarWidth = math.min(690, math.floor(self.progressPercent * 6.9))
-            self.progressLabel = string.format('%d%%, %s of %s chunks [%s]', self.progressPercent, self:_fmtInt(done), self:_fmtInt(total), phase)
-        else
-            self.progressPercent = 0
-            self.progressBarWidth = 0
-            self.progressLabel = self:_fmtInt(done) .. ' chunks  [' .. phase .. ']'
-        end
-    end, 2000, 'satMonitor')
+    fromX = clampMapCoord(fromX)
+    fromY = clampMapCoord(fromY)
+    toX   = clampMapCoord(toX)
+    toY   = clampMapCoord(toY)
+    floor = math.max(0, math.min(15, math.floor(floor)))
+
+    local odir   = self.satOutputDir or '/satellite_output'
+    local lod    = tonumber(self.satAreaLod)    or 32
+    local shadow = tonumber(self.satAreaShadow) or 30
+    local mode   = self.satAreaGenMode or 'all'
+
+    if g_map.setGenerateFloorRange then
+        g_map.setGenerateFloorRange(floor, floor)
+    end
+    self:addLog(string.format('Starting satellite gen (area): %s  LOD=%d  shadow=%d%%  mode=%s  floor=%d  area=[%d,%d]-[%d,%d]',
+        odir, lod, shadow, mode, floor, fromX, fromY, toX, toY), '#88ccff')
+    self.isGenerating    = true
+    self:setHighLoad(true)
+    self.progressPercent = 0
+    self.progressLabel   = 'Initialising area generation...'
+    self.statusText      = 'Generating satellite data by area...'
+
+    generateSatelliteData(odir, lod, shadow, _mapPath, mode, fromX, fromY, toX, toY)
+    self:_startSatelliteGenerationMonitor()
 end
 
 function MapGenUI:doEnableSatellitePerPart()

@@ -222,6 +222,8 @@ void Client::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_map", "saveMapDat", &Map::saveMapDat, &g_map);
     g_lua.bindSingletonFunction("g_map", "setGenerateFloorRange", &Map::setGenerateFloorRange, &g_map);
     g_lua.bindSingletonFunction("g_map", "clearGenerateFloorRange", &Map::clearGenerateFloorRange, &g_map);
+    g_lua.bindSingletonFunction("g_map", "setGenerateAreaRange", &Map::setGenerateAreaRange, &g_map);
+    g_lua.bindSingletonFunction("g_map", "clearGenerateAreaRange", &Map::clearGenerateAreaRange, &g_map);
 #endif
     g_lua.bindSingletonFunction("g_map", "beginGhostMode", &Map::beginGhostMode, &g_map);
     g_lua.bindSingletonFunction("g_map", "endGhostMode", &Map::endGhostMode, &g_map);

@@ -294,6 +294,16 @@ public:
         m_generateMaxZ = std::min(15, maxZ);
     }
     void clearGenerateFloorRange() { m_generateMinZ = -1; m_generateMaxZ = -1; }
+    // Tile range filter for satellite/minimap chunk generation.
+    // When enabled, only chunks intersecting [minX,minY]-[maxX,maxY] are generated.
+    void setGenerateAreaRange(int fromX, int fromY, int toX, int toY) {
+        m_generateAreaMinX = std::clamp(std::min(fromX, toX), 0, 65535);
+        m_generateAreaMinY = std::clamp(std::min(fromY, toY), 0, 65535);
+        m_generateAreaMaxX = std::clamp(std::max(fromX, toX), 0, 65535);
+        m_generateAreaMaxY = std::clamp(std::max(fromY, toY), 0, 65535);
+        m_generateAreaRangeEnabled = true;
+    }
+    void clearGenerateAreaRange() { m_generateAreaRangeEnabled = false; }
 private:
     struct FloorData
     {
@@ -362,6 +372,11 @@ private:
     bool m_mapGenOptimizedLoad{ false };
     int m_generateMinZ{ -1 };  // -1 = use m_globalMinZ
     int m_generateMaxZ{ -1 };  // -1 = use m_globalMaxZ
+    bool m_generateAreaRangeEnabled{ false };
+    int m_generateAreaMinX{ 0 };
+    int m_generateAreaMinY{ 0 };
+    int m_generateAreaMaxX{ 65535 };
+    int m_generateAreaMaxY{ 65535 };
     int16_t m_shadowPercent{ 0 };
     uint8_t m_lowerFloorsShadowPercent{ 50 };
     std::string m_exportMapDir{ "exported_images/map" };

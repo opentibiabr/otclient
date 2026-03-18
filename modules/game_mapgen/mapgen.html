@@ -34,11 +34,20 @@
   self.satPreviewFloor = self.satPreviewFloor or 7
   self.satPosX = self.satPosX or 32000
   self.satPosY = self.satPosY or 32000
+  self.satAreaFromX = self.satAreaFromX or 32000
+  self.satAreaFromY = self.satAreaFromY or 32000
+  self.satAreaToX = self.satAreaToX or 32500
+  self.satAreaToY = self.satAreaToY or 32500
+  self.satAreaFloor = self.satAreaFloor or 7
   self.satViewMode = self.satViewMode or "surface"
   self.satForceLod = "auto"
   self.satForceFields = "auto"
   self.satGenMode = self.satGenMode or "all"
   self.satGenModeState = self.satGenModeState or { all = true, satellite = false, minimap = false }
+  self.satAreaLod = self.satAreaLod or self.satLod or 32
+  self.satAreaShadow = self.satAreaShadow or self.satShadow or 30
+  self.satAreaGenMode = self.satAreaGenMode or "all"
+  self.satAreaGenModeState = self.satAreaGenModeState or { all = true, satellite = false, minimap = false }
   self.satGenFloorsMode = self.satGenFloorsMode or "all"
   self.satGenCustomFloors = self.satGenCustomFloors or "7"
   self.satDatQuery = ""
@@ -481,9 +490,9 @@
           </div>
 
           <!-- ---- generateMapArea ---- -->
-          <div class="mg-section-title" style="margin-top: 8" disabled>generateMapArea Specific Region  [NOT WORKING]</div>
-          <div class="mg-card" style="height: 130px" disabled>
-            <div class="mg-row" disabled>
+          <div class="mg-section-title" style="margin-top: 8">generateMapArea Specific Region</div>
+          <div class="mg-card" style="height: 152px">
+            <div class="mg-row">
               <span class="mg-coordlabel" style="margin-left: 0">From X</span>
               <spinbox id="areaFromXInput" focusable="true" *value="self.areaFromX" onchange="self:onPositionInputChanged('areaFrom'); self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
               <span class="mg-coordlabel">From Y</span>
@@ -493,22 +502,22 @@
               <span class="mg-coordlabel">To Y</span>
               <spinbox focusable="true" *value="self.areaToY" onchange="self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
             </div>
-            <div class="mg-row" disabled>
+            <div class="mg-row">
               <label class="mg-label" style="width: 80">Floors:</label>
               <input type="text" *value="self.areaFloors" style="width: 100" />
               <span class="mg-hint">e.g. 7,8,9</span>
               <label class="mg-label" style="width: 60; margin-left: 10">Name:</label>
               <input type="text" *value="self.areaName" style="width: 120" />
             </div>
-            <div class="mg-row" disabled>
+            <div class="mg-row">
               <button class="mg-btn mg-btn-secondary" onclick="self:pastePositionFromClipboard('areaFrom')" style="padding: 3 8">Paste From</button>
               <label class="mg-label" style="width: 535"></label>
               <button class="mg-btn mg-btn-secondary" onclick="self:pastePositionFromClipboard('areaTo')" style="padding: 3 8">Paste To</button>
             </div>
-            <div class="mg-row" disabled>
+            <div class="mg-row">
               <button class="mg-btn mg-btn-success" onclick="self:doGenerateMapArea()" *visible="not self.isGenerating">Run generateMapArea</button>
             </div>
-            <div class="mg-warnbox" style="background-color: #351515ff; border: 1 #aa3333ff; color: #ff8888ff; margin-top: 4" disabled>
+            <div class="mg-warnbox" style="background-color: #351515ff; border: 1 #aa3333ff; color: #ff8888ff; margin-top: 4">
               {{self.areaGenerateWarnText}}
             </div>
           </div>
@@ -541,7 +550,7 @@
       <div class="mg-tabpanel" *visible="self.activeTab == 'satellite'">
 
         <div *visible="self.isPrepared" style="margin-bottom: 78;">
-          <div class="mg-section-title">Satellite and Minimap Chunk Generation</div>
+          <div class="mg-section-title">Satellite and Minimap Chunk Generation (Full Map)</div>
           <div class="mg-infobox">
             Generates satellite .bmp.lzma chunks, minimap chunks and map.dat protobuf for external viewers.
           </div>
@@ -602,8 +611,59 @@
           <div class="mg-row" style="margin-top: -28; margin-bottom: 10">
             <button class="mg-btn mg-btn-success" onclick="self:doGenerateSatellite()"
               *visible="not self.isGenerating">
-              Generate Satellite Data
+              Generate Full Map Satellite Data
             </button>
+          </div>
+
+          <div class="mg-section-title" style="margin-top: 10">Satellite and Minimap Chunk Generation By Area</div>
+          <div class="mg-infobox">
+            Generates only the selected area (From/To + Floor), exporting .bmp.lzma chunks and map.dat.
+          </div>
+          <div class="mg-card">
+            <div class="mg-row">
+              <label class="mg-label">LOD:</label>
+              <select *value="self.satAreaLod" style="width: 180" menu-scroll="true" menu-height="95" menu-scroll-step="24" onchange="self:updateGenerateWarning()">
+                <option value="16">16 High Detail</option>
+                <option value="32">32 Medium (recommended)</option>
+                <option value="64">64 Low / Fast</option>
+              </select>
+            </div>
+            <div class="mg-row">
+              <label class="mg-label">Shadow %:</label>
+              <spinbox focusable="true" *value="self.satAreaShadow" onchange="self:updateGenerateWarning()" style="width: 75" minimum="0" maximum="100" step="1" />
+            </div>
+            <div class="mg-row">
+              <label class="mg-label">Generate:</label>
+              <input type="checkbox" *checked="self.satAreaGenModeState.all" onclick="self:satSetAreaGenMode('all')" />
+              <label class="mg-checkbox-label">All (Satellite + Minimap)</label>
+              <input type="checkbox" *checked="self.satAreaGenModeState.satellite" onclick="self:satSetAreaGenMode('satellite')" />
+              <label class="mg-checkbox-label">Satellite only</label>
+              <input type="checkbox" *checked="self.satAreaGenModeState.minimap" onclick="self:satSetAreaGenMode('minimap')" />
+              <label class="mg-checkbox-label">Minimap only</label>
+            </div>
+            <div class="mg-row">
+              <span class="mg-coordlabel">From X</span>
+              <spinbox id="satAreaFromXInput" focusable="true" *value="self.satAreaFromX" onchange="self:onPositionInputChanged('satAreaFrom'); self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
+              <span class="mg-coordlabel">From Y</span>
+              <spinbox focusable="true" *value="self.satAreaFromY" onchange="self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
+              <span class="mg-coordlabel">To X</span>
+              <spinbox id="satAreaToXInput" focusable="true" *value="self.satAreaToX" onchange="self:onPositionInputChanged('satAreaTo'); self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
+              <span class="mg-coordlabel">To Y</span>
+              <spinbox focusable="true" *value="self.satAreaToY" onchange="self:updateGenerateWarning()" style="width: 110" minimum="0" maximum="65535" step="1" />
+              <span class="mg-coordlabel">Floor</span>
+              <spinbox focusable="true" *value="self.satAreaFloor" onchange="self:updateGenerateWarning()" style="width: 70" minimum="0" maximum="15" step="1" />
+            </div>
+            <div class="mg-row">
+              <button class="mg-btn mg-btn-secondary" onclick="self:pastePositionFromClipboard('satAreaFrom')" style="padding: 3 8">Paste From</button>
+              <label class="mg-label" style="width: 535"></label>
+              <button class="mg-btn mg-btn-secondary" onclick="self:pastePositionFromClipboard('satAreaTo')" style="padding: 3 8">Paste To</button>
+            </div>
+            <div class="mg-row">
+              <button class="mg-btn mg-btn-success" onclick="self:doGenerateSatelliteArea()"
+                *visible="not self.isGenerating">
+                Generate Area Satellite Data
+              </button>
+            </div>
           </div>
         </div>
 
