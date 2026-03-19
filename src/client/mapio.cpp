@@ -341,36 +341,7 @@ void Map::loadOtbm(const std::string& fileName)
                     }
 
                     if (const TilePtr& tile = getTile(pos)) {
-                        if (!strictClassicOtbm) {
-                            // Protobuf/canary maps may carry duplicated entries for fixed-position
-                            // items (ground, borders, walls, on-top). These item types can't
-                            // legitimately appear more than once per ID on the same tile.
-                            // Keep only the last instance to match editor-visible result.
-                            // Moveable items (CREATURE/COMMON_ITEMS priority) are left alone.
-                            std::unordered_map<uint16_t, ThingPtr> lastById;
-                            std::vector<ThingPtr> duplicates;
-                            for (const auto& thing : tile->getThings()) {
-                                if (!thing->isItem())
-                                    continue;
-                                const int priority = thing->getStackPriority();
-                                if (priority > ON_TOP) // skip CREATURE and COMMON_ITEMS
-                                    continue;
-                                const uint16_t id = thing->static_self_cast<Item>()->getId();
-                                auto [it, inserted] = lastById.try_emplace(id, thing);
-                                if (!inserted) {
-                                    duplicates.emplace_back(it->second);
-                                    it->second = thing;
-                                }
-                            }
-                            for (const auto& dup : duplicates)
-                                tile->removeThing(dup);
-                        }
-
-                        if (type == OTBM_HOUSETILE) {
-                            tile->setFlag(TILESTATE_HOUSE);
-                            if (houseId != 0)
-                                tile->setHouseId(houseId);
-                        }
+                    
 
                         if (house)
                             tile->setFlag(TILESTATE_HOUSE);
