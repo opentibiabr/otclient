@@ -143,7 +143,12 @@ find_package(ZLIB REQUIRED)
 find_package(httplib CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(utf8cpp REQUIRED)
-find_package(unofficial-inih CONFIG REQUIRED)
+if(DEFINED VCPKG_TARGET_TRIPLET)
+  find_package(unofficial-inih CONFIG REQUIRED)
+else()
+  pkg_check_modules(INIReader REQUIRED IMPORTED_TARGET INIReader)
+  add_library(unofficial::inih::inireader ALIAS PkgConfig::INIReader)
+endif()
 find_package(Freetype REQUIRED)
 
 find_path(CPPCODEC_INCLUDE_DIRS "cppcodec/base32_crockford.hpp")
@@ -177,9 +182,30 @@ if(TOGGLE_FRAMEWORK_SOUND)
   if(NOT WASM)
     find_package(OpenAL CONFIG REQUIRED)
   endif()
-  find_package(VorbisFile REQUIRED)
-  find_package(Vorbis CONFIG REQUIRED)
-  find_package(Ogg CONFIG REQUIRED)
+  if(DEFINED VCPKG_TARGET_TRIPLET)
+    find_package(VorbisFile REQUIRED)
+    find_package(Vorbis CONFIG REQUIRED)
+    find_package(Ogg CONFIG REQUIRED)
+  else()
+    pkg_check_modules(VORBISFILE REQUIRED vorbisfile)
+    add_library(Vorbis::vorbisfile INTERFACE IMPORTED)
+    set_target_properties(Vorbis::vorbisfile PROPERTIES
+      INTERFACE_INCLUDE_DIRECTORIES "${VORBISFILE_INCLUDE_DIRS}"
+      INTERFACE_LINK_LIBRARIES "${VORBISFILE_LIBRARIES}"
+    )
+    pkg_check_modules(VORBIS REQUIRED vorbis)
+    add_library(Vorbis::vorbis INTERFACE IMPORTED)
+    set_target_properties(Vorbis::vorbis PROPERTIES
+      INTERFACE_INCLUDE_DIRECTORIES "${VORBIS_INCLUDE_DIRS}"
+      INTERFACE_LINK_LIBRARIES "${VORBIS_LIBRARIES}"
+    )
+    pkg_check_modules(OGG REQUIRED ogg)
+    add_library(Ogg::ogg INTERFACE IMPORTED)
+    set_target_properties(Ogg::ogg PROPERTIES
+      INTERFACE_INCLUDE_DIRECTORIES "${OGG_INCLUDE_DIRS}"
+      INTERFACE_LINK_LIBRARIES "${OGG_LIBRARIES}"
+    )
+  endif()
 endif()
 if(ANDROID)
   set(LUA_LIBRARY ${LUA_LIBRARY} ${Android_LIBRARIES}/liblua.a)
@@ -193,7 +219,12 @@ if(ANDROID)
 else()
   if(NOT WASM)
     find_package(OpenGL REQUIRED)
-    find_package(GLEW REQUIRED)
+    if(DEFINED VCPKG_TARGET_TRIPLET)
+      find_package(GLEW REQUIRED)
+    else()
+      pkg_check_modules(GLEW REQUIRED IMPORTED_TARGET glew)
+      add_library(GLEW::GLEW ALIAS PkgConfig::GLEW)
+    endif()
     find_package(LuaJIT REQUIRED)
   else()
     set(LUA_LIBRARY ${LUA_LIBRARY} ${CMAKE_SOURCE_DIR}/browser/include/lua51/liblua.a)
@@ -777,7 +808,7 @@ else() # Linux
           $<$<BOOL:${TOGGLE_FRAMEWORK_PROTOBUF}>:${Protobuf_INCLUDE_DIRS}>
           ${GMP_INCLUDE_DIR}
           ${PHYSFS_INCLUDE_DIR}
-          ${GLEW_INCLUDE_DIR}
+          GLEW::GLEW
           ${PARALLEL_HASHMAP_INCLUDE_DIRS}
           ${NLOHMANN_JSON_INCLUDE_DIR}
           ${OPENSSL_INCLUDE_DIR}
@@ -789,7 +820,7 @@ else() # Linux
           ${PHYSFS_LIBRARY}
           ${ZLIB_LIBRARY}
           ${NLOHMANN_JSON_LIBRARY}
-          ${GLEW_LIBRARY}
+          GLEW::GLEW
           ${OPENGL_LIBRARIES}
           ${DirectX_LIBRARY}
           ${DirectX_LIBRARIES}
