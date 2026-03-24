@@ -27,6 +27,9 @@
 
 namespace {
     constexpr int MAX_FLEX_DEPTH = 32;
+    inline int s_flexDepth = 0;
+    inline std::vector<std::vector<UIWidget*>> s_pendingDescendantVersionResetRootsByDepth;
+    inline std::vector<std::unordered_set<UIWidget*>> s_pendingDescendantVersionResetLookupByDepth;
 
     enum class Axis { Horizontal, Vertical };
 
@@ -154,7 +157,21 @@ namespace {
         SizeUnitGuard& operator=(const SizeUnitGuard&) = delete;
     };
 
-    void resetDescendantVersions(UIWidget* w)
+    bool isDescendantOf(UIWidget* node, UIWidget* ancestor)
+    {
+        if (!node || !ancestor || node == ancestor)
+            return false;
+
+        auto parent = node->getParent();
+        while (parent) {
+            if (parent.get() == ancestor)
+                return true;
+            parent = parent->getParent();
+        }
+        return false;
+    }
+
+    void resetDescendantVersionsNow(UIWidget* w)
     {
         for (const auto& child : w->getChildrenRef()) {
             if (child->isDestroyed() || child->getDisplay() == DisplayType::None)
@@ -171,8 +188,69 @@ namespace {
                 ch.version = 0;
             }
             if (!child->getChildrenRef().empty())
-                resetDescendantVersions(child.get());
+                resetDescendantVersionsNow(child.get());
         }
+    }
+
+    void queueDescendantVersionReset(UIWidget* root)
+    {
+        if (!root || s_flexDepth <= 0)
+            return;
+
+        const size_t depthIndex = static_cast<size_t>(s_flexDepth - 1);
+        const size_t requiredSize = depthIndex + 1;
+        if (s_pendingDescendantVersionResetRootsByDepth.size() < requiredSize) {
+            s_pendingDescendantVersionResetRootsByDepth.resize(requiredSize);
+            s_pendingDescendantVersionResetLookupByDepth.resize(requiredSize);
+        }
+
+        auto& roots = s_pendingDescendantVersionResetRootsByDepth[depthIndex];
+        auto& lookup = s_pendingDescendantVersionResetLookupByDepth[depthIndex];
+
+        if (lookup.find(root) != lookup.end())
+            return;
+
+        for (auto parent = root->getParent(); parent; parent = parent->getParent()) {
+            if (lookup.find(parent.get()) != lookup.end())
+                return;
+        }
+
+        for (auto& queuedRoot : roots) {
+            if (!queuedRoot)
+                continue;
+            if (isDescendantOf(queuedRoot, root)) {
+                lookup.erase(queuedRoot);
+                queuedRoot = nullptr;
+            }
+        }
+
+        roots.push_back(root);
+        lookup.insert(root);
+    }
+
+    void flushQueuedDescendantVersionResetsForCurrentDepth()
+    {
+        if (s_flexDepth <= 0)
+            return;
+
+        const size_t depthIndex = static_cast<size_t>(s_flexDepth - 1);
+        if (depthIndex >= s_pendingDescendantVersionResetRootsByDepth.size())
+            return;
+
+        auto& roots = s_pendingDescendantVersionResetRootsByDepth[depthIndex];
+        auto& lookup = s_pendingDescendantVersionResetLookupByDepth[depthIndex];
+
+        for (UIWidget* root : roots) {
+            if (!root)
+                continue;
+            if (lookup.erase(root) == 0)
+                continue;
+
+            resetDescendantVersionsNow(root);
+        }
+
+        roots.clear();
+        lookup.clear();
     }
 
     inline double maxDouble(double a, double b)
@@ -332,7 +410,6 @@ void layoutFlex(UIWidget& container)
         return;
 
     // Global depth limit: prevent infinite recursion through nested flex containers
-    static int s_flexDepth = 0;
     if (s_flexDepth >= MAX_FLEX_DEPTH) {
         g_logger.warning("layoutFlex: maximum nesting depth ({}) exceeded, skipping layout", MAX_FLEX_DEPTH);
         return;
@@ -341,7 +418,11 @@ void layoutFlex(UIWidget& container)
     struct FlexDepthGuard {
         UIWidget& c;
         FlexDepthGuard(UIWidget& w) : c(w) { c.m_inFlexLayout = true; ++s_flexDepth; }
-        ~FlexDepthGuard() { c.m_inFlexLayout = false; --s_flexDepth; }
+        ~FlexDepthGuard() {
+            flushQueuedDescendantVersionResetsForCurrentDepth();
+            c.m_inFlexLayout = false;
+            --s_flexDepth;
+        }
     } guard(container);
 
     const auto& style = container.style();
@@ -531,7 +612,8 @@ void layoutFlex(UIWidget& container)
                 preferredCrossUnit.valueCalculed = preferredCrossUnit.value;
                 preferredCrossUnit.pendingUpdate = false;
 
-                resetDescendantVersions(child);
+                queueDescendantVersionReset(child);
+                flushQueuedDescendantVersionResetsForCurrentDepth();
                 child->updateSize();
             }
         }
@@ -842,21 +924,32 @@ void layoutFlex(UIWidget& container)
     // must be recomputed. Set the final width on each item and propagate
     // to children so text re-wraps, then read the new height.
     if (mainAxis == Axis::Horizontal) {
-        for (auto& item : items) {
+        std::vector<bool> step7WidthChanged(items.size(), false);
+        for (size_t i = 0; i < items.size(); ++i) {
+            auto& item = items[i];
             if (!item.widget || !item.crossSizeAuto)
                 continue;
             const int bL = item.widget->getBorderLeftWidth();
             const int bR = item.widget->getBorderRightWidth();
-            const int bT = item.widget->getBorderTopWidth();
-            const int bB = item.widget->getBorderBottomWidth();
 
             const int targetWidth = std::max(0, roundi(item.mainSize) - bL - bR);
             const bool widthChanged = item.widget->getWidth() != targetWidth;
+            step7WidthChanged[i] = widthChanged;
             if (widthChanged) {
                 item.widget->setWidth_px(targetWidth);
-                resetDescendantVersions(item.widget);
+                queueDescendantVersionReset(item.widget);
             }
+        }
 
+        flushQueuedDescendantVersionResetsForCurrentDepth();
+
+        for (size_t i = 0; i < items.size(); ++i) {
+            auto& item = items[i];
+            if (!item.widget || !item.crossSizeAuto)
+                continue;
+            const int bT = item.widget->getBorderTopWidth();
+            const int bB = item.widget->getBorderBottomWidth();
+            const bool widthChanged = step7WidthChanged[i];
             const auto itemDisplay = item.widget->getDisplay();
             if (itemDisplay == DisplayType::Flex || itemDisplay == DisplayType::InlineFlex) {
                 // Nested flex container (e.g. column-flex card): run its
@@ -1119,13 +1212,19 @@ void layoutFlex(UIWidget& container)
     }
 
     // Post-layout: flex items now have their final sizes from setRect.
-    // Reset versions recursively so all descendants can be re-measured,
-    // then re-run nested flex layouts or propagate to children.
+    // Queue recursive resets so descendants are batched and re-measured once
+    // at the end of this flex layout pass.
     for (auto& item : items) {
         if (!item.widget || item.widget->getChildrenRef().empty() || !item.rectChanged)
             continue;
-        resetDescendantVersions(item.widget);
+        queueDescendantVersionReset(item.widget);
+    }
 
+    flushQueuedDescendantVersionResetsForCurrentDepth();
+
+    for (auto& item : items) {
+        if (!item.widget || item.widget->getChildrenRef().empty() || !item.rectChanged)
+            continue;
         const auto d = item.widget->getDisplay();
         if (d == DisplayType::Flex || d == DisplayType::InlineFlex) {
             // Force definite pixel sizes while running nested layoutFlex.
