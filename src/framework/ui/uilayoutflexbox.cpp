@@ -1051,7 +1051,7 @@ void layoutFlex(UIWidget& container)
             const int maxW = container.getMaxWidth();
             if (minW >= 0)
                 desired = std::max(desired, minW);
-            if (maxW >= 0)
+            if (maxW > 0)
                 desired = std::min(desired, maxW);
             if (container.getWidth() != desired) {
                 container.setWidth_px(desired);
@@ -1062,7 +1062,7 @@ void layoutFlex(UIWidget& container)
             const int maxH = container.getMaxHeight();
             if (minH >= 0)
                 desired = std::max(desired, minH);
-            if (maxH >= 0)
+            if (maxH > 0)
                 desired = std::min(desired, maxH);
             if (container.getHeight() != desired) {
                 container.setHeight_px(desired);
@@ -1079,7 +1079,7 @@ void layoutFlex(UIWidget& container)
             const int maxH = container.getMaxHeight();
             if (minH >= 0)
                 desired = std::max(desired, minH);
-            if (maxH >= 0)
+            if (maxH > 0)
                 desired = std::min(desired, maxH);
             if (container.getHeight() != desired) {
                 container.setHeight_px(desired);
@@ -1090,7 +1090,7 @@ void layoutFlex(UIWidget& container)
             const int maxW = container.getMaxWidth();
             if (minW >= 0)
                 desired = std::max(desired, minW);
-            if (maxW >= 0)
+            if (maxW > 0)
                 desired = std::min(desired, maxW);
             if (container.getWidth() != desired) {
                 container.setWidth_px(desired);
