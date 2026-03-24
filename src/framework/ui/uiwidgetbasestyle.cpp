@@ -211,9 +211,9 @@ namespace {
             }
         }
 
-        float grow = widget->getFlexGrow();
-        float shrink = widget->getFlexShrink();
-        FlexBasis basis = widget->getFlexBasis();
+        float grow = 0.f;
+        float shrink = 1.f;
+        FlexBasis basis = { FlexBasis::Type::Px, 0.f };
 
         size_t idx = 0;
         if (idx < filtered.size() && parseFloat(filtered[idx], grow)) ++idx;
@@ -409,11 +409,68 @@ void UIWidget::parseBaseStyle(const OTMLNodePtr& styleNode)
             setClipping(node->value<bool>());
         else if (node->tag() == "border") {
             const auto& split = stdext::split(node->value(), " ");
-            if (split.size() == 2) {
-                setBorderWidth(stdext::to_number(stdext::safe_cast<std::string>(split[0])));
-                setBorderColor(stdext::safe_cast<Color>(split[1]));
-            } else
-                throw OTMLException(node, "border param must have its width followed by its color");
+            int borderWidth = 0;
+            bool hasBorderWidth = false;
+            Color borderColor = Color::black;
+            bool hasBorderColor = false;
+
+            for (const auto& rawToken : split) {
+                auto token = stdext::safe_cast<std::string>(rawToken);
+                stdext::trim(token);
+                if (token.empty())
+                    continue;
+
+                auto lower = token;
+                stdext::tolower(lower);
+                if (lower == "solid" || lower == "dashed" || lower == "dotted" ||
+                    lower == "double" || lower == "groove" || lower == "ridge" ||
+                    lower == "inset" || lower == "outset" || lower == "hidden" ||
+                    lower == "none") {
+                    continue;
+                }
+
+                if (!hasBorderColor) {
+                    try {
+                        borderColor = stdext::safe_cast<Color>(token);
+                        hasBorderColor = true;
+                        continue;
+                    } catch (const std::exception&) {
+                    }
+                }
+
+                if (!hasBorderWidth) {
+                    if (lower == "thin") {
+                        borderWidth = 1;
+                        hasBorderWidth = true;
+                        continue;
+                    }
+                    if (lower == "medium") {
+                        borderWidth = 2;
+                        hasBorderWidth = true;
+                        continue;
+                    }
+                    if (lower == "thick") {
+                        borderWidth = 3;
+                        hasBorderWidth = true;
+                        continue;
+                    }
+
+                    const bool hasDigit = std::ranges::any_of(token, [](const char c) {
+                        return std::isdigit(static_cast<unsigned char>(c)) != 0;
+                    });
+                    if (hasDigit) {
+                        borderWidth = stdext::to_number(token);
+                        hasBorderWidth = true;
+                    }
+                }
+            }
+
+            if (hasBorderWidth && hasBorderColor) {
+                setBorderWidth(borderWidth);
+                setBorderColor(borderColor);
+            } else {
+                throw OTMLException(node, "border param must include width and color");
+            }
         } else if (node->tag() == "border-width")
             setBorderWidth(stdext::to_number(node->value<std::string>()));
         else if (node->tag() == "border-width-top" || node->tag() == "border-top-width")
@@ -568,8 +625,15 @@ void UIWidget::parseBaseStyle(const OTMLNodePtr& styleNode)
             setJustifyItems(justify);
         } else if (node->tag() == "line-height") {
             setLineHeight(node->value<std::string>());
-        } else if (node->tag() == "margin-top")
-            setMarginTop(stdext::to_number(node->value<std::string>()));
+        } else if (node->tag() == "margin-top") {
+            auto value = node->value<std::string>();
+            if (isAutoKeyword(value)) {
+                m_margin.top = 0;
+                setMarginTopAuto(true);
+            } else {
+                setMarginTop(stdext::to_number(value));
+            }
+        }
         else if (node->tag() == "margin-right") {
             auto value = node->value<std::string>();
             if (isAutoKeyword(value)) {
@@ -578,8 +642,15 @@ void UIWidget::parseBaseStyle(const OTMLNodePtr& styleNode)
             } else {
                 setMarginRight(stdext::to_number(value));
             }
-        } else if (node->tag() == "margin-bottom")
-            setMarginBottom(stdext::to_number(node->value<std::string>()));
+        } else if (node->tag() == "margin-bottom") {
+            auto value = node->value<std::string>();
+            if (isAutoKeyword(value)) {
+                m_margin.bottom = 0;
+                setMarginBottomAuto(true);
+            } else {
+                setMarginBottom(stdext::to_number(value));
+            }
+        }
         else if (node->tag() == "margin-left") {
             auto value = node->value<std::string>();
             if (isAutoKeyword(value)) {
@@ -619,7 +690,9 @@ void UIWidget::parseBaseStyle(const OTMLNodePtr& styleNode)
                 leftStr = values[3];
             }
 
+            const bool topAuto = isAutoKeyword(topStr);
             const bool rightAuto = isAutoKeyword(rightStr);
+            const bool bottomAuto = isAutoKeyword(bottomStr);
             const bool leftAuto = isAutoKeyword(leftStr);
             const int top = isAutoKeyword(topStr) ? 0 : stdext::to_number(topStr);
             const int bottom = isAutoKeyword(bottomStr) ? 0 : stdext::to_number(bottomStr);
@@ -628,6 +701,16 @@ void UIWidget::parseBaseStyle(const OTMLNodePtr& styleNode)
 
             setMarginTop(top);
             setMarginBottom(bottom);
+
+            if (topAuto) {
+                m_margin.top = top;
+                setMarginTopAuto(true);
+            }
+
+            if (bottomAuto) {
+                m_margin.bottom = bottom;
+                setMarginBottomAuto(true);
+            }
 
             if (rightAuto) {
                 m_margin.right = right;

@@ -23,6 +23,7 @@
 #include "uiwidget.h"
 
 #include "uianchorlayout.h"
+#include "uilayoutflexbox.h"
 #include "uimanager.h"
 #include "uitranslator.h"
 #include "framework/core/eventdispatcher.h"
@@ -1148,9 +1149,64 @@ bool UIWidget::setRect(const Rect& rect)
 
     Rect oldRect = m_rect;
     m_rect = clampedRect;
+    const bool movedOnly = oldRect.topLeft() != clampedRect.topLeft();
+    const bool sizeChanged = oldRect.size() != clampedRect.size();
 
-    // updates own layout
-    updateLayout();
+    // Suppress relayout when parent is actively running flex layout —
+    // layoutFlex positions children via setRect directly, so anchor-based
+    // relayout would conflict with flex positioning.
+    if (!m_parent || !m_parent->m_inFlexLayout)
+        updateLayout();
+
+    // If this is a flex container that moved, re-run flex to reposition children
+    // (e.g., when the window is dragged). The re-entrance guard in layoutFlex
+    // prevents infinite recursion.
+    // NOTE: Only trigger on position changes — size changes are handled by
+    // the post-layout section in layoutFlex which sets definite Px units first.
+    // Calling layoutFlex here for size changes would cause nested flex containers
+    // to auto-size before the parent can enforce stretch height.
+    // Avoid re-entering child flex layout while the parent is running its
+    // own flex pass; the parent already assigns this child's final rect.
+    if (isOnHtml() && !m_inFlexLayout &&
+        (!m_parent || !m_parent->m_inFlexLayout) &&
+        (m_displayType == DisplayType::Flex || m_displayType == DisplayType::InlineFlex) &&
+        movedOnly) {
+        if (sizeChanged) {
+            layoutFlex(*this);
+        } else {
+            // Pure movement: translate descendants by delta instead of doing
+            // a full flex relayout, which is expensive during scroll/drag.
+            const Point delta = clampedRect.topLeft() - oldRect.topLeft();
+            if (!delta.isNull()) {
+                std::vector<UIWidget*> stack;
+                stack.reserve(m_children.size());
+                for (const auto& child : m_children) {
+                    if (child && !child->isDestroyed())
+                        stack.push_back(child.get());
+                }
+
+                while (!stack.empty()) {
+                    UIWidget* w = stack.back();
+                    stack.pop_back();
+
+                    // INTENTIONAL BYPASS: We modify m_rect directly instead of
+                    // calling setRect() for performance. This is safe because:
+                    // 1. All flex descendant positions are absolute (screen coords)
+                    //    and only need a uniform delta shift — no relayout needed.
+                    // 2. updateLayout()/onGeometryChange events are unnecessary for
+                    //    pure translation during scroll/drag.
+                    // 3. The parent's deferred geometry-change event (above) will
+                    //    fire for the container itself, covering hover updates.
+                    w->m_rect.translate(delta);
+
+                    for (const auto& grandChild : w->m_children) {
+                        if (grandChild && !grandChild->isDestroyed())
+                            stack.push_back(grandChild.get());
+                    }
+                }
+            }
+        }
+    }
 
     // avoid massive update events
     if (!hasProp(PropUpdateEventScheduled)) {
@@ -2279,6 +2335,8 @@ const UIWidgetStyle& UIWidget::style() const
     m_styleCache.minHeight = m_minSize.height();
     m_styleCache.maxWidth = m_maxSize.width();
     m_styleCache.maxHeight = m_maxSize.height();
+    m_styleCache.marginTopAuto = m_marginTopAuto;
+    m_styleCache.marginBottomAuto = m_marginBottomAuto;
     m_styleCache.marginLeftAuto = m_marginLeftAuto;
     m_styleCache.marginRightAuto = m_marginRightAuto;
     return m_styleCache;

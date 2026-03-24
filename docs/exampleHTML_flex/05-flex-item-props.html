@@ -1,0 +1,165 @@
+<html>
+<style>
+  window {
+    font-family: Arial, sans-serif;
+    margin: 24px;
+    background-color: #ffffff;
+    color: #222222;
+    height: 100%;
+    margin-top: 0;
+    margin-left: 0;
+    margin-right: 0;
+    display: block !important;
+    --image-source: none;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 100% !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  .example {
+    border: 2px solid #ef6c00;
+    border-radius: 10px;
+    background-color: #fff;
+    padding: 12px;
+    width: 94%;
+    margin-bottom: 18px;
+  }
+
+  .container {
+    display: flex;
+    border: 2px dashed #b1a395;
+    min-height: 120px;
+    padding: 10px;
+    gap: 8px;
+    background-color: #eceff1;
+    align-items: center;
+  }
+
+  .item1 {
+    border: 2px solid #ef6c00;
+    border-radius: 8px;
+    background-color: #ffe3c2;
+    padding: 10px;
+    text-align: center;
+    min-width: 70px;
+  }
+
+  .grow1 {
+    flex-grow: 1;
+  }
+
+  .grow2 {
+    flex-grow: 2;
+  }
+
+  .basis100 {
+    flex-basis: 100px;
+  }
+
+  .basis180 {
+    flex-basis: 180px;
+  }
+
+  .shrink0 {
+    flex-shrink: 0;
+  }
+
+  .order1 {
+    order: 1;
+  }
+
+  .order2 {
+    order: 2;
+  }
+
+  .order3 {
+    order: 3;
+  }
+
+  .self-start {
+    align-self: flex-start;
+  }
+
+  .self-end {
+    align-self: flex-end;
+  }
+
+  button {
+    margin-top: 5px;
+    border: 1px solid #ef6c00;
+    background-color: #ef6c00;
+    color: #fff;
+    border-radius: 6px;
+    padding: 4px 8px;
+  }
+
+  /* Visual variants per example */
+  .purple .item1 {
+    background-color: #9c27b0;
+  }
+
+  .blue .item1 {
+    background-color: #2196f3;
+  }
+
+  .green .item1 {
+    background-color: #4caf50;
+  }
+
+  .orange .item1 {
+    background-color: #ff9800;
+  }
+
+  .red .item1 {
+    background-color: #f44336;
+  }
+
+  .steel .item1 {
+    background-color: #607d8b;
+  }
+</style>
+<window>
+  <h1>Flexbox: item properties</h1>
+  <p>Examples of order, flex-grow, flex-shrink, flex-basis, and align-self.</p>
+
+  <div class="example purple">
+    <h3>order</h3>
+    <div class="container">
+      <div class="item1 order3">First in HTML (order 3)</div>
+      <div class="item1 order1">Second in HTML (order 1)</div>
+      <div class="item1 order2">Third in HTML (order 2)</div>
+    </div>
+  </div>
+
+  <div class="example blue">
+    <h3>flex-grow</h3>
+    <div class="container">
+      <div class="item1 grow1">grow 1</div>
+      <div class="item1 grow2">grow 2</div>
+      <div class="item1 grow1">grow 1</div>
+    </div>
+  </div>
+
+  <div class="example green">
+    <h3>flex-basis + flex-shrink</h3>
+    <div class="container" style="width: 380px;">
+      <div class="item1 basis180 shrink0">basis 180 + shrink 0</div>
+      <div class="item1 basis100">basis 100</div>
+      <div class="item1 basis100">basis 100</div>
+    </div>
+  </div>
+
+  <div class="example orange">
+    <h3>align-self</h3>
+    <div class="container" style="height: 140px; align-items: center;">
+      <div class="item1 self-start">self-start</div>
+      <div class="item1">center</div>
+      <div class="item1 self-end">self-end<br><button>Button</button></div>
+    </div>
+  </div>
+</window>
+
+</html>

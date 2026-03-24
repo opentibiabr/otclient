@@ -1,0 +1,181 @@
+<html>
+<style>
+  window {
+    font-family: Arial, sans-serif;
+    margin: 24px;
+    background-color: #ffffff;
+    color: #222222;
+    height: 100%;
+    margin-top: 0;
+    margin-left: 0;
+    margin-right: 0;
+    display: block !important;
+    --image-source: none;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 100% !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  .example {
+    border: 2px solid #00897b;
+    border-radius: 10px;
+    background-color: #fff;
+    padding: 12px;
+    margin-bottom: 18px;
+        width: 94%;
+
+  }
+
+  .container {
+    display: flex;
+    width: 97%;
+    min-height: 100px;
+    border: 2px dashed #9aa5b1;
+    padding: 10px;
+    background-color: #eceff1;
+    gap: 10px;
+  }
+
+  .item1 {
+    width: 100px;
+    border: 2px solid #00897b;
+    background-color: #d5f7f1;
+    border-radius: 8px;
+    text-align: center;
+    padding: 10px;
+  }
+
+  img {
+    width: 32px;
+    height: 32px;
+    border-radius: 5px;
+    border: 1px solid #888;
+  }
+
+  button {
+    margin-top: 6px;
+    padding: 5px 8px;
+    border: 1px solid #00897b;
+    background-color: #00897b;
+    color: #fff;
+    border-radius: 6px;
+  }
+
+  .start {
+    justify-content: flex-start;
+  }
+
+  .center {
+    justify-content: center;
+  }
+
+  .end {
+    justify-content: flex-end;
+  }
+
+  .between {
+    justify-content: space-between;
+  }
+
+  .around {
+    justify-content: space-around;
+  }
+
+  .evenly {
+    justify-content: space-evenly;
+  }
+
+  /* Visual variants per example */
+  .purple .item1 {
+    background-color: #9c27b0;
+  }
+
+  .blue .item1 {
+    background-color: #2196f3;
+  }
+
+  .green .item1 {
+    background-color: #4caf50;
+  }
+
+  .orange .item1 {
+    background-color: #ff9800;
+  }
+
+  .red .item1 {
+    background-color: #f44336;
+  }
+
+  .steel .item1 {
+    background-color: #607d8b;
+  }
+</style>
+
+<window>
+
+  <h1>Flexbox: justify-content</h1>
+  <p>Horizontal distribution of items.</p>
+
+  <div class="example purple">
+    <h3>flex-start</h3>
+    <div class="container start">
+      <div class="item1">A</div>
+      <div class="item1">B</div>
+      <div class="item1">
+        <img src="/data/images/clienticon.png" alt="img"><br>
+        <button>OK</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="example blue">
+    <h3>center</h3>
+    <div class="container center">
+      <div class="item1">A</div>
+      <div class="item1">B</div>
+      <div class="item1">C</div>
+    </div>
+  </div>
+
+  <div class="example green">
+    <h3>flex-end</h3>
+    <div class="container end">
+      <div class="item1">A</div>
+      <div class="item1">B</div>
+      <div class="item1">C</div>
+    </div>
+  </div>
+
+  <div class="example orange">
+    <h3>space-between</h3>
+    <div class="container between">
+      <div class="item1">A</div>
+      <div class="item1">B</div>
+      <div class="item1">C</div>
+    </div>
+  </div>
+
+  <div class="example red">
+    <h3>space-around</h3>
+    <div class="container around">
+      <div class="item1">A</div>
+      <div class="item1">B</div>
+      <div class="item1">C</div>
+    </div>
+  </div>
+
+  <div class="example steel">
+    <h3>space-evenly</h3>
+    <div class="container evenly">
+      <div class="item1">A</div>
+      <div class="item1">B</div>
+      <div class="item1">C</div>
+    </div>
+  </div>
+
+</window>
+
+</html>

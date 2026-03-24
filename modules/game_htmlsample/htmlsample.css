@@ -1,8 +1,14 @@
 .content {
   position: relative;
-  background-color: red;
-  width: 500;
-  height: 350;
+  background-color: #2b2b2b;
+}
+
+.tabs {
+  padding: 8;
+}
+
+.tabs > button {
+  margin-right: 5;
 }
 
 .form {
@@ -18,7 +24,56 @@
   border: 1px red;
 }
 
-.footer {
+#examplesTab {
+  position: absolute;
+  top: 40;
+  left: 8;
+  right: 8;
+  bottom: 42;
+}
+
+.exampleControls {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 24;
+}
+
+.exampleControls > label {
+  margin-right: 8;
+}
+
+.exampleControls > select {
+  min-width: 300;
+}
+
+.examplePreview {
+  position: absolute;
+  top: 28;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 1px #8a8a8a;
+  background-color: #ffffff;
+  overflow: scroll;
+}
+
+.examplePreview window,
+.examplePreview > window,
+.examplePreview > .exampleRoot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 8;
+  display: block;
+}
+
+.appFooter {
   position: absolute;
   left: 5;
   right: 10;
@@ -73,6 +128,6 @@ img.shield {
   width: 64;
   height: 64;
   position: absolute;
-  right: 0;
+  right: 30;
   --shader: Map - Party;
 }
