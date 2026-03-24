@@ -713,17 +713,18 @@ void UIWidget::parseBaseStyle(const OTMLNodePtr& styleNode)
             const int right = rightAuto ? 0 : stdext::to_number(rightStr);
             const int left = leftAuto ? 0 : stdext::to_number(leftStr);
 
-            setMarginTop(top);
-            setMarginBottom(bottom);
-
             if (topAuto) {
                 m_margin.top = top;
                 setMarginTopAuto(true);
+            } else {
+                setMarginTop(top);
             }
 
             if (bottomAuto) {
                 m_margin.bottom = bottom;
                 setMarginBottomAuto(true);
+            } else {
+                setMarginBottom(bottom);
             }
 
             if (rightAuto) {
