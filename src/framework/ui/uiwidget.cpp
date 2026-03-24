@@ -823,8 +823,12 @@ void UIWidget::updateLayout()
     if (m_layout)
         m_layout->update();
 
-    // children can affect the parent layout
+    // Children can affect the parent layout.
+    // If the parent is currently running a flex pass, skip parent relayout
+    // scheduling to avoid conflicting with flex-driven geometry assignment.
     if (const auto& parent = getParent()) {
+        if (parent->m_inFlexLayout)
+            return;
         if (const auto& parentLayout = parent->getLayout())
             parentLayout->updateLater();
     }
@@ -1152,11 +1156,10 @@ bool UIWidget::setRect(const Rect& rect)
     const bool movedOnly = oldRect.topLeft() != clampedRect.topLeft();
     const bool sizeChanged = oldRect.size() != clampedRect.size();
 
-    // Suppress relayout when parent is actively running flex layout —
-    // layoutFlex positions children via setRect directly, so anchor-based
-    // relayout would conflict with flex positioning.
-    if (!m_parent || !m_parent->m_inFlexLayout)
-        updateLayout();
+    // Always run local layout updates after geometry change.
+    // Parent relayout scheduling is handled inside updateLayout and is
+    // suppressed there while the parent runs flex layout.
+    updateLayout();
 
     // If this is a flex container that moved, re-run flex to reposition children
     // (e.g., when the window is dragged). The re-entrance guard in layoutFlex
