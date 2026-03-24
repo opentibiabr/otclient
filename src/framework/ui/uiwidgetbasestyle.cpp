@@ -409,17 +409,31 @@ void UIWidget::parseBaseStyle(const OTMLNodePtr& styleNode)
             setClipping(node->value<bool>());
         else if (node->tag() == "border") {
             const auto& split = stdext::split(node->value(), " ");
+            std::vector<std::string> tokens;
+            tokens.reserve(split.size());
+            for (const auto& rawToken : split) {
+                auto token = stdext::safe_cast<std::string>(rawToken);
+                stdext::trim(token);
+                if (!token.empty())
+                    tokens.push_back(token);
+            }
+
+            if (tokens.size() == 1) {
+                auto lower = tokens.front();
+                stdext::tolower(lower);
+                if (lower == "none" || lower == "hidden") {
+                    setBorderWidth(0);
+                    setBorderColor(Color::alpha);
+                    continue;
+                }
+            }
+
             int borderWidth = 0;
             bool hasBorderWidth = false;
             Color borderColor = Color::black;
             bool hasBorderColor = false;
 
-            for (const auto& rawToken : split) {
-                auto token = stdext::safe_cast<std::string>(rawToken);
-                stdext::trim(token);
-                if (token.empty())
-                    continue;
-
+            for (const auto& token : tokens) {
                 auto lower = token;
                 stdext::tolower(lower);
                 if (lower == "solid" || lower == "dashed" || lower == "dotted" ||
