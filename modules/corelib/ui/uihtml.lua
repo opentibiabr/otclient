@@ -77,13 +77,16 @@ end
 local function computeContentExtent(widget)
     local paddingRect = widget:getPaddingRect()
     local bounds = collectContentBounds(widget, nil, nil)
+    local virtualOffset = widget:getVirtualOffset()
 
     if not bounds then
         return paddingRect.width, paddingRect.height
     end
 
-    local width = math.max(bounds.right - bounds.left, paddingRect.width)
-    local height = math.max(bounds.bottom - bounds.top, paddingRect.height)
+    local paddingLeft = paddingRect.x
+    local paddingTop = paddingRect.y
+    local width = math.max((bounds.right + virtualOffset.x) - paddingLeft, paddingRect.width)
+    local height = math.max((bounds.bottom + virtualOffset.y) - paddingTop, paddingRect.height)
     return width, height
 end
 
