@@ -49,9 +49,11 @@ local function intersectRects(a, b)
     return { x = left, y = top, width = right - left, height = bottom - top }
 end
 
+local DISPLAY_NONE = 0 -- DisplayType::None
+
 local function collectContentBounds(widget, bounds, clipRect)
     for _, child in pairs(widget:getChildren()) do
-        if child and not child:isDestroyed() and child:isExplicitlyVisible() then
+        if child and not child:isDestroyed() and child:isExplicitlyVisible() and child:getDisplay() ~= DISPLAY_NONE then
             local visibleRect = child:getMarginRect()
             if clipRect then
                 visibleRect = intersectRects(visibleRect, clipRect)
