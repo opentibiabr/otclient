@@ -309,6 +309,7 @@ std::istream& operator>>(std::istream& in, Color& color)
         g = clamp255(static_cast<int>(std::lround(gF * 255.0)));
         b = clamp255(static_cast<int>(std::lround(bF * 255.0)));
     };
+
     std::string tmp;
 
     if (in.peek() == '#') {
