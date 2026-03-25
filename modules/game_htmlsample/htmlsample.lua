@@ -92,7 +92,7 @@ function HtmlSample:setupExamplesComboBox()
             self:renderSelectedExample()
         end
     else
-        self:showExampleMessage('No .html files found in ejemplosFlex.')
+        self:showExampleMessage('No .html files found in ' .. self.exampleBasePath)
     end
 end
 

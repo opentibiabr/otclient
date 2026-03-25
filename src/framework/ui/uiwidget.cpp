@@ -1154,53 +1154,54 @@ bool UIWidget::setRect(const Rect& rect)
     Rect oldRect = m_rect;
     m_rect = clampedRect;
     const bool positionChanged = oldRect.topLeft() != clampedRect.topLeft();
+    const bool sizeChanged = oldRect.size() != clampedRect.size();
 
     // Always run local layout updates after geometry change.
     // Parent relayout scheduling is handled inside updateLayout and is
     // suppressed there while the parent runs flex layout.
     updateLayout();
 
-    // If this is a flex container that moved, re-position descendants with a
-    // uniform translation (e.g. when the window is dragged). Size-driven flex
-    // relayout must not run from setRect(); explicit width/height changes use
-    // the deferred HTML size-update path instead.
+    // If this is a flex container that moved without resizing, re-position
+    // descendants with a uniform translation (e.g. when the window is dragged).
+    // Size-driven relayout must not take this fast-path because the children
+    // may need a real flex reflow/re-wrap.
     if (isOnHtml() && !m_inFlexLayout &&
         (!m_parent || !m_parent->m_inFlexLayout) &&
         (m_displayType == DisplayType::Flex || m_displayType == DisplayType::InlineFlex) &&
-        positionChanged) {
-            // Pure movement: translate descendants by delta instead of doing
-            // a full flex relayout, which is expensive during scroll/drag.
-            const Point delta = clampedRect.topLeft() - oldRect.topLeft();
-            if (!delta.isNull()) {
-                std::vector<UIWidget*> stack;
-                stack.reserve(m_children.size());
-                for (const auto& child : m_children) {
-                    if (child && !child->isDestroyed())
-                        stack.push_back(child.get());
-                }
+        positionChanged && !sizeChanged) {
+        // Pure movement: translate descendants by delta instead of doing
+        // a full flex relayout, which is expensive during scroll/drag.
+        const Point delta = clampedRect.topLeft() - oldRect.topLeft();
+        if (!delta.isNull()) {
+            std::vector<UIWidget*> stack;
+            stack.reserve(m_children.size());
+            for (const auto& child : m_children) {
+                if (child && !child->isDestroyed())
+                    stack.push_back(child.get());
+            }
 
-                while (!stack.empty()) {
-                    UIWidget* w = stack.back();
-                    stack.pop_back();
+            while (!stack.empty()) {
+                UIWidget* w = stack.back();
+                stack.pop_back();
 
-                    // INTENTIONAL BYPASS: We modify m_rect directly instead of
-                    // calling setRect() for performance. This is safe because:
-                    // 1. All flex descendant positions are absolute (screen coords)
-                    //    and only need a uniform delta shift — no relayout needed.
-                    // 2. updateLayout()/onGeometryChange events are unnecessary for
-                    //    pure translation during scroll/drag.
-                    // 3. The parent's deferred geometry-change event (above) will
-                    //    fire for the container itself, covering hover updates.
-                    w->m_rect.translate(delta);
-                    for (auto& rectToWord : w->m_rectToWord)
-                        rectToWord.first.translate(delta);
+                // INTENTIONAL BYPASS: We modify m_rect directly instead of
+                // calling setRect() for performance. This is safe because:
+                // 1. All flex descendant positions are absolute (screen coords)
+                //    and only need a uniform delta shift - no relayout needed.
+                // 2. updateLayout()/onGeometryChange events are unnecessary for
+                //    pure translation during scroll/drag.
+                // 3. The parent's deferred geometry-change event (above) will
+                //    fire for the container itself, covering hover updates.
+                w->m_rect.translate(delta);
+                for (auto& rectToWord : w->m_rectToWord)
+                    rectToWord.first.translate(delta);
 
-                    for (const auto& grandChild : w->m_children) {
-                        if (grandChild && !grandChild->isDestroyed())
-                            stack.push_back(grandChild.get());
-                    }
+                for (const auto& grandChild : w->m_children) {
+                    if (grandChild && !grandChild->isDestroyed())
+                        stack.push_back(grandChild.get());
                 }
             }
+        }
     }
 
     // avoid massive update events
