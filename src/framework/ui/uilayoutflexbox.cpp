@@ -27,9 +27,9 @@
 
 namespace {
     constexpr int MAX_FLEX_DEPTH = 32;
-    inline int s_flexDepth = 0;
-    inline std::vector<std::vector<UIWidget*>> s_pendingDescendantVersionResetRootsByDepth;
-    inline std::vector<std::unordered_set<UIWidget*>> s_pendingDescendantVersionResetLookupByDepth;
+    thread_local int s_flexDepth = 0;
+    thread_local std::array<std::vector<UIWidgetPtr>, MAX_FLEX_DEPTH> s_pendingDescendantVersionResetRootsByDepth;
+    thread_local std::array<std::unordered_set<UIWidget*>, MAX_FLEX_DEPTH> s_pendingDescendantVersionResetLookupByDepth;
 
     enum class Axis { Horizontal, Vertical };
 
@@ -194,23 +194,24 @@ namespace {
 
     void queueDescendantVersionReset(UIWidget* root)
     {
-        if (!root || s_flexDepth <= 0)
+        if (!root || root->isDestroyed() || s_flexDepth <= 0)
             return;
 
         const size_t depthIndex = static_cast<size_t>(s_flexDepth - 1);
-        const size_t requiredSize = depthIndex + 1;
-        if (s_pendingDescendantVersionResetRootsByDepth.size() < requiredSize) {
-            s_pendingDescendantVersionResetRootsByDepth.resize(requiredSize);
-            s_pendingDescendantVersionResetLookupByDepth.resize(requiredSize);
-        }
+        if (depthIndex >= MAX_FLEX_DEPTH)
+            return;
+
+        const UIWidgetPtr rootPtr = root->static_self_cast<UIWidget>();
+        if (!rootPtr)
+            return;
 
         auto& roots = s_pendingDescendantVersionResetRootsByDepth[depthIndex];
         auto& lookup = s_pendingDescendantVersionResetLookupByDepth[depthIndex];
 
-        if (lookup.find(root) != lookup.end())
+        if (lookup.find(rootPtr.get()) != lookup.end())
             return;
 
-        for (auto parent = root->getParent(); parent; parent = parent->getParent()) {
+        for (auto parent = rootPtr->getParent(); parent; parent = parent->getParent()) {
             if (lookup.find(parent.get()) != lookup.end())
                 return;
         }
@@ -218,14 +219,21 @@ namespace {
         for (auto& queuedRoot : roots) {
             if (!queuedRoot)
                 continue;
-            if (isDescendantOf(queuedRoot, root)) {
-                lookup.erase(queuedRoot);
-                queuedRoot = nullptr;
+
+            if (queuedRoot->isDestroyed()) {
+                lookup.erase(queuedRoot.get());
+                queuedRoot.reset();
+                continue;
+            }
+
+            if (isDescendantOf(queuedRoot.get(), rootPtr.get())) {
+                lookup.erase(queuedRoot.get());
+                queuedRoot.reset();
             }
         }
 
-        roots.push_back(root);
-        lookup.insert(root);
+        roots.push_back(rootPtr);
+        lookup.insert(rootPtr.get());
     }
 
     void flushQueuedDescendantVersionResetsForCurrentDepth()
@@ -234,19 +242,21 @@ namespace {
             return;
 
         const size_t depthIndex = static_cast<size_t>(s_flexDepth - 1);
-        if (depthIndex >= s_pendingDescendantVersionResetRootsByDepth.size())
+        if (depthIndex >= MAX_FLEX_DEPTH)
             return;
 
         auto& roots = s_pendingDescendantVersionResetRootsByDepth[depthIndex];
         auto& lookup = s_pendingDescendantVersionResetLookupByDepth[depthIndex];
 
-        for (UIWidget* root : roots) {
+        for (auto& root : roots) {
             if (!root)
                 continue;
-            if (lookup.erase(root) == 0)
+            if (lookup.erase(root.get()) == 0)
+                continue;
+            if (root->isDestroyed())
                 continue;
 
-            resetDescendantVersionsNow(root);
+            resetDescendantVersionsNow(root.get());
         }
 
         roots.clear();
