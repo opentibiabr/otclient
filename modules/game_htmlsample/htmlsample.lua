@@ -29,7 +29,6 @@ function HtmlSample:onInit()
 
     self:setupExamplesComboBox()
     self:setupResponsiveDemo()
-    self:startResponsiveDemo()
 end
 
 function HtmlSample:selectTab(tab)
@@ -57,6 +56,7 @@ function HtmlSample:selectTab(tab)
     elseif isResponsive then
         self:scheduleEvent(function()
             self:updateResponsiveViewport()
+            self:startResponsiveDemo()
         end, 1)
     end
 end
@@ -178,18 +178,31 @@ function HtmlSample:setupResponsiveDemo()
     viewport:destroyChildren()
 
     local palette = {
-        '#0b6e00', '#8f1d1d', '#51459c', '#ff1d12', '#4f6f31',
-        '#8c1298', '#18d4dd', '#1c1f7f', '#b33434', '#355f59'
+          "red",
+    "blue",
+    "green",
+    "darkorange",
+    "purple",
+    "darkred",
+    "teal",
+    "navy",
+    "maroon",
+    "darkgreen",
+    "brown",
+    "darkslategray",
+    "crimson",
+    "darkviolet",
+    "firebrick",
+    "midnightblue",
+    "sienna",
+    "darkolivegreen",
+    "indigo",
+    "darkslateblue",
     }
 
-    local widths = {
-        34, 30, 72, 58, 34, 66, 28, 52, 40, 30,
-        44, 76, 36, 64, 32, 58, 46, 30, 68, 38,
-        50, 42, 74, 34, 62, 28, 54, 48, 36, 70
-    }
-
-    for i, width in ipairs(widths) do
-        local color = palette[((i - 1) % #palette) + 1]
+    for i = 1, 30 do
+        local width = math.random(10, 78)
+        local color = palette[math.random(1, #palette)]
         self:createWidgetFromHTML(string.format(
             '<div class="responsiveBox" style="width: %dpx; background-color: %s;"></div>',
             width,
@@ -219,15 +232,13 @@ function HtmlSample:startResponsiveDemo()
         if not self.ui or self.ui:isDestroyed() then
             return false
         end
-print(1)
-
         local viewport = self:findWidget('#responsiveViewport')
         if not viewport or viewport:isDestroyed() then
             return false
         end
 
         if not self.isResponsiveTab then
-            return
+            return false
         end
 
         self.responsiveWidth = self.responsiveWidth + self.responsiveDirection * 24
