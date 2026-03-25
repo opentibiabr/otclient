@@ -73,6 +73,73 @@
   display: block;
 }
 
+#responsiveTab {
+  position: absolute;
+  top: 40;
+  left: 8;
+  right: 8;
+  bottom: 42;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #d8d8d8;
+}
+
+.responsiveHeader {
+  position: relative;
+  flex: 0 0 auto;
+  height: 18;
+}
+
+.responsiveTitle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-weight: bold;
+}
+
+.responsiveMeta {
+  position: absolute;
+  right: 0;
+  top: 0;
+  color: #b8c7ff;
+}
+
+.responsiveHint {
+  flex: 0 0 auto;
+  color: #bdbdbd;
+}
+
+.responsiveStage {
+  flex-grow: 1;
+  min-height: 0;
+  border: 1px #676767;
+  background-color: #1f1f1f;
+  padding: 12;
+  overflow: auto;
+}
+
+.responsiveViewportFrame {
+  width: 100%;
+  text-align: left;
+}
+
+.responsiveViewport {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 0px;
+  width: 480;
+  min-height: 220;
+  background-color: #3b3b3b;
+  border: 1px #808080;
+}
+
+.responsiveBox {
+  height: 34;
+  flex: 0 0 auto;
+}
+
 .appFooter {
   position: absolute;
   left: 5;

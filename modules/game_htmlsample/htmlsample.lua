@@ -2,6 +2,7 @@ HtmlSample = Controller:new()
 HtmlSample.showEqualizerEffect = true
 HtmlSample.isMainTab = true
 HtmlSample.isExamplesTab = false
+HtmlSample.isResponsiveTab = false
 HtmlSample.exampleBasePath = '/docs/exampleHTML_flex/'
 
 function HtmlSample:isThingsLoaded()
@@ -19,22 +20,33 @@ function HtmlSample:onInit()
     self.width = 500
     self.isMainTab = true
     self.isExamplesTab = false
+    self.isResponsiveTab = false
+    self.responsiveWidth = 480
+    self.responsiveDirection = -1
 
     self:loadHtml('htmlsample.html')
     self:equalizerEffect()
 
     self:setupExamplesComboBox()
+    self:setupResponsiveDemo()
+    self:startResponsiveDemo()
 end
 
 function HtmlSample:selectTab(tab)
     local isExamples = tab == 'examples'
-    
-    self.isMainTab = not isExamples
+    local isResponsive = tab == 'responsive'
+
+    self.isMainTab = not isExamples and not isResponsive
     self.isExamplesTab = isExamples
-    self.height = isExamples and 650 or 350
-    self.width = isExamples and 900 or 500
-    -- Explicitly resize the window to ensure it updates immediately
-    
+    self.isResponsiveTab = isResponsive
+    self.height = (isExamples or isResponsive) and 650 or 350
+    self.width = (isExamples or isResponsive) and 900 or 500
+
+    if self.ui and not self.ui:isDestroyed() then
+        self.ui:setHeight(self.height)
+        self.ui:setWidth(self.width)
+    end
+
     if isExamples then
         -- Defer render until visibility/layout settle for the examples tab.
         self:scheduleEvent(function()
@@ -42,6 +54,10 @@ function HtmlSample:selectTab(tab)
                 self:renderSelectedExample()
             end
         end, 111)
+    elseif isResponsive then
+        self:scheduleEvent(function()
+            self:updateResponsiveViewport()
+        end, 1)
     end
 end
 
@@ -151,6 +167,80 @@ function HtmlSample:renderSelectedExample()
     self:scheduleEvent(refreshPreviewLayout, 1)
     self:scheduleEvent(refreshPreviewLayout, 30)
     self:scheduleEvent(refreshPreviewLayout, 80)
+end
+
+function HtmlSample:setupResponsiveDemo()
+    local viewport = self:findWidget('#responsiveViewport')
+    if not viewport then
+        return
+    end
+
+    viewport:destroyChildren()
+
+    local palette = {
+        '#0b6e00', '#8f1d1d', '#51459c', '#ff1d12', '#4f6f31',
+        '#8c1298', '#18d4dd', '#1c1f7f', '#b33434', '#355f59'
+    }
+
+    local widths = {
+        34, 30, 72, 58, 34, 66, 28, 52, 40, 30,
+        44, 76, 36, 64, 32, 58, 46, 30, 68, 38,
+        50, 42, 74, 34, 62, 28, 54, 48, 36, 70
+    }
+
+    for i, width in ipairs(widths) do
+        local color = palette[((i - 1) % #palette) + 1]
+        self:createWidgetFromHTML(string.format(
+            '<div class="responsiveBox" style="width: %dpx; background-color: %s;"></div>',
+            width,
+            color
+        ), viewport)
+    end
+
+    self:updateResponsiveViewport()
+end
+
+function HtmlSample:updateResponsiveViewport()
+    local viewport = self:findWidget('#responsiveViewport')
+    if not viewport or viewport:isDestroyed() then
+        return
+    end
+
+    viewport:setWidth(self.responsiveWidth)
+
+    local widthLabel = self:findWidget('#responsiveWidthLabel')
+    if widthLabel and not widthLabel:isDestroyed() then
+        widthLabel:setText(string.format('Width: %dpx', self.responsiveWidth))
+    end
+end
+
+function HtmlSample:startResponsiveDemo()
+    self:cycleEvent(function()
+        if not self.ui or self.ui:isDestroyed() then
+            return false
+        end
+print(1)
+
+        local viewport = self:findWidget('#responsiveViewport')
+        if not viewport or viewport:isDestroyed() then
+            return false
+        end
+
+        if not self.isResponsiveTab then
+            return
+        end
+
+        self.responsiveWidth = self.responsiveWidth + self.responsiveDirection * 24
+        if self.responsiveWidth <= 220 then
+            self.responsiveWidth = 220
+            self.responsiveDirection = 1
+        elseif self.responsiveWidth >= 760 then
+            self.responsiveWidth = 760
+            self.responsiveDirection = -1
+        end
+
+        self:updateResponsiveViewport()
+    end, 90, 'responsive-demo')
 end
 
 function HtmlSample:addPlayer(name)

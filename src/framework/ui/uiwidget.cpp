@@ -1153,30 +1153,21 @@ bool UIWidget::setRect(const Rect& rect)
 
     Rect oldRect = m_rect;
     m_rect = clampedRect;
-    const bool movedOnly = oldRect.topLeft() != clampedRect.topLeft();
-    const bool sizeChanged = oldRect.size() != clampedRect.size();
+    const bool positionChanged = oldRect.topLeft() != clampedRect.topLeft();
 
     // Always run local layout updates after geometry change.
     // Parent relayout scheduling is handled inside updateLayout and is
     // suppressed there while the parent runs flex layout.
     updateLayout();
 
-    // If this is a flex container that moved, re-run flex to reposition children
-    // (e.g., when the window is dragged). The re-entrance guard in layoutFlex
-    // prevents infinite recursion.
-    // NOTE: Only trigger on position changes — size changes are handled by
-    // the post-layout section in layoutFlex which sets definite Px units first.
-    // Calling layoutFlex here for size changes would cause nested flex containers
-    // to auto-size before the parent can enforce stretch height.
-    // Avoid re-entering child flex layout while the parent is running its
-    // own flex pass; the parent already assigns this child's final rect.
+    // If this is a flex container that moved, re-position descendants with a
+    // uniform translation (e.g. when the window is dragged). Size-driven flex
+    // relayout must not run from setRect(); explicit width/height changes use
+    // the deferred HTML size-update path instead.
     if (isOnHtml() && !m_inFlexLayout &&
         (!m_parent || !m_parent->m_inFlexLayout) &&
         (m_displayType == DisplayType::Flex || m_displayType == DisplayType::InlineFlex) &&
-        movedOnly) {
-        if (sizeChanged) {
-            layoutFlex(*this);
-        } else {
+        positionChanged) {
             // Pure movement: translate descendants by delta instead of doing
             // a full flex relayout, which is expensive during scroll/drag.
             const Point delta = clampedRect.topLeft() - oldRect.topLeft();
@@ -1210,7 +1201,6 @@ bool UIWidget::setRect(const Rect& rect)
                     }
                 }
             }
-        }
     }
 
     // avoid massive update events

@@ -995,6 +995,7 @@ void UIWidget::applyDimension(bool isWidth, Unit unit, int32_t value) {
     int32_t valueCalculed = -1;
 
     bool needUpdate = false;
+    bool explicitPxResize = false;
 
     if (m_positionType == PositionType::Absolute && unit == Unit::Auto) {
         unit = Unit::FitContent;
@@ -1034,6 +1035,7 @@ void UIWidget::applyDimension(bool isWidth, Unit unit, int32_t value) {
                     value += getPaddingTop() + getPaddingBottom();
                 setHeight_px(value);
             }
+            explicitPxResize = true;
             break;
         }
     }
@@ -1047,7 +1049,7 @@ void UIWidget::applyDimension(bool isWidth, Unit unit, int32_t value) {
     if (!isOnHtml())
         return;
 
-    if (needUpdate) {
+    if (needUpdate || (explicitPxResize && isFlexContainer(m_displayType))) {
         scheduleHtmlTask(PropUpdateSize);
     }
 

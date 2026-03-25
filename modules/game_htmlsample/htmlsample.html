@@ -4,6 +4,7 @@
     <div class="tabs">
       <button onclick="self:selectTab('main')">Current Demo</button>
       <button onclick="self:selectTab('examples')">Flex Examples</button>
+      <button onclick="self:selectTab('responsive')">Responsive</button>
     </div>
 
     <div *visible="self.isMainTab">
@@ -91,6 +92,21 @@
         <select id="exampleComboBox" onchange="self:onExampleComboBoxChange(event)"></select>
       </div>
       <div id="examplePreview" class="examplePreview"></div>
+    </div>
+
+    <div id="responsiveTab" *visible="self.isResponsiveTab">
+      <div class="responsiveHeader">
+        <div class="responsiveTitle">Responsive flex-wrap demo</div>
+        <div id="responsiveWidthLabel" class="responsiveMeta">Width: 480px</div>
+      </div>
+      <div class="responsiveHint">
+        The viewport below changes width automatically to show flex-wrap in the content area.
+      </div>
+      <div class="responsiveStage">
+        <div class="responsiveViewportFrame">
+          <div id="responsiveViewport" class="responsiveViewport"></div>
+        </div>
+      </div>
     </div>
 
     <div class="appFooter">
