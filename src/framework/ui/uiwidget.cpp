@@ -1201,6 +1201,8 @@ bool UIWidget::setRect(const Rect& rect)
                     // 3. The parent's deferred geometry-change event (above) will
                     //    fire for the container itself, covering hover updates.
                     w->m_rect.translate(delta);
+                    for (auto& rectToWord : w->m_rectToWord)
+                        rectToWord.first.translate(delta);
 
                     for (const auto& grandChild : w->m_children) {
                         if (grandChild && !grandChild->isDestroyed())

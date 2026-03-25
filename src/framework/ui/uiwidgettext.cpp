@@ -643,10 +643,14 @@ void UIWidget::applyWhiteSpace() {
     if (whiteSpace.empty())
         whiteSpace = "normal";
 
+    WrapOptions* wrapOptionsOwner = &m_textWrapOptions;
+    if (m_parent && m_htmlNode && m_htmlNode->getType() == NodeType::Text)
+        wrapOptionsOwner = &m_parent->m_textWrapOptions;
+
     if (m_htmlNode->getStyle("overflow-wrap").empty())
-        m_textWrapOptions.overflowWrapMode = OverflowWrapMode::Normal;
+        wrapOptionsOwner->overflowWrapMode = OverflowWrapMode::Normal;
     if (m_htmlNode->getStyle("word-break").empty())
-        m_textWrapOptions.wordBreakMode = WordBreakMode::Normal;
+        wrapOptionsOwner->wordBreakMode = WordBreakMode::Normal;
 
     setProp(PropTextHorizontalAutoResize, false);
     setProp(PropTextVerticalAutoResize, false);

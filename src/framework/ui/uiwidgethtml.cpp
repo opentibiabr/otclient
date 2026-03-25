@@ -657,11 +657,17 @@ namespace {
     }
 
     static inline void applyFitContentRecursive(UIWidget* w, int& width, int& height) {
-        // In a row flex container, all children lay out horizontally regardless
-        // of their individual display type (block divs become flex items).
-        const bool parentIsRowFlex = isFlexContainer(w->getDisplay())
-            && (w->getFlexDirection() == FlexDirection::Row
-                || w->getFlexDirection() == FlexDirection::RowReverse);
+        const bool parentIsFlex = isFlexContainer(w->getDisplay());
+        const FlexDirection parentFlexDirection = w->getFlexDirection();
+        const bool parentIsRowFlex = parentIsFlex
+            && (parentFlexDirection == FlexDirection::Row
+                || parentFlexDirection == FlexDirection::RowReverse);
+        const bool parentIsColumnFlex = parentIsFlex
+            && (parentFlexDirection == FlexDirection::Column
+                || parentFlexDirection == FlexDirection::ColumnReverse);
+        const int parentMainGap = parentIsRowFlex ? std::max(0, w->getColumnGap())
+            : (parentIsColumnFlex ? std::max(0, w->getRowGap()) : 0);
+        size_t measuredChildren = 0;
 
         int maxLineWidth = 0, totalHeight = 0, runWidth = 0, runHeight = 0;
 
@@ -731,11 +737,10 @@ namespace {
                     applyFitContentRecursive(c, subW, subH);
                     cwh = origWidthSpec;
                     if (isFlexContainer(d) && !c->isInFlexLayout()) {
-                        // applyFitContentRecursive treats all flex items as a single
-                        // row and ignores flex-wrap, so it underestimates multi-row
-                        // containers.  After items have their intrinsic sizes (from
-                        // the recursive call above), re-run flex layout to get the
-                        // correct wrapped height.
+                        // Fit-content measurement approximates flex flow before
+                        // layoutFlex() runs. Re-run the real flex layout once the
+                        // intrinsic child sizes are available so wrapped rows and
+                        // final gap handling produce the correct container height.
                         layoutFlex(*c);
                     }
                     // After the recursive call (and optional layoutFlex), c's height
@@ -773,19 +778,24 @@ namespace {
 
             const int childOuterW = std::max<int>(0, childContentW + c->getMarginLeft() + c->getMarginRight());
             const int childOuterH = std::max<int>(0, childContentH + c->getMarginTop() + c->getMarginBottom());
-
-            // In a row flex container, children are side by side (sum widths).
-            // Otherwise, use the child's own display type (block → break).
-            const bool shouldBreak = parentIsRowFlex ? false : breakLine(c->getDisplay());
+            // Flex parents measure children on their main axis first; non-flex
+            // parents still defer to the child display type for line breaks.
+            const bool shouldBreak = parentIsFlex ? parentIsColumnFlex : breakLine(c->getDisplay());
 
             if (shouldBreak) {
                 flushLine();
+                if (parentIsColumnFlex && measuredChildren > 0)
+                    totalHeight += parentMainGap;
                 if (childOuterW > maxLineWidth) maxLineWidth = childOuterW;
                 totalHeight += childOuterH;
             } else {
+                if (parentIsRowFlex && measuredChildren > 0)
+                    runWidth += parentMainGap;
                 runWidth += childOuterW;
                 if (childOuterH > runHeight) runHeight = childOuterH;
             }
+
+            ++measuredChildren;
         }
 
         flushLine();
@@ -1641,30 +1651,33 @@ void UIWidget::updateSize() {
 
                 int forcedH = 0;
                 if (isFlexContainer(m_displayType)) {
-                    // Avoid recursive flex->updateSize->flex loops while the parent
-                    // is already running a flex pass. Use a local estimate based on
-                    // current children geometry in this phase.
                     const bool rowMain = m_flexContainer.direction == FlexDirection::Row
                         || m_flexContainer.direction == FlexDirection::RowReverse;
+                    const bool allowWrap = m_flexContainer.wrap != FlexWrap::NoWrap;
                     const int oldH = getHeight();
-                    int estimatedContent = 0;
-                    int childCount = 0;
-                    for (const auto& childPtr : getChildrenRef()) {
-                        UIWidget* child = childPtr.get();
-                        if (!child || child->getDisplay() == DisplayType::None || child->getPositionType() == PositionType::Absolute)
-                            continue;
-                        const int outerH = std::max<int>(0, child->getHeight()) + child->getMarginTop() + child->getMarginBottom();
-                        if (rowMain)
-                            estimatedContent = std::max(estimatedContent, outerH);
-                        else {
-                            estimatedContent += outerH;
-                            ++childCount;
+                    if (rowMain && allowWrap && getWidth() > 0) {
+                        layoutFlex(*this);
+                        forcedH = std::max<int>(0, getHeight());
+                    } else {
+                        int estimatedContent = 0;
+                        int childCount = 0;
+                        for (const auto& childPtr : getChildrenRef()) {
+                            UIWidget* child = childPtr.get();
+                            if (!child || child->getDisplay() == DisplayType::None || child->getPositionType() == PositionType::Absolute)
+                                continue;
+                            const int outerH = std::max<int>(0, child->getHeight()) + child->getMarginTop() + child->getMarginBottom();
+                            if (rowMain)
+                                estimatedContent = std::max(estimatedContent, outerH);
+                            else {
+                                estimatedContent += outerH;
+                                ++childCount;
+                            }
                         }
-                    }
-                    if (!rowMain && childCount > 1)
-                        estimatedContent += std::max<int>(0, m_flexContainer.rowGap) * (childCount - 1);
+                        if (!rowMain && childCount > 1)
+                            estimatedContent += std::max<int>(0, m_flexContainer.rowGap) * (childCount - 1);
 
-                    forcedH = std::max<int>(0, estimatedContent + getPaddingTop() + getPaddingBottom());
+                        forcedH = std::max<int>(0, estimatedContent + getPaddingTop() + getPaddingBottom());
+                    }
                     if (forcedH <= 0 && oldH > 0)
                         forcedH = oldH;
                 } else {

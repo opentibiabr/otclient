@@ -818,15 +818,15 @@ public:
     void setBorderColorRight(const Color& color) { m_borderColor.right = color; repaint(); }
     void setBorderColorBottom(const Color& color) { m_borderColor.bottom = color; repaint(); }
     void setBorderColorLeft(const Color& color) { m_borderColor.left = color; repaint(); }
-    void setMargin(const int margin) { m_margin.set(margin); m_marginTopAuto = m_marginBottomAuto = m_marginLeftAuto = m_marginRightAuto = false; updateParentLayout(); }
-    void setMarginHorizontal(const int margin) { m_margin.right = m_margin.left = margin; m_marginLeftAuto = m_marginRightAuto = false; updateParentLayout(); }
-    void setMarginVertical(const int margin) { m_margin.bottom = m_margin.top = margin; m_marginTopAuto = m_marginBottomAuto = false; updateParentLayout(); }
-    void setMarginTop(const int margin) { m_margin.top = margin; m_marginTopAuto = false; updateParentLayout(); }
-    void setMarginRight(const int margin) { m_margin.right = margin; m_marginRightAuto = false; updateParentLayout(); }
-    void setMarginBottom(const int margin) { m_margin.bottom = margin; m_marginBottomAuto = false; updateParentLayout(); }
-    void setMarginLeft(const int margin) { m_margin.left = margin; m_marginLeftAuto = false; updateParentLayout(); }
-    void setMarginTopAuto(bool v = true) { m_marginTopAuto = v; updateParentLayout(); }
-    void setMarginBottomAuto(bool v = true) { m_marginBottomAuto = v; updateParentLayout(); }
+    void setMargin(const int margin) { m_margin.set(margin); m_marginTopAuto = m_marginBottomAuto = m_marginLeftAuto = m_marginRightAuto = false; updateParentLayout(); scheduleParentHtmlFlexLayout(); }
+    void setMarginHorizontal(const int margin) { m_margin.right = m_margin.left = margin; m_marginLeftAuto = m_marginRightAuto = false; updateParentLayout(); scheduleParentHtmlFlexLayout(); }
+    void setMarginVertical(const int margin) { m_margin.bottom = m_margin.top = margin; m_marginTopAuto = m_marginBottomAuto = false; updateParentLayout(); scheduleParentHtmlFlexLayout(); }
+    void setMarginTop(const int margin) { m_margin.top = margin; m_marginTopAuto = false; updateParentLayout(); scheduleParentHtmlFlexLayout(); }
+    void setMarginRight(const int margin) { m_margin.right = margin; m_marginRightAuto = false; updateParentLayout(); scheduleParentHtmlFlexLayout(); }
+    void setMarginBottom(const int margin) { m_margin.bottom = margin; m_marginBottomAuto = false; updateParentLayout(); scheduleParentHtmlFlexLayout(); }
+    void setMarginLeft(const int margin) { m_margin.left = margin; m_marginLeftAuto = false; updateParentLayout(); scheduleParentHtmlFlexLayout(); }
+    void setMarginTopAuto(bool v = true) { m_marginTopAuto = v; updateParentLayout(); scheduleParentHtmlFlexLayout(); }
+    void setMarginBottomAuto(bool v = true) { m_marginBottomAuto = v; updateParentLayout(); scheduleParentHtmlFlexLayout(); }
     void setMarginLeftAuto(bool v = true) { m_marginLeftAuto = v; updateParentLayout(); }
     void setMarginRightAuto(bool v = true) { m_marginRightAuto = v; updateParentLayout(); }
     void setPadding(const int padding) { m_padding.top = m_padding.right = m_padding.bottom = m_padding.left = padding; updateLayout(); }
@@ -988,6 +988,12 @@ protected:
     void processCodeTags();
     void cacheRectToWord();
     void updateRectToWord(const std::vector<Rect>& glypsCoords);
+    void scheduleParentHtmlFlexLayout() {
+        if (m_positionType == PositionType::Absolute || !m_parent)
+            return;
+        if (m_parent->getDisplay() == DisplayType::Flex || m_parent->getDisplay() == DisplayType::InlineFlex)
+            m_parent->scheduleHtmlTask(PropUpdateSize);
+    }
 
     virtual void onTextChange(std::string_view text, std::string_view oldText);
     virtual void onFontChange(std::string_view font);

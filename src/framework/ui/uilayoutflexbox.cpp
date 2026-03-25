@@ -613,6 +613,7 @@ void layoutFlex(UIWidget& container)
             if (effectiveAlign == AlignSelf::Stretch) {
                 const double availableCross = std::max(0.0, innerCrossSize - child->getMarginLeft() - child->getMarginRight());
                 const int targetContentWidth = std::max(0, roundi(availableCross) - borderCross);
+                const bool mainAutoLike = preferredMainUnit.unit == Unit::Auto || preferredMainUnit.unit == Unit::FitContent;
 
                 SizeUnitGuard crossGuard(preferredCrossUnit);
 
@@ -621,6 +622,11 @@ void layoutFlex(UIWidget& container)
                 preferredCrossUnit.value = clampToPositiveSize(targetContentWidth);
                 preferredCrossUnit.valueCalculed = preferredCrossUnit.value;
                 preferredCrossUnit.pendingUpdate = false;
+
+                if (mainAutoLike) {
+                    preferredMainUnit.pendingUpdate = true;
+                    preferredMainUnit.version = 0;
+                }
 
                 queueDescendantVersionReset(child);
                 flushQueuedDescendantVersionResetsForCurrentDepth();
@@ -1003,6 +1009,11 @@ void layoutFlex(UIWidget& container)
             line.crossSize = lineCross;
         }
     }
+
+    // Step 7 recomputes line cross-sizes from the items' final dimensions, so
+    // re-apply the single-line definite cross-size override before align-content.
+    if (!crossAuto && lines.size() == 1)
+        lines[0].crossSize = std::max(0.0, innerCrossSize);
 
     // contentCross must reflect the final per-line cross sizes (after item
     // width assignment and text reflow), otherwise auto cross-size containers
