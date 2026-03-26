@@ -104,6 +104,11 @@ void AndroidManager::unZipAssetData() {
             "data.zip",
             AASSET_MODE_BUFFER);
 
+    if (!dataAsset) {
+        g_logger.fatal("Failed to open data.zip from APK assets. Run setup_android_deps.sh to generate it.");
+        return;
+    }
+
     auto dataFileLength = AAsset_getLength(dataAsset);
     char* dataContent = (char *) malloc(dataFileLength + 1);
     AAsset_read(dataAsset, dataContent, dataFileLength);

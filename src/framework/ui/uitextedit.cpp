@@ -1357,7 +1357,8 @@ void UITextEdit::onFocusChange(const bool focused, const Fw::FocusReason reason)
             blinkCursor();
         update(true);
 #ifdef ANDROID
-        if (getProp(PropEditable)) {
+        // Only show keyboard on user interaction (mouse/touch), not programmatic focus
+        if (getProp(PropEditable) && reason == Fw::MouseFocusReason) {
             g_androidManager.showKeyboardSoft();
             g_androidManager.showInputPreview(getText());
         }
