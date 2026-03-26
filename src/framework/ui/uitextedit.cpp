@@ -1360,7 +1360,10 @@ void UITextEdit::onFocusChange(const bool focused, const Fw::FocusReason reason)
         // Only show keyboard on user interaction (mouse/touch), not programmatic focus
         if (getProp(PropEditable) && reason == Fw::MouseFocusReason) {
             g_androidManager.showKeyboardSoft();
-            g_androidManager.showInputPreview(getText());
+            // TODO: widget rect is passed for future smart toolbar positioning
+            // (toolbar tries above/below/left/right of the input before falling back to above-keyboard)
+            const auto& rect = getRect();
+            g_androidManager.showInputPreview(getText(), rect.x(), rect.y(), rect.width(), rect.height());
         }
 #endif
     } else if (getProp(PropSelectable))
@@ -1623,7 +1626,8 @@ bool UITextEdit::onMousePress(const Point& mousePos, const Fw::MouseButton butto
 #ifdef ANDROID
         if (getProp(PropEditable)) {
             g_androidManager.showKeyboardSoft();
-            g_androidManager.showInputPreview(getText());
+            const auto& rect = getRect();
+            g_androidManager.showInputPreview(getText(), rect.x(), rect.y(), rect.width(), rect.height());
         }
 #endif
         const int pos = getTextPos(mousePos);
@@ -1658,6 +1662,7 @@ bool UITextEdit::onMousePress(const Point& mousePos, const Fw::MouseButton butto
 #endif
         return true;
     }
+
     return false;
 }
 

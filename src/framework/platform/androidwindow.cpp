@@ -272,6 +272,8 @@ void AndroidWindow::processFingerDownAndUp() {
         m_mouseButtonStates |= 1 << mouseButton;
     } else if (m_currentEvent.type == TOUCH_UP) {
         if (!m_isDragging && stdext::millis() > m_lastPress + 500) {
+            // Long-press: remap to right-click and clear left button state
+            m_mouseButtonStates &= ~(1 << Fw::MouseLeftButton);
             mouseButton = Fw::MouseRightButton;
             m_inputEvent.mouseButton = mouseButton;
         }
@@ -336,12 +338,11 @@ void AndroidWindow::setVerticalSync(bool enable) {
 }
 
 std::string AndroidWindow::getClipboardText() {
-    // TODO: implement via JNI ClipboardManager (see PR #1674)
-    return "";
+    return g_androidManager.getClipboardText();
 }
 
 void AndroidWindow::setClipboardText(const std::string_view text) {
-    // TODO: implement via JNI ClipboardManager (see PR #1674)
+    g_androidManager.setClipboardText(std::string(text));
 }
 
 Size AndroidWindow::getDisplaySize() {

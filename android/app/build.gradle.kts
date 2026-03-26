@@ -33,6 +33,17 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            // Use env vars for CI/production, fallback to debug keystore for local dev
+            storeFile = file(System.getenv("RELEASE_KEYSTORE")
+                ?: System.getProperty("user.home") + "/.android/debug.keystore")
+            storePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD") ?: "android"
+            keyAlias = System.getenv("RELEASE_KEY_ALIAS") ?: "androiddebugkey"
+            keyPassword = System.getenv("RELEASE_KEY_PASSWORD") ?: "android"
+        }
+    }
+
     externalNativeBuild {
         cmake {
             path = file("../../CMakeLists.txt")
@@ -44,6 +55,7 @@ android {
         getByName("release") {
             isMinifyEnabled = false
             isShrinkResources = false
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 file("proguard-rules.pro")

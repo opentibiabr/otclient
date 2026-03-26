@@ -37,11 +37,15 @@ public:
     void showKeyboardSoft();
     void hideKeyboard();
 
-    void showInputPreview(const std::string& text);
+    // Input preview toolbar: positioned near the focused widget
+    void showInputPreview(const std::string& text, int widgetX = -1, int widgetY = -1, int widgetW = -1, int widgetH = -1);
     void updateInputPreview(const std::string& text);
     void hideInputPreview();
 
     void unZipAssetData();
+
+    std::string getClipboardText();
+    void setClipboardText(const std::string& text);
 
     std::string getStringFromJString(jstring);
     std::string getAppBaseDir();
@@ -60,6 +64,8 @@ private:
     jmethodID m_midShowInputPreview;
     jmethodID m_midUpdateInputPreview;
     jmethodID m_midHideInputPreview;
+    jmethodID m_midGetClipboardText;
+    jmethodID m_midSetClipboardText;
 };
 
 extern AndroidManager g_androidManager;
