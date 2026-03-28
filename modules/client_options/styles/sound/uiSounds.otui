@@ -1,0 +1,120 @@
+UIWidget
+  anchors.fill: parent
+  visible: false
+  Label
+    id: info
+    text: "The sound is currently deactivated. \nIncrease the master volume in the Options menu 'Sound'."
+    color: #FF9854
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: parent.top
+
+
+  SmallReversedQtPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    margin-top: 7
+    height: 20
+  
+    OptionScaleScroll
+      id: soundUI
+      anchors.left: parent.left
+      anchors.right: parent.right
+      &minimumScrollValue: 1
+      &maximumScrollValue: 100
+      &scrollSize: 21
+      margin-left: -15
+      @onSetup: |
+        local value = modules.client_options.getOption('soundUI')
+        self:setText(tr('UI Volume: %d %%', value))
+
+  SmallReversedQtPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    margin-top: 7
+    height: 22
+
+    OptionCheckBox
+      id: soundUIsubChannelsInteractions
+      !text: tr('UI Interactions')
+
+  SmallReversedQtPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    margin-top: 7
+    height: 40
+
+    OptionCheckBox
+      id: soundUIsubChannelsJoinLeaveParty
+      !text: tr('Join/Leave Party')
+
+    OptionCheckBox
+      id: soundUIsubChannelsVipLoginLogout
+      !text: tr('VIP login/logout')
+      anchors.top: prev.bottom
+
+  SmallReversedQtPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    margin-top: 7
+    height: 160
+
+    OptionCheckBox
+      id: soundNotificationUIInteractions
+      !text: tr('UI Interactions')
+
+    MiniWindowContents
+      id: soundNotification
+      padding-left: 10
+      padding-right: 5
+      layout: verticalBox
+      QtCheckBox
+        id: soundNotificationsubChannelsParty
+        !text: tr('Party')
+        @onCheckChange: modules.client_options.setOption(self:getId(), self:isChecked())
+      QtCheckBox
+        id: soundNotificationsubChannelsGuild
+        !text: tr('Guild')
+        @onCheckChange: modules.client_options.setOption(self:getId(), self:isChecked())
+      QtCheckBox
+        id: soundNotificationsubChannelsLocalChat
+        !text: tr('Private Messages in Local Chat')
+        @onCheckChange: modules.client_options.setOption(self:getId(), self:isChecked())
+      QtCheckBox
+        id: soundNotificationsubChannelsPrivateMessages
+        !text: tr('Private Messages')
+        @onCheckChange: modules.client_options.setOption(self:getId(), self:isChecked())
+      QtCheckBox
+        id: soundNotificationsubChannelsNPC
+        !text: tr('NPC')
+        @onCheckChange: modules.client_options.setOption(self:getId(), self:isChecked())
+      QtCheckBox
+        id: soundNotificationsubChannelsGlobal
+        !text: tr('Global')
+        @onCheckChange: modules.client_options.setOption(self:getId(), self:isChecked())
+      QtCheckBox
+        id: soundNotificationsubChannelsTeamFinder
+        !text: tr('Team Finder')
+        @onCheckChange: modules.client_options.setOption(self:getId(), self:isChecked())
+      QtCheckBox
+        id: soundNotificationsubChannelsRaidAnnouncements
+        !text: tr('Raid Announcements')
+        @onCheckChange: modules.client_options.setOption(self:getId(), self:isChecked())
+      QtCheckBox
+        id: soundNotificationsubChannelsSystemAnnouncements
+        !text: tr('System Announcements')
+        !tooltip: tr('Check this box to see how much time or how many charges are left \non your equipped items')
+        @onCheckChange: modules.client_options.setOption(self:getId(), self:isChecked())
+        UIWidget
+          id: toolTipWidget
+          image-source: /images/icons/show_gui_help_grey
+          size: 12 12  
+          anchors.right: parent.right
+          anchors.verticalCenter: parent.verticalCenter
+          margin-right: 3
+
+

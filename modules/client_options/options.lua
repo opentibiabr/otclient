@@ -9,7 +9,10 @@ panels = {
     interface = nil,
     misc = nil,
     miscHelp = nil,
-    keybindsPanel = nil
+    keybindsPanel = nil,
+    battleSoundsPanel = nil,
+    iuSoundPanel = nil,
+
 }
 
 -- Hook into application exit to ensure settings are saved
@@ -55,14 +58,14 @@ local buttons = { {
 }, {
     text = "Sound",
     icon = "/images/icons/icon_sound",
-    open = "soundPanel"
-    --[[     subCategories = {{
+    open = "soundPanel",
+    subCategories = {{
         text = "Battle Sounds",
-        open = "Battle_Sounds"
+        open = "battleSoundsPanel"
     }, {
         text = "UI Sounds",
-        open = "UI_Sounds"
-    }} ]]
+        open = "iuSoundPanel"
+    }} 
 }, {
     text = "Misc.",
     icon = "/images/icons/icon_misc",
@@ -86,6 +89,33 @@ local extraWidgets = {
     logoutButton = nil,
     optionsButtons = nil
 }
+
+local protocolSoundSettingsKeys = {
+    battleSoundOwnBattle = true,
+    battleSoundOtherPlayers = true,
+    battleSoundCreature = true,
+    battleSoundOwnBattleSubChannelsAttack = true,
+    battleSoundOwnBattleSoundSubChannelsHealing = true,
+    battleSoundOwnBattleSoundSubChannelsSupport = true,
+    battleSoundOwnBattleSoundSubChannelsWeapons = true,
+    battleSoundOtherPlayersSubChannelsAttack = true,
+    battleSoundOtherPlayersSubChannelsHealing = true,
+    battleSoundOtherPlayersSubChannelsSupport = true,
+    battleSoundOtherPlayersSubChannelsWeapons = true,
+    battleSoundCreatureSubChannelsNoises = true,
+    battleSoundCreatureSubChannelsNoisesDeath = true,
+    battleSoundCreatureSubChannelsAttacksAndSpells = true,
+}
+
+local function syncProtocolSoundSettings(key)
+    if key and not protocolSoundSettingsKeys[key] then
+        return
+    end
+
+    if g_sounds and g_sounds.refreshProtocolSoundSettings then
+        g_sounds.refreshProtocolSoundSettings()
+    end
+end
 
 local function toggleDisplays()
     if options['displayNames'].value and options['displayHealth'].value and options['displayMana'].value and options['displayHarmony'].value then
@@ -309,7 +339,9 @@ function controller:onInit()
     panels.interfaceHUD = g_ui.loadUI('styles/interface/HUD', controller.ui.optionsTabContent)
     panels.actionbars = g_ui.loadUI('styles/interface/actionbars', controller.ui.optionsTabContent)
 
-    panels.soundPanel = g_ui.loadUI('styles/sound/audio', controller.ui.optionsTabContent)
+    panels.soundPanel = g_ui.loadUI('styles/sound/sound', controller.ui.optionsTabContent)
+    panels.battleSoundsPanel = g_ui.loadUI('styles/sound/battleSounds', controller.ui.optionsTabContent)
+    panels.iuSoundPanel = g_ui.loadUI('styles/sound/uiSounds', controller.ui.optionsTabContent)
 
     panels.misc = g_ui.loadUI('styles/misc/misc', controller.ui.optionsTabContent)
     panels.miscHelp = g_ui.loadUI('styles/misc/help', controller.ui.optionsTabContent)
@@ -445,6 +477,7 @@ function setOption(key, value, force)
 
     option.value = value
     g_settings.set(key, value)
+    syncProtocolSoundSettings(key)
 end
 
 function setupOptionsMainButton()

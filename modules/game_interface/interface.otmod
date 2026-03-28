@@ -43,6 +43,7 @@ Module
     - game_paperdolls
     - game_stash
     - game_healthcircle
+    - game_soundDebug
     - game_shop
     - game_screenshot
     - game_highscore

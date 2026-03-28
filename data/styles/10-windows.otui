@@ -12,6 +12,7 @@ Window < UIWindow
   padding-left: 16
   padding-right: 16
   padding-bottom: 16
+  display-sound: 2785
 
   $disabled:
     color: #dfdfdf88

@@ -1218,6 +1218,155 @@ int push_luavalue(const RaceType& raceData)
     return 1;
 }
 
+#ifdef FRAMEWORK_SOUND
+int push_luavalue(const ClientSoundEffect& soundEffect) {
+    g_lua.createTable(0, 7);
+
+    g_lua.pushInteger(soundEffect.clientId);
+    g_lua.setField("clientId");
+
+    g_lua.pushInteger(static_cast<int>(soundEffect.type));
+    g_lua.setField("type");
+
+    g_lua.createTable(0, 2);
+    g_lua.pushNumber(soundEffect.pitchMin);
+    g_lua.setField("min");
+    g_lua.pushNumber(soundEffect.pitchMax);
+    g_lua.setField("max");
+    g_lua.setField("randomPitch");
+
+    g_lua.createTable(0, 2);
+    g_lua.pushNumber(soundEffect.volumeMin);
+    g_lua.setField("min");
+    g_lua.pushNumber(soundEffect.volumeMax);
+    g_lua.setField("max");
+    g_lua.setField("randomVolume");
+
+    g_lua.pushInteger(soundEffect.soundId);
+    g_lua.setField("soundId");
+
+    g_lua.createTable(soundEffect.randomSoundId.size(), 0);
+    for (size_t i = 0; i < soundEffect.randomSoundId.size(); ++i) {
+        g_lua.pushInteger(soundEffect.randomSoundId[i]);
+        g_lua.rawSeti(i + 1);
+    }
+    g_lua.setField("randomSoundId");
+
+    return 1;
+}
+
+int push_luavalue(const SoundDebugChannelState& channel) {
+    g_lua.createTable(0, 6);
+    g_lua.pushInteger(channel.id);
+    g_lua.setField("id");
+    g_lua.pushString(channel.name);
+    g_lua.setField("name");
+    g_lua.pushNumber(channel.gain);
+    g_lua.setField("gain");
+    g_lua.pushBoolean(channel.enabled);
+    g_lua.setField("enabled");
+    g_lua.pushInteger(channel.activeSources);
+    g_lua.setField("activeSources");
+    g_lua.pushNumber(channel.activity);
+    g_lua.setField("activity");
+    return 1;
+}
+
+int push_luavalue(const SoundDebugSourceState& source) {
+    g_lua.createTable(0, 9);
+    g_lua.pushString(source.name);
+    g_lua.setField("name");
+    g_lua.pushString(source.channelName);
+    g_lua.setField("channelName");
+    g_lua.pushString(source.kind);
+    g_lua.setField("kind");
+    g_lua.pushInteger(source.channelId);
+    g_lua.setField("channelId");
+    g_lua.pushNumber(source.gain);
+    g_lua.setField("gain");
+    push_luavalue(source.position);
+    g_lua.setField("position");
+    g_lua.pushBoolean(source.relative);
+    g_lua.setField("relative");
+    g_lua.pushBoolean(source.looping);
+    g_lua.setField("looping");
+    g_lua.pushBoolean(source.streaming);
+    g_lua.setField("streaming");
+    g_lua.pushBoolean(source.combined);
+    g_lua.setField("combined");
+    return 1;
+}
+
+int push_luavalue(const SoundDebugItemState& item) {
+    g_lua.createTable(0, 7);
+    g_lua.pushInteger(item.itemId);
+    g_lua.setField("itemId");
+    g_lua.pushInteger(item.effectId);
+    g_lua.setField("effectId");
+    g_lua.pushInteger(item.audioFileId);
+    g_lua.setField("audioFileId");
+    g_lua.pushInteger(item.itemCount);
+    g_lua.setField("itemCount");
+    g_lua.pushNumber(item.distance);
+    g_lua.setField("distance");
+    push_luavalue(item.position);
+    g_lua.setField("position");
+    g_lua.pushString(item.fileName);
+    g_lua.setField("fileName");
+    return 1;
+}
+
+int push_luavalue(const SoundDebugEventState& event) {
+    g_lua.createTable(0, 11);
+    g_lua.pushInteger(event.soundEffectId);
+    g_lua.setField("soundEffectId");
+    g_lua.pushInteger(event.audioFileId);
+    g_lua.setField("audioFileId");
+    g_lua.pushInteger(event.soundSource);
+    g_lua.setField("soundSource");
+    g_lua.pushInteger(event.channelId);
+    g_lua.setField("channelId");
+    g_lua.pushNumber(event.gain);
+    g_lua.setField("gain");
+    g_lua.pushNumber(event.distance);
+    g_lua.setField("distance");
+    g_lua.pushNumber(static_cast<double>(event.timestamp));
+    g_lua.setField("timestamp");
+    g_lua.pushInteger(event.ageMs);
+    g_lua.setField("ageMs");
+    g_lua.pushBoolean(event.secondary);
+    g_lua.setField("secondary");
+    push_luavalue(event.position);
+    g_lua.setField("position");
+    g_lua.pushString(event.fileName);
+    g_lua.setField("fileName");
+    return 1;
+}
+
+int push_luavalue(const SoundDebugSnapshot& snapshot) {
+    g_lua.createTable(0, 9);
+    g_lua.pushBoolean(snapshot.audioEnabled);
+    g_lua.setField("audioEnabled");
+    g_lua.pushBoolean(snapshot.debugMode);
+    g_lua.setField("debugMode");
+    g_lua.pushInteger(snapshot.masterVolume);
+    g_lua.setField("masterVolume");
+    g_lua.pushNumber(snapshot.masterActivity);
+    g_lua.setField("masterActivity");
+    g_lua.pushInteger(snapshot.totalSources);
+    g_lua.setField("totalSources");
+    push_luavalue(snapshot.channels);
+    g_lua.setField("channels");
+    push_luavalue(snapshot.sources);
+    g_lua.setField("sources");
+    push_luavalue(snapshot.items);
+    g_lua.setField("items");
+    push_luavalue(snapshot.events);
+    g_lua.setField("events");
+    return 1;
+}
+#endif // FRAMEWORK_SOUND
+
 int push_luavalue(const DailyRewardItem& item) {
     g_lua.createTable(0, 3);
     g_lua.pushInteger(item.itemId);

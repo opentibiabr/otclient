@@ -36,6 +36,9 @@
 #include "framework/otml/otmlnode.h"
 #include <framework/platform/platformwindow.h>
 #include <framework/util/stats.h>
+#ifdef FRAMEWORK_SOUND
+#include <framework/sound/soundmanager.h>
+#endif
 
 UIWidget::UIWidget()
 {
@@ -1230,6 +1233,9 @@ void UIWidget::setVisible(const bool visible)
     updateState(Fw::ActiveState);
     updateState(Fw::HiddenState);
 
+    if (visible)
+        playUiSound(UISoundTypeShow);
+
     // visibility can change the current hovered widget
     if (visible)
         g_ui.onWidgetAppear(static_self_cast<UIWidget>());
@@ -1298,6 +1304,34 @@ void UIWidget::setVirtualOffset(const Point& offset)
     m_virtualOffset = offset;
     if (m_layout)
         m_layout->update();
+}
+
+void UIWidget::setClickSound(const int soundId)
+{
+    addSound(UISoundTypeClick, soundId);
+}
+
+void UIWidget::addSound(const int soundType, const int soundId)
+{
+    if (soundType <= UISoundTypeNone)
+        return;
+
+    if (soundId <= 0) {
+        m_uiSounds.erase(soundType);
+        return;
+    }
+
+    m_uiSounds[soundType] = soundId;
+}
+
+void UIWidget::removeSound(const int soundType)
+{
+    if (soundType <= UISoundTypeNone) {
+        m_uiSounds.clear();
+        return;
+    }
+
+    m_uiSounds.erase(soundType);
 }
 
 bool UIWidget::isAnchored()
@@ -1991,6 +2025,7 @@ bool UIWidget::onMouseWheel(const Point& mousePos, const Fw::MouseWheelDirection
 
 bool UIWidget::onClick(const Point& mousePos)
 {
+    playUiSound(UISoundTypeClick);
     if (hasEventListener(EVENT_TEXT_CLICK)) {
         std::string clickedText = getTextByPos(mousePos);
         if (!clickedText.empty()) {
@@ -2169,6 +2204,20 @@ void UIWidget::setShader(const std::string_view name) {
     g_dispatcher.addEvent([this, shader = std::string(name.data())] {
         m_shader = g_shaders.getShader(shader);
     });
+}
+
+void UIWidget::playUiSound(const int soundType)
+{
+    if (soundType <= UISoundTypeNone)
+        return;
+
+    const auto soundIt = m_uiSounds.find(soundType);
+    if (soundIt == m_uiSounds.end() || soundIt->second <= 0)
+        return;
+
+#ifdef FRAMEWORK_SOUND
+    g_sounds.playUiSoundById(soundIt->second);
+#endif
 }
 
 void UIWidget::repaint() { g_drawPool.repaint(DrawPoolType::FOREGROUND); }

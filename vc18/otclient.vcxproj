@@ -61,7 +61,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='OpenGL|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v145</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <EnableUnitySupport>true</EnableUnitySupport>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DirectX|x64'" Label="Configuration">
@@ -477,6 +477,9 @@
     <ClCompile Include="..\src\framework\sound\soundeffect.cpp" />
     <ClCompile Include="..\src\framework\sound\soundfile.cpp" />
     <ClCompile Include="..\src\framework\sound\soundmanager.cpp" />
+    <ClCompile Include="..\src\framework\sound\soundmanager_debug.cpp" />
+    <ClCompile Include="..\src\framework\sound\soundmanager_itemambience.cpp" />
+    <ClCompile Include="..\src\framework\sound\soundmanager_protocol.cpp" />
     <ClCompile Include="..\src\framework\sound\soundsource.cpp" />
     <ClCompile Include="..\src\framework\sound\streamsoundsource.cpp" />
     <ClCompile Include="..\src\framework\stdext\demangle.cpp" />

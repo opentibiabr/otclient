@@ -1,0 +1,119 @@
+UIWidget
+  anchors.fill: parent
+  visible: false
+
+  SmallReversedQtPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: parent.top
+    height: 22
+
+    OptionScaleScroll
+      id: soundMaster
+      anchors.left: parent.left
+      anchors.right: parent.right
+      &minimumScrollValue: 1
+      &maximumScrollValue: 100
+      &scrollSize: 21
+      margin-left: -15
+      @onSetup: |
+        local value = modules.client_options.getOption('soundMaster')
+        self:setText(tr('Master Volume: %d %%', value))
+
+  SmallReversedQtPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    margin-top: 7
+    height: 44
+
+    OptionScaleScroll
+      id: soundMusic
+      anchors.top: parent.top
+      anchors.left: parent.left
+      anchors.right: parent.right
+      &minimumScrollValue: 1
+      &maximumScrollValue: 100
+      &scrollSize: 21
+      margin-left: -15
+      @onSetup: |
+        local value = modules.client_options.getOption('soundMusic')
+        self:setText(tr('Music Volume: %d %%', value))
+
+    OptionCheckBox
+      id: soundAnthem
+      !text: tr('Anthem')
+      margin-top: 5
+      anchors.top: prev.bottom
+
+  SmallReversedQtPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    margin-top: 7
+    height: 25
+    OptionScaleScroll
+      id: soundAmbience
+      margin-top: 2
+      anchors.top: parent.top
+      anchors.left: parent.left
+      anchors.right: parent.right
+      &minimumScrollValue: 1
+      &maximumScrollValue: 100
+      &scrollSize: 21
+      margin-left: -15
+      @onSetup: |
+        local value = modules.client_options.getOption('soundAmbience')
+        self:setText(tr('Ambience Volume: %d %%', value))
+
+  SmallReversedQtPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    margin-top: 7
+    height: 55
+
+    OptionScaleScroll
+      id: soundItems
+      margin-top: 1
+      anchors.top: parent.top
+      anchors.left: parent.left
+      anchors.right: parent.right
+      &minimumScrollValue: 1
+      &maximumScrollValue: 100
+      &scrollSize: 21
+      margin-left: -15
+      @onSetup: |
+        local value = modules.client_options.getOption('soundItems')
+        self:setText(tr('Item Volume: %d %%', value))
+
+    OptionCheckBox
+      id: soundFoodAndBeverages
+      !text: tr('Food and Beverages')
+      anchors.top: prev.bottom
+
+    OptionCheckBox
+      id: soundMoveItem
+      !text: tr('Move Item')
+      anchors.top: prev.bottom
+
+  SmallReversedQtPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    margin-top: 7
+    height: 33
+
+    OptionScaleScroll
+      id: soundEventVolume
+      margin-top: 5
+      anchors.top: parent.top
+      anchors.left: parent.left
+      anchors.right: parent.right
+      &minimumScrollValue: 1
+      &maximumScrollValue: 100
+      &scrollSize: 21
+      margin-left: -15
+      @onSetup: |
+        local value = modules.client_options.getOption('soundEventVolume')
+        self:setText(tr('Event Volume: %d %%', value))
