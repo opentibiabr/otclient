@@ -125,6 +125,14 @@ add_definitions(-D"BUILD_REVISION=\\\"${BUILD_REVISION}\\\"")
 # *****************************************************************************
 # Packages / Libs
 # *****************************************************************************
+# Before we begin loading packages wholesale, we have to check which package
+# provider is available. Normally, OTClient developers prefer vcpkg.
+# However if that is not available, we can check if PkgConfig is available.
+# PkgConfig is only intended for package maintainers.
+# *****************************************************************************
+if(NOT DEFINED VCPKG_TARGET_TRIPLET)
+  find_package(PkgConfig REQUIRED)
+endif()
 find_package(OpenSSL QUIET)
 find_package(PhysFS REQUIRED)
 find_package(ZLIB REQUIRED)
@@ -224,6 +232,14 @@ else()
     else()
       pkg_check_modules(GLEW REQUIRED IMPORTED_TARGET glew)
       add_library(GLEW::GLEW ALIAS PkgConfig::GLEW)
+# *****************************************************************************
+# GLEW_LIBRARY seems to be missing from PkgConfig::GLEW, so
+# we're gonna declare it with the value of GLEW_LIBRARIES to make the rest
+# of the recipe hold it together.
+# *****************************************************************************
+      if(NOT DEFINED GLEW_LIBRARY AND DEFINED GLEW_LIBRARIES)
+        set(GLEW_LIBRARY "${GLEW_LIBRARIES}")
+      endif()
     endif()
     find_package(LuaJIT REQUIRED)
   else()
@@ -808,7 +824,7 @@ else() # Linux
           $<$<BOOL:${TOGGLE_FRAMEWORK_PROTOBUF}>:${Protobuf_INCLUDE_DIRS}>
           ${GMP_INCLUDE_DIR}
           ${PHYSFS_INCLUDE_DIR}
-          GLEW::GLEW
+          ${GLEW_INCLUDE_DIR}
           ${PARALLEL_HASHMAP_INCLUDE_DIRS}
           ${NLOHMANN_JSON_INCLUDE_DIR}
           ${OPENSSL_INCLUDE_DIR}
@@ -820,7 +836,7 @@ else() # Linux
           ${PHYSFS_LIBRARY}
           ${ZLIB_LIBRARY}
           ${NLOHMANN_JSON_LIBRARY}
-          GLEW::GLEW
+          ${GLEW_LIBRARY}
           ${OPENGL_LIBRARIES}
           ${DirectX_LIBRARY}
           ${DirectX_LIBRARIES}
