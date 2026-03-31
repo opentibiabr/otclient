@@ -62,12 +62,15 @@ RUN source /opt/emsdk/emsdk_env.sh \
     -DTOGGLE_BOT_PROTECTION=OFF \
     -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
     -DCMAKE_CXX_STANDARD=20 \
-    -DCMAKE_C_FLAGS="-pthread -matomics -mbulk-memory -fno-lto" \
-    -DCMAKE_CXX_FLAGS="-pthread -matomics -mbulk-memory -fno-lto -std=c++20 -D_LIBCPP_DISABLE_AVAILABILITY -fexperimental-library" \
+    -DCMAKE_C_FLAGS="-pthread -matomics -mbulk-memory -fno-lto -DFMT_USE_NONTYPE_TEMPLATE_ARGS=0 -DFMT_USE_CONSTEVAL=0" \
+    -DCMAKE_CXX_FLAGS="-pthread -matomics -mbulk-memory -fno-lto -std=c++20 -D_LIBCPP_DISABLE_AVAILABILITY -fexperimental-library -DFMT_USE_NONTYPE_TEMPLATE_ARGS=0 -DFMT_USE_CONSTEVAL=0" \
     -DCMAKE_EXE_LINKER_FLAGS="-pthread -matomics -mbulk-memory -s ALLOW_MEMORY_GROWTH=1 -s USE_PTHREADS=1 -s PTHREAD_POOL_SIZE=4 -s WASM=1 -s NO_EXIT_RUNTIME=1 -fno-lto" \
     -DCMAKE_CXX_FLAGS_RELEASE="-O2 -DNDEBUG -fno-lto" \
     -DCMAKE_CXX_FLAGS_DEBUG="-O0 -g -fno-lto" \
     -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF \
+ && sed -i \
+    's/define SPDLOG_FMT_STRING(format_string) FMT_STRING(format_string)/define SPDLOG_FMT_STRING(format_string) (format_string)/' \
+    ${BUILD_DIR}/vcpkg_installed/wasm32-emscripten-pthread/include/spdlog/common.h \
  && cmake --build ${BUILD_DIR} --target otclient -j"$(nproc)"
 
 # NOSONAR: minimal BusyBox stage used only to package static artifacts, root default is acceptable
