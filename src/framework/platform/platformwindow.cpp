@@ -31,6 +31,9 @@ WIN32Window window;
 #elif defined ANDROID
     #include "androidwindow.h"
     AndroidWindow window;
+#elif defined __APPLE__
+    #include "cocoawindow.h"
+    CocoaWindow window;
 #elif defined __EMSCRIPTEN__
     #include "browserwindow.h"
     BrowserWindow window;

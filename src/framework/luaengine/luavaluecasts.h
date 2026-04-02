@@ -97,7 +97,7 @@ inline bool luavalue_cast(const int index, int64_t& v)
     const bool r = luavalue_cast(index, d); v = d; return r;
 }
 
-using lua_u64 = std::conditional_t<sizeof(unsigned long) == 8, unsigned long, std::uint64_t>;
+using lua_u64 = typename std::conditional<sizeof(unsigned long) == 8, unsigned long, std::uint64_t>::type;
 using lua_unsigned_long = lua_u64;
 
 static_assert(sizeof(lua_u64) == 8, "lua_u64 must be 64-bit");
@@ -127,14 +127,14 @@ inline bool luavalue_cast(const int index, unsigned long& v)
     return r;
 }
 
-template<typename T = lua_u64, std::enable_if_t<!std::is_same_v<T, unsigned long>, int> = 0>
+template<typename T = lua_u64, typename std::enable_if<!std::is_same<T, unsigned long>::value, int>::type = 0>
 inline int push_luavalue(lua_u64 v)
 {
     push_luavalue(static_cast<double>(v));
     return 1;
 }
 
-template<typename T = lua_u64, std::enable_if_t<!std::is_same_v<T, unsigned long>, int> = 0>
+template<typename T = lua_u64, typename std::enable_if<!std::is_same<T, unsigned long>::value, int>::type = 0>
 inline bool luavalue_cast(const int idx, lua_u64& v)
 {
     double d;
@@ -191,22 +191,23 @@ bool luavalue_cast(int index, OTMLNodePtr& node);
 
 // enum
 template<class T>
-int
-push_luavalue(T e) requires (std::is_enum_v<T>) { return push_luavalue(static_cast<int>(e)); }
+typename std::enable_if<std::is_enum<T>::value, int>::type
+push_luavalue(const T& e) { return push_luavalue(static_cast<int>(e)); }
 
 template<class T>
-std::enable_if_t<std::is_enum_v<T>, bool>
+typename std::enable_if<std::is_enum<T>::value, bool>::type
 luavalue_cast(int index, T& myenum);
 
 // LuaObject pointers
+// LuaObject pointers
 template<class T>
-std::enable_if_t<std::is_base_of_v<LuaObject, typename T::element_type>, int>
+typename std::enable_if<std::is_base_of<LuaObject, typename T::element_type>::value, int>::type
 push_luavalue(const T& obj);
 
 bool luavalue_cast(int index, LuaObjectPtr& obj);
 
 template<class T>
-std::enable_if_t<std::is_base_of_v<LuaObject, T>, bool>
+typename std::enable_if<std::is_base_of<LuaObject, T>::value, bool>::type
 luavalue_cast(int index, std::shared_ptr<T>& ptr);
 
 // std::function
@@ -221,7 +222,7 @@ template<typename... Args>
 bool luavalue_cast(int index, std::function<void(Args...)>& func);
 
 template<typename Ret, typename... Args>
-std::enable_if_t<!std::is_void_v<Ret>, bool>
+typename std::enable_if<!std::is_void<Ret>::value, bool>::type
 luavalue_cast(int index, std::function<Ret(Args...)>& func);
 
 // list
@@ -285,7 +286,7 @@ template<typename T>
 int push_internal_luavalue(T v) { return push_luavalue(v); }
 
 template<class T>
-std::enable_if_t<std::is_enum_v<T>, bool>
+typename std::enable_if<std::is_enum<T>::value, bool>::type
 luavalue_cast(const int index, T& myenum)
 {
     if (int i; luavalue_cast(index, i)) {
@@ -296,7 +297,7 @@ luavalue_cast(const int index, T& myenum)
 }
 
 template<class T>
-std::enable_if_t<std::is_base_of_v<LuaObject, typename T::element_type>, int>
+typename std::enable_if<std::is_base_of<LuaObject, typename T::element_type>::value, int>::type
 push_luavalue(const T& obj)
 {
     if (obj)
@@ -307,7 +308,7 @@ push_luavalue(const T& obj)
 }
 
 template<class T>
-std::enable_if_t<std::is_base_of_v<LuaObject, T>, bool>
+typename std::enable_if<std::is_base_of<LuaObject, T>::value, bool>::type
 luavalue_cast(const int index, std::shared_ptr<T>& ptr)
 {
     LuaObjectPtr obj;
@@ -364,7 +365,7 @@ bool luavalue_cast(const int index, std::function<void(Args...)>& func)
 }
 
 template<typename Ret, typename... Args>
-std::enable_if_t<!std::is_void_v<Ret>, bool>
+typename std::enable_if<!std::is_void<Ret>::value, bool>::type
 luavalue_cast(const int index, std::function<Ret(Args...)>& func)
 {
     if (g_lua.isFunction(index)) {
@@ -661,7 +662,7 @@ struct push_tuple_luavalue
     template<typename Tuple>
     static void call(const Tuple& tuple)
     {
-        push_internal_luavalue(std::get<std::tuple_size_v<Tuple> -N>(tuple));
+        push_internal_luavalue(std::get<std::tuple_size<Tuple>::value - N>(tuple));
         push_tuple_luavalue<N - 1>::call(tuple);
     }
 };

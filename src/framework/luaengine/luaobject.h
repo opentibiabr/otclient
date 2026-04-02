@@ -156,8 +156,8 @@ namespace luabinder
 
 // connect for lambdas
 template<typename Lambda>
-std::enable_if_t<std::is_constructible_v<decltype(&Lambda::operator())>, void>
-connect(const LuaObjectPtr& obj, const std::string_view field, const Lambda& f, bool pushFront)
+typename std::enable_if<std::is_constructible<std::function<void()>, decltype(&Lambda::operator())>::value, void>::type
+connect(const LuaObjectPtr& obj, const std::string_view field, const Lambda& f, bool pushFront = false)
 {
     using F = decltype(&Lambda::operator());
     luabinder::connect_lambda<F>::call(obj, field, f, pushFront);

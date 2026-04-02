@@ -39,7 +39,7 @@ namespace stdext
         using set = phmap::flat_hash_set<T, Hash, Eq, Alloc>;
 
     template<typename T>
-    concept OnlyEnum = std::is_enum_v<T>;
+    concept OnlyEnum = std::is_enum<T>::value;
 
     template<OnlyEnum Key>
     class dynamic_storage

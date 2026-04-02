@@ -94,7 +94,7 @@
 // ===== Utilities / Helpers =====
 // FMT Custom Formatter for Enums
 template <typename E>
-std::enable_if_t<std::is_enum_v<E>, std::underlying_type_t<E>>
+typename std::enable_if<std::is_enum<E>::value, typename std::underlying_type<E>::type>::type
 format_as(E e) {
-    return static_cast<std::underlying_type_t<E>>(e);
+    return static_cast<typename std::underlying_type<E>::type>(e);
 }

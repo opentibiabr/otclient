@@ -153,6 +153,9 @@ if(APPLE)
   find_library(FOUNDATION Foundation REQUIRED)
   find_library(IOKIT IOKit REQUIRED)
   find_library(INIREADER_LIBRARY INIReader REQUIRED)
+  find_library(APPKIT AppKit REQUIRED)
+  find_library(QUARTZCORE QuartzCore REQUIRED)
+  find_library(MACOS_OPENGL OpenGL REQUIRED)
 endif()
 if(UNIX AND NOT ANDROID AND NOT WASM)
   find_package(X11 REQUIRED)
@@ -255,10 +258,13 @@ set(SOURCE_FILES
         framework/platform/platformwindow.cpp
         framework/platform/unixcrashhandler.cpp
         framework/platform/unixplatform.cpp
-        framework/platform/x11window.cpp
         framework/platform/x11window.h
         framework/platform/win32crashhandler.cpp
         framework/platform/win32platform.cpp
+        $<$<PLATFORM_ID:Darwin>:framework/platform/cocoawindow.mm>
+        $<$<PLATFORM_ID:Darwin>:framework/platform/cocoawindow.h>
+        $<$<AND:$<NOT:$<PLATFORM_ID:Darwin>>,$<NOT:$<PLATFORM_ID:Android>>,$<NOT:$<PLATFORM_ID:Emscripten>>,$<NOT:$<PLATFORM_ID:Windows>>>:framework/platform/x11window.cpp>
+        $<$<AND:$<NOT:$<PLATFORM_ID:Darwin>>,$<NOT:$<PLATFORM_ID:Android>>,$<NOT:$<PLATFORM_ID:Emscripten>>,$<NOT:$<PLATFORM_ID:Windows>>>:framework/platform/x11window.h>
         framework/stdext/demangle.cpp
         framework/stdext/math.cpp
         framework/stdext/net.cpp
@@ -422,6 +428,10 @@ endif(TOGGLE_PRE_COMPILED_HEADER)
 
 if(SPEED_UP_BUILD_UNITY)
   set_target_properties(otclient_core PROPERTIES UNITY_BUILD ON)
+  if(APPLE)
+    set_source_files_properties(framework/platform/cocoawindow.mm PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+    set_source_files_properties(framework/platform/cocoawindow.mm PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+  endif()
   log_option_enabled("Build unity for speed up compilation")
 endif(SPEED_UP_BUILD_UNITY)
 
@@ -804,6 +814,9 @@ else() # Linux
           ${FOUNDATION}
           ${X11_LIBRARIES}
           ${IOKIT}
+          ${APPKIT}
+          ${QUARTZCORE}
+          ${MACOS_OPENGL}
           ${OPENSSL_LIBRARY}
           ${OPENSSL_CRYPTO_LIBRARY}
           ${HTTPLIB_LIBRARY}
