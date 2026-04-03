@@ -187,6 +187,7 @@ int AttachedEffect::getCurrentAnimationPhase()
     }
 
     const auto thingTye = getThingType();
+    if (!thingTye) return 0;
 
     const auto* animator = thingTye->getIdleAnimator();
     if (!animator && thingTye->isAnimateAlways())
@@ -196,15 +197,28 @@ int AttachedEffect::getCurrentAnimationPhase()
         return animator->getPhaseAt(m_animationTimer, getSpeed());
 
     if (thingTye->isEffect()) {
-        const int lastPhase = thingTye->getAnimationPhases() - 1;
-        const int phase = std::min<int>(static_cast<int>(m_animationTimer.ticksElapsed() / (g_gameConfig.getEffectTicksPerFrame() / getSpeed())), lastPhase);
+        const int animationPhases = thingTye->getAnimationPhases();
+        const int speed = getSpeed();
+        if (animationPhases <= 0 || speed <= 0) return 0;
+
+        const int lastPhase = animationPhases - 1;
+        const int effectTicksPerFrame = g_gameConfig.getEffectTicksPerFrame();
+        const int ticksPerFrame = std::max<int>(1, effectTicksPerFrame / speed);
+        const int phase = std::min<int>(static_cast<int>(m_animationTimer.ticksElapsed() / ticksPerFrame), lastPhase);
         if (phase == lastPhase) m_animationTimer.restart();
         return phase;
     }
 
     if (thingTye->isCreature() && thingTye->isAnimateAlways()) {
-        const int ticksPerFrame = std::round(1000 / thingTye->getAnimationPhases()) / getSpeed();
-        return (g_clock.millis() % (static_cast<long long>(ticksPerFrame) * thingTye->getAnimationPhases())) / ticksPerFrame;
+        const int animationPhases = thingTye->getAnimationPhases();
+        const int speed = getSpeed();
+        if (animationPhases <= 0 || speed <= 0) return 0;
+
+        const int ticksPerFrame = std::max<int>(1, static_cast<int>(std::round((1000.0 / animationPhases) / speed)));
+        const long long animationPeriod = static_cast<long long>(ticksPerFrame) * animationPhases;
+        if (animationPeriod <= 0) return 0;
+
+        return (g_clock.millis() % animationPeriod) / ticksPerFrame;
     }
 
     return 0;

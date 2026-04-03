@@ -491,6 +491,8 @@ if(MSVC)
           _WIN32_WINNT=0x0600
   )
 
+  target_compile_definitions(otclient_core PRIVATE CRASH_HANDLER)
+
   target_compile_options(otclient_core PUBLIC /MP /FS /Zf /EHsc /bigobj)
 
   if(CMAKE_BUILD_TYPE STREQUAL "Debug")
