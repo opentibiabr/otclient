@@ -186,25 +186,25 @@ int AttachedEffect::getCurrentAnimationPhase()
         return m_frame;
     }
 
-    const auto thingTye = getThingType();
+    const auto thingType = getThingType();
 
-    const auto* animator = thingTye->getIdleAnimator();
-    if (!animator && thingTye->isAnimateAlways())
-        animator = thingTye->getAnimator();
+    const auto* animator = thingType->getIdleAnimator();
+    if (!animator && thingType->isAnimateAlways())
+        animator = thingType->getAnimator();
 
     if (animator)
         return animator->getPhaseAt(m_animationTimer, getSpeed());
 
-    if (thingTye->isEffect()) {
-        const int lastPhase = thingTye->getAnimationPhases() - 1;
+    if (thingType->isEffect()) {
+        const int lastPhase = thingType->getAnimationPhases() - 1;
         const int phase = std::min<int>(static_cast<int>(m_animationTimer.ticksElapsed() / (g_gameConfig.getEffectTicksPerFrame() / getSpeed())), lastPhase);
         if (phase == lastPhase) m_animationTimer.restart();
         return phase;
     }
 
-    if (thingTye->isCreature() && thingTye->isAnimateAlways()) {
-        const int ticksPerFrame = std::round(1000 / thingTye->getAnimationPhases()) / getSpeed();
-        return (g_clock.millis() % (static_cast<long long>(ticksPerFrame) * thingTye->getAnimationPhases())) / ticksPerFrame;
+    if (thingType->isCreature() && thingType->isAnimateAlways()) {
+        const int ticksPerFrame = std::round(1000 / thingType->getAnimationPhases()) / getSpeed();
+        return (g_clock.millis() % (static_cast<long long>(ticksPerFrame) * thingType->getAnimationPhases())) / ticksPerFrame;
     }
 
     return 0;
