@@ -118,8 +118,8 @@ int Paperdoll::getCurrentAnimationPhase()
 
     if (m_thingType->isCreature() && m_thingType->isAnimateAlways()) {
         const int animationPhases = m_thingType->getAnimationPhases();
-        const int speed = getSpeed();
-        if (animationPhases <= 0 || speed <= 0) return 0;
+        const float speed = getSpeed();
+        if (animationPhases <= 0 || speed <= 0.f) return 0;
 
         const int ticksPerFrame = std::max<int>(1, static_cast<int>(std::round((1000.0 / animationPhases) / speed)));
         const long long animationPeriod = static_cast<long long>(ticksPerFrame) * animationPhases;
