@@ -82,6 +82,7 @@ namespace Proto
         GameServerDetachPaperdoll = 61,
         GameServerFeatures = 67,
         GameServerFloorDescription = 75,
+        GameServerTaskBoard = 91,
 
         // original tibia ONLY
         GameServerWeaponProficiencyExperience = 92,
@@ -171,7 +172,7 @@ namespace Proto
         GameServerUnjustifiedStats = 183,
         GameServerPvpSituations = 184,
         GameServerBestiaryRefreshTracker = 185,
-        GameServerTaskHuntingBasicData = 186,
+        GameServerTaskHuntingBasicData = 186, // SoulSealsWindow 1521
         GameServerTaskHuntingData = 187,
         GameServerBosstiaryCooldownTimer = 189,
         GameServerFloorChangeUp = 190,
@@ -255,6 +256,7 @@ namespace Proto
 
         // NOTE: add any custom opcodes in this range
         // 51 - 99
+        ClientTaskBoardAction = 95,
 
         // original tibia ONLY
         ClientImbuementDurations = 96,
@@ -326,6 +328,7 @@ namespace Proto
         ClientBosstiaryRequestSlotInfo = 175,
         ClientBosstiaryRequestSlotAction = 176,
         ClientRequestHighscore = 177,
+        ClientSoulSealsAction = 186,
         ClientCancelAttackAndFollow = 190,
         ClientForgeEnter = 191,
         ClientForgeBrowseHistory = 192,

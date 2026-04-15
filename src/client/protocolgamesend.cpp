@@ -774,9 +774,10 @@ void ProtocolGame::sendRequestTrackerQuestLog(const std::map<uint16_t, std::stri
     msg->addU8(static_cast<uint8_t>(quests.size()));
     for (const auto& [questId, questName] : quests) {
         msg->addU16(questId);
-        if (g_game.getClientVersion() >= 1410) {
-            msg->addString(questName);
-        }
+    }
+    if (g_game.getClientVersion() >= 1511) {
+        msg->addU8(0); // TO-DO  automaticallyTrackNewQuests
+        msg->addU8(0); // TO-DO automaticallyUntrackCompletedQuests
     }
     send(msg);
 }
@@ -1699,4 +1700,57 @@ void ProtocolGame::sendApplyWheelPoints(const std::vector<uint16_t>& slotPoints,
     g_logger.debug(fmt::format("[WheelDebugHex] Pacote completo ({} bytes): {}", length, oss.str()));
     send(msg);
     g_logger.debug("[Wheel C++ Send] Pacote enviado com sucesso.");
+}
+
+void ProtocolGame::sendTaskBoardAction(const uint8_t option, const uint16_t value, const uint16_t extraValue)
+{
+    const auto& msg = std::make_shared<OutputMessage>();
+    msg->addU8(Proto::ClientTaskBoardAction);
+    msg->addU8(option);
+    switch (option) {
+        case Otc::TASK_BOARD_OPTION_BOUNTY_CHANGE_DIFFICULTY:
+        case Otc::TASK_BOARD_OPTION_BOUNTY_SELECT_TASK:
+        case Otc::TASK_BOARD_OPTION_BOUNTY_TALISMAN_UPGRADE:
+        case Otc::TASK_BOARD_OPTION_WEEKLY_DELIVER:
+        case Otc::TASK_BOARD_OPTION_WEEKLY_SELECT_DIFFICULTY:
+            msg->addU8(static_cast<uint8_t>(value));
+            break;
+        case Otc::TASK_BOARD_OPTION_HUNTING_SHOP_BUY_OFFER:
+            msg->addU8(static_cast<uint8_t>(value));
+            msg->addU8(static_cast<uint8_t>(extraValue));
+            break;
+        case Otc::TASK_BOARD_OPTION_PREFERRED_UNLOCK:
+        case Otc::TASK_BOARD_OPTION_PREFERRED_CLEAR:
+        case Otc::TASK_BOARD_OPTION_UNWANTED_CLEAR:
+            msg->addU16(value);
+            break;
+        case Otc::TASK_BOARD_OPTION_PREFERRED_ASSIGN:
+        case Otc::TASK_BOARD_OPTION_UNWANTED_ASSIGN:
+            msg->addU16(value);
+            msg->addU16(extraValue);
+            break;
+        case Otc::TASK_BOARD_OPTION_OPEN_BOUNTY:
+        case Otc::TASK_BOARD_OPTION_OPEN_WEEKLY:
+        case Otc::TASK_BOARD_OPTION_BOUNTY_REROLL:
+        case Otc::TASK_BOARD_OPTION_BOUNTY_CLAIM_DAILY:
+        case Otc::TASK_BOARD_OPTION_BOUNTY_CLAIM_REWARD:
+        case Otc::TASK_BOARD_OPTION_OPEN_HUNTING_SHOP:
+            break;
+        default:
+            g_logger.error("Unknown task board action option {}", static_cast<int>(option));
+            return;
+    }
+    send(msg);
+}
+
+void ProtocolGame::sendSoulSealsAction(const uint16_t raceId)
+{
+    if (raceId == 0) {
+        return;
+    }
+
+    const auto& msg = std::make_shared<OutputMessage>();
+    msg->addU8(Proto::ClientSoulSealsAction);
+    msg->addU16(raceId);
+    send(msg);
 }

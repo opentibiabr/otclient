@@ -1,0 +1,162 @@
+/* Weekly difficulty overlay */
+.diffOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: block;
+    --image-source: /images/ui/ditherpattern64;
+    --image-repeated: true;
+    opacity: 0.8;
+    background-color: #050505f0;
+}
+
+.diffOverlayCenter {
+    position: absolute;
+    top: 70px;
+    left: 314px;
+    width: 320px;
+    height: 345px;
+    display: block;
+}
+
+.diffModal {
+    width: 320px;
+    height: 345px;
+    display: block;
+    padding: 25px 10px 10px 10px;
+}
+
+.diffWindowTitle {
+    display: block;
+    height: 16px;
+    text-align: center;
+    font: verdana-11px-rounded;
+    color: #c0c0c0;
+}
+
+.diffBackdropWrap {
+    display: block;
+    text-align: center;
+    margin-top: 12px;
+    margin-bottom: 18px;
+}
+
+.diffBackdrop {
+    width: 175px;
+    height: 66px;
+    display: inline-block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.diffSummaryPanel {
+    width: 100%;
+    display: block;
+    margin: 0 auto 18px auto;
+}
+
+.diffSummaryLabel {
+    display: block;
+    font: verdana-11px-rounded;
+    color: #c0c0c0;
+    margin-bottom: 2px;
+    text-align: center;
+
+}
+
+.diffSummaryEarnedRow {
+    display: block;
+    text-align: center;
+    margin-top: 4px;
+}
+
+.diffSummaryEarnedPrefix,
+.diffSummaryEarnedValue,
+.diffSummaryEarnedAnd {
+    display: inline-block;
+    vertical-align: middle;
+    font: verdana-11px-rounded;
+    color: #c0c0c0;
+}
+
+.diffSummaryEarnedIcon {
+    width: 11px;
+    height: 11px;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 6px;
+}
+
+.diffSummaryEarnedSoulIcon {
+    width: 9px;
+    height: 9px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.diffLabel {
+    width: 260px;
+    height: 30px;
+    display: block;
+    margin: 0 auto 10px auto;
+    text-align: center;
+    font: verdana-11px-rounded;
+    color: #c0c0c0;
+    margin-left: 25px
+}
+
+.diffButtonsPanel {
+    width: 158px;
+    display: block;
+    margin-left: 80px;
+    margin-right: auto;
+    
+}
+
+.diffButtonWrap {
+    width: 158px;
+    display: block;
+    margin: 0 auto 6px auto;
+    height: 20px;
+
+}
+
+.diffBtnLarge {
+    display: block;
+    width: 158px;
+    height: 20px;
+    margin: 0 auto;
+    padding: 0;
+    --image-border: 2;
+    --image-clip: 0 0 158 20;
+}
+
+.diffBtnLargeActive {
+    cursor: pointer;
+    --image-clip: 0 0 158 20;
+
+}
+
+.diffBtnLargeActive:hover,
+.diffBtnLargeActive:pressed {
+    --image-clip: 0 20 158 20;
+}
+
+.diffBtnLargeDisabled {
+    opacity: 0.8;
+    --image-clip: 0 40 158 20;
+}
+
+.diffMinLevel {
+    display: block;
+    text-align: center;
+    font: verdana-11px-antialised;
+    color: #c0c0c0;
+    margin-top: 2px;
+}
+
+.diffMinLevelLocked {
+    color: #888888;
+}

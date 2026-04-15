@@ -44,7 +44,7 @@ PanelCreateYourAccount < Panel
 
   UIWidget
     id: icons
-    image-source: /images/ui/createaccount/icon-yes
+    image-source: /images/ui/icon-yes
     image-size: 12 9
     margin-top: 12
     enabled: false
@@ -158,7 +158,7 @@ MainWindow
 
         UIWidget
           id: icons
-          image-source: /images/ui/createaccount/icon-yes
+          image-source: /images/ui/icon-yes
           image-size: 12 9
           margin-top: 12
           margin-left: 2
@@ -198,7 +198,7 @@ MainWindow
         
         UIWidget
           id: icons
-          image-source: /images/ui/createaccount/icon-yes
+          image-source: /images/ui/icon-yes
           image-size: 12 9
           margin-top: 12
           margin-left: 3
@@ -239,7 +239,7 @@ MainWindow
           width: 100
         UIWidget
           id: icons
-          image-source: /images/ui/createaccount/icon-yes
+          image-source: /images/ui/icon-yes
           image-size: 12 9
           margin-top: 12
           $disabled:
@@ -264,7 +264,7 @@ MainWindow
           text-auto-resize: true
         UIWidget
           id: icons
-          image-source: /images/ui/createaccount/icon-yes
+          image-source: /images/ui/icon-yes
           image-size: 12 9
           margin-top: 12
           $disabled:
@@ -417,7 +417,7 @@ MainWindow
 
         UIWidget
           id: icons
-          image-source: /images/ui/createaccount/icon-yes
+          image-source: /images/ui/icon-yes
           image-size: 12 9
           margin-top: 12
           enabled: false
@@ -438,7 +438,7 @@ MainWindow
 
         UIWidget
           id: icons
-          image-source: /images/ui/createaccount/icon-yes
+          image-source: /images/ui/icon-yes
           image-size: 12 9
           margin-left: 5
           margin-top: 12
@@ -458,7 +458,7 @@ MainWindow
         id: HasLowerCase
         UIWidget
           id: icons
-          image-source: /images/ui/createaccount/icon-yes
+          image-source: /images/ui/icon-yes
           image-size: 12 9
           margin-left: 5
           margin-top: 12
@@ -479,7 +479,7 @@ MainWindow
 
         UIWidget
           id: icons
-          image-source: /images/ui/createaccount/icon-yes
+          image-source: /images/ui/icon-yes
           image-size: 12 9
           margin-left: 5
           enabled: false
@@ -499,7 +499,7 @@ MainWindow
 
         UIWidget
           id: icons
-          image-source: /images/ui/createaccount/icon-yes
+          image-source: /images/ui/icon-yes
           image-size: 12 9
           margin-left: 5
           enabled: false

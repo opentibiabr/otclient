@@ -99,7 +99,7 @@ local infoPopUp = {
         {
             title = "Outfit Unlocked",
             description = "You have unlocked '%s'", --skinName
-            creatureId = '%d', --lookType
+            hasCreatureId = true,
             img = "/game_notifications/assets/images/nodo/icon-infobanner-unlock"
         }
     },
@@ -108,7 +108,7 @@ local infoPopUp = {
         {
             title = "Bosstiary Progress",
             description = "You have progressed '%s'",--progressLevel
-            raceId = '%d', --RaceId
+            hasRaceId = true,
             img = "/game_notifications/assets/images/nodo/icon-infobanner-unlock"
         }
     },
@@ -117,7 +117,7 @@ local infoPopUp = {
         {
             title = "Bestiary Progress",
             description = "You have progressed '%s'", --progressLevel
-            raceId = '%d', --RaceId
+            hasRaceId = true,
             img = "/game_notifications/assets/images/nodo/icon-infobanner-unlock"
         }
     },
@@ -142,20 +142,20 @@ local infoPopUp = {
         {
             title = "Weapon Proficiency",
             description = "you have improved '%s'", -- message
-            itemId = '%d', -- itemId
+            hasItemId = true,
             img = "/game_notifications/assets/images/nodo/icon-infobanner-unlock"
         }
     },
     [eventCategory.CLIENT_EVENT_TYPE_QUEST] = {
         -- type(int), questName(string), isCompleted(bool)
         [true] = { -- isCompleted(bool)
-            title = "Quest started",
-            description = "you have begun '%s'",
+            title = "Quest completed",
+            description = "you have finished '%s'",
             img = "/game_notifications/assets/images/nodo/icon-infobanner-quests"
         },
         [false] = { -- isCompleted(bool)
-            title = "Quest completed",
-            description = "you have finished '%s'",
+            title = "Quest started",
+            description = "you have begun '%s'",
             img = "/game_notifications/assets/images/nodo/icon-infobanner-quests"
         }
     },
@@ -220,12 +220,6 @@ function notificationsController:onClientEvent(eventCat, ...)
     local popupTemplate = nil
     if eventCat == eventCategory.CLIENT_EVENT_TYPE_SIMPLE then
         local eventType = args[1]
---[[        
-        --TODO check
-         if eventType <= eventType.CLIENT_EVENT_ATTACKSTOPPED  then
-            onScreenShot(eventType)
-            return
-        end ]]
         popupTemplate = infoPopUp[eventCat] and infoPopUp[eventCat][eventType]
 
     elseif eventCat == eventCategory.CLIENT_EVENT_TYPE_QUEST then
@@ -256,7 +250,7 @@ function notificationsController:onClientEvent(eventCat, ...)
         local itemId = args[1]
         local message = args[2]
         description = type(description) == 'string' and description:format(message) or description
-        if popupTemplate.itemId then
+        if popupTemplate.hasItemId then
             extraData.itemId = itemId
         end
 
@@ -282,7 +276,7 @@ function notificationsController:onClientEvent(eventCat, ...)
             skinName = skinName .. " (Addon 2)"
         end
         description = type(description) == 'string' and description:format(skinName) or description
-        if popupTemplate.creatureId then
+        if popupTemplate.hasCreatureId then
             extraData.creatureId = lookType
             extraData.skinType = skinType
         end
@@ -290,7 +284,7 @@ function notificationsController:onClientEvent(eventCat, ...)
         local raceId = args[1]
         local progressLevel = args[2]
         description = type(description) == 'string' and description:format(progressLevel) or description
-        if popupTemplate.raceId then
+        if popupTemplate.hasRaceId then
             extraData.raceId = raceId
         end
 

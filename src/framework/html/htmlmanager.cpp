@@ -54,7 +54,8 @@ namespace {
         {"border", "image-border"},
         {"auto-resize", "image-auto-resize"},
         {"individual-animation", "image-individual-animation"},
-        {"src", "image-source"}
+        {"src", "image-source"},
+        {"*src", "*image-source"}
     };
 
     static const std::unordered_map<std::string, std::string> cssMap = {

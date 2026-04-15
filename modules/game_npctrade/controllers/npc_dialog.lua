@@ -59,7 +59,6 @@ function controllerNpcTrader:cloneConsoleMessages()
         local childCount = consoleBuffer:getChildCount()
 
         if childCount == 0 then
-            consoleBuffer:destroyChildren()
             local npcTab = consoleModule.getTab("NPCs")
             if not npcTab then
                 npcTab = consoleModule.getTab("NPC")
@@ -105,7 +104,7 @@ function controllerNpcTrader:initNpcWindow(creature, buttons)
         self.outfit = creature:getOutfit()
     else
         self.creatureName = "Unknown"
-        self.outfit = "/game_npctrader/assets/images/icon-npcdialog-multiplenpcs"
+        self.outfit = "/game_npctrade/assets/images/icon-npcdialog-multiplenpcs"
     end
     self.buttons = buttons or self.buttons or self.buttonsDefault
     self:updateChatButton()
@@ -129,7 +128,9 @@ function onNpcChatWindow(data)
         return
     end
     local creature = g_map.getCreatureById(data.npcIds[1])
-    controllerNpcTrader:initNpcWindow(creature, data.buttons)
+    if creature then
+        controllerNpcTrader:initNpcWindow(creature, data.buttons)
+    end
 end
 
 function controllerNpcTrader:onConsoleKeyPress(event)

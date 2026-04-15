@@ -160,7 +160,7 @@
   height: 66px;
 }
 .transfer-requirement {
-  --image-source: "/modules/game_forge/images/item66";
+  --image-source: "/images/ui/item66";
   --image-size: 66 66;
   width: 66px;
   height: 66px;
@@ -255,7 +255,7 @@
   --image-border: 2;
 }
 .conversion-column-item-container {
-  --image-source: "/modules/game_forge/images/item66";
+  --image-source: "/images/ui/item66";
   --image-size: 66 66;
   width: 66px;
   height: 66px;

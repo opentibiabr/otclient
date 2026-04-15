@@ -1,7 +1,5 @@
 notificationsController = Controller:new()
 function notificationsController:onInit()
-    self.bannerQueue = {}
-    self.bannerState = "idle"
     self:registerEvents(g_game, {
         onClientEvent = function(...)
             self:onClientEvent(...)

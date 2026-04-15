@@ -5,7 +5,6 @@ function onOpenNpcTrade(items, currencyId, currencyName)
     end
     local isNewSession = not controllerNpcTrader.isTradeOpen
     if isNewSession then
-        -- delete this?
         controllerNpcTrader.isTradeOpen = true
         controllerNpcTrader.widthConsole = controllerNpcTrader.TRADE_CONSOLE_WIDTH
         controllerNpcTrader.buyItems = {}
@@ -139,14 +138,10 @@ function controllerNpcTrader:loadNextBatch()
         return
     end
 
-    local newItems = {unpack(self.tradeItems)}
     local limit = math.min(total, current + self.itemBatchSize)
-
     for i = current + 1, limit do
-        table.insert(newItems, self.currentList[i])
+        table.insert(self.tradeItems, self.currentList[i])
     end
-
-    self.tradeItems = newItems
     self.loadedItems = limit
 end
 
@@ -287,24 +282,29 @@ function controllerNpcTrader:onAmountInputChange(event)
         input:setText(cleanText)
         text = cleanText
     end
+    if text == "" then
+        text = "1"
+    end
     local amount = tonumber(text) or 1
     self:updateAmount(amount)
     local scroll = self:findWidget("#amountScrollBar")
     if scroll then
-        if self.amount ~= amount then
-            input:setText(self.amount)
+        if amount ~= self.amount then
+            input:setText(tostring(self.amount))
         end
         scroll:setValue(self.amount)
     end
 end
 
 function controllerNpcTrader:getPlayerMoney()
+    if self.playerMoney ~= nil then
+        return self.playerMoney
+    end
     local player = g_game.getLocalPlayer()
     if not player then
         return 0
     end
-    local money = player:getTotalMoney()
-    return money
+    return player:getTotalMoney()
 end
 
 function controllerNpcTrader:getSellQuantity(itemPtr)
@@ -329,11 +329,18 @@ function controllerNpcTrader:getSellQuantity(itemPtr)
     return inventoryTotal
 end
 
-function controllerNpcTrader:onPlayerGoods(items)
+function controllerNpcTrader:onPlayerGoods(money, items)
     if not items or type(items) ~= "table" then
         return
     end
-    self.playerItems = items
+    self.playerMoney = money
+    local newPlayerItems = {}
+    for _, itemData in ipairs(items) do
+        local id = itemData[1]:getId()
+        local count = itemData[2]
+        newPlayerItems[id] = (newPlayerItems[id] or 0) + count
+    end
+    self.playerItems = newPlayerItems
     self:refreshPlayerGoods()
 end
 
@@ -396,7 +403,13 @@ function controllerNpcTrader:filterTradeList(searchText)
     self:loadNextBatch()
 
     if #self.tradeItems > 0 then
-        if not self.selectedItem then
+        local found = false
+        if self.selectedItem then
+            for _, item in ipairs(self.tradeItems) do
+                if item == self.selectedItem then found = true; break end
+            end
+        end
+        if not found then
             self:selectTradeItem(self.tradeItems[1])
         end
     end

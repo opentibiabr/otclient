@@ -1708,6 +1708,36 @@ int push_luavalue(const CyclopediaCharacterMiscStats& data)
     }
     g_lua.setField("concoctions");
 
+    g_lua.createTable(data.activeFoods.size(), 0);
+    for (size_t i = 0; i < data.activeFoods.size(); ++i) {
+        g_lua.createTable(0, 2);
+        g_lua.pushInteger(data.activeFoods[i].id);
+        g_lua.setField("id");
+        g_lua.pushInteger(data.activeFoods[i].duration);
+        g_lua.setField("duration");
+        g_lua.rawSeti(i + 1);
+    }
+    g_lua.setField("activeFoods");
+
+    auto pushAugments = [&](const std::vector<CyclopediaCharacterMiscStats::Augment>& augments, const std::string& fieldName) {
+        g_lua.createTable(augments.size(), 0);
+        for (size_t i = 0; i < augments.size(); ++i) {
+            g_lua.createTable(0, 3);
+            g_lua.pushInteger(augments[i].spellId);
+            g_lua.setField("spellId");
+            g_lua.pushInteger(augments[i].type);
+            g_lua.setField("type");
+            g_lua.pushNumber(augments[i].value);
+            g_lua.setField("value");
+            g_lua.rawSeti(i + 1);
+        }
+        g_lua.setField(fieldName);
+    };
+
+    pushAugments(data.weaponProficiencyAugments, "weaponProficiencyAugments");
+    pushAugments(data.wheelAugments, "wheelAugments");
+    pushAugments(data.equippedAugments, "equippedAugments");
+
     return 1;
 }
 

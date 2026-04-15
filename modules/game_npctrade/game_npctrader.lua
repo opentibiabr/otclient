@@ -23,11 +23,11 @@ function controllerNpcTrader:onGameStart()
                 onOpenNpcTrade(...)
             end
         end,
-        onPlayerGoods = function(...)
+        onPlayerGoods = function(money, items)
             if not g_game.getFeature(GameNpcWindowRedesign) then
-                self:onPlayerGoodsLegacy(...)
+                self:onPlayerGoodsLegacy(money, items)
             else
-                -- onPlayerGoods(...)
+                self:onPlayerGoods(money, items)
             end
         end,
         onCloseNpcTrade = function()
@@ -57,6 +57,7 @@ function controllerNpcTrader:onCloseNpcTrade()
     controllerNpcTrader.buyItems = {}
     controllerNpcTrader.sellItems = {}
     controllerNpcTrader.playerItems = {}
+    controllerNpcTrader.playerMoney = nil
     controllerNpcTrader.selectedItem = nil
     controllerNpcTrader.tradeItems = {}
     controllerNpcTrader.currentList = {}

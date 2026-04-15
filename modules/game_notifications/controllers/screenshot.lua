@@ -17,10 +17,9 @@ local ScreenshotType = {
     HIGHEST_DAMAGE_DEALT = 13,
     HIGHEST_HEALING_DONE = 14,
     LOW_HEALTH = 15,
-    GIFT_OF_LIFE_TRIGGERED = 16
+    GIFT_OF_LIFE_TRIGGERED = 16,
+    VALUABLE_LOOT = 17
 }
-local checkboxes = {}
-local TypeScreenshots = {}
 local AutoScreenshotEvents = {
     {id = ScreenshotType.LEVEL_UP, label = "Level Up", enableDefault = true},
     {id = ScreenshotType.SKILL_UP, label = "Skill Up", enableDefault = true},
@@ -28,7 +27,7 @@ local AutoScreenshotEvents = {
     {id = ScreenshotType.BESTIARY_ENTRY_UNLOCKED, label = "Bestiary Entry Unlocked", enableDefault = false},
     {id = ScreenshotType.BESTIARY_ENTRY_COMPLETED, label = "Bestiary Entry Completed", enableDefault = false},
     {id = ScreenshotType.TREASURE_FOUND, label = "Treasure Found", enableDefault = false},
-    {id = -99, label = "Valuable Loot", enableDefault = false},
+    {id = ScreenshotType.VALUABLE_LOOT, label = "Valuable Loot", enableDefault = false},
     {id = ScreenshotType.BOSS_DEFEATED, label = "Boss Defeated", enableDefault = false},
     {id = ScreenshotType.DEATH_PVE, label = "Death PvE", enableDefault = true},
     {id = ScreenshotType.DEATH_PVP, label = "Death PvP", enableDefault = false},
@@ -53,11 +52,6 @@ local autoScreenshotDir = g_resources.getWriteDir() .. "/" .. autoScreenshotDirN
 
 function screenshot_onTerminate()
     destroyOptionsModule()
-
-    ScreenshotType = {}
-    checkboxes = {}
-    TypeScreenshots = {}
-    AutoScreenshotEvents = {}
 end
 
 function screenshot_onGameStart()
@@ -77,7 +71,7 @@ function screenshot_onGameStart()
         local settings = g_settings.getBoolean(settingKey) or screenshotEvent.enableDefault
         label.text:setText(screenshotEvent.label)
         label.enabled:setChecked(settings)
-        label.enabled:setId(screenshotEvent.id)
+        label.enabled.eventId = screenshotEvent.id
         screenshotEvent.currentBoolean = settings
     end
 
@@ -110,12 +104,11 @@ function screenshot_onGameEnd()
 end
 
 function onUICheckBox(widget, checked)
-    if not widget then
+    if not widget or not widget.eventId then
         return
     end
-    local id = tonumber(widget:getId())
     for _, screenshotEvent in ipairs(AutoScreenshotEvents) do
-        if screenshotEvent.id == id then
+        if screenshotEvent.id == widget.eventId then
             screenshotEvent.currentBoolean = checked
             break
         end
@@ -132,16 +125,12 @@ function resetValues()
         return
     end
     for _, selectedCheckBox in pairs(optionPanel.allCheckBox:getChildren()) do
-        for _, selectedCheckBoxChildren in pairs(selectedCheckBox:getChildren()) do
-            if selectedCheckBoxChildren:getStyle().__class == 'UICheckBox' then
-                local id = tonumber(selectedCheckBoxChildren:getId())
-                if id then
-                    for _, screenshotEvent in ipairs(AutoScreenshotEvents) do
-                        if screenshotEvent.id == id then                
-                            selectedCheckBoxChildren:setChecked(screenshotEvent.enableDefault)
-                            break
-                        end
-                    end
+        local checkBox = selectedCheckBox:getChildById('enabled')
+        if checkBox and checkBox.eventId then
+            for _, screenshotEvent in ipairs(AutoScreenshotEvents) do
+                if screenshotEvent.id == checkBox.eventId then
+                    checkBox:setChecked(screenshotEvent.enableDefault)
+                    break
                 end
             end
         end

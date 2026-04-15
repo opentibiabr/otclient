@@ -1,0 +1,291 @@
+/* Soulseal modal */
+.soulsealWindow {
+    width: 365px;
+    height: 410px;
+    display: block;
+}
+
+.soulsealBody {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.soulsealMainPanel {
+    width: 350px;
+    height: 360px;
+    display: block;
+    --image-source: /images/ui/2pixel_up_frame_borderimage;
+    --image-border: 2;
+    padding: 10px;
+}
+
+.soulsealFilterRow {
+    width: 100%;
+    height: 24px;
+    display: block;
+}
+
+.soulsealSearchInput {
+    width: 180px;
+    height: 22px;
+    display: inline-block;
+    vertical-align: middle;
+    --placeholder: "Type to search";
+    --placeholder-color: #6E706F;
+}
+
+.soulsealClearBtn {
+    width: 22px;
+    height:0px;
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 4px;
+}
+
+.soulsealCategorySelect {
+    width: 90px;
+    height: 22px;
+    display: inline-block;
+    margin-left: 5px;
+}
+
+.soulsealListHeaderRow {
+    height: 20px;
+    display: block;
+    position: relative;
+    background-color: #343434;
+      --border-width-bottom: 1;
+  --border-color-bottom: #747474;
+}
+
+.soulsealListHeaderLeft {
+    float: left;
+    margin-left: 4px;
+    color: #ffffff;
+    font: Verdana Bold-11px;
+}
+
+.soulsealListHeaderRight {
+    float: right;
+    margin-right: 22px;
+    color: #ffffff;
+    font: Verdana Bold-11px;
+}
+
+.soulsealListFrame {
+    width: 100%;
+    height: 205px;
+    display: block;
+    margin-top: 4px;
+    --image-source: /images/ui/2pixel_up_frame_borderimage_dark_reversed;
+    --image-border: 2;
+    padding: 2px;
+    overflow: hidden;
+}
+
+.soulsealListScroll {
+    width: 99%;
+    height: 199px;
+    display: block;
+    overflow: scroll;
+}
+
+.soulsealRow {
+    width: 100%;
+    height: 38px;
+    display: block;
+    position: relative;
+}
+
+.soulsealRow:nth-child(odd) {
+    background-color: #414141;
+}
+
+.soulsealRow:nth-child(even) {
+    background-color: #484848;
+}
+
+.soulsealRow:focus {
+    background-color: #224466 !important;
+}
+
+.soulsealRowCreature {
+    width: 32px;
+    height: 32px;
+    position: absolute;
+    top: 3px;
+    left: 4px;
+}
+
+.soulsealRowName {
+    position: absolute;
+    top: 12px;
+    left: 42px;
+    right: 64px;
+    color: #c0c0c0;
+    font: Verdana Bold-11px;
+}
+
+.soulsealRowDoneIcon {
+    width: 12px;
+    height: 12px;
+    position: absolute;
+    top: 0px;
+    right: 13px;
+}
+
+.soulsealRowCostBox {
+    position: absolute;
+    top: 5px;
+    right: 8px;
+    width: 58px;
+}
+
+.soulsealRowCost {
+    display: inline-block;
+    vertical-align: middle;
+    color: #c0c0c0;
+    font: Verdana Bold-11px;
+    margin-right: 4px;
+}
+
+.soulsealRowCostIcon {
+    width: 9px;
+    height: 9px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.soulsealEmptyLabel {
+    display: block;
+    width: 100%;
+    text-align: center;
+    color: #9f9f9f;
+    font: verdana-11px-antialised;
+    margin-top: 82px;
+}
+
+.soulsealSelectedArea {
+    width: 100%;
+    height: 88px;
+    display: block;
+    margin-top: 10px;
+}
+
+.soulsealSelectedPreview {
+    width: 66px;
+    height: 66px;
+    float: left;
+    --image-source: /images/ui/item66;
+    --image-border: 2;
+}
+
+.soulsealSelectedCreature {
+    width: 64px;
+    height: 64px;
+}
+
+.soulsealSelectedControls {
+    float: left;
+    width: 230px;
+    height: 66px;
+    margin-left: 12px;
+    margin-top: 18px;
+}
+
+.soulsealFightBtn {
+    width: 66px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.soulsealCostPanel {
+    width: 86px;
+    height: 20px;
+    display: inline-block;
+    position: relative;
+    margin-left: 6px;
+    --image-source: /images/ui/infoPanel;
+    --image-border: 2;
+}
+
+.soulsealCostLabel {
+    position: absolute;
+    top: 0;
+    left: 4px;
+    right: 15px;
+    bottom: 0;
+    color: #c0c0c0;
+    font: Verdana Bold-11px;
+    text-align: right;
+}
+
+.soulsealCostIcon {
+    width: 9px;
+    height: 9px;
+    position: absolute;
+    top: 5px;
+    right: 4px;
+}
+
+.soulsealHelpIcon {
+    width: 12px;
+    height: 12px;
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 8px;
+}
+
+.soulsealFooter {
+    width: 100%;
+    height: 24px;
+    display: block;
+}
+
+.soulsealBalancePanel {
+    width: 105px;
+    height: 20px;
+    float: left;
+    position: relative;
+    --image-source: /images/ui/infoPanel;
+    --image-border: 2;
+}
+
+.soulsealBalanceLabel {
+     font: verdana-11px-rounded;
+    color: #c0c0c0;
+    text-align: right;
+    float: right;
+    width: 80px;
+    height: 100%;
+    margin-right: 5px;
+}
+
+.soulsealBalanceIcon {
+    width: 12px;
+    height: 12px;
+    float: right;
+    margin-top: 4px;
+    margin-right: 4px;
+}
+
+.soulsealCloseBtn {
+    float: right;
+    min-width: 60px;
+    
+}
+
+.soulsealHeaderSep {
+    top: 0;
+    position: absolute;
+    right:48px;
+    height: 20px;
+}
+
+.soulsealRowSep {
+    top: 0;
+    position: absolute;
+    right:48px;
+    height: 100%;
+}

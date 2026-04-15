@@ -41,7 +41,7 @@ local selectedItem = nil
 local cancelNextRelease = nil
 
 function controllerNpcTrader:legacy_init()
-    npcWindow = g_ui.displayUI('/game_npctrader/templates/npctrade_legacy')
+    npcWindow = g_ui.displayUI('/game_npctrade/templates/npctrade_legacy')
     npcWindow:setVisible(false)
 
     itemsPanel = npcWindow:recursiveGetChildById('itemsPanel')
@@ -499,14 +499,12 @@ function checkSellAllTooltip()
         if data then
             amount = getSellQuantity(data.ptr)
             if amount > 0 then
-                if data and amount > 0 then
-                    info = info .. (not first and '\n' or '') .. amount .. ' ' .. data.name .. ' (' .. data.price *
-                               amount .. ' gold)'
+                info = info .. (not first and '\n' or '') .. amount .. ' ' .. data.name .. ' (' .. data.price *
+                           amount .. ' gold)'
 
-                    total = total + (data.price * amount)
-                    if first then
-                        first = false
-                    end
+                total = total + (data.price * amount)
+                if first then
+                    first = false
                 end
             end
         end
@@ -535,7 +533,7 @@ function getMaxAmount()
 end
 
 function controllerNpcTrader:sellAllLegacy()
-    for itemid, item in pairs(playerItems) do
+    for itemid, _ in pairs(playerItems) do
         local item = Item.create(itemid)
         local amount = getSellQuantity(item)
         if amount > 0 then

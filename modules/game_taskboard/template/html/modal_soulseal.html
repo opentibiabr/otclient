@@ -1,0 +1,78 @@
+<link href="template/css/modal_soulseal.css" />
+
+<html>
+<window id="soulsealWindow" class="soulsealWindow" placement="center" title="Soulseals" onescape="self:hideSoulseal()">
+
+    <div class="soulsealBody">
+        <div class="soulsealMainPanel">
+            <div class="soulsealFilterRow">
+                <input class="soulsealSearchInput" *value="self.soulsealSearchText"
+                    onchange="self:filterSoulseals(event.value)" />
+                <button class="soulsealClearBtn" onclick="self:clearSoulsealSearch()">X</button>
+                <select id="soulsealCategorySelect" class="soulsealCategorySelect"
+                    onchange="self:changeSoulsealCategory(event)">
+                    <option data="1">All</option>
+                    <option data="2">Harmless</option>
+                    <option data="3">Trivial</option>
+                    <option data="4">Easy</option>
+                    <option data="5">Medium</option>
+                    <option data="6">Hard</option>
+                    <option data="7">Challenging</option>
+                </select>
+            </div>
+
+            <div class="soulsealListFrame">
+                <div class="soulsealListScroll UIScrollArea" layout="type: verticalBox">
+                    <div class="soulsealListHeaderRow">
+                        <label class="soulsealListHeaderLeft">Creatures</label>
+                        <label class="soulsealListHeaderRight">Soulseals</label>
+                        <div class="soulsealHeaderSep VerticalSeparator"></div>
+                    
+                    </div>
+                    <div *for="local entry in self.soulsealEntries"
+                        class="soulsealRow"
+                        onclick="self:selectSoulseal(entry.listIndex)">
+                        <uicreature class="soulsealRowCreature" *outfit="entry.outfit" idle-animate="true"></uicreature>
+                        <label class="soulsealRowName">{{entry.name}}</label>
+                        <img class="soulsealRowDoneIcon" *visible="entry.done" src="/game_cyclopedia/images/indicator_beast" />
+                        <div class="soulsealRowSep VerticalSeparator"></div>
+                        <div class="soulsealRowCostBox">
+                            <label class="soulsealRowCost">{{entry.soulsealPoints}}</label>
+                            <img class="soulsealRowCostIcon" src="/game_taskboard/assets/images/icon-currency-soulseals" />
+                        </div>
+                    </div>
+                    <label class="soulsealEmptyLabel" *visible="not self.soulsealHasEntries">{{self.soulsealEmptyText}}</label>
+                </div>
+            </div>
+
+            <div class="soulsealSelectedArea">
+                <div class="soulsealSelectedPreview">
+                    <uicreature class="soulsealSelectedCreature"
+                        *visible="self.soulsealHasSelection and self.soulsealSelectedRaceId > 0"
+                        *outfit="self.soulsealSelectedOutfit"
+                        idle-animate="true"></uicreature>
+                </div>
+
+                <div class="soulsealSelectedControls">
+                    <button class="soulsealFightBtn" *enabled="self.soulsealSelectedCanFight"
+                        onclick="self:fightSoulseal()">Fight</button>
+                    <div class="soulsealCostPanel">
+                        <img class="soulsealBalanceIcon" src="/game_taskboard/assets/images/icon-currency-soulseals" />
+                        <label class="soulsealBalanceLabel">{{self.soulsealSelectedPoints}}</label>
+                    </div>
+                    <img class="soulsealHelpIcon" src="/images/skin/show-gui-help-grey" *tooltip="self.soulsealSelectedHint" />
+                </div>
+            </div>
+        </div>
+        <hr style="height: 3px; width: 100%; " />
+        <div class="soulsealFooter">
+            <div class="soulsealBalancePanel">
+                <img class="soulsealBalanceIcon" src="/game_taskboard/assets/images/icon-currency-soulseals" />
+                <label class="soulsealBalanceLabel">{{self.soulpitPoints}}</label>
+            </div>
+            <button class="soulsealCloseBtn" onclick="self:hideSoulseal()">Close</button>
+        </div>
+    </div>
+
+</window>
+</html>

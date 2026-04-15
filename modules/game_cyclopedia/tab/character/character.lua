@@ -1299,56 +1299,131 @@ function Cyclopedia.onParseCyclopediaStoreSummary(xpBoostTime, dailyRewardXpBoos
         itemWidget:fill('parent')
     end
 end
-local function getWeaponSkillName2(skillType)
-        local skillNames = {
-            [1]  = "Magic Level",
-	        [6]  = "Shielding",
-	        [7]  = "Distance Fighting",
-	        [8]  = "Sword Fighting",
-	        [9]  = "Club Fighting",
-	        [10] = "Axe Fighting",
-	        [11] = "Fist Fighting",
-	        [13] = "Fishing"
-        }
-        
-    return skillNames[skillType] or "Fighting Skill"
+-- Mapping from HardcodedSkillIds (protocol 15.x) to display names
+-- Used for extra damage/spell/healing skills from the server
+local hardcodedSkillNames = {
+    [1]  = "Magic Level",
+    [6]  = "Shielding",
+    [7]  = "Distance Fighting",
+    [8]  = "Sword Fighting",
+    [9]  = "Club Fighting",
+    [10] = "Axe Fighting",
+    [11] = "Fist Fighting",
+    [13] = "Fishing"
+}
+
+local function getHardcodedSkillName(skillType)
+    return hardcodedSkillNames[skillType] or "Fighting Skill"
 end
 
-local  function getWeaponSkillName(skillType)
-        local skillNames = {
-            [0] = "Fist Fighting",
-            [1] = "Club Fighting",
-            [2] = "Sword Fighting",
-            [3] = "Axe Fighting",
-            [4] = "Distance Fighting",
-            [5] = "Shielding",
-            [6] = "Fishing",
-            [7] = "Magic Level",
-            [8] = "Critical Hits",
-            [9] = "Life Leech",
-            [10] = "Mana Leech"
-        }
-        
-        return skillNames[skillType] or "Fighting Skill"
+local weaponSkillNames = {
+    [0] = "Fist Fighting",
+    [1] = "Club Fighting",
+    [2] = "Sword Fighting",
+    [3] = "Axe Fighting",
+    [4] = "Distance Fighting",
+    [5] = "Shielding",
+    [6] = "Fishing",
+    [7] = "Magic Level",
+    [8] = "Critical Hits",
+    [9] = "Life Leech",
+    [10] = "Mana Leech"
+}
+
+local function getWeaponSkillName(skillType)
+    return weaponSkillNames[skillType] or "Fighting Skill"
 end
+
+local elementNames = {
+    [0] = "Physical",
+    [1] = "Fire",
+    [2] = "Earth",
+    [3] = "Energy",
+    [4] = "Ice",
+    [5] = "Holy",
+    [6] = "Death",
+    [7] = "Healing",
+    [8] = "Drowning",
+    [9] = "Life Drain",
+    [10] = "Mana Drain",
+    [11] = "Agony"
+}
 
 local function getElementName(id)
-        local elementNames = {
-          [0] = "Physical",
-          [1] = "Fire",
-          [2] = "Earth",
-          [3] = "Energy",
-          [4] = "Ice",
-          [5] = "Holy",
-          [6] = "Death",
-          [7] = "Healing",
-          [8] = "Drowning",
-          [9] = "Life Drain",
-          [10] = "Mana Drain",
-          [11] = "Agony"
-        }
-        return elementNames[id] or "Unknown"
+    return elementNames[id] or "Unknown"
+end
+
+-- Shared rendering function for Offence/Defence/Misc stat panels
+-- combatTable: the element-to-info mapping table (e.g. clientCombat or Cyclopedia.clientCombat)
+local function renderCharacterStat(stat, leftPanel, rightPanel, combatTable)
+    local parent = stat.parent == "right" and rightPanel or leftPanel
+
+    if stat.align == "center" then
+        local widget = g_ui.createWidget("Label", parent)
+        local valueText = stat.value
+        if type(valueText) == "number" and stat.percent then
+            local percentValue = math.floor(valueText * 10000) / 100
+            local sign = percentValue > 0 and "+ " or ""
+            valueText = sign .. percentValue .. "%"
+        elseif type(valueText) == "number" then
+            valueText = tostring(valueText)
+        end
+        widget:setText("   " .. valueText .. " " .. stat.name)
+        widget:setTextOffset("29 0")
+        widget:setHeight(16)
+        return widget
+    else
+        local widget = g_ui.createWidget("CharacterSkillBase", parent)
+        local nameLabel = g_ui.createWidget("SkillNameLabel", widget)
+        nameLabel:setText(stat.name .. ":")
+
+        if string.find(stat.name, "\n") then
+            nameLabel:setTextWrap(true)
+            nameLabel:setTextAutoResize(true)
+            widget:setHeight(math.max(widget:getHeight(), nameLabel:getHeight() + 4))
+        end
+
+        local valueLabel = g_ui.createWidget("SkillValueLabel", widget)
+        if stat.percent and type(stat.value) == "number" then
+            local percentValue = math.floor(stat.value * 10000) / 100
+            local sign = percentValue > 0 and "+ " or ""
+            valueLabel:setText(sign .. percentValue .. "%")
+        else
+            valueLabel:setText(tostring(stat.value))
+        end
+
+        if stat.color then
+            valueLabel:setColor(stat.color)
+        end
+
+        if stat.icon then
+            valueLabel:setMarginRight(12)
+            local icon = g_ui.createWidget("SkillCharacterIcon", widget)
+            icon:setMarginTop(2)
+            icon:addAnchor(AnchorRight, "parent", AnchorRight)
+            local elementKey = stat.element or stat.weaponElement
+            if elementKey and combatTable then
+                local element = combatTable[elementKey]
+                if element then
+                    icon:setImageSource(element.path)
+                    icon:setImageSize({ width = 9, height = 9 })
+                end
+            end
+        end
+
+        return widget
     end
+end
+
+local function renderAndSkipZeroStats(stats, leftPanel, rightPanel, combatTable)
+    for _, stat in ipairs(stats) do
+        if stat.align ~= "center" and type(stat.value) == "number" and stat.value == 0 then
+            -- Skip stats with zero values (headers use "" which won't match)
+        else
+            renderCharacterStat(stat, leftPanel, rightPanel, combatTable)
+        end
+    end
+end
     function Cyclopedia.onCyclopediaCharacterOffenceStats(data)
         -- TODO UI/UX , verticalScroll, add new stats
         local container = UI.OffenceStats.content.statsContainer
@@ -1399,29 +1474,35 @@ local function getElementName(id)
             {name = "From Event Bonus", value = data.onslaughtEventBonus or 0, align = "center", percent = true, icon = false},
 
             {name = "Damage against Specific Targets", value = "", icon = false, percent = false},
-            {name = "against Placeholder", value = data.critDamageFlat or 0, align = "center", percent = true, icon = false},
-            {name = "against Powerful Foes", value = data.critChanceImbuement or 0, align = "center", percent = true, icon = false},
+            {name = "against Powerful Foes", value = data.damagePowerfulFoes or 0, align = "center", percent = true, icon = false},
         }
 
         -- Dynamic Left/Mixed Panel Lists
+        -- Dynamic target-specific damage entries from the server
+        if data.damageSpecificTargets and #data.damageSpecificTargets > 0 then
+            for _, target in ipairs(data.damageSpecificTargets) do
+                table.insert(stats, {name = "against " .. (target.name or "Unknown"), value = target.value or 0, align = "center", percent = true, icon = false})
+            end
+        end
+
         if data.extraDamageSkills and #data.extraDamageSkills > 0 then
             table.insert(stats, {name = "Auto-Attack Extra Damage", value = "", icon = false, percent = false})
             for _, skill in ipairs(data.extraDamageSkills) do
-                table.insert(stats, {name = "from " .. getWeaponSkillName2(skill.skillId), value = skill.valueA or 0, align = "center", percent = false, icon = false})
+                table.insert(stats, {name = "from " .. getHardcodedSkillName(skill.skillId), value = skill.valueA or 0, align = "center", percent = false, icon = false})
             end
         end
 
         if data.extraDamageSpells and #data.extraDamageSpells > 0 then
             table.insert(stats, {name = "Extra Spell Damage", value = "", icon = false, percent = false})
             for _, skill in ipairs(data.extraDamageSpells) do
-                table.insert(stats, {name = "from " .. getWeaponSkillName2(skill.skillId), value = skill.valueA or 0, align = "center", percent = false, icon = false})
+                table.insert(stats, {name = "from " .. getHardcodedSkillName(skill.skillId), value = skill.valueA or 0, align = "center", percent = false, icon = false})
             end
         end
 
         if data.extraHealingSpells and #data.extraHealingSpells > 0 then
             table.insert(stats, {name = "Extra Spell Healing", value = "", icon = false, percent = false})
             for _, skill in ipairs(data.extraHealingSpells) do
-                table.insert(stats, {name = "from " .. getWeaponSkillName2(skill.skillId), value = skill.valueA or 0, align = "center", percent = false, icon = false})
+                table.insert(stats, {name = "from " .. getHardcodedSkillName(skill.skillId), value = skill.valueA or 0, align = "center", percent = false, icon = false})
             end
         end
 
@@ -1478,7 +1559,20 @@ local function getElementName(id)
 
         -- Cleave & Distance
         table.insert(stats, {name = "Cleave", parent = "right", value = data.cleavePercent or 0, icon = false, percent = true})
-        table.insert(stats, {name = "Distance Fighting Accuracy", parent = "right", value = data.critChanceEquipament or 0, icon = false, percent = true})
+        -- Distance Fighting Accuracy: render dynamically from parsed accuracy data
+        if data.weaponAccuracy and #data.weaponAccuracy > 0 then
+            table.insert(stats, {name = "Distance Fighting Accuracy", parent = "right", value = "", icon = false, percent = false})
+            for _, acc in ipairs(data.weaponAccuracy) do
+                table.insert(stats, {
+                    name = "     Range " .. acc.range,
+                    parent = "right",
+                    value = acc.chance or 0,
+                    align = "center",
+                    percent = true,
+                    icon = false
+                })
+            end
+        end
 
         -- Perfect Shot
         if data.perfectShotDamage then
@@ -1518,70 +1612,7 @@ local function getElementName(id)
              end
         end
 
-        -- Render Helper Function
-        local function renderStat(stat)
-            local parent = stat.parent == "right" and rightPanel or leftPanel
-    
-            if stat.align == "center" then
-                local widget = g_ui.createWidget("Label", parent)
-                local valueText = stat.value
-                -- Check if value is a string (pre-formatted) or number
-                if type(valueText) == "number" and stat.percent then
-                    local percentValue = math.floor(valueText * 10000) / 100
-                    local sign = percentValue > 0 and "+ " or ""
-                    valueText = sign .. percentValue .. "%"
-                elseif type(valueText) == "number" then
-                     valueText = tostring(valueText)
-                end
-                widget:setText("   " .. valueText .. " " .. stat.name)
-                widget:setTextOffset("29 0")
-                widget:setHeight(16)
-                return widget
-            else
-                local widget = g_ui.createWidget("CharacterSkillBase", parent)
-                local nameLabel = g_ui.createWidget("SkillNameLabel", widget)
-                nameLabel:setText(stat.name .. ":")
-                
-                if string.find(stat.name, "\n") then
-                    nameLabel:setTextWrap(true)
-                    nameLabel:setTextAutoResize(true)
-                    widget:setHeight(math.max(widget:getHeight(), nameLabel:getHeight() + 4))
-                end
-
-                local valueLabel = g_ui.createWidget("SkillValueLabel", widget)
-                if stat.percent and type(stat.value) == "number" then
-                    local percentValue = math.floor(stat.value * 10000) / 100
-                    local sign = percentValue > 0 and "+ " or ""
-                    valueLabel:setText(sign .. percentValue .. "%")
-                else
-                    valueLabel:setText(tostring(stat.value))
-                end
-                if stat.icon then
-                    valueLabel:setMarginRight(12)
-                    local icon = g_ui.createWidget("SkillCharacterIcon", widget)
-                    icon:setMarginTop(2)
-                    icon:addAnchor(AnchorRight, "parent", AnchorRight)
-                    local element = clientCombat[stat.weaponElement]
-                    if element then
-                        icon:setImageSource(element.path)
-                        icon:setImageSize({
-                            width = 9,
-                            height = 9
-                        })
-                    end
-                end
-    
-                return widget
-            end
-        end
-    
-        for _, stat in ipairs(stats) do
-            if stat.align ~= "center" and stat.value == 0 and stat.value ~= "" then
-                -- Skip 0
-            else
-                renderStat(stat)
-            end
-        end 
+        renderAndSkipZeroStats(stats, leftPanel, rightPanel, clientCombat)
 
         -- temp fix
         controllerCyclopedia:scheduleEvent(function()
@@ -1652,155 +1683,141 @@ local function getElementName(id)
             })
         end
     
-        local function renderStat(stat)
-            local parent = stat.parent == "right" and UI.DeffenceStats.rightPanel or UI.DeffenceStats.leftPanel
-    
-            if stat.align == "center" then
-                local widget = g_ui.createWidget("Label", parent)
-                local valueText = stat.value
-                if stat.percent then
-                    local percentValue = math.floor(stat.value * 10000) / 100
-                    local sign = percentValue > 0 and "+ " or ""
-                    valueText = sign .. percentValue .. "%"
-                end
-                widget:setText("   " .. valueText .. " " .. stat.name)
-                widget:setMarginLeft(80)
-                return widget
-            else
-                local widget = g_ui.createWidget("CharacterSkillBase", parent)
-                local nameLabel = g_ui.createWidget("SkillNameLabel", widget)
-                nameLabel:setText(stat.name .. ":")
-                local valueLabel = g_ui.createWidget("SkillValueLabel", widget)
-                if stat.percent then
-                    local percentValue = math.floor(stat.value * 10000) / 100
-                    local sign = percentValue > 0 and "+ " or ""
-                    valueLabel:setText(sign .. percentValue .. "%")
-                else
-                    valueLabel:setText(tostring(stat.value))
-                end
-                
-                if stat.color then
-                    valueLabel:setColor(stat.color)
-                end
-                
-                if stat.icon then
-                    valueLabel:setMarginRight(12)
-                    local icon = g_ui.createWidget("SkillCharacterIcon", widget)
-                    icon:setMarginTop(2)
-                    icon:addAnchor(AnchorRight, "parent", AnchorRight)
-                    local element = Cyclopedia.clientCombat[stat.element]
-                    if element then
-                        icon:setImageSource(element.path)
-                        icon:setImageSize({
-                            width = 9,
-                            height = 9
-                        })
-                    end
-                end
-    
-                return widget
-            end
-        end
-    
-        for _, stat in ipairs(stats) do
-            if stat.align ~= "center" and stat.value == 0 and stat.value ~= "" then
-                -- Skip
-            else
-                renderStat(stat)
-            end
-        end
+        renderAndSkipZeroStats(stats, UI.DeffenceStats.leftPanel, UI.DeffenceStats.rightPanel, Cyclopedia.clientCombat)
     end
 
     function Cyclopedia.onCyclopediaCharacterMiscStats(data)
-        UI.MiscStats.leftPanel:destroyChildren()
-        UI.MiscStats.rightPanel:destroyChildren()
-    
-        local stats = {
-            {name = "Momentum", value = data.momentumTotal or 0, icon = false, percent = true},
-            {name = "From Equipment", value = data.momentumBase or 0, align = "center", percent = true, icon = false},
-            {name = "From Amplification", value = data.momentumBonus or 0, align = "center", percent = true, icon = false},
-            {name = "From Wheel", value = data.momentumWheel or 0, align = "center", percent = true, icon = false},
-            
-            {name = "Transcendence", value = data.dodgeTotal or 0, icon = false, percent = true},
-            {name = "From Base", value = data.dodgeBase or 0, align = "center", percent = true, icon = false},
-            {name = "From Amplification", value = data.dodgeBonus or 0, align = "center", percent = true, icon = false},
-            {name = "From Event Bonus", value = data.dodgeWheel or 0, align = "center", percent = true, icon = false},
-            
-            {name = "Damage Reflection", value = data.damageReflectionTotal or 0, icon = false, percent = true},
-            {name = "From Base", value = data.damageReflectionBase or 0, align = "center", percent = true, icon = false},
-            {name = "From Bonus", value = data.damageReflectionBonus or 0, align = "center", percent = true, icon = false},
-            
-            {name = "Blessings", value = (data.haveBlesses or 0) .. "/" .. (data.totalBlesses or 0), icon = false, percent = false},
+        if not UI or not UI.MiscStats then return end
+        if not UI.MiscStats.miscStatsContent then return end
 
+        local container = UI.MiscStats.miscStatsContent.miscStatsContainer
+        if not container or not container.leftPanel or not container.rightPanel then return end
+
+        local leftPanel = container.leftPanel
+        local rightPanel = container.rightPanel
+
+        if rightPanel.concoctions then rightPanel.concoctions:destroyChildren() end
+        if rightPanel.cooldowns then rightPanel.cooldowns:destroyChildren() end
+        leftPanel:destroyChildren()
+
+        local stats = {
+            -- Momentum
+            {name = "Momentum", value = data.momentumTotal or 0, icon = false, percent = true},
+            {name = "     from Equipment", value = data.momentumBase or 0, align = "center", percent = true, icon = false},
+            {name = "     from Amplification", value = data.momentumBonus or 0, align = "center", percent = true, icon = false},
+            {name = "     from Wheel", value = data.momentumWheel or 0, align = "center", percent = true, icon = false},
+            {name = "     from Event Bonus", value = data.momentumEvent or 0, align = "center", percent = true, icon = false},
+
+            -- Dodge
+            {name = "Dodge", value = data.dodgeTotal or 0, icon = false, percent = true},
+            {name = "     from Equipment", value = data.dodgeBase or 0, align = "center", percent = true, icon = false},
+            {name = "     from Amplification", value = data.dodgeBonus or 0, align = "center", percent = true, icon = false},
+            {name = "     from Wheel", value = data.dodgeWheel or 0, align = "center", percent = true, icon = false},
+            {name = "     from Event Bonus", value = data.dodgeEvent or 0, align = "center", percent = true, icon = false},
+
+            -- Damage Reflection
+            {name = "Damage Reflection", value = data.damageReflectionTotal or 0, icon = false, percent = true},
+            {name = "     from Equipment", value = data.damageReflectionBase or 0, align = "center", percent = true, icon = false},
+            {name = "     from Amplification", value = data.damageReflectionBonus or 0, align = "center", percent = true, icon = false},
+            {name = "     from Event Bonus", value = data.damageReflectionEvent or 0, align = "center", percent = true, icon = false},
+            {name = "Blessings", value = string.format("%d/%d", data.haveBlesses or 0, data.totalBlesses or 0), icon = false, percent = false}
         }
-        
-        if data.concoctions and #data.concoctions > 0 then
-            for _, concoction in ipairs(data.concoctions) do
-                table.insert(stats, {
-                    name = "     " .. concoction.name,
-                    parent = "right", 
-                    value = concoction.value, 
-                    percent = true,
-                    icon = false
-                })
-            end
-        end
-    
-        local function renderStat(stat)
-            local parent = stat.parent == "right" and UI.MiscStats.rightPanel or UI.MiscStats.leftPanel
-    
-            if stat.align == "center" then
-                local widget = g_ui.createWidget("Label", parent)
-                local valueText = stat.value
-                if stat.percent then
-                    local percentValue = math.floor(stat.value * 10000) / 100
-                    local sign = percentValue > 0 and "+ " or ""
-                    valueText = sign .. percentValue .. "%"
-                end
-                widget:setText("   " .. valueText .. " " .. stat.name)
-                widget:setMarginLeft(60)
-                return widget
-            else
-                local widget = g_ui.createWidget("CharacterSkillBase", parent)
-                local nameLabel = g_ui.createWidget("SkillNameLabel", widget)
-                nameLabel:setText(stat.name .. ":")
-                local valueLabel = g_ui.createWidget("SkillValueLabel", widget)
-                if stat.percent then
-                    local percentValue = math.floor(stat.value * 10000) / 100
-                    local sign = percentValue > 0 and "+ " or ""
-                    
-                    
-                    valueLabel:setText(sign .. percentValue .. "%")
+
+        local augmentTypes = {
+            [1] = { name = "Mana Cost", percent = false, sign = "+" },
+            [2] = { name = "Base Damage", percent = true, sign = "+" },
+            [3] = { name = "Base Healing", percent = true, sign = "+" },
+            [4] = { name = "Cooldown", percent = false, sign = "-", suffix = "s" },
+            [5] = { name = "Critical Extra Damage", percent = true, sign = "+" },
+            [6] = { name = "Life Leech", percent = true, sign = "+" },
+            [7] = { name = "Mana Leech", percent = true, sign = "+" },
+        }
+
+        local function addAugments(augments, header)
+            if not augments or #augments == 0 then return end
+            table.insert(stats, {name = header, value = "", icon = false})
+            for _, augment in ipairs(augments) do
+                local spell = Spells.getSpellDataById(augment.spellId)
+                local spellName = spell and spell.name or "Unknown Spell (" .. augment.spellId .. ")"
+                table.insert(stats, {name = "     " .. spellName, value = "", align = "center", icon = false})
+                
+                local typeInfo = augmentTypes[augment.type] or { name = "Augment Type " .. augment.type, percent = false, sign = "+" }
+                local valueText = augment.value
+                if typeInfo.percent then
+                    local percentValue = math.floor(augment.value * 10000) / 100
+                    valueText = typeInfo.sign .. percentValue .. "%"
                 else
-                    valueLabel:setText(tostring(stat.value))
+                    valueText = typeInfo.sign .. string.format("%.1f", augment.value) .. (typeInfo.suffix or "")
                 end
                 
-                if stat.icon then
-                    valueLabel:setMarginRight(12)
-                    local icon = g_ui.createWidget("SkillCharacterIcon", widget)
-                    icon:setMarginTop(2)
-                    icon:addAnchor(AnchorRight, "parent", AnchorRight)
-                    if stat.element then
-                        local element = Cyclopedia.clientCombat[stat.element]
-                        if element then
-                            icon:setImageSource(element.path)
-                            icon:setImageSize({
-                                width = 9,
-                                height = 9
-                            })
-                        end
+                table.insert(stats, {name = "          " .. valueText .. " " .. typeInfo.name, value = "", align = "center", icon = false})
+            end
+        end
+
+        addAugments(data.weaponProficiencyAugments, "Weapon Proficiency Spell Augments")
+        addAugments(data.wheelAugments, "Wheel of Destiny Spell Augments")
+        addAugments(data.equippedAugments, "Equipment Spell Augments")
+
+
+
+        renderAndSkipZeroStats(stats, leftPanel, rightPanel, Cyclopedia.clientCombat)
+
+        -- Item grids (Concoctions)
+        local hasConcoctions = data.concoctions and #data.concoctions > 0
+        if rightPanel.activeConcoctions then rightPanel.activeConcoctions:setVisible(hasConcoctions) end
+        if rightPanel.concoctions then rightPanel.concoctions:setVisible(hasConcoctions) end
+        if hasConcoctions then
+            for _, v in ipairs(data.concoctions) do
+                local widget = g_ui.createWidget("Item", rightPanel.concoctions)
+                widget:setItemId(v.id)
+                widget:setVirtual(true)
+                widget:setShowCount(false)
+                
+                local itemName = "unknown item"
+                local thing = g_things.getThingType(v.id, ThingCategoryItem)
+                if thing then
+                    local marketData = thing:getMarketData()
+                    if marketData and marketData.name and marketData.name ~= "" then
+                        itemName = marketData.name
                     end
                 end
-    
-                return widget
+                
+                widget.duration:setText(string.format("%dm%02d", v.duration / 60, v.duration % 60))
+                
+                local durationText = v.duration > 60 and (math.floor(v.duration / 60) .. "m") or (v.duration .. "s")
+                widget:setTooltip(tr("%s: %s", itemName, durationText))
             end
         end
-    
-        for _, stat in ipairs(stats) do
-            if stat.align ~= "center" and stat.value == 0 and stat.value ~= "" then
-                -- Skip
-            else
-                renderStat(stat)
+
+        -- Item grids (Foods -> cooldowns)
+        local hasFoods = data.activeFoods and #data.activeFoods > 0
+        if rightPanel.consumables then rightPanel.consumables:setVisible(hasFoods) end
+        if rightPanel.cooldowns then rightPanel.cooldowns:setVisible(hasFoods) end
+
+        if hasFoods then
+            for _, v in ipairs(data.activeFoods) do
+                local widget = g_ui.createWidget("Item", rightPanel.cooldowns)
+                widget:setItemId(v.id)
+                widget:setVirtual(true)
+                widget:setShowCount(false)
+                widget.duration:setText(string.format("%dm%02d", v.duration / 60, v.duration % 60))
+
+                local itemName = "unknown item"
+                local thing = g_things.getThingType(v.id, ThingCategoryItem)
+                if thing then
+                    local marketData = thing:getMarketData()
+                    if marketData and marketData.name and marketData.name ~= "" then
+                        itemName = marketData.name
+                    end
+                end
+              
+                local durationText = v.duration > 60 and (math.floor(v.duration / 60) .. "m") or (v.duration .. "s")
+                widget:setTooltip(tr("%s: %s", itemName, durationText))
             end
         end
+        -- Update container height
+        controllerCyclopedia:scheduleEvent(function()
+            local height = math.max(leftPanel:getHeight() + leftPanel:getMarginTop(), rightPanel:getHeight() + rightPanel:getMarginTop())
+            container:setHeight(height + 20)
+        end, 50)
     end

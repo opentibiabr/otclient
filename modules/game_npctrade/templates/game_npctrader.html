@@ -60,7 +60,7 @@
     
     /* Buttons Panel */
     .panelBotons {height: 35px;  margin-bottom: 39px; --focusable: false; width: 100%; margin-left: 15px;}
-    .npc-button { width: 19px; height: 19px; --icon-source: /game_npctrader/assets/images/icons-npcdialog; margin-right: 2px; }
+    .npc-button { width: 19px; height: 19px; --icon-source: /game_npctrade/assets/images/icons-npcdialog; margin-right: 2px; }
 
     /* ==============================================================================================
        TRADE INTERFACE (RIGHT PANEL)
@@ -121,7 +121,7 @@
 <uiwindow id="windowTrader" placement="center" *width="self.widthConsole" class="modal-message"
     src="images/ui/miniwindow" onescape="self:onCloseNpcTrade()" onkeydown="self:onConsoleKeyPress(event)">
 
-    <!-- Panel izquierda -->
+    <!-- Left Panel -->
     <div class="leftPanel" >
         <div id="consoleBuffer" inverted-scroll="true" class="panelConsole panelBase" style="overflow: scroll; padding: 4px;" layout="type: verticalBox; align-bottom: true" placement="top-left">
         </div>
@@ -138,13 +138,13 @@
 
             </button>
         </div>
-        <input class="inputConsole" placement="bottom-left"/>
+        <input id="chatInput" class="inputConsole" placement="bottom-left" />
         <button id="chatModeButton" class="bottonChat" onclick="self:toggleChatMode()">{{self.chatMode}}</button>
     </div>
 
     <div class="verticalSep VerticalSeparator" *visible="self.isTradeOpen"></div>
 
-    <!-- Panel derecha (Trade) -->
+    <!-- Right Panel (Trade) -->
     <div class="rightPanel" *visible="self.isTradeOpen">
         <!-- Header -->
         <div class="tradeHeader flex">
@@ -181,23 +181,23 @@
         <!-- Footer -->
         <div class="tradeFooter">
 
-            <!-- scrollbar (arriba izquierda) -->
+            <!-- Scrollbar (top left) -->
             <div class="tradeTopRow">
                 <HorizontalScrollBar id="amountScrollBar" minimum="1" maximum="100" step="1"
                     onchange="self:onAmountScrollBarChange(event.value)" disabled />
             </div>
 
-            <!-- preview (derecha) -->
+            <!-- Preview (right) -->
             <UIItem class="tradePreviewBox item borderGrey iconBox sunkenBorder" *item="self.selectedItem and self.selectedItem.ptr or nil" />
 
-            <!-- buy (derecha abajo) -->
+            <!-- Buy button (bottom right) -->
             <button id="toggleButton" class="tradeBuyButton fontTitle" text="Buy" onclick="self:executeTrade()"></button>
 
-            <!-- filas (izquierda) -->
+            <!-- Rows (left) -->
             <div class="tradeRows">
                 <div class="tradeRow">
                     <div class="tradeFooterLabel fontText colorGrey inlineBlock">Amount:</div>
-                    <input class="tradeFooterAmountInput fontText colorWhite bgDark borderGrey inlineBlock" *text="self.amount" onchange="self:onAmountInputChange(event)"/>
+                    <input id="amountInput" class="tradeFooterAmountInput fontText colorWhite bgDark borderGrey inlineBlock" *text="self.amount" onchange="self:onAmountInputChange(event)" />
                 </div>
 
                 <div class="tradeRow">

@@ -826,8 +826,8 @@ return {
     },
     actionBarBottomLocked = false,
     actionBarLeftLocked = false,
-    actionBarRightLocked = false ,
-        setOwnSpellEffectAlphaScroll                       = {
+    actionBarRightLocked = false,
+    setOwnSpellEffectAlphaScroll = {
         value = 100,
         action = function(value, options, controller, panels, extraWidgets)
             panels.graphicsEffectsPanel:recursiveGetChildById('setOwnSpellEffectAlphaScroll'):setText(string.format('Own Spells Effect: %s %%',
@@ -835,7 +835,7 @@ return {
             g_client.setOwnSpellEffectAlpha(value / 100)
         end
     },
-    setOtherPlayerSpellEffectAlphaScroll                       = {
+    setOtherPlayerSpellEffectAlphaScroll = {
         value = 100,
         action = function(value, options, controller, panels, extraWidgets)
             panels.graphicsEffectsPanel:recursiveGetChildById('setOtherPlayerSpellEffectAlphaScroll'):setText(string.format('Other Player Spells Effect: %s %%',
@@ -843,7 +843,7 @@ return {
            g_client.setOtherPlayerSpellEffectAlpha(value / 100)
         end
     },
-        setCreatureSpellEffectAlphaScroll                       = {
+    setCreatureSpellEffectAlphaScroll = {
         value = 100,
         action = function(value, options, controller, panels, extraWidgets)
             panels.graphicsEffectsPanel:recursiveGetChildById('setCreatureSpellEffectAlphaScroll'):setText(string.format('Creature Spells Effect: %s %%',
@@ -851,13 +851,13 @@ return {
             g_client.setCreatureSpellEffectAlpha(value / 100)
         end
     },
-        setBossAreaCreatureEffectAlphaScroll                       = {
+    setBossAreaCreatureEffectAlphaScroll = {
         value = 100,
         action = function(value, options, controller, panels, extraWidgets)
             panels.graphicsEffectsPanel:recursiveGetChildById('setBossAreaCreatureEffectAlphaScroll'):setText(string.format('Boss Area Creature Effect: %s %%',
                 value))
            g_client.setBossAreaCreatureEffectAlpha(value / 100)
         end
-    },   
-    showInfoBanner                     = true,
+    },
+    showInfoBanner = true,
 }

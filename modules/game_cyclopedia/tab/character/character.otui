@@ -1,3 +1,52 @@
+
+InfoLabel < Panel
+  height: 20
+  Label
+    id: text
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    text-auto-resize: true
+    color: #C0C0C0
+  Label
+    id: value
+    anchors.right: parent.right
+    anchors.verticalCenter: parent.verticalCenter
+    text-auto-resize: true
+    color: #C1C1C1
+
+InfoLeftLabel < Panel
+  height: 15
+  Label
+    id: value
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    text-auto-resize: true
+    color: #929292
+    margin-left: 20
+
+BlessingLabel < Panel
+  height: 20
+  Label
+    id: text
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    text-auto-resize: true
+    color: #C0C0C0
+  Label
+    id: value
+    anchors.right: parent.right
+    anchors.verticalCenter: parent.verticalCenter
+    text-auto-resize: true
+    color: #C1C1C1
+
+MiscItems < UIWidget
+  size: 34 34
+  Item
+    id: item
+    anchors.fill: parent
+    phantom: true
+    virtual: true
+
 UIWidget
   id: Cat6
   anchors.fill: parent
@@ -1865,6 +1914,7 @@ UIWidget
     anchors.right: parent.right
     margin-left: 10
     visible: false
+
     VerticalSeparator
       id: separator
       anchors.horizontalCenter: parent.horizontalCenter
@@ -1905,34 +1955,94 @@ UIWidget
     anchors.right: parent.right
     margin-left: 10
     visible: false
-    VerticalSeparator
-      id: separator
-      anchors.horizontalCenter: parent.horizontalCenter
-      anchors.top: parent.top
-      anchors.bottom: parent.bottom
-      margin-top: 5
-      margin-bottom: 5
 
-
-    Panel
-      id: leftPanel
+    UIScrollArea
+      id: miscStatsContent
       anchors.top: parent.top
       anchors.left: parent.left
-      anchors.right: separator.right
-      margin-top: 5
-      margin-left: 5
-      height: 350
-      layout:
-        type: verticalBox
-        spacing: 2
-
-    Panel
-      id: rightPanel
-      anchors.top: prev.top
-      anchors.left: separator.left
       anchors.right: parent.right
-      margin-top: 1
-      height: 350
-      layout:
-        type: verticalBox
-        spacing: 2
+      anchors.bottom: parent.bottom
+      vertical-scrollbar: miscStatsScrollbar
+      margin-right: 0
+
+      UIWidget
+        id: miscStatsContainer
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        layout:
+          type: anchor
+        
+        VerticalSeparator
+          id: miscStatsSeparator
+          width: 2
+          anchors.horizontalCenter: parent.horizontalCenter
+          anchors.top: parent.top
+          anchors.bottom: parent.bottom
+          margin-top: 5
+          margin-bottom: 5
+
+        Panel
+          id: leftPanel
+          anchors.top: parent.top
+          anchors.left: parent.left
+          anchors.right: miscStatsSeparator.right
+          margin-top: 5
+          margin-left: 5
+          layout:
+            type: verticalBox
+            fit-children: true
+
+        Panel
+          id: rightPanel
+          anchors.top: parent.top
+          anchors.left: miscStatsSeparator.right
+          anchors.right: parent.right
+          margin-top: 5
+          margin-left: 10
+          layout:
+            type: verticalBox
+            fit-children: true
+
+          Label
+            id: activeConcoctions
+            !text: tr("Active Concoctions:")
+            color: #C0C0C0
+            text-auto-resize: true 
+          Panel
+            id: concoctions
+            margin-top: 3
+            layout:
+              type: grid
+              cell-size: 34 34
+              cell-spacing: 5
+              num-columns: 5
+              fit-children: true
+
+          Label
+            id: consumables
+            !text: tr("Active Foods:")
+            margin-top: 10
+            color: #C0C0C0
+            text-auto-resize: true 
+          Panel
+            id: cooldowns
+            margin-top: 3
+            layout:
+              type: grid
+              cell-size: 34 34
+              cell-spacing: 5
+              num-columns: 5
+              fit-children: true
+
+    VerticalScrollBar
+      id: miscStatsScrollbar
+      anchors.top: parent.top
+      anchors.bottom: parent.bottom
+      anchors.right: parent.right
+      step: 48
+      pixel-scroll: true
+      @onMaximumChange: |
+        local visible = self:getMaximum() > 0
+        self:setVisible(visible)
+        self:getParent():getChildById('miscStatsContent'):setMarginRight(visible and self:getWidth() or 0)

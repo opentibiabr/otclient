@@ -190,6 +190,28 @@ function Controller:createWidgetFromHTML(html, parent)
     return widget
 end
 
+-- Opens a secondary HTML window (e.g. modal) without affecting self.ui / self.htmlId.
+-- Returns a handle: { htmlId, ui }
+-- The modal HTML's onclick="self:method()" resolves to this controller (same self.name).
+function Controller:openModal(path)
+    local suffix = ".html"
+    if path:sub(-#suffix) ~= suffix then
+        path = path .. suffix
+    end
+    if not self.dataUI then
+        self:setUI(path, g_ui.getRootWidget())
+    end
+    local htmlId = g_html.load(self.name, path, g_ui.getRootWidget())
+    return { htmlId = htmlId, ui = g_html.getRootWidget(htmlId) }
+end
+
+-- Destroys a modal handle returned by openModal.
+function Controller:closeModal(handle)
+    if handle and handle.htmlId then
+        g_html.destroy(handle.htmlId)
+    end
+end
+
 function Controller:loadUI(name, parent)
     if self.ui then
         return
