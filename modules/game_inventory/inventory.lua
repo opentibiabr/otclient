@@ -5,6 +5,7 @@ local itemSlotsWithDuration = {}
 local updateSlotsDurationEvent = nil
 local DURATION_UPDATE_INTERVAL = 1000
 local pvpModeRadioGroup = nil 
+local monkMirrorItem = nil
 
 local function getInventoryUi()
     if inventoryShrink then
@@ -26,6 +27,67 @@ local getSlotPanelBySlot = {
     [InventorySlotFinger] = function(ui) return ui.ring, ui.ring.ring end,
     [InventorySlotAmmo] = function(ui) return ui.tools, ui.tools.tools end
 }
+
+local function isPlayerMonk()
+    local player = g_game.getLocalPlayer()
+    if not player then
+        return false
+    end
+    return player:isMonk()
+end
+
+local function updateMonkMirrorItem(leftItem)
+    if not g_game.getFeature(GameVocationMonk) then
+        return
+    end
+    if inventoryShrink then
+        return
+    end
+
+    local ui = getInventoryUi()
+    if not ui or not ui.shield or not ui.shield.item then
+        return
+    end
+
+    local shieldSlot = ui.shield
+    local shieldItemWidget = shieldSlot.item
+
+    if not isPlayerMonk() then
+        if monkMirrorItem then
+            monkMirrorItem = nil
+        end
+        return
+    end
+
+    local player = g_game.getLocalPlayer()
+    local realShieldItem = player and player:getInventoryItem(InventorySlotRight)
+
+    if realShieldItem then
+        monkMirrorItem = nil
+        return
+    end
+
+    if leftItem then
+        monkMirrorItem = leftItem
+        shieldItemWidget:setItem(leftItem)
+        shieldItemWidget:setOpacity(0.5)
+        shieldItemWidget:setDraggable(false)
+        shieldItemWidget:setEnabled(false)
+        shieldItemWidget:setFlipDirection(FlipDirection.Horizontal)
+        shieldSlot.shield:setEnabled(false)
+    else
+        monkMirrorItem = nil
+        shieldItemWidget:setItem(nil)
+        shieldItemWidget:setOpacity(1.0)
+        shieldItemWidget:setDraggable(true)
+        shieldItemWidget:setEnabled(true)
+        shieldItemWidget:setFlipDirection(FlipDirection.None)
+        shieldSlot.shield:setEnabled(true)
+        if shieldItemWidget.tier then
+            shieldItemWidget.tier:setVisible(false)
+        end
+    end
+end
 
 local function formatDuration(duration)
     return string.format("%dm%02d", duration / 60, duration % 60)
@@ -122,6 +184,19 @@ local function inventoryEvent(player, slot, item, oldItem)
         return
     end
 
+    if slot == InventorySlotRight and isPlayerMonk() and not item and monkMirrorItem then
+        return
+    end
+
+    if slot == InventorySlotRight and item then
+        local slotPanel, toggler = getSlotInfo(ui)
+        slotPanel.item:setOpacity(1.0)
+        slotPanel.item:setDraggable(true)
+        slotPanel.item:setEnabled(true)
+        slotPanel.item:setFlipDirection(FlipDirection.None)
+        monkMirrorItem = nil
+    end
+
     local slotPanel, toggler = getSlotInfo(ui)
 
     slotPanel.item:setItem(item)
@@ -152,6 +227,10 @@ local function inventoryEvent(player, slot, item, oldItem)
         ItemsDatabase.setCharges(slotPanel.item, item)
     end
     ItemsDatabase.setTier(slotPanel.item, item)
+
+    if slot == InventorySlotLeft then
+        updateMonkMirrorItem(item)
+    end
 end
 
 local function onSoulChange(localPlayer, soul)
@@ -338,10 +417,18 @@ function inventoryController:onGameStart()
         end
     end
     inventoryController.ui.onPanel.purseButton:setVisible(g_game.getFeature(GamePurseSlot))
+
+    if isPlayerMonk() and player then
+        local leftItem = player:getInventoryItem(InventorySlotLeft)
+        if leftItem then
+            updateMonkMirrorItem(leftItem)
+        end
+    end
 end
 
 function inventoryController:onGameEnd()
     stopEvent()
+    monkMirrorItem = nil
 
     local lastCombatControls = g_settings.getNode('LastCombatControls')
     if not lastCombatControls then

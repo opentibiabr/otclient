@@ -42,14 +42,23 @@ void Mouse::loadCursors(const std::string& filename)
         const auto& doc = OTMLDocument::parse(path);
         const auto& cursorsNode = doc->at("Cursors");
 
-        for (const auto& cursorNode : cursorsNode->children())
+        for (const auto& cursorNode : cursorsNode->children()) {
             addCursor(cursorNode->tag(),
                       stdext::resolve_path(cursorNode->valueAt("image"), cursorNode->source()),
                       cursorNode->valueAt<Point>("hot-spot"));
+        }
+        
+        // Automatically set 'default' cursor as the main cursor (without pushing to stack)
+        if (m_cursors.contains("default")) {
+            const int defaultCursorId = m_cursors["default"];
+            g_window.setMouseCursor(defaultCursorId);
+        }
+
     } catch (stdext::exception& e) {
         g_logger.error("unable to load cursors file: {}", e.what());
     }
 }
+
 
 void Mouse::addCursor(const std::string& name, const std::string& file, const Point& hotSpot)
 {
@@ -92,10 +101,17 @@ void Mouse::popCursor(const std::string& name)
             return;
     }
 
-    if (!m_cursorStack.empty())
+    if (!m_cursorStack.empty()) {
         g_window.setMouseCursor(m_cursorStack.back());
-    else
-        g_window.restoreMouseCursor();
+    } else {
+
+        if (m_cursors.contains("default")) {
+            const int defaultCursorId = m_cursors["default"];
+            g_window.setMouseCursor(defaultCursorId);
+        } else {
+            g_window.restoreMouseCursor();
+        }
+    }
 }
 
 bool Mouse::isCursorChanged()
@@ -106,6 +122,13 @@ bool Mouse::isCursorChanged()
 bool Mouse::isPressed(const Fw::MouseButton mouseButton)
 {
     return g_window.isMouseButtonPressed(mouseButton);
+}
+
+int Mouse::getCursorId(const std::string& name)
+{
+    if (m_cursors.contains(name))
+        return m_cursors[name];
+    return -1;
 }
 
 void Mouse::checkStackSize()

@@ -14,6 +14,23 @@ function table.dump(t, depth)
     end
 end
 
+function table.isIn(tbl, val)
+  for _, v in ipairs(tbl) do
+    if v == val then
+      return true
+    end
+  end
+  return false
+end
+
+function table.reserve(count, default)
+  local t = {}
+  for i = 1, count do
+    t[i] = default
+  end
+  return t
+end
+
 function table.clear(t)
     for k, v in pairs(t) do
         t[k] = nil

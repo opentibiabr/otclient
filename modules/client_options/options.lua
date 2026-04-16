@@ -119,7 +119,7 @@ local function setupComboBox()
     local mouseControlModeCombobox = panels.generalPanel:recursiveGetChildById('mouseControlMode')
     local lootControlModeCombobox = panels.generalPanel:recursiveGetChildById('lootControlMode')
 
-    for k, v in pairs({ { 'Disabled', 'disabled' }, { 'Default', 'default' }, { 'Full', 'full' } }) do
+    for k, v in pairs({ { 'Disabled', 'disabled' }, { 'Default', 'default' }, { 'Full', 'full' }, { 'Animation', 'animation' } }) do
         crosshairCombo:addOption(v[1], v[2])
     end
 
@@ -264,6 +264,16 @@ local function setup()
             end
         end
     end, 100)
+
+    local talkOnRightClick = panels.generalPanel:recursiveGetChildById('talkOnRightClick')
+    if talkOnRightClick then
+        local parent = talkOnRightClick:getParent()
+       if g_game.getClientVersion() > 1511 then
+            parent:setVisible(false)
+            parent:setHeight(0)
+            parent:setMarginTop(0)
+        end
+    end
 end
 
 
@@ -394,6 +404,11 @@ function controller:onGameStart()
         if Keybind.selectPreset(name) then
             panels.keybindsPanel.presets.list:setCurrentOption(name, true)
             updateKeybinds()
+            if modules.game_actionbar and modules.game_actionbar.selectHotkeySet then
+                if not modules.game_actionbar.selectHotkeySet(name) then
+                    g_logger.warning(string.format("[client_options] Failed to sync action bar hotkey set '%s' on startup.", name))
+                end
+            end
         end
     end
 end

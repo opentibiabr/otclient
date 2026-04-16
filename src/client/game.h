@@ -326,7 +326,13 @@ public:
     void setProtocolVersion(uint16_t version);
     int getProtocolVersion() { return m_protocolVersion; }
 
-    bool isUsingProtobuf() { return getProtocolVersion() >= 1281 && !getFeature(Otc::GameLoadSprInsteadProtobuf); }
+    bool isUsingProtobuf() {
+#ifdef FRAMEWORK_PROTOBUF
+        return getProtocolVersion() >= 1281 && !getFeature(Otc::GameLoadSprInsteadProtobuf);
+#else
+        return false;
+#endif
+    }
 
     void setClientVersion(uint16_t version);
     int getClientVersion() { return m_clientVersion; }
@@ -356,7 +362,9 @@ public:
     void setServerBeat(const int beat) { m_serverBeat = beat; }
     int getServerBeat() { return m_serverBeat; }
     void setCanReportBugs(const bool enable) { m_canReportBugs = enable; }
+    void setCanExivaOptions(const bool enable) { m_CanExivaOptions = enable; }
     bool canReportBugs() { return m_canReportBugs; }
+    bool canExivaOptions() { return m_CanExivaOptions; }
     void setExpertPvpMode(const bool enable) { m_expertPvpMode = enable; }
     bool getExpertPvpMode() { return m_expertPvpMode; }
     LocalPlayerPtr getLocalPlayer() { return m_localPlayer; }
@@ -380,6 +388,14 @@ public:
     void preyAction(uint8_t slot, uint8_t actionType, uint16_t index);
     void preyRequest();
 
+    // exiva related
+    void sendExivaOptions(bool allowAll, bool allowOwnGuild, bool allowOwnParty, bool allowVipList,
+                          bool allowPlayerWhitelist, bool allowGuildWhitelist,
+                          const std::vector<std::string>& characterWhiteList,
+                          const std::vector<std::string>& removeCharacter,
+                          const std::vector<std::string>& guildWhiteList,
+                          const std::vector<std::string>& removeGuild);
+
     // forge related
     void openPortableForgeRequest();
     void forgeRequest(Otc::ForgeAction_t actionType, bool convergence = false, uint16_t firstItemid = 0, uint8_t firstItemTier = 0, uint16_t secondItemId = 0, bool improveChance = false, bool tierLoss = false);
@@ -390,6 +406,8 @@ public:
     void clearImbuement(uint8_t slot);
     void closeImbuingWindow();
     void imbuementDurations(bool isOpen = false);
+    void openWheelOfDestiny(uint32_t playerId);
+    void applyWheelOfDestiny(const std::vector<uint16_t>& wheelPointsVec, const std::vector<uint16_t>& activeGemsVec);
 
     void enableTileThingLuaCallback(const bool value) { m_tileThingsLuaCallback = value; }
     bool isTileThingLuaCallbackEnabled() { return m_tileThingsLuaCallback; }
@@ -436,6 +454,11 @@ public:
     void processCyclopediaCharacterDefenceStats(const CyclopediaCharacterDefenceStats& data);
     void processCyclopediaCharacterMiscStats(const CyclopediaCharacterMiscStats& data);
 
+    //whell of destiny 
+    void openWheel(uint32_t playerId);
+    void sendApplyWheelPoints(const std::vector<uint16_t>& slotPoints,uint16_t greenGem,uint16_t redGem,uint16_t acquaGem,uint16_t purpleGem);
+    void gemAction(uint8_t actionType, uint8_t param, uint8_t pos);
+
     void updateMapLatency() {
         if (!m_mapUpdateTimer.first) {
             m_mapUpdatedAt = m_mapUpdateTimer.second.ticksElapsed();
@@ -471,6 +494,7 @@ private:
     bool m_scheduleLastWalk{ false };
     bool m_safeFight{ true };
     bool m_canReportBugs{ false };
+    bool m_CanExivaOptions{ false };
 
     uint16_t m_mapUpdatedAt{ 0 };
     std::pair<uint16_t, Timer> m_mapUpdateTimer = { true, Timer{} };

@@ -1,0 +1,136 @@
+NewMainWindow
+  id: newPreset
+  !text: tr('New Preset')
+  anchors.horizontalCenter: parent.horizontalCenter
+  size: 625 201
+  @onClose:
+
+  Panel
+    id: contentPanel
+    anchors.fill: parent
+    margin: 12 12 12 12
+
+    Label
+      id: presetNameLabel
+      !text: tr('Preset name:')
+      anchors.top: parent.top
+      anchors.left: parent.left
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+      margin-top: -1
+      margin-left: -1
+
+    UIWidget
+      id: presetNameTooltip
+      size: 12 12
+      anchors.top: prev.top
+      anchors.left: prev.right
+      margin-left: 6
+      margin-top: 2
+      image-source: /images/skin/show-gui-help-orange
+      !tooltip: tr('Preset names must be unique. Also, this field must not be empty.')
+
+    TextEdit
+      id: presetName
+      size: 164 16
+      focusable: true
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 6
+      @onTextChange: modules.game_wheel.WheelOfDestiny.onEditName(self:getText())
+      !placeholder: tr('Enter a unique name')
+      placeholder-color: #707070
+      placeholder-align: left
+
+    CheckBox
+      id: useEmpty
+      size: 12 12
+      !text: tr('Use empty Wheel of Destiny')
+      font: Verdana Bold-11px
+      text-auto-resize: true
+      color: #c0c0c0
+      text-offet: -6 0
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      change-cursor-image: false
+      image-source: /images/ui/checkboxcircle
+      image-clip: 0 0 12 12
+      margin-top: 11
+
+    CheckBox
+      id: copyPreset
+      size: 12 12
+      !text: tr("Copy preset 'Default-Preset'")
+      font: Verdana Bold-11px
+      text-auto-resize: true
+      color: #c0c0c0
+      text-offet: -6 0
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      change-cursor-image: false
+      image-source: /images/ui/checkboxcircle
+      image-clip: 0 0 12 12
+      margin-top: 5
+
+    CheckBox
+      id: import
+      size: 12 12
+      !text: tr('Import')
+      font: Verdana Bold-11px
+      text-auto-resize: true
+      color: #c0c0c0
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      change-cursor-image: false
+      image-source: /images/ui/checkboxcircle
+      image-clip: 0 0 12 12
+      margin-top: 5
+
+    UIWidget
+      id: importTooltip
+      size: 12 12
+      anchors.top: prev.top
+      anchors.left: prev.right
+      margin-left: 6
+      margin-top: 2
+      image-source: /images/skin/show-gui-help-orange
+      !tooltip: tr('Export code does not match a valid Wheel of Destiny.')
+
+    TextEdit
+      id: presetCode
+      size: 164 16
+      focusable: true
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 6
+      @onTextChange: modules.game_wheel.WheelOfDestiny.onEditCode(self:getText())
+      !placeholder: tr('Enter copied export code or URL of the planner, e.g. EKAABkZJbI...')
+      placeholder-color: #707070
+
+    HorizontalSeparator
+      id: separator
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 11
+
+    Button
+      id: cancel
+      anchors.bottom: parent.bottom
+      anchors.right: parent.right
+      !text: tr('Cancel')
+      size: 43 20
+      @onClick: modules.game_wheel.WheelOfDestiny.onCancelConfig()
+
+    Button
+      id: ok
+      anchors.bottom: parent.bottom
+      anchors.right: prev.left
+      !text: tr('Ok')
+      size: 43 20
+      margin-right: 5
+      enabled: false
+      @onClick: modules.game_wheel.WheelOfDestiny.onConfirmCreatePreset()

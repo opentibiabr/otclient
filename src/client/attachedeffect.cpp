@@ -80,7 +80,8 @@ void AttachedEffect::draw(const Point& dest, const bool isOnTop, LightView* ligh
     if (m_transform)
         return;
 
-    if (m_texture != nullptr || getThingType() != nullptr) {
+    auto* thingType = getThingType();
+    if (m_texture != nullptr || thingType != nullptr) {
         const auto& dirControl = m_offsetDirections[m_direction];
         if (dirControl.onTop != isOnTop)
             return;
@@ -95,17 +96,28 @@ void AttachedEffect::draw(const Point& dest, const bool isOnTop, LightView* ligh
                 return;
         }
 
-        if (m_shader) g_drawPool.setShaderProgram(m_shader, true);
-        if (m_opacity < 100) g_drawPool.setOpacity(getOpacity(), true);
+        // Check if the thing type can actually be drawn before setting opacity/shader
+        // This prevents stale state from affecting subsequent draws when this effect
+        // returns early due to missing texture or invalid state
+        if (!m_texture && thingType && (thingType->isNull() || thingType->getAnimationPhases() == 0))
+            return;
+
 
         const auto scaleFactor = g_drawPool.getScaleFactor();
 
-        if (m_pulse.height > 0 && m_pulse.speed > 0) {
-            g_drawPool.setScaleFactor(scaleFactor + getBounce(m_pulse) / 100.f);
-        }
+        // Only set shader, opacity, pulse and fade when actually drawing things
+        // to prevent stale state from affecting subsequent draws
+        if (drawThing) {
+            if (m_shader) g_drawPool.setShaderProgram(m_shader, true);
+            if (m_opacity < 100) g_drawPool.setOpacity(getOpacity(), true);
 
-        if (m_fade.height > 0 && m_fade.speed > 0) {
-            g_drawPool.setOpacity(std::clamp<float>(getBounce(m_fade) / 100.f, 0, 1.f));
+            if (m_pulse.height > 0 && m_pulse.speed > 0) {
+                g_drawPool.setScaleFactor(scaleFactor + getBounce(m_pulse) / 100.f);
+            }
+
+            if (m_fade.height > 0 && m_fade.speed > 0) {
+                g_drawPool.setOpacity(std::clamp<float>(getBounce(m_fade) / 100.f, 0, 1.f));
+            }
         }
 
         auto point = dest - (dirControl.offset * g_drawPool.getScaleFactor());
@@ -134,17 +146,19 @@ void AttachedEffect::draw(const Point& dest, const bool isOnTop, LightView* ligh
                 g_drawPool.addTexturedRect(Rect(point, size), texture, rect, Color::white);
             }
         } else {
-            getThingType()->draw(point, 0, m_direction, 0, 0, animation, Color::white, drawThing, lightView);
+            thingType->draw(point, 0, m_direction, 0, 0, animation, Color::white, drawThing, lightView);
         }
 
         g_drawPool.setDrawOrder(lastDrawOrder);
 
-        if (m_pulse.height > 0 && m_pulse.speed > 0) {
-            g_drawPool.setScaleFactor(scaleFactor);
-        }
+        if (drawThing) {
+            if (m_pulse.height > 0 && m_pulse.speed > 0) {
+                g_drawPool.setScaleFactor(scaleFactor);
+            }
 
-        if (m_fade.height > 0 && m_fade.speed > 0) {
-            g_drawPool.resetOpacity();
+            if (m_fade.height > 0 && m_fade.speed > 0) {
+                g_drawPool.resetOpacity();
+            }
         }
     }
 
@@ -172,25 +186,39 @@ int AttachedEffect::getCurrentAnimationPhase()
         return m_frame;
     }
 
-    const auto thingTye = getThingType();
+    const auto thingType = getThingType();
+    if (!thingType) return 0;
 
-    const auto* animator = thingTye->getIdleAnimator();
-    if (!animator && thingTye->isAnimateAlways())
-        animator = thingTye->getAnimator();
+    const auto* animator = thingType->getIdleAnimator();
+    if (!animator && thingType->isAnimateAlways())
+        animator = thingType->getAnimator();
 
     if (animator)
         return animator->getPhaseAt(m_animationTimer, getSpeed());
 
-    if (thingTye->isEffect()) {
-        const int lastPhase = thingTye->getAnimationPhases() - 1;
-        const int phase = std::min<int>(static_cast<int>(m_animationTimer.ticksElapsed() / (g_gameConfig.getEffectTicksPerFrame() / getSpeed())), lastPhase);
+    if (thingType->isEffect()) {
+        const int animationPhases = thingType->getAnimationPhases();
+        const float speed = getSpeed();
+        if (animationPhases <= 0 || speed <= 0.f) return 0;
+
+        const int lastPhase = animationPhases - 1;
+        const int effectTicksPerFrame = g_gameConfig.getEffectTicksPerFrame();
+        const int ticksPerFrame = std::max<int>(1, static_cast<int>(effectTicksPerFrame / speed));
+        const int phase = std::min<int>(static_cast<int>(m_animationTimer.ticksElapsed() / ticksPerFrame), lastPhase);
         if (phase == lastPhase) m_animationTimer.restart();
         return phase;
     }
 
-    if (thingTye->isCreature() && thingTye->isAnimateAlways()) {
-        const int ticksPerFrame = std::round(1000 / thingTye->getAnimationPhases()) / getSpeed();
-        return (g_clock.millis() % (static_cast<long long>(ticksPerFrame) * thingTye->getAnimationPhases())) / ticksPerFrame;
+    if (thingType->isCreature() && thingType->isAnimateAlways()) {
+        const int animationPhases = thingType->getAnimationPhases();
+        const float speed = getSpeed();
+        if (animationPhases <= 0 || speed <= 0.f) return 0;
+
+        const int ticksPerFrame = std::max<int>(1, static_cast<int>(std::round((1000.0 / animationPhases) / speed)));
+        const long long animationPeriod = static_cast<long long>(ticksPerFrame) * animationPhases;
+        if (animationPeriod <= 0) return 0;
+
+        return static_cast<int>((g_clock.millis() % animationPeriod) / ticksPerFrame);
     }
 
     return 0;

@@ -11,7 +11,12 @@ function UIItem:onDragEnter(mousePos)
     UIDragIcon:display(item)
     self:setBorderWidth(1)
     self.currentDragThing = item
-    g_mouse.pushCursor('target')
+    -- Use native cursor when enabled, otherwise use custom cursor
+    if modules.client_options and modules.client_options.getOption('nativeCursor') then
+        g_window.setSystemCursor('cross')
+    else
+        g_mouse.pushCursor('target')
+    end
     return true
 end
 
@@ -20,7 +25,12 @@ function UIItem:onDragLeave(droppedWidget, mousePos)
         return false
     end
     self.currentDragThing = nil
-    g_mouse.popCursor('target')
+    -- Restore cursor
+    if modules.client_options and modules.client_options.getOption('nativeCursor') then
+        g_window.restoreMouseCursor()
+    else
+        g_mouse.popCursor('target')
+    end
     UIDragIcon:hide()
     self:setBorderWidth(0)
     self.hoveredWho = nil

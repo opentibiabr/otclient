@@ -778,6 +778,213 @@ function ApiJson.setClientOption(optionKey, value)
     g_settings.set(optionKey, value)
 end
 
+function ApiJson.setCurrentHotkeySetName(name)
+    if not name or name == "" then
+        return false
+    end
+
+    ApiJson.bootstrap()
+    local options = ensureState()
+    local array = options.array
+    if not array then
+        return false
+    end
+
+    local hotkeyOptions = array.hotkeyOptions or {}
+    array.hotkeyOptions = hotkeyOptions
+
+    local hotkeySets = hotkeyOptions.hotkeySets or options.hotkeySets or {}
+    hotkeyOptions.hotkeySets = hotkeySets
+
+    if not hotkeySets[name] then
+        return false
+    end
+
+    hotkeyOptions.currentHotkeySetName = name
+    options.currentHotkeySetName = name
+    options.currentHotkeySet = hotkeySets[name]
+
+    options.actionBarOptions = options.currentHotkeySet.actionBarOptions
+    if not options.actionBarOptions then
+        options.actionBarOptions = {}
+        options.currentHotkeySet.actionBarOptions = options.actionBarOptions
+    end
+
+    options.actionBarMappings = options.actionBarOptions.mappings
+    if not options.actionBarMappings then
+        options.actionBarMappings = {}
+        options.actionBarOptions.mappings = options.actionBarMappings
+    end
+
+    options.actionBarMappingsIndex = nil
+    return true
+end
+
+function ApiJson.createHotkeySet(name, sourceName)
+    if not name or name == "" then
+        return false
+    end
+
+    ApiJson.bootstrap()
+    local options = ensureState()
+    local array = options.array
+    if not array then
+        return false
+    end
+
+    local hotkeyOptions = array.hotkeyOptions or {}
+    array.hotkeyOptions = hotkeyOptions
+
+    local hotkeySets = hotkeyOptions.hotkeySets or options.hotkeySets or {}
+    hotkeyOptions.hotkeySets = hotkeySets
+    options.hotkeySets = hotkeySets
+
+    if hotkeySets[name] then
+        return false
+    end
+
+    local source = nil
+    if sourceName then
+        source = hotkeySets[sourceName]
+        if not source then
+            return false
+        end
+    end
+
+    local newSet = source and table.recursivecopy(source) or {
+        actionBarOptions = {
+            mappings = {}
+        },
+        chatOn = {},
+        chatOff = {}
+    }
+
+    hotkeySets[name] = newSet
+
+    local profiles = array.profiles or options.profiles or {}
+    array.profiles = profiles
+    options.profiles = profiles
+    if not table.contains(profiles, name) then
+        table.insert(profiles, name)
+    end
+
+    return true
+end
+
+function ApiJson.renameHotkeySet(oldName, newName)
+    if not oldName or oldName == "" or not newName or newName == "" then
+        return false
+    end
+
+    ApiJson.bootstrap()
+    local options = ensureState()
+    local array = options.array
+    if not array then
+        return false
+    end
+
+    local hotkeyOptions = array.hotkeyOptions or {}
+    array.hotkeyOptions = hotkeyOptions
+
+    local hotkeySets = hotkeyOptions.hotkeySets or options.hotkeySets or {}
+    hotkeyOptions.hotkeySets = hotkeySets
+    options.hotkeySets = hotkeySets
+
+    if not hotkeySets[oldName] or hotkeySets[newName] then
+        return false
+    end
+
+    hotkeySets[newName] = hotkeySets[oldName]
+    hotkeySets[oldName] = nil
+
+    local profiles = array.profiles or options.profiles or {}
+    array.profiles = profiles
+    options.profiles = profiles
+    for i, profileName in ipairs(profiles) do
+        if profileName == oldName then
+            profiles[i] = newName
+            break
+        end
+    end
+
+    local currentName = options.currentHotkeySetName or hotkeyOptions.currentHotkeySetName
+    if currentName == oldName then
+        hotkeyOptions.currentHotkeySetName = newName
+        options.currentHotkeySetName = newName
+        options.currentHotkeySet = hotkeySets[newName]
+        options.actionBarOptions = options.currentHotkeySet.actionBarOptions or {}
+        options.currentHotkeySet.actionBarOptions = options.actionBarOptions
+        options.actionBarMappings = options.actionBarOptions.mappings or {}
+        options.actionBarOptions.mappings = options.actionBarMappings
+        options.actionBarMappingsIndex = nil
+    end
+
+    return true
+end
+
+function ApiJson.removeHotkeySet(name)
+    if not name or name == "" then
+        return false
+    end
+
+    ApiJson.bootstrap()
+    local options = ensureState()
+    local array = options.array
+    if not array then
+        return false
+    end
+
+    local hotkeyOptions = array.hotkeyOptions or {}
+    array.hotkeyOptions = hotkeyOptions
+
+    local hotkeySets = hotkeyOptions.hotkeySets or options.hotkeySets or {}
+    hotkeyOptions.hotkeySets = hotkeySets
+    options.hotkeySets = hotkeySets
+
+    if not hotkeySets[name] then
+        return false
+    end
+
+    hotkeySets[name] = nil
+
+    local profiles = array.profiles or options.profiles or {}
+    array.profiles = profiles
+    options.profiles = profiles
+    table.removevalue(profiles, name)
+
+    local currentName = options.currentHotkeySetName or hotkeyOptions.currentHotkeySetName
+    if currentName == name then
+        local fallback = nil
+        for _, profileName in ipairs(profiles) do
+            if hotkeySets[profileName] then
+                fallback = profileName
+                break
+            end
+        end
+        if not fallback then
+            for profileName, _ in pairs(hotkeySets) do
+                fallback = profileName
+                break
+            end
+        end
+        hotkeyOptions.currentHotkeySetName = fallback
+        options.currentHotkeySetName = fallback
+        options.currentHotkeySet = fallback and hotkeySets[fallback] or nil
+        if options.currentHotkeySet then
+            options.actionBarOptions = options.currentHotkeySet.actionBarOptions or {}
+            options.currentHotkeySet.actionBarOptions = options.actionBarOptions
+            options.actionBarMappings = options.actionBarOptions.mappings or {}
+            options.actionBarOptions.mappings = options.actionBarMappings
+        else
+            options.actionBarOptions = nil
+            options.actionBarMappings = nil
+        end
+        options.actionBarMappingsIndex = nil
+    end
+
+    return true
+end
+
 function ApiJson.toggleLockGroup(optionKey, rangeStart, rangeEnd)
     local newState = not ApiJson.getClientOption(optionKey)
     ApiJson.setClientOption(optionKey, newState)

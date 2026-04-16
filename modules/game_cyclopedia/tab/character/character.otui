@@ -124,12 +124,13 @@ UIWidget
       &state: 1
       @onClick: modules.game_cyclopedia.Cyclopedia.characterButton(self)
     Button
-      id: WheelButton
-      anchors.left: CharacterButton.right
-      anchors.top: CharacterButton.top
-      margin-left: 5
-      size: 34 34
-      icon-source: /game_cyclopedia/images/button_wheel
+      id: WheelButton  
+      anchors.left: CharacterButton.right  
+      anchors.top: CharacterButton.top  
+      margin-left: 5  
+      size: 34 34  
+      icon-source: /game_cyclopedia/images/button_wheel  
+      @onClick: modules.game_wheel.toggle()
     BorderBox
       id: DetailsBase
       anchors.top: inventoryPanel.bottom

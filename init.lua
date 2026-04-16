@@ -10,20 +10,79 @@ Services = {
     --getCoinsUrl = "http://localhost/?subtopic=shop&step=terms", --./game_market
 }
 
---[[
-Servers_init = {
-    ["http://127.0.0.1/login.php"] = {
-        ["port"] = 80,
-        ["protocol"] = 1320,
-        ["httpLogin"] = true
-    },
-    ["ip.net"] = {
-        ["port"] = 7171,
-        ["protocol"] = 860,
-        ["httpLogin"] = false
-    },
-}
-]]
+--- Enables or disables the entire server configuration block.
+-- Set to `false` to disable all configuration below.
+local ENABLE_SERVERS = true
+
+---
+-- @module Servers_init
+-- Configuration table for all servers used by the system.
+--
+-- This entire block is conditionally enabled based on ENABLE_SERVERS.
+-- When ENABLE_SERVERS == false, everything is ignored/disabled.
+--
+
+---
+-- Server configuration system for multi-server or multi-world clients.
+--
+-- This structure allows a single client build to connect to multiple servers
+-- without requiring duplicate client folders.
+--
+-- A server that hosts several worlds, or that provides a separate test environment,
+-- can simply define additional entries inside this configuration table.
+--
+-- Instead of maintaining multiple client installations (one per world/server),
+-- the client can switch between servers by selecting the desired configuration entry.
+-- This simplifies testing, avoids redundant directories, and centralizes connection settings.
+--
+-- The ENABLE_SERVERS flag allows the entire configuration block to be enabled or disabled
+-- without deleting or commenting out individual entries.
+--
+
+Servers_init = {}
+
+if ENABLE_SERVERS then
+
+    ---
+    -- List of servers and their configuration parameters.
+    -- Each entry defines port, protocol, and authentication options.
+    -- @table Servers_init
+    --
+    Servers_init = {
+
+        -- Local login server
+        ---
+        -- Configuration for local login server.
+        -- @class table
+        -- @name local_login
+        -- @field port Port used for HTTP connection
+        -- @field protocol Protocol identifier used by the application
+        -- @field httpLogin Enables HTTP-based login on the server
+        -- @field useAuthenticator Enables additional authentication layer
+        --
+        ["http://127.0.0.1/login.php"] = {
+            port = 80,
+            protocol = 1412,
+            httpLogin = true,
+            useAuthenticator = false
+        },
+
+        -- External server
+        ---
+        -- Configuration for external server ip.net.
+        -- @class table
+        -- @name ip_net
+        -- @field port TCP port used for connection
+        -- @field protocol Protocol identifier used by the server
+        -- @field httpLogin Indicates if the server allows HTTP login
+        --
+        ["ip.net"] = {
+            port = 7171,
+            protocol = 860,
+            httpLogin = false
+        }
+    }
+end
 
 g_app.setName("OTClient - Redemption");
 g_app.setCompactName("otclient");

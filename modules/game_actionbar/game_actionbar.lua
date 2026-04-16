@@ -553,6 +553,73 @@ function updateVisibleWidgetsExternal()
     updateVisibleWidgets()
 end
 
+function selectHotkeySet(name)
+    if not ApiJson or not ApiJson.setCurrentHotkeySetName then
+        return false
+    end
+
+    if not ApiJson.setCurrentHotkeySetName(name) then
+        return false
+    end
+
+    ApiJson.saveData()
+
+    if #actionBars == 0 then
+        return true
+    end
+
+    for _, actionbar in pairs(actionBars) do
+        if actionbar and not actionbar:isDestroyed() then
+            unbindActionBarEvent(actionbar)
+        end
+    end
+
+    for i = 1, #actionBars do
+        setupActionBar(i)
+    end
+
+    updateVisibleWidgets()
+    updateActionBarEventSubscriptions()
+
+    return true
+end
+
+function createHotkeySet(name, sourceName)
+    if not ApiJson or not ApiJson.createHotkeySet then
+        return false
+    end
+
+    local ok = ApiJson.createHotkeySet(name, sourceName)
+    if ok then
+        ApiJson.saveData()
+    end
+    return ok
+end
+
+function renameHotkeySet(oldName, newName)
+    if not ApiJson or not ApiJson.renameHotkeySet then
+        return false
+    end
+
+    local ok = ApiJson.renameHotkeySet(oldName, newName)
+    if ok then
+        ApiJson.saveData()
+    end
+    return ok
+end
+
+function removeHotkeySet(name)
+    if not ApiJson or not ApiJson.removeHotkeySet then
+        return false
+    end
+
+    local ok = ApiJson.removeHotkeySet(name)
+    if ok then
+        ApiJson.saveData()
+    end
+    return ok
+end
+
 --- Toggles cooldown display options
 function toggleCooldownOption()
     for _, actionbar in pairs(activeActionBars) do
@@ -565,7 +632,6 @@ function toggleCooldownOption()
             end
         end
     end
-
 end
 
 function configureActionBar(key, value)

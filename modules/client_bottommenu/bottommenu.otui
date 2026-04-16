@@ -13,16 +13,24 @@ ShowOffWidget < UIWidget
 
   UITextEdit
     id: description
-    size: 476 0
+    size: 465 0
+    ttf-font: verdana-bold
+    ttf-font-size: 10
     anchors.left: image.right
     anchors.top: parent.top
     anchors.bottom: parent.bottom
-    margin-top: 2
-    margin-left: 10
+    margin-left: 2
     color: #c0c0c0ff
+    multiline: true
     text-wrap: true
     text-auto-resize: true
+    editable: false
     selectable: true
+    focusable: false
+    cursor-visible: false
+    change-cursor-image: false
+    selection-color: #f4f4f4ff
+    selection-background-color: #808080ff
 
 Panel
   id: bottomMenu
@@ -31,19 +39,20 @@ Panel
   anchors.horizontalCenter: parent.horizontalCenter
   image-source: /images/ui/panel_top
   
-  UIWidget
+  Label
     phantom: true
     anchors.bottom: parent.bottom
     anchors.horizontalCenter: parent.horizontalCenter
     text-align: center
     text-auto-resize: true
-    color: #e98d02
+    color: #c0c0c0ff
     margin-bottom: 110
     text: OTClient Redemption
-    font: verdana-11px-rounded
-    font-scale: 4
+    ttf-font: martel
+    ttf-font-size: 90
+    stroke: 2 black
     shader: Map - Party
-
+    
   MiniQtScrollableWindow
     id: showOffWindow
     anchors.bottom: parent.bottom
