@@ -128,7 +128,7 @@ void AndroidManager::unZipAssetData() {
             AASSET_MODE_BUFFER);
 
     if (!dataAsset) {
-        g_logger.fatal("Failed to open data.zip from APK assets. Ensure data.zip is bundled in android/app/src/main/assets/");
+        g_logger.fatal("Failed to open data.zip from APK assets. Run setup_android_deps.sh to generate it.");
         return;
     }
 
