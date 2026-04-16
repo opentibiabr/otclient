@@ -1196,6 +1196,16 @@ function g_game.requestHighscore(action, category, vocation, world, worldType, b
 ---@param isOpen? boolean false
 function g_game.imbuementDurations(isOpen) end
 
+---@param isOpen? boolean false
+function g_game.imbuementDurations(isOpen) end
+
+---@param playerId integer
+function g_game.openWheelOfDestiny(playerId) end
+
+---@param wheelPoints table<integer, integer>
+---@param activeGems table<integer, integer>
+function g_game.applyWheelOfDestiny(wheelPoints, activeGems) end
+
 ---@param variant integer
 ---@param item ItemPtr
 function g_game.sendQuickLoot(variant, item) end

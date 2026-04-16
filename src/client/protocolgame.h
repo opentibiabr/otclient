@@ -139,6 +139,12 @@ public:
     void sendOpenPortableForge();
     void sendForgeRequest(Otc::ForgeAction_t actionType, bool convergence = false, uint16_t firstItemid = 0, uint8_t firstItemTier = 0, uint16_t secondItemId = 0, bool improveChance = false, bool tierLoss = false);
     void sendForgeBrowseHistoryRequest(uint16_t page);
+    void sendExivaRestrictions(bool allowAll, bool allowOwnGuild, bool allowOwnParty, bool allowVipList,
+                               bool allowPlayerWhitelist, bool allowGuildWhitelist,
+                               const std::vector<std::string>& characterWhiteList,
+                               const std::vector<std::string>& removeCharacter,
+                               const std::vector<std::string>& guildWhiteList,
+                               const std::vector<std::string>& removeGuild);
     void sendApplyImbuement(uint8_t slot, uint32_t imbuementId, bool protectionCharm);
     void sendClearImbuement(uint8_t slot);
     void sendCloseImbuingWindow();
@@ -149,6 +155,8 @@ public:
     void sendStashStow(const Position& position, const uint16_t itemId, const uint32_t count, const uint8_t stackpos, const uint8_t action);
     void sendHighscoreInfo(uint8_t action, uint8_t category, uint32_t vocation, std::string_view world, uint8_t worldType, uint8_t battlEye, uint16_t page, uint8_t totalPages);
     void sendImbuementDurations(bool isOpen = false);
+    void sendOpenWheelOfDestiny(uint32_t playerId);
+    void sendApplyWheelOfDestiny(const std::vector<uint16_t>& wheelPointsVec, const std::vector<uint16_t>& activeGemsVec);
     void sendRequestBestiary();
     void sendRequestBestiaryOverview(std::string_view catName, bool search = false, std::vector<uint16_t> raceIds = {});
     void sendRequestBestiarySearch(uint16_t raceId);
@@ -164,6 +172,11 @@ public:
     void openContainerQuickLoot(uint8_t action, uint8_t category, const Position& pos, uint16_t itemId, uint8_t stackpos, bool useMainAsFallback);
     void sendInspectionNormalObject(const Position& position);
     void sendInspectionObject(Otc::InspectObjectTypes inspectionType, uint16_t itemId, uint8_t itemCount);
+
+    // Wheel of Destiny
+    void sendOpenWheel(uint32_t playerId);
+    void sendApplyWheelPoints(const std::vector<uint16_t>& slotPoints,uint16_t greenGem,uint16_t redGem,uint16_t acquaGem,uint16_t purpleGem);
+    void sendWheelGemAction(const uint8_t actionType, const uint8_t param, const uint8_t pos);
 
     // otclient only
     void sendChangeMapAwareRange(uint8_t xrange, uint8_t yrange);
@@ -298,6 +311,7 @@ private:
     void parseQuestTracker(const InputMessagePtr& msg);
     void parseKillTracker(const InputMessagePtr& msg);
     void parseOpenOutfitWindow(const InputMessagePtr& msg) const;
+    void parseExivaRestrictions(const InputMessagePtr& msg);
     void parseVipAdd(const InputMessagePtr& msg);
     void parseVipState(const InputMessagePtr& msg);
     void parseVipLogout(const InputMessagePtr& msg);
@@ -374,6 +388,7 @@ private:
     void parseDetachEffect(const InputMessagePtr& msg);
     void parseCreatureShader(const InputMessagePtr& msg);
     void parseMapShader(const InputMessagePtr& msg);
+    void parseOpenWheelWindow(const InputMessagePtr& msg);
 
     void parseAttachedPaperdoll(const InputMessagePtr& msg);
     void parseDetachPaperdoll(const InputMessagePtr& msg);

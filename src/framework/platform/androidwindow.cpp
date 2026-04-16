@@ -27,6 +27,8 @@
 #include <game-activity/native_app_glue/android_native_app_glue.h>
 #include "framework/core/clock.h"
 #include <framework/core/eventdispatcher.h>
+#include <android/log.h>
+#define ALOGD(...) __android_log_print(ANDROID_LOG_DEBUG, "OTClientMobile", __VA_ARGS__)
 
 AndroidWindow& g_androidWindow = (AndroidWindow&) g_window;
 
@@ -90,7 +92,9 @@ void AndroidWindow::internalCheckGL() {
 
 void AndroidWindow::internalChooseGL() {
     static int attrList[] = {
-#if OPENGL_ES==2
+#if OPENGL_ES>=3
+        EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT,
+#elif OPENGL_ES==2
         EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
 #else
         EGL_RENDERABLE_TYPE, EGL_OPENGL_ES_BIT,
@@ -121,7 +125,9 @@ void AndroidWindow::internalCreateGLContext() {
     }
 
     EGLint attrList[] = {
-#if OPENGL_ES==2
+#if OPENGL_ES>=3
+        EGL_CONTEXT_CLIENT_VERSION, 3,
+#elif OPENGL_ES==2
         EGL_CONTEXT_CLIENT_VERSION, 2,
 #else
         EGL_CONTEXT_CLIENT_VERSION, 1,
@@ -175,6 +181,11 @@ void AndroidWindow::internalCreateGLSurface() {
 }
 
 void AndroidWindow::queryGlSize() {
+    // Surface may not be created yet during early CONFIG_CHANGED events
+    if (m_eglDisplay == EGL_NO_DISPLAY || m_eglSurface == EGL_NO_SURFACE) {
+        return;
+    }
+
     int width, height;
     if (EGL_FALSE == eglQuerySurface(m_eglDisplay, m_eglSurface, EGL_WIDTH, &width) ||
         EGL_FALSE ==  eglQuerySurface(m_eglDisplay, m_eglSurface, EGL_HEIGHT, &height)) {
@@ -250,8 +261,7 @@ void AndroidWindow::processTextInput() {
 void AndroidWindow::processFingerDownAndUp() {
     bool isTouchdown = m_currentEvent.type == TOUCH_DOWN;
 
-    Fw::MouseButton mouseButton = (m_currentEvent.type == TOUCH_UP && !m_isDragging && stdext::millis() > m_lastPress + 500) ?
-        Fw::MouseRightButton : Fw::MouseLeftButton;
+    Fw::MouseButton mouseButton = Fw::MouseLeftButton;
 
     m_inputEvent.reset();
     m_inputEvent.type = (isTouchdown) ? Fw::MousePressInputEvent : Fw::MouseReleaseInputEvent;
@@ -261,11 +271,9 @@ void AndroidWindow::processFingerDownAndUp() {
         m_lastPress = g_clock.millis();
         m_mouseButtonStates |= 1 << mouseButton;
     } else if (m_currentEvent.type == TOUCH_UP) {
-        if (!m_isDragging) {
-            if (stdext::millis() > m_lastPress + 500) {
-                mouseButton = Fw::MouseRightButton;
-                m_inputEvent.mouseButton = mouseButton;
-            }
+        if (!m_isDragging && stdext::millis() > m_lastPress + 500) {
+            mouseButton = Fw::MouseRightButton;
+            m_inputEvent.mouseButton = mouseButton;
         }
         m_isDragging = false;
         g_dispatcher.addEvent([this, mouseButton] { m_mouseButtonStates &= ~(1 << mouseButton); });
@@ -276,7 +284,7 @@ void AndroidWindow::processFingerDownAndUp() {
 
 void AndroidWindow::processFingerMotion() {
     static Point lastMousePos(-1, -1);
-    static const int dragThreshold = 5;
+    static const int dragThreshold = 15; // Increased for touch (was 5, too sensitive)
 
     m_inputEvent.reset();
     m_inputEvent.type = Fw::MouseMoveInputEvent;
@@ -306,7 +314,21 @@ void AndroidWindow::handleInputEvent() {
 }
 
 void AndroidWindow::swapBuffers() {
-    eglSwapBuffers(m_eglDisplay, m_eglSurface);
+    if (m_eglDisplay == EGL_NO_DISPLAY || m_eglSurface == EGL_NO_SURFACE)
+        return;
+
+    if (!eglSwapBuffers(m_eglDisplay, m_eglSurface)) {
+        EGLint error = eglGetError();
+        if (error == EGL_BAD_SURFACE || error == EGL_BAD_NATIVE_WINDOW) {
+            // Surface was lost (e.g. during config change), try to recreate
+            internalDestroySurface();
+            if (m_app->window != nullptr) {
+                internalCreateGLSurface();
+                internalConnectSurface();
+                queryGlSize();
+            }
+        }
+    }
 }
 
 void AndroidWindow::setVerticalSync(bool enable) {
@@ -314,12 +336,12 @@ void AndroidWindow::setVerticalSync(bool enable) {
 }
 
 std::string AndroidWindow::getClipboardText() {
-    // TODO
+    // TODO: implement via JNI ClipboardManager (see PR #1674)
     return "";
 }
 
 void AndroidWindow::setClipboardText(const std::string_view text) {
-    // TODO
+    // TODO: implement via JNI ClipboardManager (see PR #1674)
 }
 
 Size AndroidWindow::getDisplaySize() {
@@ -427,9 +449,11 @@ void AndroidWindow::handleNativeEvents() {
 }
 
 void AndroidWindow::handleCmd(int32_t cmd) {
+    ALOGD("handleCmd: cmd=%d", cmd);
     switch (cmd) {
         case APP_CMD_INIT_WINDOW:
             if (m_app->window != nullptr) {
+                ALOGD("INIT_WINDOW: window=%p, hasContext=%d", m_app->window, m_eglContext != EGL_NO_CONTEXT);
                 if (m_eglContext) {
                     internalCreateGLSurface();
                     internalConnectSurface();
@@ -437,13 +461,21 @@ void AndroidWindow::handleCmd(int32_t cmd) {
                     internalInitGL();
                 }
                 updateDisplayDensityFromSystem(g_androidManager.getScreenDensity());
+                queryGlSize();
+                ALOGD("INIT_WINDOW: size=%dx%d, density=%.2f, visible=true", m_size.width(), m_size.height(), m_displayDensity);
                 m_visible = true;
             } else {
+                ALOGD("INIT_WINDOW: window is null, visible=false");
                 m_visible = false;
             }
             break;
         case APP_CMD_LOW_MEMORY:
+            ALOGD("LOW_MEMORY: ignoring surface destruction to keep rendering alive");
+            // Do NOT destroy the surface on low memory - it prevents recovery
+            // since APP_CMD_INIT_WINDOW won't be sent again.
+            break;
         case APP_CMD_TERM_WINDOW:
+            ALOGD("TERM_WINDOW: setting visible=false");
             m_visible = false;
             internalDestroySurface();
             break;
@@ -451,6 +483,7 @@ void AndroidWindow::handleCmd(int32_t cmd) {
         case APP_CMD_CONFIG_CHANGED:
             updateDisplayDensityFromSystem(g_androidManager.getScreenDensity());
             queryGlSize();
+            ALOGD("RESIZED/CONFIG_CHANGED: size=%dx%d, density=%.2f", m_size.width(), m_size.height(), m_displayDensity);
             break;
         default:
             break;

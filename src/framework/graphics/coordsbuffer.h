@@ -68,6 +68,18 @@ public:
         m_textureCoordArray.addQuad(src);
     }
 
+    void addHorizontallyFlippedQuad(const Rect& dest, const Rect& src)
+    {
+        m_vertexArray.addQuad(dest);
+        m_textureCoordArray.addHorizontallyFlippedQuad(src);
+    }
+
+    void addVerticallyFlippedQuad(const Rect& dest, const Rect& src)
+    {
+        m_vertexArray.addQuad(dest);
+        m_textureCoordArray.addVerticallyFlippedQuad(src);
+    }
+
     void addUpsideDownRect(const Rect& dest, const Rect& src)
     {
         m_vertexArray.addUpsideDownRect(dest);

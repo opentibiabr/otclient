@@ -185,6 +185,7 @@ void Application::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_configs", "load", &ConfigManager::load, &g_configs);
     g_lua.bindSingletonFunction("g_configs", "unload", &ConfigManager::unload, &g_configs);
     g_lua.bindSingletonFunction("g_configs", "create", &ConfigManager::create, &g_configs);
+    g_lua.bindSingletonFunction("g_configs", "saveSettings", &ConfigManager::saveSettings, &g_configs);
 
     // Logger
     g_lua.registerSingletonClass("g_logger");
@@ -389,6 +390,7 @@ void Application::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_window", "poll", &PlatformWindow::poll, &g_window);
     g_lua.bindSingletonFunction("g_window", "maximize", &PlatformWindow::maximize, &g_window);
     g_lua.bindSingletonFunction("g_window", "restoreMouseCursor", &PlatformWindow::restoreMouseCursor, &g_window);
+    g_lua.bindSingletonFunction("g_window", "setSystemCursor", &PlatformWindow::setSystemCursor, &g_window);
     g_lua.bindSingletonFunction("g_window", "showMouse", &PlatformWindow::showMouse, &g_window);
     g_lua.bindSingletonFunction("g_window", "hideMouse", &PlatformWindow::hideMouse, &g_window);
     g_lua.bindSingletonFunction("g_window", "setTitle", &PlatformWindow::setTitle, &g_window);
@@ -429,7 +431,10 @@ void Application::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_mouse", "pushCursor", &Mouse::pushCursor, &g_mouse);
     g_lua.bindSingletonFunction("g_mouse", "popCursor", &Mouse::popCursor, &g_mouse);
     g_lua.bindSingletonFunction("g_mouse", "isCursorChanged", &Mouse::isCursorChanged, &g_mouse);
+    g_lua.bindSingletonFunction("g_mouse", "setUseNativeCursor", &Mouse::setUseNativeCursor, &g_mouse);
+    g_lua.bindSingletonFunction("g_mouse", "isUsingNativeCursor", &Mouse::isUsingNativeCursor, &g_mouse);
     g_lua.bindSingletonFunction("g_mouse", "isPressed", &Mouse::isPressed, &g_mouse);
+    g_lua.bindSingletonFunction("g_mouse", "getCursorId", &Mouse::getCursorId, &g_mouse);
 
     // Graphics
     g_lua.registerSingletonClass("g_graphics");
@@ -477,7 +482,10 @@ void Application::registerLuaFunctions()
     // FontManager
     g_lua.registerSingletonClass("g_fonts");
     g_lua.bindSingletonFunction("g_fonts", "clearFonts", &FontManager::clearFonts, &g_fonts);
-    g_lua.bindSingletonFunction("g_fonts", "importFont", &FontManager::importFont, &g_fonts);
+    g_lua.bindSingletonFunction("g_fonts", "importFont",
+        static_cast<bool (FontManager::*)(const std::string&)>(&FontManager::importFont), &g_fonts);
+    g_lua.bindSingletonFunction("g_fonts", "importFontWithSize",
+        static_cast<bool (FontManager::*)(const std::string&, int)>(&FontManager::importFont), &g_fonts);
     g_lua.bindSingletonFunction("g_fonts", "fontExists", &FontManager::fontExists, &g_fonts);
 
     // ParticleManager
@@ -585,6 +593,7 @@ void Application::registerLuaFunctions()
     g_lua.bindClassMemberFunction<UIWidget>("getChildByIndex", &UIWidget::getChildByIndex);
     g_lua.bindClassMemberFunction<UIWidget>("getChildByState", &UIWidget::getChildByState);
     g_lua.bindClassMemberFunction<UIWidget>("getChildByStyleName", &UIWidget::getChildByStyleName);
+    g_lua.bindClassMemberFunction<UIWidget>("getNearestChild", &UIWidget::getNearestChild);
     g_lua.bindClassMemberFunction<UIWidget>("recursiveGetChildById", &UIWidget::recursiveGetChildById);
     g_lua.bindClassMemberFunction<UIWidget>("recursiveGetChildByPos", &UIWidget::recursiveGetChildByPos);
     g_lua.bindClassMemberFunction<UIWidget>("recursiveGetChildByState", &UIWidget::recursiveGetChildByState);
@@ -816,6 +825,8 @@ void Application::registerLuaFunctions()
     g_lua.bindClassMemberFunction<UIWidget>("setTextHorizontalAutoResize", &UIWidget::setTextHorizontalAutoResize);
     g_lua.bindClassMemberFunction<UIWidget>("setFont", &UIWidget::setFont);
     g_lua.bindClassMemberFunction<UIWidget>("setFontScale", &UIWidget::setFontScale);
+    g_lua.bindClassMemberFunction<UIWidget>("setTTFFont", &UIWidget::setTTFFont);
+    g_lua.bindClassMemberFunction<UIWidget>("setStroke", &UIWidget::setStroke); 
     g_lua.bindClassMemberFunction<UIWidget>("setShader", &UIWidget::setShader);
     g_lua.bindClassMemberFunction<UIWidget>("getText", &UIWidget::getText);
     g_lua.bindClassMemberFunction<UIWidget>("getDrawText", &UIWidget::getDrawText);
