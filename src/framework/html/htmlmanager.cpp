@@ -28,6 +28,7 @@
 #include "framework/otml/otmlnode.h"
 #include "framework/ui/uimanager.h"
 #include "framework/ui/uiwidget.h"
+#include <functional>
 
 HtmlManager g_html;
 
@@ -55,6 +56,10 @@ namespace {
         {"auto-resize", "image-auto-resize"},
         {"individual-animation", "image-individual-animation"},
         {"src", "image-source"}
+        , {"align", "image-align"}
+        , {"valign", "image-valign"}
+        , {"vspace", "image-offset-y"}
+        , {"hspace", "image-offset-x"}
     };
 
     static const std::unordered_map<std::string, std::string> cssMap = {
@@ -98,6 +103,8 @@ namespace {
         "unicode-bidi",
         /*"visibility",*/
         "white-space",
+        "text-decoration",
+        "vertical-align",
         "word-spacing",
         "writing-mode",
         "hyphens",
@@ -161,6 +168,15 @@ namespace {
             auto it = IMG_ATTR_TRANSLATED.find(attr);
             if (it != IMG_ATTR_TRANSLATED.end()) {
                 attr = it->second;
+            }
+        }
+
+        // map some table-specific attributes to equivalent widget style tags
+        if (tagName == "table") {
+            if (attr == "cellpadding") {
+                attr = "padding";
+            } else if (attr == "cellspacing") {
+                attr = "border-spacing";
             }
         }
     }
@@ -328,6 +344,48 @@ void applyAttributesAndStyles(UIWidget* widget, HtmlNode* node, std::unordered_m
         }
     }
 
+    // Map presentational HTML attributes to CSS properties before stylesMerge is built.
+    // emplace() is used so an explicit inline style="..." always wins.
+    {
+        const auto& tag = node->getTag();
+        auto mapPresAttr = [&](const std::string& htmlAttr, const std::string& cssProp) {
+            const auto& v = node->getAttr(htmlAttr);
+            if (!v.empty()) {
+                node->getAttrStyles().emplace(cssProp, v);
+                if (isInheritable(cssProp))
+                    setChildrenStyles(widget->getHtmlId(), node, "styles", cssProp, v);
+            }
+        };
+        if (tag == "td" || tag == "th") {
+            mapPresAttr("valign", "vertical-align");
+            mapPresAttr("align",  "text-align");
+        }
+        if (tag == "p"  || tag == "div" || tag == "center" ||
+            tag == "h1" || tag == "h2" || tag == "h3" ||
+            tag == "h4" || tag == "h5" || tag == "h6") {
+            mapPresAttr("align", "text-align");
+        }
+        if (tag == "img" || tag == "video" || tag == "object" || tag == "embed") {
+            // align="middle/top/bottom" on replaced content is a vertical-alignment hint,
+            // not text-align.  Map it to the vertical-align CSS property so the anchor
+            // layout code can vertically centre the image relative to its inline siblings.
+            const auto& alignVal = node->getAttr("align");
+            if (alignVal == "middle" || alignVal == "center") {
+                node->getAttrStyles().emplace("vertical-align", "middle");
+            } else if (alignVal == "top" || alignVal == "bottom") {
+                node->getAttrStyles().emplace("vertical-align", alignVal);
+            }
+        }
+        if (tag == "img") {
+            // Map width/height HTML attributes to CSS layout dimensions so the img
+            // widget occupies proper space in the flow layout.
+            // image-width/image-height (set via IMG_ATTR_TRANSLATED) control texture
+            // rendering; these CSS width/height properties control the layout box size.
+            mapPresAttr("width",  "width");
+            mapPresAttr("height", "height");
+        }
+    }
+
     // text node depends on style
     if (!node->getText().empty()) {
         widget->setText(node->getText());
@@ -444,12 +502,48 @@ UIWidgetPtr HtmlManager::readNode(DataRoot& root, const UIWidgetPtr& parent, con
             script = el->getText();
             scriptStr = el->toString();
         } else if (el->getTag() == "html") {
+            // Tags whose layout dimensions come from their loaded resource (image texture,
+            // video frame…) rather than from text metrics.  Propagating "font" (or any
+            // text-specific inheritable property) to these elements would trigger setFont()
+            // → scheduleHtmlTask(PropUpdateSize) → applyFitContentRecursive which resets
+            // their layout size to 0 before the texture has loaded, breaking float/block
+            // paragraph clearance and vertical-centering inside table cells.
+            static const std::unordered_set<std::string_view> kReplacedContentTags = {
+                "img", "video", "canvas", "audio", "embed", "iframe", "object", "picture", "source"
+            };
+
+            // Recursive helper that mirrors setChildrenStyles but skips replaced-content
+            // elements so their layout dimensions are left intact.
+            std::function<void(HtmlNode*, const std::string&, const std::string&, const std::string&)>
+            propagateToTextBearing = [&](HtmlNode* node,
+                                         const std::string& styleName,
+                                         const std::string& style,
+                                         const std::string& value)
+            {
+                for (const auto& child : node->getChildren()) {
+                    if (kReplacedContentTags.count(child->getTag()))
+                        continue;  // skip: font/color have no effect here and cause layout resets
+                    auto& styleMap = child->getStyles()[styleName];
+                    auto it = styleMap.find(style);
+                    if (it == styleMap.end() || !it->second.important) {
+                        styleMap[style] = { value, parent->getHtmlId() };
+                        if (child->getType() == NodeType::Element)
+                            child->getInheritableStyles()[styleName][style] = value;
+                        propagateToTextBearing(child.get(), styleName, style, value);
+                    }
+                }
+            };
+
             for (const auto& n : el->getChildren()) {
                 if (isDynamic) {
                     n->getInheritableStyles() = parent->getHtmlNode()->getInheritableStyles();
                     for (const auto& [styleName, styleMap] : n->getInheritableStyles()) {
-                        for (auto& [style, value] : styleMap)
+                        for (auto& [style, value] : styleMap) {
                             n->getStyles()[styleName][style] = { value , parent->getHtmlId() };
+                            // Propagate to all text-bearing descendants in the dynamic content
+                            // tree (but not to replaced-content elements like <img>).
+                            propagateToTextBearing(n.get(), styleName, style, value);
+                        }
                     }
                 }
                 widget = createWidgetFromNode(n, parent, textNodes, htmlId, moduleName, widgets);
