@@ -19,16 +19,18 @@ CaveBot.Extensions.PosCheck.setup = function()
 
     local maxRetries = 10
     if #data == 6 then
-      local maxRetriesArg = data[6] and data[6]:trim()
-      if maxRetriesArg and maxRetriesArg:len() > 0 then
-        if maxRetriesArg == "inf" or maxRetriesArg == "infinity" or maxRetriesArg == "0" then
+      local maxRetriesArg = data[6]:trim():lower()
+      if maxRetriesArg:len() > 0 then
+        if maxRetriesArg == "inf" or maxRetriesArg == "infinity" then
           maxRetries = 0
         else
-          maxRetries = tonumber(maxRetriesArg)
-          if not maxRetries then
-            warn("wrong poscheck format, maxRetries should be a number or 'inf', is: " .. maxRetriesArg)
+          local parsed = tonumber(maxRetriesArg)
+          if not parsed or parsed ~= parsed or parsed == math.huge
+              or parsed <= 0 or parsed ~= math.floor(parsed) then
+            warn("wrong poscheck format, maxRetries must be a positive integer or 'inf', is: " .. maxRetriesArg)
             return false
           end
+          maxRetries = parsed
         end
       end
     end
@@ -38,7 +40,7 @@ CaveBot.Extensions.PosCheck.setup = function()
         posCheckRetries = 0
     end
 
-    if maxRetries > 0 and posCheckRetries > maxRetries then
+    if maxRetries > 0 and posCheckRetries >= maxRetries then
         posCheckRetries = 0
         print("CaveBot[CheckPos]: waypoints locked, too many tries, unclogging cavebot and proceeding")
         return false
@@ -63,7 +65,7 @@ CaveBot.Extensions.PosCheck.setup = function()
   CaveBot.Editor.registerAction("poscheck", "pos check", {
     value=function() return "last" .. "," .. "10" .. "," .. posx() .. "," .. posy() .. "," .. posz() .. "," .. "10" end,
     title="Location Check",
-    description="label name, accepted dist from coordinates, x, y, z, maxRetries (0/inf=infinite)",
+    description="label name, accepted dist from coordinates, x, y, z, maxRetries (positive integer, 'inf' for infinite)",
     multiline=false,
 })
 end
