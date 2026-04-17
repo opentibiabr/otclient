@@ -159,9 +159,13 @@ context.findItem = function(itemId, subType)
   if subType == nil then
     subType = -1
   end
-  local ammo = context.player:getInventoryItem(InventorySlotAmmo)
-  if ammo and ammo:getId() == itemId and (subType == -1 or ammo:getSubType() == subType) then
-    return ammo
+  -- Search every equipped inventory slot (helmet, amulet, backpack, armor,
+  -- weapons, legs, boots, ring and ammo) before falling back to containers.
+  for slot = InventorySlotFirst, InventorySlotLast do
+    local item = context.player:getInventoryItem(slot)
+    if item and item:getId() == itemId and (subType == -1 or item:getSubType() == subType) then
+      return item
+    end
   end
   return g_game.findItemInContainers(itemId, subType)
 end
