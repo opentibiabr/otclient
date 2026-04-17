@@ -30,8 +30,13 @@
 AndroidManager g_androidManager;
 
 AndroidManager::~AndroidManager() {
-    JNIEnv* env = getJNIEnv();
-    env->DeleteGlobalRef(m_androidManagerJObject);
+    if (m_app && m_app->activity && m_app->activity->vm && m_androidManagerJObject) {
+        JNIEnv* env = nullptr;
+        if (m_app->activity->vm->AttachCurrentThread(&env, nullptr) == 0 && env) {
+            env->DeleteGlobalRef(m_androidManagerJObject);
+            m_androidManagerJObject = nullptr;
+        }
+    }
 }
 
 void AndroidManager::setAndroidApp(android_app* app) {
@@ -45,9 +50,11 @@ void AndroidManager::setAndroidManager(JNIEnv* env, jobject androidManager) {
     m_midShowSoftKeyboard = jniEnv->GetMethodID(androidManagerJClass, "showSoftKeyboard", "()V");
     m_midHideSoftKeyboard = jniEnv->GetMethodID(androidManagerJClass, "hideSoftKeyboard", "()V");
     m_midGetDisplayDensity = jniEnv->GetMethodID(androidManagerJClass, "getDisplayDensity", "()F");
-    m_midShowInputPreview = jniEnv->GetMethodID(androidManagerJClass, "showInputPreview", "(Ljava/lang/String;)V");
+    m_midShowInputPreview = jniEnv->GetMethodID(androidManagerJClass, "showInputPreview", "(Ljava/lang/String;IIII)V");
     m_midUpdateInputPreview = jniEnv->GetMethodID(androidManagerJClass, "updateInputPreview", "(Ljava/lang/String;)V");
     m_midHideInputPreview = jniEnv->GetMethodID(androidManagerJClass, "hideInputPreview", "()V");
+    m_midGetClipboardText = jniEnv->GetMethodID(androidManagerJClass, "getClipboardText", "()Ljava/lang/String;");
+    m_midSetClipboardText = jniEnv->GetMethodID(androidManagerJClass, "setClipboardText", "(Ljava/lang/String;)V");
     jniEnv->DeleteLocalRef(androidManagerJClass);
 }
 
@@ -72,10 +79,10 @@ namespace {
     }
 }
 
-void AndroidManager::showInputPreview(const std::string& text) {
+void AndroidManager::showInputPreview(const std::string& text, int widgetX, int widgetY, int widgetW, int widgetH) {
     JNIEnv* env = getJNIEnv();
     jstring jText = latin1ToJString(env, text);
-    env->CallVoidMethod(m_androidManagerJObject, m_midShowInputPreview, jText);
+    env->CallVoidMethod(m_androidManagerJObject, m_midShowInputPreview, jText, (jint)widgetX, (jint)widgetY, (jint)widgetW, (jint)widgetH);
     env->DeleteLocalRef(jText);
 }
 
@@ -91,6 +98,22 @@ void AndroidManager::hideInputPreview() {
     env->CallVoidMethod(m_androidManagerJObject, m_midHideInputPreview);
 }
 
+std::string AndroidManager::getClipboardText() {
+    JNIEnv* env = getJNIEnv();
+    auto jText = (jstring) env->CallObjectMethod(m_androidManagerJObject, m_midGetClipboardText);
+    if (!jText) return "";
+    std::string result = getStringFromJString(jText);
+    env->DeleteLocalRef(jText);
+    return result;
+}
+
+void AndroidManager::setClipboardText(const std::string& text) {
+    JNIEnv* env = getJNIEnv();
+    jstring jText = latin1ToJString(env, text);
+    env->CallVoidMethod(m_androidManagerJObject, m_midSetClipboardText, jText);
+    env->DeleteLocalRef(jText);
+}
+
 void AndroidManager::unZipAssetData() {
     std::string destFolder = getAppBaseDir() + "/game_data/";
 
@@ -104,6 +127,11 @@ void AndroidManager::unZipAssetData() {
             "data.zip",
             AASSET_MODE_BUFFER);
 
+    if (!dataAsset) {
+        g_logger.fatal("Failed to open data.zip from APK assets. Run setup_android_deps.sh to generate it.");
+        return;
+    }
+
     auto dataFileLength = AAsset_getLength(dataAsset);
     char* dataContent = (char *) malloc(dataFileLength + 1);
     AAsset_read(dataAsset, dataContent, dataFileLength);
@@ -112,7 +140,7 @@ void AndroidManager::unZipAssetData() {
     unzipper::extract(dataContent, dataFileLength, destFolder);
 
     AAsset_close(dataAsset);
-    delete [] dataContent;
+    free(dataContent);
 }
 
 std::string AndroidManager::getAppBaseDir() {

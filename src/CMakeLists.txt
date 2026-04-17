@@ -76,7 +76,9 @@ endif()
 if (TOGGLE_FRAMEWORK_EDITOR)
   set(FRAMEWORK_DEFINITIONS ${FRAMEWORK_DEFINITIONS} -DFRAMEWORK_EDITOR)
 endif()
-if (ANDROID OR WASM)
+if (ANDROID)
+  set(FRAMEWORK_DEFINITIONS ${FRAMEWORK_DEFINITIONS} -DOPENGL_ES=3)
+elseif(WASM)
   set(FRAMEWORK_DEFINITIONS ${FRAMEWORK_DEFINITIONS} -DOPENGL_ES=2)
 endif()
 
@@ -125,6 +127,14 @@ add_definitions(-D"BUILD_REVISION=\\\"${BUILD_REVISION}\\\"")
 # *****************************************************************************
 # Packages / Libs
 # *****************************************************************************
+# Before we begin loading packages wholesale, we have to check which package
+# provider is available. Normally, OTClient developers prefer vcpkg.
+# However if that is not available, we can check if PkgConfig is available.
+# PkgConfig is only intended for package maintainers.
+# *****************************************************************************
+if(NOT DEFINED VCPKG_TARGET_TRIPLET)
+  find_package(PkgConfig REQUIRED)
+endif()
 find_package(OpenSSL QUIET)
 find_package(PhysFS REQUIRED)
 find_package(ZLIB REQUIRED)
@@ -143,7 +153,12 @@ find_package(ZLIB REQUIRED)
 find_package(httplib CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(utf8cpp REQUIRED)
-find_package(unofficial-inih CONFIG REQUIRED)
+if(DEFINED VCPKG_TARGET_TRIPLET)
+  find_package(unofficial-inih CONFIG REQUIRED)
+else()
+  pkg_check_modules(INIReader REQUIRED IMPORTED_TARGET INIReader)
+  add_library(unofficial::inih::inireader ALIAS PkgConfig::INIReader)
+endif()
 find_package(Freetype REQUIRED)
 
 find_path(CPPCODEC_INCLUDE_DIRS "cppcodec/base32_crockford.hpp")
@@ -177,23 +192,72 @@ if(TOGGLE_FRAMEWORK_SOUND)
   if(NOT WASM)
     find_package(OpenAL CONFIG REQUIRED)
   endif()
-  find_package(VorbisFile REQUIRED)
-  find_package(Vorbis CONFIG REQUIRED)
-  find_package(Ogg CONFIG REQUIRED)
+  if(DEFINED VCPKG_TARGET_TRIPLET)
+    find_package(VorbisFile REQUIRED)
+    find_package(Vorbis CONFIG REQUIRED)
+    find_package(Ogg CONFIG REQUIRED)
+  else()
+    pkg_check_modules(VORBISFILE REQUIRED vorbisfile)
+    add_library(Vorbis::vorbisfile INTERFACE IMPORTED)
+    set_target_properties(Vorbis::vorbisfile PROPERTIES
+      INTERFACE_INCLUDE_DIRECTORIES "${VORBISFILE_INCLUDE_DIRS}"
+      INTERFACE_LINK_LIBRARIES "${VORBISFILE_LIBRARIES}"
+    )
+    pkg_check_modules(VORBIS REQUIRED vorbis)
+    add_library(Vorbis::vorbis INTERFACE IMPORTED)
+    set_target_properties(Vorbis::vorbis PROPERTIES
+      INTERFACE_INCLUDE_DIRECTORIES "${VORBIS_INCLUDE_DIRS}"
+      INTERFACE_LINK_LIBRARIES "${VORBIS_LIBRARIES}"
+    )
+    pkg_check_modules(OGG REQUIRED ogg)
+    add_library(Ogg::ogg INTERFACE IMPORTED)
+    set_target_properties(Ogg::ogg PROPERTIES
+      INTERFACE_INCLUDE_DIRECTORIES "${OGG_INCLUDE_DIRS}"
+      INTERFACE_LINK_LIBRARIES "${OGG_LIBRARIES}"
+    )
+  endif()
 endif()
 if(ANDROID)
-  set(LUA_LIBRARY ${LUA_LIBRARY} ${Android_LIBRARIES}/liblua.a)
-  set(LUAJIT_INCLUDE_DIR ${LUAJIT_LIBRARY} ${Android_INCLUDES}/luajit)
-  set(LUAJIT_LIBRARY ${LUAJIT_LIBRARY} ${Android_LIBRARIES}/libluajit.a)
-  set(OpenAL_LIBRARY ${OpenAL_LIBRARY} ${Android_LIBRARIES}/libopenal.a)
-  set(MINIZIP_INCLUDE_DIR ${MINIZIP_INCLUDE_DIR} ${Android_INCLUDES}/minizip)
-  set(MINIZIP_LIBRARY ${MINIZIP_LIBRARY} ${Android_LIBRARIES}/libminizip.a)
+  # LuaJIT: pre-compiled via build_luajit_android.sh or setup_android_deps.sh
+  # vcpkg LuaJIT port can't cross-compile for Android from x64 host
+  set(LUAJIT_ANDROID_LIBS "${CMAKE_SOURCE_DIR}/android/app/libs")
+  set(LUAJIT_ANDROID_LIB "${LUAJIT_ANDROID_LIBS}/lib/${CMAKE_ANDROID_ARCH_ABI}/libluajit-5.1.a")
+  set(LUAJIT_ANDROID_INC "${LUAJIT_ANDROID_LIBS}/include/luajit")
+  if(EXISTS "${LUAJIT_ANDROID_LIB}")
+    set(LUAJIT_INCLUDE_DIR "${LUAJIT_ANDROID_INC}" CACHE PATH "" FORCE)
+    set(LUAJIT_LIBRARY "${LUAJIT_ANDROID_LIB}" CACHE FILEPATH "" FORCE)
+    set(LUA_LIBRARY "${LUAJIT_ANDROID_LIB}")
+    include_directories("${LUAJIT_ANDROID_INC}")
+    message(STATUS "LuaJIT: using pre-compiled lib for ${CMAKE_ANDROID_ARCH_ABI}")
+  else()
+    message(FATAL_ERROR "LuaJIT not found for ${CMAKE_ANDROID_ARCH_ABI}. Run ./build_luajit_android.sh first.")
+  endif()
+  find_package(OpenAL CONFIG REQUIRED)
+  set(OpenAL_LIBRARY OpenAL::OpenAL)
+
+  # Vendored minizip (nmoinvaz fork) for Android APK asset extraction
+  include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR}/framework/core/minizip)
+  set(MINIZIP_LIBRARY "")
+
   find_package(game-activity REQUIRED CONFIG)
   find_package(EGL REQUIRED)
 else()
   if(NOT WASM)
     find_package(OpenGL REQUIRED)
-    find_package(GLEW REQUIRED)
+    if(DEFINED VCPKG_TARGET_TRIPLET)
+      find_package(GLEW REQUIRED)
+    else()
+      pkg_check_modules(GLEW REQUIRED IMPORTED_TARGET glew)
+      add_library(GLEW::GLEW ALIAS PkgConfig::GLEW)
+# *****************************************************************************
+# GLEW_LIBRARY seems to be missing from PkgConfig::GLEW, so
+# we're gonna declare it with the value of GLEW_LIBRARIES to make the rest
+# of the recipe hold it together.
+# *****************************************************************************
+      if(NOT DEFINED GLEW_LIBRARY AND DEFINED GLEW_LIBRARIES)
+        set(GLEW_LIBRARY "${GLEW_LIBRARIES}")
+      endif()
+    endif()
     find_package(LuaJIT REQUIRED)
   else()
     set(LUA_LIBRARY ${LUA_LIBRARY} ${CMAKE_SOURCE_DIR}/browser/include/lua51/liblua.a)
@@ -402,6 +466,16 @@ if (WASM)
   )
 endif()
 
+if(ANDROID)
+  # Vendored minizip sources for APK asset extraction (must be after SOURCE_FILES definition)
+  set(SOURCE_FILES ${SOURCE_FILES}
+          framework/core/minizip/ioapi.c
+          framework/core/minizip/ioapi_mem.c
+          framework/core/minizip/unzip.c
+          framework/core/minizip/crypt.c
+  )
+endif()
+
 add_library(otclient_core STATIC ${SOURCE_FILES})
 
 target_link_libraries(otclient_core PRIVATE unofficial::inih::inireader)
@@ -417,6 +491,19 @@ if(TOGGLE_PRE_COMPILED_HEADER)
 else()
   message(STATUS "Use precompiled header: OFF")
 endif(TOGGLE_PRE_COMPILED_HEADER)
+
+# Exclude vendored minizip C files from PCH and unity build (Android only, C files cannot use C++ PCH)
+if(ANDROID)
+  set_source_files_properties(
+    framework/core/minizip/ioapi.c
+    framework/core/minizip/ioapi_mem.c
+    framework/core/minizip/unzip.c
+    framework/core/minizip/crypt.c
+    PROPERTIES
+      SKIP_PRECOMPILE_HEADERS ON
+      SKIP_UNITY_BUILD_INCLUSION ON
+  )
+endif()
 
 if(SPEED_UP_BUILD_UNITY)
   set_target_properties(otclient_core PROPERTIES UNITY_BUILD ON)
@@ -490,6 +577,8 @@ if(MSVC)
           NTDDI_VERSION=0x06000000
           _WIN32_WINNT=0x0600
   )
+
+  target_compile_definitions(otclient_core PRIVATE CRASH_HANDLER)
 
   target_compile_options(otclient_core PUBLIC /MP /FS /Zf /EHsc /bigobj)
 
@@ -592,7 +681,6 @@ elseif(ANDROID)
           ${EGL_INCLUDE_DIR}
           ${PARALLEL_HASHMAP_INCLUDE_DIRS}
           ${NLOHMANN_JSON_INCLUDE_DIR}
-          ${MINIZIP_INCLUDE_DIR}
           ${CPPCODEC_INCLUDE_DIRS}
   )
   target_link_libraries(otclient_core
@@ -622,6 +710,7 @@ elseif(ANDROID)
           GLESv3
           android
           log
+          Freetype::Freetype
           pugixml::pugixml
           fmt::fmt-header-only
           utf8cpp::utf8cpp

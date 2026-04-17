@@ -87,15 +87,12 @@ void FileStream::cache(bool
 
 #if ENABLE_ENCRYPTION == 1
         if (useEnc) {
-            if (m_data.size() >= std::string(ENCRYPTION_HEADER).size() &&
-                std::memcmp(m_data.data(), ENCRYPTION_HEADER, std::string(ENCRYPTION_HEADER).size()) == 0) {
-                m_data.erase(m_data.begin(), m_data.begin() + std::string(ENCRYPTION_HEADER).size());
+            const std::string encHeader(ENCRYPTION_HEADER);
+            if (m_data.size() >= encHeader.size() &&
+                std::memcmp(m_data.data(), encHeader.data(), encHeader.size()) == 0) {
+                m_data.erase(m_data.begin(), m_data.begin() + encHeader.size());
+                ResourceManager::decrypt(m_data.data(), m_data.size());
             }
-
-            uint8_t* decryptedData = ResourceManager::decrypt(m_data.data(), m_data.size());
-            m_data.resize(size - std::string(ENCRYPTION_HEADER).size());
-            std::memcmp(m_data.data(), decryptedData, m_data.size());
-            delete[] decryptedData;
         }
 #endif
         PHYSFS_close(m_fileHandle);
