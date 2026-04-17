@@ -57,7 +57,7 @@ TargetBot.Looting.update = function(data)
   TargetBot.Looting.list = {}
   ui.items:setItems(data['items'] or {})
   ui.containers:setItems(data['containers'] or {})
-  ui.everyItem:setOn(data['everyItem'] == true)
+  ui.everyItem:setOn(not not data['everyItem'])
   updateLootingModeLabel()
   ui.maxDangerPanel.value:setText(data['maxDanger'] or 10)
   ui.minCapacityPanel.value:setText(data['minCapacity'] or 100)
