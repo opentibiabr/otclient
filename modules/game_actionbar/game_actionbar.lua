@@ -508,7 +508,7 @@ function onHotkeyItems(itemList)
     end
     for _, actionbar in pairs(activeActionBars) do
         for _, button in pairs(actionbar.tabBar:getChildren()) do
-            if button.item:getItemId() >= 100 then
+            if button.item and button.item:getItemId() >= 100 then
                 setupButtonTooltip(button, false)
             end
         end
@@ -560,6 +560,10 @@ function selectHotkeySet(name)
 
     if not ApiJson.setCurrentHotkeySetName(name) then
         return false
+    end
+
+    if clearHotkeyCache then
+        clearHotkeyCache()
     end
 
     ApiJson.saveData()
