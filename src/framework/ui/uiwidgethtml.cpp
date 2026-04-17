@@ -1565,8 +1565,7 @@ void UIWidget::updateSize() {
         if (targetWidth != prevWidth)
             setWidth_px(targetWidth);
 
-        if (targetWidth != prevWidth || m_realTextSize.width() <= 0 || m_realTextSize.height() <= 0)
-            updateText();
+        updateText();
         return;
     }
 
