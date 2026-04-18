@@ -311,6 +311,7 @@ function assignItem(button, itemId, itemTier, dragEvent)
     local selectButton = ui:querySelector("button[text='Select Object']")
     local checkbox1 = ui:querySelector("#UseOnYourself")
     local checkbox2 = ui:querySelector("#UseOnTarget")
+    local checkbox3 = ui:querySelector("#UseAtCursorPosition")
     local checkbox4 = ui:querySelector("#SelectUseTarget")
     local checkbox5 = ui:querySelector("#Equip")
     local checkbox6 = ui:querySelector("#Use")
@@ -341,6 +342,9 @@ function assignItem(button, itemId, itemTier, dragEvent)
         widget = checkbox2,
         useType = "UseOnTarget"
     }, {
+        widget = checkbox3,
+        useType = "UseAtCursorPosition"
+    }, {
         widget = checkbox4,
         useType = "SelectUseTarget"
     }, {
@@ -359,11 +363,12 @@ function assignItem(button, itemId, itemTier, dragEvent)
         end
     end
 
-    -- UseTypes: UseOnYourself=1, UseOnTarget=2, SelectUseTarget=3
+    -- UseTypes: UseOnYourself=1, UseOnTarget=2, SelectUseTarget=3, UseAtCursorPosition=9
     if item:isMultiUse() then
         for _, cbData in ipairs(checkboxWidgets) do
             local useTypeIndex = UseTypes[cbData.useType]
-            if useTypeIndex <= UseTypes["SelectUseTarget"] and cbData.widget then
+            if (useTypeIndex <= UseTypes["SelectUseTarget"] or useTypeIndex == UseTypes["UseAtCursorPosition"]) and
+                cbData.widget then
                 cbData.widget:setEnabled(true)
 
                 if not selectedCheckbox and
@@ -545,6 +550,34 @@ function assignPassive(button)
     ui.onEnter = function()
         okFunc(true)
     end
+end
+
+function assignSpecialAction(button, mousePos)
+    local actionbar = button:getParent():getParent()
+    if actionbar.locked then
+        alert('Action bar is locked')
+        return
+    end
+
+    local menu = g_ui.createWidget('PopupMenu')
+    menu:setGameMenu(true)
+
+    for _, specialAction in ipairs(ActionBarSpecialActions) do
+        menu:addOption(specialAction.text, function()
+            local barID, buttonID = string.match(button:getId(), "(.*)%.(.*)")
+            ApiJson.createOrUpdateSpecialAction(tonumber(barID), tonumber(buttonID), specialAction.id)
+            updateButton(button)
+        end)
+    end
+
+    if button.cache and button.cache.specialAction then
+        menu:addSeparator()
+        menu:addOption(tr("Clear Assigned Action"), function()
+            clearButton(button, true)
+        end)
+    end
+
+    menu:display(mousePos)
 end
 
 -- /*=============================================
