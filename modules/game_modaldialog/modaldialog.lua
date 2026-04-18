@@ -7,7 +7,12 @@ local MINIMUM_CHOICES = 4
 local MAXIMUM_CHOICES = 10
 local BASE_HEIGHT = 40
 local MAX_CHOICE_TEXT = 28
-
+local function destroyWindow()
+    local ui = controllerModal.ui
+    if ui then
+        controllerModal:unloadHtml()
+    end
+end
 function controllerModal:onInit()
     controllerModal:registerEvents(g_game, {
         onModalDialog = onModalDialog
@@ -18,10 +23,7 @@ function controllerModal:onTerminate()
 end
 
 function controllerModal:onGameEnd()
-    local ui = controllerModal.ui
-    if ui and ui:isVisible() then
-        controllerModal:unloadHtml()
-    end
+    destroyWindow()
 end
 
 local function createButtonHandler(id, buttonId, choiceList)
@@ -29,7 +31,7 @@ local function createButtonHandler(id, buttonId, choiceList)
         local focusedChoice = choiceList and choiceList:getFocusedChild()
         local choice = (choiceList and choiceList.selectedChoice) or (focusedChoice and focusedChoice.choiceId) or 0xFF
         g_game.answerModalDialog(id, buttonId, choice)
-        controllerModal:unloadHtml()
+        destroyWindow()
     end
 end
 
@@ -116,23 +118,18 @@ end
 
 function onModalDialog(id, title, message, buttons, enterButton, escapeButton, choices, priority)
     if controllerModal.ui then
-        controllerModal:unloadHtml()
+        destroyWindow()
     end
 
-    -- Workaround for mixed setups where protocolVersion and clientVersion cross 970 differently.
     -- C++ parse currently uses clientVersion for enter/escape byte order.
-    local protocolVersion = g_game.getProtocolVersion and g_game.getProtocolVersion() or nil
-    local clientVersion = g_game.getClientVersion and g_game.getClientVersion() or nil
-    if protocolVersion and clientVersion then
-        local protocolAfter970 = protocolVersion > 970
-        local clientAfter970 = clientVersion > 970
-        if protocolAfter970 ~= clientAfter970 then
-            enterButton, escapeButton = escapeButton, enterButton
-        end
+    local protocolVersion = g_game.getProtocolVersion()
+    local clientVersion = g_game.getClientVersion()
+    local protocolAfter970 = protocolVersion > 970
+    local clientAfter970 = clientVersion > 970
+    if protocolAfter970 ~= clientAfter970 then
+        enterButton, escapeButton = escapeButton, enterButton
     end
-
     enterButton, escapeButton = resolveModalButtons(buttons, enterButton, escapeButton)
-
     local MINIMUM_WIDTH = g_game.getFeature(GameEnterGameShowAppearance) and MINIMUM_WIDTH_OLD or MINIMUM_WIDTH_QT
     controllerModal:loadHtml('modaldialog.html')
     local ui = controllerModal.ui
@@ -234,7 +231,6 @@ function onModalDialog(id, title, message, buttons, enterButton, escapeButton, c
         ui:raise()
         ui:focus()
         ui:grabKeyboard()
-        -- Avoid triggering default action from key states carried over while the modal is being created.
         confirmKeysEnabledAt = g_clock.millis() + 180
         if firstChoiceWidget then
             selectChoiceWidget(choiceList, firstChoiceWidget, KeyboardFocusReason)
