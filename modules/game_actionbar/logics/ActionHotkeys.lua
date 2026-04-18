@@ -1,24 +1,13 @@
 local function getUsedHotkeyButton(key)
-    if not key or key == "" then
-        return nil
-    end
-
-    local normalizedKey = key:lower()
     for _, actionbar in pairs(activeActionBars) do
         for _, button in pairs(actionbar.tabBar:getChildren()) do
-            local hotkey = button.cache and button.cache.hotkey
-            if hotkey and hotkey:lower() == normalizedKey then
+            local hotkey = button.cache.hotkey
+            if hotkey and hotkey:lower() == key:lower() then
                 return button
             end
         end
     end
     return nil
-end
-
-local function invalidateHotkeyButtonCache()
-    if clearHotkeyCache then
-        clearHotkeyCache()
-    end
 end
 
 local function isHotkeyUsedInternal(key, chatType, checkSecondary)
@@ -130,7 +119,6 @@ function removeHotkeyFromActionBar(keyCombo)
     if button then
         ApiJson.removeHotkey(button:getId())
         unbindHotkey(keyCombo)
-        invalidateHotkeyButtonCache()
         updateButton(button)
         return true
     end
@@ -191,7 +179,7 @@ function assignHotkey(button)
 
     desc:setText('Click "Ok" to assign the hotkey. Click "Clear" to remove the hotkey from "' .. barDesc .. '".')
 
-    local currentHotkey = (button.cache and button.cache.hotkey) or ""
+    local currentHotkey = button.cache.hotkey or ""
     if currentHotkey ~= "" then
         display:setText(currentHotkey)
     else
@@ -254,14 +242,13 @@ function assignHotkey(button)
     end
 
     local okFunc = function()
-        local lastHotkey = (button.cache and button.cache.hotkey) or ""
+        local lastHotkey = button.cache.hotkey or ""
         local hotkey = display.combo or ""
 
         if hotkey == "" then
             if lastHotkey ~= "" then
                 ApiJson.removeHotkey(button:getId())
                 unbindHotkey(lastHotkey)
-                invalidateHotkeyButtonCache()
                 updateButton(button)
             end
 
@@ -277,6 +264,7 @@ function assignHotkey(button)
         if usedButton then
             ApiJson.removeHotkey(usedButton:getId())
             unbindHotkey(hotkey)
+            updateButton(usedButton)
         else
             unbindHotkey(hotkey)
         end
@@ -287,23 +275,18 @@ function assignHotkey(button)
         end
 
         ApiJson.updateActionBarHotkey("TriggerActionButton_" .. button:getId(), hotkey)
-        invalidateHotkeyButtonCache()
-        if usedButton and usedButton ~= button then
-            updateButton(usedButton)
-        end
         updateButton(button)
 
         ActionBarController:unloadHtml()
     end
 
     local clearFunc = function()
-        local assignedHotkey = (button.cache and button.cache.hotkey) or ""
+        local assignedHotkey = button.cache.hotkey or ""
         ApiJson.removeHotkey(button:getId())
         if assignedHotkey ~= '' then
             unbindHotkey(assignedHotkey)
         end
 
-        invalidateHotkeyButtonCache()
         updateButton(button)
         display:setText('')
         display.combo = ''
@@ -331,3 +314,5 @@ function unbindHotkey(hotkey)
     g_keyboard.unbindKeyDown(hotkey, nil, gameRootPanel)
     g_keyboard.unbindKeyUp(hotkey, nil, gameRootPanel)
 end
+
+
