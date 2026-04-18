@@ -7,12 +7,14 @@ local MINIMUM_CHOICES = 4
 local MAXIMUM_CHOICES = 10
 local BASE_HEIGHT = 40
 local MAX_CHOICE_TEXT = 28
+
 local function destroyWindow()
     local ui = controllerModal.ui
     if ui then
         controllerModal:unloadHtml()
     end
 end
+
 function controllerModal:onInit()
     controllerModal:registerEvents(g_game, {
         onModalDialog = onModalDialog
@@ -117,9 +119,7 @@ local function applyFinalHeight(ui, messageLabel, additionalHeight)
 end
 
 function onModalDialog(id, title, message, buttons, enterButton, escapeButton, choices, priority)
-    if controllerModal.ui then
-        destroyWindow()
-    end
+    destroyWindow()
 
     -- C++ parse currently uses clientVersion for enter/escape byte order.
     local protocolVersion = g_game.getProtocolVersion()
@@ -140,7 +140,7 @@ function onModalDialog(id, title, message, buttons, enterButton, escapeButton, c
     local buttonsPanel = controllerModal:findWidget('#buttonsPanel')
     local enterFunc = createButtonHandler(id, enterButton, choiceList)
     local escapeFunc = createButtonHandler(id, escapeButton, choiceList)
-    local confirmKeysEnabledAt = 0
+    local confirmKeysEnabledAt = g_clock.millis() + 180
     local firstChoiceWidget = nil
     ui:setTitle(title)
     messageLabel:html(message)
@@ -194,7 +194,7 @@ function onModalDialog(id, title, message, buttons, enterButton, escapeButton, c
         end
 
         if keyCode == KeyEscape then
-            if g_clock.millis() < confirmKeysEnabledAt then
+            if not ui:isVisible() or g_clock.millis() < confirmKeysEnabledAt then
                 return true
             end
             escapeFunc()
@@ -202,7 +202,7 @@ function onModalDialog(id, title, message, buttons, enterButton, escapeButton, c
         end
 
         if keyCode == KeyEnter then
-            if g_clock.millis() < confirmKeysEnabledAt then
+            if not ui:isVisible() or g_clock.millis() < confirmKeysEnabledAt then
                 return true
             end
             enterFunc()
