@@ -1254,7 +1254,7 @@ function getImageClip(elementIndex)
 end
 
 function Cyclopedia.onParseCyclopediaStoreSummary(xpBoostTime, dailyRewardXpBoostTime, blessings, preySlotsUnlocked,
-    preyWildcards, instantRewards, hasCharmExpansion, hirelingsObtained, hirelingSkills, houseItems)
+    preyWildcards, hasPermanentWeeklyTaskExpansion, instantRewards, hasCharmExpansion, hirelingsObtained, hirelingSkills, houseItems)
 
     UI.StoreSummary.ListBase.List.XPBoosts.RemainingStoreXPBoostTimeValue:setText(string.format("%02d:%02d",
         math.floor(xpBoostTime / 3600), math.floor((xpBoostTime % 3600) / 60)))

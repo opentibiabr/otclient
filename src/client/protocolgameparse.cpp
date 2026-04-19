@@ -1332,6 +1332,9 @@ void ProtocolGame::parseUpdateNeeded(const InputMessagePtr& msg)
 void ProtocolGame::parseLoginError(const InputMessagePtr& msg)
 {
     const auto& error = msg->getString();
+    if (g_game.getClientVersion() >= 1521) {
+        msg->getU8(); // reason
+    }
     g_game.processLoginError(error);
 }
 
@@ -5649,6 +5652,10 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
 
             const uint8_t preySlotsUnlocked = msg->getU8();
             const uint8_t preyWildcards = msg->getU8();
+            bool hasPermanentWeeklyTaskExpansion = false;
+            if (g_game.getClientVersion() >= 1521) {
+                hasPermanentWeeklyTaskExpansion = static_cast<bool>(msg->getU8());
+            }
             const uint8_t instantRewards = msg->getU8();
             const bool hasCharmExpansion = static_cast<bool>(msg->getU8());
             const uint8_t hirelingsObtained = msg->getU8();
@@ -5661,7 +5668,10 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
                 hirelingSkills.emplace_back(static_cast<uint16_t>(skill + 1000));
             }
 
-            msg->getU8();
+            const uint8_t hirelingOutfitsCount = msg->getU8();
+            for (auto i = 0; i < hirelingOutfitsCount; ++i) {
+                msg->getU8(); // outfit ID
+            }
 
             std::vector<std::tuple<uint16_t, std::string, uint8_t>> houseItems;
             const uint16_t houseItemsCount = msg->getU16();
@@ -5673,10 +5683,7 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
                 houseItems.emplace_back(itemId, itemName, count);
             }
 
-            if (g_game.getClientVersion() >= 1521) {
-                msg->getU8();
-            }
-            g_lua.callGlobalField("g_game", "onParseCyclopediaStoreSummary", xpBoostTime, dailyRewardXpBoostTime, blessings, preySlotsUnlocked, preyWildcards, instantRewards, hasCharmExpansion, hirelingsObtained, hirelingSkills, houseItems);
+            g_lua.callGlobalField("g_game", "onParseCyclopediaStoreSummary", xpBoostTime, dailyRewardXpBoostTime, blessings, preySlotsUnlocked, preyWildcards, hasPermanentWeeklyTaskExpansion, instantRewards,hasCharmExpansion, hirelingsObtained, hirelingSkills, houseItems);
             break;
         }
         case Otc::CYCLOPEDIA_CHARACTERINFO_INSPECTION:

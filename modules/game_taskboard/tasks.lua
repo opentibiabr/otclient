@@ -168,7 +168,7 @@ function TaskBoardController:onGameStart()
         onBountyKillUpdate       = function(...) self:onBountyKillUpdate(...) end,
         onWeeklyKillUpdate       = function(...) self:onWeeklyKillUpdate(...) end,
         onBountyPreferredData    = function(...) self:onPreferredServerData(...) end,
-        onSoulsealsData          = function(...) self:onSoulsealsData(...) end,
+        onSoulsealsData          = function(...) pdump(...) self:onSoulsealsData(...) end,
     })
 -- LuaFormatter on
     if not TaskBoardButton then
