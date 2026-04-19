@@ -109,14 +109,18 @@ local function updatePremiumBenefitsVisibility(account)
     end
     local showBenefits = shouldShowAppearance() and SHOW_PREMIUM_WIDGETS and not isPremiumAccount(account)
     premiumBenefitsPanel:setVisible(showBenefits)
-    if showBenefits then
-        premiumBenefitsPanel:setHeight(120)
-        premiumBenefitsPanel:setMarginBottom(6)
-    else
-        premiumBenefitsPanel:setHeight(0)
-        premiumBenefitsPanel:setMarginBottom(0)
+    if premiumBenefitsPanel then
+        if showBenefits then
+            premiumBenefitsPanel:setHeight(120)
+            premiumBenefitsPanel:setMarginBottom(6)
+        else
+            premiumBenefitsPanel:setHeight(0)
+            premiumBenefitsPanel:setMarginBottom(0)
+        end
     end
-    premiumButton:setVisible(showBenefits)
+    if premiumButton then
+        premiumButton:setVisible(showBenefits)
+    end
 end
 
 local function getShowHiddenCharacters()
