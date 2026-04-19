@@ -104,12 +104,9 @@ local function isPremiumAccount(account)
 end
 
 local function updatePremiumBenefitsVisibility(account)
-    if not premiumBenefitsPanel and not premiumButton then
-        return
-    end
     local showBenefits = shouldShowAppearance() and SHOW_PREMIUM_WIDGETS and not isPremiumAccount(account)
-    premiumBenefitsPanel:setVisible(showBenefits)
     if premiumBenefitsPanel then
+        premiumBenefitsPanel:setVisible(showBenefits)
         if showBenefits then
             premiumBenefitsPanel:setHeight(120)
             premiumBenefitsPanel:setMarginBottom(6)
@@ -570,8 +567,19 @@ function onPremiumButtonClick(widget)
         g_platform.openUrl(Services.getCoinsUrl)
         return
     end
-
-    displayInfoBox(tr('Information'), tr('Donation URL not configured. Please contact the server administrator.'))
+    local info = debug.getinfo(1, "Slfn")
+    local filename = info.short_src or "unknown_file"
+    local line = info.currentline or 0
+    local funcname = info.name or "unknown_function"
+    displayInfoBox(
+        tr('Information'),
+        string.format(
+            "[%s:%d - %s] Premium URL not configured. Please contact the server administrator.",
+            filename,
+            line,
+            funcname
+        )
+    )
 end
 
 -- public functions

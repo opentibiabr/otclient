@@ -657,15 +657,11 @@ MainWindow
       anchors.verticalCenter: parent.verticalCenter
       margin-left: 6
       checked: true
-      @onCheckChange: onShowHiddenCharacters(self, self:isChecked())
-    Label
       !text: tr('Show Hidden Characters')
       text-auto-resize: true
-      font: verdana-11px-monochrome
       color: #c0c0c0
-      anchors.left: checkBoxHidden.right
-      anchors.verticalCenter: parent.verticalCenter
-      margin-left: 4
+      @onCheckChange: onShowHiddenCharacters(self, self:isChecked())
+
 
   Panel
     id: buttonOutfit
@@ -693,19 +689,11 @@ MainWindow
       id: checkBoxOutfit
       anchors.left: parent.left
       anchors.verticalCenter: parent.verticalCenter
-      margin-left: 6
-      @onCheckChange: onShowOutfits(self, self:isChecked())
-    Label
+      margin-left: 6      
       !text: tr('Show Outfit')
       text-auto-resize: true
-      font: verdana-11px-monochrome
       color: #c0c0c0
-      anchors.left: checkBoxOutfit.right
-      anchors.verticalCenter: parent.verticalCenter
-      margin-left: 4
-      @onClick: |
-        local checkBox = self:getParent():getChildById('checkBoxOutfit')
-        checkBox:setChecked(not checkBox:isChecked())
+      @onCheckChange: onShowOutfits(self, self:isChecked())
 
   Button
     id: autoReconnect
