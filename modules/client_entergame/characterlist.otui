@@ -10,9 +10,13 @@ CharacterWidget < UIWidget
       end
       if self.rowColor then
         if focused then
-          self:setBackgroundColor("#585858")
+          self:setBackgroundColor("#696767")
+          self:setBorderWidth(1)
+          self:setBorderColor("#696767")
         else
           self:setBackgroundColor(self.rowColor)
+          self:setBorderWidth(0)
+          self:setBorderColor("alpha")
         end
       end
       local pin = self:getChildById('pin')
@@ -475,6 +479,7 @@ MainWindow
     anchors.right: parent.right
     text-auto-resize: true
     image-color: green
+    @onClick: onPremiumButtonClick(self)
     @onSetup: |
       if g_game.getFeature(GameEnterGameShowAppearance) then
         self:setMarginBottom(15)

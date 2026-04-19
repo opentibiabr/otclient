@@ -45,6 +45,13 @@ local SHOW_HIDDEN_SETTING = 'characterlist-show-hidden'
 local SORT_COLUMN_SETTING = 'characterlist-sort-column'
 local SORT_ASCENDING_SETTING = 'characterlist-sort-ascending'
 local PINNED_CHARACTERS_SETTING = 'characterlist-pinned-characters'
+--[[
+    Controls whether the "Premium Benefits Include" panel is visible.
+
+    true  -> panel is displayed
+    false -> panel is hidden
+]]
+local SHOW_PREMIUM_WIDGETS = true
 
 -- autoReconnect Button
 local autoReconnectButton
@@ -100,7 +107,7 @@ local function updatePremiumBenefitsVisibility(account)
     if not premiumBenefitsPanel and not premiumButton then
         return
     end
-    local showBenefits = shouldShowAppearance() and not isPremiumAccount(account)
+    local showBenefits = shouldShowAppearance() and SHOW_PREMIUM_WIDGETS and not isPremiumAccount(account)
     premiumBenefitsPanel:setVisible(showBenefits)
     if showBenefits then
         premiumBenefitsPanel:setHeight(120)
@@ -121,25 +128,12 @@ local function setShowHiddenCharacters(value)
 end
 
 local function getShowOutfits()
-    if modules.client_options and modules.client_options.getOption then
-        local value = modules.client_options.getOption('showOutfitsOnList')
-        if value ~= nil then
-            return toBoolean(value, true)
-        end
-    end
-
-    return g_settings.getBoolean('showOutfitsOnList', true)
+    return toBoolean(modules.client_options.getOption('showOutfitsOnList'), true)
 end
 
 local function setShowOutfits(value)
     value = toBoolean(value, true)
-
-    if modules.client_options and modules.client_options.setOption then
-        modules.client_options.setOption('showOutfitsOnList', value)
-        return
-    end
-
-    g_settings.set('showOutfitsOnList', value)
+    modules.client_options.setOption('showOutfitsOnList', value)
 end
 
 local function getSortColumn()
@@ -238,6 +232,26 @@ local function toLowerText(value)
     return string.lower(tostring(value or ''))
 end
 
+local function toNumberValue(value)
+    if type(value) == 'number' then
+        return value
+    end
+
+    local numericValue = tonumber(value)
+    if numericValue then
+        return numericValue
+    end
+
+    if type(value) == 'string' then
+        numericValue = tonumber((value:gsub('[^%d%-%.]', '')))
+        if numericValue then
+            return numericValue
+        end
+    end
+
+    return 0
+end
+
 local PVP_TYPE_LABELS = {
     [0] = 'Open PvP',
     [1] = 'Optional PvP',
@@ -278,9 +292,12 @@ local function getCharacterWorldLabel(characterInfo)
 end
 
 local function compareCharacters(a, b, sortColumn, sortAscending, pinnedLookup)
-    local aPinned = isCharacterPinned(a.name, a.worldName, pinnedLookup)
-    local bPinned = isCharacterPinned(b.name, b.worldName, pinnedLookup)
-    if aPinned ~= bPinned then return aPinned end
+    local prioritizePinned = sortColumn ~= SORT_COLUMN.Level
+    if prioritizePinned then
+        local aPinned = isCharacterPinned(a.name, a.worldName, pinnedLookup)
+        local bPinned = isCharacterPinned(b.name, b.worldName, pinnedLookup)
+        if aPinned ~= bPinned then return aPinned end
+    end
 
     local aValue, bValue
     if sortColumn == SORT_COLUMN.Character then
@@ -288,7 +305,7 @@ local function compareCharacters(a, b, sortColumn, sortAscending, pinnedLookup)
     elseif sortColumn == SORT_COLUMN.Status then
         aValue, bValue = getCharacterStatusValue(a), getCharacterStatusValue(b)
     elseif sortColumn == SORT_COLUMN.Level then
-        aValue, bValue = tonumber(a.level) or 0, tonumber(b.level) or 0
+        aValue, bValue = toNumberValue(a.level), toNumberValue(b.level)
     elseif sortColumn == SORT_COLUMN.Vocation then
         aValue, bValue = toLowerText(a.vocation), toLowerText(b.vocation)
     else
@@ -542,6 +559,15 @@ function onPinCharacter(widget, isChecked)
 
     setCharacterPinned(parentWidget.characterName, parentWidget.worldName, toBoolean(isChecked, false))
     CharacterList.rebuildCharactersList()
+end
+
+function onPremiumButtonClick(widget)
+    if Services and Services.getCoinsUrl and Services.getCoinsUrl ~= '' then
+        g_platform.openUrl(Services.getCoinsUrl)
+        return
+    end
+
+    displayInfoBox(tr('Information'), tr('Donation URL not configured. Please contact the server administrator.'))
 end
 
 -- public functions

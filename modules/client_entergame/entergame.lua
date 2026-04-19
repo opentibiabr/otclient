@@ -714,14 +714,14 @@ function EnterGame.loginSuccess(requestId, jsonSession, jsonWorlds, jsonCharacte
             name = world.name,
             ip = world.externaladdressprotected,
             port = world.externalportprotected,
-            previewState = world.previewstate == 1,
+            previewState = tonumber(world.previewstate) or PreviewState.Default,
             pvptype = world.pvptype,
         }
     end
 
     local characters = {}
     for index, character in ipairs(json.decode(jsonCharacters)) do
-        local world = worlds[character.worldid]
+        local world = worlds[character.worldid] or {}
         characters[index] = {
             name = character.name,
             level = character.level,
@@ -735,10 +735,10 @@ function EnterGame.loginSuccess(requestId, jsonSession, jsonWorlds, jsonCharacte
             legscolor = character.legscolor,
             detailcolor = character.detailcolor,
             addonsflags = character.addonsflags,
-            worldName = world.name,
+            worldName = world.name or '',
             worldIp = world.ip,
             worldPort = world.port,
-            previewState = world.previewstate,
+            previewState = tonumber(world.previewState or character.previewstate) or PreviewState.Default,
             pvptype = world.pvptype,
         }
     end
