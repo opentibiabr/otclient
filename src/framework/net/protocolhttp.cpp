@@ -237,8 +237,12 @@ void HttpSession::start()
     instance_uri = parseURI(m_url);
     const asio::ip::tcp::resolver::query query_resolver(instance_uri.domain, instance_uri.port);
 
-    m_timer.expires_after(std::chrono::seconds(m_timeout));
-    m_timer.async_wait([sft = shared_from_this()](const std::error_code& ec) { sft->onTimeout(ec); });
+    if (m_timeout > 0) {
+        m_timer.expires_after(std::chrono::seconds(m_timeout));
+        m_timer.async_wait([sft = shared_from_this()](const std::error_code& ec) { sft->onTimeout(ec); });
+    } else {
+        m_timer.cancel();
+    }
 
     if (m_result->postData == "") {
         m_request.append("GET " + instance_uri.query + " HTTP/1.0\r\n");
@@ -365,8 +369,12 @@ void HttpSession::on_connect(const std::error_code& ec)
         on_write();
     }
 
-    m_timer.expires_after(std::chrono::seconds(m_timeout));
-    m_timer.async_wait([sft = shared_from_this()](const std::error_code& ec) {sft->onTimeout(ec); });
+    if (m_timeout > 0) {
+        m_timer.expires_after(std::chrono::seconds(m_timeout));
+        m_timer.async_wait([sft = shared_from_this()](const std::error_code& ec) {sft->onTimeout(ec); });
+    } else {
+        m_timer.cancel();
+    }
 }
 
 void HttpSession::on_write()
@@ -382,8 +390,12 @@ void HttpSession::on_write()
         (const std::error_code& ec, const size_t bytes) {sft->on_request_sent(ec, bytes); });
     }
 
-    m_timer.expires_after(std::chrono::seconds(m_timeout));
-    m_timer.async_wait([sft = shared_from_this()](const std::error_code& ec) {sft->onTimeout(ec); });
+    if (m_timeout > 0) {
+        m_timer.expires_after(std::chrono::seconds(m_timeout));
+        m_timer.async_wait([sft = shared_from_this()](const std::error_code& ec) {sft->onTimeout(ec); });
+    } else {
+        m_timer.cancel();
+    }
 }
 
 void HttpSession::on_request_sent(const std::error_code& ec, size_t /*bytes_transferred*/)
@@ -399,17 +411,17 @@ void HttpSession::on_request_sent(const std::error_code& ec, size_t /*bytes_tran
     if (instance_uri.port == "443") {
         async_read_until(
             m_ssl, m_response, "\r\n\r\n",
-            [this](const std::error_code& ec, const size_t size) {
+            [sft = shared_from_this()](const std::error_code& ec, const size_t size) {
             if (ec) {
                 g_logger.error("Failed to read HTTP headers: {}", ec.message());
-                onError("HttpSession error receiving header " + m_url + ": " + ec.message());
+                sft->onError("HttpSession error receiving header " + sft->m_url + ": " + ec.message());
                 return;
             }
             g_logger.debug("HTTP headers received ({} bytes)", size);
             std::string header(
-                buffers_begin(m_response.data()),
-                buffers_begin(m_response.data()) + size);
-            m_response.consume(size);
+                buffers_begin(sft->m_response.data()),
+                buffers_begin(sft->m_response.data()) + size);
+            sft->m_response.consume(size);
 
             // Check for Content-Length
             const size_t contentLengthPos = header.find("Content-Length: ");
@@ -417,23 +429,23 @@ void HttpSession::on_request_sent(const std::error_code& ec, size_t /*bytes_tran
                 const size_t len = std::strtoul(
                     header.c_str() + contentLengthPos + sizeof("Content-Length: ") - 1,
                     nullptr, 10);
-                m_result->size = len;
+                sft->m_result->size = len;
                 g_logger.debug("Content-Length: {}", len);
             } else {
                 // Check for Transfer-Encoding: chunked
                 const size_t transferEncodingPos = header.find("Transfer-Encoding: chunked");
                 if (transferEncodingPos != std::string::npos) {
                     g_logger.debug("Server using chunked transfer encoding");
-                    m_result->size = 0; // Unknown size for chunked
+                    sft->m_result->size = 0; // Unknown size for chunked
                 } else {
                     g_logger.warning("No Content-Length or Transfer-Encoding found in headers");
-                    m_result->size = 0; // Unknown size
+                    sft->m_result->size = 0; // Unknown size
                 }
             }
 
-            async_read(m_ssl, m_response,
+            async_read(sft->m_ssl, sft->m_response,
                              asio::transfer_at_least(1),
-                             [sft = shared_from_this()](
+                             [sft](
                        const std::error_code& ec, const size_t bytes) {
                 sft->on_read(ec, bytes);
             });
@@ -441,50 +453,65 @@ void HttpSession::on_request_sent(const std::error_code& ec, size_t /*bytes_tran
     } else {
         async_read_until(
             m_socket, m_response, "\r\n\r\n",
-            [this](const std::error_code& ec, const size_t size) {
+            [sft = shared_from_this()](const std::error_code& ec, const size_t size) {
             if (ec) {
-                onError("HttpSession error receiving header " + m_url + ": " + ec.message());
+                sft->onError("HttpSession error receiving header " + sft->m_url + ": " + ec.message());
                 return;
             }
             std::string header(
-                buffers_begin(m_response.data()),
-                buffers_begin(m_response.data()) + size);
-            m_response.consume(size);
+                buffers_begin(sft->m_response.data()),
+                buffers_begin(sft->m_response.data()) + size);
+            sft->m_response.consume(size);
 
             const size_t pos = header.find("Content-Length: ");
             if (pos != std::string::npos) {
                 const size_t len = std::strtoul(
                     header.c_str() + pos + sizeof("Content-Length: ") - 1,
                     nullptr, 10);
-                m_result->size = len - m_response.size();
-            } else if (m_checkContentLength) {
-                onError("HttpSession error receiving header " + m_url + ": " + "Content-Length not found");
+                sft->m_result->size = len - sft->m_response.size();
+            } else if (sft->m_checkContentLength) {
+                sft->onError("HttpSession error receiving header " + sft->m_url + ": " + "Content-Length not found");
                 return;
             }
 
-            async_read(m_socket, m_response,
+            async_read(sft->m_socket, sft->m_response,
                              asio::transfer_at_least(1),
-                             [sft = shared_from_this()](
+                             [sft](
                        const std::error_code& ec, const size_t bytes) {
                 sft->on_read(ec, bytes);
             });
         });
     }
 
-    m_timer.expires_after(std::chrono::seconds(m_timeout));
-    m_timer.async_wait([sft = shared_from_this()](const std::error_code& ec) {sft->onTimeout(ec); });
+    if (m_timeout > 0) {
+        m_timer.expires_after(std::chrono::seconds(m_timeout));
+        m_timer.async_wait([sft = shared_from_this()](const std::error_code& ec) {sft->onTimeout(ec); });
+    } else {
+        m_timer.cancel();
+    }
 }
 
 void HttpSession::on_read(const std::error_code& ec, const size_t bytes_transferred)
 {
-    auto on_done_read = [this] {
-        m_timer.cancel();
-        const auto& data = m_response.data();
-        m_result->response.append(buffers_begin(data), buffers_end(data));
-        g_logger.debug("HTTP response received ({} bytes): {}", m_result->response.size(), m_result->response);
-        m_result->finished = true;
-        m_callback(m_result);
+    auto on_done_read = [sft = shared_from_this()] {
+        if (!sft->m_result || sft->m_result->finished) {
+            return;
+        }
+        sft->m_timer.cancel();
+        const auto& data = sft->m_response.data();
+        sft->m_result->response.append(buffers_begin(data), buffers_end(data));
+        g_logger.debug("HTTP response received ({} bytes): {}", sft->m_result->response.size(), sft->m_result->response);
+        sft->m_result->finished = true;
+        if (sft->m_callback) {
+            sft->m_callback(sft->m_result);
+        } else {
+            g_logger.error("HttpSession callback missing for {}", sft->m_url);
+        }
     };
+
+    if (!m_result || m_result->finished) {
+        return;
+    }
 
     if (ec && ec != asio::error::eof) {
         onError("HttpSession unable to on_read " + m_url + ": " + ec.message());
@@ -505,10 +532,14 @@ void HttpSession::on_read(const std::error_code& ec, const size_t bytes_transfer
         }
         m_last_progress_update = stdext::millis() + 100;
         sum_bytes_speed_response = 0;
-        m_callback(m_result);
+        if (m_callback) {
+            m_callback(m_result);
+        } else {
+            g_logger.error("HttpSession callback missing for {}", m_url);
+        }
     }
 
-    if (m_enable_time_out_on_read_write) {
+    if (m_enable_time_out_on_read_write && m_timeout > 0) {
         m_timer.expires_after(std::chrono::seconds(m_timeout));
         m_timer.async_wait([sft = shared_from_this()](const std::error_code& ec) {sft->onTimeout(ec); });
     } else {
@@ -569,19 +600,24 @@ void HttpSession::close()
 
 void HttpSession::onTimeout(const std::error_code& ec)
 {
-    if (!ec) {
-        // Timer expired - this is an actual timeout
-        g_logger.error("HttpSession timeout after {} seconds", m_timeout);
+    if (!ec && m_timeout > 0) {
         onError("HttpSession timeout after " + std::to_string(m_timeout) + " seconds");
     }
 }
 
 void HttpSession::onError(const std::string& ec, const std::string& /*details*/) const
 {
+    if (!m_result || m_result->finished) {
+        return;
+    }
     g_logger.error("{}", ec);
     m_result->error = fmt::format("{}", ec);
     m_result->finished = true;
-    m_callback(m_result);
+    if (m_callback) {
+        m_callback(m_result);
+    } else {
+        g_logger.error("HttpSession callback missing for {}", m_url);
+    }
 }
 
 void WebsocketSession::start()
@@ -641,8 +677,10 @@ void WebsocketSession::on_resolve(const std::error_code& ec, asio::ip::tcp::reso
     }
 
     m_timer.cancel();
-    m_timer.expires_after(std::chrono::seconds(m_timeout));
-    m_timer.async_wait([sft = shared_from_this()](const std::error_code& ec) {sft->onTimeout(ec); });
+    if (m_timeout > 0) {
+        m_timer.expires_after(std::chrono::seconds(m_timeout));
+        m_timer.async_wait([sft = shared_from_this()](const std::error_code& ec) {sft->onTimeout(ec); });
+    }
 }
 
 void WebsocketSession::on_connect(const std::error_code& ec)
@@ -675,8 +713,10 @@ void WebsocketSession::on_connect(const std::error_code& ec)
     }
 
     m_timer.cancel();
-    m_timer.expires_after(std::chrono::seconds(m_timeout));
-    m_timer.async_wait([sft = shared_from_this()](const std::error_code& ec) {sft->onTimeout(ec); });
+    if (m_timeout > 0) {
+        m_timer.expires_after(std::chrono::seconds(m_timeout));
+        m_timer.async_wait([sft = shared_from_this()](const std::error_code& ec) {sft->onTimeout(ec); });
+    }
 }
 
 void WebsocketSession::on_request_sent(const std::error_code& ec, size_t /*bytes_transferred*/)
@@ -774,7 +814,7 @@ void WebsocketSession::on_write(const std::error_code& ec, size_t /*bytes_transf
         return;
     }
 
-    if (m_enable_time_out_on_read_write) {
+    if (m_enable_time_out_on_read_write && m_timeout > 0) {
         m_timer.expires_after(std::chrono::seconds(m_timeout));
         m_timer.async_wait([sft = shared_from_this()](const std::error_code& ec) {sft->onTimeout(ec); });
     } else {
@@ -930,10 +970,10 @@ void WebsocketSession::onError(const std::string& ec, const std::string& /*detai
 
 void WebsocketSession::onTimeout(const std::error_code& ec)
 {
-    if (!ec) {
-        g_logger.error("WebsocketSession ontimeout {}", ec.message());
+    if (!ec && m_timeout > 0) {
+        g_logger.error("WebsocketSession timeout after {} seconds for {}", m_timeout, m_url);
         m_closed = true;
-        m_callback(WebsocketCallbackType::ERROR_, "close_code::ontimeout " + ec.message());
+        m_callback(WebsocketCallbackType::ERROR_, "close_code::ontimeout after " + std::to_string(m_timeout) + "s");
         close();
     }
 }
