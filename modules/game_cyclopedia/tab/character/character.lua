@@ -1271,6 +1271,7 @@ function Cyclopedia.onParseCyclopediaStoreSummary(xpBoostTime, dailyRewardXpBoos
 
     UI.StoreSummary.ListBase.List.preyPanel.PermanentPreySlotsValue:setText(preySlotsUnlocked)
     UI.StoreSummary.ListBase.List.preyPanel.PreyWildcardsValue:setText(preyWildcards)
+    UI.StoreSummary.ListBase.List.taskBoard.permanentWeeklyTaskExpansionValue:setText(hasPermanentWeeklyTaskExpansion and "Yes" or "No")
     UI.StoreSummary.ListBase.List.dailyReward.InstantRewardAccessValue:setText(instantRewards)
 
     if hasCharmExpansion then

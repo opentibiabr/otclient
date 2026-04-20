@@ -1691,6 +1691,32 @@ UIWidget
             text: 20x
 
         MiniPanel
+          id: taskBoard
+          image-source: /images/ui/outfits/minipanel
+          image-border: 5
+          color: #C0C0C0
+          height: 66
+          padding-bottom: 5
+          margin: 5
+          margin-bottom: 1
+          text: Task Board
+
+          Label
+            id: permanentWeeklyTaskExpansion
+            text-auto-resize: true
+            anchors.top: parent.top
+            anchors.left: parent.left
+            margin-top: 2
+            text: Permanent Weekly Task Expansion:
+
+          Label
+            id: permanentWeeklyTaskExpansionValue
+            anchors.top: parent.top
+            anchors.left: parent.right
+            margin-left: -30
+            text: No
+
+        MiniPanel
           id: dailyReward
           image-source: /images/ui/outfits/minipanel
           image-border: 5
