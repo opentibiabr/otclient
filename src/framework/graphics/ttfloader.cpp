@@ -23,6 +23,7 @@
 #include "ttfloader.h"
 #include "bitmapfont.h"
 #include "image.h"
+#include "texture.h"
 #include "texturemanager.h"
 #include <algorithm>
 #include <cctype>
