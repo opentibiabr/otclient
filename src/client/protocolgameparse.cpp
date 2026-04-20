@@ -108,6 +108,9 @@ void ProtocolGame::parseMessage(const InputMessagePtr& msg)
                 case Proto::GameServerBugReport:
                     parseBugReport(msg);
                     break;
+                case Proto::GameServerMultiOfflineTrainingDialog:
+                    parseMultiOfflineTrainingDialog(msg);
+                    break;
                 case Proto::GameServerNpcChatWindow:
                     parseNpcChatWindow(msg);
                     break;
@@ -762,6 +765,11 @@ void ProtocolGame::parseBugReport(const InputMessagePtr& msg)
 {
     const bool canReportBugs = msg->getU8() > 0;
     g_game.setCanReportBugs(canReportBugs);
+}
+
+void ProtocolGame::parseMultiOfflineTrainingDialog(const InputMessagePtr& /*msg*/)
+{
+    m_localPlayer->openMultiOfflineTrainingDialog();
 }
 
 void ProtocolGame::parseNpcChatWindow(const InputMessagePtr& msg)

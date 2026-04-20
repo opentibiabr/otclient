@@ -6,12 +6,61 @@ monkHarmonySlots = {}
 isMonkMode = false
 monkImageSizeBroad = 0
 monkImageSizeThin = 0
+monkOpacity = 0.7
+monkHarmony = 0
+monkSerene = false
 
 -- @ position constants
 MONK_SERENE_OFFSET_X = 0
 MONK_SERENE_OFFSET_Y = 0
 MONK_HARMONY_OFFSET_X = 0
 MONK_HARMONY_OFFSET_Y = 0
+
+local function clampMonkOpacity(value)
+    if type(value) ~= 'number' then
+        return monkOpacity
+    end
+    if value < 0 then
+        return 0
+    end
+    if value > 1 then
+        return 1
+    end
+    return value
+end
+
+local function clampMonkHarmony(value)
+    if type(value) ~= 'number' then
+        return 0
+    end
+    value = math.floor(value)
+    if value < 0 then
+        return 0
+    end
+    if value > 5 then
+        return 5
+    end
+    return value
+end
+
+local function refreshMonkDynamicOpacity()
+    if monkSereneCircle then
+        monkSereneCircle:setImageColor('#9933FF')
+        monkSereneCircle:setOpacity(monkSerene and monkOpacity or 0)
+    end
+
+    for i = 1, 5 do
+        local slot = monkHarmonySlots[i]
+        if slot then
+            if i <= monkHarmony then
+                slot:setImageColor('#FFD700')
+                slot:setOpacity(monkOpacity)
+            else
+                slot:setOpacity(0)
+            end
+        end
+    end
+end
 
 function initMonkWidgets()
     local mapPanel = modules.game_interface.getMapPanel()
@@ -27,8 +76,11 @@ function initMonkWidgets()
     monkCircleBackground:setVisible(false)
     monkHealthCircle:setVisible(false)
     monkSereneCircle:setVisible(false)
+    monkHarmony = 0
+    monkSerene = false
     monkImageSizeBroad = monkHealthCircle:getHeight()
     monkImageSizeThin = monkHealthCircle:getWidth()
+    refreshMonkDynamicOpacity()
 end
 
 function terminateMonkWidgets()
@@ -50,6 +102,8 @@ function terminateMonkWidgets()
             monkHarmonySlots[i] = nil
         end
     end
+    monkHarmony = 0
+    monkSerene = false
     isMonkMode = false
 end
 
@@ -67,6 +121,15 @@ function switchToMonkMode(enabled)
         monkHarmonySlots[i]:setVisible(enabled)
     end
     if enabled then
+        local player = g_game.getLocalPlayer()
+        if player then
+            monkHarmony = clampMonkHarmony(player:getHarmony())
+            monkSerene = player:isSerene()
+        else
+            monkHarmony = 0
+            monkSerene = false
+        end
+        refreshMonkDynamicOpacity()
         whenMapResizeChange()
         whenMonkHealthChange()
     end
@@ -117,23 +180,13 @@ function whenMonkHealthChange()
 end
 
 function whenMonkSereneChange(localplayer, serene)
-    if serene then
-        monkSereneCircle:setImageColor('#9933FF')
-        monkSereneCircle:setOpacity(1.0)
-    else
-        monkSereneCircle:setOpacity(0)
-    end
+    monkSerene = not not serene
+    refreshMonkDynamicOpacity()
 end
 
 function whenMonkHarmonyChange(localplayer, harmony)
-    for i = 1, 5 do
-        if i <= harmony then
-            monkHarmonySlots[i]:setImageColor('#FFD700')
-            monkHarmonySlots[i]:setOpacity(1.0)
-        else
-            monkHarmonySlots[i]:setOpacity(0)
-        end
-    end
+    monkHarmony = clampMonkHarmony(harmony)
+    refreshMonkDynamicOpacity()
 end
 
 function positionMonkWidgets()
@@ -160,20 +213,14 @@ end
 -------------------------------------------------
 
 function setMonkCircleOpacity(value)
+    monkOpacity = clampMonkOpacity(value)
     if monkCircleBackground then
-        monkCircleBackground:setOpacity(value)
+        monkCircleBackground:setOpacity(monkOpacity)
     end
     if monkHealthCircle then
-        monkHealthCircle:setOpacity(value)
+        monkHealthCircle:setOpacity(monkOpacity)
     end
-    if monkSereneCircle then
-        monkSereneCircle:setOpacity(value)
-    end
-    for i = 1, 5 do
-        if monkHarmonySlots[i] then
-            monkHarmonySlots[i]:setOpacity(value)
-        end
-    end
+    refreshMonkDynamicOpacity()
 end
 
 function setMonkWidgetsVisible(visible)

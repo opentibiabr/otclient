@@ -576,7 +576,12 @@ void LocalPlayer::setBlessings(const uint16_t blessings)
 
 void LocalPlayer::takeScreenshot(const uint8_t type)
 {
-    g_lua.callGlobalField("LocalPlayer", "onTakeScreenshot", type);
+    callLuaField("onTakeScreenshot", type);
+}
+
+void LocalPlayer::openMultiOfflineTrainingDialog()
+{
+    callLuaField("onMultiOfflineTrainingDialog");
 }
 
 void LocalPlayer::setResourceBalance(const Otc::ResourceTypes_t type, const uint64_t value)

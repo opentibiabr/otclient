@@ -2283,3 +2283,12 @@ void Game::sendApplyWheelPoints(const std::vector<uint16_t>& slotPoints,uint16_t
         return;
     m_protocolGame->sendApplyWheelPoints(slotPoints, greenGem, redGem, acquaGem, purpleGem);
 }
+
+
+void Game::sendStartOfflineTraining(const uint8_t skillType)
+{
+    if (!canPerformGameAction())
+        return;
+
+    m_protocolGame->sendStartOfflineTraining(skillType);
+}

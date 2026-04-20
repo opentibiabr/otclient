@@ -3,6 +3,50 @@ local TypeEvent = {
     GAME_INIT = 2
 }
 
+local function unregisterModalHandle(self, handle)
+    if not self.modalHandles or not handle then
+        return false
+    end
+
+    for _, handles in pairs(self.modalHandles) do
+        if handles and table.removevalue(handles, handle) then
+            return true
+        end
+    end
+
+    return false
+end
+
+local function destroyModalHandles(self, eventType)
+    if not self.modalHandles then
+        return
+    end
+
+    local handles = self.modalHandles[eventType]
+    if not handles then
+        return
+    end
+
+    for i = #handles, 1, -1 do
+        self:closeModal(handles[i])
+    end
+
+    self.modalHandles[eventType] = nil
+end
+
+local function destroyUIEvents(self)
+    if not self.uiEvents then
+        return
+    end
+
+    for _, event in pairs(self.uiEvents) do
+        event:destroy()
+    end
+
+    self.uiEvents = {}
+    WidgetWatch.update() -- Prevent warnings from stale widget references in the watch list.
+end
+
 local function onGameStart(self)
     if self.__onGameStart ~= nil then
         self.currentTypeEvent = TypeEvent.GAME_INIT
@@ -23,6 +67,8 @@ local function onGameEnd(self)
     if self.__onGameEnd ~= nil then
         self:__onGameEnd()
     end
+
+    destroyModalHandles(self, TypeEvent.GAME_INIT)
 
     local eventList = self.events[TypeEvent.GAME_INIT]
     if eventList ~= nil then
@@ -68,7 +114,8 @@ Controller = {
     htmlId = nil,
     keyboardAnchor = nil,
     scheduledEvents = nil,
-    keyboardEvents = nil
+    keyboardEvents = nil,
+    modalHandles = nil
 }
 
 if not G_CONTROLLER_CALLED then
@@ -84,6 +131,7 @@ function Controller:new()
         uiEvents = {},
         scheduledEvents = {},
         keyboardEvents = {},
+        modalHandles = {},
         attrs = {},
         extendedOpcodes = {},
         opcodes = {},
@@ -160,7 +208,9 @@ end
 
 function Controller:destroyUI()
     if self.htmlId ~= nil then
-        g_html.destroy(self.htmlId)
+        local htmlId = self.htmlId
+        self.htmlId = nil
+        g_html.destroy(htmlId)
         self.ui = nil
     end
 
@@ -169,12 +219,7 @@ function Controller:destroyUI()
         self.ui = nil
     end
 
-    for _, event in pairs(self.uiEvents) do
-        event:destroy()
-    end
-
-    self.uiEvents = {}
-    WidgetWatch.update() -- Prevent warnings from stale widget references in the watch list.
+    destroyUIEvents(self)
 end
 
 function Controller:findWidget(query)
@@ -202,14 +247,42 @@ function Controller:openModal(path)
         self:setUI(path, g_ui.getRootWidget())
     end
     local htmlId = g_html.load(self.name, path, g_ui.getRootWidget())
-    return { htmlId = htmlId, ui = g_html.getRootWidget(htmlId) }
+    local handle = {
+        htmlId = htmlId,
+        ui = g_html.getRootWidget(htmlId),
+        controllerEventType = self.currentTypeEvent
+    }
+
+    self.modalHandles = self.modalHandles or {}
+    if self.modalHandles[handle.controllerEventType] == nil then
+        self.modalHandles[handle.controllerEventType] = {}
+    end
+    table.insert(self.modalHandles[handle.controllerEventType], handle)
+
+    return handle
 end
 
 -- Destroys a modal handle returned by openModal.
 function Controller:closeModal(handle)
-    if handle and handle.htmlId then
-        g_html.destroy(handle.htmlId)
+    if not handle then
+        return
     end
+
+    unregisterModalHandle(self, handle)
+
+    if handle.htmlId then
+        local htmlId = handle.htmlId
+        handle.htmlId = nil
+        handle.ui = nil
+        g_html.destroy(htmlId)
+        return
+    end
+
+    if handle.ui and not handle.ui:isDestroyed() then
+        handle.ui:destroy()
+    end
+
+    handle.ui = nil
 end
 
 function Controller:loadUI(name, parent)
@@ -246,6 +319,9 @@ function Controller:terminate()
         self:onTerminate()
     end
 
+    destroyModalHandles(self, TypeEvent.GAME_INIT)
+    destroyModalHandles(self, TypeEvent.MODULE_INIT)
+
     for i, event in pairs(self.keyboardEvents) do
         g_keyboard['unbind' .. event.name](event.args[1], event.args[2], event.args[3])
     end
@@ -276,9 +352,12 @@ function Controller:terminate()
 
     if self.ui ~= nil then
         self:destroyUI()
+    else
+        destroyUIEvents(self)
     end
 
     self.ui = nil
+    self.uiEvents = nil
     self.attrs = nil
     self.events = nil
     self.dataUI = nil
@@ -287,6 +366,7 @@ function Controller:terminate()
     self.keyboardEvents = nil
     self.keyboardAnchor = nil
     self.scheduledEvents = nil
+    self.modalHandles = nil
     self.htmlId = nil
 
     self.__onGameStart = nil

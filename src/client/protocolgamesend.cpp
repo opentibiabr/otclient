@@ -1795,3 +1795,15 @@ void ProtocolGame::sendSoulSealsAction(const uint16_t raceId)
     msg->addU16(raceId);
     send(msg);
 }
+
+void ProtocolGame::sendStartOfflineTraining(const uint8_t skillType)
+{
+    if (skillType > Otc::Fishing) {
+        return;
+    }
+
+    const auto& msg = std::make_shared<OutputMessage>();
+    msg->addU8(Proto::ClientStartOfflineTraining);
+    msg->addU8(skillType);
+    send(msg);
+}

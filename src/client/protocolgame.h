@@ -157,6 +157,7 @@ public:
     void sendImbuementDurations(bool isOpen = false);
     void sendTaskBoardAction(const uint8_t option, const uint16_t value = 0, const uint16_t extraValue = 0);
     void sendSoulSealsAction(const uint16_t raceId);
+    void sendStartOfflineTraining(const uint8_t skillType);
     void sendOpenWheelOfDestiny(uint32_t playerId);
     void sendApplyWheelOfDestiny(const std::vector<uint16_t>& wheelPointsVec, const std::vector<uint16_t>& activeGemsVec);
     void sendRequestBestiary();
@@ -218,6 +219,7 @@ private:
     void parsePlayerHelpers(const InputMessagePtr& msg) const;
     void parseMessage(const InputMessagePtr& msg);
     void parseBugReport(const InputMessagePtr& msg);
+    void parseMultiOfflineTrainingDialog(const InputMessagePtr& msg);
     void parseNpcChatWindow(const InputMessagePtr& msg);
     void parsePendingGame(const InputMessagePtr& msg);
     void parseEnterGame(const InputMessagePtr& msg);
