@@ -6,9 +6,13 @@
 
 .tabs {
   display: flex;
-  width: 464px;
-  height: 34px;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 0;
 }
+
 .tabs-img {
   width: 116px;
   height: 34px;
@@ -75,11 +79,15 @@
 }
 .fusion-buttons-text-container {
   display: flex;
-  width: 150px;
-  height: 20px;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 0;
+
 }
 .fusion-text-chance {
-  margin-left: 30px;
+  margin-left: 60px;
   color: #d33c3c;
 }
 .fusion-text-chance-cost {
@@ -119,8 +127,12 @@
 }
 .transfer-select-wrapper {
   display: flex;
-  width: 450px;
-  height: 80px;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 0;
+
   margin-left: 8px;
   margin-top: 4px;
 }
@@ -150,10 +162,14 @@
 }
 .transfer-requirements-wrapper {
   display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 0;
   padding-left: 8px;
   padding-top: 2px;
-  height: 90px;
-  width: 465px;
+
 }
 .transfer-requirement-item-container {
   width: 66px;
@@ -168,6 +184,7 @@
 .transfer-requirement UIItem {
   width: 64px;
   height: 64px;
+  --virtual: true;
 }
 .transfer-requirement-item-cost {
   --image-source: "/modules/game_forge/images/info-bg";
@@ -208,8 +225,12 @@
 }
 .transfer-button-items {
   display: flex;
-  height: 66px;
-  width: 128px;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 0;
+
 }
 .transfer-description {
   --image-size: 465 75;
@@ -230,8 +251,12 @@
 }
 .conversion-wrapper {
   display: flex;
-  width: 465px;
-  height: 252px;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 0;
+
 }
 .conversion-column {
   width: 151px;
@@ -372,9 +397,13 @@
 }
 
 .history-footer {
-  height: 20px;
-  width: 465px;
+
   display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 0;
 }
 
 .history-footer-previous {
@@ -416,13 +445,22 @@
 
 .footer {
   display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
   height: 20px;
-  width: 415px;
+  margin-left: 8px;
   justify-content: space-between;
+  gap: 0;
 }
 
 .footer-content {
   display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 0;
   height: 20px;
 }
 
@@ -432,6 +470,7 @@
 
 .close-btn {
   padding: 3px 10px !important;
+  margin-left: auto;
 }
 
 .close-btn:pressed {

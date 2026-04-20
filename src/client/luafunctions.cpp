@@ -320,6 +320,8 @@ void Client::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_game", "setPingDelay", &Game::setPingDelay, &g_game);
     g_lua.bindSingletonFunction("g_game", "changeMapAwareRange", &Game::changeMapAwareRange, &g_game);
     g_lua.bindSingletonFunction("g_game", "canReportBugs", &Game::canReportBugs, &g_game);
+    g_lua.bindSingletonFunction("g_game", "canExivaOptions", &Game::canExivaOptions, &g_game);
+    g_lua.bindSingletonFunction("g_game", "sendExivaOptions", &Game::sendExivaOptions, &g_game);
     g_lua.bindSingletonFunction("g_game", "isOnline", &Game::isOnline, &g_game);
     g_lua.bindSingletonFunction("g_game", "isLogging", &Game::isLogging, &g_game);
     g_lua.bindSingletonFunction("g_game", "isDead", &Game::isDead, &g_game);
@@ -838,6 +840,8 @@ void Client::registerLuaFunctions()
     g_lua.registerClass<Effect, Thing>();
     g_lua.bindClassStaticFunction<Effect>("create", [] { return std::make_shared<Effect>(); });
     g_lua.bindClassMemberFunction<Effect>("setId", &Effect::setId);
+    g_lua.bindClassMemberFunction<Effect>("setPermanent", &Effect::setPermanent);
+    g_lua.bindClassMemberFunction<Effect>("isPermanent", &Effect::isPermanent);
 
     g_lua.registerClass<Missile, Thing>();
     g_lua.bindClassStaticFunction<Missile>("create", [] { return std::make_shared<Missile>(); });

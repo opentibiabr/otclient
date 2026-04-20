@@ -714,7 +714,8 @@ function EnterGame.loginSuccess(requestId, jsonSession, jsonWorlds, jsonCharacte
             name = world.name,
             ip = world.externaladdressprotected,
             port = world.externalportprotected,
-            previewState = world.previewstate == 1
+            previewState = world.previewstate == 1,
+            pvptype = world.pvptype,
         }
     end
 
@@ -737,7 +738,8 @@ function EnterGame.loginSuccess(requestId, jsonSession, jsonWorlds, jsonCharacte
             worldName = world.name,
             worldIp = world.ip,
             worldPort = world.port,
-            previewState = world.previewstate
+            previewState = world.previewstate,
+            pvptype = world.pvptype,
         }
     end
 

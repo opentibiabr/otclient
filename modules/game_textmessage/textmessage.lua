@@ -240,6 +240,8 @@ function displayMessage(mode, text)
         MessageTypes[MessageModes.ValuableLoot] = MessageSettings.centerGreen
         MessageTypes[MessageModes.Guild] = MessageSettings.centerGreen
         MessageTypes[MessageModes.Party] = MessageSettings.centerGreen
+        MessageTypes[MessageModes.MonsterSay] = MessageSettings.consoleOrange
+        MessageTypes[MessageModes.MonsterYell] = MessageSettings.consoleOrange
     end
     local msgtype = MessageTypes[mode]
     if not msgtype then

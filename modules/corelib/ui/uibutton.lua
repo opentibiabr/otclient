@@ -26,6 +26,7 @@ end
 
 function UIButton:onHoverChange(hovered)
     if not modules.client_options then
+        UIWidget.onHoverChange(self, hovered)
         return
     end
     
@@ -63,4 +64,5 @@ function UIButton:onHoverChange(hovered)
     end
     -- When both are disabled, use default Tibia cursors (no animation)
     -- The cursor is already set to default, so we don't need to change it
+    UIWidget.onHoverChange(self, hovered)
 end

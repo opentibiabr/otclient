@@ -23,8 +23,14 @@
 #include "uilayoutflexbox.h"
 
 #include "uiwidget.h"
+#include <framework/html/htmlnode.h>
 
 namespace {
+    constexpr int MAX_FLEX_DEPTH = 32;
+    thread_local int s_flexDepth = 0;
+    thread_local std::array<std::vector<UIWidgetPtr>, MAX_FLEX_DEPTH> s_pendingDescendantVersionResetRootsByDepth;
+    thread_local std::array<std::unordered_set<UIWidget*>, MAX_FLEX_DEPTH> s_pendingDescendantVersionResetLookupByDepth;
+
     enum class Axis { Horizontal, Vertical };
 
     struct FlexItemData
@@ -53,9 +59,13 @@ namespace {
         bool autoMainStart{ false };
         bool autoMainEnd{ false };
 
+        double contentMainSize{ 0.0 };  // intrinsic/content main size for auto-min
+
         double mainPos{ 0.0 };
         double crossPos{ 0.0 };
         double finalCrossSize{ 0.0 };
+        bool crossSizeAuto{ true };
+        bool rectChanged{ false };
     };
 
     struct FlexLine
@@ -73,6 +83,27 @@ namespace {
     inline bool isMainReverse(FlexDirection direction)
     {
         return direction == FlexDirection::RowReverse || direction == FlexDirection::ColumnReverse;
+    }
+
+    inline Axis crossAxisForMain(Axis mainAxis)
+    {
+        return mainAxis == Axis::Horizontal ? Axis::Vertical : Axis::Horizontal;
+    }
+
+    inline bool axisUsesContentWhenAuto(DisplayType display, Axis axis, const SizeUnit& unit)
+    {
+        if (unit.unit == Unit::FitContent)
+            return true;
+        if (unit.unit != Unit::Auto)
+            return false;
+
+        // display:flex (block-level) width:auto uses available containing width.
+        // display:inline-flex width:auto shrink-wraps content.
+        if (axis == Axis::Horizontal)
+            return display == DisplayType::InlineFlex;
+
+        // height:auto remains content-sized in normal flow.
+        return true;
     }
 
     inline double getUnitValue(const SizeUnit& unit, double reference)
@@ -104,6 +135,132 @@ namespace {
     inline int roundi(double value)
     {
         return static_cast<int>(std::round(value));
+    }
+
+    // Shared utility: clamp int to positive int32_t range for SizeUnit::value.
+    inline int32_t clampToPositiveSize(int value)
+    {
+        if (value < 0)
+            return 0;
+        return static_cast<int32_t>(value);
+    }
+
+    // RAII guard that saves and restores a SizeUnit on destruction.
+    // Prevents state corruption if an exception or early return occurs
+    // between temporary mutation and restoration.
+    struct SizeUnitGuard {
+        SizeUnit& ref;
+        const SizeUnit original;
+        SizeUnitGuard(SizeUnit& r) : ref(r), original(r) {}
+        ~SizeUnitGuard() { ref = original; }
+        SizeUnitGuard(const SizeUnitGuard&) = delete;
+        SizeUnitGuard& operator=(const SizeUnitGuard&) = delete;
+    };
+
+    bool isDescendantOf(UIWidget* node, UIWidget* ancestor)
+    {
+        if (!node || !ancestor || node == ancestor)
+            return false;
+
+        auto parent = node->getParent();
+        while (parent) {
+            if (parent.get() == ancestor)
+                return true;
+            parent = parent->getParent();
+        }
+        return false;
+    }
+
+    void resetDescendantVersionsNow(UIWidget* w)
+    {
+        for (const auto& child : w->getChildrenRef()) {
+            if (child->isDestroyed() || child->getDisplay() == DisplayType::None)
+                continue;
+
+            auto& cw = child->getWidthHtml();
+            if (cw.unit == Unit::Auto || cw.unit == Unit::FitContent || cw.unit == Unit::Percent) {
+                cw.pendingUpdate = true;
+                cw.version = 0;
+            }
+            auto& ch = child->getHeightHtml();
+            if (ch.unit == Unit::Auto || ch.unit == Unit::FitContent || ch.unit == Unit::Percent) {
+                ch.pendingUpdate = true;
+                ch.version = 0;
+            }
+            if (!child->getChildrenRef().empty())
+                resetDescendantVersionsNow(child.get());
+        }
+    }
+
+    void queueDescendantVersionReset(UIWidget* root)
+    {
+        if (!root || root->isDestroyed() || s_flexDepth <= 0)
+            return;
+
+        const size_t depthIndex = static_cast<size_t>(s_flexDepth - 1);
+        if (depthIndex >= MAX_FLEX_DEPTH)
+            return;
+
+        const UIWidgetPtr rootPtr = root->static_self_cast<UIWidget>();
+        if (!rootPtr)
+            return;
+
+        auto& roots = s_pendingDescendantVersionResetRootsByDepth[depthIndex];
+        auto& lookup = s_pendingDescendantVersionResetLookupByDepth[depthIndex];
+
+        if (lookup.find(rootPtr.get()) != lookup.end())
+            return;
+
+        for (auto parent = rootPtr->getParent(); parent; parent = parent->getParent()) {
+            if (lookup.find(parent.get()) != lookup.end())
+                return;
+        }
+
+        for (auto& queuedRoot : roots) {
+            if (!queuedRoot)
+                continue;
+
+            if (queuedRoot->isDestroyed()) {
+                lookup.erase(queuedRoot.get());
+                queuedRoot.reset();
+                continue;
+            }
+
+            if (isDescendantOf(queuedRoot.get(), rootPtr.get())) {
+                lookup.erase(queuedRoot.get());
+                queuedRoot.reset();
+            }
+        }
+
+        roots.push_back(rootPtr);
+        lookup.insert(rootPtr.get());
+    }
+
+    void flushQueuedDescendantVersionResetsForCurrentDepth()
+    {
+        if (s_flexDepth <= 0)
+            return;
+
+        const size_t depthIndex = static_cast<size_t>(s_flexDepth - 1);
+        if (depthIndex >= MAX_FLEX_DEPTH)
+            return;
+
+        auto& roots = s_pendingDescendantVersionResetRootsByDepth[depthIndex];
+        auto& lookup = s_pendingDescendantVersionResetLookupByDepth[depthIndex];
+
+        for (auto& root : roots) {
+            if (!root)
+                continue;
+            if (lookup.erase(root.get()) == 0)
+                continue;
+            if (root->isDestroyed())
+                continue;
+
+            resetDescendantVersionsNow(root.get());
+        }
+
+        roots.clear();
+        lookup.clear();
     }
 
     inline double maxDouble(double a, double b)
@@ -230,15 +387,67 @@ namespace {
         if (std::abs(freeSpace) < epsilon)
             freeSpace = 0.0;
     }
+
+    // Distribute auto-margins and then flex grow/shrink.
+    // Shared between mainAuto and definite-main paths to avoid duplication.
+    void distributeAutoMarginsAndSpace(
+        std::vector<FlexItemData*>& lineItems,
+        int autoMarginCount,
+        double& freeSpace)
+    {
+        if (autoMarginCount > 0 && freeSpace > 0.0) {
+            const double share = freeSpace / autoMarginCount;
+            for (auto* item : lineItems) {
+                if (item->autoMainStart)
+                    item->marginMainStart = share;
+                if (item->autoMainEnd)
+                    item->marginMainEnd = share;
+            }
+            freeSpace = 0.0;
+        }
+
+        if (freeSpace > 0.0)
+            distributePositiveSpace(lineItems, freeSpace);
+        else if (freeSpace < 0.0)
+            distributeNegativeSpace(lineItems, freeSpace);
+    }
 }
 
 void layoutFlex(UIWidget& container)
 {
+    // Re-entrance guard: prevent the same container from re-entering layoutFlex
+    if (container.m_inFlexLayout)
+        return;
+
+    // Global depth limit: prevent infinite recursion through nested flex containers
+    if (s_flexDepth >= MAX_FLEX_DEPTH) {
+        g_logger.warning("layoutFlex: maximum nesting depth ({}) exceeded, skipping layout", MAX_FLEX_DEPTH);
+        return;
+    }
+
+    struct FlexDepthGuard {
+        UIWidget& c;
+        FlexDepthGuard(UIWidget& w) : c(w) { c.m_inFlexLayout = true; ++s_flexDepth; }
+        ~FlexDepthGuard() {
+            flushQueuedDescendantVersionResetsForCurrentDepth();
+            c.m_inFlexLayout = false;
+            --s_flexDepth;
+        }
+    } guard(container);
+
     const auto& style = container.style();
     const Axis mainAxis = mainAxisForDirection(style.flexDirection);
     const bool mainReverse = isMainReverse(style.flexDirection);
     const bool wrapReverse = style.flexWrap == FlexWrap::WrapReverse;
     const bool allowWrap = style.flexWrap != FlexWrap::NoWrap;
+    const auto parentWidget = container.getParent();
+    const bool isFlexItemInParent =
+        parentWidget &&
+        container.getPositionType() != PositionType::Absolute &&
+        (parentWidget->getDisplay() == DisplayType::Flex || parentWidget->getDisplay() == DisplayType::InlineFlex);
+    const Axis parentMainAxis = isFlexItemInParent
+        ? mainAxisForDirection(parentWidget->style().flexDirection)
+        : Axis::Horizontal;
 
     const int paddingStart = (mainAxis == Axis::Horizontal) ? container.getPaddingLeft() : container.getPaddingTop();
     const int paddingCrossStart = (mainAxis == Axis::Horizontal) ? container.getPaddingTop() : container.getPaddingLeft();
@@ -248,8 +457,94 @@ void layoutFlex(UIWidget& container)
     const int containerMainSize = (mainAxis == Axis::Horizontal) ? container.getWidth() : container.getHeight();
     const int containerCrossSize = (mainAxis == Axis::Horizontal) ? container.getHeight() : container.getWidth();
 
-    const double innerMainSize = std::max(0, containerMainSize - paddingStart - paddingEnd);
+    const int containerMinMain = (mainAxis == Axis::Horizontal) ? container.getMinWidth() : container.getMinHeight();
+    const int containerMaxMain = (mainAxis == Axis::Horizontal) ? container.getMaxWidth() : container.getMaxHeight();
+    const double minInnerMainConstraint = containerMinMain > 0
+        ? std::max(0, containerMinMain - paddingStart - paddingEnd)
+        : 0.0;
+    const double maxInnerMainConstraint = containerMaxMain > 0
+        ? std::max(0, containerMaxMain - paddingStart - paddingEnd)
+        : std::numeric_limits<double>::infinity();
+
+    const auto& containerMainUnit = (mainAxis == Axis::Horizontal) ? container.getWidthHtml() : container.getHeightHtml();
+    bool mainAuto = axisUsesContentWhenAuto(style.display, mainAxis, containerMainUnit);
+    // Only suppress main-axis auto sizing when the parent controls this same axis.
+    // If axes differ (e.g. row parent -> column child), the child's main axis
+    // is not directly controlled by the parent and must remain content-sized.
+    if (isFlexItemInParent && containerMainSize > 0 && parentMainAxis == mainAxis)
+        mainAuto = false;
+
+    double innerMainSize = std::max(0, containerMainSize - paddingStart - paddingEnd);
     double innerCrossSize = std::max(0, containerCrossSize - paddingCrossStart - paddingCrossEnd);
+
+    // Cache the containing-block inner-main-size from ancestor chain.
+    // This walk is O(depth) and we may need it in up to two places below,
+    // so compute it once and reuse the cached value.
+    double cachedContainingInnerMain = -1.0;
+    const auto getContainingInnerMain = [&container, &cachedContainingInnerMain]() -> double {
+        if (cachedContainingInnerMain >= 0.0)
+            return cachedContainingInnerMain;
+        double containingInner = 0.0;
+        auto p = container.getParent();
+        while (p) {
+            const double inner = std::max(0, p->getWidth() - p->getPaddingLeft() - p->getPaddingRight());
+            if (inner > 0.0) {
+                containingInner = (containingInner <= 0.0) ? inner : std::min(containingInner, inner);
+
+                const auto& pw = p->getWidthHtml();
+                if (pw.unit == Unit::Px || pw.unit == Unit::Percent)
+                    break;
+            }
+            p = p->getParent();
+        }
+        cachedContainingInnerMain = containingInner;
+        return containingInner;
+    };
+
+    // Block-level display:flex with CSS width:auto must wrap against the
+    // available containing-block width. Internal unit/state may drift across
+    // async passes; rely on CSS width intent (empty/auto) to keep wrapping
+    // stable and avoid one-line overflow on subsequent layout runs.
+    bool cssWidthAutoLike = true;
+    if (const auto node = container.getHtmlNode()) {
+        const std::string cssWidth = node->getStyle("width");
+        cssWidthAutoLike = cssWidth.empty() || cssWidth == "auto";
+    }
+
+    const bool blockFlexAutoMain =
+        mainAxis == Axis::Horizontal &&
+        style.display == DisplayType::Flex &&
+        !isFlexItemInParent &&
+        cssWidthAutoLike;
+
+    if (blockFlexAutoMain) {
+        // Use the tightest positive inner width in the ancestor chain as a
+        // stable containing width. This prevents width inflation feedback
+        // loops where an auto-sized ancestor temporarily expands to content.
+        const double containingInner = getContainingInnerMain();
+
+        const double margins = std::max(0, container.getMarginLeft()) + std::max(0, container.getMarginRight());
+        const double availableBorderBox = std::max(0.0, containingInner - margins);
+        const double availableInner = std::max(0.0, availableBorderBox - paddingStart - paddingEnd);
+        if (availableInner > 0.0)
+            innerMainSize = availableInner;
+
+        // Even if internal units drift to fit-content, block flex width:auto
+        // must not content-size its main axis.
+        mainAuto = false;
+    }
+
+    // Safety net: wrapping cannot work with zero main size. In transient
+    // passes, recover from ancestors instead of collapsing all items into one
+    // overflowing line.
+    if (allowWrap && mainAxis == Axis::Horizontal && innerMainSize <= 0.0) {
+        const double containingInner = getContainingInnerMain();
+        const double margins = std::max(0, container.getMarginLeft()) + std::max(0, container.getMarginRight());
+        const double availableBorderBox = std::max(0.0, containingInner - margins);
+        const double availableInner = std::max(0.0, availableBorderBox - paddingStart - paddingEnd);
+        if (availableInner > 0.0)
+            innerMainSize = availableInner;
+    }
 
     const double mainGap = (mainAxis == Axis::Horizontal) ? style.columnGap : style.rowGap;
     const double crossGap = (mainAxis == Axis::Horizontal) ? style.rowGap : style.columnGap;
@@ -258,7 +553,7 @@ void layoutFlex(UIWidget& container)
     items.reserve(container.getChildCount());
 
     size_t index = 0;
-    for (const auto& childPtr : container.getChildren()) {
+    for (const auto& childPtr : container.getChildrenRef()) {
         UIWidget* child = childPtr.get();
         if (!child)
             continue;
@@ -281,16 +576,86 @@ void layoutFlex(UIWidget& container)
         item.alignSelf = childStyle.alignSelf;
 
         const bool horizontal = (mainAxis == Axis::Horizontal);
-        const SizeUnit& preferredMainUnit = horizontal ? child->getWidthHtml() : child->getHeightHtml();
-        const SizeUnit& preferredCrossUnit = horizontal ? child->getHeightHtml() : child->getWidthHtml();
+        auto& preferredMainUnit = horizontal ? child->getWidthHtml() : child->getHeightHtml();
+        auto& preferredCrossUnit = horizontal ? child->getHeightHtml() : child->getWidthHtml();
+
+        // Border widths: OTC draws borders inside the rect, but in CSS the
+        // border-box size = content + padding + border. The flex algorithm
+        // must use border-box sizes for wrapping and space distribution.
+        const int borderMainStart = horizontal ? child->getBorderLeftWidth() : child->getBorderTopWidth();
+        const int borderMainEnd = horizontal ? child->getBorderRightWidth() : child->getBorderBottomWidth();
+        const int borderCrossStart = horizontal ? child->getBorderTopWidth() : child->getBorderLeftWidth();
+        const int borderCrossEnd = horizontal ? child->getBorderBottomWidth() : child->getBorderRightWidth();
+        const int borderMain = borderMainStart + borderMainEnd;
+        const int borderCross = borderCrossStart + borderCrossEnd;
+
+        const bool crossAutoLike = preferredCrossUnit.unit == Unit::Auto || preferredCrossUnit.unit == Unit::FitContent;
+
+        // For column-wrap, cross size must be based on intrinsic widths.
+        // If we keep previously stretched widths, each line can become as
+        // wide as the container and all wrapped columns collapse/overlap.
+        if (!horizontal && allowWrap && crossAutoLike) {
+            const Unit originalUnit = preferredCrossUnit.unit;
+            preferredCrossUnit.pendingUpdate = true;
+            preferredCrossUnit.version = 0;
+            preferredCrossUnit.unit = Unit::FitContent;
+            child->updateSize();
+            preferredCrossUnit.unit = originalUnit;
+        }
+
+        // For column no-wrap with stretch, auto-width items must be measured
+        // with the available cross width before deriving auto heights.
+        if (!horizontal && !allowWrap && innerCrossSize > 0.0 && crossAutoLike) {
+            AlignSelf effectiveAlign = childStyle.alignSelf;
+            if (effectiveAlign == AlignSelf::Auto)
+                effectiveAlign = alignSelfFromAlignItems(style.alignItems);
+
+            if (effectiveAlign == AlignSelf::Stretch) {
+                const double availableCross = std::max(0.0, innerCrossSize - child->getMarginLeft() - child->getMarginRight());
+                const int targetContentWidth = std::max(0, roundi(availableCross) - borderCross);
+                const bool mainAutoLike = preferredMainUnit.unit == Unit::Auto || preferredMainUnit.unit == Unit::FitContent;
+
+                SizeUnitGuard crossGuard(preferredCrossUnit);
+
+                child->setWidth_px(targetContentWidth);
+                preferredCrossUnit.unit = Unit::Px;
+                preferredCrossUnit.value = clampToPositiveSize(targetContentWidth);
+                preferredCrossUnit.valueCalculed = preferredCrossUnit.value;
+                preferredCrossUnit.pendingUpdate = false;
+
+                if (mainAutoLike) {
+                    preferredMainUnit.pendingUpdate = true;
+                    preferredMainUnit.version = 0;
+                }
+
+                queueDescendantVersionReset(child);
+                flushQueuedDescendantVersionResetsForCurrentDepth();
+                child->updateSize();
+            }
+        }
+
+        // Flex base size for auto/content should come from intrinsic size on
+        // the main axis. Force a fit-content pass here so stale block-sized
+        // widths/heights don't leak into row/column wrapping behavior.
+        if ((item.basis.type == FlexBasis::Type::Auto || item.basis.type == FlexBasis::Type::Content)
+            && (preferredMainUnit.unit == Unit::Auto || preferredMainUnit.unit == Unit::FitContent)) {
+            // Only restore `unit` — intentionally leave pendingUpdate=true and
+            // version=0 so subsequent passes pick up the measured size.
+            const Unit originalUnit = preferredMainUnit.unit;
+            preferredMainUnit.pendingUpdate = true;
+            preferredMainUnit.version = 0;
+            preferredMainUnit.unit = Unit::FitContent;
+            child->updateSize();
+            preferredMainUnit.unit = originalUnit;
+        }
 
         auto preferredMainSize = getUnitValue(preferredMainUnit, innerMainSize);
         if (preferredMainSize < 0.0)
-            preferredMainSize = horizontal ? child->getWidth() : child->getHeight();
+            preferredMainSize = (horizontal ? child->getWidth() : child->getHeight()) + borderMain;
 
         auto preferredCrossSize = getUnitValue(preferredCrossUnit, innerCrossSize);
         if (preferredCrossSize < 0.0)
-            preferredCrossSize = horizontal ? child->getHeight() : child->getWidth();
+            preferredCrossSize = (horizontal ? child->getHeight() : child->getWidth()) + borderCross;
 
         switch (item.basis.type) {
             case FlexBasis::Type::Px:
@@ -309,12 +674,20 @@ void layoutFlex(UIWidget& container)
         }
 
         item.mainSize = item.baseSize;
+        item.contentMainSize = preferredMainSize;
         item.minMain = horizontal ? child->getMinWidth() : child->getMinHeight();
         double maxMain = horizontal ? child->getMaxWidth() : child->getMaxHeight();
         item.maxMain = availableLimit(maxMain);
         item.mainSize = clampToLimits(item.mainSize, item.minMain, item.maxMain);
 
         item.crossSize = preferredCrossSize;
+        const bool crossUnitAutoLike = (preferredCrossUnit.unit == Unit::Auto || preferredCrossUnit.unit == Unit::FitContent);
+        bool cssCrossAutoLike = false;
+        if (const auto node = child->getHtmlNode()) {
+            const std::string cssCross = node->getStyle(horizontal ? "height" : "width");
+            cssCrossAutoLike = cssCross.empty() || cssCross == "auto";
+        }
+        item.crossSizeAuto = crossUnitAutoLike || cssCrossAutoLike;
         item.minCross = horizontal ? child->getMinHeight() : child->getMinWidth();
         double maxCross = horizontal ? child->getMaxHeight() : child->getMaxWidth();
         item.maxCross = availableLimit(maxCross);
@@ -332,8 +705,8 @@ void layoutFlex(UIWidget& container)
             item.marginMainEnd = child->getMarginBottom();
             item.marginCrossStart = child->getMarginLeft();
             item.marginCrossEnd = child->getMarginRight();
-            item.autoMainStart = false;
-            item.autoMainEnd = false;
+            item.autoMainStart = child->isMarginTopAuto();
+            item.autoMainEnd = child->isMarginBottomAuto();
         }
 
         if (mainReverse) {
@@ -345,7 +718,7 @@ void layoutFlex(UIWidget& container)
     }
 
     if (items.empty()) {
-        for (const auto& childPtr : container.getChildren()) {
+        for (const auto& childPtr : container.getChildrenRef()) {
             if (childPtr && childPtr->getPositionType() == PositionType::Absolute)
                 childPtr->updateSize();
         }
@@ -401,12 +774,44 @@ void layoutFlex(UIWidget& container)
             contentCross += crossGap;
     }
 
-    const bool crossAuto = (mainAxis == Axis::Horizontal)
-        ? (container.getHeightHtml().needsUpdate(Unit::Auto) || container.getHeightHtml().needsUpdate(Unit::FitContent))
-        : (container.getWidthHtml().needsUpdate(Unit::Auto) || container.getWidthHtml().needsUpdate(Unit::FitContent));
+    const auto& containerCrossUnit = (mainAxis == Axis::Horizontal) ? container.getHeightHtml() : container.getWidthHtml();
+    bool crossAuto = axisUsesContentWhenAuto(style.display, crossAxisForMain(mainAxis), containerCrossUnit);
+    if (isFlexItemInParent && containerCrossSize > 0)
+        crossAuto = false;
 
-    if (crossAuto)
-        innerCrossSize = contentCross;
+    if (crossAuto) {
+        double resolvedInnerCross = contentCross;
+        if (mainAxis == Axis::Horizontal) {
+            const int minH = container.getMinHeight();
+            const int maxH = container.getMaxHeight();
+            if (minH > 0) {
+                const double minInner = std::max(0, minH - paddingCrossStart - paddingCrossEnd);
+                resolvedInnerCross = std::max(resolvedInnerCross, minInner);
+            }
+            if (maxH > 0) {
+                const double maxInner = std::max(0, maxH - paddingCrossStart - paddingCrossEnd);
+                resolvedInnerCross = std::min(resolvedInnerCross, maxInner);
+            }
+        } else {
+            const int minW = container.getMinWidth();
+            const int maxW = container.getMaxWidth();
+            if (minW > 0) {
+                const double minInner = std::max(0, minW - paddingCrossStart - paddingCrossEnd);
+                resolvedInnerCross = std::max(resolvedInnerCross, minInner);
+            }
+            if (maxW > 0) {
+                const double maxInner = std::max(0, maxW - paddingCrossStart - paddingCrossEnd);
+                resolvedInnerCross = std::min(resolvedInnerCross, maxInner);
+            }
+        }
+        innerCrossSize = std::max(0.0, resolvedInnerCross);
+    }
+
+    // Single-line flex containers ignore align-content; their line cross-size
+    // must match the container's definite inner cross-size. This prevents
+    // content-sized children from inflating the line on the cross axis.
+    if (!crossAuto && lines.size() == 1)
+        lines[0].crossSize = std::max(0.0, innerCrossSize);
 
     for (auto& line : lines) {
         std::vector<FlexItemData*> lineItems;
@@ -425,22 +830,34 @@ void layoutFlex(UIWidget& container)
                 ++autoMarginCount;
         }
 
-        double freeSpace = innerMainSize - totalOuter;
-        if (autoMarginCount > 0 && freeSpace > 0.0) {
-            const double share = freeSpace / autoMarginCount;
+        double availableMain = innerMainSize;
+        if (mainAuto) {
+            availableMain = std::max(totalOuter, minInnerMainConstraint);
+            availableMain = std::min(availableMain, maxInnerMainConstraint);
+        }
+        double freeSpace = availableMain - totalOuter;
+
+        // When main axis is auto-sized, apply the automatic minimum floor first
+        // (CSS automatic minimum size for flex items).
+        if (mainAuto) {
             for (auto* item : lineItems) {
-                if (item->autoMainStart)
-                    item->marginMainStart = share;
-                if (item->autoMainEnd)
-                    item->marginMainEnd = share;
+                if (item->mainSize < item->contentMainSize)
+                    item->mainSize = clampToLimits(item->contentMainSize, item->minMain, item->maxMain);
             }
-            freeSpace = 0.0;
+
+            totalOuter = 0.0;
+            for (size_t j = 0; j < line.itemIndices.size(); ++j) {
+                const auto& item = items[line.itemIndices[j]];
+                totalOuter += item.marginMainStart + item.mainSize + item.marginMainEnd;
+                if (j + 1 < line.itemIndices.size())
+                    totalOuter += mainGap;
+            }
+            availableMain = std::max(totalOuter, minInnerMainConstraint);
+            availableMain = std::min(availableMain, maxInnerMainConstraint);
+            freeSpace = availableMain - totalOuter;
         }
 
-        if (freeSpace > 0.0)
-            distributePositiveSpace(lineItems, freeSpace);
-        else if (freeSpace < 0.0)
-            distributeNegativeSpace(lineItems, freeSpace);
+        distributeAutoMarginsAndSpace(lineItems, autoMarginCount, freeSpace);
 
         totalOuter = 0.0;
         for (size_t j = 0; j < line.itemIndices.size(); ++j) {
@@ -449,7 +866,7 @@ void layoutFlex(UIWidget& container)
             if (j + 1 < line.itemIndices.size())
                 totalOuter += mainGap;
         }
-        freeSpace = innerMainSize - totalOuter;
+        freeSpace = availableMain - totalOuter;
         line.mainSize = totalOuter;
 
         double betweenSpacing = mainGap;
@@ -492,23 +909,123 @@ void layoutFlex(UIWidget& container)
                     cursor += betweenSpacing;
             }
         } else {
-            double cursor = innerMainSize - leadingSpace;
-            for (size_t offset = 0; offset < count; ++offset) {
-                auto& item = items[line.itemIndices[count - 1 - offset]];
+            // In CSS row-reverse/column-reverse, the first item in DOM order
+            // is placed at the main-end edge (right/bottom). Iterate in
+            // forward order so the first item ends up at the right/bottom.
+            double cursor = availableMain - leadingSpace;
+            for (size_t idx = 0; idx < count; ++idx) {
+                auto& item = items[line.itemIndices[idx]];
                 cursor -= item.marginMainStart;
                 cursor -= item.mainSize;
                 item.mainPos = cursor;
                 cursor -= item.marginMainEnd;
-                if (offset + 1 < count)
+                if (idx + 1 < count)
                     cursor -= betweenSpacing;
             }
         }
     }
 
-    double totalCross = 0.0;
-    for (const auto& line : lines)
-        totalCross += line.crossSize;
-    totalCross += crossGap * (lines.size() > 0 ? (lines.size() - 1) : 0);
+    // When main axis is auto-sized, set innerMainSize to content so
+    // positioning and container sizing work correctly.
+    if (mainAuto) {
+        double contentMain = 0.0;
+        for (const auto& line : lines)
+            contentMain = maxDouble(contentMain, line.mainSize);
+        innerMainSize = contentMain;
+    }
+
+    // CSS flex spec step 7: hypothetical cross-size.
+    // After main-axis distribution, item widths may differ from the initial
+    // measurement. Text wrapping depends on width, so cross-sizes (heights)
+    // must be recomputed. Set the final width on each item and propagate
+    // to children so text re-wraps, then read the new height.
+    if (mainAxis == Axis::Horizontal) {
+        std::vector<bool> step7WidthChanged(items.size(), false);
+        for (size_t i = 0; i < items.size(); ++i) {
+            auto& item = items[i];
+            if (!item.widget || !item.crossSizeAuto)
+                continue;
+            const int bL = item.widget->getBorderLeftWidth();
+            const int bR = item.widget->getBorderRightWidth();
+
+            const int targetWidth = std::max(0, roundi(item.mainSize) - bL - bR);
+            const bool widthChanged = item.widget->getWidth() != targetWidth;
+            step7WidthChanged[i] = widthChanged;
+            if (widthChanged) {
+                item.widget->setWidth_px(targetWidth);
+                queueDescendantVersionReset(item.widget);
+            }
+        }
+
+        flushQueuedDescendantVersionResetsForCurrentDepth();
+
+        for (size_t i = 0; i < items.size(); ++i) {
+            auto& item = items[i];
+            if (!item.widget || !item.crossSizeAuto)
+                continue;
+            const int bT = item.widget->getBorderTopWidth();
+            const int bB = item.widget->getBorderBottomWidth();
+            const bool widthChanged = step7WidthChanged[i];
+            const auto itemDisplay = item.widget->getDisplay();
+            if (itemDisplay == DisplayType::Flex || itemDisplay == DisplayType::InlineFlex) {
+                // Nested flex container (e.g. column-flex card): run its
+                // own layout so it computes its content height via mainAuto.
+                // Temporarily mark cross-axis (width) as non-pending so the
+                // nested layoutFlex doesn't override the parent-assigned width.
+                auto& crossUnit = (mainAxis == Axis::Horizontal)
+                    ? item.widget->getWidthHtml() : item.widget->getHeightHtml();
+                // Only save/restore pendingUpdate — layoutFlex may modify
+                // value/valueCalculed on crossUnit, and those changes must persist.
+                if (widthChanged || item.widget->getHeight() <= 0) {
+                    const bool origPending = crossUnit.pendingUpdate;
+                    crossUnit.pendingUpdate = false;
+                    layoutFlex(*item.widget);
+                    crossUnit.pendingUpdate = origPending;
+                }
+            } else {
+                // Width was assigned directly in this pass. Reflow this item
+                // immediately so wrapped text updates its own height before we
+                // read it for line cross-size calculations.
+                if (widthChanged || item.widget->getHeight() <= 0) {
+                    item.widget->updateText();
+                    for (const auto& child : item.widget->getChildrenRef())
+                        child->updateSize();
+                }
+            }
+
+            double newCross = item.widget->getHeight() + bT + bB;
+            item.crossSize = newCross;
+            item.finalCrossSize = clampToLimits(newCross, item.minCross, item.maxCross);
+        }
+
+        // Recompute line cross-sizes with updated item heights
+        for (auto& line : lines) {
+            double lineCross = 0.0;
+            for (size_t idx : line.itemIndices) {
+                auto& item = items[idx];
+                const double cross = item.finalCrossSize + item.marginCrossStart + item.marginCrossEnd;
+                lineCross = maxDouble(lineCross, cross);
+            }
+            line.crossSize = lineCross;
+        }
+    }
+
+    // Step 7 recomputes line cross-sizes from the items' final dimensions, so
+    // re-apply the single-line definite cross-size override before align-content.
+    if (!crossAuto && lines.size() == 1)
+        lines[0].crossSize = std::max(0.0, innerCrossSize);
+
+    // contentCross must reflect the final per-line cross sizes (after item
+    // width assignment and text reflow), otherwise auto cross-size containers
+    // can end up shorter than wrapped content.
+    contentCross = 0.0;
+    for (size_t i = 0; i < lines.size(); ++i) {
+        contentCross += lines[i].crossSize;
+        if (i + 1 < lines.size())
+            contentCross += crossGap;
+    }
+
+    double totalCross = contentCross;
 
     double crossFreeSpace = innerCrossSize - totalCross;
     double betweenCross = crossGap;
@@ -585,7 +1102,7 @@ void layoutFlex(UIWidget& container)
             double available = lineCrossSize - item.marginCrossStart - item.marginCrossEnd;
             available = std::max(0.0, available);
 
-            if (align == AlignSelf::Stretch) {
+            if (align == AlignSelf::Stretch && item.crossSizeAuto) {
                 item.finalCrossSize = clampToLimits(available, item.minCross, item.maxCross);
             } else {
                 item.finalCrossSize = clampToLimits(item.finalCrossSize, item.minCross, item.maxCross);
@@ -610,16 +1127,62 @@ void layoutFlex(UIWidget& container)
         }
     }
 
+    const int containerX = container.getX();
+    const int containerY = container.getY();
+
     for (auto& item : items) {
         if (!item.widget)
             continue;
-        const int width = (mainAxis == Axis::Horizontal) ? std::max(0, roundi(item.mainSize)) : std::max(0, roundi(item.finalCrossSize));
-        const int height = (mainAxis == Axis::Horizontal) ? std::max(0, roundi(item.finalCrossSize)) : std::max(0, roundi(item.mainSize));
 
-        const int x = container.getPaddingLeft() + ((mainAxis == Axis::Horizontal) ? roundi(item.mainPos) : roundi(item.crossPos));
-        const int y = container.getPaddingTop() + ((mainAxis == Axis::Horizontal) ? roundi(item.crossPos) : roundi(item.mainPos));
+        // Subtract border widths: the flex algorithm uses border-box sizes
+        // internally, but OTC's setRect expects the rect WITHOUT borders
+        // (borders are drawn inside/on-top of the rect).
+        const int bL = item.widget->getBorderLeftWidth();
+        const int bR = item.widget->getBorderRightWidth();
+        const int bT = item.widget->getBorderTopWidth();
+        const int bB = item.widget->getBorderBottomWidth();
 
-        item.widget->setRect(Rect(Point(x, y), Size(width, height)));
+        const int width = (mainAxis == Axis::Horizontal)
+            ? std::max(0, roundi(item.mainSize) - bL - bR)
+            : std::max(0, roundi(item.finalCrossSize) - bL - bR);
+        const int height = (mainAxis == Axis::Horizontal)
+            ? std::max(0, roundi(item.finalCrossSize) - bT - bB)
+            : std::max(0, roundi(item.mainSize) - bT - bB);
+
+        const int x = containerX + container.getPaddingLeft() + ((mainAxis == Axis::Horizontal) ? roundi(item.mainPos) : roundi(item.crossPos));
+        const int y = containerY + container.getPaddingTop() + ((mainAxis == Axis::Horizontal) ? roundi(item.crossPos) : roundi(item.mainPos));
+
+        item.rectChanged = item.widget->setRect(Rect(Point(x, y), Size(width, height)));
+    }
+
+    bool containerSizeChanged = false;
+
+    if (mainAuto) {
+        const double totalMainWithPadding = innerMainSize + paddingStart + paddingEnd;
+        int desired = std::max(0, roundi(totalMainWithPadding));
+        if (mainAxis == Axis::Horizontal) {
+            const int minW = container.getMinWidth();
+            const int maxW = container.getMaxWidth();
+            if (minW >= 0)
+                desired = std::max(desired, minW);
+            if (maxW > 0)
+                desired = std::min(desired, maxW);
+            if (container.getWidth() != desired) {
+                container.setWidth_px(desired);
+                containerSizeChanged = true;
+            }
+        } else {
+            const int minH = container.getMinHeight();
+            const int maxH = container.getMaxHeight();
+            if (minH >= 0)
+                desired = std::max(desired, minH);
+            if (maxH > 0)
+                desired = std::min(desired, maxH);
+            if (container.getHeight() != desired) {
+                container.setHeight_px(desired);
+                containerSizeChanged = true;
+            }
+        }
     }
 
     if (crossAuto) {
@@ -630,23 +1193,88 @@ void layoutFlex(UIWidget& container)
             const int maxH = container.getMaxHeight();
             if (minH >= 0)
                 desired = std::max(desired, minH);
-            if (maxH >= 0)
+            if (maxH > 0)
                 desired = std::min(desired, maxH);
-            if (container.getHeight() != desired)
+            if (container.getHeight() != desired) {
                 container.setHeight_px(desired);
+                containerSizeChanged = true;
+            }
         } else {
             const int minW = container.getMinWidth();
             const int maxW = container.getMaxWidth();
             if (minW >= 0)
                 desired = std::max(desired, minW);
-            if (maxW >= 0)
+            if (maxW > 0)
                 desired = std::min(desired, maxW);
-            if (container.getWidth() != desired)
+            if (container.getWidth() != desired) {
                 container.setWidth_px(desired);
+                containerSizeChanged = true;
+            }
         }
     }
 
-    for (const auto& childPtr : container.getChildren()) {
+    // Propagate size changes from this flex container to auto/fit-content parents.
+    if (containerSizeChanged && container.getPositionType() != PositionType::Absolute) {
+        if (const auto& parent = container.getParent()) {
+            auto& parentW = parent->m_width;
+            if (parentW.unit == Unit::Auto || parentW.unit == Unit::FitContent) {
+                parentW.pendingUpdate = true;
+                parentW.version = 0;
+            }
+
+            auto& parentH = parent->m_height;
+            if (parentH.unit == Unit::Auto || parentH.unit == Unit::FitContent) {
+                parentH.pendingUpdate = true;
+                parentH.version = 0;
+            }
+
+            parent->scheduleHtmlTask(PropUpdateSize);
+        }
+    }
+
+    // Post-layout: flex items now have their final sizes from setRect.
+    // Queue recursive resets so descendants are batched and re-measured once
+    // at the end of this flex layout pass.
+    for (auto& item : items) {
+        if (!item.widget || item.widget->getChildrenRef().empty() || !item.rectChanged)
+            continue;
+        queueDescendantVersionReset(item.widget);
+    }
+
+    flushQueuedDescendantVersionResetsForCurrentDepth();
+
+    for (auto& item : items) {
+        if (!item.widget || item.widget->getChildrenRef().empty() || !item.rectChanged)
+            continue;
+        const auto d = item.widget->getDisplay();
+        if (d == DisplayType::Flex || d == DisplayType::InlineFlex) {
+            // Force definite pixel sizes while running nested layoutFlex.
+            // Just clearing pending flags is not enough because Auto/FitContent
+            // units would still make nested containers re-content-size and
+            // ignore the size assigned by the parent flex item.
+            auto& wUnit = item.widget->getWidthHtml();
+            auto& hUnit = item.widget->getHeightHtml();
+            SizeUnitGuard wGuard(wUnit);
+            SizeUnitGuard hGuard(hUnit);
+
+            wUnit.unit = Unit::Px;
+            wUnit.value = clampToPositiveSize(item.widget->getWidth());
+            wUnit.valueCalculed = wUnit.value;
+            wUnit.pendingUpdate = false;
+
+            hUnit.unit = Unit::Px;
+            hUnit.value = clampToPositiveSize(item.widget->getHeight());
+            hUnit.valueCalculed = hUnit.value;
+            hUnit.pendingUpdate = false;
+
+            layoutFlex(*item.widget);
+        } else {
+            for (const auto& child : item.widget->getChildrenRef())
+                child->updateSize();
+        }
+    }
+
+    for (const auto& childPtr : container.getChildrenRef()) {
         if (childPtr && childPtr->getPositionType() == PositionType::Absolute)
             childPtr->updateSize();
     }

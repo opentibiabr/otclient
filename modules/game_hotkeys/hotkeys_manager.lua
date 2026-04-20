@@ -2,6 +2,7 @@ HOTKEY_MANAGER_USE = nil
 HOTKEY_MANAGER_USEONSELF = 1
 HOTKEY_MANAGER_USEONTARGET = 2
 HOTKEY_MANAGER_USEWITH = 3
+HOTKEY_MANAGER_USEATCURSOR = 4
 
 HOTKEY_ACTION_TOGGLE_WASD = 1
 HOTKEY_ACTION_ATTACK_NEXT = 2
@@ -49,6 +50,7 @@ clearObjectButton = nil
 useOnSelf = nil
 useOnTarget = nil
 useWith = nil
+useAtCursor = nil
 defaultComboKeys = nil
 perServer = true
 perCharacter = true
@@ -88,11 +90,13 @@ function init()
     useOnSelf = hotkeysWindow:getChildById('useOnSelf')
     useOnTarget = hotkeysWindow:getChildById('useOnTarget')
     useWith = hotkeysWindow:getChildById('useWith')
+    useAtCursor = hotkeysWindow:getChildById('useAtCursor')
 
     useRadioGroup = UIRadioGroup.create()
     useRadioGroup:addWidget(useOnSelf)
     useRadioGroup:addWidget(useOnTarget)
     useRadioGroup:addWidget(useWith)
+    useRadioGroup:addWidget(useAtCursor)
     useRadioGroup.onSelectionChange = function(self, selected)
         onChangeUseType(selected)
     end
@@ -157,6 +161,7 @@ function terminate()
     useOnSelf = nil
     useOnTarget = nil
     useWith = nil
+    useAtCursor = nil
     currentHotkeys = nil
     hotkeysWindowButton = nil
 end
@@ -515,7 +520,7 @@ function doKeyCombo(keyCombo)
         elseif hotKey.action == HOTKEY_ACTION_ATTACK_PREV then
             modules.game_battle.attackNext(true)
         elseif hotKey.action == HOTKEY_ACTION_TOGGLE_CHASE then
-            g_game.setChaseMode(ChaseOpponent)
+            toggleChaseMode()
         end
 
     elseif hotKey.itemId == nil then
@@ -537,7 +542,49 @@ function doKeyCombo(keyCombo)
     end
 end
 
+function toggleChaseMode()
+    local currentMode = g_game.getChaseMode()
+    local nextMode = currentMode == ChaseOpponent and DontChase or ChaseOpponent
+    g_game.setChaseMode(nextMode)
+end
+
 function executeHotkeyItem(action, itemId, subType)
+    local function get_use_thing_under_cursor()
+        local mapPanel = modules.game_interface and modules.game_interface.getMapPanel and modules.game_interface.getMapPanel()
+        if not mapPanel then
+            return nil
+        end
+
+        local mousePosition = g_window.getMousePosition()
+        if not mapPanel:containsPoint(mousePosition) then
+            return nil
+        end
+
+        local mapPosition = mapPanel:getPosition(mousePosition)
+        if not mapPosition then
+            return nil
+        end
+
+        local localPlayer = g_game.getLocalPlayer()
+        if localPlayer and mapPosition.z ~= localPlayer:getPosition().z then
+            local dz = mapPosition.z - localPlayer:getPosition().z
+            mapPosition.x = mapPosition.x + dz
+            mapPosition.y = mapPosition.y + dz
+            mapPosition.z = localPlayer:getPosition().z
+        end
+
+        local tile = g_map.getTile(mapPosition)
+        if not tile then
+            return nil
+        end
+
+        local virtualItem = Item.create(itemId)
+        if virtualItem:isFluidContainer() or virtualItem:isMultiUse() then
+            return tile:getTopMultiUseThing()
+        end
+        return tile:getTopUseThing()
+    end
+
     if action == HOTKEY_MANAGER_USE then
         if g_game.getClientVersion() < 780 or subType then
             local item = g_game.findPlayerItem(itemId, subType or -1)
@@ -593,6 +640,29 @@ function executeHotkeyItem(action, itemId, subType)
             item = tmpItem
         end
         modules.game_interface.startUseWith(item)
+    elseif action == HOTKEY_MANAGER_USEATCURSOR then
+        local useThing = get_use_thing_under_cursor()
+        if not useThing then
+            local item = Item.create(itemId)
+            if g_game.getClientVersion() < 780 or subType then
+                local tmpItem = g_game.findPlayerItem(itemId, subType or -1)
+                if not tmpItem then
+                    return
+                end
+                item = tmpItem
+            end
+            modules.game_interface.startUseWith(item)
+            return
+        end
+
+        if g_game.getClientVersion() < 780 or subType then
+            local item = g_game.findPlayerItem(itemId, subType or -1)
+            if item then
+                g_game.useWith(item, useThing)
+            end
+        else
+            g_game.useInventoryItemWith(itemId, useThing)
+        end
     end
 end
 
@@ -608,6 +678,9 @@ function updateHotkeyLabel(hotkeyLabel)
         hotkeyLabel:setColor(HotkeyColors.itemUseTarget)
     elseif hotkeyLabel.useType == HOTKEY_MANAGER_USEWITH then
         hotkeyLabel:setText(tr('%s: (use object with crosshair)', hotkeyLabel.keyCombo))
+        hotkeyLabel:setColor(HotkeyColors.itemUseWith)
+    elseif hotkeyLabel.useType == HOTKEY_MANAGER_USEATCURSOR then
+        hotkeyLabel:setText(tr('%s: (use object at cursor position)', hotkeyLabel.keyCombo))
         hotkeyLabel:setColor(HotkeyColors.itemUseWith)
     elseif hotkeyLabel.itemId ~= nil then
         hotkeyLabel:setText(tr('%s: (use object)', hotkeyLabel.keyCombo))
@@ -657,17 +730,21 @@ function updateHotkeyForm(reset, dontUpdateCombo)
                 useOnSelf:enable()
                 useOnTarget:enable()
                 useWith:enable()
+                useAtCursor:enable()
                 if currentHotkeyLabel.useType == HOTKEY_MANAGER_USEONSELF then
                     useRadioGroup:selectWidget(useOnSelf)
                 elseif currentHotkeyLabel.useType == HOTKEY_MANAGER_USEONTARGET then
                     useRadioGroup:selectWidget(useOnTarget)
                 elseif currentHotkeyLabel.useType == HOTKEY_MANAGER_USEWITH then
                     useRadioGroup:selectWidget(useWith)
+                elseif currentHotkeyLabel.useType == HOTKEY_MANAGER_USEATCURSOR then
+                    useRadioGroup:selectWidget(useAtCursor)
                 end
             else
                 useOnSelf:disable()
                 useOnTarget:disable()
                 useWith:disable()
+                useAtCursor:disable()
                 useRadioGroup:clearSelected()
             end
         elseif currentHotkeyLabel.action then
@@ -684,6 +761,7 @@ function updateHotkeyForm(reset, dontUpdateCombo)
             useOnSelf:disable()
             useOnTarget:disable()
             useWith:disable()
+            useAtCursor:disable()
             useRadioGroup:clearSelected()
             selectObjectButton:disable()
             clearObjectButton:disable()
@@ -695,6 +773,7 @@ function updateHotkeyForm(reset, dontUpdateCombo)
             useOnSelf:disable()
             useOnTarget:disable()
             useWith:disable()
+            useAtCursor:disable()
             useRadioGroup:clearSelected()
             hotkeyText:enable()
             hotkeyText:focus()
@@ -722,6 +801,7 @@ function updateHotkeyForm(reset, dontUpdateCombo)
         useOnSelf:disable()
         useOnTarget:disable()
         useWith:disable()
+        useAtCursor:disable()
         hotkeyText:clearText()
         useRadioGroup:clearSelected()
         sendAutomatically:setChecked(false)
@@ -782,6 +862,8 @@ function onChangeUseType(useTypeWidget)
         currentHotkeyLabel.useType = HOTKEY_MANAGER_USEONTARGET
     elseif useTypeWidget == useWith then
         currentHotkeyLabel.useType = HOTKEY_MANAGER_USEWITH
+    elseif useTypeWidget == useAtCursor then
+        currentHotkeyLabel.useType = HOTKEY_MANAGER_USEATCURSOR
     else
         currentHotkeyLabel.useType = HOTKEY_MANAGER_USE
     end

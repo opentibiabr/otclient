@@ -1,5 +1,5 @@
 setDefaultTab("HP")
-if voc() ~= 1 and voc() ~= 11 then
+if voc() ~= 1 and voc() ~= 11 and voc() ~= 5 and voc() ~= 15 then
     if storage.foodItems then
         local t = {}
         for i, v in pairs(storage.foodItems) do

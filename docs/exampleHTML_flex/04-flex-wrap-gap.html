@@ -1,0 +1,154 @@
+<html>
+<style>
+  window {
+    font-family: Arial, sans-serif;
+    margin: 24px;
+    background-color: #ffffff;
+    color: #222222;
+    height: 100%;
+    margin-top: 0;
+    margin-left: 0;
+    margin-right: 0;
+    display: block !important;
+    --image-source: none;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 100% !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  .example {
+    border: 2px #2e7d32;
+    border-radius: 10px;
+    background-color: #ffffff;
+    padding: 12px;
+    width: 94%;
+    margin-bottom: 18px;
+  }
+
+  .container {
+    display: flex;
+    width: 420px;
+    border: 2px #96a19b;
+    padding: 10px;
+    background-color: #eceff1;
+  }
+
+  .item1 {
+    width: 110px;
+    border: 2px solid #2e7d32;
+    border-radius: 8px;
+    background-color: #d9f7dc;
+    text-align: center;
+    padding: 8px;
+  }
+
+  .nowrap {
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+
+  .wrap {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .wrap-reverse {
+    flex-wrap: wrap-reverse;
+    gap: 6px;
+  }
+
+  .big-gap {
+    flex-wrap: wrap;
+    gap: 18px;
+  }
+
+  button {
+    margin-top: 5px;
+    border: 1px solid #2e7d32;
+    background-color: #2e7d32;
+    color: white;
+    border-radius: 6px;
+    padding: 4px 8px;
+  }
+
+  img {
+    width: 28px;
+    height: 28px;
+    border-radius: 5px;
+    border: 1px #888;
+  }
+
+  /* Visual variants per example */
+  .purple .item1 {
+    background-color: #9c27b0;
+  }
+
+  .blue .item1 {
+    background-color: #2196f3;
+  }
+
+  .green .item1 {
+    background-color: #4caf50;
+  }
+
+  .orange .item1 {
+    background-color: #ff9800;
+  }
+
+  .red .item1 {
+    background-color: #f44336;
+  }
+
+  .steel .item1 {
+    background-color: #607d8b;
+  }
+</style>
+<window>
+  <h1>Flexbox: flex-wrap and gap</h1>
+  <p>How boxes wrap to a new line and spacing between them.</p>
+
+  <div class="example purple">
+    <h3>nowrap</h3>
+    <div class="container nowrap">
+      <div class="item1">1</div>
+      <div class="item1">2</div>
+      <div class="item1">3</div>
+      <div class="item1">4</div>
+    </div>
+  </div>
+
+  <div class="example blue">
+    <h3>wrap</h3>
+    <div class="container wrap">
+      <div class="item1">1</div>
+      <div class="item1">2</div>
+      <div class="item1">3</div>
+      <div class="item1">4</div>
+    </div>
+  </div>
+
+  <div class="example green">
+    <h3>wrap-reverse</h3>
+    <div class="container wrap-reverse">
+      <div class="item1">1</div>
+      <div class="item1">2</div>
+      <div class="item1">3</div>
+      <div class="item1">4</div>
+    </div>
+  </div>
+
+  <div class="example orange">
+    <h3>large gap</h3>
+    <div class="container big-gap">
+      <div class="item1"><img src="/data/images/clienticon.png" alt="img"><br>Card</div>
+      <div class="item1">Text<br><button>Button</button></div>
+      <div class="item1">Card 3</div>
+      <div class="item1">Card 4</div>
+    </div>
+  </div>
+</window>
+
+</html>
