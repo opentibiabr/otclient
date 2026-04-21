@@ -15,7 +15,8 @@ local SAVED_TOP_LEVEL_KEYS = {
     chatOptions = true,
     hotkeyOptions = true,
     options = true,
-    profiles = true
+    profiles = true,
+    actionBarVisibility = true,
 }
 
 local function isSequentialArray(value)
@@ -241,13 +242,14 @@ local function rebuildStateFromArray()
     options.clientOptions = array.options or {}
     array.options = options.clientOptions
 
+    local visJson = array.actionBarVisibility or {}
     local actionBar = {}
     local lockedBottom = g_settings.getBoolean("actionBarBottomLocked") or false
     for i = 1, 3 do
-        local isVisible = g_settings.getBoolean("actionBarShowBottom" .. i)
-        if isVisible == nil then
-            isVisible = (i == 1) -- Default: only first bar visible
-        end
+        local key = "actionBarShowBottom" .. i
+        local isVisible = visJson[key]
+        if isVisible == nil then isVisible = g_settings.getBoolean(key) end
+        if isVisible == nil then isVisible = (i == 1) end
         actionBar[#actionBar + 1] = {
             isVisible = isVisible,
             isLocked = lockedBottom and true or false
@@ -256,10 +258,10 @@ local function rebuildStateFromArray()
 
     local lockedLeft = g_settings.getBoolean("actionBarLeftLocked") or false
     for i = 1, 3 do
-        local isVisible = g_settings.getBoolean("actionBarShowLeft" .. i)
-        if isVisible == nil then
-            isVisible = false
-        end
+        local key = "actionBarShowLeft" .. i
+        local isVisible = visJson[key]
+        if isVisible == nil then isVisible = g_settings.getBoolean(key) end
+        if isVisible == nil then isVisible = false end
         actionBar[#actionBar + 1] = {
             isVisible = isVisible,
             isLocked = lockedLeft and true or false
@@ -268,10 +270,10 @@ local function rebuildStateFromArray()
 
     local lockedRight = g_settings.getBoolean("actionBarRightLocked") or false
     for i = 1, 3 do
-        local isVisible = g_settings.getBoolean("actionBarShowRight" .. i)
-        if isVisible == nil then
-            isVisible = false
-        end
+        local key = "actionBarShowRight" .. i
+        local isVisible = visJson[key]
+        if isVisible == nil then isVisible = g_settings.getBoolean(key) end
+        if isVisible == nil then isVisible = false end
         actionBar[#actionBar + 1] = {
             isVisible = isVisible,
             isLocked = lockedRight and true or false
@@ -872,6 +874,11 @@ function ApiJson.setBarVisibility(barIndex, optionKey, visible, markCreated)
         if markCreated then
             bar.created = true
         end
+    end
+
+    if state.array then
+        state.array.actionBarVisibility = state.array.actionBarVisibility or {}
+        state.array.actionBarVisibility[optionKey] = visible
     end
 
     g_settings.set(optionKey, visible)

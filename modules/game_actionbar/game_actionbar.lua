@@ -704,9 +704,9 @@ function configureActionBar(key, value)
     }
     local n = map[key]
     if not n then return end
-    ApiJson.setBarVisibility(n, key, value)
     local actionbar = actionBars[n]
     if actionbar then
+        ApiJson.setBarVisibility(n, key, value)
         actionbar:setVisible(value)
         actionbar:setOn(value)
         if value then
