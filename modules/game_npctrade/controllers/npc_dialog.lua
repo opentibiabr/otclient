@@ -93,6 +93,30 @@ function controllerNpcTrader:cloneConsoleMessages()
     end
 end
 
+function controllerNpcTrader:setupWindowDragBehavior()
+    if not self.ui then
+        return
+    end
+
+    local dragHandle = self:findWidget("#dragHandle")
+    if not dragHandle then
+        return
+    end
+
+    dragHandle:setDraggable(true)
+    dragHandle.onDragEnter = function(widget, mousePos)
+        return self.ui:onDragEnter(mousePos)
+    end
+    dragHandle.onDragMove = function(widget, mousePos, mouseMoved)
+        self.ui:onDragMove(mousePos, mouseMoved)
+        return true
+    end
+    dragHandle.onDragLeave = function(widget, droppedWidget, mousePos)
+        self.ui:onDragLeave(droppedWidget, mousePos)
+        return true
+    end
+end
+
 function controllerNpcTrader:initNpcWindow(creature, buttons)
     if not g_game.getFeature(GameNpcWindowRedesign) then
         return
@@ -111,6 +135,7 @@ function controllerNpcTrader:initNpcWindow(creature, buttons)
     if not self.ui or not self.ui:isVisible() then
         self:loadHtml('templates/game_npctrader.html')
     end
+    self:setupWindowDragBehavior()
     local creatureOutfit = self:findWidget("#creatureOutfit")
     if creatureOutfit then
         if type(self.outfit) == "string" then

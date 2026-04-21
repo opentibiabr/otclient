@@ -37,6 +37,7 @@
     .leftPanel {width: 395px; height: 400px; float: left;}
     .rightPanel { width: 195px; height: 368px; margin-top: 27px; margin-left: 10px; float: left;}
     .verticalSep { height: 340px; margin-top: 25px; float: left;  margin-left: -10px;}
+    .dragHandle { height: 27px; background-color: alpha; }
     .closeButton { --image-clip: 28 0 14 14; margin-right: 10px; }
     .closeButton:hover { --image-clip: 28 14 14 14; }
     .closeButton:active { --image-clip: 28 28 14 14; }
@@ -214,6 +215,8 @@
         </div>
 
     </div>
+
+    <div id="dragHandle" class="dragHandle" placement="top-left" *width="self.widthConsole" focusable="false"></div>
 
     <UIButton class="bottonOptions windowBtn" placement="top-right" *visible="self.isTradeOpen" onclick="self:onOptionsClick()"></UIButton>
     <UIButton class="closeButton windowBtn" placement="top-right" onclick="self:onCloseNpcTrade()"></UIButton>
