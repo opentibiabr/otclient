@@ -93,16 +93,15 @@ function controllerNpcTrader:cloneConsoleMessages()
     end
 end
 
+-- temp fix. can't drag the left panel to move the window.
 function controllerNpcTrader:setupWindowDragBehavior()
     if not self.ui then
         return
     end
-
     local dragHandle = self:findWidget("#dragHandle")
     if not dragHandle then
         return
     end
-
     dragHandle:setDraggable(true)
     dragHandle.onDragEnter = function(widget, mousePos)
         return self.ui:onDragEnter(mousePos)
