@@ -972,9 +972,9 @@ void WebsocketSession::onTimeout(const std::error_code& ec)
 {
     if (!ec && m_timeout > 0) {
         g_logger.error("WebsocketSession timeout after {} seconds for {}", m_timeout, m_url);
-        close();
         m_closed = true;
         m_callback(WebsocketCallbackType::ERROR_, "close_code::ontimeout after " + std::to_string(m_timeout) + "s");
+        close();
     }
 }
 
