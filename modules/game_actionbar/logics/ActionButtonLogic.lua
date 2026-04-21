@@ -369,6 +369,13 @@ function clearButton(button, removeAction)
         removeEvent(button.cache.cooldownEvent)
     end
 
+    if cacheMultiActionButtons then
+        table.removevalue(cacheMultiActionButtons, button)
+    end
+    if clearMultiActionCooldownEvents then
+        clearMultiActionCooldownEvents(button:getId())
+    end
+
     removeCooldown(button)
     resetButtonCache(button)
 
@@ -453,7 +460,9 @@ function getButtonCache(button)
             isDragging = false,
             buttonIndex = 0,
             buttonParent = nil,
-            itemId = 0
+            itemId = 0,
+            multiActions = {{}, {}, {}},
+            smartMode = false
         }
     end
 
@@ -477,7 +486,9 @@ function getButtonCache(button)
             isDragging = false,
             buttonIndex = 0,
             buttonParent = nil,
-            itemId = 0
+            itemId = 0,
+            multiActions = {{}, {}, {}},
+            smartMode = false
         }
     end
 
@@ -561,6 +572,11 @@ function resetButtonCache(button)
     c.buttonIndex = 0
     c.buttonParent = nil
     c.itemId = 0
+    c.multiActions = {{}, {}, {}}
+    c.smartMode = false
+    if button.multiIcon then
+        button.multiIcon:setVisible(false)
+    end
 end
 
 -- /*=============================================
@@ -771,9 +787,43 @@ function configureButtonMouseRelease(button)
             menu:addOption(button.cache.hotkey and tr('Edit Hotkey') or tr('Assign Hotkey'), function()
                 assignHotkey(button)
             end)
-            if button.cache.actionType > 0 then
+
+            local hasMultiActions = false
+            if button.cache.multiActions then
+                for i = 1, 3 do
+                    if not table.empty(button.cache.multiActions[i] or {}) then
+                        hasMultiActions = true
+                        break
+                    end
+                end
+            end
+            local hasMultiIcon = button.multiIcon and button.multiIcon:isVisible()
+            if assignMultiAction then
+                local panelOpen = multiPanel and not multiPanel:isDestroyed() and multiPanel.button == button
+                if panelOpen then
+                    menu:addOption(tr('Close Multi-Action'), function()
+                        closeCurrentMultiActionPanel()
+                    end)
+                else
+                    menu:addOption((hasMultiActions or hasMultiIcon) and tr('Edit Multi-Action') or tr('Assign Multi-Action'),
+                        function()
+                            assignMultiAction(button)
+                        end)
+                end
+            end
+
+            if button.cache.actionType > 0 or hasMultiActions then
                 menu:addSeparator()
                 menu:addOption(tr('Clear Action'), function()
+                    if closeCurrentMultiActionPanel and multiPanel and multiPanel.button == button then
+                        closeCurrentMultiActionPanel()
+                    end
+                    local barID, buttonID = string.match(button:getId(), "(.*)%.(.*)")
+                    if hasMultiActions then
+                        for i = 1, 3 do
+                            ApiJson.removeMultiAction(tonumber(barID), tonumber(buttonID), i)
+                        end
+                    end
                     clearButton(button, true)
                 end)
             end
@@ -868,6 +918,97 @@ function updateButton(button)
     local sendText = buttonData["actionsetting"]["chatText"]
     local passiveAbility = buttonData["actionsetting"]["passiveAbility"]
     local specialAction = buttonData["actionsetting"]["specialAction"]
+    local multiActions = buttonData["actionsetting"]["multiActions"]
+
+    local hasMultiActions = false
+    if type(multiActions) == "table" then
+        for i = 1, 3 do
+            if type(multiActions[i]) == "table" and next(multiActions[i]) ~= nil then
+                hasMultiActions = true
+                break
+            end
+        end
+    end
+
+    if hasMultiActions then
+        button.cache.multiActions = {{}, {}, {}}
+        for i = 1, 3 do
+            if type(multiActions[i]) == "table" then
+                button.cache.multiActions[i] = multiActions[i]
+            end
+        end
+        if button.multiIcon then
+            button.multiIcon:setVisible(true)
+        end
+        if cacheMultiActionButtons and not table.contains(cacheMultiActionButtons, button) then
+            table.insert(cacheMultiActionButtons, button)
+        end
+
+        if updateMultiButtonState then
+            updateMultiButtonState(button)
+        end
+        if registerMultiActionCooldownEvents then
+            registerMultiActionCooldownEvents(button)
+        end
+
+        button.item:setDraggable(true)
+
+        local parentButton = button:getParent()
+        if parentButton then
+            button.cache.buttonIndex = parentButton:getChildIndex(button)
+            button.cache.buttonParent = parentButton
+        end
+
+        local barIndexLocal = barIndex
+        button.item.onDragEnter = function(self, mousePos)
+            if ApiJson.isBarLocked(barIndexLocal) then
+                return false
+            end
+            button.cooldown:setBorderWidth(1)
+            button.cache.isDragging = true
+            dragButton = button
+            dragItem = self
+            return true
+        end
+        button.item.onDragMove = function(self, mousePos)
+            self:setPhantom(true)
+            self:setParent(gameRootPanel)
+            self:setX(mousePos.x)
+            self:setY(mousePos.y)
+            self:setBorderColor('white')
+            if lastHighlightWidget then
+                lastHighlightWidget:setBorderWidth(0)
+                lastHighlightWidget:setBorderColor('alpha')
+            end
+            local clickedWidget = gameRootPanel:recursiveGetChildByPos(mousePos, false)
+            if not clickedWidget or not clickedWidget:backwardsGetWidgetById("tabBar") then
+                return true
+            end
+            lastHighlightWidget = clickedWidget
+            lastHighlightWidget:setBorderWidth(1)
+            lastHighlightWidget:setBorderColor('white')
+        end
+        button.item.onDragLeave = function(self, widget, mousePos)
+            if not button.cache.isDragging then
+                return false
+            end
+            isLoaded = false
+            button.cache.isDragging = false
+            onDragItemLeave(self, mousePos, button)
+            isLoaded = true
+            dragButton = nil
+            dragItem = nil
+        end
+
+        button.item.onClick = function()
+            onExecuteAction(button)
+        end
+        button.item.text.onClick = function()
+            onExecuteAction(button)
+        end
+        configureButtonMouseRelease(button)
+        return true
+    end
 
     if useAction then
         button.item:setItemId(useAction, true)
@@ -1013,6 +1154,9 @@ function updateButton(button)
     button.item.text.onClick = function()
         onExecuteAction(button)
     end
+    if button.multiIcon then
+        button.multiIcon:setVisible(false)
+    end
     configureButtonMouseRelease(button)
     ActionBarController:scheduleEvent(function()
         onMultiUseCooldown()
@@ -1084,6 +1228,29 @@ function tryAssignActionButtonFromDrop(mousePos, draggedWidget, item)
         return false
     end
 
+    if clickedWidget:getParent() then
+        local parentId = clickedWidget:getParent():getId() or ""
+        local targetIndex = tonumber(string.match(parentId, "^actionButton(%d)$"))
+        if targetIndex and targetIndex >= 1 and targetIndex <= 3 then
+            local panel = clickedWidget:getParent():getParent()
+            if panel and panel.button then
+                local itemId, itemTier = resolveDroppedItemData(draggedWidget, item)
+                if not itemId then
+                    return false
+                end
+                local thingType = g_things.getThingType(itemId, ThingCategoryItem)
+                if not thingType or not thingType:isPickupable() then
+                    return false
+                end
+                if assignMultiItem then
+                    assignMultiItem(panel.button, targetIndex, itemId, itemTier, true)
+                    return true
+                end
+                return false
+            end
+        end
+    end
+
     local tabBar = clickedWidget:backwardsGetWidgetById("tabBar")
     if not tabBar or not tabBar:isVisible() then
         return false
@@ -1150,6 +1317,68 @@ function onDragItemLeave(self, mousePos, button)
     end
 
     local clickedWidget = gameRootPanel:recursiveGetChildByPos(mousePos, false)
+
+    if clickedWidget and clickedWidget:getParent() then
+        local parentId = clickedWidget:getParent():getId() or ""
+        local targetIndex = tonumber(string.match(parentId, "^actionButton(%d)$"))
+        if targetIndex and targetIndex >= 1 and targetIndex <= 3 then
+            local panel = clickedWidget:getParent():getParent()
+            if panel and panel.button then
+                local targetButton = panel.button
+                local tBarID, tButtonID = string.match(targetButton:getId(), "(.*)%.(.*)")
+                local sourceBarID, sourceButtonID = string.match(button:getId(), "(.*)%.(.*)")
+
+                if button.cache.actionType == UseTypes["chatText"] and button.cache.param and button.cache.param ~= "" then
+                    ApiJson.createOrUpdateMultiText(tonumber(tBarID), tonumber(tButtonID), targetIndex,
+                        button.cache.param, button.cache.sendAutomatic)
+                    targetButton.cache = getButtonCache(targetButton)
+                    targetButton.cache.multiActions = targetButton.cache.multiActions or {{}, {}, {}}
+                    targetButton.cache.multiActions[targetIndex] = {
+                        chatText = button.cache.param,
+                        sendAutomatically = button.cache.sendAutomatic
+                    }
+                elseif button.cache.itemId and button.cache.itemId > 100 then
+                    local useTypeName = getActionName(button.cache.actionType) or "Use"
+                    ApiJson.createOrUpdateMultiAction(tonumber(tBarID), tonumber(tButtonID), targetIndex, useTypeName,
+                        button.cache.itemId, button.cache.upgradeTier or 0, button.cache.smartMode or false)
+                    targetButton.cache = getButtonCache(targetButton)
+                    targetButton.cache.multiActions = targetButton.cache.multiActions or {{}, {}, {}}
+                    targetButton.cache.multiActions[targetIndex] = {
+                        useObject = button.cache.itemId,
+                        useType = useTypeName,
+                        upgradeTier = button.cache.upgradeTier or 0,
+                        useEquipSmartMode = button.cache.smartMode or false
+                    }
+                else
+                    resetDragWidget(self, button)
+                    return true
+                end
+
+                if targetButton.multiIcon then
+                    targetButton.multiIcon:setVisible(true)
+                end
+                if cacheMultiActionButtons and not table.contains(cacheMultiActionButtons, targetButton) then
+                    table.insert(cacheMultiActionButtons, targetButton)
+                end
+
+                ApiJson.removeAction(tonumber(sourceBarID), tonumber(sourceButtonID))
+
+                if updateMultiButtonState then
+                    updateMultiButtonState(targetButton)
+                end
+                if registerMultiActionCooldownEvents then
+                    registerMultiActionCooldownEvents(targetButton)
+                end
+                if assignMultiAction and multiPanel and multiPanel.button == targetButton then
+                    assignMultiAction(targetButton, true)
+                end
+
+                resetDragWidget(self, button)
+                return true
+            end
+        end
+    end
+
     if not clickedWidget or not clickedWidget:backwardsGetWidgetById("tabBar") then
         resetDragWidget(self, button)
         return true
@@ -1167,6 +1396,61 @@ function onDragItemLeave(self, mousePos, button)
     local itemId = button.cache.itemId
     local destBarID, destButtonID = string.match(destButton:getId(), "(.*)%.(.*)")
     local draggedBarID, draggedButtonID = string.match(button:getId(), "(.*)%.(.*)")
+
+    local sourceHasMulti = false
+    if button.cache.multiActions then
+        for i = 1, 3 do
+            if not table.empty(button.cache.multiActions[i] or {}) then
+                sourceHasMulti = true
+                break
+            end
+        end
+    end
+
+    if sourceHasMulti then
+        local destHasMulti = false
+        if destButtonCache and destButtonCache.multiActions then
+            for i = 1, 3 do
+                if not table.empty(destButtonCache.multiActions[i] or {}) then
+                    destHasMulti = true
+                    break
+                end
+            end
+        end
+        if destHasMulti then
+            resetDragWidget(self, button)
+            return
+        end
+
+        for i = 1, 3 do
+            local slotData = button.cache.multiActions[i]
+            if slotData and not table.empty(slotData) then
+                if slotData["chatText"] then
+                    ApiJson.createOrUpdateMultiText(tonumber(destBarID), tonumber(destButtonID), i,
+                        slotData["chatText"], slotData["sendAutomatically"])
+                elseif slotData["useObject"] then
+                    ApiJson.createOrUpdateMultiAction(tonumber(destBarID), tonumber(destButtonID), i,
+                        getActionName(slotData["useType"]) or "Use", slotData["useObject"],
+                        slotData["upgradeTier"] or 0, slotData["useEquipSmartMode"] or false)
+                end
+            else
+                ApiJson.removeMultiAction(tonumber(destBarID), tonumber(destButtonID), i)
+            end
+        end
+
+        ApiJson.removeAction(tonumber(draggedBarID), tonumber(draggedButtonID))
+        if cacheMultiActionButtons then
+            table.removevalue(cacheMultiActionButtons, button)
+        end
+        if clearMultiActionCooldownEvents then
+            clearMultiActionCooldownEvents(button:getId())
+        end
+
+        updateButton(destButton)
+        resetDragWidget(self, button)
+        self:setBorderColor('alpha')
+        return
+    end
 
     local cachedItem = cachedItemWidget[itemId]
     if cachedItem then

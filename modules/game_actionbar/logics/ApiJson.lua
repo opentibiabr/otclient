@@ -671,6 +671,100 @@ function ApiJson.removeAction(barId, buttonId)
     end
 end
 
+local function ensureMultiActionsSlot(entry, slotIndex)
+    if not entry["actionsetting"] then
+        entry["actionsetting"] = {}
+    end
+    local actionsetting = entry["actionsetting"]
+    local multiActions = actionsetting["multiActions"]
+    if type(multiActions) ~= "table" then
+        multiActions = {{}, {}, {}}
+        actionsetting["multiActions"] = multiActions
+    end
+    for i = 1, 3 do
+        if type(multiActions[i]) ~= "table" then
+            multiActions[i] = {}
+        end
+    end
+    slotIndex = tonumber(slotIndex)
+    if not slotIndex or slotIndex < 1 or slotIndex > 3 then
+        return nil, multiActions
+    end
+    return slotIndex, multiActions
+end
+
+function ApiJson.createOrUpdateMultiAction(barId, buttonId, slotIndex, useMode, itemId, itemTier, smartMode)
+    barId = tonumber(barId)
+    buttonId = tonumber(buttonId)
+    if not barId or not buttonId then
+        return
+    end
+
+    local entry = getOrCreateMappingEntry(barId, buttonId)
+    local slot, multiActions = ensureMultiActionsSlot(entry, slotIndex)
+    if not slot then
+        return
+    end
+    multiActions[slot] = {
+        ["useObject"] = itemId,
+        ["useType"] = useMode,
+        ["upgradeTier"] = itemTier,
+        ["useEquipSmartMode"] = smartMode and true or false
+    }
+end
+
+function ApiJson.createOrUpdateMultiText(barId, buttonId, slotIndex, text, sendAutomatic)
+    barId = tonumber(barId)
+    buttonId = tonumber(buttonId)
+    if not barId or not buttonId then
+        return
+    end
+
+    local entry = getOrCreateMappingEntry(barId, buttonId)
+    local slot, multiActions = ensureMultiActionsSlot(entry, slotIndex)
+    if not slot then
+        return
+    end
+    multiActions[slot] = {
+        ["chatText"] = text,
+        ["sendAutomatically"] = sendAutomatic and true or false
+    }
+end
+
+function ApiJson.removeMultiAction(barId, buttonId, slotIndex)
+    barId = tonumber(barId)
+    buttonId = tonumber(buttonId)
+    slotIndex = tonumber(slotIndex)
+    if not barId or not buttonId or not slotIndex then
+        return
+    end
+
+    local entry = ApiJson.getMapping(barId, buttonId)
+    if not entry or not entry["actionsetting"] then
+        return
+    end
+    local multiActions = entry["actionsetting"]["multiActions"]
+    if type(multiActions) ~= "table" then
+        return
+    end
+
+    if slotIndex >= 1 and slotIndex <= 3 then
+        multiActions[slotIndex] = {}
+    end
+
+    local allEmpty = true
+    for i = 1, 3 do
+        local slot = multiActions[i]
+        if type(slot) == "table" and next(slot) ~= nil then
+            allEmpty = false
+            break
+        end
+    end
+    if allEmpty then
+        entry["actionsetting"]["multiActions"] = nil
+    end
+end
+
 function ApiJson.removeHotkey(buttonId)
     buttonId = tonumber(buttonId)
     if not buttonId then

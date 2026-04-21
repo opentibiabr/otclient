@@ -310,6 +310,7 @@ ActionBarController = Controller:new()
 --- Initializes the action bar controller
 function ActionBarController:onInit()
     g_ui.importStyle("otui/style.otui")
+    g_ui.importStyle("otui/multiaction.otui")
     gameRootPanel = modules.game_interface.getRootPanel()
     mouseGrabberWidget = g_ui.createWidget('UIWidget')
     mouseGrabberWidget:setVisible(false)
@@ -320,6 +321,18 @@ end
 --- Handles termination event
 function ActionBarController:onTerminate()
     ApiJson.saveData()
+    if closeCurrentMultiActionPanel then
+        closeCurrentMultiActionPanel()
+    end
+    if multiActionCooldownEvents then
+        for buttonId, events in pairs(multiActionCooldownEvents) do
+            for _, eventId in pairs(events) do
+                removeEvent(eventId)
+            end
+            multiActionCooldownEvents[buttonId] = nil
+        end
+    end
+    cacheMultiActionButtons = {}
     for _, actionbar in pairs(actionBars) do
         if actionbar and not actionbar:isDestroyed() then
             actionbar:destroy()
@@ -373,6 +386,18 @@ end
 
 function ActionBarController:onGameEnd()
     isLoaded = false
+    if closeCurrentMultiActionPanel then
+        closeCurrentMultiActionPanel()
+    end
+    if multiActionCooldownEvents then
+        for buttonId, events in pairs(multiActionCooldownEvents) do
+            for _, eventId in pairs(events) do
+                removeEvent(eventId)
+            end
+            multiActionCooldownEvents[buttonId] = nil
+        end
+    end
+    cacheMultiActionButtons = {}
     for _, actionbar in pairs(activeActionBars) do
         unbindActionBarEvent(actionbar)
     end
@@ -423,6 +448,14 @@ function onSpellCooldown(spellId, delay)
                         removeCooldown(button)
                     end, delay)
                 end
+            end
+        end
+    end
+
+    if cacheMultiActionButtons and registerMultiActionCooldownEvents then
+        for _, button in pairs(cacheMultiActionButtons) do
+            if button and not button:isDestroyed() then
+                registerMultiActionCooldownEvents(button)
             end
         end
     end
@@ -477,6 +510,25 @@ function onSpellGroupCooldown(groupId, delay)
                         }
                     end
                 end
+            end
+        end
+    end
+
+    if cacheMultiActionButtons and registerMultiActionCooldownEvents then
+        for _, button in pairs(cacheMultiActionButtons) do
+            if button and not button:isDestroyed() and button.cache and button.cache.multiActions then
+                for _, data in pairs(button.cache.multiActions) do
+                    if data and data["chatText"] then
+                        local spellData = Spells.getSpellDataByParamWords(data["chatText"]:lower())
+                        if spellData and spellData.group and Spells.getCooldownByGroup(spellData, groupId) then
+                            spellCooldownCache[spellData.id] = {
+                                exhaustion = delay,
+                                startTime = g_clock.millis()
+                            }
+                        end
+                    end
+                end
+                registerMultiActionCooldownEvents(button)
             end
         end
     end
@@ -652,7 +704,7 @@ function configureActionBar(key, value)
     }
     local n = map[key]
     if not n then return end
-    
+    ApiJson.setBarVisibility(n, key, value)
     local actionbar = actionBars[n]
     if actionbar then
         actionbar:setVisible(value)

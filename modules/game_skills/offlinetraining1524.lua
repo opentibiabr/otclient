@@ -6,36 +6,42 @@ local offlineTrainingDefs = {
         valueId = 'magicValue',
         barId = 'magicBar',
         getLevel = function(p) return p:getMagicLevel() end,
+        getBaseLevel = function(p) return p:getBaseMagicLevel() end,
         getPercent = function(p) return p:getMagicLevelPercent() end
     },
     {
         valueId = 'fistValue',
         barId = 'fistBar',
         getLevel = function(p) return p:getSkillLevel(Skill.Fist) end,
+        getBaseLevel = function(p) return p:getSkillBaseLevel(Skill.Fist) end,
         getPercent = function(p) return p:getSkillLevelPercent(Skill.Fist) end
     },
     {
         valueId = 'clubValue',
         barId = 'clubBar',
         getLevel = function(p) return p:getSkillLevel(Skill.Club) end,
+        getBaseLevel = function(p) return p:getSkillBaseLevel(Skill.Club) end,
         getPercent = function(p) return p:getSkillLevelPercent(Skill.Club) end
     },
     {
         valueId = 'swordValue',
         barId = 'swordBar',
         getLevel = function(p) return p:getSkillLevel(Skill.Sword) end,
+        getBaseLevel = function(p) return p:getSkillBaseLevel(Skill.Sword) end,
         getPercent = function(p) return p:getSkillLevelPercent(Skill.Sword) end
     },
     {
         valueId = 'axeValue',
         barId = 'axeBar',
         getLevel = function(p) return p:getSkillLevel(Skill.Axe) end,
+        getBaseLevel = function(p) return p:getSkillBaseLevel(Skill.Axe) end,
         getPercent = function(p) return p:getSkillLevelPercent(Skill.Axe) end
     },
     {
         valueId = 'distanceValue',
         barId = 'distanceBar',
         getLevel = function(p) return p:getSkillLevel(Skill.Distance) end,
+        getBaseLevel = function(p) return p:getSkillBaseLevel(Skill.Distance) end,
         getPercent = function(p) return p:getSkillLevelPercent(Skill.Distance) end
     }
 }
@@ -46,12 +52,37 @@ end
 
 local offlineTrainingEvents = {
     onMagicLevelChange = refresh,
-    onSkillChange = refresh
+    onBaseMagicLevelChange = refresh,
+    onSkillChange = refresh,
+    onBaseSkillChange = refresh
 }
 
 local function clampPercent(percent)
     percent = math.floor(tonumber(percent) or 0)
     return math.max(0, math.min(100, percent))
+end
+
+local function applyBaseState(widget, value, baseValue)
+    if not widget then
+        return
+    end
+
+    if baseValue <= 0 or value < 0 then
+        widget:setColor('#bbbbbb')
+        widget:removeTooltip()
+        return
+    end
+
+    if value > baseValue then
+        widget:setColor('#008b00')
+        widget:setTooltip(baseValue .. ' +' .. (value - baseValue))
+    elseif value < baseValue then
+        widget:setColor('#b22222')
+        widget:setTooltip(baseValue .. ' ' .. (value - baseValue))
+    else
+        widget:setColor('#bbbbbb')
+        widget:removeTooltip()
+    end
 end
 
 function skillController:cacheOfflineTrainingWidgets()
@@ -99,10 +130,12 @@ function skillController:refreshOfflineTrainingDialog()
     for i, def in ipairs(offlineTrainingDefs) do
         local entry = cache[i]
         local level = def.getLevel(player) or 0
+        local baseLevel = def.getBaseLevel(player) or 0
         local percent = clampPercent(def.getPercent(player))
 
         if entry.value then
             entry.value:setText(tostring(level))
+            applyBaseState(entry.value, level, baseLevel)
         end
         if entry.bar then
             entry.bar:setPercent(percent)
