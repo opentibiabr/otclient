@@ -388,7 +388,7 @@ public:
     void preyAction(uint8_t slot, uint8_t actionType, uint16_t index);
     void preyRequest();
 
-    // Winter Update 2025 - Task Board / SoulSeals
+    // Task Board / SoulSeals / Offline Training related
     void bountyTaskAction(uint8_t actionType, uint16_t value = 0);
     void weeklyTaskAction(uint8_t actionType, uint16_t value = 0);
     void taskHuntingShopRequest();
@@ -396,6 +396,7 @@ public:
     void bountyTalismanUpgrade(uint8_t pathIndex);
     void bountyPreferredAction(uint8_t actionType, uint16_t slot, uint16_t raceId);
     void soulsealFightAction(uint16_t raceId);
+    void sendStartOfflineTraining(const uint8_t skillType);
 
     // exiva related
     void sendExivaOptions(bool allowAll, bool allowOwnGuild, bool allowOwnParty, bool allowVipList,
@@ -467,8 +468,6 @@ public:
     void openWheel(uint32_t playerId);
     void sendApplyWheelPoints(const std::vector<uint16_t>& slotPoints,uint16_t greenGem,uint16_t redGem,uint16_t acquaGem,uint16_t purpleGem);
     void gemAction(uint8_t actionType, uint8_t param, uint8_t pos);
-
-    void sendStartOfflineTraining(const uint8_t skillType);
 
     void updateMapLatency() {
         if (!m_mapUpdateTimer.first) {

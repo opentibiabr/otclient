@@ -1820,11 +1820,11 @@ namespace
 {
     uint8_t toServerDifficulty(const uint16_t uiDifficulty)
     {
-        if (uiDifficulty == 0) {
+        if (std::cmp_equal(uiDifficulty, 0)) {
             g_logger.warning("toServerDifficulty received invalid UI difficulty 0");
             return 1;
         }
-        if (uiDifficulty >= 4) {
+        if (std::cmp_greater_equal(uiDifficulty, 4)) {
             return 3;
         }
         return static_cast<uint8_t>(uiDifficulty - 1);
@@ -1903,7 +1903,7 @@ void Game::bountyTalismanUpgrade(const uint8_t pathIndex)
     if (!canPerformGameAction())
         return;
 
-    if (pathIndex > 3) {
+    if (std::cmp_greater(pathIndex, 3)) {
         g_logger.warning("bountyTalismanUpgrade: invalid pathIndex {}", static_cast<int>(pathIndex));
         return;
     }
@@ -1921,27 +1921,27 @@ void Game::bountyPreferredAction(const uint8_t actionType, const uint16_t slot, 
             m_protocolGame->sendTaskBoardAction(Otc::TASK_BOARD_OPTION_OPEN_BOUNTY);
             break;
         case Otc::PREFERRED_ACTION_BUY_SLOT:
-            if (slot != 0) {
+            if (std::cmp_not_equal(slot, 0)) {
                 m_protocolGame->sendTaskBoardAction(Otc::TASK_BOARD_OPTION_PREFERRED_UNLOCK, slot);
             }
             break;
         case Otc::PREFERRED_ACTION_SET_PREFERRED:
-            if (slot != 0 && raceId != 0) {
+            if (std::cmp_not_equal(slot, 0) && std::cmp_not_equal(raceId, 0)) {
                 m_protocolGame->sendTaskBoardAction(Otc::TASK_BOARD_OPTION_PREFERRED_ASSIGN, slot, raceId);
             }
             break;
         case Otc::PREFERRED_ACTION_SET_UNWANTED:
-            if (slot != 0 && raceId != 0) {
+            if (std::cmp_not_equal(slot, 0) && std::cmp_not_equal(raceId, 0)) {
                 m_protocolGame->sendTaskBoardAction(Otc::TASK_BOARD_OPTION_UNWANTED_ASSIGN, slot, raceId);
             }
             break;
         case Otc::PREFERRED_ACTION_REMOVE_PREFERRED:
-            if (slot != 0) {
+            if (std::cmp_not_equal(slot, 0)) {
                 m_protocolGame->sendTaskBoardAction(Otc::TASK_BOARD_OPTION_PREFERRED_CLEAR, slot);
             }
             break;
         case Otc::PREFERRED_ACTION_REMOVE_UNWANTED:
-            if (slot != 0) {
+            if (std::cmp_not_equal(slot, 0)) {
                 m_protocolGame->sendTaskBoardAction(Otc::TASK_BOARD_OPTION_UNWANTED_CLEAR, slot);
             }
             break;
@@ -1953,10 +1953,18 @@ void Game::bountyPreferredAction(const uint8_t actionType, const uint16_t slot, 
 
 void Game::soulsealFightAction(const uint16_t raceId)
 {
-    if (!canPerformGameAction() || raceId == 0)
+    if (!canPerformGameAction() || std::cmp_equal(raceId, 0))
         return;
 
     m_protocolGame->sendSoulSealsAction(raceId);
+}
+
+void Game::sendStartOfflineTraining(const uint8_t skillType)
+{
+    if (!canPerformGameAction())
+        return;
+
+    m_protocolGame->sendStartOfflineTraining(skillType);
 }
 
 void Game::openPortableForgeRequest()
@@ -2282,13 +2290,4 @@ void Game::sendApplyWheelPoints(const std::vector<uint16_t>& slotPoints,uint16_t
     if (!canPerformGameAction())
         return;
     m_protocolGame->sendApplyWheelPoints(slotPoints, greenGem, redGem, acquaGem, purpleGem);
-}
-
-
-void Game::sendStartOfflineTraining(const uint8_t skillType)
-{
-    if (!canPerformGameAction())
-        return;
-
-    m_protocolGame->sendStartOfflineTraining(skillType);
 }

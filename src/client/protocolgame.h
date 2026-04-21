@@ -154,12 +154,12 @@ public:
     void sendStashWithdraw(uint16_t itemId, uint32_t count, uint8_t stackpos);
     void sendStashStow(const Position& position, const uint16_t itemId, const uint32_t count, const uint8_t stackpos, const uint8_t action);
     void sendHighscoreInfo(uint8_t action, uint8_t category, uint32_t vocation, std::string_view world, uint8_t worldType, uint8_t battlEye, uint16_t page, uint8_t totalPages);
-    void sendImbuementDurations(bool isOpen = false);
     void sendTaskBoardAction(const uint8_t option, const uint16_t value = 0, const uint16_t extraValue = 0);
-    void sendSoulSealsAction(const uint16_t raceId);
-    void sendStartOfflineTraining(const uint8_t skillType);
+    void sendImbuementDurations(bool isOpen = false);
     void sendOpenWheelOfDestiny(uint32_t playerId);
     void sendApplyWheelOfDestiny(const std::vector<uint16_t>& wheelPointsVec, const std::vector<uint16_t>& activeGemsVec);
+    void sendStartOfflineTraining(const uint8_t skillType);
+    void sendSoulSealsAction(const uint16_t raceId);
     void sendRequestBestiary();
     void sendRequestBestiaryOverview(std::string_view catName, bool search = false, std::vector<uint16_t> raceIds = {});
     void sendRequestBestiarySearch(uint16_t raceId);

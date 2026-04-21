@@ -782,13 +782,13 @@ void ProtocolGame::parseNpcChatWindow(const InputMessagePtr& msg)
 
     const uint8_t npcCount = msg->getU8();
     data.npcIds.reserve(npcCount);
-    for (uint8_t i = 0; i < npcCount; ++i) {
+    for (auto i = 0; std::cmp_less(i, npcCount); ++i) {
         data.npcIds.push_back(msg->getU32());
     }
 
     const uint8_t buttonCount = msg->getU8();
     data.buttons.reserve(buttonCount);
-    for (uint8_t i = 0; i < buttonCount; ++i) {
+    for (auto i = 0; std::cmp_less(i, buttonCount); ++i) {
         NpcButton button;
         button.id = msg->getU8();
         button.text = msg->getString();
@@ -4612,7 +4612,7 @@ void ProtocolGame::parseTaskBoardBountyData(const InputMessagePtr& msg)
     monsters.reserve(offerCount);
     const bool hasSingleOffer = offerCount == 1;
 
-    for (uint8_t i = 0; i < offerCount; ++i) {
+    for (auto i = 0; std::cmp_less(i, offerCount); ++i) {
         TaskBoardBountyMonsterData monster;
         monster.taskIndex = msg->getU8();
         monster.raceId = msg->getU16();
@@ -4635,7 +4635,7 @@ void ProtocolGame::parseTaskBoardBountyData(const InputMessagePtr& msg)
     headerData.difficulty = std::clamp<uint8_t>(msg->getU8() + 1, 1, 4);
 
     talismans.reserve(TASK_BOARD_TALISMAN_PATHS);
-    for (uint8_t i = 0; i < TASK_BOARD_TALISMAN_PATHS; ++i) {
+    for (uint8_t i = 0; std::cmp_less(i, TASK_BOARD_TALISMAN_PATHS); ++i) {
         TaskBoardTalismanData talisman;
         const uint8_t currentLevel = msg->getU8();
         msg->getU8(); // multiplier2 is unused on server
@@ -4654,7 +4654,7 @@ void ProtocolGame::parseTaskBoardBountyData(const InputMessagePtr& msg)
 
     const uint8_t preferredSlotCount = msg->getU8();
     preferredSlots.reserve(preferredSlotCount);
-    for (uint8_t i = 0; i < preferredSlotCount; ++i) {
+    for (auto i = 0; std::cmp_less(i, preferredSlotCount); ++i) {
         TaskBoardPreferredSlotData slot;
         slot.slot = i + 1;
         slot.locked = msg->getU8() == 0 ? 1 : 0;
@@ -4708,7 +4708,7 @@ void ProtocolGame::parseTaskBoardWeeklyData(const InputMessagePtr& msg)
         monsters.emplace_back(anyCreatureTask);
     }
 
-    for (uint8_t i = 0; i < killTasksCount; ++i) {
+    for (auto i = 0; std::cmp_less(i, killTasksCount); ++i) {
         TaskBoardWeeklyMonsterData task;
         task.raceId = msg->getU16();
         task.total = msg->getU16();
@@ -4719,7 +4719,7 @@ void ProtocolGame::parseTaskBoardWeeklyData(const InputMessagePtr& msg)
 
     const uint8_t deliveryTasksCount = msg->getU8();
     items.reserve(deliveryTasksCount);
-    for (uint8_t i = 0; i < deliveryTasksCount; ++i) {
+    for (auto i = 0; std::cmp_less(i, deliveryTasksCount); ++i) {
         TaskBoardWeeklyItemData task;
         task.slotIndex = msg->getU8();
         task.itemId = msg->getU16();
@@ -4776,7 +4776,7 @@ void ProtocolGame::parseTaskBoardShopData(const InputMessagePtr& msg)
     const uint8_t offersCount = msg->getU8();
     shopItems.reserve(offersCount);
 
-    for (uint8_t i = 0; i < offersCount; ++i) {
+    for (auto i = 0; std::cmp_less(i, offersCount); ++i) {
         TaskBoardShopItemData item;
         item.id = i;
 
@@ -4840,7 +4840,7 @@ void ProtocolGame::parseTaskHuntingBasicData(const InputMessagePtr& msg)
         std::vector<std::map<std::string, std::string>> soulsealEntries;
         soulsealEntries.reserve(masteredCount);
 
-        for (uint16_t i = 0; i < masteredCount; ++i) {
+        for (auto i = 0; std::cmp_less(i, masteredCount); ++i) {
             const uint16_t raceId = msg->getU16();
             if (raceId == 0) {
                 continue;
@@ -4858,12 +4858,12 @@ void ProtocolGame::parseTaskHuntingBasicData(const InputMessagePtr& msg)
         g_lua.callGlobalField("g_game", "onSoulsealsData", soulsealEntries);
     } else {
         const uint16_t preys = msg->getU16();
-        for (uint16_t i = 0; i < preys; ++i) {
+        for (auto i = 0; std::cmp_less(i, preys); ++i) {
             msg->getU16(); // RaceID
             msg->getU8(); // Difficult
         }
         const uint8_t options = msg->getU8();
-        for (uint8_t i = 0; i < options; ++i) {
+        for (auto i = 0; std::cmp_less(i, options); ++i) {
             msg->getU8(); // Difficult
             msg->getU8(); // Stars
             msg->getU16(); // First kill
@@ -5736,7 +5736,7 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
             }
 
             const uint8_t hirelingOutfitsCount = msg->getU8();
-            for (auto i = 0; i < hirelingOutfitsCount; ++i) {
+            for (auto i = 0; std::cmp_less(i, hirelingOutfitsCount); ++i) {
                 msg->getU8(); // outfit ID
             }
 
@@ -5854,8 +5854,8 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
             data.weaponElementDamage = msg->getDouble(); // % amount
             data.weaponElementType = msg->getU8(); // new element
 
-            const uint8_t accuracyCount = msg->getU8();// distance fighting accuracy
-            for (int i = 0; i < accuracyCount; i++) {
+            const uint8_t accuracyCount = msg->getU8(); // distance fighting accuracy
+            for (auto i = 0; std::cmp_less(i, accuracyCount); ++i) {
                 CyclopediaCharacterOffenceStats::AccuracyData acc;
                 acc.range = msg->getU8(); // range
                 acc.chance = msg->getDouble(); // change to hit (placeholder)
@@ -5865,14 +5865,14 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
             if (g_game.getClientVersion() >= 1510) {
                 data.damagePowerfulFoes = msg->getDouble(); // damage against powerful foes
                 const uint16_t targetCount = msg->getU16(); // damage against specific targets FOR
-                for (int i = 0; i < targetCount; i++) {
+                for (auto i = 0; std::cmp_less(i, targetCount); ++i) {
                     CyclopediaCharacterOffenceStats::TargetBonus bonus;
                     bonus.name = msg->getString(); // placeholder
                     bonus.value = msg->getDouble(); // 1.25
                     data.damageSpecificTargets.push_back(bonus);
                 }
-                const uint8_t elementCount = msg->getU8();// critical chance by type
-                for (int i = 0; i < elementCount; i++) {
+                const uint8_t elementCount = msg->getU8(); // critical chance by type
+                for (auto i = 0; std::cmp_less(i, elementCount); ++i) {
                     CyclopediaCharacterOffenceStats::ElementModifier mod;
                     mod.element = msg->getU8(); // element id
                     mod.value = msg->getDouble(); // modifier
@@ -5881,7 +5881,7 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
                 data.offensiveRuneDamage = msg->getDouble(); // +x% for offensive runes
                 data.autoAttackDamage = msg->getDouble(); // +x% for auto-attack
                 const uint8_t critDmgElemCount = msg->getU8(); // critical damage by type
-                for (int i = 0; i < critDmgElemCount; i++) {
+                for (auto i = 0; std::cmp_less(i, critDmgElemCount); ++i) {
                     CyclopediaCharacterOffenceStats::ElementModifier mod;
                     mod.element = msg->getU8(); // element id
                     mod.value = msg->getDouble(); // modifier
@@ -5896,7 +5896,7 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
                 data.manaGainKill = msg->getU16(); // mana gain on kill
 
                 const uint8_t adExtraDmgCount = msg->getU8();
-                for (int i = 0; i < adExtraDmgCount; i++) {
+                for (auto i = 0; std::cmp_less(i, adExtraDmgCount); ++i) {
                     CyclopediaCharacterOffenceStats::SkillBonus bonus;
                     bonus.skillId = msg->getU8(); // skill id, uses same enums as in HardcodedSkillIds
                     bonus.valueA = msg->getDouble(); // value a
@@ -5904,7 +5904,7 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
                     data.extraDamageSkills.push_back(bonus);
                 }
                 const uint8_t spellExtraCount = msg->getU8();
-                for (int i = 0; i < spellExtraCount; i++) {
+                for (auto i = 0; std::cmp_less(i, spellExtraCount); ++i) {
                     CyclopediaCharacterOffenceStats::SkillBonus bonus;
                     bonus.skillId = msg->getU8(); // skill id, uses same enums as in HardcodedSkillIds
                     bonus.valueA = msg->getDouble(); // value a
@@ -5912,7 +5912,7 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
                     data.extraDamageSpells.push_back(bonus);
                 }
                 const uint8_t spellExtraHealingCount = msg->getU8();
-                for (int i = 0; i < spellExtraHealingCount; i++) {
+                for (auto i = 0; std::cmp_less(i, spellExtraHealingCount); ++i) {
                     CyclopediaCharacterOffenceStats::SkillBonus bonus;
                     bonus.skillId = msg->getU8(); // skill id, uses same enums as in HardcodedSkillIds
                     bonus.valueA = msg->getDouble(); // value a
@@ -5925,7 +5925,7 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
                 data.damageLowHp = msg->getDouble(); // damage to targets below 30% hp
                 data.armorPenetration = msg->getDouble(); // armor penetration multiplier
                 const uint8_t elemPierceBonuses = msg->getU8(); // elemental pierce
-                for (int i = 0; i < elemPierceBonuses; i++) {
+                for (auto i = 0; std::cmp_less(i, elemPierceBonuses); ++i) {
                     CyclopediaCharacterOffenceStats::ElementModifier mod;
                     mod.element = msg->getU8(); // element id
                     mod.value = msg->getDouble(); // modifier
@@ -6016,7 +6016,7 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
             }
 
             const uint8_t activeFoodsCount = msg->getU8();
-            for (int j = 0; j < activeFoodsCount; ++j) {
+            for (auto j = 0; std::cmp_less(j, activeFoodsCount); ++j) {
                 CyclopediaCharacterMiscStats::Food food;
                 food.id = msg->getU16();
                 msg->getU8(); // unused
@@ -6026,7 +6026,7 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
             }
 
             const uint8_t weaponProficiencyAugmentsCount = msg->getU8();
-            for (int j = 0; j < weaponProficiencyAugmentsCount; ++j) {
+            for (auto j = 0; std::cmp_less(j, weaponProficiencyAugmentsCount); ++j) {
                 CyclopediaCharacterMiscStats::Augment augment;
                 augment.spellId = msg->getU16();
                 augment.type = msg->getU8();
@@ -6035,7 +6035,7 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
             }
 
             const uint8_t wheelAugmentsCount = msg->getU8();
-            for (int j = 0; j < wheelAugmentsCount; ++j) {
+            for (auto j = 0; std::cmp_less(j, wheelAugmentsCount); ++j) {
                 CyclopediaCharacterMiscStats::Augment augment;
                 augment.spellId = msg->getU16();
                 augment.type = msg->getU8();
@@ -6044,7 +6044,7 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
             }
 
             const uint8_t equippedAugmentsCount = msg->getU8();
-            for (int j = 0; j < equippedAugmentsCount; ++j) {
+            for (auto j = 0; std::cmp_less(j, equippedAugmentsCount); ++j) {
                 CyclopediaCharacterMiscStats::Augment augment;
                 augment.spellId = msg->getU16();
                 augment.type = msg->getU8();

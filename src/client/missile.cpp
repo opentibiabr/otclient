@@ -50,7 +50,7 @@ void Missile::draw(const Point& dest, const bool drawThings, LightView* lightVie
 
         float alpha = g_client.getMissileAlpha();
         if (m_source != Otc::ME_SOURCE_DEFAULT)
-             alpha = g_client.getEffectAlpha(m_source);
+            alpha = g_client.getEffectAlpha(m_source);
 
         if (drawThings && alpha < 1.f)
             g_drawPool.setOpacity(alpha, true);
