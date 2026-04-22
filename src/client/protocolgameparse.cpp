@@ -2817,6 +2817,17 @@ void ProtocolGame::parseOpenOwnPrivateChannel(const InputMessagePtr& msg)
 {
     const uint16_t channelId = msg->getU16();
     const auto& channelName = msg->getString();
+    if (g_game.getFeature(Otc::GameChannelPlayerList)) {
+        const uint16_t joinedPlayers = msg->getU16();
+        for (auto i = 0; i < joinedPlayers; ++i) {
+            g_game.formatCreatureName(msg->getString()); // player name
+        }
+
+        const uint16_t invitedPlayers = msg->getU16();
+        for (auto i = 0; i < invitedPlayers; ++i) {
+            g_game.formatCreatureName(msg->getString()); // player name
+        }
+    }
 
     g_game.processOpenOwnPrivateChannel(channelId, channelName);
 }

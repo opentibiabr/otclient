@@ -35,19 +35,25 @@ HighScoreData < UIWidget
     anchors.left: parent.left
     anchors.bottom : parent.bottom
     id: rank
-    width: 55
+    width: 39
     !text: tr('1')
     text-align: left
     color: #dfdfdfcf
     phantom: false
     margin-left: 4
 
+  VerticalSeparator
+    anchors.top: parent.top
+    anchors.left: prev.right
+    anchors.bottom: parent.bottom
+    margin-bottom: -1
+
   Label
     anchors.top: parent.top
     anchors.left: prev.right
     anchors.bottom : parent.bottom
     id: name
-    width: 216
+    width: 223
 
     !text: tr('-')
     text-align: left
@@ -55,38 +61,63 @@ HighScoreData < UIWidget
     phantom: true
     margin-left: 5
 
+  VerticalSeparator
+    anchors.top: parent.top
+    anchors.left: prev.right
+    anchors.bottom: parent.bottom
+    margin-bottom: -1
+
   Label
     anchors.top: parent.top
     anchors.left: prev.right
     anchors.bottom : parent.bottom
     text-align: center
     id: voc
-    width: 115
+    width: 116
     !text: tr('-')
     color: #dfdfdfcf
     phantom: true
+
+  VerticalSeparator
+    anchors.top: parent.top
+    anchors.left: prev.right
+    anchors.bottom: parent.bottom
+    margin-bottom: -1
 
   Label
     anchors.top: parent.top
     anchors.left: prev.right
     anchors.bottom : parent.bottom
     id: world
-    width: 98
+    width: 85
     !text: tr('-')
     text-align: center
     color: #dfdfdfcf
     phantom: true
+    text-overflow-length: 14
+
+  VerticalSeparator
+    anchors.top: parent.top
+    anchors.left: prev.right
+    anchors.bottom: parent.bottom
+    margin-bottom: -1
 
   Label
     anchors.top: parent.top
     anchors.left: prev.right
     anchors.bottom : parent.bottom
     id: level
-    width: 65
+    width: 50
     !text: tr('-')
     text-align: center
     color: #dfdfdfcf
     phantom: true
+
+  VerticalSeparator
+    anchors.top: parent.top
+    anchors.left: prev.right
+    anchors.bottom: parent.bottom
+    margin-bottom: -1
 
   Label
     anchors.top: parent.top
@@ -98,6 +129,7 @@ HighScoreData < UIWidget
     id: points
     color: #dfdfdfcf
     phantom: true
+    text-overflow-length: 19
 
 MainWindow
   id: highscoresWindow
@@ -252,7 +284,7 @@ MainWindow
   PlayersTableHeaderColumn
     anchors.top: data.top
     anchors.left: data.left
-    size: 60 20
+    size: 44 20
 
     Label
       anchors.fill: parent
@@ -261,10 +293,16 @@ MainWindow
       !text: tr('Rank')
       text-offset: 5 3
 
+  VerticalSeparator
+    anchors.top: data.top
+    anchors.left: prev.right
+    height: 20
+    margin-bottom: -1
+
   PlayersTableHeaderColumn
     anchors.top: data.top
     anchors.left: prev.right
-    size: 220 20
+    size: 228 20
 
     Label
       anchors.fill: parent
@@ -272,6 +310,12 @@ MainWindow
       color: #dfdfdf88
       !text: tr('Character')
       text-offset: 5 3
+
+  VerticalSeparator
+    anchors.top: data.top
+    anchors.left: prev.right
+    height: 20
+    margin-bottom: -1
 
   PlayersTableHeaderColumn
     anchors.top: data.top
@@ -281,21 +325,39 @@ MainWindow
     font: verdana-11px-antialised
     color: #dfdfdf88
 
+  VerticalSeparator
+    anchors.top: data.top
+    anchors.left: prev.right
+    height: 20
+    margin-bottom: -1
+
   PlayersTableHeaderColumn
     anchors.top: data.top
     anchors.left: prev.right
     !text: tr('Game World')  
-    size: 96 20
+    size: 85 20
     font: verdana-11px-antialised
     color: #dfdfdf88
+
+  VerticalSeparator
+    anchors.top: data.top
+    anchors.left: prev.right
+    height: 20
+    margin-bottom: -1
 
   PlayersTableHeaderColumn
     anchors.top: data.top
     anchors.left: prev.right
     !text: tr('Level')  
-    size: 66 20
+    size: 50 20
     font: verdana-11px-antialised
     color: #dfdfdf88
+
+  VerticalSeparator
+    anchors.top: data.top
+    anchors.left: prev.right
+    height: 20
+    margin-bottom: -1
 
   PlayersTableHeaderColumn
     id: points
