@@ -1,11 +1,11 @@
 <style>
-    .offline-dialog { width: 270px; height: 310px; }
-    .offline-body { width: 100%; height: 90%; padding: 12px 14px 10px 14px; display: block; }
-    .offline-description { width: 100%; display: block; color: #d4d4d4; text-align: center; --text-wrap: true; --text-auto-resize: true; margin-top: -12px; }
-    .skills-list { width: 100%; height: 85%; display: block; margin-top: 35px; }
-    .skill-row { width: 100%; display: flex; align-items: stretch; margin-bottom: 6px; }
+    .offline-dialog { width: 208px; height: 266px;}
+    .offline-body { width: 100%; height: 90%; display: block; }
+    .offline-description { width: 100%; display: block; color: #d4d4d4; text-align: center; --text-wrap: true; --text-auto-resize: true; margin-top: 2px; }
+    .skills-list { width: 100%; height: 75%; display: block; margin-top: 39px; }
+    .skill-row { height: 25px;width: 100%; display: flex; align-items: stretch; margin-top: 4px; }
     .skill-info { flex: 1; display: flex; flex-direction: column; }
-    .skill-header { width: 100%; height: 14px; display: flex; align-items: center; margin-bottom: 2px; }
+    .skill-header { height: 14px; display: flex; align-items: center; margin-bottom: 2px; }
     .skill-header-main { flex: 1; display: flex; align-items: center; }
     .skill-name { flex: 1; color: #d2d2d2;  }
     .skill-value { width: 46px; color: #c0c0c0;  text-align: right; margin-right: 10px; }
@@ -13,14 +13,14 @@
     .skill-icon { width: 9px; height: 9px; margin-right: 5px; flex-shrink: 0; }
     .skill-bar-wrap { flex: 1; display: flex; align-items: center; margin-right: 6px; }
     .skill-bar { width: 100%; height: 5px; background-color: #18be20; --image-source: /images/ui/progressbar; --image-border: 2; --text-offset: 0 0; }
-    .train-btn { width: 41px; margin-left: 4px; height: 10px; }
-    .offline-footer { width: 100%; display: flex; justify-content: flex-end; align-items: center; }
-    .cancel-btn { width: 40px; height: 5px; }
+    .train-btn { width: 25px; margin-left: 4px; height: 100%; margin-top: 5px }
+    .offline-footer { width: 100%; display: flex; justify-content: flex-end; align-items: center;  }
+    .cancel-btn { width: 25px; height: 0px;  }
     .offline-divider { width: 100%; height: 2px; }
 </style>
 
 <html>
-<window id="offlineTrainingDialog" placement="center" class="offline-dialog" title="Offline Training / WIP need improve html" onescape="self:hideOfflineTrainingDialog()">
+<window id="offlineTrainingDialog" placement="center" class="offline-dialog" title="Offline Training" onescape="self:hideOfflineTrainingDialog()">
   <div class="offline-body" >
     <label class="offline-description">
       While logged out, you can train one of these skills using offline training. Shielding is always trained alongside.
