@@ -57,6 +57,7 @@ public:
     std::string getVersion() { return m_version; }
     bool isAutoLoad() { return m_autoLoad; }
     int getAutoLoadPriority() { return m_autoLoadPriority; }
+    int getMinClientVersion() const { return m_minClientVersion; }
 
     // @dontbind
     ModulePtr asModule() { return static_self_cast<Module>(); }
@@ -73,6 +74,7 @@ private:
     bool m_sandboxed{ false };
 
     int m_autoLoadPriority{};
+    int m_minClientVersion{};
     int m_sandboxEnv{};
     std::tuple<std::string, std::string> m_onLoadFunc;
     std::tuple<std::string, std::string> m_onUnloadFunc;

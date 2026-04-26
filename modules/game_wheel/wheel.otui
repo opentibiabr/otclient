@@ -3,13 +3,13 @@ NewMainWindow
   !text: tr('Wheel Of Destiny')
   anchors.horizontalCenter: parent.horizontalCenter
   size: 1000 645
-  @onEscape: hide()
-  @onEnter: onWheelOfDestinyApply(true)
+  @onEscape: modules.game_wheel.hide()
+  @onEnter: modules.game_wheel.onWheelOfDestinyApply(true)
 
   Panel
     id: optionsTabBar
     size: 968 36
-    image-source: /images/game/wheel/menuBg
+    image-source: /game_wheel/images/menuBg
     image-border: 1
     anchors.top: parent.top
     anchors.left: parent.left
@@ -25,7 +25,7 @@ NewMainWindow
       size: 322 34
       margin-left: 1
       margin-top: 1
-      image-source: /images/game/wheel/wheelMenu
+      image-source: /game_wheel/images/wheelMenu
       image-clip: 0 0 322 34
       $hover !checked:
         image-clip: 0 0 322 34
@@ -33,7 +33,7 @@ NewMainWindow
         image-clip: 0 34 322 34
       $checked:
         image-clip: 0 34 322 34
-      @onClick: loadMenu('wheelMenu')
+      @onClick: modules.game_wheel.loadMenu('wheelMenu')
 
     Button
       id: gemMenu
@@ -42,7 +42,7 @@ NewMainWindow
       size: 322 34
       margin-left: 1
       margin-top: 1
-      image-source: /images/game/wheel/gemMenu
+      image-source: /game_wheel/images/gemMenu
       image-clip: 0 0 322 34
       $hover !checked:
         image-clip: 0 0 322 34
@@ -50,7 +50,7 @@ NewMainWindow
         image-clip: 0 34 322 34
       $checked:
         image-clip: 0 34 322 34
-      @onClick: loadMenu('gemMenu')
+      @onClick: modules.game_wheel.loadMenu('gemMenu')
 
     Button
       id: fragmentMenu
@@ -59,7 +59,7 @@ NewMainWindow
       size: 322 34
       margin-right: 1
       margin-top: 1
-      image-source: /images/game/wheel/fragmentMenu
+      image-source: /game_wheel/images/fragmentMenu
       image-clip: 0 0 322 34
       $hover !checked:
         image-clip: 0 0 322 34
@@ -67,7 +67,7 @@ NewMainWindow
         image-clip: 0 34 322 34
       $checked:
         image-clip: 0 34 322 34
-      @onClick: loadMenu('fragmentMenu')
+      @onClick: modules.game_wheel.loadMenu('fragmentMenu')
 
   Panel
     id: mainPanel
@@ -126,7 +126,7 @@ NewMainWindow
     image-border: 7
     UIWidget
       size: 12 12
-      image-source: /images/game/wheel/fragmentIcon
+      image-source: /game_wheel/images/fragmentIcon
       image-clip: 0 0 12 12
       anchors.right: parent.right
       anchors.top: parent.top
@@ -155,7 +155,7 @@ NewMainWindow
     image-border: 7
     UIWidget
       size: 12 12
-      image-source: /images/game/wheel/fragmentIcon
+      image-source: /game_wheel/images/fragmentIcon
       image-clip: 0 12 12 12
       anchors.right: parent.right
       anchors.top: parent.top
@@ -178,7 +178,7 @@ NewMainWindow
     size: 20 20
     anchors.bottom: parent.bottom
     anchors.left: prev.right
-    image-source: /images/game/wheel/change_preset_icon
+    image-source: /game_wheel/images/change_preset_icon
     image-clip: 0 0 20 20
     margin-bottom: 12
     margin-left: 5
@@ -207,7 +207,7 @@ NewMainWindow
     size: 43 20
     margin-bottom: 12
     margin-right: 12
-    @onClick: hide()
+    @onClick: modules.game_wheel.hide()
 
   Button
     id: reset
@@ -217,7 +217,7 @@ NewMainWindow
     size: 43 20
     margin-bottom: 12
     margin-right: 5
-    @onClick: resetWheel()
+    @onClick: modules.game_wheel.resetWheel()
 
   Button
     id: apply
@@ -227,7 +227,7 @@ NewMainWindow
     size: 43 20
     margin-bottom: 12
     margin-right: 5
-    @onClick: onWheelOfDestinyApply(false)
+    @onClick: modules.game_wheel.onWheelOfDestinyApply(false)
 
   Button
     id: ok
@@ -237,4 +237,4 @@ NewMainWindow
     size: 43 20
     margin-bottom: 12
     margin-right: 5
-    @onClick: onWheelOfDestinyApply(true)
+    @onClick: modules.game_wheel.onWheelOfDestinyApply(true)

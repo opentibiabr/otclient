@@ -3,7 +3,6 @@ NewMainWindow
   !text: tr('Rename Preset')
   anchors.horizontalCenter: parent.horizontalCenter
   size: 625 121
-  @onClose:
 
   Panel
     id: contentPanel
