@@ -1274,6 +1274,10 @@ void ProtocolGame::parsePlayerHelpers(const InputMessagePtr& msg) const
 
 void ProtocolGame::parseGMActions(const InputMessagePtr& msg)
 {
+    if (g_game.getClientVersion() >= 1200) { // 0x0B is used as secondary connection identifier
+        msg->getString();
+        return;
+    }
     uint8_t numViolationReasons;
     if (g_game.getClientVersion() >= 850) {
         numViolationReasons = 20;
