@@ -51,7 +51,7 @@ Protocol::~Protocol()
 }
 
 #ifndef __EMSCRIPTEN__
-void Protocol::connect(const std::string_view host, const uint16_t port, std::string_view worldName)
+void Protocol::connect(const std::string_view host, const uint16_t port)
 {
     if (host == "proxy" || host == "0.0.0.0" || (host == "127.0.0.1" && g_proxy.isActive())) {
         m_disconnected = false;
@@ -72,15 +72,9 @@ void Protocol::connect(const std::string_view host, const uint16_t port, std::st
             self->onError(std::forward<decltype(err)>(err));
         }
     });
-    m_connection->connect(host, port, [weakSelf, worldName] {
+    m_connection->connect(host, port, [weakSelf] {
         if (auto self = weakSelf.lock()) {
             if (!self->m_disconnected) {
-                if (g_game.getClientVersion() >= 1200) {
-                    std::string sendWorldName(worldName);
-                    sendWorldName += '\n';
-                    self->m_connection->write((const uint8_t*) sendWorldName.data(), sendWorldName.size());
-                    self->enabledSequencedPackets();
-                }
                 self->onConnect();
             }
         }
@@ -383,7 +377,15 @@ void Protocol::xteaEncrypt(const OutputMessagePtr& outputMessage) const
     }
 }
 
-void Protocol::onConnect() { callLuaField("onConnect"); }
+void Protocol::onConnect() {
+    if (g_game.getClientVersion() >= 1200) {
+        std::string sendWorldName(g_game.getWorldName());
+        sendWorldName += '\n';
+        m_connection->write((const uint8_t*)sendWorldName.data(), sendWorldName.size());
+        enabledSequencedPackets();
+    }
+    callLuaField("onConnect"); 
+}
 
 void Protocol::onRecv(const InputMessagePtr& inputMessage)
 {
