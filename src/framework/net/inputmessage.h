@@ -109,7 +109,7 @@ public:
 
         checkWrite(4);
 
-        static const uint8_t footer[] = { 0x00, 0x00, 0xFF, 0xFF }; // real tibia zlib tail
+        static const uint8_t footer[] = { 0x00, 0x00, 0xFF, 0xFF };
         uint8_t* dest = m_buffer + m_messageSize;
 
         // Copy last 4 bytes
