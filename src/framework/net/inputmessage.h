@@ -100,12 +100,13 @@ public:
 
     void addCompressionFooter()
     {
-        // Pointer to last 4 bytes of current buffer
-        const uint8_t* src = m_buffer + m_messageSize - 4;
-
         // Optional: check if already equal to footer (avoid duplicating)
-        if (src[0] == 0x00 && src[1] == 0x00 && src[2] == 0xFF && src[3] == 0xFF)
-            return;
+        if (m_messageSize >= 4) {
+            // Pointer to last 4 bytes of current buffer
+            const uint8_t* src = m_buffer + m_messageSize - 4;
+            if (src[0] == 0x00 && src[1] == 0x00 && src[2] == 0xFF && src[3] == 0xFF)
+                return;
+        }
 
         checkWrite(4);
 
