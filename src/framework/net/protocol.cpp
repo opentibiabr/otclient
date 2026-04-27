@@ -270,6 +270,7 @@ void Protocol::internalRecvData(const uint8_t* buffer, const uint16_t size)
         m_zstream.next_out = zbuffer;
         m_zstream.avail_in = m_inputMessage->getUnreadSize();
         m_zstream.avail_out = InputMessage::BUFFER_MAXSIZE;
+        m_zstream.total_out = 0;
 
         const int32_t ret = inflate(&m_zstream, Z_SYNC_FLUSH);
         if (ret != Z_OK && ret != Z_STREAM_END) {
