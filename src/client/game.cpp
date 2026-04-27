@@ -603,7 +603,7 @@ void Game::loginWorld(const std::string_view account, const std::string_view pas
     if (!recordTo.empty()) {
         m_protocolGame->setRecorder(std::make_shared<PacketRecorder>(recordTo));
     }
-    m_protocolGame->login(account, password, worldHost, static_cast<uint16_t>(worldPort), characterName, authenticatorToken, sessionKey);
+    m_protocolGame->login(account, password, worldHost, static_cast<uint16_t>(worldPort), characterName, authenticatorToken, sessionKey, worldName);
     m_characterName = characterName;
     m_worldName = worldName;
 }

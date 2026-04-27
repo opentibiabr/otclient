@@ -33,7 +33,7 @@ public:
     ~Protocol() override;
 
 #ifndef __EMSCRIPTEN__
-    void connect(std::string_view host, uint16_t port);
+    void connect(std::string_view host, uint16_t port, std::string_view worldName);
 #else
     void connect(const std::string_view host, uint16_t port, bool gameWorld = false);
 #endif

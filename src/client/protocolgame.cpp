@@ -25,7 +25,7 @@
 #include "protocolgame.h"
 
 void ProtocolGame::login(const std::string_view accountName, const std::string_view accountPassword, const std::string_view host, uint16_t port,
-                         const std::string_view characterName, const std::string_view authenticatorToken, const std::string_view sessionKey)
+                         const std::string_view characterName, const std::string_view authenticatorToken, const std::string_view sessionKey, std::string_view worldName)
 {
     m_accountName = accountName;
     m_accountPassword = accountPassword;
@@ -34,7 +34,7 @@ void ProtocolGame::login(const std::string_view accountName, const std::string_v
     m_characterName = characterName;
 
 #ifndef __EMSCRIPTEN__
-    connect(host, port);
+    connect(host, port, worldName);
 #else
     if (port == 7172)
         port = 443;

@@ -51,7 +51,7 @@ Protocol::~Protocol()
 }
 
 #ifndef __EMSCRIPTEN__
-void Protocol::connect(const std::string_view host, const uint16_t port)
+void Protocol::connect(const std::string_view host, const uint16_t port, std::string_view worldName)
 {
     if (host == "proxy" || host == "0.0.0.0" || (host == "127.0.0.1" && g_proxy.isActive())) {
         m_disconnected = false;
@@ -72,9 +72,15 @@ void Protocol::connect(const std::string_view host, const uint16_t port)
             self->onError(std::forward<decltype(err)>(err));
         }
     });
-    m_connection->connect(host, port, [weakSelf] {
+    m_connection->connect(host, port, [weakSelf, worldName] {
         if (auto self = weakSelf.lock()) {
             if (!self->m_disconnected) {
+                if (g_game.getClientVersion() >= 1200) {
+                    std::string sendWorldName(worldName);
+                    sendWorldName += '\n';
+                    self->m_connection->write((const uint8_t*) sendWorldName.data(), sendWorldName.size());
+                    self->enabledSequencedPackets();
+                }
                 self->onConnect();
             }
         }
@@ -253,7 +259,11 @@ void Protocol::internalRecvData(const uint8_t* buffer, const uint16_t size)
         }
     }
 
+
+
     if (decompress) {
+        m_inputMessage->addCompressionFooter();
+
         static uint8_t zbuffer[InputMessage::BUFFER_MAXSIZE];
 
         m_zstream.next_in = m_inputMessage->getDataBuffer();
@@ -261,14 +271,13 @@ void Protocol::internalRecvData(const uint8_t* buffer, const uint16_t size)
         m_zstream.avail_in = m_inputMessage->getUnreadSize();
         m_zstream.avail_out = InputMessage::BUFFER_MAXSIZE;
 
-        const int32_t ret = inflate(&m_zstream, Z_FINISH);
+        const int32_t ret = inflate(&m_zstream, Z_SYNC_FLUSH);
         if (ret != Z_OK && ret != Z_STREAM_END) {
             g_logger.traceError("failed to decompress message - {}", m_zstream.msg);
             return;
         }
 
         const uint32_t totalSize = m_zstream.total_out;
-        inflateReset(&m_zstream);
         if (totalSize == 0) {
             g_logger.traceError("invalid size of decompressed message - %i", totalSize);
             return;
