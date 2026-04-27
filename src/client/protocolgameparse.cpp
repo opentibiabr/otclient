@@ -1344,7 +1344,7 @@ void ProtocolGame::parseUpdateNeeded(const InputMessagePtr& msg)
 void ProtocolGame::parseLoginError(const InputMessagePtr& msg)
 {
     const auto& error = msg->getString();
-    if (g_game.getClientVersion() >= 1521) {
+    if (g_game.getClientVersion() >= 1523) {
         msg->getU8(); // reason
     }
     g_game.processLoginError(error);
