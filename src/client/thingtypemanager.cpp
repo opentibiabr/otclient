@@ -148,11 +148,11 @@ bool ThingTypeManager::loadAppearances(const std::string& file)
 {
 #ifdef FRAMEWORK_PROTOBUF
     try {
-        const std::string assetIdentifierFilePath = g_resources.resolvePath(g_resources.guessFilePath(file + "assets", "json.sha256"));
-        std::ifstream assetIdentifierFile(assetIdentifierFilePath);
-        m_assetIdentifier = "";
-        if (!(assetIdentifierFile && std::getline(assetIdentifierFile, m_assetIdentifier))) {
-            m_assetIdentifier = "AssetIdentifier";
+        try {
+            m_assetIdentifier = g_resources.readFileContents(g_resources.resolvePath(g_resources.guessFilePath(file + "assets", "json.sha256")));
+        } catch (const std::exception& e) {
+            m_assetIdentifier = "AssetIdentifierUnknown";
+            g_logger.warning("Cannot load asset hash identifier from assets.json.sha256: {}", e.what());
         }
 
         if (!g_game.getFeature(Otc::GameLoadSprInsteadProtobuf)) {
