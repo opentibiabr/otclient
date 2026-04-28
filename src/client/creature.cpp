@@ -64,7 +64,12 @@ Creature::~Creature() {
     g_stats.removeCreature();
 }
 
-bool Creature::isHidden() const { return m_type == Proto::CreatureTypeHidden; }
+bool Creature::isHidden() const {
+    if (m_type == Proto::CreatureTypeHidden)
+        return true;
+    // Old protocol (< 910): healthPercent=0 means health is hidden, not that the creature is dead
+    return g_game.getClientVersion() < 910 && m_healthPercent == 0;
+}
 
 void Creature::onCreate() {
     callLuaField("onCreate");
