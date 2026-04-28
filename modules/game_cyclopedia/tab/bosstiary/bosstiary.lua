@@ -151,9 +151,9 @@ function Cyclopedia.CreateBosstiaryCreature(data)
         if g_game.getClientVersion() >= 1320 then
             widget.TrackCheck:enable()
             if data.isTrackerActived == 1 then
-                widget.TrackCheck:setChecked(true)
+                widget.TrackCheck:setChecked(true, true)
             else
-                widget.TrackCheck:setChecked(false)
+                widget.TrackCheck:setChecked(false, true)
             end
         else
             widget.TrackCheck:hide()
@@ -166,7 +166,7 @@ function Cyclopedia.CreateBosstiaryCreature(data)
 end
 
 function Cyclopedia.LoadBosstiaryCreatures(data)
-    if not UI then
+    if not UI or UI:isDestroyed() or not UI.PageValue then
         return
     end
     local maxCategoriesPerPage = 8

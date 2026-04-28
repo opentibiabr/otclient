@@ -219,9 +219,9 @@ function Cyclopedia.loadBestiarySelectedCreature(data)
     Cyclopedia.ensureStoredRaceIDsPopulated()
 
     if table.find(storedRaceIDs, data.id) then
-        UI.ListBase.CreatureInfo.LeftBase.TrackCheck:setChecked(true)
+        UI.ListBase.CreatureInfo.LeftBase.TrackCheck:setChecked(true, true)
     else
-        UI.ListBase.CreatureInfo.LeftBase.TrackCheck:setChecked(false)
+        UI.ListBase.CreatureInfo.LeftBase.TrackCheck:setChecked(false, true)
     end
 
     if data.currentLevel > 1 then
