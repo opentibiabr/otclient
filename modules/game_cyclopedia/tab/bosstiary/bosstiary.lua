@@ -166,7 +166,7 @@ function Cyclopedia.CreateBosstiaryCreature(data)
 end
 
 function Cyclopedia.LoadBosstiaryCreatures(data)
-    if not UI then
+    if not UI or not UI.PageValue then
         return
     end
     local maxCategoriesPerPage = 8
@@ -245,6 +245,9 @@ function Cyclopedia.LoadBosstiaryCreature(page)
 end
 
 function Cyclopedia.verifyBosstiaryButtons()
+    if not UI or not UI.PageValue then
+        return
+    end
     local page = Cyclopedia.Bosstiary.Page
     local totalPages = Cyclopedia.Bosstiary.TotalPages
 
@@ -429,6 +432,9 @@ function Cyclopedia.ReadjustPages()
         Cyclopedia.Bosstiary.Page = 1
     end
 
+    if not UI or not UI.PageValue then
+        return
+    end
     UI.PageValue:setText(string.format("%d / %d", Cyclopedia.Bosstiary.Page, Cyclopedia.Bosstiary.TotalPages))
     Cyclopedia.LoadBosstiaryCreature(Cyclopedia.Bosstiary.Page)
     Cyclopedia.verifyBosstiaryButtons()
