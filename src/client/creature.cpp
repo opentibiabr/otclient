@@ -64,13 +64,15 @@ Creature::~Creature() {
     g_stats.removeCreature();
 }
 
+bool Creature::isHidden() const { return m_type == Proto::CreatureTypeHidden; }
+
 void Creature::onCreate() {
     callLuaField("onCreate");
 }
 
 void Creature::draw(const Point& dest, const bool drawThings, LightView* /*lightView*/)
 {
-    if (!canBeSeen() || !canDraw() || isDead())
+    if (!canBeSeen() || !canDraw() || (isDead() && !isHidden()))
         return;
 
     if (drawThings) {
@@ -161,7 +163,7 @@ void Creature::drawInformation(const MapPosInfo& mapRect, const Point& dest, con
         DEFAULT_COLOR(96, 96, 96),
         NPC_COLOR(0x66, 0xcc, 0xff);
 
-    if (isDead() || !canBeSeen() || !(drawFlags & Otc::DrawCreatureInfo) || !mapRect.isInRange(getPosition()))
+    if (isHidden() || isDead() || !canBeSeen() || !(drawFlags & Otc::DrawCreatureInfo) || !mapRect.isInRange(getPosition()))
         return;
 
     if (g_gameConfig.isDrawingInformationByWidget()) {
