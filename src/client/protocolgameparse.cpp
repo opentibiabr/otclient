@@ -2508,7 +2508,7 @@ void ProtocolGame::parsePlayerStats(const InputMessagePtr& msg) const
 
     const uint64_t experience = g_game.getFeature(Otc::GameDoubleExperience) ? msg->getU64() : msg->getU32();
     const uint16_t level = g_game.getFeature(Otc::GameLevelU16) ? msg->getU16() : msg->getU8();
-    const uint8_t levelPercent = g_game.getFeature(Otc::GameLevelPercentU16) ? msg->getU16() : msg->getU8();
+    const uint16_t levelPercent = g_game.getFeature(Otc::GameLevelPercentU16) ? msg->getU16() : static_cast<uint16_t>(msg->getU8());
 
     if (g_game.getFeature(Otc::GameExperienceBonus)) {
         if (g_game.getClientVersion() <= 1096) {
@@ -2656,8 +2656,9 @@ void ProtocolGame::parsePlayerSkills(const InputMessagePtr& msg) const
 
     if (g_game.getFeature(Otc::GameCharacterSkillStats)) {
         //msg->getU8(); //  GameConcotions ??
-        const uint32_t capacity = msg->getU32(); // base + bonus capacity
-        msg->getU32(); // base capacity
+        const uint32_t capacity = msg->getU32() / 100; // base + bonus capacity
+        const uint32_t baseCapacity = msg->getU32() / 100; // base capacity
+        m_localPlayer->setBaseCapacity(baseCapacity);
         m_localPlayer->setTotalCapacity(capacity);
         // Flat Damage and Healing Total
         const uint16_t flatBonus = msg->getU16();
@@ -5377,7 +5378,7 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
             CyclopediaCharacterGeneralStats stats;
             stats.experience = msg->getU64();
             stats.level = msg->getU16();
-            stats.levelPercent = g_game.getFeature(Otc::GameLevelPercentU16) ? msg->getU16() : msg->getU8();
+            stats.levelPercent = g_game.getFeature(Otc::GameLevelPercentU16) ? msg->getU16() / 100 : msg->getU8();
             stats.baseExpGain = msg->getU16();
             if (g_game.getFeature(Otc::GameTournamentPackets)) {
                 msg->getU32(); // tournament exp(deprecated)

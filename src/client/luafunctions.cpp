@@ -982,6 +982,7 @@ void Client::registerLuaFunctions()
     g_lua.bindClassMemberFunction<LocalPlayer>("getRegenerationTime", &LocalPlayer::getRegenerationTime);
     g_lua.bindClassMemberFunction<LocalPlayer>("getBaseMagicLevel", &LocalPlayer::getBaseMagicLevel);
     g_lua.bindClassMemberFunction<LocalPlayer>("getTotalCapacity", &LocalPlayer::getTotalCapacity);
+    g_lua.bindClassMemberFunction<LocalPlayer>("getBaseCapacity", &LocalPlayer::getBaseCapacity);
     g_lua.bindClassMemberFunction<LocalPlayer>("getInventoryItem", &LocalPlayer::getInventoryItem);
     g_lua.bindClassMemberFunction<LocalPlayer>("hasEquippedItemId", &LocalPlayer::hasEquippedItemId);
     g_lua.bindClassMemberFunction<LocalPlayer>("getInventoryCount", &LocalPlayer::getInventoryCount);

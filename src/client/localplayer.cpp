@@ -343,6 +343,15 @@ void LocalPlayer::setTotalCapacity(const uint32_t totalCapacity)
     callLuaField("onTotalCapacityChange", totalCapacity, oldTotalCapacity);
 }
 
+void LocalPlayer::setBaseCapacity(const uint32_t baseCapacity)
+{
+    if (m_baseCapacity == baseCapacity)
+        return;
+
+    m_baseCapacity = baseCapacity;
+    callLuaField("onBaseCapacityChange", baseCapacity);
+}
+
 void LocalPlayer::setExperience(const uint64_t experience)
 {
     if (m_experience == experience)
@@ -354,18 +363,23 @@ void LocalPlayer::setExperience(const uint64_t experience)
     callLuaField("onExperienceChange", experience, oldExperience);
 }
 
-void LocalPlayer::setLevel(const uint16_t level, const uint8_t levelPercent)
+void LocalPlayer::setLevel(const uint16_t level, const uint16_t levelPercent)
 {
     if (m_level == level && m_levelPercent == levelPercent)
         return;
 
     const uint16_t oldLevel = m_level;
-    const uint8_t oldLevelPercent = m_levelPercent;
+    const uint16_t oldLevelPercent = m_levelPercent;
 
     m_level = level;
     m_levelPercent = levelPercent;
 
     callLuaField("onLevelChange", level, levelPercent, oldLevel, oldLevelPercent);
+}
+
+uint16_t LocalPlayer::getLevelPercent()
+{
+    return g_game.getFeature(Otc::GameLevelPercentU16) ? m_levelPercent / 100 : m_levelPercent;
 }
 
 void LocalPlayer::setMana(const uint32_t mana, const uint32_t maxMana)
