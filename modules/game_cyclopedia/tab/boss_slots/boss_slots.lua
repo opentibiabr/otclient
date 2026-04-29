@@ -244,7 +244,7 @@ function Cyclopedia.setActiveSlot(widget, slot, slotData, data, bossId)
     widget:setText(string.format("Slot %d: %s", slot, raceData.name))
     widget.ActivedBoss.TypeIcon:setImageSource(ICONS[slotData.bossRace])
 
-    Cyclopedia.setBosstiarySlotsBossProgress(widget.ActivedBoss.Progress, slotData.killBonus,
+    Cyclopedia.setBosstiarySlotsBossProgress(widget.ActivedBoss.Progress, slotData.killCount,
         CONFIG[slotData.bossRace].MASTERY)
 
     local tooltip = slotData.bossRace == CATEGORY.ARCHFOE and
@@ -259,23 +259,23 @@ function Cyclopedia.setActiveSlot(widget, slot, slotData, data, bossId)
     widget.ActivedBoss.TypeIcon:setTooltip(tooltip)
     widget.ActivedBoss.Progress.ProgressBorder1:setTooltip()
 
-    local fullText = slotData.killBonus >= CONFIG[slotData.bossRace].MASTERY and "(fully unlocked)" or ""
+    local fullText = slotData.killCount >= CONFIG[slotData.bossRace].MASTERY and "(fully unlocked)" or ""
 
     local progress = widget.ActivedBoss.Progress
-    progress.ProgressBorder1:setTooltip(string.format(" %d / %d %s", slotData.killBonus,
+    progress.ProgressBorder1:setTooltip(string.format(" %d / %d %s", slotData.killCount,
         CONFIG[slotData.bossRace].PROWESS, fullText))
-    progress.ProgressBorder2:setTooltip(string.format(" %d / %d %s", slotData.killBonus,
+    progress.ProgressBorder2:setTooltip(string.format(" %d / %d %s", slotData.killCount,
         CONFIG[slotData.bossRace].EXPERTISE, fullText))
-    progress.ProgressBorder3:setTooltip(string.format(" %d / %d %s", slotData.killBonus,
+    progress.ProgressBorder3:setTooltip(string.format(" %d / %d %s", slotData.killCount,
         CONFIG[slotData.bossRace].MASTERY, fullText))
 
-    progress.bronzeStar:setImageSource(slotData.killBonus >= CONFIG[slotData.bossRace].PROWESS and
+    progress.bronzeStar:setImageSource(slotData.killCount >= CONFIG[slotData.bossRace].PROWESS and
                                            "/game_cyclopedia/images/boss/icon_star_bronze" or
                                            "/game_cyclopedia/images/boss/icon_star_dark")
-    progress.silverStar:setImageSource(slotData.killBonus >= CONFIG[slotData.bossRace].EXPERTISE and
+    progress.silverStar:setImageSource(slotData.killCount >= CONFIG[slotData.bossRace].EXPERTISE and
                                            "/game_cyclopedia/images/boss/icon_star_silver" or
                                            "/game_cyclopedia/images/boss/icon_star_dark")
-    progress.goldStar:setImageSource(slotData.killBonus >= CONFIG[slotData.bossRace].MASTERY and
+    progress.goldStar:setImageSource(slotData.killCount >= CONFIG[slotData.bossRace].MASTERY and
                                          "/game_cyclopedia/images/boss/icon_star_gold" or
                                          "/game_cyclopedia/images/boss/icon_star_dark")
 

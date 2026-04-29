@@ -521,7 +521,7 @@ local function applyToBoostedSlot(raceId, outfitWidget, imageWidget, fileName)
 
     -- check if race id is present in the staticdata
     if raceData.raceId == 0 then
-        local msg = string.format("[%s] Creature with race id %s was not found.", fileName, data.creatureraceid)
+        local msg = string.format("[%s] Creature with race id %s was not found.", fileName, raceId)
         g_logger.warning(msg)
         return
     end

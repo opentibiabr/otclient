@@ -114,6 +114,7 @@ Window
   color: #C0C0C0
   size: 700 425
   anchors.centerIn: parent
+  @onEscape: modules.game_quickloot.QuickLoot.toggle()
   SmallReversedQtPanel
     id: fallbackPanel
     size: 255 20
@@ -189,9 +190,8 @@ Window
       color: #C0C0C0
       anchors.top: parent.top
       anchors.left: parent.left
-    CheckBox
+    CheckBoxCircle
       id: skipped
-      image-source: /images/ui/outfits/checkbox_round
       text-auto-resize: true
       margin-top: 5
       anchors.top: label.bottom
@@ -201,9 +201,8 @@ Window
       width: 84
       checked: true
       @onClick: QuickLoot.filter(self, self:isChecked())
-    CheckBox
+    CheckBoxCircle
       id: accepted
-      image-source: /images/ui/outfits/checkbox_round
       text-auto-resize: true
       margin-top: 5
       anchors.top: skipped.bottom
@@ -231,8 +230,7 @@ Window
       anchors.bottom: parent.bottom
       anchors.left: parent.left
       @onClick: |
-        QuickLoot.hide()
-        modules.game_cyclopedia.toggle()
+        modules.game_cyclopedia.show("items")
         
   Panel
     id: information
@@ -264,12 +262,7 @@ Window
         image-source: /game_quickloot/images/getpremium
         image-clip: 0 0 128 37
         image-border: 3
-        @onClick: |
-          if g_game.getClientVersion() >= 1332 then
-            modules.game_store.toggle()
-          else
-            modules.game_shop.toggle()
-          end
+        @onClick: modules.game_mainpanel.toggleStore()
 
         $pressed:
           image-clip: 0 37 128 37

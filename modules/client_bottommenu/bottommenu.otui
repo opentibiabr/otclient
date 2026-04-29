@@ -77,7 +77,7 @@ Panel
     id: eventsWindow
     anchors.bottom: parent.bottom
     anchors.top: parent.top
-    anchors.left: prev.right
+    anchors.left: showOffWindow.right
     margin-left: 1
     size: 246 116
     draggable: false
@@ -139,7 +139,7 @@ Panel
     id: boostedWindow
     anchors.bottom: parent.bottom
     anchors.top: parent.top
-    anchors.left: prev.right
+    anchors.left: eventsWindow.right
     margin-left: 1
     size: 169 116
     draggable: false
