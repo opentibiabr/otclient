@@ -165,3 +165,49 @@ end
 function roundToTwoDecimalPlaces(num)
   return math.floor(num * 100 + 0.5) / 100
 end
+
+function pdumpItemId(itemId)
+    if not itemId then
+        g_logger.error("pdumpItemId: No itemId provided.")
+        return
+    end
+
+    local itemType = g_things.getThingType(itemId, 0)
+    if not itemType or (itemType:getId() ~= itemId and itemType:getId() == 0) then
+        g_logger.error("pdumpItemId: Item " .. tostring(itemId) .. " not found.")
+        return
+    end
+
+    local groups = {
+        { name = "BASIC INFORMATION", props = { "getId", "getName", "getDescription", "getCategory", "getMeanPrice" } },
+        { name = "DIMENSIONS AND TEXTURES", props = { "getWidth", "getHeight", "getLayers", "getAnimationPhases", "getRealSize", "getNumPatternX", "getNumPatternY", "getNumPatternZ", "getDisplacementX", "getDisplacementY" } },
+        { name = "MOVEMENT PROPERTIES", props = { "isGround", "isGroundBorder", "isOnBottom", "isOnTop", "isNotWalkable", "isNotMoveable", "isNotPathable", "blockProjectile" } },
+        { name = "INTERACTIONS", props = { "isPickupable", "isUsable", "isContainer", "isStackable", "isForceUse", "isMultiUse", "isWritable", "isChargeable", "isWritableOnce", "isFluidContainer", "isSplash", "isHangable", "isRotateable", "isMarketable", "isWrapable", "isUnwrapable" } },
+        { name = "SPECIFICATIONS / FLAGS", props = { "isTranslucent", "hasDisplacement", "hasElevation", "hasFloorChange", "isLyingCorpse", "isAnimateAlways", "hasMiniMapColor", "hasLensHelp", "isFullGround", "isIgnoreLook", "isCloth", "isTopEffect", "isPodium", "hasWearOut", "hasClockExpire", "hasExpire", "hasExpireStop", "isAmmo", "isDualWield", "hasSkillWheelGem", "getClothSlot", "getElevation", "getMinimapColor", "getLensHelp", "getClassification" } }
+    }
+
+    g_logger.info(" ")
+    g_logger.info("+--------------------------------------------------------+")
+    g_logger.info(string.format("| DUMPING ITEM ID: %-37d |", itemId))
+    g_logger.info("+--------------------------------------------------------+")
+
+    for _, group in ipairs(groups) do
+        g_logger.info(string.format("| >> %-51s |", group.name))
+        g_logger.info("+--------------------------------------------------------+")
+        for _, prop in ipairs(group.props) do
+            local success, val = pcall(function() return itemType[prop](itemType) end)
+            if success then
+                if type(val) == "boolean" then
+                    val = val and "true" or "false"
+                end
+                g_logger.info(string.format("|   %-25s : %-24s |", prop, tostring(val)))
+            end
+        end
+        g_logger.info("+--------------------------------------------------------+")
+    end
+    g_logger.info("+--------------------------------------------------------+")
+    g_logger.info(" ")
+
+end
+
+
