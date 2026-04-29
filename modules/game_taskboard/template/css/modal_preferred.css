@@ -1,0 +1,542 @@
+/* Preferred monster modal */
+.prefWindow {
+    width: 600px;
+    height: 480px;
+    display: block;
+}
+
+.prefBody {
+    height: 450px;
+    display: block;
+    padding: 4px 8px;
+}
+
+.prefLeftPanel {
+    width: 272px;
+    height: 440px;
+    float: left;
+    display: block;
+    --image-source: /images/ui/2pixel_up_frame_borderimage;
+    --image-border: 2;
+    padding: 6px;
+}
+
+.searchInput {
+    width: 100%;
+    height: 22px;
+    display: block;
+    margin-bottom: 6px;
+    font: verdana-11px-antialised;
+    --placeholder: "Type to search";
+    --placeholder-color: #6E706F;
+}
+
+.monsterListScroll {
+    width: 257px;
+    height: 400px;
+    overflow: scroll;
+    display: block;
+    --image-source: /images/ui/2pixel_up_frame_borderimage_dark_reversed;
+    --image-border: 2;
+    margin: 0 auto;
+}
+
+.monsterListSpacer {
+    display: block;
+    width: 100%;
+    height: 0;
+}
+
+.monsterRow {
+    height: 44px;
+    padding: 4px 6px;
+    display: block;
+    border: 1px transparent;
+}
+
+.monsterRow:nth-child(odd) {
+    background-color: #141414;
+}
+
+.monsterRow:nth-child(even) {
+    background-color: #0e0e0e;
+}
+
+.monsterRow:hover {
+    background-color: #2a2a2a;
+}
+
+.monsterRow:focus {
+    background-color: #224466;
+}
+.monsterRowSelected {
+    background-color: #224466;
+    border: 1px #336699;
+}
+
+.monsterCreature {
+    width: 36px;
+    height: 36px;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 6px;
+    --creature-size: 40;
+}
+
+.monsterName {
+    display: inline-block;
+    vertical-align: middle;
+    font: verdana-11px-rounded;
+    color: #c0c0c0;
+}
+
+.prefRightPanel {
+    width: 280px;
+    height: 440px;
+    float: right;
+    display: block;
+    --image-source: /images/ui/2pixel_up_frame_borderimage;
+    --image-border: 2;
+    padding: 6px;
+    overflow: hidden;
+    margin-right: -5px
+}
+
+.slotsHeader {
+    height: 20px;
+    display: block;
+}
+
+.slotsHeaderEntry {
+    width: 145px;
+    height: 20px;
+    display: block;
+}
+
+.slotsHeaderEntry:first-child {
+    float: left;
+}
+
+.slotsHeaderEntry:last-child {
+    float: right;
+}
+
+.slotsHeaderLabel {
+    display: inline-block;
+    text-align: center;
+    font: verdana-11px-rounded;
+    color: #c0c0c0;
+}
+
+.slotsHelpIcon {
+    width: 12px;
+    height: 12px;
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 4px;
+}
+
+.slotsSep {
+    display: block;
+    clear: both;
+    height: 1px;
+    background-color: #444444;
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
+
+.slotRow {
+    height: 74px;
+    display: block;
+    margin-bottom: 4px;
+    border: 1px #333333;
+    padding: 4px;
+    overflow: hidden;
+    position: relative;
+}
+
+.slotUnlockedBox {
+    height: 66px;
+    display: block;
+    position: relative;
+}
+
+.slotCol {
+    width: 132px;
+    height: 66px;
+    float: left;
+    display: block;
+    padding-right: 6px;
+    border-right: 1px #333333;
+    position: relative;
+}
+
+.preferredArea {
+    width: 132px;
+    height: 66px;
+    float: left;
+    display: block;
+    padding-right: 6px;
+    border-right: 1px #333333;
+    position: relative;
+}
+
+.slotColUnwanted {
+    width: 132px;
+    height: 66px;
+    float: right;
+    display: block;
+    padding-left: 6px;
+    position: relative;
+}
+
+.unwantedArea {
+    width: 132px;
+    height: 66px;
+    float: right;
+    display: block;
+    padding-left: 6px;
+    position: relative;
+}
+
+.slotCreatureBox {
+    width: 50px;
+    height: 50px;
+    float: left;
+    margin-top: 8px;
+    display: block;
+    --image-source: /images/ui/item66;
+    --image-border: 2;
+}
+
+.preferredIconBox {
+    width: 50px;
+    height: 50px;
+    float: left;
+    margin-top: 8px;
+    display: block;
+    --image-source: /images/ui/item66;
+    --image-border: 2;
+}
+
+.unwantedIconBox {
+    width: 50px;
+    height: 50px;
+    float: left;
+    display: block;
+    --image-source: /images/ui/item66;
+    --image-border: 2;
+}
+
+.slotCreature {
+    width: 48px;
+    height: 48px;
+}
+
+.preferredCreature {
+    width: 48px;
+    height: 48px;
+}
+
+.unwantedCreature {
+    width: 48px;
+    height: 48px;
+}
+
+.slotNoCreature {
+    width: 48px;
+    height: 48px;
+    display: block;
+}
+
+.slotNoCreature {
+    --image-source: /game_taskboard/assets/images/icon-arbitrarymonster;
+}
+
+.preferredName {
+    display: block;
+    margin-left: 56px;
+    margin-top: 4px;
+    margin-right: 4px;
+    height: 16px;
+    font: verdana-11px-rounded;
+    color: #c0c0c0;
+    text-auto-resize: true;
+}
+
+.unwantedName {
+    display: block;
+    margin-left: 56px;
+    margin-top: 4px;
+    margin-right: 4px;
+    height: 16px;
+    font: verdana-11px-rounded;
+    color: #c0c0c0;
+    text-auto-resize: true;
+}
+
+.slotBtns {
+    width: 70px;
+    float: right;
+    display: block;
+    margin-top: 6px;
+    text-align: right;
+}
+
+.slotAssignBtn {
+    width: 43px;
+    height: 20px;
+    display: block;
+    margin-left: auto;
+    margin-top: 0;
+    margin-bottom: 3px;
+}
+
+.preferredClearButton {
+    width: 43px;
+    height: 20px;
+    display: block;
+    margin-left: auto;
+    margin-top: 0;
+    margin-bottom: 3px;
+}
+
+.unwantedAssignButton {
+    width: 43px;
+    height: 20px;
+    display: block;
+    margin-left: auto;
+    margin-top: 0;
+    margin-bottom: 3px;
+}
+
+.slotClearBtnRow {
+    height: 20px;
+    display: block;
+    white-space: nowrap;
+}
+
+.slotClearBtn {
+    width: 43px;
+    height: 20px;
+    display: inline-block;
+    margin-right: 2px;
+    vertical-align: top;
+}
+
+.TaskBoardSmallResource {
+    --image-source: /images/ui/progress;
+    --image-border: 7;
+    display: block;
+    position: relative;
+}
+
+.slotCostBox {
+    width: 44px;
+    height: 20px;
+    display: inline-block;
+    vertical-align: top;
+    margin-left: 0;
+    margin-top: 0;
+}
+
+.preferredCostPanel {
+    width: 44px;
+    height: 20px;
+    display: inline-block;
+    vertical-align: top;
+    margin-left: 0;
+    margin-top: 0;
+}
+
+.unwantedCostPanel {
+    width: 44px;
+    height: 20px;
+    display: inline-block;
+    vertical-align: top;
+    margin-left: 0;
+    margin-top: 0;
+}
+
+.slotUnlockCostBox {
+    height: 20px;
+    width: 86px;
+    display: inline-block;
+    vertical-align: top;
+    margin-left: 4px;
+}
+
+.slotCostIcon {
+    width: 9px;
+    height: 9px;
+    position: absolute;
+    right: 3px;
+    top: 5px;
+}
+
+.slotCostLabel {
+    position: absolute;
+    left: 4px;
+    right: 15px;
+    top: 0;
+    bottom: 0;
+    font: verdana-11px-rounded;
+    color: #c0c0c0;
+    text-align: right;
+}
+
+.slotLockedBox {
+    width: 257px;
+    height: 64px;
+    display: block;
+    --image-source: /images/ui/2pixel_up_frame_borderimage;
+    --image-border: 2;
+    padding: 8px;
+    text-align: center;
+    margin: 0 auto;
+}
+
+.slotLockedTitle {
+    display: block;
+    font: verdana-11px-rounded;
+    color: #888888;
+    margin-bottom: 6px;
+}
+
+.slotUnlockRow {
+    display: block;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.slotUnlockBtn {
+    display: inline-block;
+    vertical-align: top;
+}
+
+.slotUnlockedBox {
+    width: 257px;
+    height: 64px;
+    margin: 0 auto;
+    display: block;
+    position: relative;
+    overflow: hidden;
+}
+
+.preferredArea {
+    display: block;
+    position: relative;
+    width: 122px;
+    height: 56px;
+    left: 4px;
+    top: 4px;
+    position: absolute;
+    border-right: 1px #333333;
+}
+
+.unwantedArea {
+    display: block;
+    width: 122px;
+    height: 56px;
+    right: 4px;
+    top: 4px;
+    position: absolute;
+}
+
+.preferredIconBox {
+    display: block;
+    width: 54px;
+    height: 54px;
+    margin-top: 1px;
+    --image-source: /images/ui/2pixel_up_frame_borderimage_dark_reversed;
+    --image-border: 3;
+}
+
+.unwantedIconBox {
+    display: block;
+    position: absolute;
+    left: 0;
+    top: 1px;
+    width: 54px;
+    height: 54px;
+    --image-source: /images/ui/2pixel_up_frame_borderimage_dark_reversed;
+    --image-border: 3;
+}
+
+.preferredCreature {
+    width: 48px;
+    height: 48px;
+}
+
+.unwantedCreature {
+    width: 48px;
+    height: 48px;
+    display: block;
+    margin-left: 3px;
+    margin-top: 3px;
+}
+
+.slotNoCreature {
+    width: 48px;
+    height: 48px;
+    display: block;
+    margin-left: 3px;
+    margin-top: 3px;
+}
+
+.slotActionStack {
+    display: block;
+    position: absolute;
+    left: 60px;
+    top: 0;
+    width: 58px;
+    height: 56px;
+}
+
+.preferredActionButton {
+    width: 58px;
+    height: 0px;
+    display: block;
+    font: cipsoftFont;
+    text-align: center;
+    padding: 0;
+}
+
+.unwantedActionButton {
+    width: 58px;
+    height: 0px;
+    display: block;
+    font: cipsoftFont;
+    text-align: center;
+    padding: 0;
+}
+
+.preferredCostPanel {
+    width: 58px;
+    height: 20px;
+    display: block;
+    margin-top: 4px;
+    position: relative;
+}
+
+.unwantedCostPanel {
+    width: 58px;
+    height: 20px;
+    display: block;
+    margin-top: 4px;
+    position: relative;
+}
+
+.prefFooter {
+    clear: both;
+    height: 30px;
+    padding: 4px 8px;
+    display: block;
+}
+
+.prefCloseBtn {
+    float: right;
+    height: 1px;
+    padding: 0 10px;
+    font: verdana-11px-antialised;
+}

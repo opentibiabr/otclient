@@ -5,6 +5,8 @@ NpcIconChat = 1
 NpcIconTrade = 2
 NpcIconQuest = 3
 NpcIconTradeQuest = 4
+NpcIconTraveler = 5
+NpcIconHireling = 7
 
 CreatureTypePlayer = 0
 CreatureTypeMonster = 1
@@ -132,15 +134,19 @@ function getIconImagePath(iconId)
         path = '/images/game/npcicons/icon_quest'
     elseif iconId == NpcIconTradeQuest then
         path = '/images/game/npcicons/icon_tradequest'
-    end
+    elseif iconId == NpcIconTraveler then
+        path = '/images/game/npcicons/icon_traveler'
+    elseif iconId == NpcIconHireling then
+        path = '/images/game/npcicons/npc-hilering'
+	end
     return path
 end
 
 function getIconsImagePath(category)
     if category == 1 then
-        return '/images/game/creatureicons/monsterIcons'
+        return '/images/game/creatureicons/modifications'
     end
-    return '/images/game/creatureicons/CreatureIcons'
+    return '/images/game/creatureicons/quests'
 end
 
 function Creature:onIconsChange(icon, category, count)

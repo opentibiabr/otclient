@@ -1,0 +1,163 @@
+BottomMultiAction < QtPanel
+  id: multiActionPanel
+  size: 67 116
+  draggable: false
+  image-source: /images/ui/2pixel_up_frame_borderimage
+  @onEscape: modules.game_actionbar.closeCurrentMultiActionPanel()
+  ActionButton
+    id: actionButton3
+    size: 34 34
+    anchors.top: parent.top
+    anchors.right: parent.right
+    margin-top: -3
+  ActionButton
+    id: actionButton2
+    size: 34 34
+    anchors.top: actionButton3.bottom
+    anchors.right: parent.right
+    margin-top: 3
+  ActionButton
+    id: actionButton1
+    size: 34 34
+    anchors.top: actionButton2.bottom
+    anchors.right: parent.right
+    margin-top: 3
+  UIWidget
+    anchors.top: parent.top
+    anchors.left: parent.left
+    margin-top: 27
+    margin-left:  -2
+    image-source: /images/game/actionbar/icon-arrow-greater-vertical
+  UIWidget
+    anchors.top: actionButton2.bottom
+    anchors.left: parent.left
+    margin-left:  -2
+    margin-top:  -2
+    image-source: /images/game/actionbar/icon-arrow-greater-vertical
+  Label
+    anchors.top: parent.top
+    anchors.left: parent.left
+    text: "III"
+    margin-left:  -6
+    margin-top:  5
+  Label
+    anchors.verticalCenter: parent.verticalCenter
+    anchors.left: parent.left
+    text: "II"
+    margin-left:  -2
+  Label
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    text: "I"
+
+LeftMultiAction < QtPanel
+  id: multiActionPanel
+  size: 116 67
+  image-source: /images/ui/2pixel_up_frame_borderimage
+  draggable: false
+  @onEscape: modules.game_actionbar.closeCurrentMultiActionPanel()
+  ActionButton
+    id: actionButton3
+    size: 34 34
+    anchors.top: parent.top
+    anchors.right: parent.right
+    margin-top: 15
+    margin-right: -5
+  ActionButton
+    id: actionButton2
+    size: 34 34
+    anchors.top: parent.top
+    anchors.right: actionButton3.left
+    margin-top: 15
+    margin-right: 3
+  ActionButton
+    id: actionButton1
+    size: 34 34
+    anchors.top: parent.top
+    anchors.right: actionButton2.left
+    margin-top: 15
+    margin-right: 3
+  UIWidget
+    anchors.top: parent.top
+    anchors.left: parent.left
+    margin-left:  25
+    image-source: /images/game/actionbar/icon-arrow-greater-horizontal
+  UIWidget
+    anchors.top: parent.top
+    anchors.right: parent.right
+    margin-right:  25
+    image-source: /images/game/actionbar/icon-arrow-greater-horizontal
+  Label
+    anchors.top: parent.top
+    anchors.right: parent.right
+    text: "III"
+    margin-right: 2
+    margin-top: -2
+  Label
+    anchors.top: parent.top
+    anchors.horizontalCenter: parent.horizontalCenter
+    text: "II"
+    margin-left:  -2
+    margin-top: -2
+  Label
+    anchors.top: parent.top
+    anchors.left: parent.left
+    text: "I"
+    margin-top: -2
+    margin-left: 8
+
+RightMultiAction < QtPanel
+  id: multiActionPanel
+  size: 116 67
+  image-source: /images/ui/2pixel_up_frame_borderimage
+  draggable: false
+  @onEscape: modules.game_actionbar.closeCurrentMultiActionPanel()
+  ActionButton
+    id: actionButton3
+    size: 34 34
+    anchors.top: parent.top
+    anchors.left: parent.left
+    margin-top: 18
+    margin-left: -4
+  ActionButton
+    id: actionButton2
+    size: 34 34
+    anchors.top: parent.top
+    anchors.left: actionButton3.right
+    margin-top: 18
+    margin-left: 3
+  ActionButton
+    id: actionButton1
+    size: 34 34
+    anchors.top: parent.top
+    anchors.left: actionButton2.right
+    margin-top: 18
+    margin-left: 3
+  UIWidget
+    anchors.top: parent.top
+    anchors.left: parent.left
+    margin-left:  26
+    image-source: /images/game/actionbar/icon-arrow-greater-horizontal
+  UIWidget
+    anchors.top: parent.top
+    anchors.right: parent.right
+    margin-right:  27
+    image-source: /images/game/actionbar/icon-arrow-greater-horizontal
+  Label
+    anchors.top: parent.top
+    anchors.right: parent.right
+    text: "I"
+    margin-right: 8
+    margin-top: -2
+  Label
+    anchors.top: parent.top
+    anchors.horizontalCenter: parent.horizontalCenter
+    text: "II"
+    margin-left:  -2
+    margin-top: -2
+  Label
+    anchors.top: parent.top
+    anchors.left: parent.left
+    text: "III"
+    margin-top: -2
+    margin-left: 2

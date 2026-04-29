@@ -100,9 +100,11 @@ function init()
     connect(g_game, {
         onGameStart = setPlayerValues
     })
+    StatusIconBar.init()
 end
 
 function terminate()
+    StatusIconBar.terminate()
     healthCircle:destroy()
     healthCircle = nil
     manaCircle:destroy()
@@ -566,6 +568,9 @@ function whenMapResizeChange()
     end
 
     updateManaShieldDisplay()
+    if StatusIconBar and StatusIconBar.updatePosition then
+        StatusIconBar.updatePosition()
+    end
 end
 
 -------------------------------------------------

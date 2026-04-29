@@ -1,0 +1,105 @@
+<link href="template/css/modal_preferred.css" />
+
+<html>
+<window id="preferredWindow" class="prefWindow" placement="center" title="Preferred List" onescape="self:hidePreferred()">
+
+    <div class="prefBody">
+
+        <!-- Left: search + monster list -->
+        <div class="prefLeftPanel" style="float:left;">
+            <input class="searchInput" *value="self.searchText" onchange="self:filterMonsters(event.value)" />
+            <div id="monsterListScroll" class="monsterListScroll">
+                <div class="monsterListSpacer" *height="self.monsterTopSpacerPxA"></div>
+                <div class="monsterListSpacer" *height="self.monsterTopSpacerPxB"></div>
+                <div class="monsterListSpacer" *height="self.monsterTopSpacerPxC"></div>
+                <div *for="local m in self.visibleMonsters; trackBy: m.raceId"
+                    class="monsterRow"
+                    *class-monsterRowSelected="self.selectedRaceId == m.raceId"
+                    *tooltip="m.name"
+                    onclick="self:selectMonster(m.raceId)">
+                    <uicreature class="monsterCreature" *outfit="m.outfit" idle-animate="false"></uicreature>
+                    <label class="monsterName">{{m.name}}</label>
+                </div>
+                <div class="monsterListSpacer" *height="self.monsterBottomSpacerPxA"></div>
+                <div class="monsterListSpacer" *height="self.monsterBottomSpacerPxB"></div>
+                <div class="monsterListSpacer" *height="self.monsterBottomSpacerPxC"></div>
+            </div>
+        </div>
+
+        <!-- Right: slot list -->
+        <div class="prefRightPanel" style="float:right;">
+            <div class="slotsHeader">
+                <div class="slotsHeaderEntry" style="float:left; margin-left: 20px">
+                    <label class="slotsHeaderLabel">Preferred</label>
+                    <img class="slotsHelpIcon" src="/images/skin/show-gui-help-grey"
+                        *tooltip="'Preferred creatures are 5x more likely to appear when rolling tasks.'" />
+                </div>
+                <div class="slotsHeaderEntry" style="float:right; margin-right: -40px">
+                    <label class="slotsHeaderLabel">Unwanted</label>
+                    <img class="slotsHelpIcon" src="/images/skin/show-gui-help-grey"
+                        *tooltip="'Unwanted creatures will never appear when rolling tasks.'" />
+                </div>
+            </div>
+            <div class="slotsSep"></div>
+            <hr style="height: 2px;width: 100%;"/>
+            <div *for="local slot in self.preferredSlots" class="slotRow">
+
+                <!-- Locked state -->
+                <div class="slotLockedBox" *visible="slot.locked == 1">
+                    <label class="slotLockedTitle">{{slot.slotTitle}}</label>
+                    <div class="slotUnlockRow">
+                        <button class="slotUnlockBtn" *visible="slot.canUnlock"
+                            onclick="self:buyPreferredSlot(slot.slotNum, slot.lockPrice)">Unlock</button>
+                        <button class="slotUnlockBtn" disabled="true" *visible="not slot.canUnlock">Unlock</button>
+                        <div class="TaskBoardSmallResource slotUnlockCostBox">
+                            <img class="slotCostIcon" src="/game_taskboard/assets/images/icon-currency-bountypoints" />
+                            <label class="slotCostLabel">{{slot.lockPrice}}</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Unlocked: preferred + unwanted -->
+                <div class="slotUnlockedBox" *visible="slot.unlocked == 1" placement="center">
+
+                    <div class="preferredArea" >
+                        <div class="preferredIconBox" *tooltip="slot.preferredName or ''">
+                            <uicreature  class="preferredCreature"  *outfit="slot.preferredOutfit" *visible="slot.showPreferredCreature == 1" idle-animate="true"></uicreature>
+                        </div>
+                        <div class="slotActionStack">
+                            <button class="preferredActionButton" *enabled="slot.canPreferredAct"
+                                onclick="self:onPreferredSlotAction(slot.slotNum, slot.preferredAction, slot.actionCost)" *text="slot.preferredButtonText"></button>
+                            <div class="TaskBoardSmallResource preferredCostPanel">
+                                <img class="slotCostIcon" src="/game_taskboard/assets/images/icon-currency-bountypoints" />
+                                <label class="slotCostLabel">{{slot.actionCost}}</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="unwantedArea">
+                        <div class="unwantedIconBox" *tooltip="slot.unwantedName or ''">
+                            <uicreature placement="top" class="unwantedCreature" *outfit="slot.unwantedOutfit" *visible="slot.showUnwantedCreature == 1" idle-animate="true"></uicreature>
+                        </div>
+                        <div class="slotActionStack">
+                            <button class="unwantedActionButton" *enabled="slot.canUnwantedAct"
+                                onclick="self:onPreferredSlotAction(slot.slotNum, slot.unwantedAction, slot.actionCost)" *text="slot.unwantedButtonText"></button>
+                            <div class="TaskBoardSmallResource unwantedCostPanel">
+                                <img class="slotCostIcon" src="/game_taskboard/assets/images/icon-currency-bountypoints" />
+                                <label class="slotCostLabel">{{slot.actionCost}}</label>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div><!-- *for slots -->
+
+        </div><!-- /prefRightPanel -->
+
+    </div><!-- /prefBody -->
+
+    <div class="prefFooter">
+        <button class="prefCloseBtn" onclick="self:hidePreferred()">Close</button>
+    </div>
+
+</window>
+</html>

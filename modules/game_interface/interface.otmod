@@ -44,7 +44,7 @@ Module
     - game_stash
     - game_healthcircle
     - game_shop
-    - game_screenshot
+    - game_notifications
     - game_highscore
     - game_blessing
     - game_store

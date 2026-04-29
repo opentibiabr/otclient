@@ -1,0 +1,166 @@
+/* Shop tab */
+.shopOuter {
+    width: 100%;
+    height: 100%;
+    display: block;
+    --image-source: /images/ui/2pixel_up_frame_borderimage;
+    --image-border: 2;
+}
+
+.shopScroll {
+    width: 100%;
+    height: 100%;
+    overflow: scroll;
+    padding: 10px 15px 10px 15px;
+    --image-source: /images/ui/background_dark;
+    --image-repeated: true;
+    text-align: left;
+}
+
+.shopCard {
+    width: 305px;
+    height: 144px;
+    display: block;
+    margin: 0;
+    --image-source: /images/ui/window_new;
+    --image-border: 30;
+    padding: 25px 0 4px 10px;
+    vertical-align: top;
+    position: relative;
+}
+
+.shopCardTitle {
+    position: absolute;
+    top: 7px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font: verdana-11px-rounded;
+    color: #c0c0c0;
+}
+
+.shopPreview {
+    width: 66px;
+    height: 66px;
+    display: inline-block;
+    vertical-align: top;
+    --image-source: /images/ui/item66;
+    --image-border: 2;
+    position: relative;
+}
+
+.shopCreature {
+    width: 64px;
+    height: 64px;
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.shopItemWidget {
+    width: 32px;
+    height: 32px;
+    position: absolute;
+    left: 16px;
+    top: 16px;
+    margin: 0;
+}
+
+.shopIconWidget {
+    width: 64px;
+    height: 64px;
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.shopInfo {
+    display: inline-block;
+    vertical-align: top;
+    margin-left: 4px;
+    width: 205px;
+}
+
+.shopDescription {
+    display: block;
+    height: 66px;
+    width: 201px;
+    max-width: 201px;
+    margin-right: 0;
+    font: verdana-11px-antialised;
+    color: #c0c0c0;
+    text-wrap: true;
+    --text-auto-resize: false;
+    white-space: normal;
+    text-align: left;
+}
+
+.shopSep {
+    display: block;
+    width: 97%;
+    height: 2px;
+    background-color: #555555;
+}
+
+.shopActionRow {
+    display: block;
+    height: 22px;
+    margin-top: 2px;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.shopBuyBtn {
+    width: 66px;
+    height: 0px;
+    display: inline-block;
+    vertical-align: top;
+    margin-right: 4px;
+    padding: 0;
+}
+
+.shopBoughtLabel {
+    width: 66px;
+    height: 20px;
+    display: inline-block;
+    vertical-align: top;
+    text-align: center;
+    font: verdana-11px-antialised;
+    color: #666666;
+    margin-top: 4px;
+}
+
+.shopPriceBox {
+    width: 70px;
+    height: 20px;
+    display: inline-block;
+    vertical-align: top;
+    margin-right: 4px;
+    --image-source: /images/ui/infoPanel;
+    --image-border: 2;
+    position: relative;
+}
+
+.shopPriceLabel {
+    text-align: right;
+    float: right;
+    font: verdana-11px-rounded;
+    color: #c0c0c0;
+    margin-right:19px
+}
+
+.shopPriceIcon {
+    position: absolute;
+    width: 11px;
+    height: 11px;
+    right: 3px;
+    top: 5px;
+}
+
+.shopTypeBackdrop {
+    position: absolute;
+    width: 48px;
+    height: 30px;
+    right: -2px;
+    bottom: 0;
+}

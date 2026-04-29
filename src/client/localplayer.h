@@ -61,6 +61,7 @@ public:
     void setBlessings(uint16_t blessings);
     void setResourceBalance(Otc::ResourceTypes_t type, uint64_t value);
     void takeScreenshot(uint8_t type);
+    void openMultiOfflineTrainingDialog();
     void setFlatDamageHealing(uint16_t flatBonus);
     void setAttackInfo(uint16_t attackValue, uint8_t attackElement);
     void setConvertedDamage(double convertedDamage, uint8_t convertedElement);

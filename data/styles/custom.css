@@ -77,3 +77,15 @@ InputBoxButton {
 TextQtEdit {
   padding: 4;
 }
+
+.borderQt {
+  --border-width-top: 1;
+  --border-color-top: black;
+  --border-width-left: 1;
+  --border-color-left: black;
+  --border-width-bottom: 1;
+  --border-color-bottom: #747474;
+  --border-width-right: 1;
+  --border-color-right: #747474;
+  --padding: 1 1 1 1;
+}

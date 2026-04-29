@@ -1,0 +1,359 @@
+<link href="template/css/taskboard_main.css" /> <!-- L#8-L29, L#345-L361 -->
+<link href="template/css/taskboard_daily.css" /> <!-- L#35-L148 -->
+<link href="template/css/taskboard_weekly.css" /> <!-- L#158-L295 -->
+<link href="template/css/taskboard_overlay.css" /> <!-- L#262-L295 -->
+<link href="template/css/taskboard_shop.css" /> <!-- L#305-L342 -->
+
+<html>
+<window id="taskHuntWindow" class="taskWindow" placement="center" title="Task Board" onescape="self:hide()">
+
+    <!--  Tab bar — NO whitespace between buttons (inline-block whitespace = overflow) -->
+    <div class="tabBar">
+        <UIButton id="tabDaily" class="tabBtn" onclick="self:selectTab(1)">
+            <img class="tabIcon" src="/game_taskboard/assets/images/icon-bountytasks" />
+            <label class="tablabel" text="Daily tasks"></label>
+        </UIButton>
+
+        <UIButton id="tabWeekly" class="tabBtn" onclick="self:selectTab(2)">
+            <img class="tabIcon" src="/game_taskboard/assets/images/icon-weeklytasks" />
+            <label class="tablabel" text="Weekly Tasks"></label>
+        </UIButton>
+
+        <UIButton id="tabShop" class="tabBtn" onclick="self:selectTab(3)">
+            <img class="tabIcon" src="/game_taskboard/assets/images/icon-huntingtaskshop" />
+            <label class="tablabel" text="Hunting Task Shop"></label>
+        </UIButton>
+
+    </div>
+
+    <!--  Content area (all tabs overlap here via position:absolute)  -->
+    <div class="contentArea">
+
+        <!-- ══════════════════════════════════════════════════════════
+             BOUNTY TAB
+             ══════════════════════════════════════════════════════════ -->
+        <div class="contentPanel" *visible="self.activeTab == 1">
+
+            <!-- Set Up & Reroll Tasks -->
+            <div class="staticWindow bountySetup" title="Set Up &amp; Reroll Tasks">
+                <div class="setupRow">
+                    <div class="helpIcon"
+                        *tooltip="'Select one of three Bounty tasks to complete and earn a reward.\n\nTasks are grouped by difficulty:\n\n   Beginner tasks include easy creatures.\n   Adept tasks include easy and medium creatures.\n   Expert tasks include medium and hard creatures.\n   Master tasks include hard and challenging creatures.\n\nYou can change the difficulty at any time, but it only takes effect\nwhen selecting your next task.\n\nUse the Preferred List to customise which tasks can appear when\nyou roll.\n\nTasks can be re-rolled using Reroll Tokens. One token can be\nclaimed for free each day. You can store up to 10 Reroll Tokens at\na time.\n\nThere is a chance for Silver and Gold tasks to appear, which grant\ngreater rewards.'"></div>
+                    <div class="vSep VerticalSeparator"></div>
+                    <label class="setupLabel">Task Difficulty:</label>
+                    <select id="dailyDifficultySelect" class="setupCombo" onchange="self:changeDifficulty(event)">
+                        <option data="1">Beginner</option>
+                        <option data="2">Adept</option>
+                        <option data="3">Expert</option>
+                        <option data="4">Master</option>
+                    </select>
+                    <button class="setupBtn" style="margin-left:25px;" onclick="self:showPreferred()"
+                        text="Preferred List"></button>
+                    <div class="vSep VerticalSeparator" style="margin-left:25px;"></div>
+                    <button class="setupBtn" onclick="self:rerollMonsters()" text="Reroll Tasks"
+                        style="margin-left:25px;" *disabled="self.rerollPoints == 0"></button>
+                    <div class="rerollBox" style="margin-left:12px;">
+                        <img class="rerollBoxIcon" src="/game_taskboard/assets/images/icon-currency-taskreroll" />
+                        <label class="rerollBoxLabel">{{self.rerollPoints}}</label>
+                    </div>
+                    <img class="warningIcon" src="/images/icons/icon-inline-warning"
+                        *tooltip="'You have reached the maximum of 10 Reroll Tokens.\nComplete tasks or reroll to make room for more.\nDo not worry, unclaimed daily tokens are never lost!'"
+                        *visible="self.claimDailyWarning" />
+                    <button class="setupBtn setupBtnWithIcon" *enabled="self.claimDailyAvailable"
+                        onclick="self:claimDaily()" text="Claim Daily">
+
+                    </button>
+                </div>
+            </div>
+
+            <!-- Three task cards -->
+            <div class="taskCardsWrap borderQt">
+                <div *for="local task in self.bountyTasks" class="taskCard">
+                    <div class="taskBackdrop" *image-source="task.backdrop">
+                        <label class="taskBackdropLabel">{{task.name}}</label>
+                    </div>
+                    <div class="taskPreviewCenterWrap">
+                        <div class="taskPreviewBox">
+                            <uicreature class="taskCreature" *outfit="task.outfit" *visible="task.raceId ~= 0"
+                                idle-animate="true"></uicreature>
+                            <div class="taskNoCreature" *visible="task.raceId == 0"></div>
+                        </div>
+                    </div>
+                    <div class="taskKillsCenter">
+                        <label class="taskKillsLabel" *text="task.current..'/'..task.total..' kills'"></label>
+                    </div>
+                    <hr style="height: 2px; width: 90%; margin-left: 15px" />
+                    <label class="taskRewardTitle">Reward:</label>
+                    <div class="taskRewardRow">
+                        <img class="taskBullet" style="height: 10px; width: 9px;"
+                            src="/game_taskboard/assets/images/monster-icon-diamond-inactive" />
+                        <label *text="task.xp .. ' XP'"></label>
+                    </div>
+                    <div class="taskRewardRow">
+                        <img class="taskBullet" style="height: 10px; width: 9px;"
+                            src="/game_taskboard/assets/images/monster-icon-diamond-inactive" />
+                        <label>{{task.points}}</label>
+                        <img class="taskRewardIcon" src="/game_taskboard/assets/images/icon-currency-bountypoints" />
+                    </div>
+                    <div class="taskRewardRow">
+                        <img class="taskBullet" style="height: 10px; width: 9px;"
+                            src="/game_taskboard/assets/images/monster-icon-diamond-inactive" />
+                        <label>{{task.reroll}}</label>
+                        <img class="taskRewardIcon" src="/game_taskboard/assets/images/icon-currency-taskreroll" />
+                    </div>
+                    <button class="taskActionBtn" disabled="true" *visible="task.isCompleted">Completed</button>
+                    <button class="taskActionBtn"
+                        *visible="not task.isCompleted and not task.isActive and task.raceId ~= 0"
+                        onclick="self:selectTask(task.taskIndex)">Select Task</button>
+                    <button class="taskActionBtn" disabled="true"
+                        *visible="not task.isCompleted and task.isActive and not task.canClaim">In
+                        Progress</button>
+                    <button class="taskActionBtn" *visible="not task.isCompleted and task.isActive and task.canClaim"
+                        onclick="self:claimReward()">Claim Reward</button>
+                </div>
+            </div>
+
+            <!-- Bounty Ring -->
+            <div class="staticWindow talismanBar" title="Bounty Talisman">
+                <div class="talismanRow">
+                    <img class="talismanHelpIcon" src="/images/skin/show-gui-help-grey"
+                        *tooltip="'Upgrades to your Bounty Talisman are permanent and bound to\nyour character.\n\nEquip your Bounty Talisman to activate its effects, but they only\napply when battling creatures from your active Bounty Task.\n\nYou can buy a Bounty Talisman from any Jeweller for 5,000 gold.'" />
+                    <div class="vSep VerticalSeparator talismanSep"></div>
+                    <div *for="local t in self.talismans" class="talismanItemWrap">
+                        <div class="vSep VerticalSeparator talismanSep" *visible="t.showSeparator"></div>
+                        <div class="talismanEntry">
+                            <img class="talismanIcon" *src="t.icon" />
+                            <div class="talismanMeta">
+                                <label class="talismanTitle">{{t.title}}</label>
+                                <span class="talismanCurVal" *text="t.current"></span>
+                            </div>
+                            <div>
+                                <button class="talismanUpgradeBtn" *visible="t.upgradeable"
+                                    onclick="self:upgradeTalisman(t.statType)">{{t.buttonText}}</button>
+                                <div class="talismanCostBox" *visible="t.upgradeable">
+                                    <img class="talismanCostIcon"
+                                        src="/game_taskboard/assets/images/icon-currency-bountypoints" />
+                                    <label class="talismanCostLabel">{{t.cost}}</label>
+                                </div>
+                                <label class="talismanMaxed" *visible="not t.upgradeable">MAX</label>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /bounty tab -->
+
+
+        <!-- ══════════════════════════════════════════════════════════
+             WEEKLY TAB
+             ══════════════════════════════════════════════════════════ -->
+        <div class="contentPanel" *visible="self.activeTab == 2">
+
+            <!-- Weekly overlay is rendered after the weekly content so it stays above the minipanels -->
+
+            <!-- Kill + Delivery side by side — explicit widths, NO whitespace between boxes -->
+            <div class="weeklyTasksRow">
+                <div class="killTasksBox minipanel" title="Kill Tasks">
+                    <div *for="local m in self.weeklyMonsters" class="weeklyCard" *title="m.fullName">
+                        <div class="weeklyPreview">
+                            <uicreature class="weeklyCreature" *outfit="m.outfit" *visible="not m.anyCreature"
+                                idle-animate="true"></uicreature>
+                            <div class="weeklyAnyCreature" *visible="m.anyCreature" placement="center"></div>
+                        </div>
+                        <div class="weeklyInfo">
+                            <label class="weeklyCurrentLabel" *visible="m.showProgress">{{m.current}}</label>
+                            <label class="weeklyOfLabel" *visible="m.showProgress">of</label>
+                            <label class="weeklyTotalLabel" *visible="m.showProgress">{{m.total}}</label>
+                            <div class="weeklyDoneIcon" *visible="m.finished"></div>
+                        </div>
+                    </div>
+                    <div class="weeklyStoreBtn" *visible="self.weeklyShowExtraSlotUnlock" onclick="self:openTaskStore()">
+                        <img class="weeklyStoreBtnIcon" src="/images/store/icon-tibiastore" />
+                        <label class="weeklyStoreBtnLabel">Unlock permanently</label>
+                    </div>
+                </div>
+                <div class="deliveryTasksBox minipanel" title="Delivery Tasks">
+                    <div *for="local item in self.weeklyItems" class="weeklyCard" *title="item.itemName">
+                        <div class="weeklyPreview">
+                            <UIItem class="weeklyItemWidget" *visible="item.itemId > 0"
+                                *item-id="(item.itemId and item.itemId > 0) and item.itemId or 1"
+                                virtual="true"></UIItem>
+                        </div>
+                        <div class="weeklyInfo" style="top: -10px;">
+                            <label class="weeklyCurrentLabel" *visible="item.showProgress"
+                                *class-weeklyCurrentReady="item.canDeliver">{{item.current}}</label>
+                            <label class="weeklyOfLabel" *visible="item.showProgress">of</label>
+                            <label class="weeklyTotalLabel" *visible="item.showProgress">{{item.total}}</label>
+                            <div class="weeklyDoneIcon" *visible="item.delivered"></div>
+                            <button class="weeklyDeliverBtn" *enabled="item.canDeliver" text="Deliver"
+                                onclick="self:deliverItem(item.itemId, item.slotIndex)"></button>
+                        </div>
+                    </div>
+                    <div class="weeklyStoreBtn" *visible="self.weeklyShowExtraSlotUnlock" onclick="self:openTaskStore()">
+                        <img class="weeklyStoreBtnIcon" src="/images/store/icon-tibiastore" />
+                        <label class="weeklyStoreBtnLabel">Unlock permanently</label>
+                    </div>
+                </div>
+            </div>
+            <label class="weeklyXpLabel">{{self.weeklyXpText}}</label>
+
+            <!-- Progress + Rewards — NO whitespace between boxes -->
+            <div class="weeklyBottomRow">
+                <div class="weeklyProgressBox minipanel" title="Weekly Progress">
+                    <div class="weeklyProgLeftCol">
+                        <label class="weeklyProgLabelTop">Reward Multiplier</label>
+                        <label class="weeklyProgLabelBottom">Completed Tasks</label>
+                    </div>
+                    <div class="weeklyProgRightCol">
+                        <!-- NO whitespace between multiplier labels — each 127px, 5×127=635px -->
+                        <div class="multiplierRow">
+                            <label class="multiplierLabel">x1</label>
+                            <label class="multiplierLabel">x2</label>
+                            <label class="multiplierLabel">x3</label>
+                            <label class="multiplierLabel">x5</label>
+                            <label class="multiplierLabel">x8</label>
+                        </div>
+                        <div class="diveVertical">
+                            <div class="VerticalSeparator VerticalSeparatorTasks"></div>
+                            <div class="VerticalSeparator VerticalSeparatorTasks"></div>
+                            <div class="VerticalSeparator VerticalSeparatorTasks"></div>
+                            <div class="VerticalSeparator VerticalSeparatorTasks"></div>
+                        </div>
+                        <div class="progressTrack" *tooltip="self.weeklyProgressTooltip">
+                            <div class="progressFill" *style-width="tostring(self.weeklyProgressPct) .. '%'"></div>
+                        </div>
+
+                        <div class="thresholdRow">
+                            <label class="multiplierLabel">0</label>
+                            <label class="multiplierLabel">4</label>
+                            <label class="multiplierLabel">8</label>
+                            <label class="multiplierLabel">12</label>
+                            <label class="multiplierLabel">16</label>
+                            <label class="threshLabelRight">18</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="weeklyRewardsBox minipanel" title="Weekly Rewards">
+                    <div class="rewardInfoRow">
+                        <div class="rewardInfoPanel">
+                            <img class="rewardPanelIcon"
+                                src="/game_taskboard/assets/images/icon_tasksystem_promotionpoint" />
+                            <label class="rewardPanelLabel">{{self.weeklyRewardTokens}}</label>
+                        </div>
+                        <img class="rewardInfoIcon" src="/images/skin/show-gui-help-grey"
+                            *tooltip="self.weeklyRewardTokensTooltip" />
+                    </div>
+                    <div class="rewardInfoRow">
+                        <div class="rewardInfoPanel">
+                            <img class="rewardPanelIcon" src="/game_taskboard/assets/images/icon-currency-soulseals" />
+                            <label class="rewardPanelLabel">{{self.weeklyRewardSeals}}</label>
+                        </div>
+                        <img class="rewardInfoIcon" src="/images/skin/show-gui-help-grey"
+                            *tooltip="self.weeklyRewardSealsTooltip" />
+                    </div>
+                    <label class="remainingLabel" *text="self.weeklyRemainingDays .. ' day(s) remaining'"></label>
+                </div>
+            </div>
+
+            <!-- Difficulty overlay -->
+            <div class="diffOverlay" *visible="self.diffModalVisible">
+                <div class="diffOverlayCenter">
+                    <div class="diffModal minipanel" title="Weekly Tasks">
+                        <div class="diffBackdropWrap">
+                            <img class="diffBackdrop" src="/game_taskboard/assets/images/backdrop_weeklyresults" />
+                        </div>
+                        <div class="diffSummaryPanel" *visible="self.weeklyDifficultySummaryVisible">
+                            <label class="diffSummaryLabel" *text="self.weeklyDifficultyKillSummary"></label>
+                            <label class="diffSummaryLabel" *text="self.weeklyDifficultyDeliverySummary"></label>
+                            <div class="diffSummaryEarnedRow">
+                                <label class="diffSummaryEarnedPrefix" text="Total earned: "></label>
+                                <label class="diffSummaryEarnedValue" *text="self.weeklyDifficultyPointsEarned"></label>
+                                <img class="diffSummaryEarnedIcon"
+                                    src="/game_taskboard/assets/images/icon_tasksystem_promotionpoint" />
+                                <label class="diffSummaryEarnedAnd" text="and "></label>
+                                <label class="diffSummaryEarnedValue" *text=" self.weeklyDifficultySealsEarned"></label>
+                                <img class="diffSummaryEarnedSoulIcon"
+                                    src="/game_taskboard/assets/images/icon-currency-soulseals" />
+                            </div>
+                        </div>
+                        <label class="diffLabel">Select the difficulty for your next tasks.</label>
+                        <div class="diffButtonsPanel">
+                            <div *for="local d in self.weeklyDifficulties" class="diffButtonWrap" *tooltip="d.tooltip">
+                                <button class="diffBtn" *enabled="d.canSelect"
+                                    onclick="self:selectDifficulty(d.id)">{{d.name}}</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /weekly tab -->
+
+
+        <!-- ══════════════════════════════════════════════════════════
+             SHOP TAB
+             ══════════════════════════════════════════════════════════ -->
+        <div class="contentPanel" *visible="self.activeTab == 3">
+            <div class="shopOuter">
+                <div class="shopScroll borderQt"
+                    layout="type: grid; cell-size: 305 144; cell-spacing: 5; num-columns: 3">
+                        <div *for="local item in self.shopItems" class="shopCard" *title="item.title">
+                                <div class="shopPreview">
+                                    <uicreature class="shopCreature"
+                                        *if="item.previewType == 'creature'"
+                                        *outfit="{type=(item.lookType and item.lookType > 0) and item.lookType or 128, head=item.lookHead or 0, body=item.lookBody or 0, legs=item.lookLegs or 0, feet=item.lookFeet or 0, addons=item.lookAddons or 0, mount=item.lookMount or 0}"
+                                        idle-animate="true"></uicreature>
+                                    <UIItem class="shopItemWidget"
+                                        *if="item.previewType == 'item'"
+                                        *item-id="item.itemId"
+                                        virtual="true"></UIItem>
+                                    <img class="shopIconWidget" *if="item.previewType == 'icon'" *image-source="item.imageSource" />
+                                </div>
+                                <div class="shopInfo">
+                                    <label class="shopDescription">{{item.description}}</label>
+                                </div>
+                                    <hr class="shopSep" style="height: 2px;" />
+                                    <div class="shopActionRow">
+                                        <button class="shopBuyBtn"
+                                            *enabled="item.canAfford"
+                                            onclick="self:buyItem(item.id)">
+                                            <img src="/images/ui/icon-yes" *visible="item.bought" style="image-offset-y: 5"/>
+                                            <label class="infoPanelLabel" *text="item.bought and 'Bought' or 'Buy'"></label>
+                                        </button>
+                                        <div class="shopPriceBox"  style="width:106px;" >
+                                            <label class="shopPriceLabel">{{item.displayPrice}}</label>
+                                            <img class="shopPriceIcon"
+                                                src="/game_taskboard/assets/images/task-tokens" />
+                                        </div>
+                                    </div>
+                                <div class="shopTypeBackdrop" *image-source="item.backdrop"></div>
+                        </div>
+                </div>
+            </div>
+        </div><!-- /shop tab -->
+
+    </div><!-- /contentArea -->
+
+    <hr style="height: 2px; width: 97%; margin-left:12px ">
+    <!--  Bottom bar  -->
+    <div class="bottomBar">
+        <div class="infoPanel">
+            <img class="infoPanelIcon" src="/game_taskboard/assets/images/icon-currency-bountypoints" />
+            <label class="infoPanelLabel">{{self.bountyPoints}}</label>
+        </div>
+        <div class="infoPanel">
+            <img class="infoPanelIcon" src="/game_taskboard/assets/images/task-tokens" />
+            <label class="infoPanelLabel">{{self.taskShopPoints}}</label>
+        </div>
+        <div class="infoPanel">
+            <img class="infoPanelIcon" src="/game_taskboard/assets/images/icon-currency-soulseals" />
+            <label class="infoPanelLabel">{{self.soulpitPoints}}</label>
+        </div>
+        <button class="closeBtn" onclick="self:hide()" text="Close"></button>
+    </div>
+
+</window>
+
+</html>
