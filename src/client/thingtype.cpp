@@ -147,6 +147,10 @@ void ThingType::applyAppearanceFlags(const appearances::AppearanceFlags& flags)
         m_flags |= ThingFlagAttrForceUse;
     }
 
+    if (flags.has_usable() && flags.usable()) {
+        m_flags |= ThingFlagAttrUsable;
+    }
+
     if (flags.has_write()) {
         m_flags |= ThingFlagAttrWritable;
         m_maxTextLength = flags.write().max_text_length();
