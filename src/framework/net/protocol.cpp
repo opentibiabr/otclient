@@ -256,23 +256,49 @@ void Protocol::internalRecvData(const uint8_t* buffer, const uint16_t size)
 
 
     if (decompress) {
-        m_inputMessage->addCompressionFooter();
-
+        uint32_t totalSize = 0;
         static uint8_t zbuffer[InputMessage::BUFFER_MAXSIZE];
 
-        m_zstream.next_in = m_inputMessage->getDataBuffer();
-        m_zstream.next_out = zbuffer;
-        m_zstream.avail_in = m_inputMessage->getUnreadSize();
-        m_zstream.avail_out = InputMessage::BUFFER_MAXSIZE;
-        m_zstream.total_out = 0;
+        if (m_compressionMode == COMPRESSION_MODE_UNKNOWN || m_compressionMode == COMPRESSION_MODE_PER_PACKET) {
+            m_zstream.next_in = m_inputMessage->getDataBuffer();
+            m_zstream.next_out = zbuffer;
+            m_zstream.avail_in = m_inputMessage->getUnreadSize();
+            m_zstream.avail_out = InputMessage::BUFFER_MAXSIZE;
 
-        const int32_t ret = inflate(&m_zstream, Z_SYNC_FLUSH);
-        if (ret != Z_OK && ret != Z_STREAM_END) {
-            g_logger.traceError("failed to decompress message - {}", m_zstream.msg);
-            return;
+            const int32_t ret = inflate(&m_zstream, Z_FINISH);
+            totalSize = m_zstream.total_out;
+            if (ret == Z_STREAM_END && totalSize > 0) {
+                m_compressionMode = COMPRESSION_MODE_PER_PACKET;
+                inflateReset(&m_zstream);
+            } else if (m_compressionMode == COMPRESSION_MODE_UNKNOWN) {
+                // Detection: standard failed, fall through to sync-flush
+                inflateReset(&m_zstream);
+                m_compressionMode = COMPRESSION_MODE_STREAM;
+                totalSize = 0;
+            } else {
+                g_logger.traceError("failed to decompress message - {}", m_zstream.msg);
+                return;
+            }
+
         }
 
-        const uint32_t totalSize = m_zstream.total_out;
+        if (m_compressionMode == COMPRESSION_MODE_STREAM) {
+            m_inputMessage->addCompressionFooter();
+
+            m_zstream.next_in = m_inputMessage->getDataBuffer();
+            m_zstream.next_out = zbuffer;
+            m_zstream.avail_in = m_inputMessage->getUnreadSize();
+            m_zstream.avail_out = InputMessage::BUFFER_MAXSIZE;
+            m_zstream.total_out = 0;
+
+            const int32_t ret = inflate(&m_zstream, Z_SYNC_FLUSH);
+            if (ret != Z_OK && ret != Z_STREAM_END) {
+                g_logger.traceError("failed to decompress message - {}", m_zstream.msg);
+                return;
+            }
+            totalSize = m_zstream.total_out;
+        }
+
         if (totalSize == 0) {
             g_logger.traceError("invalid size of decompressed message - %i", totalSize);
             return;

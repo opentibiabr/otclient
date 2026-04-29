@@ -25,6 +25,13 @@
 #include "declarations.h"
 #include <framework/luaengine/luaobject.h>
 
+enum CompressionMode_t : uint8_t
+{
+    COMPRESSION_MODE_UNKNOWN = 0,
+    COMPRESSION_MODE_PER_PACKET = 1,
+    COMPRESSION_MODE_STREAM = 2,
+};
+
  // @bindclass
 class Protocol : public LuaObject
 {
@@ -102,6 +109,6 @@ private:
     ConnectionPtr m_connection;
 #endif
     InputMessagePtr m_inputMessage;
-
+    CompressionMode_t m_compressionMode{ COMPRESSION_MODE_UNKNOWN };
     z_stream m_zstream{};
 };
