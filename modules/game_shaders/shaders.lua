@@ -115,8 +115,10 @@ local function attachShaders()
     map:setShader('Default')
 
     local player = g_game.getLocalPlayer()
-    player:setShader('Default')
-    player:setMountShader('Default')
+    if player then
+        player:setShader('Default')
+        player:setMountShader('Default')
+    end
 end
 
 local registerShader = function(opts, method)
