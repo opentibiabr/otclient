@@ -40,6 +40,31 @@ local UI = nil
 
 focusCategoryList = nil
 
+local function getItemsViewState()
+    local defaults = {
+        selectedCategoryId = nil,
+        searchText = "",
+        vocationFilter = false,
+        levelFilter = false,
+        h1Filter = false,
+        h2Filter = false,
+        classificationFilter = 0,
+        selectedItemId = nil
+    }
+
+    if Cyclopedia.getTabState then
+        return Cyclopedia.getTabState("items", defaults)
+    end
+
+    return defaults
+end
+
+local function saveItemsViewState(statePatch)
+    if Cyclopedia.saveTabState then
+        Cyclopedia.saveTabState("items", statePatch)
+    end
+end
+
 -- JSON Data Management Functions
 function Cyclopedia.Items.terminate()
 	Cyclopedia.Items.saveJson()
@@ -607,11 +632,12 @@ end
 function showItems()
     UI = g_ui.loadUI("items", contentContainer)
     UI:show()
-    Cyclopedia.Items.VocFilter = false
-    Cyclopedia.Items.LevelFilter = false
-    Cyclopedia.Items.h1Filter = false
-    Cyclopedia.Items.h2Filter = false
-    Cyclopedia.Items.ClassificationFilter = 0
+    local viewState = getItemsViewState()
+    Cyclopedia.Items.VocFilter = viewState.vocationFilter == true
+    Cyclopedia.Items.LevelFilter = viewState.levelFilter == true
+    Cyclopedia.Items.h1Filter = viewState.h1Filter == true
+    Cyclopedia.Items.h2Filter = viewState.h2Filter == true
+    Cyclopedia.Items.ClassificationFilter = tonumber(viewState.classificationFilter) or 0
     UI.selectedCategory = nil
     UI.LootValue.NpcBuyCheck.onClick = Cyclopedia.onChangeLootValue
     UI.LootValue.MarketCheck.onClick = Cyclopedia.onChangeLootValue
@@ -687,12 +713,59 @@ function showItems()
             focusedChild:onClick()
         end
     })
+
+    local selectedCategoryId = tonumber(viewState.selectedCategoryId)
+    if selectedCategoryId then
+        for _, child in pairs(UI.CategoryList:getChildren()) do
+            if tonumber(child:getId()) == selectedCategoryId then
+                child:onClick()
+                break
+            end
+        end
+
+        UI.LevelButton:setChecked(Cyclopedia.Items.LevelFilter)
+        UI.VocationButton:setChecked(Cyclopedia.Items.VocFilter)
+
+        if Cyclopedia.Items.h1Filter then
+            UI.H1Button:setChecked(true)
+        elseif Cyclopedia.Items.h2Filter then
+            UI.H2Button:setChecked(true)
+        end
+
+        if UI.ItemFilter:isEnabled() then
+            local classFilter = Cyclopedia.Items.ClassificationFilter
+            if classFilter == -1 then
+                UI.ItemFilter:setOption("None", true)
+            elseif classFilter >= 1 and classFilter <= 4 then
+                UI.ItemFilter:setOption("Class " .. classFilter, true)
+            else
+                UI.ItemFilter:setOption("All", true)
+            end
+        end
+    end
+
+    UI.SearchEdit:setText(viewState.searchText or "")
+    if UI.SearchEdit:getText() ~= "" then
+        Cyclopedia.ItemSearch(UI.SearchEdit:getText(), false)
+    end
+
+    local selectedItemId = tonumber(viewState.selectedItemId)
+    if selectedItemId then
+        for _, child in pairs(UI.ItemListBase.List:getChildren()) do
+            if tonumber(child:getId()) == selectedItemId and child.onClick then
+                child:onClick()
+                break
+            end
+        end
+    end
 end
 
 function Cyclopedia.onCategoryChange(widget)
     if widget:isChecked() then
-        Cyclopedia.selectItemCategory(tonumber(widget:getId()))
+        local categoryId = tonumber(widget:getId())
+        Cyclopedia.selectItemCategory(categoryId)
         UI.selectedCategory = widget
+        saveItemsViewState({ selectedCategoryId = categoryId })
     end
 end
 
@@ -707,12 +780,14 @@ end
 function Cyclopedia.vocationFilter(value)
     UI.ItemListBase.List:destroyChildren()
     Cyclopedia.Items.VocFilter = value
+    saveItemsViewState({ vocationFilter = value == true })
     Cyclopedia.applyFilters()
 end
 
 function Cyclopedia.levelFilter(value)
     UI.ItemListBase.List:destroyChildren()
     Cyclopedia.Items.LevelFilter = value
+    saveItemsViewState({ levelFilter = value == true })
     Cyclopedia.applyFilters()
 end
 
@@ -727,6 +802,10 @@ end
 function Cyclopedia.handFilter(h1Val, h2Val)
     Cyclopedia.Items.h1Filter = h1Val
     Cyclopedia.Items.h2Filter = h2Val
+    saveItemsViewState({
+        h1Filter = h1Val == true,
+        h2Filter = h2Val == true
+    })
 
     if ignoreRecursiveCalls then
         return
@@ -740,6 +819,7 @@ end
 function Cyclopedia.classificationFilter(data)
     UI.ItemListBase.List:destroyChildren()
     Cyclopedia.Items.ClassificationFilter = tonumber(data)
+    saveItemsViewState({ classificationFilter = Cyclopedia.Items.ClassificationFilter })
     Cyclopedia.applyFilters()
 end
 
@@ -883,6 +963,7 @@ function Cyclopedia.internalCreateItem(data)
             UI.SelectedItem.Rarity:setImageSource("")
         end
         widget:setBackgroundColor("#585858")
+        saveItemsViewState({ selectedItemId = itemId })
        
         if modules.game_quickloot.QuickLoot.data.filter == 2 then
             UI.InfoBase.quickLootCheck:setText("Loot when Quick Looting")
@@ -1012,6 +1093,8 @@ function Cyclopedia.ItemSearch(text, clearTextEdit)
     if clearTextEdit then
         UI.SearchEdit:setText("")
     end
+
+    saveItemsViewState({ searchText = UI.SearchEdit:getText() or "" })
 end
 
 local function isHandWeapon(id)
@@ -1027,6 +1110,17 @@ function Cyclopedia.selectItemCategory(id)
     UI.VocationButton:setChecked(false)
     Cyclopedia.Items.VocFilter = false
     Cyclopedia.Items.LevelFilter = false
+    Cyclopedia.Items.h1Filter = false
+    Cyclopedia.Items.h2Filter = false
+    Cyclopedia.Items.ClassificationFilter = 0
+    saveItemsViewState({
+        selectedCategoryId = id,
+        vocationFilter = false,
+        levelFilter = false,
+        h1Filter = false,
+        h2Filter = false,
+        classificationFilter = 0
+    })
 
     if UI.SearchEdit:getText() ~= "" then
         Cyclopedia.ItemSearch("", true)

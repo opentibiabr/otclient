@@ -25,6 +25,102 @@ local tabStack = {}
 local previousType = nil
 local windowTypes = {}
 local magicalArchives = nil
+
+Cyclopedia.SessionState = Cyclopedia.SessionState or {
+    lastWindow = "items",
+    tabStates = {}
+}
+
+local function copyTable(source)
+    local result = {}
+    if type(source) ~= "table" then
+        return result
+    end
+
+    for key, value in pairs(source) do
+        if type(value) == "table" then
+            result[key] = copyTable(value)
+        else
+            result[key] = value
+        end
+    end
+
+    return result
+end
+
+local function ensureSessionState()
+    Cyclopedia.SessionState = Cyclopedia.SessionState or {}
+    Cyclopedia.SessionState.lastWindow = Cyclopedia.SessionState.lastWindow or "items"
+    Cyclopedia.SessionState.tabStates = Cyclopedia.SessionState.tabStates or {}
+    return Cyclopedia.SessionState
+end
+
+function Cyclopedia.getTabState(tabName, defaults)
+    if type(tabName) ~= "string" or tabName == "" then
+        return copyTable(defaults)
+    end
+
+    local sessionState = ensureSessionState()
+    local savedState = sessionState.tabStates[tabName]
+    local base = copyTable(defaults)
+    if type(savedState) ~= "table" then
+        return base
+    end
+
+    for key, value in pairs(savedState) do
+        if type(value) == "table" then
+            base[key] = copyTable(value)
+        else
+            base[key] = value
+        end
+    end
+    return base
+end
+
+function Cyclopedia.saveTabState(tabName, statePatch)
+    if type(tabName) ~= "string" or tabName == "" or type(statePatch) ~= "table" then
+        return
+    end
+
+    local sessionState = ensureSessionState()
+    local current = sessionState.tabStates[tabName]
+    if type(current) ~= "table" then
+        current = {}
+        sessionState.tabStates[tabName] = current
+    end
+
+    for key, value in pairs(statePatch) do
+        if type(value) == "table" then
+            current[key] = copyTable(value)
+        else
+            current[key] = value
+        end
+    end
+end
+
+function Cyclopedia.resetTabState(tabName)
+    if type(tabName) ~= "string" or tabName == "" then
+        return
+    end
+
+    local sessionState = ensureSessionState()
+    sessionState.tabStates[tabName] = nil
+end
+
+local function resolveCyclopediaWindow(defaultWindow)
+    if defaultWindow and windowTypes[defaultWindow] then
+        return defaultWindow
+    end
+
+    local sessionState = ensureSessionState()
+    local lastWindow = sessionState.lastWindow
+    if lastWindow and windowTypes[lastWindow] then
+        return lastWindow
+    end
+
+    return "items"
+end
+
 function toggle(defaultWindow)
     if not controllerCyclopedia.ui then
         return
@@ -44,7 +140,7 @@ end
 function controllerCyclopedia:onGameStart()
     if g_game.getClientVersion() >= 1310 then
         CyclopediaButton = modules.game_mainpanel.addToggleButton('CyclopediaButton', tr('Cyclopedia'),
-            '/images/options/cooldowns', function() toggle("items") end, false, 7)
+            '/images/options/cooldowns', function() toggle() end, false, 7)
         ButtonBossSlot = modules.game_mainpanel.addToggleButton("bossSlot", tr("Open Boss Slots dialog"),
             "/images/options/ButtonBossSlot", function() toggle("bossSlot") end, false, 20)
         CyclopediaButton:setOn(false)
@@ -98,12 +194,16 @@ function controllerCyclopedia:onGameStart()
             onCyclopediaCharacterRecentKills = Cyclopedia.loadCharacterRecentKills,
             onUpdateCyclopediaCharacterItemSummary = Cyclopedia.loadCharacterItems,
             onParseCyclopediaCharacterAppearances = Cyclopedia.loadCharacterAppearances,
+            onParseCyclopediaCharacterTitles = Cyclopedia.loadCharacterTitles,
             onParseCyclopediaStoreSummary = Cyclopedia.onParseCyclopediaStoreSummary,
             -- character 14.10
             onCyclopediaCharacterOffenceStats = Cyclopedia.onCyclopediaCharacterOffenceStats,
             onCyclopediaCharacterDefenceStats = Cyclopedia.onCyclopediaCharacterDefenceStats,
             onCyclopediaCharacterMiscStats = Cyclopedia.onCyclopediaCharacterMiscStats,
-
+            -- houses
+            onParseCyclopediaHouseAuctionMessage = Cyclopedia.onParseCyclopediaHouseAuctionMessage,
+            onParseCyclopediaHousesInfo = Cyclopedia.onParseCyclopediaHousesInfo,
+            onParseCyclopediaHouseList = Cyclopedia.onParseCyclopediaHouseList,
 
             -- charms
             onUpdateBestiaryCharmsData = Cyclopedia.loadCharms,
@@ -416,6 +516,10 @@ function controllerCyclopedia:onGameEnd()
     end
     
     -- Don't clear currentCharacter here - keep it for character change detection
+    Cyclopedia.SessionState = {
+        lastWindow = "items",
+        tabStates = {}
+    }
     
     Keybind.delete("Windows", "Show/hide Bosstiary Tracker")
     Keybind.delete("Windows", "Show/hide Bestiary Tracker")
@@ -493,7 +597,8 @@ function show(defaultWindow)
     controllerCyclopedia.ui:show()
     controllerCyclopedia.ui:raise()
     controllerCyclopedia.ui:focus()
-    SelectWindow(defaultWindow, false)
+    local windowToShow = resolveCyclopediaWindow(defaultWindow)
+    SelectWindow(windowToShow, false)
     controllerCyclopedia.ui.GoldBase.Value:setText(Cyclopedia.formatGold(g_game.getLocalPlayer():getTotalMoney()))
 end
 
@@ -506,6 +611,10 @@ function toggleBack()
 end
 
 function SelectWindow(type, isBackButtonPress)
+    if not windowTypes[type] then
+        type = resolveCyclopediaWindow(nil)
+    end
+
     if previousType then
         local previousWindow = windowTypes[previousType]
         previousWindow.obj:enable()
@@ -522,6 +631,8 @@ function SelectWindow(type, isBackButtonPress)
         window.obj:setOn(true)
         window.obj:disable()
         previousType = type
+        local sessionState = ensureSessionState()
+        sessionState.lastWindow = type
         if window.func then
             window.func(contentContainer)
         end

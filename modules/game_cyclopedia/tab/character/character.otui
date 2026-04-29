@@ -1,3 +1,49 @@
+CharacterTitleListRow < UIWidget
+  height: 20
+  focusable: true
+  phantom: false
+
+  UIWidget
+    id: Background
+    anchors.fill: parent
+    background-color: #484848
+
+  Label
+    id: Name
+    anchors.left: parent.left
+    anchors.right: PermanentValue.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 6
+    margin-right: 6
+    color: #C0C0C0
+    text-auto-resize: true
+
+  Label
+    id: PermanentValue
+    anchors.right: UnlockedValue.left
+    anchors.verticalCenter: parent.verticalCenter
+    width: 72
+    margin-right: 6
+    text-align: center
+    color: #C0C0C0
+
+  Label
+    id: UnlockedValue
+    anchors.right: parent.right
+    anchors.verticalCenter: parent.verticalCenter
+    width: 72
+    margin-right: 6
+    text-align: center
+    color: #C0C0C0
+
+  Label
+    id: SelectedMarker
+    anchors.right: PermanentValue.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-right: 3
+    color: #DCDCDC
+    text-auto-resize: true
+
 UIWidget
   id: Cat6
   anchors.fill: parent
@@ -1780,14 +1826,163 @@ UIWidget
     anchors.right: parent.right
     margin-left: 10
     visible: false
-
+    Label
+      id: CurrentTitleLabel
+      anchors.top: parent.top
+      anchors.horizontalCenter: parent.horizontalCenter
+      margin-top: 4
+      !text: tr('Your Current Character Title')
+      color: #C0C0C0
+      text-auto-resize: true
+    Label
+      id: CurrentTitleValue
+      anchors.top: CurrentTitleLabel.bottom
+      anchors.horizontalCenter: CurrentTitleLabel.horizontalCenter
+      margin-top: 3
+      !text: tr('(No character title selected)')
+      color: #C0C0C0
+      text-auto-resize: true
+    Label
+      id: AvailableTitleLabel
+      anchors.top: CurrentTitleValue.bottom
+      anchors.horizontalCenter: parent.horizontalCenter
+      margin-top: 4
+      !text: tr('Available Character Titles')
+      color: #C0C0C0
+      text-auto-resize: true
+    UIWidget
+      id: filters
+      height: 48
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: AvailableTitleLabel.bottom
+      margin-top: 4
+      image-source: /images/ui/2pixel_up_frame_borderimage
+      image-border: 5
+      UIWidget
+        id: filterOptionsType
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: 20
+        margin-top: 2
+        CheckBoxCircle
+          id: all
+          width: 70
+          text: All
+          color: #C0C0C0
+          text-offset: 15 0
+          anchors.left: parent.left
+          margin-left: 6
+          @onCheckChange: modules.game_cyclopedia.Cyclopedia.characterTitlesTypeFilter(self)
+        CheckBoxCircle
+          id: permanent
+          width: 95
+          text: Permanent
+          color: #C0C0C0
+          text-offset: 15 0
+          anchors.left: all.right
+          margin-left: 5
+          @onCheckChange: modules.game_cyclopedia.Cyclopedia.characterTitlesTypeFilter(self)
+        CheckBoxCircle
+          id: temporary
+          width: 95
+          text: Temporary
+          color: #C0C0C0
+          text-offset: 15 0
+          anchors.left: permanent.right
+          margin-left: 5
+          @onCheckChange: modules.game_cyclopedia.Cyclopedia.characterTitlesTypeFilter(self)
+      UIWidget
+        id: filterOptionsUnlock
+        anchors.top: filterOptionsType.bottom
+        anchors.left: parent.left
+        anchors.right: SearchEdit.left
+        height: 20
+        margin-top: 1
+        CheckBoxCircle
+          id: unlocked
+          width: 85
+          text: Unlocked
+          color: #C0C0C0
+          text-offset: 15 0
+          anchors.left: parent.left
+          margin-left: 6
+          @onCheckChange: modules.game_cyclopedia.Cyclopedia.characterTitlesUnlockFilter(self)
+        CheckBoxCircle
+          id: locked
+          width: 70
+          text: Locked
+          color: #C0C0C0
+          text-offset: 15 0
+          anchors.left: unlocked.right
+          margin-left: 10
+          @onCheckChange: modules.game_cyclopedia.Cyclopedia.characterTitlesUnlockFilter(self)
+      TextEdit
+        id: SearchEdit
+        size: 180 16
+        anchors.top: filterOptionsType.bottom
+        anchors.right: parent.right
+        margin-right: 6
+        margin-top: 2
+        padding-top: 2
+        padding-right: 15
+        padding-bottom: 0
+        placeholder: Type to search
+        placeholder-color: #6E706F
+        @onTextChange: modules.game_cyclopedia.Cyclopedia.characterTitlesSearch(self:getText())
+    UIWidget
+      id: columns
+      height: 18
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: filters.bottom
+      margin-top: 3
+      image-source: /images/ui/2pixel_up_frame_borderimage
+      image-border: 5
+      Label
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 8
+        !text: tr('Name')
+        color: #C0C0C0
+      Label
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        margin-right: 88
+        !text: tr('Permanent')
+        color: #C0C0C0
+      Label
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        margin-right: 14
+        !text: tr('Unlocked')
+        color: #C0C0C0
+    BorderBox
+      id: ListBase
+      anchors.top: columns.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
+      margin-top: 2
+      margin-bottom: 10
+      UIScrollArea
+        id: List
+        vertical-scrollbar: ListScrollbar
+        anchors.fill: parent
+        margin: 1
+        margin-right: 15
+        background-color: #404040
+        layout:
+          type: verticalBox
+          spacing: 1
       VerticalScrollBar
         id: ListScrollbar
         anchors.top: List.top
         anchors.right: List.right
         anchors.bottom: List.bottom
         margin: 1
-
+        margin-right: -13
         step: 80
         pixel-scroll: true
 

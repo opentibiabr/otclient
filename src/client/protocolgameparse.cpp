@@ -4466,65 +4466,151 @@ void ProtocolGame::parseMonkData(const InputMessagePtr& msg) {
 
 void ProtocolGame::parseCyclopediaHouseAuctionMessage(const InputMessagePtr& msg)
 {
-    msg->getU32(); // houseId
-    const uint8_t typeValue = msg->getU8();
-    if (typeValue == 1) {
-        msg->getU8(); // 0x00
+    const auto failParse = [&](std::string_view /*reason*/) {
+        msg->setReadPos(msg->getMessageSize());
+    };
+
+    if (msg->getUnreadSize() < 6) {
+        failParse("insufficient bytes to decode header");
+        return;
     }
-    msg->getU8(); // index
-    // TO-DO Lua - Otui
+
+    const uint32_t houseId = msg->getU32();
+    const auto auctionType = static_cast<Otc::CyclopediaHouseAuctionType_t>(msg->getU8());
+
+    uint8_t bidSuccessOrError = 0xFF;
+    if (auctionType == Otc::CYCLOPEDIA_HOUSE_TYPE_BID) {
+        if (msg->getUnreadSize() < 2) {
+            failParse("missing bid callback payload");
+            return;
+        }
+        bidSuccessOrError = msg->getU8();
+    }
+
+    if (msg->getUnreadSize() < 1) {
+        failParse("missing result index");
+        return;
+    }
+
+    const uint8_t index = msg->getU8();
+
+    g_lua.callGlobalField("g_game", "onParseCyclopediaHouseAuctionMessage", houseId, auctionType, index, bidSuccessOrError);
 }
 
 void ProtocolGame::parseCyclopediaHousesInfo(const InputMessagePtr& msg)
 {
-    msg->getU32(); // houseClientId
-    msg->getU8(); // 0x00
+    const auto failParse = [&](std::string_view /*reason*/) {
+        msg->setReadPos(msg->getMessageSize());
+    };
 
-    msg->getU8(); // accountHouseCount
-
-    msg->getU8(); // 0x00
-
-    msg->getU8(); // 3
-    msg->getU8(); // 3
-
-    msg->getU8(); // 0x01
-
-    msg->getU8(); // 0x01
-    msg->getU32(); // houseClientId
-
-    const uint16_t housesList = msg->getU16(); // g_game().map.houses.getHouses()
-    for (auto i = 0; i < housesList; ++i) {
-        msg->getU32(); // getClientId
+    if (msg->getUnreadSize() < 11) {
+        failParse("insufficient bytes to decode metadata header");
+        return;
     }
-    // TO-DO Lua // Otui
+
+    const uint32_t currentHouseId = msg->getU32();
+    const uint8_t unknownHeaderA = msg->getU8();
+    const uint8_t accountHouseCount = msg->getU8();
+    const uint8_t unknownHeaderB = msg->getU8();
+    const uint8_t maxTownHouses = msg->getU8();
+    const uint8_t maxGuildHouses = msg->getU8();
+
+    const uint8_t highlightedEntriesCount = msg->getU8();
+    std::vector<std::tuple<uint8_t, uint32_t>> highlightedEntries;
+    highlightedEntries.reserve(highlightedEntriesCount);
+    for (auto i = 0; i < highlightedEntriesCount; ++i) {
+        if (msg->getUnreadSize() < 5) {
+            failParse("insufficient bytes while reading highlighted entries");
+            return;
+        }
+
+        const uint8_t entryType = msg->getU8();
+        const uint32_t highlightedHouseId = msg->getU32();
+        highlightedEntries.emplace_back(entryType, highlightedHouseId);
+    }
+
+    if (msg->getUnreadSize() < 2) {
+        failParse("missing houses list size");
+        return;
+    }
+
+    const uint16_t housesListCount = msg->getU16();
+    std::vector<uint32_t> housesList;
+    housesList.reserve(housesListCount);
+    for (auto i = 0; i < housesListCount; ++i) {
+        if (msg->getUnreadSize() < 4) {
+            failParse("insufficient bytes while reading houses list");
+            return;
+        }
+        housesList.push_back(msg->getU32());
+    }
+
+    g_lua.callGlobalField("g_game", "onParseCyclopediaHousesInfo", currentHouseId, accountHouseCount, highlightedEntries, housesList,
+                          maxTownHouses, maxGuildHouses, unknownHeaderA, unknownHeaderB);
 }
 
 void ProtocolGame::parseCyclopediaHouseList(const InputMessagePtr& msg)
 {
+    const auto failParse = [&](std::string_view /*reason*/) {
+        msg->setReadPos(msg->getMessageSize());
+    };
+
+    if (msg->getUnreadSize() < 2) {
+        failParse("missing houses count");
+        return;
+    }
+
     const uint16_t housesCount = msg->getU16(); // housesCount
+    std::vector<std::tuple<uint32_t, uint8_t, uint64_t, uint32_t, uint64_t, uint8_t, uint32_t, uint32_t, uint64_t, uint8_t, uint8_t, uint8_t, uint8_t, uint8_t>> houseData;
+    std::vector<std::tuple<std::string, std::string, std::string>> houseExtraData;
+    houseData.reserve(housesCount);
+    houseExtraData.reserve(housesCount);
+
     for (auto i = 0; i < housesCount; ++i) {
-        msg->getU32(); // clientId
+        if (msg->getUnreadSize() < 6) {
+            failParse("insufficient bytes while decoding house entry header");
+            return;
+        }
+
+        const uint32_t houseId = msg->getU32();
         msg->getU8(); // 0x00 = Renovation, 0x01 = Available
 
         const auto type = static_cast<Otc::CyclopediaHouseState_t>(msg->getU8());
+
+        uint64_t bidHolderLimit = 0;
+        uint32_t bidEnd = 0;
+        uint64_t highestBid = 0;
+        uint8_t selfCanBid = 0;
+        uint32_t paidUntil = 0;
+        uint32_t transferTime = 0;
+        uint64_t transferValue = 0;
+        uint8_t hasTransferOwner = 0;
+        uint8_t canAcceptTransfer = 0;
+        uint8_t canRejectTransfer = 0;
+        uint8_t canCancelTransfer = 0;
+        uint8_t canCancelMoveOut = 0;
+        std::string ownerName;
+        std::string bidName;
+        std::string transferPlayerName;
+
         switch (type) {
             case Otc::CYCLOPEDIA_HOUSE_STATE_AVAILABLE: {
-                std::string bidderName = msg->getString();
+                bidName = msg->getString();
                 const auto isBidder = static_cast<bool>(msg->getU8());
-                msg->getU8(); // disableIndex
+                selfCanBid = msg->getU8(); // disableIndex
 
-                if (!bidderName.empty()) {
-                    msg->getU32(); // bidEndDate
-                    msg->getU64(); // highestBid
+                if (!bidName.empty()) {
+                    bidEnd = msg->getU32();
+                    highestBid = msg->getU64();
                     if (isBidder) {
-                        msg->getU64(); // bidHolderLimit
+                        bidHolderLimit = msg->getU64();
                     }
                 }
                 break;
             }
             case Otc::CYCLOPEDIA_HOUSE_STATE_RENTED: {
-                msg->getString(); // ownerName
-                msg->getU32(); // paidUntil
+                ownerName = msg->getString();
+                paidUntil = msg->getU32();
 
                 const auto isRented = static_cast<bool>(msg->getU8());
                 if (isRented) {
@@ -4534,48 +4620,56 @@ void ProtocolGame::parseCyclopediaHouseList(const InputMessagePtr& msg)
                 break;
             }
             case Otc::CYCLOPEDIA_HOUSE_STATE_TRANSFER: {
-                msg->getString(); // ownerName
-                msg->getU32(); // paidUntil
+                ownerName = msg->getString();
+                paidUntil = msg->getU32();
                 const auto isOwner = static_cast<bool>(msg->getU8());
                 if (isOwner) {
                     msg->getU8(); // unknown
                     msg->getU8(); // unknown
                 }
-                msg->getU32(); // bidEndDate
-                msg->getString(); // bidderName
+                transferTime = msg->getU32();
+                transferPlayerName = msg->getString();
                 msg->getU8(); // unknown
-                msg->getU64(); // internalBid
+                transferValue = msg->getU64();
 
                 const auto isNewOwner = static_cast<bool>(msg->getU8());
                 if (isNewOwner) {
-                    msg->getU8(); // acceptTransferError
-                    msg->getU8(); // rejectTransferError
+                    hasTransferOwner = 1;
+                    canAcceptTransfer = msg->getU8();
+                    canRejectTransfer = msg->getU8();
                 }
 
                 if (isOwner) {
-                    msg->getU8(); // cancelTransferError
+                    canCancelTransfer = msg->getU8();
                 }
                 break;
             }
             case Otc::CYCLOPEDIA_HOUSE_STATE_MOVEOUT: {
-                msg->getString(); // ownerName
-                msg->getU32(); // paidUntil
+                ownerName = msg->getString();
+                paidUntil = msg->getU32();
 
                 const auto isOwner = static_cast<bool>(msg->getU8());
                 if (isOwner) {
                     msg->getU8(); // unknown
                     msg->getU8(); // unknown
-                    msg->getU32(); // bidEndDate
-                    msg->getU8(); // unknown
+                    transferTime = msg->getU32();
+                    canCancelMoveOut = msg->getU8();
                 } else {
-                    msg->getU32(); // bidEndDate
+                    transferTime = msg->getU32();
                 }
 
                 break;
             }
+            default:
+                failParse(fmt::format("unknown house state {} for houseId {}", static_cast<int>(type), houseId));
+                return;
         }
+
+        houseData.emplace_back(houseId, static_cast<uint8_t>(type), bidHolderLimit, bidEnd, highestBid, selfCanBid, paidUntil, transferTime,
+                               transferValue, hasTransferOwner, canAcceptTransfer, canRejectTransfer, canCancelTransfer, canCancelMoveOut);
+        houseExtraData.emplace_back(ownerName, bidName, transferPlayerName);
     }
-    // TO-DO Lua - Otui
+    g_lua.callGlobalField("g_game", "onParseCyclopediaHouseList", houseData, houseExtraData);
 }
 
 void ProtocolGame::parseSupplyStash(const InputMessagePtr& msg)
@@ -5254,14 +5348,24 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
         }
         case Otc::CYCLOPEDIA_CHARACTERINFO_TITLES:
         {
-            msg->getU8(); // current title
+            const uint8_t currentTitle = msg->getU8();
             const uint8_t titlesSize = msg->getU8();
+            const bool hasTitleId = g_game.getClientVersion() >= 1412;
+
+            std::vector<std::tuple<uint8_t, std::string, std::string, bool, bool>> titles;
+            titles.reserve(titlesSize);
+
             for (auto i = 0; i < titlesSize; ++i) {
-                msg->getString(); // title name
-                msg->getString(); // title description
-                msg->getU8(); // bool title permanent
-                msg->getU8(); // bool title unlocked
+                const uint8_t titleId = hasTitleId ? msg->getU8() : static_cast<uint8_t>(i + 1);
+                const auto& titleName = msg->getString();
+                const auto& titleDescription = msg->getString();
+                const bool titlePermanent = static_cast<bool>(msg->getU8());
+                const bool titleUnlocked = static_cast<bool>(msg->getU8());
+
+                titles.emplace_back(titleId, titleName, titleDescription, titlePermanent, titleUnlocked);
             }
+
+            g_lua.callGlobalField("g_game", "onParseCyclopediaCharacterTitles", currentTitle, titles);
             break;
         }
         case Otc::CYCLOPEDIA_CHARACTERINFO_OFFENCESTATS:
