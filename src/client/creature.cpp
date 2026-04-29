@@ -1205,7 +1205,10 @@ uint16_t Creature::getCurrentAnimationPhase(const bool mount)
         const long long animationPeriod = static_cast<long long>(ticksPerFrame) * animationPhases;
         if (animationPeriod <= 0) return 0;
 
-        return static_cast<uint16_t>((g_clock.millis() % animationPeriod) / ticksPerFrame);
+        // When a static idle frame group exists (no idleAnimator but idle sprites are present),
+        // skip over the idle phase(s) so animateAlways only cycles through the moving frames.
+        const int idlePhases = thingType->getIdleAnimationPhases();
+        return static_cast<uint16_t>(idlePhases + (g_clock.millis() % animationPeriod) / ticksPerFrame);
     }
 
     return isDisabledWalkAnimation() ? 0 : m_walkAnimationPhase;

@@ -41,6 +41,21 @@ void Animator::unserializeAppearance(const appearances::SpriteAnimation& animati
         m_phaseDurations.emplace_back(phase.duration_min(), phase.duration_max());
     }
 
+    // Replace zero-duration phases with the first non-zero duration found.
+    // Zero durations in protobuf data cause instant phase cycling (1ms per phase),
+    // making the animation appear broken. The missing duration inherits from its neighbours.
+    {
+        int fallbackMin = 0, fallbackMax = 0;
+        for (const auto& [mn, mx] : m_phaseDurations) {
+            if (mn > 0 || mx > 0) { fallbackMin = mn; fallbackMax = mx; break; }
+        }
+        if (fallbackMin > 0 || fallbackMax > 0) {
+            for (auto& [mn, mx] : m_phaseDurations) {
+                if (mn == 0 && mx == 0) { mn = fallbackMin; mx = fallbackMax; }
+            }
+        }
+    }
+
     m_phase = getStartPhase();
 
     assert(m_animationPhases == static_cast<int>(m_phaseDurations.size()));
