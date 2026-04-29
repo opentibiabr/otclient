@@ -71,7 +71,7 @@ public:
     void enableChecksum() { m_checksumEnabled = true; }
     void enabledSequencedPackets() { m_sequencedPackets = true; }
 
-    virtual void send(const OutputMessagePtr& outputMessage);
+    virtual void send(const OutputMessagePtr& outputMessage, bool raw = false);
     virtual void recv();
 
     ProtocolPtr asProtocol() { return static_self_cast<Protocol>(); }

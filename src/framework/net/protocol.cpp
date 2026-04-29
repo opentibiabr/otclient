@@ -119,7 +119,7 @@ bool Protocol::isConnecting()
     return m_connection && m_connection->isConnecting();
 }
 
-void Protocol::send(const OutputMessagePtr& outputMessage)
+void Protocol::send(const OutputMessagePtr& outputMessage, bool raw)
 {
     if (m_player) {
         m_player->onOutputPacket(outputMessage);
@@ -130,28 +130,30 @@ void Protocol::send(const OutputMessagePtr& outputMessage)
         m_recorder->addOutputPacket(outputMessage);
     }
 
-    // padding
-    if (g_game.getClientVersion() >= 1405) {
-        outputMessage->writePaddingAmount();
-    }
+    if (!raw) {
+        // padding
+        if (g_game.getClientVersion() >= 1405) {
+            outputMessage->writePaddingAmount();
+        }
 
-    // encrypt
-    if (m_xteaEncryptionEnabled) {
-        xteaEncrypt(outputMessage);
-    }
+        // encrypt
+        if (m_xteaEncryptionEnabled) {
+            xteaEncrypt(outputMessage);
+        }
 
-    // write checksum
-    if (m_sequencedPackets) {
-        outputMessage->writeSequence(m_packetNumber++);
-    } else if (m_checksumEnabled) {
-        outputMessage->writeChecksum();
-    }
+        // write checksum
+        if (m_sequencedPackets) {
+            outputMessage->writeSequence(m_packetNumber++);
+        } else if (m_checksumEnabled) {
+            outputMessage->writeChecksum();
+        }
 
-    // write message size
-    if (g_game.getClientVersion() >= 1405) {
-        outputMessage->writeHeaderSize();
-    } else {
-        outputMessage->writeMessageSize();
+        // write message size
+        if (g_game.getClientVersion() >= 1405) {
+            outputMessage->writeHeaderSize();
+        } else {
+            outputMessage->writeMessageSize();
+        }
     }
 
     onSend();
@@ -407,7 +409,10 @@ void Protocol::onConnect() {
     if (g_game.getClientVersion() >= 1200) {
         std::string sendWorldName(g_game.getWorldName());
         sendWorldName += '\n';
-        m_connection->write((const uint8_t*)sendWorldName.data(), sendWorldName.size());
+        const auto& msg = std::make_shared<OutputMessage>();
+        msg->addBytes(std::string_view(sendWorldName));
+        send(msg, true);
+
         enabledSequencedPackets();
     }
     callLuaField("onConnect"); 
