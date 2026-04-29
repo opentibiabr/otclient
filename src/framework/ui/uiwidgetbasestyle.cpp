@@ -377,6 +377,10 @@ void UIWidget::parseBaseStyle(const OTMLNodePtr& styleNode)
             setEnabled(node->value<bool>());
         else if (node->tag() == "visible")
             setVisible(node->value<bool>());
+        else if (node->tag() == "click-sound")
+            setClickSound(node->value<int>());
+        else if (node->tag() == "display-sound")
+            addSound(UISoundTypeShow, node->value<int>());
         else if (node->tag() == "visibility")
             setVisible(node->value<std::string>() == "visible");
         else if (node->tag() == "checked")

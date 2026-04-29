@@ -8,6 +8,7 @@ Button < UIButton
   image-border: 1
   padding: 10
   opacity: 1.0
+  click-sound: 2774
 
   $hover !disabled:
     image-clip: 0 0 43 20

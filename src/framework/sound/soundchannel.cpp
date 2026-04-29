@@ -33,21 +33,27 @@ SoundSourcePtr SoundChannel::play(const std::string& filename, const float fadet
         m_currentSource->stop();
 
     m_currentSource = g_sounds.play(filename, fadetime, m_gain * gain, pitch);
+    if (m_currentSource)
+        m_currentSource->setChannel(static_cast<uint8_t>(m_id));
     return m_currentSource;
 }
 
 void SoundChannel::stop(const float fadetime)
 {
     m_queue.clear();
+    SoundSource* fadingSource = nullptr;
 
     if (m_currentSource) {
-        if (fadetime > 0)
+        if (fadetime > 0) {
             m_currentSource->setFading(StreamSoundSource::FadingOff, fadetime);
-        else {
+            fadingSource = m_currentSource.get();
+        } else {
             m_currentSource->stop();
             m_currentSource = nullptr;
         }
     }
+
+    g_sounds.stopChannelSounds(m_id, fadingSource);
 }
 
 void SoundChannel::enqueue(const std::string& filename, float fadetime, float gain, float pitch)
@@ -87,6 +93,8 @@ void SoundChannel::setEnabled(const bool enable)
             m_currentSource->stop();
             m_currentSource = nullptr;
         }
+
+        g_sounds.stopChannelSounds(m_id);
     }
 }
 
