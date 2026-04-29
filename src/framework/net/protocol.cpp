@@ -119,7 +119,7 @@ bool Protocol::isConnecting()
     return m_connection && m_connection->isConnecting();
 }
 
-void Protocol::send(const OutputMessagePtr& outputMessage)
+void Protocol::send(const OutputMessagePtr& outputMessage, bool raw)
 {
     if (m_player) {
         m_player->onOutputPacket(outputMessage);
@@ -130,28 +130,30 @@ void Protocol::send(const OutputMessagePtr& outputMessage)
         m_recorder->addOutputPacket(outputMessage);
     }
 
-    // padding
-    if (g_game.getClientVersion() >= 1405) {
-        outputMessage->writePaddingAmount();
-    }
+    if (!raw) {
+        // padding
+        if (g_game.getClientVersion() >= 1405) {
+            outputMessage->writePaddingAmount();
+        }
 
-    // encrypt
-    if (m_xteaEncryptionEnabled) {
-        xteaEncrypt(outputMessage);
-    }
+        // encrypt
+        if (m_xteaEncryptionEnabled) {
+            xteaEncrypt(outputMessage);
+        }
 
-    // write checksum
-    if (m_sequencedPackets) {
-        outputMessage->writeSequence(m_packetNumber++);
-    } else if (m_checksumEnabled) {
-        outputMessage->writeChecksum();
-    }
+        // write checksum
+        if (m_sequencedPackets) {
+            outputMessage->writeSequence(m_packetNumber++);
+        } else if (m_checksumEnabled) {
+            outputMessage->writeChecksum();
+        }
 
-    // write message size
-    if (g_game.getClientVersion() >= 1405) {
-        outputMessage->writeHeaderSize();
-    } else {
-        outputMessage->writeMessageSize();
+        // write message size
+        if (g_game.getClientVersion() >= 1405) {
+            outputMessage->writeHeaderSize();
+        } else {
+            outputMessage->writeMessageSize();
+        }
     }
 
     onSend();
@@ -253,22 +255,52 @@ void Protocol::internalRecvData(const uint8_t* buffer, const uint16_t size)
         }
     }
 
+
+
     if (decompress) {
+        uint32_t totalSize = 0;
         static uint8_t zbuffer[InputMessage::BUFFER_MAXSIZE];
 
-        m_zstream.next_in = m_inputMessage->getDataBuffer();
-        m_zstream.next_out = zbuffer;
-        m_zstream.avail_in = m_inputMessage->getUnreadSize();
-        m_zstream.avail_out = InputMessage::BUFFER_MAXSIZE;
+        if (m_compressionMode == COMPRESSION_MODE_UNKNOWN || m_compressionMode == COMPRESSION_MODE_PER_PACKET) {
+            m_zstream.next_in = m_inputMessage->getDataBuffer();
+            m_zstream.next_out = zbuffer;
+            m_zstream.avail_in = m_inputMessage->getUnreadSize();
+            m_zstream.avail_out = InputMessage::BUFFER_MAXSIZE;
 
-        const int32_t ret = inflate(&m_zstream, Z_FINISH);
-        if (ret != Z_OK && ret != Z_STREAM_END) {
-            g_logger.traceError("failed to decompress message - {}", m_zstream.msg);
-            return;
+            const int32_t ret = inflate(&m_zstream, Z_FINISH);
+            totalSize = m_zstream.total_out;
+            if (ret == Z_STREAM_END && totalSize > 0) {
+                m_compressionMode = COMPRESSION_MODE_PER_PACKET;
+                inflateReset(&m_zstream);
+            } else if (m_compressionMode == COMPRESSION_MODE_UNKNOWN) {
+                // Detection: standard failed, fall through to sync-flush
+                inflateReset(&m_zstream);
+                m_compressionMode = COMPRESSION_MODE_STREAM;
+                totalSize = 0;
+            } else {
+                g_logger.traceError("failed to decompress message - {}", m_zstream.msg);
+                return;
+            }
+
         }
 
-        const uint32_t totalSize = m_zstream.total_out;
-        inflateReset(&m_zstream);
+        if (m_compressionMode == COMPRESSION_MODE_STREAM) {
+            m_inputMessage->addCompressionFooter();
+
+            m_zstream.next_in = m_inputMessage->getDataBuffer();
+            m_zstream.next_out = zbuffer;
+            m_zstream.avail_in = m_inputMessage->getUnreadSize();
+            m_zstream.avail_out = InputMessage::BUFFER_MAXSIZE;
+            m_zstream.total_out = 0;
+
+            const int32_t ret = inflate(&m_zstream, Z_SYNC_FLUSH);
+            if (ret != Z_OK && ret != Z_STREAM_END) {
+                g_logger.traceError("failed to decompress message - {}", m_zstream.msg);
+                return;
+            }
+            totalSize = m_zstream.total_out;
+        }
+
         if (totalSize == 0) {
             g_logger.traceError("invalid size of decompressed message - %i", totalSize);
             return;
@@ -373,7 +405,18 @@ void Protocol::xteaEncrypt(const OutputMessagePtr& outputMessage) const
     }
 }
 
-void Protocol::onConnect() { callLuaField("onConnect"); }
+void Protocol::onConnect() {
+    if (g_game.getClientVersion() >= 1200) {
+        std::string sendWorldName(g_game.getWorldName());
+        sendWorldName += '\n';
+        const auto& msg = std::make_shared<OutputMessage>();
+        msg->addBytes(std::string_view(sendWorldName));
+        send(msg, true);
+
+        enabledSequencedPackets();
+    }
+    callLuaField("onConnect"); 
+}
 
 void Protocol::onRecv(const InputMessagePtr& inputMessage)
 {
