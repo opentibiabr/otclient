@@ -16,6 +16,7 @@ Module
     - game_prey
     - game_imbuing
     - game_imbuementtracker
+    - game_imbui
     - game_hotkeys
     - game_questlog
     - game_textmessage
