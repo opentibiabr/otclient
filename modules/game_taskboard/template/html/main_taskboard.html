@@ -281,10 +281,8 @@
                         <label class="diffLabel">Select the difficulty for your next tasks.</label>
                         <div class="diffButtonsPanel">
                             <div *for="local d in self.weeklyDifficulties" class="diffButtonWrap" *tooltip="d.tooltip">
-                                <div class="diffBtnLarge diffBtnLargeActive" *visible="d.canSelect"
-                                    *image-source="d.imgPath" onclick="self:selectDifficulty(d.id)"></div>
-                                <div class="diffBtnLarge diffBtnLargeDisabled" *visible="not d.canSelect"
-                                    *image-source="d.imgPath"></div>
+                                <button class="diffBtn" *enabled="d.canSelect"
+                                    onclick="self:selectDifficulty(d.id)">{{d.name}}</button>
                             </div>
                         </div>
                     </div>

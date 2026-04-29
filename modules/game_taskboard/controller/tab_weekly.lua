@@ -91,7 +91,8 @@ function TaskBoardController:onWeeklyServerData(header, monsters, items)
         completedDeliveryTasks = tonumber(header.completedDeliveryTasks) or 0,
         pointsEarned = tonumber(header.pointsEarned) or 0,
         soulsealsEarned = tonumber(header.soulsealsEarned) or 0,
-        extraSlot = (tonumber(header.extraSlot) or 0) == 1
+        extraSlot = (tonumber(header.extraSlot) or 0) == 1,
+        weeklyProgressFinished = (tonumber(header.weeklyProgressFinished) or 0) == 1
     }
 
     -- Build weeklyMonsters list
@@ -156,7 +157,6 @@ function TaskBoardController:onWeeklyServerData(header, monsters, items)
             name = d.name,
             minLevel = d.minLevel,
             canSelect = canSelect,
-            imgPath = string.format('/game_taskboard/assets/images/%s-large-button', d.name:lower()),
             tooltip = (not canSelect) and
                 string.format('The minimum level to start this difficulty is %d', d.minLevel) or nil
         })
@@ -167,7 +167,7 @@ function TaskBoardController:onWeeklyServerData(header, monsters, items)
     self:refreshWeeklySummary()
 
     -- Difficulty modal
-    self.weeklyDifficultyPending = data.difficulty == 0
+    self.weeklyDifficultyPending = data.difficulty == 0 or data.weeklyProgressFinished
     self.diffModalVisible = false
 
     self:onWeeklyTabSelected()

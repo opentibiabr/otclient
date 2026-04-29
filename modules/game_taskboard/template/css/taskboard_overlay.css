@@ -112,7 +112,6 @@
     display: block;
     margin-left: 80px;
     margin-right: auto;
-    
 }
 
 .diffButtonWrap {
@@ -120,33 +119,20 @@
     display: block;
     margin: 0 auto 6px auto;
     height: 20px;
-
 }
 
-.diffBtnLarge {
+.diffBtn {
     display: block;
     width: 158px;
-    height: 20px;
+    height: 0px;
     margin: 0 auto;
-    padding: 0;
-    --image-border: 2;
-    --image-clip: 0 0 158 20;
+    font: verdana-11px-rounded;
+    text-align: center;
 }
 
-.diffBtnLargeActive {
-    cursor: pointer;
-    --image-clip: 0 0 158 20;
-
-}
-
-.diffBtnLargeActive:hover,
-.diffBtnLargeActive:pressed {
-    --image-clip: 0 20 158 20;
-}
-
-.diffBtnLargeDisabled {
+.diffBtn:disabled {
+   color: #dfdfdf88;
     opacity: 0.8;
-    --image-clip: 0 40 158 20;
 }
 
 .diffMinLevel {
