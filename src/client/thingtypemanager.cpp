@@ -151,7 +151,7 @@ bool ThingTypeManager::loadAppearances(const std::string& file)
         try {
             m_assetIdentifier = g_resources.readFileContents(g_resources.resolvePath(g_resources.guessFilePath(file + "assets", "json.sha256")));
         } catch (const std::exception& e) {
-            m_assetIdentifier = "AssetIdentifierUnknown";
+            m_assetIdentifier = "appearancesHash";
             g_logger.warning("Cannot load asset hash identifier from assets.json.sha256: {}", e.what());
         }
 
