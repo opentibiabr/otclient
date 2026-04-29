@@ -117,13 +117,21 @@ void ThingType::unserializeAppearance(const uint16_t clientId, const ThingCatego
         }
 
         // When frame groups have different pattern dimensions (e.g. idle patternX=1 vs moving patternX=4),
-        // the sprite index formula breaks because it uses the final (moving) dimensions for all phases.
-        // Expand smaller frame groups to match the final dimensions by repeating sprites.
+        // the sprite index formula breaks. Remap all groups to the maximum dimensions found across
+        // all frame groups: smaller groups repeat their sprites, larger groups are never truncated.
         if (fgInfos.size() > 1) {
+            int tgtX = 1, tgtY = 1, tgtZ = 1, tgtL = 1;
+            for (const auto& fg : fgInfos) {
+                tgtX = std::max(tgtX, fg.numPatternX);
+                tgtY = std::max(tgtY, fg.numPatternY);
+                tgtZ = std::max(tgtZ, fg.numPatternZ);
+                tgtL = std::max(tgtL, fg.layers);
+            }
+
             bool dimensionMismatch = false;
             for (const auto& fg : fgInfos) {
-                if (fg.numPatternX != (int)m_numPatternX || fg.numPatternY != (int)m_numPatternY ||
-                    fg.numPatternZ != (int)m_numPatternZ || fg.layers != (int)m_layers) {
+                if (fg.numPatternX != tgtX || fg.numPatternY != tgtY ||
+                    fg.numPatternZ != tgtZ || fg.layers != tgtL) {
                     dimensionMismatch = true;
                     break;
                 }
@@ -132,14 +140,14 @@ void ThingType::unserializeAppearance(const uint16_t clientId, const ThingCatego
             if (dimensionMismatch) {
                 const auto oldIndex = std::move(m_spritesIndex);
                 m_spritesIndex.clear();
-                m_spritesIndex.reserve(m_animationPhases * m_numPatternX * m_numPatternY * m_numPatternZ * m_layers);
+                m_spritesIndex.reserve(m_animationPhases * tgtX * tgtY * tgtZ * tgtL);
 
                 for (const auto& fg : fgInfos) {
                     for (int a = 0; a < fg.phases; ++a) {
-                        for (int z = 0; z < (int)m_numPatternZ; ++z) {
-                            for (int y = 0; y < (int)m_numPatternY; ++y) {
-                                for (int x = 0; x < (int)m_numPatternX; ++x) {
-                                    for (int l = 0; l < (int)m_layers; ++l) {
+                        for (int z = 0; z < tgtZ; ++z) {
+                            for (int y = 0; y < tgtY; ++y) {
+                                for (int x = 0; x < tgtX; ++x) {
+                                    for (int l = 0; l < tgtL; ++l) {
                                         const int srcX = std::min(x, fg.numPatternX - 1);
                                         const int srcY = std::min(y, fg.numPatternY - 1);
                                         const int srcZ = std::min(z, fg.numPatternZ - 1);
@@ -153,6 +161,12 @@ void ThingType::unserializeAppearance(const uint16_t clientId, const ThingCatego
                         }
                     }
                 }
+
+                // Update member dimensions to reflect the unified target grid.
+                m_numPatternX = tgtX;
+                m_numPatternY = tgtY;
+                m_numPatternZ = tgtZ;
+                m_layers      = tgtL;
             }
         }
 
@@ -1076,7 +1090,7 @@ bool ThingType::isTall(const bool useRealSize) { return useRealSize ? getRealSiz
 int ThingType::getAnimationPhases() const { return m_animator ? m_animator->getAnimationPhases() : m_animationPhases; }
 int ThingType::getIdleAnimationPhases() const {
     if (m_idleAnimator) return m_idleAnimator->getAnimationPhases();
-    if (m_animator) return m_animationPhases - m_animator->getAnimationPhases();
+    if (m_animator) return std::max(0, m_animationPhases - m_animator->getAnimationPhases());
     return 0;
 }
 
