@@ -134,8 +134,7 @@ UIWidget
           !text: tr('Track Kills')
           text-auto-resize: true
           color: #C7C7C7
-          @onCheckChange: |
-            g_game.sendStatusTrackerBestiary(self.raceId,self:isChecked())
+          @onCheckChange: modules.game_cyclopedia.Cyclopedia.onBestiaryTrackCheckChange(self)
         UICreature
           id: Sprite
           anchors.top: parent.top
@@ -581,7 +580,6 @@ UIWidget
           margin-bottom: 2
           step: 37
           pixels-scroll: true
-
 
 
 

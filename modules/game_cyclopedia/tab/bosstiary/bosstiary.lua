@@ -53,6 +53,270 @@ local CONFIG = {
     }
 }
 
+local BOSSTIARY_TRACKER_OVERRIDE_TTL = 5000
+
+local function getBosstiaryTrackerOverrides()
+    Cyclopedia.BosstiaryTrackerOverrides = Cyclopedia.BosstiaryTrackerOverrides or {}
+    return Cyclopedia.BosstiaryTrackerOverrides
+end
+
+local function getBosstiaryTrackerOverride(raceId)
+    local overrides = getBosstiaryTrackerOverrides()
+    local override = overrides[raceId]
+
+    if override and override.expiresAt <= g_clock.millis() then
+        overrides[raceId] = nil
+        return nil
+    end
+
+    return override
+end
+
+local function setBosstiaryTrackerOverride(raceId, checked)
+    local overrides = getBosstiaryTrackerOverrides()
+    overrides[raceId] = {
+        checked = checked,
+        expiresAt = g_clock.millis() + BOSSTIARY_TRACKER_OVERRIDE_TTL
+    }
+
+    scheduleEvent(function()
+        local override = overrides[raceId]
+        if override and override.expiresAt <= g_clock.millis() then
+            overrides[raceId] = nil
+        end
+    end, BOSSTIARY_TRACKER_OVERRIDE_TTL + 250)
+end
+
+local function getEffectiveBosstiaryTrackerState(raceId, serverState, confirmServerState)
+    local trackerState = serverState == 1 and 1 or 0
+    local override = getBosstiaryTrackerOverride(raceId)
+
+    if not override then
+        return trackerState
+    end
+
+    local desiredState = override.checked and 1 or 0
+    if confirmServerState and trackerState == desiredState then
+        getBosstiaryTrackerOverrides()[raceId] = nil
+        return trackerState
+    end
+
+    return desiredState
+end
+
+local function setBosstiaryTrackCheck(widget, checked)
+    local originalCallback = widget.onCheckChange
+    widget.onCheckChange = nil
+    widget:setChecked(checked)
+    widget.onCheckChange = originalCallback
+    widget.bosstiaryTrackerState = checked
+end
+
+local function updateBosstiaryTrackerState(raceId, checked)
+    if not Cyclopedia.Bosstiary then
+        return
+    end
+
+    local trackerState = checked and 1 or 0
+
+    for _, creatures in ipairs(Cyclopedia.Bosstiary.Creatures or {}) do
+        for _, creature in ipairs(creatures) do
+            if creature.raceId == raceId then
+                creature.isTrackerActived = trackerState
+            end
+        end
+    end
+
+    for _, creature in ipairs(Cyclopedia.Bosstiary.NotVisibleCreatures or {}) do
+        if creature.raceId == raceId then
+            creature.isTrackerActived = trackerState
+        end
+    end
+end
+
+local function addBosstiaryTrackerEntry(trackerData, data, confirmServerState)
+    local config = CONFIG[data.category]
+    local trackerState = getEffectiveBosstiaryTrackerState(data.raceId, data.isTrackerActived, confirmServerState)
+
+    if not config or trackerState ~= 1 or data.kills < 1 then
+        return
+    end
+
+    table.insert(trackerData, {
+        data.raceId,
+        data.kills,
+        config.PROWESS,
+        config.EXPERTISE,
+        config.MASTERY,
+        1
+    })
+end
+
+local function findBosstiaryTrackerEntry(raceId)
+    for _, creatures in ipairs(Cyclopedia.Bosstiary.Creatures or {}) do
+        for _, creature in ipairs(creatures) do
+            if creature.raceId == raceId then
+                local trackerData = {}
+                addBosstiaryTrackerEntry(trackerData, creature, false)
+                return trackerData[1]
+            end
+        end
+    end
+
+    for _, creature in ipairs(Cyclopedia.Bosstiary.NotVisibleCreatures or {}) do
+        if creature.raceId == raceId then
+            local trackerData = {}
+            addBosstiaryTrackerEntry(trackerData, creature, false)
+            return trackerData[1]
+        end
+    end
+
+    for _, entry in ipairs(Cyclopedia.storedBosstiaryTrackerData or {}) do
+        if entry[1] == raceId then
+            local copy = {unpack(entry)}
+            copy[6] = 1
+            return copy
+        end
+    end
+end
+
+function Cyclopedia.mergeBosstiaryTrackerOverrides(data)
+    local overrides = getBosstiaryTrackerOverrides()
+    local mergedData = {}
+    local seenRaceIds = {}
+    local sourceData = data or {}
+
+    if #sourceData == 0 and next(overrides) and Cyclopedia.storedBosstiaryTrackerData and
+        #Cyclopedia.storedBosstiaryTrackerData > 0 then
+        sourceData = Cyclopedia.storedBosstiaryTrackerData
+    end
+
+    for _, entry in ipairs(sourceData) do
+        local raceId = entry[1]
+        local trackerState = getEffectiveBosstiaryTrackerState(raceId, 1, true)
+
+        seenRaceIds[raceId] = true
+
+        if trackerState == 1 then
+            local copy = {unpack(entry)}
+            copy[6] = 1
+            table.insert(mergedData, copy)
+        end
+    end
+
+    for raceId, override in pairs(overrides) do
+        if not seenRaceIds[raceId] and not getBosstiaryTrackerOverride(raceId) then
+            override = nil
+        end
+
+        if override and override.checked and not seenRaceIds[raceId] then
+            local entry = findBosstiaryTrackerEntry(raceId)
+            if entry then
+                table.insert(mergedData, entry)
+            end
+        end
+    end
+
+    return mergedData
+end
+
+local function copyBosstiaryTrackerEntry(entry)
+    return {unpack(entry)}
+end
+
+local function setBosstiaryTrackerData(trackerData)
+    Cyclopedia.BosstiaryTrackerPending = false
+    Cyclopedia.storedBosstiaryTrackerData = trackerData
+
+    if trackerMiniWindowBosstiary and Cyclopedia.onParseCyclopediaTracker then
+        local previousLocalRender = Cyclopedia.BosstiaryTrackerLocalRender
+        Cyclopedia.BosstiaryTrackerLocalRender = true
+        Cyclopedia.onParseCyclopediaTracker(1, trackerData)
+        Cyclopedia.BosstiaryTrackerLocalRender = previousLocalRender
+    elseif trackerMiniWindowBosstiary and trackerMiniWindowBosstiary.contentsPanel then
+        trackerMiniWindowBosstiary.contentsPanel:destroyChildren()
+    end
+end
+
+local function rebuildBosstiaryTrackerDataFromCreatures()
+    local trackerData = {}
+
+    for _, creatures in ipairs(Cyclopedia.Bosstiary.Creatures or {}) do
+        for _, creature in ipairs(creatures) do
+            addBosstiaryTrackerEntry(trackerData, creature, false)
+        end
+    end
+
+    for _, creature in ipairs(Cyclopedia.Bosstiary.NotVisibleCreatures or {}) do
+        addBosstiaryTrackerEntry(trackerData, creature, false)
+    end
+
+    setBosstiaryTrackerData(trackerData)
+end
+
+function Cyclopedia.syncBosstiaryTrackerFromBosstiaryInfo(data)
+    local trackerData = {}
+
+    for _, dataEntry in ipairs(data or {}) do
+        addBosstiaryTrackerEntry(trackerData, dataEntry, true)
+    end
+
+    setBosstiaryTrackerData(trackerData)
+end
+
+function Cyclopedia.setBosstiaryTrackerStatus(raceId, checked, sendToServer)
+    raceId = tonumber(raceId)
+    if not raceId then
+        return
+    end
+
+    setBosstiaryTrackerOverride(raceId, checked)
+    updateBosstiaryTrackerState(raceId, checked)
+
+    if UI and UI.ListBase and UI.ListBase.BossList then
+        for _, child in ipairs(UI.ListBase.BossList:getChildren()) do
+            if tonumber(child:getId()) == raceId and child.TrackCheck then
+                setBosstiaryTrackCheck(child.TrackCheck, checked)
+            end
+        end
+    end
+
+    local trackerData = {}
+    for _, entry in ipairs(Cyclopedia.storedBosstiaryTrackerData or {}) do
+        if entry[1] ~= raceId then
+            table.insert(trackerData, copyBosstiaryTrackerEntry(entry))
+        end
+    end
+
+    if checked then
+        local entry = findBosstiaryTrackerEntry(raceId)
+        if entry then
+            table.insert(trackerData, entry)
+        end
+    end
+
+    setBosstiaryTrackerData(trackerData)
+
+    if sendToServer ~= false then
+        g_game.sendStatusTrackerBestiary(raceId, checked)
+    end
+end
+
+function Cyclopedia.onBosstiaryTrackCheckChange(widget)
+    local raceId = tonumber(widget.raceId or widget:getParent():getId())
+    if not raceId then
+        return
+    end
+
+    local checked = widget:isChecked()
+    if widget.bosstiaryTrackerState == checked then
+        return
+    end
+
+    widget.bosstiaryTrackerState = checked
+    Cyclopedia.setBosstiaryTrackerStatus(raceId, checked, true)
+end
+
 --[[ function Cyclopedia.SetBosstiaryProgress(object, value, maxValue)
     local rect = {
         height = 12,
@@ -150,11 +414,8 @@ function Cyclopedia.CreateBosstiaryCreature(data)
         widget:setText(format(data.name))
         if g_game.getClientVersion() >= 1320 then
             widget.TrackCheck:enable()
-            if data.isTrackerActived == 1 then
-                widget.TrackCheck:setChecked(true)
-            else
-                widget.TrackCheck:setChecked(false)
-            end
+            widget.TrackCheck.raceId = data.raceId
+            setBosstiaryTrackCheck(widget.TrackCheck, data.isTrackerActived == 1)
         else
             widget.TrackCheck:hide()
         end
@@ -166,6 +427,8 @@ function Cyclopedia.CreateBosstiaryCreature(data)
 end
 
 function Cyclopedia.LoadBosstiaryCreatures(data)
+    Cyclopedia.syncBosstiaryTrackerFromBosstiaryInfo(data)
+
     if not UI or not UI.PageValue then
         return
     end
@@ -192,7 +455,7 @@ function Cyclopedia.LoadBosstiaryCreatures(data)
             name = raceData and raceData.name or "?",
             kills = dataEntry.kills,
             category = dataEntry.category,
-            isTrackerActived = dataEntry.isTrackerActived,
+            isTrackerActived = getEffectiveBosstiaryTrackerState(dataEntry.raceId, dataEntry.isTrackerActived, true),
             unlocked = dataEntry.kills > 0 and true or false
         }
 
