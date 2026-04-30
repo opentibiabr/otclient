@@ -28,7 +28,11 @@ endif()
 # Cmake Features
 # *****************************************************************************
 set(GNUCXX_MINIMUM_VERSION 9)
-set(CMAKE_CXX_STANDARD 23)
+if(MSVC)
+  set(CMAKE_CXX_STANDARD 20)
+else()
+  set(CMAKE_CXX_STANDARD 23)
+endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -587,7 +591,9 @@ if(MSVC)
   set_source_files_properties(
           framework/luaengine/luavaluecasts.cpp
           framework/luafunctions.cpp
-          PROPERTIES COMPILE_OPTIONS "/Od;/Ob0"
+          PROPERTIES
+            COMPILE_OPTIONS "/Od;/Ob0"
+            SKIP_PRECOMPILE_HEADERS ON
   )
 
   if(CMAKE_BUILD_TYPE STREQUAL "Debug")
