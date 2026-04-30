@@ -137,9 +137,7 @@ namespace stdext
         template<class T, class R>
         void update_what()
         {
-            std::stringstream ss;
-            ss << "failed to cast value of type '" << demangle_type<T>() << "' to type '" << demangle_type<R>() << "'";
-            m_what = ss.str();
+            m_what = "failed to cast value of type '" + demangle_type<T>() + "' to type '" + demangle_type<R>() + "'";
         }
 
         const char* what() const noexcept override { return m_what.c_str(); }
@@ -151,7 +149,7 @@ namespace stdext
     template<typename R, typename T>
     R safe_cast(const T& t)
     {
-        R r;
+        R r{};
         if (!cast(t, r)) {
             cast_exception e;
             e.update_what<T, R>();
