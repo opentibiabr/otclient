@@ -45,12 +45,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             autoconf \
+            autoconf-archive \
             automake \
             ccache \
             gcc-14 \
             g++-14 \
             libgl1-mesa-dev \
             libtool \
+            libtool-bin \
             libx11-dev \
             libxcursor-dev \
             libxi-dev \
