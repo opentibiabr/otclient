@@ -32,6 +32,7 @@
         "VCPKG_PLATFORM_TOOLSET": "v145",
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "OPTIONS_ENABLE_SCCACHE": "ON",
+        "SPEED_UP_BUILD_UNITY": "OFF",
         "OTCLIENT_BUILD_TESTS": "OFF"
       },
       "architecture": {
