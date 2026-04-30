@@ -230,6 +230,9 @@ function Cyclopedia.CreateCreatureItems(data)
         for itemIndex, itemData in ipairs(data[index]) do
             local thing = g_things.getThingType(itemData.id, ThingCategoryItem)
             local itemWidget = UI.ListBase.CreatureInfo.ItemsBase.Itemlist[index].Items[itemIndex]
+            if not itemWidget then
+                break
+            end
             itemWidget:setItemId(itemData.id)
             itemWidget.id = itemData.id
             itemWidget.classification = thing:getClassification()
