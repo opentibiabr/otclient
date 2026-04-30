@@ -1,0 +1,163 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "cmake/**"
+      - "browser/**"
+      - "data/**"
+      - "mods/**"
+      - "modules/**"
+      - "tools/**"
+      - "vc18/**"
+      - "vcpkg.json"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
+      - "Dockerfile"
+      - "Dockerfile.browser"
+      - "Dockerfile.browser.sh"
+      - ".dockerignore"
+      - ".reviewdog.yml"
+      - ".github/workflows/**"
+  merge_group:
+  push:
+    branches:
+      - main
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "cmake/**"
+      - "browser/**"
+      - "data/**"
+      - "mods/**"
+      - "modules/**"
+      - "tools/**"
+      - "vc18/**"
+      - "vcpkg.json"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
+      - "Dockerfile"
+      - "Dockerfile.browser"
+      - "Dockerfile.browser.sh"
+      - ".dockerignore"
+      - ".reviewdog.yml"
+      - ".github/workflows/**"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Detect Build Scope
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      compile: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') && 'true' || steps.filter.outputs.compile }}
+      docker: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') && 'true' || steps.filter.outputs.docker }}
+      browser: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') && 'true' || steps.filter.outputs.browser }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed paths
+        id: filter
+        if: github.event_name != 'workflow_dispatch' && github.event_name != 'merge_group'
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36
+        with:
+          filters: |
+            compile:
+              - "src/**"
+              - "tests/**"
+              - "cmake/**"
+              - "vc18/**"
+              - "vcpkg.json"
+              - "CMakeLists.txt"
+              - "CMakePresets.json"
+              - ".github/workflows/ci.yml"
+              - ".github/workflows/reusable-build-linux.yml"
+              - ".github/workflows/reusable-build-windows.yml"
+            docker:
+              - "Dockerfile"
+              - ".dockerignore"
+              - "src/**"
+              - "cmake/**"
+              - "vcpkg.json"
+              - "CMakeLists.txt"
+              - "CMakePresets.json"
+              - ".github/workflows/ci.yml"
+              - ".github/workflows/reusable-build-docker.yml"
+            browser:
+              - "Dockerfile.browser"
+              - "Dockerfile.browser.sh"
+              - "browser/**"
+              - "src/**"
+              - "cmake/**"
+              - "vcpkg.json"
+              - "CMakeLists.txt"
+              - ".github/workflows/ci.yml"
+              - ".github/workflows/reusable-build-browser.yml"
+
+  checks:
+    name: Fast Checks
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: read
+    uses: ./.github/workflows/reusable-checks.yml
+    secrets: inherit
+
+  tests-lua:
+    name: Lua Syntax
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    permissions:
+      contents: read
+    uses: ./.github/workflows/reusable-tests-lua.yml
+    secrets: inherit
+
+  build-linux:
+    name: Build - Linux
+    needs: [changes, checks, tests-lua]
+    if: needs.changes.outputs.compile == 'true' && needs.checks.result == 'success' && needs.tests-lua.result == 'success' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/reusable-build-linux.yml
+    secrets: inherit
+
+  build-windows:
+    name: Build - Windows
+    needs: [changes, checks, tests-lua]
+    if: needs.changes.outputs.compile == 'true' && needs.checks.result == 'success' && needs.tests-lua.result == 'success' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/reusable-build-windows.yml
+    secrets: inherit
+
+  build-docker:
+    name: Build - Docker
+    needs: [changes, checks, tests-lua]
+    if: needs.changes.outputs.docker == 'true' && needs.checks.result == 'success' && needs.tests-lua.result == 'success' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/reusable-build-docker.yml
+    secrets: inherit
+
+  build-browser:
+    name: Build - Browser
+    needs: [changes, checks, tests-lua]
+    if: needs.changes.outputs.browser == 'true' && needs.checks.result == 'success' && needs.tests-lua.result == 'success' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
+    permissions:
+      contents: read
+    uses: ./.github/workflows/reusable-build-browser.yml
+    secrets: inherit

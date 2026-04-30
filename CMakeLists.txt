@@ -17,7 +17,9 @@ if(DEFINED ENV{VCPKG_DEFAULT_TRIPLET} AND NOT DEFINED VCPKG_TARGET_TRIPLET)
 endif()
 
 set(VCPKG_FEATURE_FLAGS "versions")
-set(VCPKG_BUILD_TYPE "release")
+if(NOT DEFINED VCPKG_BUILD_TYPE)
+	set(VCPKG_BUILD_TYPE "release")
+endif()
 
 if (VCPKG_TARGET_ANDROID)
     include("cmake/vcpkg_android.cmake")

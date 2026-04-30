@@ -2,14 +2,13 @@
   "version": 3,
   "cmakeMinimumRequired": {
     "major": 3,
-    "minor": 22,
+    "minor": 24,
     "patch": 0
   },
   "configurePresets": [
     {
-      "name": "windows-release",
-      "displayName": "Windows - Release",
-      "description": "Sets Ninja generator, compilers, build and install directory and set build type as release",
+      "name": "base",
+      "hidden": true,
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/${presetName}",
       "cacheVariables": {
@@ -17,10 +16,23 @@
           "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
           "type": "FILEPATH"
         },
+        "CMAKE_COLOR_DIAGNOSTICS": "ON"
+      }
+    },
+    {
+      "name": "windows-release",
+      "inherits": "base",
+      "displayName": "Windows - Release",
+      "description": "Windows release build with Ninja and vcpkg",
+      "cacheVariables": {
         "BUILD_STATIC_LIBRARY": "ON",
         "VCPKG_TARGET_TRIPLET": "x64-windows-static",
+        "VCPKG_HOST_TRIPLET": "x64-windows-static",
+        "VCPKG_BUILD_TYPE": "release",
+        "VCPKG_PLATFORM_TOOLSET": "v145",
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
-        "OPTIONS_ENABLE_SCCACHE": "ON"
+        "OPTIONS_ENABLE_SCCACHE": "ON",
+        "OTCLIENT_BUILD_TESTS": "OFF"
       },
       "architecture": {
         "value": "x64",
@@ -28,7 +40,9 @@
       },
       "vendor": {
         "microsoft.com/VisualStudioSettings/CMake/1.0": {
-          "hostOS": [ "Windows" ]
+          "hostOS": [
+            "Windows"
+          ]
         }
       },
       "condition": {
@@ -38,32 +52,59 @@
       }
     },
     {
-      "name": "windows-debug-msbuild",
-      "inherits": "windows-debug",
-      "displayName": "Windows - Debug (msbuild)",
-      "description": "Windows Debug build using vcpkg-test manifest",
-      "generator": "Visual Studio 17 2022",
+      "name": "windows-release-asan",
+      "inherits": "windows-release",
+      "displayName": "Windows - Release + ASAN",
+      "description": "Windows release build with ASAN",
+      "cacheVariables": {
+        "ASAN_ENABLED": "ON",
+        "BUILD_STATIC_LIBRARY": "OFF",
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "VCPKG_HOST_TRIPLET": "x64-windows",
+        "OTCLIENT_BUILD_TESTS": "ON"
+      }
+    },
+    {
+      "name": "windows-debug",
+      "inherits": "windows-release",
+      "displayName": "Windows - Debug",
+      "description": "Windows debug build",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "DEBUG_LOG": "ON",
-        "ASAN_ENABLED": "ON",
+        "ASAN_ENABLED": "OFF",
         "BUILD_STATIC_LIBRARY": "OFF",
-        "VCPKG_TARGET_TRIPLET": "x64-windows"
+        "SPEED_UP_BUILD_UNITY": "OFF",
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "VCPKG_HOST_TRIPLET": "x64-windows",
+        "VCPKG_BUILD_TYPE": "debug",
+        "OTCLIENT_BUILD_TESTS": "ON"
+      }
+    },
+    {
+      "name": "windows-debug-msbuild",
+      "inherits": "windows-debug",
+      "displayName": "Windows - Debug (MSBuild)",
+      "description": "Windows debug build using the Visual Studio generator",
+      "generator": "Visual Studio 17 2022",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "ASAN_ENABLED": "ON",
+        "TOGGLE_PRE_COMPILED_HEADER": "OFF"
       }
     },
     {
       "name": "linux-release",
+      "inherits": "base",
       "displayName": "Linux - Release",
-      "description": "Sets Ninja generator, compilers, build and install directory and set build type as release",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/${presetName}",
+      "description": "Linux release build with Ninja and vcpkg",
       "cacheVariables": {
-        "CMAKE_TOOLCHAIN_FILE": {
-          "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
-          "type": "FILEPATH"
-        },
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
-        "OPTIONS_ENABLE_CCACHE": "ON"
+        "VCPKG_TARGET_TRIPLET": "x64-linux",
+        "VCPKG_HOST_TRIPLET": "x64-linux",
+        "VCPKG_BUILD_TYPE": "release",
+        "OPTIONS_ENABLE_CCACHE": "ON",
+        "OTCLIENT_BUILD_TESTS": "OFF"
       },
       "condition": {
         "type": "equals",
@@ -72,65 +113,35 @@
       }
     },
     {
-      "name": "windows-release-asan",
-      "inherits": "windows-release",
-      "displayName": "Windows - Release + ASAN",
-      "description": "Release Mode with ASAN",
-      "cacheVariables": {
-        "ASAN_ENABLED": "ON",
-        "BUILD_STATIC_LIBRARY": "OFF",
-        "VCPKG_TARGET_TRIPLET": "x64-windows"
-      },
-      "architecture": {
-        "value": "x64",
-        "strategy": "external"
-      }
-    },
-    {
-      "name": "windows-debug",
-      "inherits": "windows-release",
-      "displayName": "Windows - Debug",
-      "description": "Build Debug Mode",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "DEBUG_LOG": "ON",
-        "ASAN_ENABLED": "OFF",
-        "BUILD_STATIC_LIBRARY": "OFF",
-        "VCPKG_TARGET_TRIPLET": "x64-windows"
-      },
-      "architecture": {
-        "value": "x64",
-        "strategy": "external"
-      }
-    },
-    {
       "name": "linux-debug",
       "inherits": "linux-release",
-      "displayName": "Linux - Debug Build",
-      "description": "Build Debug Mode",
+      "displayName": "Linux - Debug",
+      "description": "Linux debug build with tests enabled",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
         "DEBUG_LOG": "ON",
         "ASAN_ENABLED": "OFF",
         "TOGGLE_PRE_COMPILED_HEADER": "OFF",
-        "SPEED_UP_BUILD_UNITY": "OFF"
+        "SPEED_UP_BUILD_UNITY": "OFF",
+        "VCPKG_BUILD_TYPE": "debug",
+        "OTCLIENT_BUILD_TESTS": "ON"
       }
     },
     {
       "name": "macos-release",
+      "inherits": "base",
       "displayName": "macOS - Release",
-      "description": "Sets Ninja generator, compilers, build and install directory and set build type as release",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/${presetName}",
+      "description": "macOS release build with Apple Clang",
       "cacheVariables": {
-        "CMAKE_TOOLCHAIN_FILE": {
-          "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
-          "type": "FILEPATH"
-        },
         "BUILD_STATIC_LIBRARY": "ON",
         "CMAKE_BUILD_TYPE": "Release",
         "OPTIONS_ENABLE_SCCACHE": "ON",
-        "CMAKE_CXX_FLAGS_RELEASE": "-O1 -DNDEBUG"
+        "CMAKE_CXX_FLAGS_RELEASE": "-O1 -DNDEBUG",
+        "VCPKG_TARGET_TRIPLET": "arm64-osx",
+        "VCPKG_HOST_TRIPLET": "arm64-osx",
+        "VCPKG_BUILD_TYPE": "release",
+        "OTCLIENT_BUILD_TESTS": "OFF"
       },
       "condition": {
         "type": "equals",
@@ -142,12 +153,14 @@
       "name": "macos-debug",
       "inherits": "macos-release",
       "displayName": "macOS - Debug",
-      "description": "Build Debug Mode",
+      "description": "macOS debug build",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "DEBUG_LOG": "ON",
         "ASAN_ENABLED": "ON",
-        "BUILD_STATIC_LIBRARY": "OFF"
+        "BUILD_STATIC_LIBRARY": "OFF",
+        "VCPKG_BUILD_TYPE": "debug",
+        "OTCLIENT_BUILD_TESTS": "ON"
       }
     }
   ],
@@ -183,6 +196,48 @@
     {
       "name": "macos-debug",
       "configurePreset": "macos-debug"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "linux-debug",
+      "configurePreset": "linux-debug",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error"
+      }
+    },
+    {
+      "name": "windows-debug",
+      "configurePreset": "windows-debug",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error"
+      }
+    },
+    {
+      "name": "windows-release-asan",
+      "configurePreset": "windows-release-asan",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error"
+      }
+    },
+    {
+      "name": "macos-debug",
+      "configurePreset": "macos-debug",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error"
+      }
     }
   ]
 }

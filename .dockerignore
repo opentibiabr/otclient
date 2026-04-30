@@ -4,9 +4,16 @@
 /.vs/
 /android/
 /build/
+/build-*/
 /cmake-build*
 /vc17/
+/vc18/generated/
+/vcpkg/
+/vcpkg_installed/
 Dockerfile
+Dockerfile.browser
 *.dll
 *.exe
+*.ilk
+*.log
 *.pdb
