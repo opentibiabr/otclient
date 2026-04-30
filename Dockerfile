@@ -23,6 +23,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 	curl \
 	git \
 	libgl1-mesa-dev \
+	libglu1-mesa-dev \
 	libltdl-dev \
 	libtool \
 	libtool-bin \

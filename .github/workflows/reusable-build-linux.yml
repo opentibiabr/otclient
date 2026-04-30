@@ -51,6 +51,7 @@ jobs:
             gcc-14 \
             g++-14 \
             libgl1-mesa-dev \
+            libglu1-mesa-dev \
             libltdl-dev \
             libtool \
             libtool-bin \
