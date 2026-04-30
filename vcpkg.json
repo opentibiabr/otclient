@@ -41,7 +41,7 @@
     },
     {
       "name": "glew",
-      "platform": "windows | osx"
+      "platform": "windows | linux | osx"
     },
     {
       "name": "angle",

@@ -51,6 +51,7 @@ jobs:
             gcc-14 \
             g++-14 \
             libgl1-mesa-dev \
+            libltdl-dev \
             libtool \
             libtool-bin \
             libx11-dev \
@@ -58,8 +59,11 @@ jobs:
             libxi-dev \
             libxinerama-dev \
             libxrandr-dev \
+            linux-libc-dev \
+            make \
             mono-complete \
             ninja-build \
+            perl \
             pkg-config
           sudo ln -sf /usr/bin/ninja /usr/bin/ninja-build
           ninja --version

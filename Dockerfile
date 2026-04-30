@@ -7,6 +7,7 @@ ENV DEBIAN_FRONTEND=${DEBIAN_FRONTEND}
 ENV TZ=Etc/UTC
 ARG VCPKG_FEED_URL
 ARG VCPKG_FEED_USERNAME
+ARG VCPKG_BINARY_CACHE_ACCESS=read
 ARG VCPKG_BINARY_SOURCES
 ENV VCPKG_BINARY_SOURCES=${VCPKG_BINARY_SOURCES}
 
@@ -14,6 +15,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 	--mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
 	apt-get update && apt-get install -y --no-install-recommends \
 	autoconf \
+	autoconf-archive \
 	automake \
 	build-essential \
 	ca-certificates \
@@ -21,14 +23,19 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 	curl \
 	git \
 	libgl1-mesa-dev \
+	libltdl-dev \
 	libtool \
+	libtool-bin \
 	libx11-dev \
 	libxcursor-dev \
 	libxi-dev \
 	libxinerama-dev \
 	libxrandr-dev \
+	linux-libc-dev \
+	make \
 	mono-complete \
 	ninja-build \
+	perl \
 	pkg-config \
 	python3 \
 	tar \
@@ -60,6 +67,8 @@ RUN --mount=type=secret,id=github_token \
 	/bin/bash -euo pipefail -c '\
 		nuget_config=""; \
 		if [ -s /run/secrets/github_token ] && [ -n "${VCPKG_FEED_URL:-}" ] && [ -n "${VCPKG_FEED_USERNAME:-}" ]; then \
+			cache_access="${VCPKG_BINARY_CACHE_ACCESS:-read}"; \
+			case "${cache_access}" in read|readwrite) ;; *) cache_access="read";; esac; \
 			nuget_auth_token="$(cat /run/secrets/github_token)"; \
 			nuget_config="/tmp/nuget.config"; \
 			printf "%s\n" \
@@ -80,7 +89,7 @@ RUN --mount=type=secret,id=github_token \
 				"</configuration>" \
 				> "${nuget_config}"; \
 			export VCPKG_NUGET_API_KEY="${nuget_auth_token}"; \
-			export VCPKG_BINARY_SOURCES="clear;nugetconfig,${nuget_config},readwrite;nugettimeout,1200"; \
+			export VCPKG_BINARY_SOURCES="clear;nugetconfig,${nuget_config},${cache_access};nugettimeout,1200"; \
 		elif [ -n "${VCPKG_BINARY_SOURCES:-}" ]; then \
 			echo "Using provided VCPKG_BINARY_SOURCES."; \
 		else \
