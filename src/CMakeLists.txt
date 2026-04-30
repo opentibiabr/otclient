@@ -583,6 +583,13 @@ if(MSVC)
 
   target_compile_options(otclient_core PUBLIC /MP /FS /Zf /EHsc /bigobj)
 
+  # MSVC 19.44 ICEs in stdext::safe_cast instantiations with release optimization.
+  set_source_files_properties(
+          framework/luaengine/luavaluecasts.cpp
+          framework/luafunctions.cpp
+          PROPERTIES COMPILE_OPTIONS "/Od;/Ob0"
+  )
+
   if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     string(REPLACE "/Zi" "/Z7" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
     string(REPLACE "/Zi" "/Z7" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
