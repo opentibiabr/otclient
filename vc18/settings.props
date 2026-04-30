@@ -24,6 +24,7 @@
         dbghelp.lib;
         gdi32.lib;
         discord-rpc.lib;
+        fmt.lib;
         glew32.lib;
         kernel32.lib;
         ole32.lib;
@@ -50,6 +51,7 @@
         avrt.lib;
         discord-rpc.lib;
         dbghelp.lib;
+        fmtd.lib;
         gdi32.lib;
         glew32d.lib;
         kernel32.lib;

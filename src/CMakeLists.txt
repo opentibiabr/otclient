@@ -656,7 +656,7 @@ if(MSVC)
           LibLZMA::LibLZMA
           winmm.lib
           pugixml::pugixml
-          fmt::fmt-header-only
+          fmt::fmt
           utf8cpp::utf8cpp
           Freetype::Freetype
   )
@@ -713,7 +713,7 @@ elseif(ANDROID)
           log
           Freetype::Freetype
           pugixml::pugixml
-          fmt::fmt-header-only
+          fmt::fmt
           utf8cpp::utf8cpp
   )
 
@@ -905,7 +905,7 @@ else() # Linux
           OpenSSL::SSL
           OpenSSL::Crypto
           httplib::httplib
-          fmt::fmt-header-only
+          fmt::fmt
           utf8cpp::utf8cpp
           Ogg::ogg
           Vorbis::vorbisfile
