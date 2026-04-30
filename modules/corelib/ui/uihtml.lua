@@ -9,6 +9,89 @@ function UIHTML.create()
     return scrollarea
 end
 
+local function includeRectBounds(bounds, rect)
+    if not rect or rect.width <= 0 or rect.height <= 0 then
+        return bounds
+    end
+
+    local left = rect.x
+    local top = rect.y
+    local right = rect.x + rect.width
+    local bottom = rect.y + rect.height
+
+    if not bounds then
+        return { left = left, top = top, right = right, bottom = bottom }
+    end
+
+    if left < bounds.left then bounds.left = left end
+    if top < bounds.top then bounds.top = top end
+    if right > bounds.right then bounds.right = right end
+    if bottom > bounds.bottom then bounds.bottom = bottom end
+    return bounds
+end
+
+local function intersectRects(a, b)
+    if not a then
+        return b
+    end
+    if not b then
+        return a
+    end
+
+    local left = math.max(a.x, b.x)
+    local top = math.max(a.y, b.y)
+    local right = math.min(a.x + a.width, b.x + b.width)
+    local bottom = math.min(a.y + a.height, b.y + b.height)
+    if right <= left or bottom <= top then
+        return nil
+    end
+
+    return { x = left, y = top, width = right - left, height = bottom - top }
+end
+
+local DISPLAY_NONE = 0 -- DisplayType::None
+
+local function collectContentBounds(widget, bounds, clipRect)
+    for _, child in pairs(widget:getChildren()) do
+        if child and not child:isDestroyed() and child:isExplicitlyVisible() and child:getDisplay() ~= DISPLAY_NONE then
+            local visibleRect = child:getMarginRect()
+            if clipRect then
+                visibleRect = intersectRects(visibleRect, clipRect)
+            end
+
+            bounds = includeRectBounds(bounds, visibleRect)
+
+            local nextClip = clipRect
+            if child:isClipping() then
+                local childClip = child:getPaddingRect()
+                nextClip = nextClip and intersectRects(nextClip, childClip) or childClip
+            end
+
+            if nextClip or not clipRect then
+                bounds = collectContentBounds(child, bounds, nextClip)
+            end
+        end
+    end
+
+    return bounds
+end
+
+local function computeContentExtent(widget)
+    local paddingRect = widget:getPaddingRect()
+    local bounds = collectContentBounds(widget, nil, nil)
+    local virtualOffset = widget:getVirtualOffset()
+
+    if not bounds then
+        return paddingRect.width, paddingRect.height
+    end
+
+    local paddingLeft = paddingRect.x
+    local paddingTop = paddingRect.y
+    local width = math.max((bounds.right + virtualOffset.x) - paddingLeft, paddingRect.width)
+    local height = math.max((bounds.bottom + virtualOffset.y) - paddingTop, paddingRect.height)
+    return width, height
+end
+
 function UIHTML:onStyleApply(styleName, styleNode)
     for name, value in pairs(styleNode) do
         if name == 'vertical-scrollbar' then
@@ -46,8 +129,10 @@ function UIHTML:updateScrollBars()
         return
     end
 
-    local scrollWidth = math.max(self:getChildrenRect().width - self:getPaddingRect().width, 0)
-    local scrollHeight = math.max(self:getChildrenRect().height - self:getPaddingRect().height, 0)
+    local paddingRect = self:getPaddingRect()
+    local contentWidth, contentHeight = computeContentExtent(self)
+    local scrollWidth = math.max(contentWidth - paddingRect.width, 0)
+    local scrollHeight = math.max(contentHeight - paddingRect.height, 0)
 
     local scrollbar = self.verticalScrollBar
     if scrollbar then

@@ -31,10 +31,6 @@
 #include "framework/platform/platform.h"
 #include "framework/util/crypt.h"
 
-#if ENABLE_ENCRYPTION == 1
-#include "client/game.h"
-#endif
-
 ResourceManager g_resources;
 
 void ResourceManager::init(const char* argv0)
@@ -241,23 +237,11 @@ std::string ResourceManager::readFileContents(const std::string& fileName)
     PHYSFS_close(file);
 
 #if ENABLE_ENCRYPTION == 1
-    const auto headerSize = std::string(ENCRYPTION_HEADER).size();
-    const bool hasHeader = (buffer.size() >= headerSize &&
-                            buffer.compare(0, headerSize, ENCRYPTION_HEADER) == 0);
-
-    if (hasHeader) {
-        buffer = buffer.substr(headerSize);
+    const std::string encHeader(ENCRYPTION_HEADER);
+    if (buffer.size() >= encHeader.size() &&
+        buffer.compare(0, encHeader.size(), encHeader) == 0) {
+        buffer = buffer.substr(encHeader.size());
         buffer = decrypt(buffer);
-    } else {
-        std::string path = fullPath;
-        std::replace(path.begin(), path.end(), '\\', '/');
-        if (path.compare(0, 5, std::string(AY_OBFUSCATE("/bot/"))) == 0) {
-            if (g_game.getFeature(Otc::GameAllowCustomBotScripts)) {
-                return buffer;
-            }
-            return "";
-        }
-        buffer = "";
     }
 #endif
 
@@ -308,13 +292,7 @@ bool ResourceManager::writeFileStream(const std::string& fileName, std::iostream
 
 bool ResourceManager::writeFileContents(const std::string& fileName, const std::string& data)
 {
-#if ENABLE_ENCRYPTION == 1
-    std::string encryptedData = encrypt(data, std::string(ENCRYPTION_PASSWORD));
-    std::string finalData = std::string(ENCRYPTION_HEADER) + encryptedData;
-    return writeFileBuffer(fileName, (const uint8_t*)finalData.c_str(), finalData.size());
-#else
     return writeFileBuffer(fileName, (const uint8_t*)data.c_str(), data.size());
-#endif
 }
 
 FileStreamPtr ResourceManager::openFile(const std::string& fileName)

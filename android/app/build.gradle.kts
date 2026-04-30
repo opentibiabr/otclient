@@ -16,25 +16,38 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         ndk {
-            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64", "x86")
         }
 
         externalNativeBuild {
             cmake {
-                cppFlags += listOf("-std=c++20", "-flto")
+                cppFlags += listOf("-std=c++20")
 
                 arguments += listOf(
                     "-DVCPKG_TARGET_ANDROID=ON",
-                    "-DANDROID_STL=c++_shared"
+                    "-DANDROID_STL=c++_shared",
+                    "-DVCPKG_MANIFEST_INSTALL=ON",
+                    "-DVCPKG_INSTALL_OPTIONS=--allow-unsupported"
                 )
             }
+        }
+    }
+
+    signingConfigs {
+        create("release") {
+            // Use env vars for CI/production, fallback to debug keystore for local dev
+            storeFile = file(System.getenv("RELEASE_KEYSTORE")
+                ?: System.getProperty("user.home") + "/.android/debug.keystore")
+            storePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD") ?: "android"
+            keyAlias = System.getenv("RELEASE_KEY_ALIAS") ?: "androiddebugkey"
+            keyPassword = System.getenv("RELEASE_KEY_PASSWORD") ?: "android"
         }
     }
 
     externalNativeBuild {
         cmake {
             path = file("../../CMakeLists.txt")
-            version = "4.0.2"
+            version = "3.22.1"
         }
     }
 
@@ -42,6 +55,7 @@ android {
         getByName("release") {
             isMinifyEnabled = false
             isShrinkResources = false
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 file("proguard-rules.pro")
@@ -63,7 +77,7 @@ android {
         prefab = true
     }
 
-    ndkVersion = "29.0.13599879 rc2"
+    ndkVersion = "29.0.13599879"
 }
 
 dependencies {

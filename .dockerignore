@@ -2,7 +2,6 @@
 /.github/
 /.idea/
 /.vs/
-/android/
 /build/
 /build-*/
 /cmake-build*
@@ -10,10 +9,16 @@
 /vc18/generated/
 /vcpkg/
 /vcpkg_installed/
-Dockerfile
-Dockerfile.browser
+/android/app/build/
+/android/app/.cxx/
+/android/.gradle/
+Dockerfile*
 *.dll
 *.exe
 *.ilk
 *.log
 *.pdb
+*.obj
+*.lib
+*.ilk
+*.exp

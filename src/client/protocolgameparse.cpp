@@ -1274,6 +1274,10 @@ void ProtocolGame::parsePlayerHelpers(const InputMessagePtr& msg) const
 
 void ProtocolGame::parseGMActions(const InputMessagePtr& msg)
 {
+    if (g_game.getClientVersion() >= 1200) { // 0x0B is used as secondary connection identifier
+        msg->getString();
+        return;
+    }
     uint8_t numViolationReasons;
     if (g_game.getClientVersion() >= 850) {
         numViolationReasons = 20;
@@ -4185,7 +4189,16 @@ ItemPtr ProtocolGame::getItem(const InputMessagePtr& msg, int id)
                     msg->getU32(); // obtain flags
                     break;
                 case 4: // Loot Highlight
+                {
+                    const auto& attachedEffect = AttachedEffect::create(252, ThingCategoryEffect);
+                    if (attachedEffect) {
+                        attachedEffect->setPermanent(true);
+                        attachedEffect->setOnTop(true);
+                        attachedEffect->setDrawOrder(DrawOrder::FIFTH);
+                        item->attachEffect(attachedEffect);
+                    }
                     break;
+                }
                 case 8: // Obtain
                     msg->getU32(); // obtain flags
                     break;

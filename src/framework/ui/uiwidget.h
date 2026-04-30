@@ -222,7 +222,7 @@ struct SizeUnit
         return pendingUpdate && unit == _unit && version != _version;
     }
 
-    void applyUpdate(int16_t v, uint32_t newVersion) {
+    void applyUpdate(int32_t v, uint32_t newVersion) {
         valueCalculed = v;
         version = newVersion;
         pendingUpdate = false;
@@ -230,13 +230,13 @@ struct SizeUnit
 
     SizeUnit() = default;
     SizeUnit(Unit u) : unit(u) {}
-    SizeUnit(int16_t v) : unit(Unit::Px), value(v) {}
-    SizeUnit(Unit u, int16_t v, int16_t valueCalculed, uint32_t needUpdate)
+    SizeUnit(int32_t v) : unit(Unit::Px), value(v) {}
+    SizeUnit(Unit u, int32_t v, int32_t valueCalculed, uint32_t needUpdate)
         : unit(u), value(v), valueCalculed(valueCalculed), pendingUpdate(needUpdate) {}
 
     Unit unit = Unit::Px;
-    int16_t value = 0;
-    int16_t valueCalculed = -1;
+    int32_t value = 0;
+    int32_t valueCalculed = -1;
     uint32_t version = 0;
     bool pendingUpdate = false;
 };
@@ -298,6 +298,8 @@ struct UIWidgetStyle
     int minHeight{ 0 };
     int maxWidth{ 0 };
     int maxHeight{ 0 };
+    bool marginTopAuto{ false };
+    bool marginBottomAuto{ false };
     bool marginLeftAuto{ false };
     bool marginRightAuto{ false };
 };
@@ -343,6 +345,7 @@ protected:
     OverflowType m_overflowType = OverflowType::Hidden;
     PositionType m_positionType = PositionType::Static;
     uint32_t m_flexLayoutVersion = 0;
+    bool m_inFlexLayout = false;
     Fw::AlignmentFlag m_placement = Fw::AlignNone;
     SizeUnit m_width;
     SizeUnit m_height;
@@ -371,6 +374,7 @@ protected:
     friend class UIGridLayout;
     friend class UIHorizontalLayout;
     friend class UIVerticalLayout;
+    friend void layoutFlex(UIWidget& container);
 
 public:
     UIWidgetPtr insert(int32_t index, const std::string& html);
@@ -508,6 +512,7 @@ public:
     auto getPositionType() { return m_positionType; }
 
     bool isOnHtml() { return m_htmlNode != nullptr; }
+    bool isInFlexLayout() const { return m_inFlexLayout; }
     const auto& getHtmlNode() const { return m_htmlNode; }
     auto& getWidthHtml() { return m_width; }
     auto& getHeightHtml() { return m_height; }
@@ -610,6 +615,7 @@ private:
     void applyAnchorAlignment();
     void layoutFlexChildren();
     void scheduleHtmlTask(FlagProp prop);
+    static void flushPendingHtmlWidgets();
 
     OTMLNodePtr m_stateStyle;
     int32_t m_states{ Fw::DefaultState };
@@ -708,6 +714,8 @@ public:
     UIWidgetPtr getFocusedChild() { return m_focusedChild; }
     UIWidgetPtr getHoveredChild();
     UIWidgetList getChildren() { return m_children; }
+    UIWidgetList& getChildrenRef() { return m_children; }
+    const UIWidgetList& getChildrenRef() const { return m_children; }
     UIWidgetList getReverseChildren() { return UIWidgetList(m_children.rbegin(), m_children.rend()); }
     UIWidgetPtr getFirstChild() { return getChildByIndex(1); }
     UIWidgetPtr getLastChild() { return getChildByIndex(-1); }
@@ -747,6 +755,8 @@ protected:
     EdgeGroup<> m_borderWidth;
     EdgeGroup<> m_margin;
     EdgeGroup<> m_padding;
+    bool m_marginTopAuto{ false };
+    bool m_marginBottomAuto{ false };
     bool m_marginLeftAuto{ false };
     bool m_marginRightAuto{ false };
     float m_opacity{ 1.f };
@@ -808,13 +818,15 @@ public:
     void setBorderColorRight(const Color& color) { m_borderColor.right = color; repaint(); }
     void setBorderColorBottom(const Color& color) { m_borderColor.bottom = color; repaint(); }
     void setBorderColorLeft(const Color& color) { m_borderColor.left = color; repaint(); }
-    void setMargin(const int margin) { m_margin.set(margin); m_marginLeftAuto = m_marginRightAuto = false; updateParentLayout(); }
-    void setMarginHorizontal(const int margin) { m_margin.right = m_margin.left = margin; m_marginLeftAuto = m_marginRightAuto = false; updateParentLayout(); }
-    void setMarginVertical(const int margin) { m_margin.bottom = m_margin.top = margin; updateParentLayout(); }
-    void setMarginTop(const int margin) { m_margin.top = margin; updateParentLayout(); }
-    void setMarginRight(const int margin) { m_margin.right = margin; m_marginRightAuto = false; updateParentLayout(); }
-    void setMarginBottom(const int margin) { m_margin.bottom = margin; updateParentLayout(); }
-    void setMarginLeft(const int margin) { m_margin.left = margin; m_marginLeftAuto = false; updateParentLayout(); }
+    void setMargin(const int margin) { m_margin.set(margin); m_marginTopAuto = m_marginBottomAuto = m_marginLeftAuto = m_marginRightAuto = false; updateParentLayout(); scheduleParentHtmlFlexLayout(); }
+    void setMarginHorizontal(const int margin) { m_margin.right = m_margin.left = margin; m_marginLeftAuto = m_marginRightAuto = false; updateParentLayout(); scheduleParentHtmlFlexLayout(); }
+    void setMarginVertical(const int margin) { m_margin.bottom = m_margin.top = margin; m_marginTopAuto = m_marginBottomAuto = false; updateParentLayout(); scheduleParentHtmlFlexLayout(); }
+    void setMarginTop(const int margin) { m_margin.top = margin; m_marginTopAuto = false; updateParentLayout(); scheduleParentHtmlFlexLayout(); }
+    void setMarginRight(const int margin) { m_margin.right = margin; m_marginRightAuto = false; updateParentLayout(); scheduleParentHtmlFlexLayout(); }
+    void setMarginBottom(const int margin) { m_margin.bottom = margin; m_marginBottomAuto = false; updateParentLayout(); scheduleParentHtmlFlexLayout(); }
+    void setMarginLeft(const int margin) { m_margin.left = margin; m_marginLeftAuto = false; updateParentLayout(); scheduleParentHtmlFlexLayout(); }
+    void setMarginTopAuto(bool v = true) { m_marginTopAuto = v; updateParentLayout(); scheduleParentHtmlFlexLayout(); }
+    void setMarginBottomAuto(bool v = true) { m_marginBottomAuto = v; updateParentLayout(); scheduleParentHtmlFlexLayout(); }
     void setMarginLeftAuto(bool v = true) { m_marginLeftAuto = v; updateParentLayout(); }
     void setMarginRightAuto(bool v = true) { m_marginRightAuto = v; updateParentLayout(); }
     void setPadding(const int padding) { m_padding.top = m_padding.right = m_padding.bottom = m_padding.left = padding; updateLayout(); }
@@ -872,6 +884,8 @@ public:
     int getMarginRight() { return m_margin.right; }
     int getMarginBottom() { return m_margin.bottom; }
     int getMarginLeft() { return m_margin.left; }
+    bool isMarginTopAuto() const { return m_marginTopAuto; }
+    bool isMarginBottomAuto() const { return m_marginBottomAuto; }
     bool isMarginLeftAuto() const { return m_marginLeftAuto; }
     bool isMarginRightAuto() const { return m_marginRightAuto; }
     int getPaddingTop() { return m_padding.top; }
@@ -887,7 +901,7 @@ private:
     void initImage();
     void parseImageStyle(const OTMLNodePtr& styleNode);
     void applyDimension(bool isWidth, std::string valueStr);
-    void applyDimension(bool isWidth, Unit unit, int16_t value);
+    void applyDimension(bool isWidth, Unit unit, int32_t value);
     void refreshHtml(bool siblingsTo = false);
 
     void updateImageCache() { if (!m_imageCachedScreenCoords.isNull()) m_imageCachedScreenCoords = {}; }
@@ -974,6 +988,12 @@ protected:
     void processCodeTags();
     void cacheRectToWord();
     void updateRectToWord(const std::vector<Rect>& glypsCoords);
+    void scheduleParentHtmlFlexLayout() {
+        if (m_positionType == PositionType::Absolute || !m_parent)
+            return;
+        if (m_parent->getDisplay() == DisplayType::Flex || m_parent->getDisplay() == DisplayType::InlineFlex)
+            m_parent->scheduleHtmlTask(PropUpdateSize);
+    }
 
     virtual void onTextChange(std::string_view text, std::string_view oldText);
     virtual void onFontChange(std::string_view font);
@@ -1086,6 +1106,7 @@ public:
     bool isTextWrap() { return hasProp(PropTextWrap); }
     std::string getFont();
     Size getTextSize() { return m_textSize; }
+    Size getRealTextSize() const { return m_realTextSize; }
     std::string getTextByPos(const Point& mousePos);
 
     // custom style

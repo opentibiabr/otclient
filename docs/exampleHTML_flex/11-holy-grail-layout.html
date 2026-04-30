@@ -1,0 +1,148 @@
+<html>
+<style>
+    window {
+    font-family: Arial, sans-serif;
+    margin: 24px;
+    background-color: #ffffff;
+    color: #222222;
+    height: 100%;
+    margin-top: 0;
+    margin-left: 0;
+    margin-right: 0;
+    display: block !important;
+    --image-source: none;
+    display: block !important;
+    width: 99% !important;
+    height: auto !important;
+    min-height: 100% !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Holy Grail structure: header / (sidebar + main + aside) / footer */
+  .page {
+    display: flex;
+    flex-direction: column;
+    height: 500px;
+    border: 2px solid #333;
+  }
+
+  .header {
+    background-color: #1565c0;
+    color: #fff;
+    padding: 12px 20px;
+    font-weight: bold;
+    flex-shrink: 0;
+  }
+
+  .body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .sidebar {
+    background-color: #e3f2fd;
+    --border-width-right: 2px;
+    --border-color-right: #90caf9;
+    width: 140px;
+    flex-shrink: 0;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .nav-link {
+    background-color: #bbdefb;
+    border-radius: 4px;
+    padding: 6px 10px;
+    color: #1565c0;
+  }
+
+  .main {
+    flex: 1;
+    padding: 16px;
+    background-color: #fff;
+    overflow: auto;
+  }
+
+  .aside {
+    background-color: #fce4ec;
+    --border-width-left: 2px;
+    --border-color-left: #f48fb1;
+    width: 120px;
+    flex-shrink: 0;
+    padding: 12px;
+    color: #880e4f;
+  }
+
+  .footer {
+    background-color: #424242;
+    color: #eee;
+    padding: 10px 20px;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .article {
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: #ffffff;
+  }
+
+  .article-title {
+    font-weight: bold;
+    color: #1565c0;
+    margin-bottom: 4px;
+  }
+
+  .article-text {
+    color: #444;
+  }
+</style>
+<window>
+  <div class="page">
+    <div class="header">Holy Grail Layout &mdash; Flexbox</div>
+
+    <div class="body">
+      <div class="sidebar">
+        <div class="nav-link">Home</div>
+        <div class="nav-link">Articles</div>
+        <div class="nav-link">Gallery</div>
+        <div class="nav-link">Contact</div>
+      </div>
+
+      <div class="main">
+        <div class="article">
+          <div class="article-title">Article 1</div>
+          <div class="article-text">Flexbox makes complex layouts simple.</div>
+        </div>
+        <div class="article">
+          <div class="article-title">Article 2</div>
+          <div class="article-text">The main area grows with flex: 1 to use available space.</div>
+        </div>
+        <div class="article">
+          <div class="article-title">Article 3</div>
+          <div class="article-text">Header and footer have fixed height with flex-shrink: 0.</div>
+        </div>
+      </div>
+
+      <div class="aside">
+        <b>Widgets</b><br><br>
+        Right sidebar with secondary content.
+      </div>
+    </div>
+
+    <div class="footer">
+      <span>(c) 2024 My Site</span>
+      <span>Made with Flexbox</span>
+    </div>
+  </div>
+</window>
+
+</html>

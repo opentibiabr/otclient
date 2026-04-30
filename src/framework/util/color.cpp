@@ -133,9 +133,8 @@ namespace {
 
     inline std::string to_lower_ascii(std::string_view s) {
         std::string out(s);
-        for (char &c : out)
-            if (c >= 'A' && c <= 'Z')
-                c |= 0x20;
+        for (char& c : out)
+            c += (c >= 'A' && c <= 'Z') ? 0x20 : 0;
         return out;
     }
 
@@ -314,6 +313,16 @@ std::istream& operator>>(std::istream& in, Color& color)
 
     if (in.peek() == '#') {
         in.ignore() >> tmp;
+        if (tmp.length() == 3 || tmp.length() == 4) {
+            std::string expanded;
+            expanded.reserve(tmp.length() * 2);
+            for (const char c : tmp) {
+                expanded.push_back(c);
+                expanded.push_back(c);
+            }
+            tmp = std::move(expanded);
+        }
+
         if (tmp.length() == 6 || tmp.length() == 8) {
             color.setRed(static_cast<uint8_t>(stdext::hex_to_dec(tmp.substr(0, 2))));
             color.setGreen(static_cast<uint8_t>(stdext::hex_to_dec(tmp.substr(2, 2))));
