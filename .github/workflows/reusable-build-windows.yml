@@ -16,7 +16,9 @@ jobs:
         type: [CMake, Solution]
     runs-on: windows-2025
     env:
-      VCPKG_BINARY_SOURCES: "clear;nuget,https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json,readwrite;nugettimeout,600"
+      VCPKG_BINARY_CACHE_ACCESS: ${{ secrets.VCPKG_PACKAGES_TOKEN != '' && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch') && 'readwrite' || 'read' }}
+      VCPKG_BINARY_SOURCES: "clear;nuget,https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json,${{ secrets.VCPKG_PACKAGES_TOKEN != '' && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch') && 'readwrite' || 'read' }};nugettimeout,600"
+      VCPKG_NUGET_REPOSITORY: https://github.com/${{ github.repository }}.git
       VCPKG_NUGET_API_KEY: ${{ secrets.VCPKG_PACKAGES_TOKEN || github.token }}
       SCCACHE_DIR: ${{ github.workspace }}\.sccache
     steps:
@@ -131,7 +133,7 @@ jobs:
             /p:GITHUB_WORKSPACE="${{ github.workspace }}"
 
       - name: Verify vcpkg binary cache push
-        if: matrix.type == 'CMake' && success() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || (github.event.pull_request != null && github.event.pull_request.head.repo.full_name == github.repository))
+        if: matrix.type == 'CMake' && success() && env.VCPKG_BINARY_CACHE_ACCESS == 'readwrite'
         shell: pwsh
         run: |
           $logs = Get-ChildItem -Path . -Recurse -Filter vcpkg-manifest-install.log -ErrorAction SilentlyContinue
