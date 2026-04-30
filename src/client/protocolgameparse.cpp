@@ -7182,7 +7182,7 @@ void ProtocolGame::parseOpenWheelWindow(const InputMessagePtr& msg)
         hasMonkQuest = msg->getU8();
         g_logger.debug(fmt::format("[Wheel C++ Parse] hasMonkQuest lido (valor={})", static_cast<int>(hasMonkQuest)));
     }
-    if (g_game.getProtocolVersion() >= 1500) {
+    if (g_game.getProtocolVersion() >= 1520) {
         msg->getU16(); // getExtraPointsFromHuntingTaskShop
     }
     // Gems ativas (equipadas)
