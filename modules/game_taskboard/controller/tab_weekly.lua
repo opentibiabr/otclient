@@ -260,7 +260,67 @@ function TaskBoardController:deliverItem(itemId, slotIndex)
     }}, yes, no)
 end
 
---  Progress bar helper 
+--  Delivery item right-click context menu
+
+function TaskBoardController:onDeliveryItemsRendered()
+    local container = self:findWidget("#deliveryTasksBox")
+    if not container then return end
+    local ctrl = self
+    for i = 1, container:getChildCount() do
+        local card = container:getChildByIndex(i)
+        if not card or card:isDestroyed() then break end
+        if not card.__for_values then break end
+        local item = card.__for_values[1]
+        if not item then break end
+        local itemId = tonumber(item.itemId) or 0
+        local itemName = tostring(item.itemName or "")
+        if itemId > 0 then
+            card.onMouseRelease = function(widget, mousePos, mouseButton)
+                if mouseButton == MouseRightButton then
+                    ctrl:showDeliveryItemMenu(itemId, itemName, mousePos)
+                    return true
+                end
+            end
+        end
+    end
+end
+
+function TaskBoardController:showDeliveryItemMenu(itemId, itemName, mousePos)
+    local menu = g_ui.createWidget('PopupMenu')
+    menu:addOption(tr('Cyclopedia'), function()
+        local cyc = modules.game_cyclopedia
+        if not cyc then
+            return
+        end
+        if controllerCyclopedia and controllerCyclopedia.ui and controllerCyclopedia.ui:isVisible() then
+            cyc.SelectWindow('items', false)
+        else
+            cyc.show('items')
+        end
+        TaskBoardController:scheduleEvent(function()
+            if cyc.Cyclopedia and cyc.Cyclopedia.ItemSearch then
+                cyc.Cyclopedia.ItemSearch(itemName, false)
+            end
+        end, 100, "showDeliveryItemCyclopedia")
+    end)
+    menu:addOption(tr('Show in Market'), function()
+        local market = modules.game_market
+        if not market or not market.onShowRedirect then
+            return
+        end
+        local thingType = g_things.getThingType(itemId, ThingCategoryItem)
+        if not thingType then
+            return
+        end
+        market.onMarketEnter({}, 0, 0, 0)
+        TaskBoardController:scheduleEvent(function()
+            market.onShowRedirect(thingType)
+        end, 100, "showDeliveryItemMarket")
+    end)
+    menu:display(mousePos)
+end
+
+--  Progress bar helper
 
 function TaskBoardController:calcProgressWidth(completedTasks)
     local sectionIndex = 0

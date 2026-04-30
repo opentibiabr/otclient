@@ -174,8 +174,8 @@
                         <label class="weeklyStoreBtnLabel">Unlock permanently</label>
                     </div>
                 </div>
-                <div class="deliveryTasksBox minipanel" title="Delivery Tasks">
-                    <div *for="local item in self.weeklyItems" class="weeklyCard" *title="item.itemName">
+                <div id="deliveryTasksBox" class="deliveryTasksBox minipanel" title="Delivery Tasks">
+                    <div *for="local item in self.weeklyItems" *for-finished="self:onDeliveryItemsRendered()" class="weeklyCard" *title="item.itemName">
                         <div class="weeklyPreview">
                             <UIItem class="weeklyItemWidget" *visible="item.itemId > 0"
                                 *item-id="(item.itemId and item.itemId > 0) and item.itemId or 1"

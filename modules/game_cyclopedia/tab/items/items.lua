@@ -1004,6 +1004,11 @@ function Cyclopedia.ItemSearch(text, clearTextEdit)
         for _, data in ipairs(searchedItems) do
             local item = Cyclopedia.internalCreateItem(data)
         end
+
+        local firstChild = UI.ItemListBase.List:getFirstChild()
+        if firstChild and firstChild.onClick then
+            firstChild:onClick()
+        end
     else
         UI.SelectedItem.Sprite:setItemId(0)
         UI.SelectedItem.Rarity:setImageSource("")
