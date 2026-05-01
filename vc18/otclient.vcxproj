@@ -157,13 +157,13 @@
     <VcpkgInstalledDir>vcpkg_installed</VcpkgInstalledDir>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <VcpkgTriplet>x86-windows-static-debug</VcpkgTriplet>
+    <VcpkgTriplet>x86-windows-static</VcpkgTriplet>
     <VcpkgInstalledDir>vcpkg_installed</VcpkgInstalledDir>
-    <VcpkgAdditionalInstallOptions>--overlay-triplets="$(MSBuildProjectDirectory)\..\cmake\triplets" $(VcpkgAdditionalInstallOptions)</VcpkgAdditionalInstallOptions>
+    <VcpkgAdditionalInstallOptions>--no-binarycaching $(VcpkgAdditionalInstallOptions)</VcpkgAdditionalInstallOptions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Vcpkg">
-    <VcpkgTriplet>x64-windows-static-debug</VcpkgTriplet>
-    <VcpkgAdditionalInstallOptions>--overlay-triplets="$(MSBuildProjectDirectory)\..\cmake\triplets" $(VcpkgAdditionalInstallOptions)</VcpkgAdditionalInstallOptions>
+    <VcpkgTriplet>x64-windows-static</VcpkgTriplet>
+    <VcpkgAdditionalInstallOptions>--no-binarycaching $(VcpkgAdditionalInstallOptions)</VcpkgAdditionalInstallOptions>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
