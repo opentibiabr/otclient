@@ -43,6 +43,9 @@
 #include "framework/stdext/math.h"
 
 #ifndef USE_GMP
+#ifndef OPENSSL_API_COMPAT
+#define OPENSSL_API_COMPAT 0x10100000L
+#endif
 #ifndef OPENSSL_SUPPRESS_DEPRECATED
 #define OPENSSL_SUPPRESS_DEPRECATED
 #endif

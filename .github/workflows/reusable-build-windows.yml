@@ -9,11 +9,26 @@ permissions:
 
 jobs:
   build:
-    name: Compile (${{ matrix.type }})
+    name: Compile (${{ matrix.name }})
     strategy:
       fail-fast: false
       matrix:
-        type: [CMake, Solution]
+        include:
+          - name: CMake Release
+            type: CMake
+            artifact: windows-cmake-release
+          - name: Solution Debug
+            type: Solution
+            configuration: Debug
+            artifact: windows-solution-debug
+          - name: Solution OpenGL
+            type: Solution
+            configuration: OpenGL
+            artifact: windows-solution-opengl
+          - name: Solution DirectX
+            type: Solution
+            configuration: DirectX
+            artifact: windows-solution-directx
     runs-on: windows-2025
     env:
       VCPKG_BINARY_CACHE_ACCESS: ${{ secrets.VCPKG_PACKAGES_TOKEN != '' && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch') && 'readwrite' || 'read' }}
@@ -113,7 +128,7 @@ jobs:
         if: matrix.type == 'CMake'
         uses: actions/upload-artifact@v7
         with:
-          name: windows-cmake-release
+          name: ${{ matrix.artifact }}
           path: build/windows-release/bin/
 
       - name: Build project (MSBuild solution)
@@ -121,12 +136,12 @@ jobs:
         shell: pwsh
         run: |
           $vcpkgRoot = Join-Path (Get-Location) "vcpkg"
-          $outDir = Join-Path (Get-Location) "artifacts"
+          $outDir = Join-Path (Get-Location) "artifacts/${{ matrix.configuration }}"
           New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 
           msbuild.exe vc18/otclient.sln `
             /m `
-            /p:Configuration=Debug `
+            /p:Configuration=${{ matrix.configuration }} `
             /p:Platform=x64 `
             /p:VcpkgEnableManifest=true `
             /p:VcpkgRoot="$vcpkgRoot" `
@@ -153,5 +168,5 @@ jobs:
         if: matrix.type == 'Solution'
         uses: actions/upload-artifact@v7
         with:
-          name: windows-solution-debug
-          path: artifacts/
+          name: ${{ matrix.artifact }}
+          path: artifacts/${{ matrix.configuration }}/
