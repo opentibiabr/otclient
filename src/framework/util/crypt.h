@@ -33,6 +33,9 @@
 #ifdef USE_GMP
 #include <gmp.h>
 #else
+#ifndef OPENSSL_SUPPRESS_DEPRECATED
+#define OPENSSL_SUPPRESS_DEPRECATED
+#endif
 #include <openssl/rsa.h>
 #endif
 

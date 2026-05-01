@@ -43,6 +43,9 @@
 #include "framework/stdext/math.h"
 
 #ifndef USE_GMP
+#ifndef OPENSSL_SUPPRESS_DEPRECATED
+#define OPENSSL_SUPPRESS_DEPRECATED
+#endif
 #include <openssl/bn.h>
 #include <openssl/rsa.h>
 #endif

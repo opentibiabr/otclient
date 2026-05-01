@@ -12,7 +12,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y luajit
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Compile Lua files
         shell: bash

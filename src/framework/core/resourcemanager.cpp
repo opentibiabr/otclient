@@ -254,7 +254,9 @@ bool ResourceManager::writeFileBuffer(const std::string& fileName, const uint8_t
         const auto& path = std::filesystem::path(fileName);
         const auto& dirPath = path.parent_path().string();
 
-        if (!PHYSFS_isDirectory(dirPath.c_str())) {
+        PHYSFS_Stat stat = {};
+        const bool dirExists = PHYSFS_stat(dirPath.c_str(), &stat) && stat.filetype == PHYSFS_FILETYPE_DIRECTORY;
+        if (!dirExists) {
             if (!PHYSFS_mkdir(dirPath.c_str())) {
                 g_logger.error(
                     "Unable to create write directory '{}': {}",
@@ -694,7 +696,6 @@ void ResourceManager::updateExecutable(std::string fileName)
     PHYSFS_close(file);
     setWriteDir(oldWriteDir);
 
-    std::filesystem::path newBinaryPath(std::filesystem::u8path(PHYSFS_getWriteDir()));
 #endif
 }
 
