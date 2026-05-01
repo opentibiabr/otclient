@@ -22,11 +22,23 @@
 
 #pragma once
 
+#ifndef USE_PRECOMPILED_HEADERS
+#include <cstdint>
+#include <string>
+#include <string_view>
+#endif
+
 #include <stduuid/uuid.h>
 
 #ifdef USE_GMP
 #include <gmp.h>
 #else
+#ifndef OPENSSL_API_COMPAT
+#define OPENSSL_API_COMPAT 0x10100000L
+#endif
+#ifndef OPENSSL_SUPPRESS_DEPRECATED
+#define OPENSSL_SUPPRESS_DEPRECATED
+#endif
 #include <openssl/rsa.h>
 #endif
 

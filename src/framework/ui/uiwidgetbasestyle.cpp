@@ -627,6 +627,7 @@ void UIWidget::parseBaseStyle(const OTMLNodePtr& styleNode)
             else if (v == "both") clear = ClearType::Both;
             else if (v == "inline-start") clear = ClearType::InlineStart;
             else if (v == "inline-end") clear = ClearType::InlineEnd;
+            setClear(clear);
         } else if (node->tag() == "justify-items") {
             auto v = node->value<std::string>();
             JustifyItemsType justify = JustifyItemsType::Normal;

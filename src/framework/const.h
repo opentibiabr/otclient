@@ -22,6 +22,12 @@
 
 #pragma once
 
+#ifndef USE_PRECOMPILED_HEADERS
+#include <cmath>
+#include <cstdint>
+#include <numbers>
+#endif
+
 #define DEG_TO_RAD (std::acos(-1.f)/180.f)
 #define RAD_TO_DEC (180.f/std::acos(-1.f))
 

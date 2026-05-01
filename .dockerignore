@@ -4,8 +4,10 @@
 /.vs/
 /build/
 /build-*/
-/cmake-build*/
+/cmake-build*
 /vc17/
+/vc18/generated/
+/vcpkg/
 /vcpkg_installed/
 /android/app/build/
 /android/app/.cxx/
@@ -13,6 +15,8 @@
 Dockerfile*
 *.dll
 *.exe
+*.ilk
+*.log
 *.pdb
 *.obj
 *.lib

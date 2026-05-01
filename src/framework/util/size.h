@@ -25,6 +25,12 @@
 #include "../const.h"
 #include "point.h"
 
+#ifndef USE_PRECOMPILED_HEADERS
+#include <algorithm>
+#include <istream>
+#include <ostream>
+#endif
+
 template<class T>
 class TSize
 {

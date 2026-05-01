@@ -24,9 +24,17 @@
 #include "exception.h"
 #include "types.h"
 
+#ifndef USE_PRECOMPILED_HEADERS
+#include <algorithm>
 #include <charconv>
-#include <utf8cpp/utf8.h>
+#include <cctype>
+#include <cstdint>
+#include <ctime>
 #include <iterator>
+#include <ranges>
+#endif
+
+#include <utf8cpp/utf8.h>
 
 #ifdef _MSC_VER
 #pragma warning(disable:4267) // '?' : conversion from 'A' to 'B', possible loss of data
@@ -237,7 +245,7 @@ namespace stdext
         while (p < end) {
             const char* token_start = p;
 
-            while (p < end && !separators.contains(*p)) {
+            while (p < end && separators.find(*p) == std::string_view::npos) {
                 ++p;
             }
 
@@ -245,7 +253,7 @@ namespace stdext
                 result.emplace_back(token_start, p - token_start);
             }
 
-            while (p < end && separators.contains(*p)) {
+            while (p < end && separators.find(*p) != std::string_view::npos) {
                 ++p;
             }
         }

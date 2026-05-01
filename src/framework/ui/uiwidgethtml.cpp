@@ -324,7 +324,7 @@ namespace {
         }
     }
 
-    static inline void applyTableRowChild(UIWidget* self, const FlowContext& ctx, bool topCleared) {
+    static inline void applyTableRowChild(UIWidget* self, const FlowContext& ctx, bool) {
         self->addAnchor(Fw::AnchorTop, "parent", Fw::AnchorTop);
 
         if (!ctx.lastNormalWidget) {
@@ -1994,21 +1994,21 @@ void UIWidget::applyAnchorAlignment() {
         const bool continueInlineRun =
             isInline && ctx.lastNormalWidget && isInlineLike(ctx.lastNormalWidget->getDisplay());
 
-        if (isInline && m_parent->getTextAlign() == Fw::AlignCenter ||
-            !isInline && m_parent->getJustifyItems() == JustifyItemsType::Center) {
+        if ((isInline && m_parent->getTextAlign() == Fw::AlignCenter) ||
+            (!isInline && m_parent->getJustifyItems() == JustifyItemsType::Center)) {
             if (continueInlineRun)
                 addAnchor(Fw::AnchorLeft, ctx.lastNormalWidget->getId().c_str(), Fw::AnchorRight);
             else
                 addAnchor(Fw::AnchorHorizontalCenter, "parent", Fw::AnchorHorizontalCenter);
         } else if (m_positionType != PositionType::Absolute) {
-            if (isInline && m_parent->getTextAlign() == Fw::AlignLeft ||
-                !isInline && m_parent->getJustifyItems() == JustifyItemsType::Left) {
+            if ((isInline && m_parent->getTextAlign() == Fw::AlignLeft) ||
+                (!isInline && m_parent->getJustifyItems() == JustifyItemsType::Left)) {
                 if (continueInlineRun)
                     addAnchor(Fw::AnchorLeft, ctx.lastNormalWidget->getId().c_str(), Fw::AnchorRight);
                 else
                     addAnchor(Fw::AnchorLeft, "parent", Fw::AnchorLeft);
-            } else if (isInline && m_parent->getTextAlign() == Fw::AlignRight ||
-                       !isInline && m_parent->getJustifyItems() == JustifyItemsType::Right) {
+            } else if ((isInline && m_parent->getTextAlign() == Fw::AlignRight) ||
+                       (!isInline && m_parent->getJustifyItems() == JustifyItemsType::Right)) {
                 if (continueInlineRun)
                     addAnchor(Fw::AnchorRight, "next", Fw::AnchorLeft);
                 else

@@ -21,6 +21,13 @@
  */
 
 #pragma once
+
+#ifndef USE_PRECOMPILED_HEADERS
+#include <string>
+#include <unordered_map>
+#include <vector>
+#endif
+
 #include "declarations.h"
 
 namespace css {
