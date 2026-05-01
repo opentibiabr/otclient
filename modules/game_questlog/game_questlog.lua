@@ -201,6 +201,9 @@ local sortFunctions = {
 }
 
 local function sendQuestTracker(listToMap)
+    if #listToMap == 0 then
+        return
+    end
     local map = {}
     for _, entry in ipairs(listToMap) do
         map[entry[1]] = entry[2]

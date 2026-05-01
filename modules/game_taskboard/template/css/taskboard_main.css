@@ -1,0 +1,159 @@
+/* Main window */
+.taskWindow {
+    width: 1000px;
+    height: 602px;
+    display: block;
+}
+
+/* Tab bar */
+.tabBar {
+    width: 967px;
+    height: 45px;
+    margin: 8px 12px 2px 12px;
+    display: block;
+    text-align: left;
+    --image-source: /images/ui/back-icons;
+    --image-border: 1;
+}
+
+.tabBtn {
+    width: 322px;
+    height: 100%;
+    display: inline-block;
+    vertical-align: top;
+    text-align: center;
+    padding: 0;
+    position: relative;
+    font: verdana-11px-antialised;
+    --text-offset: 0 0;
+    --image-source: /images/ui/button;
+    --image-clip: 0 0 22 23;
+    --image-border: 3;
+    --opacity: 1.0;
+    --color: #b9b9b9ff;
+}
+
+.tabBtn.active,
+.tabBtn:checked,
+.tabBtn:pressed {
+    --image-clip: 0 46 22 23;
+    margin-top: -1;
+}
+
+.tabBtn:hover {
+    color: #c0c0c0;
+}
+
+.tabActive {
+    color: #ffffff;
+}
+
+.tabIcon {
+    width: 32px;
+    height: 32px;
+    display: inline-block;
+    position: absolute;
+    left: 5px;
+    top: 2px;
+    margin-right: 6px;
+}
+
+.tablabel {
+    color: #c0c0c0;
+    --text-offset: 0 10;
+    vertical-align: middle;
+}
+
+/* Content area */
+.contentArea {
+    width: 968px;
+    height: 500px;
+    margin: 6px 12px 0 12px;
+    display: block;
+    position: relative;
+    --image-source: /images/ui/2pixel_up_frame_borderimage;
+    --image-border: 2;
+}
+
+.contentPanel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 10px;
+    overflow: hidden;
+}
+
+/* Bottom bar */
+.bottomBar {
+    width: 968px;
+    height: 28px;
+    margin: 4px 12px 0 12px;
+    display: block;
+}
+
+.infoPanel {
+    width: 105px;
+    height: 20px;
+    display: inline;
+    margin-right: 8px;
+    margin-top: 4px;
+    --image-source: /images/ui/infoPanel;
+    --image-border: 2;
+    position: relative;
+}
+
+.infoPanelLabel {
+    font: verdana-11px-rounded;
+    color: #c0c0c0;
+    text-align: right;
+    float: right;
+    width: 80px;
+    height: 100%;
+    margin-right: 5px;
+}
+
+.infoPanelIcon {
+    width: 12px;
+    height: 12px;
+    float: right;
+    margin-top: 4px;
+    margin-right: 4px;
+}
+
+.closeBtn {
+    float: right;
+    height: 0px;
+    padding: 0;
+    margin-top: 3px;
+    min-width: 60px;
+}
+
+/* Shared framed windows */
+.staticWindow {
+    display: block;
+    position: relative;
+    --image-source: /images/ui/window_new;
+    --image-border: 30;
+    padding: 25px 10px 8px 10px;
+    margin-bottom: 8px;
+}
+
+.helpIcon {
+    width: 12px;
+    height: 12px;
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 4px;
+    margin-right: 6px;
+    --image-source: /images/skin/show-gui-help-grey;
+}
+
+.vSep {
+    display: inline-block;
+    vertical-align: middle;
+    width: 1px;
+    height: 100%;
+    background-color: #555555;
+}

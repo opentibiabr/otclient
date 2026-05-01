@@ -43,15 +43,33 @@ public:
 
     UIMapPtr getMapWidget() { return m_mapWidget; }
 
-    float getEffectAlpha() const { return m_effectAlpha; }
-    void setEffectAlpha(const float v) { m_effectAlpha = v; }
+    float getEffectAlpha() const { return getEffectAlpha(Otc::ME_SOURCE_OWN); }
+    void setEffectAlpha(const float v) { m_effectAlphas[Otc::ME_SOURCE_OWN] = v; }
+
+    void setOwnSpellEffectAlpha(const float v) { m_effectAlphas[Otc::ME_SOURCE_OWN] = v; }
+    float getOwnSpellEffectAlpha() const { return m_effectAlphas[Otc::ME_SOURCE_OWN]; }
+
+    void setOtherPlayerSpellEffectAlpha(const float v) { m_effectAlphas[Otc::ME_SOURCE_OTHER_PLAYER] = v; }
+    float getOtherPlayerSpellEffectAlpha() const { return m_effectAlphas[Otc::ME_SOURCE_OTHER_PLAYER]; }
+
+    void setCreatureSpellEffectAlpha(const float v) { m_effectAlphas[Otc::ME_SOURCE_MONSTER] = v; }
+    float getCreatureSpellEffectAlpha() const { return m_effectAlphas[Otc::ME_SOURCE_MONSTER]; }
+
+    void setBossAreaCreatureEffectAlpha(const float v) { m_effectAlphas[Otc::ME_SOURCE_BOSS] = v; }
+    float getBossAreaCreatureEffectAlpha() const { return m_effectAlphas[Otc::ME_SOURCE_BOSS]; }
+
+    // Helper to get by source directly
+    float getEffectAlpha(uint8_t source) const {
+        if (source >= m_effectAlphas.size()) return 1.0f;
+        return m_effectAlphas[source];
+    }
 
     float getMissileAlpha() const { return m_missileAlpha; }
     void setMissileAlpha(const float v) { m_missileAlpha = v; }
 
 private:
     UIMapPtr m_mapWidget;
-    float m_effectAlpha{ 1.f };
+    std::array<float, Otc::ME_SOURCE_LAST + 1> m_effectAlphas{ 1.f, 1.f, 1.f, 1.f, 1.f };
     float m_missileAlpha{ 1.f };
 };
 

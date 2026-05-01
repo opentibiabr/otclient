@@ -317,7 +317,7 @@ local function loadIcon(bitChanged, content, topmenu)
     icon:setId(Icons[bitChanged].id)
     icon:setImageSource("/images/game/states/player-state-flags")
     icon:setImageClip(((Icons[bitChanged].clip - 1) * 9) .. ' 0 9 9')
-    local tooltip = Icons[bitChanged].tooltip
+    local tooltip = Icons[bitChanged].tooltipBar or Icons[bitChanged].tooltip
     if tooltip == "You are GoshnarTaint" then
         tooltip = "Goshnar's Lairs Penalties:\n" ..
             "- 10% chance of creature teleportation to you\n" ..
@@ -825,5 +825,16 @@ function StatsBar.onHungryChange(regenerationTime, alert)
                 icon = nil
             end
         end
+    end
+end
+
+function StatsBar.getHeight()
+    if currentStats.dimension == 'hide' or not statsBarTop then
+        return 0
+    end
+    if statsBarTop:isVisible() then
+        return statsBarTop:getHeight()
+    else
+        return 0
     end
 end

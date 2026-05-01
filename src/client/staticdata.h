@@ -90,6 +90,102 @@ struct PreyMonster
     Outfit outfit;
 };
 
+struct TaskBoardBountyHeaderData
+{
+    uint8_t rerollPoints{ 0 };
+    uint8_t claimDaily{ 0 };
+    uint8_t difficulty{ 1 };
+};
+
+struct TaskBoardBountyMonsterData
+{
+    uint8_t taskIndex{ 0 };
+    uint16_t raceId{ 0 };
+    uint16_t currentKills{ 0 };
+    uint16_t totalKills{ 0 };
+    uint32_t rewardXp{ 0 };
+    uint8_t rewardPoints{ 0 };
+    uint8_t rewardReroll{ 0 };
+    uint8_t rarity{ 0 };
+    uint8_t isActive{ 0 };
+    uint8_t isCompleted{ 0 };
+};
+
+struct TaskBoardTalismanData
+{
+    uint16_t currentValue{ 0 };
+    uint16_t nextValue{ 0 };
+    uint16_t upgradeCost{ 0 };
+    uint8_t isActiveUpgrade{ 0 };
+};
+
+struct TaskBoardPreferredSlotData
+{
+    uint8_t slot{ 0 };
+    uint8_t locked{ 1 }; // 1 = locked by default (unpurchased slot)
+    uint16_t preferred{ 0 };
+    uint16_t unwanted{ 0 };
+    uint32_t price{ 0 };
+};
+
+struct TaskBoardWeeklyHeaderData
+{
+    uint8_t difficulty{ 0 };
+    uint16_t currentPlayerLevel{ 0 };
+    uint8_t remainingDays{ 0 };
+    uint8_t totalTaskSlots{ 0 };
+    uint32_t maxExperience{ 0 };
+    uint32_t maxDeliveryExperience{ 0 };
+    uint8_t completedKillTasks{ 0 };
+    uint8_t completedDeliveryTasks{ 0 };
+    uint32_t pointsEarned{ 0 };
+    uint32_t soulsealsEarned{ 0 };
+    uint8_t extraSlot{ 0 };
+};
+
+struct TaskBoardWeeklyMonsterData
+{
+    uint16_t raceId{ 0 };
+    uint32_t current{ 0 };
+    uint32_t total{ 0 };
+    uint8_t state{ 0 };
+};
+
+struct TaskBoardWeeklyItemData
+{
+    uint8_t slotIndex{ 0 };
+    uint16_t itemId{ 0 };
+    uint32_t current{ 0 };
+    uint32_t total{ 0 };
+    uint8_t claimed{ 0 };
+    uint8_t state{ 0 };
+};
+
+struct TaskBoardShopItemData
+{
+    uint8_t id{ 0 };
+    uint8_t offerType{ 0 };
+    std::string title;
+    std::string description;
+    uint32_t price{ 0 };
+    uint8_t bought{ 0 };
+    uint32_t lookType{ 0 };
+    uint8_t lookAddons{ 0 };
+    uint32_t itemId{ 0 };
+    uint16_t maxPurchases{ 0 };
+    uint16_t currentPurchases{ 0 };
+    uint32_t nextCost{ 0 };
+};
+
+struct TaskBoardSoulsealEntryData
+{
+    std::string name;
+    uint16_t raceId{ 0 };
+    uint16_t soulsealPoints{ 0 };
+    uint8_t category{ 0 };
+    uint8_t done{ 1 };
+};
+
 struct Imbuement
 {
     uint32_t id;
@@ -146,6 +242,33 @@ struct NPCData
     uint32_t buyPrice;
     uint32_t currencyObjectTypeId;
     std::string currencyQuestFlagDisplayName;
+};
+
+enum KeywordButtonIcon : uint16_t
+{
+    KEYWORDBUTTONICON_GENERALTRADE = 0,
+    KEYWORDBUTTONICON_POTIONTRADE = 1,
+    KEYWORDBUTTONICON_EQUIPMENTTRADE = 2,
+    KEYWORDBUTTONICON_SAIL = 3,
+    KEYWORDBUTTONICON_DEPOSITALL = 4,
+    KEYWORDBUTTONICON_WITHDRAW = 5,
+    KEYWORDBUTTONICON_BALANCE = 6,
+    KEYWORDBUTTONICON_YES = 7,
+    KEYWORDBUTTONICON_NO = 8,
+    KEYWORDBUTTONICON_BYE = 9,
+    KEYWORDBUTTONICON_LAST
+};
+
+struct NpcButton
+{
+    uint16_t id;
+    std::string text;
+};
+
+struct NpcChatWindowData
+{
+    std::vector<uint32_t> npcIds;
+    std::vector<NpcButton> buttons;
 };
 
 struct MarketOffer
@@ -357,7 +480,7 @@ struct CyclopediaCharacterGeneralStats
 {
     uint64_t experience;
     uint16_t level;
-    uint8_t levelPercent;
+    uint16_t levelPercent;
     uint16_t baseExpGain;
     uint16_t lowLevelExpBonus;
     uint16_t XpBoostPercent;
@@ -657,6 +780,7 @@ struct CyclopediaCharacterOffenceStats
     double onslaught;
     double onslaughtBase;
     double onslaughtBonus;
+    double onslaughtEventBonus;
 
     double cleavePercent;
 
@@ -664,6 +788,7 @@ struct CyclopediaCharacterOffenceStats
 
     uint16_t flatDamage;
     uint16_t flatDamageBase;
+    uint16_t flatDamageWheel;
 
     uint16_t weaponAttack;
     uint16_t weaponFlatModifier;
@@ -674,7 +799,38 @@ struct CyclopediaCharacterOffenceStats
     uint8_t weaponElement;
     double weaponElementDamage;
     uint8_t weaponElementType;
-    std::vector<double> weaponAccuracy;
+    
+    struct AccuracyData { uint8_t range; double chance; };
+    std::vector<AccuracyData> weaponAccuracy;
+
+    double damagePowerfulFoes;
+    struct TargetBonus { std::string name; double value; };
+    std::vector<TargetBonus> damageSpecificTargets;
+
+    struct ElementModifier { uint8_t element; double value; };
+    std::vector<ElementModifier> damageElements;
+
+    double offensiveRuneDamage;
+    double autoAttackDamage;
+
+    std::vector<ElementModifier> critDamageElements;
+    double critDamageOffensiveRunes;
+    double critDamageAutoAttack;
+
+    uint16_t lifeGainHit;
+    uint16_t manaGainHit;
+    uint16_t lifeGainKill;
+    uint16_t manaGainKill;
+
+    struct SkillBonus { uint8_t skillId; double valueA; double valueB; };
+    std::vector<SkillBonus> extraDamageSkills;
+    std::vector<SkillBonus> extraDamageSpells;
+    std::vector<SkillBonus> extraHealingSpells;
+
+    double damageHighHp;
+    double damageLowHp;
+    double armorPenetration;
+    std::vector<ElementModifier> elementalPierce;
 };
 
 struct CyclopediaCharacterDefenceStats
@@ -738,7 +894,24 @@ struct CyclopediaCharacterMiscStats
         uint32_t duration;
     };
 
+    struct Food
+    {
+        uint16_t id;
+        uint32_t duration;
+    };
+
+    struct Augment
+    {
+        uint16_t spellId;
+        uint8_t type;
+        double value;
+    };
+
     std::vector<Concoction> concoctions;
+    std::vector<Food> activeFoods;
+    std::vector<Augment> weaponProficiencyAugments;
+    std::vector<Augment> wheelAugments;
+    std::vector<Augment> equippedAugments;
 };
 
 struct ForgeItemInfo

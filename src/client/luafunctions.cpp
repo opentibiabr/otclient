@@ -374,6 +374,13 @@ void Client::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_game", "acceptMarketOffer", &Game::acceptMarketOffer, &g_game);
     g_lua.bindSingletonFunction("g_game", "preyAction", &Game::preyAction, &g_game);
     g_lua.bindSingletonFunction("g_game", "preyRequest", &Game::preyRequest, &g_game);
+    g_lua.bindSingletonFunction("g_game", "bountyTaskAction", &Game::bountyTaskAction, &g_game);
+    g_lua.bindSingletonFunction("g_game", "weeklyTaskAction", &Game::weeklyTaskAction, &g_game);
+    g_lua.bindSingletonFunction("g_game", "taskHuntingShopRequest", &Game::taskHuntingShopRequest, &g_game);
+    g_lua.bindSingletonFunction("g_game", "taskHuntingShopPurchase", &Game::taskHuntingShopPurchase, &g_game);
+    g_lua.bindSingletonFunction("g_game", "bountyTalismanUpgrade", &Game::bountyTalismanUpgrade, &g_game);
+    g_lua.bindSingletonFunction("g_game", "bountyPreferredAction", &Game::bountyPreferredAction, &g_game);
+    g_lua.bindSingletonFunction("g_game", "soulsealFightAction", &Game::soulsealFightAction, &g_game);
     g_lua.bindSingletonFunction("g_game", "openPortableForgeRequest", &Game::openPortableForgeRequest, &g_game);
     g_lua.bindSingletonFunction("g_game", "forgeRequest", &Game::forgeRequest, &g_game);
     g_lua.bindSingletonFunction("g_game", "sendForgeBrowseHistoryRequest", &Game::sendForgeBrowseHistoryRequest, &g_game);
@@ -415,6 +422,7 @@ void Client::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_game", "openWheel", &Game::openWheel, &g_game);
     g_lua.bindSingletonFunction("g_game", "sendApplyWheelPoints", &Game::sendApplyWheelPoints, &g_game);
     g_lua.bindSingletonFunction("g_game", "gemAction", &Game::gemAction, &g_game);
+    g_lua.bindSingletonFunction("g_game", "sendStartOfflineTraining", &Game::sendStartOfflineTraining, &g_game);
 
     g_lua.registerSingletonClass("g_gameConfig");
     g_lua.bindSingletonFunction("g_gameConfig", "loadFonts", &GameConfig::loadFonts, &g_gameConfig);
@@ -429,8 +437,14 @@ void Client::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_gameConfig", "getStaticTextFontName", &GameConfig::getStaticTextFontName, &g_gameConfig);
     g_lua.bindSingletonFunction("g_gameConfig", "getWidgetTextFontName", &GameConfig::getWidgetTextFontName, &g_gameConfig);
 
+    g_lua.bindSingletonFunction("g_gameConfig", "setLastSupportedVersion", &GameConfig::setLastSupportedVersion, &g_gameConfig);
+
     g_lua.registerSingletonClass("g_client");
     g_lua.bindSingletonFunction("g_client", "setEffectAlpha", &Client::setEffectAlpha, &g_client);
+    g_lua.bindSingletonFunction("g_client", "setOwnSpellEffectAlpha", &Client::setOwnSpellEffectAlpha, &g_client);
+    g_lua.bindSingletonFunction("g_client", "setOtherPlayerSpellEffectAlpha", &Client::setOtherPlayerSpellEffectAlpha, &g_client);
+    g_lua.bindSingletonFunction("g_client", "setCreatureSpellEffectAlpha", &Client::setCreatureSpellEffectAlpha, &g_client);
+    g_lua.bindSingletonFunction("g_client", "setBossAreaCreatureEffectAlpha", &Client::setBossAreaCreatureEffectAlpha, &g_client);
     g_lua.bindSingletonFunction("g_client", "setMissileAlpha", &Client::setMissileAlpha, &g_client);
 
     g_lua.registerSingletonClass("g_attachedEffects");
@@ -968,6 +982,7 @@ void Client::registerLuaFunctions()
     g_lua.bindClassMemberFunction<LocalPlayer>("getRegenerationTime", &LocalPlayer::getRegenerationTime);
     g_lua.bindClassMemberFunction<LocalPlayer>("getBaseMagicLevel", &LocalPlayer::getBaseMagicLevel);
     g_lua.bindClassMemberFunction<LocalPlayer>("getTotalCapacity", &LocalPlayer::getTotalCapacity);
+    g_lua.bindClassMemberFunction<LocalPlayer>("getBaseCapacity", &LocalPlayer::getBaseCapacity);
     g_lua.bindClassMemberFunction<LocalPlayer>("getInventoryItem", &LocalPlayer::getInventoryItem);
     g_lua.bindClassMemberFunction<LocalPlayer>("hasEquippedItemId", &LocalPlayer::hasEquippedItemId);
     g_lua.bindClassMemberFunction<LocalPlayer>("getInventoryCount", &LocalPlayer::getInventoryCount);

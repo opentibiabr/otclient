@@ -1,3 +1,5 @@
+skillController = Controller:new()
+
 skillsWindow = nil
 skillsButton = nil
 skillsSettings = nil
@@ -67,8 +69,8 @@ local function setupUIButtons()
     end
 end
 
-function init()
-    connect(LocalPlayer, {
+function skillController:onInit()
+    skillController:registerEvents(LocalPlayer, {
         onExperienceChange = onExperienceChange,
         onLevelChange = onLevelChange,
         onHealthChange = onHealthChange,
@@ -76,6 +78,7 @@ function init()
         onSoulChange = onSoulChange,
         onFreeCapacityChange = onFreeCapacityChange,
         onTotalCapacityChange = onTotalCapacityChange,
+        onBaseCapacityChange = onBaseCapacityChange,
         onStaminaChange = onStaminaChange,
         onOfflineTrainingChange = onOfflineTrainingChange,
         onRegenerationChange = onRegenerationChange,
@@ -85,6 +88,7 @@ function init()
         onBaseMagicLevelChange = onBaseMagicLevelChange,
         onSkillChange = onSkillChange,
         onBaseSkillChange = onBaseSkillChange,
+        -- 14.12
         onFlatDamageHealingChange = onFlatDamageHealingChange,
         onAttackInfoChange = onAttackInfoChange,
         onConvertedDamageChange = onConvertedDamageChange,
@@ -92,13 +96,10 @@ function init()
         onDefenseInfoChange = onDefenseInfoChange,
         onCombatAbsorbValuesChange = onCombatAbsorbValuesChange,
         onForgeBonusesChange = onForgeBonusesChange,
-        onExperienceRateChange = onExperienceRateChange
+        onExperienceRateChange = onExperienceRateChange,
+        -- 15.24
+        onMultiOfflineTrainingDialog = onMultiOfflineTrainingDialog
     })
-    connect(g_game, {
-        onGameStart = online,
-        onGameEnd = offline
-    })
-
     skillsButton = modules.game_mainpanel.addToggleButton('skillsButton', tr('Skills') .. ' (Alt+S)',
                                                                    '/images/options/button_skills', toggle, false, 1)
     skillsButton:setOn(true)
@@ -120,44 +121,9 @@ function init()
 
     setupUIButtons()
     skillsWindow:setup()
-    if g_game.isOnline() then
-        online()
-        skillsWindow:setupOnStart()
-    end
 end
 
-function terminate()
-    disconnect(LocalPlayer, {
-        onExperienceChange = onExperienceChange,
-        onLevelChange = onLevelChange,
-        onHealthChange = onHealthChange,
-        onManaChange = onManaChange,
-        onSoulChange = onSoulChange,
-        onFreeCapacityChange = onFreeCapacityChange,
-        onTotalCapacityChange = onTotalCapacityChange,
-        onStaminaChange = onStaminaChange,
-        onOfflineTrainingChange = onOfflineTrainingChange,
-        onRegenerationChange = onRegenerationChange,
-        onSpeedChange = onSpeedChange,
-        onBaseSpeedChange = onBaseSpeedChange,
-        onMagicLevelChange = onMagicLevelChange,
-        onBaseMagicLevelChange = onBaseMagicLevelChange,
-        onSkillChange = onSkillChange,
-        onBaseSkillChange = onBaseSkillChange,
-        onFlatDamageHealingChange = onFlatDamageHealingChange,
-        onAttackInfoChange = onAttackInfoChange,
-        onConvertedDamageChange = onConvertedDamageChange,
-        onImbuementsChange = onImbuementsChange,
-        onDefenseInfoChange = onDefenseInfoChange,
-        onCombatAbsorbValuesChange = onCombatAbsorbValuesChange,
-        onForgeBonusesChange = onForgeBonusesChange,
-        onExperienceRateChange = onExperienceRateChange
-    })
-    disconnect(g_game, {
-        onGameStart = online,
-        onGameEnd = offline
-    })
-
+function skillController:onTerminate()
     Keybind.delete("Windows", "Show/hide skills windows")
     skillsWindow:destroy()
     skillsButton:destroy()
@@ -198,7 +164,7 @@ local SKILL_GROUPS = {
 local function setSkillGroupVisibility(groupName, visible)
     local skills = SKILL_GROUPS[groupName]
     if not skills then return end
-    
+
     for _, skillId in pairs(skills) do
         local skill = skillsWindow:recursiveGetChildById(skillId)
         if skill then
@@ -206,7 +172,7 @@ local function setSkillGroupVisibility(groupName, visible)
                 local valueWidget = skill:getChildById('value')
                 local text = valueWidget and valueWidget:getText() or ""
                 if g_game.getClientVersion() >= 1410 then
-                    skill:setVisible(text ~= "" and text ~= "0" and text ~= "0%" and 
+                    skill:setVisible(text ~= "" and text ~= "0" and text ~= "0%" and
                         text ~= "+ 0%" and text ~= "0.0%" and text ~= "+ 0.0%")
                 else
                     skill:setVisible(true)
@@ -214,6 +180,15 @@ local function setSkillGroupVisibility(groupName, visible)
             else
                 skill:setVisible(false)
             end
+        end
+    end
+
+    if groupName == 'offence' then
+        local criticalHitWidget = skillsWindow:recursiveGetChildById('criticalHit')
+        if criticalHitWidget then
+            local hasCritValue = math.abs(statsCache.critChance or 0) > 0.0001 or
+                                 math.abs(statsCache.critDamage or 0) > 0.0001
+            criticalHitWidget:setVisible(visible and hasCritValue)
         end
     end
 end
@@ -667,6 +642,26 @@ function setSkillValue(id, value)
         widget:setText(value)
         widget:setColor('#C0C0C0')
     end
+
+    if id == 'capacity' then
+        local player = g_game.getLocalPlayer()
+        if player then
+            local totalCap = player:getTotalCapacity()
+            local baseCap = player:getBaseCapacity()
+            local freeCap = player:getFreeCapacity()
+            if freeCap == 0 then
+                widget:setColor('#b22222')
+            elseif totalCap > 0 and baseCap > 0 and baseCap ~= 4294967295 and totalCap ~= baseCap then
+                widget:setColor('#44ad25')
+            else
+                local ratio = totalCap > 0 and (freeCap / totalCap * 100) or 100
+                widget:setColor(ratio <= 20 and '#b22222' or '#C0C0C0')
+            end
+            if totalCap > 0 then
+                skill:setTooltip(tr('You have %s of %s capacity left', comma_value(freeCap), comma_value(totalCap)))
+            end
+        end
+    end
 end
 
 function isSkillInGroups(skillId, groupNames)
@@ -796,7 +791,7 @@ function update()
     end
 end
 
-function online()
+function skillController:onGameStart()
     skillsWindow:setupOnStart()
     refresh()
 
@@ -962,7 +957,7 @@ local function resetTable(t)
     end
 end
 
-function offline()
+function skillController:onGameEnd()
     skillsWindow:setParent(nil, true)
     if expSpeedEvent then
         expSpeedEvent:cancel()
@@ -1116,7 +1111,6 @@ end
 function onLevelChange(localPlayer, value, percent)
     setSkillValue('level', comma_value(value))
     local text = tr('You have %s percent to go', 100 - percent)
-
     setSkillPercent('level', percent, text)
 end
 
@@ -1136,11 +1130,20 @@ end
 
 function onFreeCapacityChange(localPlayer, freeCapacity)
     setSkillValue('capacity', comma_value(freeCapacity))
-    checkAlert('capacity', freeCapacity, localPlayer:getTotalCapacity(), 20)
 end
 
 function onTotalCapacityChange(localPlayer, totalCapacity)
-    checkAlert('capacity', localPlayer:getFreeCapacity(), totalCapacity, 20)
+    local player = g_game.getLocalPlayer()
+    if player then
+        setSkillValue('capacity', comma_value(player:getFreeCapacity()))
+    end
+end
+
+function onBaseCapacityChange(localPlayer, baseCapacity)
+    local player = g_game.getLocalPlayer()
+    if player then
+        setSkillValue('capacity', comma_value(player:getFreeCapacity()))
+    end
 end
 
 local function formatTime(minutes)
@@ -1490,13 +1493,12 @@ function onImbuementsChange(localPlayer, lifeLeech, manaLeech, critChance, critD
     setSkillValueWithTooltips('onslaught', onslaught, tooltips.onslaught, true)
     local criticalHitWidget = skillsWindow:recursiveGetChildById("criticalHit")
     if criticalHitWidget then
-        local critChanceWidget = skillsWindow:recursiveGetChildById("criticalChance")
-        local critDamageWidget = skillsWindow:recursiveGetChildById("criticalExtraDamage")
-        local shouldShowCriticalHit = false
-        if (critChanceWidget and critChanceWidget:isVisible()) or (critDamageWidget and critDamageWidget:isVisible()) then
-            shouldShowCriticalHit = true
-        end
-        criticalHitWidget:setVisible(shouldShowCriticalHit)
+        local hasCritValue = math.abs(critChance or 0) > 0.0001 or math.abs(critDamage or 0) > 0.0001
+        local groupHidden = (function()
+            local char = g_game.getCharacterName()
+            return char and skillSettings and skillSettings[char] and skillSettings[char]['offenceStats_visible'] == false
+        end)()
+        criticalHitWidget:setVisible(hasCritValue and not groupHidden)
     end
 end
 

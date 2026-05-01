@@ -374,12 +374,14 @@ MiniWindow
       id: convertedDamage
       SkillNameLabel
         !text: tr('Converted Damage')
+        text-overflow-length: 15
       SkillValueLabel
     SmallSkillButton
       visible: false
       id: convertedElement
       SkillNameLabel
         !text: tr('Converted Element')
+        text-overflow-length: 16
       SkillValueLabel
       
     SmallSkillButton

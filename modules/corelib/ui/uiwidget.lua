@@ -79,9 +79,22 @@ local function check_load(expr, chunkName, mode, env)
     return load(expr, chunkName, mode or 'bt', env)
 end
 
+local function getControllerUiName(controller)
+    if not controller then
+        return '<unknown-ui>'
+    end
+
+    local dataUI = rawget(controller, 'dataUI')
+    if dataUI and dataUI.name then
+        return dataUI.name
+    end
+
+    return '<modal>'
+end
+
 local function getFncByExpr(exp, nodeStr, widget, controller, onError)
     local f, syntaxErr = check_load(exp,
-        ("Controller: %s | %s"):format(controller.name, controller.dataUI.name))
+        ("Controller: %s | %s"):format(controller.name, getControllerUiName(controller)))
     if not f then
         ExprHandlerError(false, syntaxErr, widget, controller, nodeStr, onError)
         return
@@ -327,7 +340,7 @@ local parseEvents = function(widget, eventName, callStr, controller, NODE_STR)
 
     local trEventName = EVENTS_TRANSLATED[eventName]
     if not trEventName then
-        pwarning('[' .. controller.dataUI.name .. ']:' .. widget:getId() .. ' Event ' .. eventName .. ' does not exist.')
+        pwarning('[' .. getControllerUiName(controller) .. ']:' .. widget:getId() .. ' Event ' .. eventName .. ' does not exist.')
         return
     end
 
@@ -576,9 +589,18 @@ function ngfor_exec(content, env, fn)
     return list, keys_str
 end
 
-function UIWidget:__childFor(moduleName, expr, html, index)
+function UIWidget:__childFor(moduleName, expr, html, index, onFinished)
     local controller = G_CONTROLLER_CALLED[moduleName]
+
+    local finishedFnc
+    if onFinished and onFinished ~= "" then
+        finishedFnc = getFncByExpr('return function(self) ' .. onFinished .. ' end',
+            html, self, controller)
+    end
+
+    local hasChanges = false
     local scan = function(self)
+        hasChanges = false
         local baseEnv = { self = controller }
         setmetatable(baseEnv, { __index = _G })
 
@@ -647,8 +669,10 @@ function UIWidget:__childFor(moduleName, expr, html, index)
         end)
 
         if isFirst then
+            hasChanges = true
             local watch = table.watchList(list, {
                 onInsert = function(i, it)
+                    hasChanges = true
                     local outer_keys    = widget.__for_keys or ''
                     local outer_values  = widget.__for_values
                     local combined_keys = (outer_keys or '') .. keys
@@ -679,6 +703,7 @@ function UIWidget:__childFor(moduleName, expr, html, index)
                     FOR_CTX.__values = nil
                 end,
                 onRemove = function(i)
+                    hasChanges = true
                     local child = widget:getChildByIndex(index + i)
                     if not child then
                         pwarning('onRemove: child(' .. index + i .. ') not found.')
@@ -703,6 +728,9 @@ function UIWidget:__childFor(moduleName, expr, html, index)
         end
 
         self.watchList:scan()
+        if finishedFnc and hasChanges then
+            execFnc(finishedFnc, { controller }, self.widget, controller, html)
+        end
     end
 
     WidgetWatch.register({
