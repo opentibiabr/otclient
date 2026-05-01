@@ -22,6 +22,9 @@
 
 #pragma once
 
+#include <cstdint>
+#include <sstream>
+
 struct apng_data
 {
     uint8_t* pdata;

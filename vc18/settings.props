@@ -53,7 +53,7 @@
         dbghelp.lib;
         fmtd.lib;
         gdi32.lib;
-        glew32d.lib;
+        glew32.lib;
         kernel32.lib;
         ole32.lib;
         lua51.lib;
