@@ -22,6 +22,11 @@
 #include "cssparser.h"
 #include "htmlnode.h"
 
+#include <cctype>
+#include <functional>
+#include <tuple>
+#include <unordered_set>
+
 namespace css {
     namespace detail {
         static void collect_pseudos(const std::string& sel, std::vector<PseudoInfo>& outPseudos, bool negated = false);
