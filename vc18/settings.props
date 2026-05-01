@@ -47,6 +47,9 @@
         zlib.lib;
     </OTCLIENT_LIBDEPS>
 
+    <OTCLIENT_GLEW_DEBUG_LIB Condition="'$(Platform)'=='Win32'">$(MSBuildThisFileDirectory)..\vcpkg_installed\x86-windows-static\lib\glew32.lib</OTCLIENT_GLEW_DEBUG_LIB>
+    <OTCLIENT_GLEW_DEBUG_LIB Condition="'$(Platform)'=='x64'">$(MSBuildThisFileDirectory)..\vcpkg_installed\x64-windows-static\lib\glew32.lib</OTCLIENT_GLEW_DEBUG_LIB>
+
     <OTCLIENT_LIBDEPS_D>
         advapi32.lib;
         avrt.lib;
@@ -54,7 +57,7 @@
         dbghelp.lib;
         fmtd.lib;
         gdi32.lib;
-        $(VcpkgInstalledDir)\$(VcpkgTriplet)\lib\glew32.lib;
+        $(OTCLIENT_GLEW_DEBUG_LIB);
         kernel32.lib;
         ole32.lib;
         lua51.lib;
