@@ -62,6 +62,8 @@ function Cyclopedia.loadBossSlots(data)
         return
     end
 
+    Cyclopedia.BossSlots.UnlockBosses = {}
+
     local raceData = g_things.getRaceData(data.boostedBossId)
     UI.Sprite:setOutfit(raceData.outfit)
 
