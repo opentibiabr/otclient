@@ -30,6 +30,9 @@ function controllerNpcTrader:onGameStart()
                 self:onPlayerGoods(money, items)
             end
         end,
+        onNpcChatWindowClose = function()
+            self:onCloseNpcTrade()
+        end,
         onCloseNpcTrade = function()
             self:onCloseNpcTrade()
         end,

@@ -776,6 +776,7 @@ void ProtocolGame::parseNpcChatWindow(const InputMessagePtr& msg)
 {
     const uint8_t status = msg->getU8();
     if (status != 0) {
+        g_lua.callGlobalField("g_game", "onNpcChatWindowClose");
         return;
     }
     NpcChatWindowData data;
