@@ -26,7 +26,7 @@
         gdi32.lib;
         discord-rpc.lib;
         fmt.lib;
-        glew32.lib;
+        libglew32.lib;
         kernel32.lib;
         ole32.lib;
         physfs-static.lib;
@@ -47,9 +47,6 @@
         zlib.lib;
     </OTCLIENT_LIBDEPS>
 
-    <OTCLIENT_GLEW_DEBUG_LIB Condition="'$(Platform)'=='Win32'">$(MSBuildThisFileDirectory)..\vcpkg_installed\x86-windows-static\lib\glew32.lib</OTCLIENT_GLEW_DEBUG_LIB>
-    <OTCLIENT_GLEW_DEBUG_LIB Condition="'$(Platform)'=='x64'">$(MSBuildThisFileDirectory)..\vcpkg_installed\x64-windows-static\lib\glew32.lib</OTCLIENT_GLEW_DEBUG_LIB>
-
     <OTCLIENT_LIBDEPS_D>
         advapi32.lib;
         avrt.lib;
@@ -57,7 +54,7 @@
         dbghelp.lib;
         fmtd.lib;
         gdi32.lib;
-        $(OTCLIENT_GLEW_DEBUG_LIB);
+        libglew32d.lib;
         kernel32.lib;
         ole32.lib;
         lua51.lib;
