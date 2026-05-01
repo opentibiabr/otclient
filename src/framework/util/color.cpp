@@ -24,6 +24,18 @@
 
 #include "framework/stdext/string.h"
 
+#include <algorithm>
+#include <cmath>
+#include <cstdlib>
+#include <iomanip>
+#include <ios>
+#include <iterator>
+#include <sstream>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
+
  // NOTE: AABBGGRR order
 const Color Color::alpha = 0x00000000U;
 const Color Color::white = 0xffffffffU;

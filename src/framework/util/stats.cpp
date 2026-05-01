@@ -26,6 +26,11 @@
 #include <framework/ui/ui.h>
 #include <framework/ui/uiwidget.h>
 
+#include <iomanip>
+#include <map>
+#include <sstream>
+#include <utility>
+
 Stats g_stats;
 
 void Stats::add(int type, Stat* stat) {

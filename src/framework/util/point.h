@@ -22,6 +22,13 @@
 
 #pragma once
 
+#include <cmath>
+#include <cstddef>
+#include <istream>
+#include <ostream>
+
+#include <fmt/format.h>
+
 template<class T>
 class TSize;
 

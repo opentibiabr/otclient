@@ -25,6 +25,10 @@
 #include "../const.h"
 #include "point.h"
 
+#include <algorithm>
+#include <istream>
+#include <ostream>
+
 template<class T>
 class TSize
 {

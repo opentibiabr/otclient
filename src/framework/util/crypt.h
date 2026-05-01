@@ -22,6 +22,10 @@
 
 #pragma once
 
+#include <cstdint>
+#include <string>
+#include <string_view>
+
 #include <stduuid/uuid.h>
 
 #ifdef USE_GMP

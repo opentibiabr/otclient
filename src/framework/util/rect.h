@@ -24,6 +24,11 @@
 
 #include "../const.h"
 
+#include <algorithm>
+#include <cstddef>
+#include <istream>
+#include <ostream>
+
 template <class T>
 class TPoint;
 

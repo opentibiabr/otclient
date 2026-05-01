@@ -22,6 +22,12 @@
 
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
+#include <istream>
+#include <ostream>
+#include <string_view>
+
 class Color
 {
 public:

@@ -21,7 +21,18 @@
  */
 
 #include "crypt.h"
+
+#include <algorithm>
 #include <cppcodec/base64_rfc4648.hpp>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <functional>
+#include <ranges>
+#include <stdexcept>
+#include <string>
+#include <utility>
+#include <zlib.h>
 
 #include "framework/core/graphicalapplication.h"
 #include "framework/core/resourcemanager.h"
