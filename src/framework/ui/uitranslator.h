@@ -24,6 +24,8 @@
 
 #include "../const.h"
 
+#include <string>
+
 namespace Fw
 {
     AlignmentFlag translateAlignment(std::string aligment);
