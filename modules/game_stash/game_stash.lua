@@ -145,7 +145,6 @@ local function getItemMeta(itemId)
     if meta then
         return meta
     end
-
     local thingType = g_things.getThingType(itemId, 0)
     local name = ""
     local categoryName = ""
@@ -167,7 +166,6 @@ local function getItemMeta(itemId)
             end
         end
     end
-
     meta = {
         itemId = itemId,
         name = name,
@@ -185,7 +183,6 @@ local function getStashEntry(itemId)
     if entry then
         return entry
     end
-
     entry = {
         itemId = itemId,
         amount = 0,
@@ -199,7 +196,6 @@ local function applyFilters(searchText)
     local searchFilter = (searchText or W.inputs.search:getText() or ""):lower()
     local stashFilter = W.combos.stash.currentIndex ~= 1 and W.combos.stash:getCurrentOption()
     local sellerFilter = W.combos.seller.currentIndex ~= 1 and W.combos.seller:getCurrentOption()
-
     local categoryTarget = nil
     local imbuementOnly = false
     if stashFilter then
@@ -210,9 +206,7 @@ local function applyFilters(searchText)
             categoryTarget = opt:sub(6)
         end
     end
-
     local sellerTarget = sellerFilter and sellerFilter.text:sub(9):lower() or nil
-
     table.clear(filteredList)
     for _, entry in pairs(stashCache) do
         local meta = entry.meta
@@ -226,7 +220,9 @@ end
 
 local function sortFilteredList()
     local func = sortFunctions[sortOrder[W.combos.sort.currentIndex]]
-    if func then table.sort(filteredList, func) end
+    if func then
+        table.sort(filteredList, func)
+    end
 end
 
 -- /*=============================================
@@ -234,7 +230,9 @@ end
 -- =============================================*/
 
 local function onStashItemBoxMousePress(itemBox, mousePos, mouseButton)
-    if mouseButton ~= MouseLeftButton or not itemBox.itemId then return false end
+    if mouseButton ~= MouseLeftButton or not itemBox.itemId then
+        return false
+    end
     if renderState.selectedBox and renderState.selectedBox ~= itemBox then
         renderState.selectedBox:setChecked(false)
     end
@@ -248,12 +246,10 @@ local function onStashItemMouseRelease(itemWidget, mousePos, mouseButton)
     if mouseButton ~= MouseRightButton and not (mouseButton == MouseLeftButton and g_keyboard.isCtrlPressed()) then
         return false
     end
-
     local itemBox = itemWidget.itemBox
     if not itemBox or not itemBox.itemId then
         return false
     end
-
     local itemId = itemBox.itemId
     local amount = itemBox.amount
     local name = itemBox.name
@@ -320,7 +316,9 @@ local function createPooledItemBox()
 end
 
 local function resetItems()
-    if not W.panels.items then return end
+    if not W.panels.items then
+        return
+    end
     local panel = W.panels.items
     while panel:getChildCount() > 0 do
         itemBoxPool:release(panel:getChildByIndex(1))
@@ -360,28 +358,24 @@ function renderItems(reason)
     if not W.window then
         return
     end
-
     local searchText = W.inputs.search:getText() or ""
     local stashIndex = W.combos.stash.currentIndex
     local sellerIndex = W.combos.seller.currentIndex
     local sortIndex = W.combos.sort.currentIndex
-    local filterChanged = reason == "data" or not filterState.filtered or
-        searchText ~= filterState.searchText or stashIndex ~= filterState.stashIndex or sellerIndex ~= filterState.sellerIndex
+    local filterChanged = reason == "data" or not filterState.filtered or searchText ~= filterState.searchText or
+                              stashIndex ~= filterState.stashIndex or sellerIndex ~= filterState.sellerIndex
     local sortChanged = filterChanged or sortIndex ~= filterState.sortIndex
-
     if filterChanged then
         applyFilters(searchText)
     end
     if sortChanged then
         sortFilteredList()
     end
-
     filterState.searchText = searchText
     filterState.stashIndex = stashIndex
     filterState.sellerIndex = sellerIndex
     filterState.sortIndex = sortIndex
     refreshRenderedItems()
-
     if W.window:isHidden() then
         W.window:show()
         W.window:lock()
@@ -499,20 +493,22 @@ end
 -- =============================================*/
 
 local function destroyWindow()
-    if not stashHandle then return end
+    if not stashHandle then
+        return
+    end
     itemBoxPool = nil
     stashController:closeModalOtui(stashHandle)
-    stashHandle      = nil
-    W.window         = nil
-    W.poolBin        = nil
-    W.panels.items   = nil
-    W.inputs.search  = nil
-    W.combos.stash   = nil
-    W.combos.seller  = nil
-    W.combos.sort    = nil
-    W.scrollbar      = nil
+    stashHandle = nil
+    W.window = nil
+    W.poolBin = nil
+    W.panels.items = nil
+    W.inputs.search = nil
+    W.combos.stash = nil
+    W.combos.seller = nil
+    W.combos.sort = nil
+    W.scrollbar = nil
     W.buttons.manage = nil
-    W.buttons.close  = nil
+    W.buttons.close = nil
 end
 
 local function ensureWindow()
@@ -523,36 +519,29 @@ local function ensureWindow()
     if not stashHandle or not stashHandle.ui then
         return false
     end
-    W.window         = stashHandle.ui
-    W.panels.items   = W.window:recursiveGetChildById('itemsPanel')
-    W.inputs.search  = W.window:recursiveGetChildById('searchEdit')
-    W.combos.stash   = W.window:recursiveGetChildById('stashCombo')
-    W.combos.seller  = W.window:recursiveGetChildById('sellerCombo')
-    W.combos.sort    = W.window:recursiveGetChildById('sortCombo')
-    W.scrollbar      = W.window:recursiveGetChildById('itemsPanelListScrollBar')
+    W.window = stashHandle.ui
+    W.panels.items = W.window:recursiveGetChildById('itemsPanel')
+    W.inputs.search = W.window:recursiveGetChildById('searchEdit')
+    W.combos.stash = W.window:recursiveGetChildById('stashCombo')
+    W.combos.seller = W.window:recursiveGetChildById('sellerCombo')
+    W.combos.sort = W.window:recursiveGetChildById('sortCombo')
+    W.scrollbar = W.window:recursiveGetChildById('itemsPanelListScrollBar')
     W.buttons.manage = W.window:recursiveGetChildById('manageButton')
-    W.buttons.close  = W.window:recursiveGetChildById('closeButton')
+    W.buttons.close = W.window:recursiveGetChildById('closeButton')
     W.window:hide()
-
-    -- hidden 0x0 container that holds pooled widgets between renders
     W.poolBin = g_ui.createWidget('UIWidget', W.window)
     W.poolBin:hide()
     W.poolBin:setWidth(0)
     W.poolBin:setHeight(0)
-
-    itemBoxPool = ObjectPool.new(
-        createPooledItemBox,
-        function(itemBox)
-            itemBox:setChecked(false)
-            itemBox:setTooltip('')
-            itemBox.itemId = nil
-            itemBox.amount = nil
-            itemBox.name = nil
-            itemBox.thingType = nil
-            itemBox:setParent(W.poolBin)
-        end
-    )
-
+    itemBoxPool = ObjectPool.new(createPooledItemBox, function(itemBox)
+        itemBox:setChecked(false)
+        itemBox:setTooltip('')
+        itemBox.itemId = nil
+        itemBox.amount = nil
+        itemBox.name = nil
+        itemBox.thingType = nil
+        itemBox:setParent(W.poolBin)
+    end)
     W.panels.items.onScrollChange = onItemsPanelScroll
     local oldSuppress = suppressRenderEvents
     suppressRenderEvents = true
@@ -580,12 +569,11 @@ local function onSupplyStashEnter(payload)
         return
     end
     if not W.window then
-         return
+        return
     end
     table.clear(payloadSeen)
     table.clear(categorySet)
     table.clear(categoryList)
-
     for i = 1, #payload do
         local itemId = payload[i][1]
         local amount = payload[i][2]
@@ -596,13 +584,11 @@ local function onSupplyStashEnter(payload)
             categorySet[entry.meta.categoryName] = true
         end
     end
-
     for itemId in pairs(stashCache) do
         if not payloadSeen[itemId] then
             stashCache[itemId] = nil
         end
     end
-
     local oldSuppress = suppressRenderEvents
     suppressRenderEvents = true
     W.combos.stash:clearOptions()
@@ -625,7 +611,9 @@ end
 -- =============================================*/
 
 function onSupplyStashClose()
-    if not W.window then return end
+    if not W.window then
+        return
+    end
     table.clear(stashCache)
     table.clear(itemMetaCache)
     table.clear(filteredList)
