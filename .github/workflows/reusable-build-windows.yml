@@ -41,7 +41,21 @@ jobs:
       - name: Install VS 2026 Build Tools (v145 toolset)
         if: matrix.type == 'Solution'
         shell: pwsh
-        run: choco install visualstudio2026-workload-vctools --yes --ignore-package-exit-codes=3010
+        run: |
+          $acceptedExitCodes = @(0, 3010)
+          for ($attempt = 1; $attempt -le 3; $attempt++) {
+            choco install visualstudio2026-workload-vctools --yes --ignore-package-exit-codes=3010 --no-progress
+            if ($acceptedExitCodes -contains $LASTEXITCODE) {
+              exit 0
+            }
+
+            Write-Warning "Chocolatey install failed with exit code $LASTEXITCODE on attempt $attempt."
+            if ($attempt -lt 3) {
+              Start-Sleep -Seconds (30 * $attempt)
+            }
+          }
+
+          Write-Warning "Chocolatey could not install the VS 2026 v145 workload. Continuing so the next step can use any runner-provided toolset."
 
       - name: Setup MSBuild.exe
         if: matrix.type == 'Solution'
@@ -49,6 +63,32 @@ jobs:
         with:
           vs-prerelease: true
           vs-version: "latest"
+
+      - name: Verify v145 platform toolset
+        if: matrix.type == 'Solution'
+        shell: pwsh
+        run: |
+          $programFilesX86 = [Environment]::GetFolderPath("ProgramFilesX86")
+          $vswhere = Join-Path $programFilesX86 "Microsoft Visual Studio\Installer\vswhere.exe"
+          if (-not (Test-Path $vswhere)) {
+            throw "vswhere.exe not found"
+          }
+
+          $installPath = & $vswhere -latest -prerelease -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (-not $installPath) {
+            throw "Visual Studio with VC tools was not found"
+          }
+
+          $toolset = Join-Path $installPath "MSBuild\Microsoft\VC\v170\Platforms\x64\PlatformToolsets\v145"
+          if (-not (Test-Path $toolset)) {
+            $parent = Split-Path $toolset
+            Get-ChildItem -Path $parent -Name -ErrorAction SilentlyContinue | Sort-Object | ForEach-Object {
+              Write-Host "Found platform toolset: $_"
+            }
+            throw "v145 platform toolset was not found at $toolset"
+          }
+
+          Write-Host "Using v145 platform toolset at $toolset"
 
       - name: Checkout repository
         uses: actions/checkout@v6
