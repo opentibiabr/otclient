@@ -55,18 +55,21 @@ void UIItem::drawSelf(const DrawPoolType drawPane)
         m_item->draw(Point(exactSize - g_gameConfig.getSpriteSize()) + m_item->getDisplacement());
         g_drawPool.releaseFrameBuffer(getPaddingRect(), m_flipDirection);
 
-        if (m_font && (m_alwaysShowCount && (m_item->isStackable() || m_item->isChargeable())) && m_item->getCountOrSubType() > 1) {
-            static constexpr Color STACK_COLOR(231, 231, 231);
-            const auto& count = m_item->getCountOrSubType();
-            std::string countText;
-            if (count < 1000) {
-                countText = std::to_string(count);
-            } else if (count < 10000) {
-                countText = fmt::format("{}.{}k", count / 1000, (count % 1000) / 100);
-            } else {
-                countText = fmt::format("{}k", count / 1000);
+        if (m_alwaysShowCount && m_item->getCountOrSubType() > 1) {
+            const auto& countFont = g_gameConfig.getItemCountFont() ? g_gameConfig.getItemCountFont() : m_font;
+            if (countFont) {
+                static constexpr Color STACK_COLOR(191, 191, 191);
+                const auto count = m_item->getCountOrSubType();
+                std::string countText;
+                if (count < 1000) {
+                    countText = std::to_string(count);
+                } else if (count < 10000) {
+                    countText = fmt::format("{},{:03d}", count / 1000, count % 1000);
+                } else {
+                    countText = fmt::format("{}K", count / 1000);
+                }
+                countFont->drawText(countText, Rect(m_rect.topLeft(), m_rect.bottomRight() ), STACK_COLOR, Fw::AlignBottomRight);
             }
-            m_font->drawText(countText, Rect(m_rect.topLeft(), m_rect.bottomRight() - Point(3, 0)), STACK_COLOR, Fw::AlignBottomRight);
         }
 
 #ifdef FRAMEWORK_EDITOR

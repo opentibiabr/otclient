@@ -233,6 +233,9 @@ local function onStashItemBoxMousePress(itemBox, mousePos, mouseButton)
     if mouseButton ~= MouseLeftButton or not itemBox.itemId then
         return false
     end
+    if g_keyboard.isCtrlPressed() then
+        return false
+    end
     if renderState.selectedBox and renderState.selectedBox ~= itemBox then
         renderState.selectedBox:setChecked(false)
     end
@@ -338,7 +341,7 @@ local function createItemBox(entry)
     itemWidget:setItemId(entry.itemId)
     itemWidget:setItemCount(entry.amount)
     ItemsDatabase.setRarityItem(itemWidget, entry.itemId)
-    itemBox:setTooltip(#meta.name > 0 and meta.name or "Loading...")
+    itemBox:setTooltip(#meta.name > 0 and string.format("Name: %s \nCount: %d", meta.name, entry.amount) or "Loading...")
 end
 
 local function refreshRenderedItems()
