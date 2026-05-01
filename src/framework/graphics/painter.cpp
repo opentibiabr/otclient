@@ -31,7 +31,7 @@ std::unique_ptr<Painter> g_painter = nullptr;
 
 namespace
 {
-[[nodiscard]] std::string joinShaderSources(const std::string_view first, const std::string_view second)
+[[nodiscard]] std::string joinPainterShaderSources(const std::string_view first, const std::string_view second)
 {
     std::string source;
     source.reserve(first.size() + second.size());
@@ -59,9 +59,9 @@ Painter::Painter()
         return program;
     };
 
-    m_drawTexturedProgram = getProgram(joinShaderSources(glslMainWithTexCoordsVertexShader, glslPositionOnlyVertexShader), joinShaderSources(glslMainFragmentShader, glslTextureSrcFragmentShader));
-    m_drawSolidColorProgram = getProgram(joinShaderSources(glslMainVertexShader, glslPositionOnlyVertexShader), joinShaderSources(glslMainFragmentShader, glslSolidColorFragmentShader));
-    m_drawReplaceColorProgram = getProgram(joinShaderSources(glslMainWithTexCoordsVertexShader, glslPositionOnlyVertexShader), joinShaderSources(glslMainFragmentShader, glslReplaceColorFragmentShader));
+    m_drawTexturedProgram = getProgram(joinPainterShaderSources(glslMainWithTexCoordsVertexShader, glslPositionOnlyVertexShader), joinPainterShaderSources(glslMainFragmentShader, glslTextureSrcFragmentShader));
+    m_drawSolidColorProgram = getProgram(joinPainterShaderSources(glslMainVertexShader, glslPositionOnlyVertexShader), joinPainterShaderSources(glslMainFragmentShader, glslSolidColorFragmentShader));
+    m_drawReplaceColorProgram = getProgram(joinPainterShaderSources(glslMainWithTexCoordsVertexShader, glslPositionOnlyVertexShader), joinPainterShaderSources(glslMainFragmentShader, glslReplaceColorFragmentShader));
     m_drawLineProgram = getProgram(lineVertexShader, lineFragmentShader);
 
     PainterShaderProgram::release();
