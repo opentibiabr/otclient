@@ -55,11 +55,14 @@ void UIItem::drawSelf(const DrawPoolType drawPane)
         m_item->draw(Point(exactSize - g_gameConfig.getSpriteSize()) + m_item->getDisplacement());
         g_drawPool.releaseFrameBuffer(getPaddingRect(), m_flipDirection);
 
-        if (m_alwaysShowCount && m_item->getCountOrSubType() > 1) {
+        const int displayCount = m_displayCount > 0 ? m_displayCount
+                               : (m_item->isStackable() ? m_item->getCount() : 0);
+        const bool shouldDrawCount = m_displayCount > 0 ? (displayCount >= 1) : (displayCount > 1);
+        if (m_alwaysShowCount && shouldDrawCount) {
             const auto& countFont = g_gameConfig.getItemCountFont() ? g_gameConfig.getItemCountFont() : m_font;
             if (countFont) {
                 static constexpr Color STACK_COLOR(191, 191, 191);
-                const auto count = m_item->getCountOrSubType();
+                const auto count = displayCount;
                 std::string countText;
                 if (count < 1000) {
                     countText = std::to_string(count);
@@ -86,6 +89,7 @@ void UIItem::drawSelf(const DrawPoolType drawPane)
 void UIItem::setItemId(const int id)
 {
     m_itemId = id;
+    m_displayCount = 0;
 
     if (id == 0)
         m_item = nullptr;

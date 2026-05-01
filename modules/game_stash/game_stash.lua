@@ -339,7 +339,7 @@ local function createItemBox(entry)
     itemBox.name = meta.name
     itemBox.thingType = meta.thingType
     itemWidget:setItemId(entry.itemId)
-    itemWidget:setItemCount(entry.amount)
+    itemWidget:setDisplayCount(entry.amount)
     ItemsDatabase.setRarityItem(itemWidget, entry.itemId)
     itemBox:setTooltip(#meta.name > 0 and string.format("Name: %s \nCount: %d", meta.name, entry.amount) or "Loading...")
 end
@@ -441,12 +441,12 @@ function prepareWithdraw(itemId, itemAmount)
     local itembox = W.modal.selectAmount:getChildById('item')
     local scrollbar = W.modal.selectAmount:getChildById('countScrollBar')
     itembox:setItemId(itemId)
-    itembox:setItemCount(itemAmount)
+    itembox:setDisplayCount(itemAmount)
     scrollbar:setMaximum(itemAmount)
     scrollbar:setMinimum(1)
     scrollbar:setValue(itemAmount)
     scrollbar.onValueChange = function(_, value)
-        itembox:setItemCount(value)
+        itembox:setDisplayCount(value)
     end
     g_keyboard.bindKeyPress('Up', function()
         scrollbar:setValue(scrollbar:getValue() + 10)
@@ -568,6 +568,7 @@ end
 -- =============================================*/
 
 local function onSupplyStashEnter(payload)
+    pdump(payload)
     if not ensureWindow() then
         return
     end
