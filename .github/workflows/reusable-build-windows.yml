@@ -79,16 +79,19 @@ jobs:
             throw "Visual Studio with VC tools was not found"
           }
 
-          $toolset = Join-Path $installPath "MSBuild\Microsoft\VC\v170\Platforms\x64\PlatformToolsets\v145"
-          if (-not (Test-Path $toolset)) {
-            $parent = Split-Path $toolset
-            Get-ChildItem -Path $parent -Name -ErrorAction SilentlyContinue | Sort-Object | ForEach-Object {
-              Write-Host "Found platform toolset: $_"
-            }
-            throw "v145 platform toolset was not found at $toolset"
+          $vcMsbuildRoot = Join-Path $installPath "MSBuild\Microsoft\VC"
+          $toolset = Get-ChildItem -Path $vcMsbuildRoot -Directory -Recurse -Filter v145 -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match "\\PlatformToolsets\\v145$" } |
+            Select-Object -First 1
+          if (-not $toolset) {
+            Get-ChildItem -Path $vcMsbuildRoot -Directory -Recurse -ErrorAction SilentlyContinue |
+              Where-Object { $_.FullName -match "\\PlatformToolsets\\v\d+$" } |
+              Sort-Object FullName |
+              ForEach-Object { Write-Host "Found platform toolset: $($_.FullName)" }
+            throw "v145 platform toolset was not found under $vcMsbuildRoot"
           }
 
-          Write-Host "Using v145 platform toolset at $toolset"
+          Write-Host "Using v145 platform toolset at $($toolset.FullName)"
 
       - name: Checkout repository
         uses: actions/checkout@v6
