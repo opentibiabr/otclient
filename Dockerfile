@@ -105,8 +105,10 @@ RUN --mount=type=secret,id=github_token \
 
 FROM dependencies AS build
 
-COPY . /srv/
 WORKDIR /srv
+COPY CMakeLists.txt CMakePresets.json vcpkg.json /srv/
+COPY cmake /srv/cmake
+COPY src /srv/src
 COPY --from=dependencies /opt/vcpkg_installed /srv/vcpkg_installed
 
 RUN export VCPKG_ROOT=/opt/vcpkg \
@@ -142,13 +144,17 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 	&& ln -snf "/usr/share/zoneinfo/${TZ}" /etc/localtime \
 	&& echo "${TZ}" > /etc/timezone \
 	&& apt-get clean \
-	&& rm -rf /var/lib/apt/lists/*
+	&& rm -rf /var/lib/apt/lists/* \
+	&& groupadd --system otclient \
+	&& useradd --system --create-home --gid otclient --home-dir /home/otclient otclient \
+	&& install -d -o otclient -g otclient /otclient
 
 WORKDIR /otclient
-COPY --from=build /srv/build/linux-release/bin/ /otclient/
-COPY data /otclient/data
-COPY mods /otclient/mods
-COPY modules /otclient/modules
-COPY init.lua otclientrc.lua cacert.pem /otclient/
+COPY --from=build --chown=otclient:otclient /srv/build/linux-release/bin/ /otclient/
+COPY --chown=otclient:otclient data /otclient/data
+COPY --chown=otclient:otclient mods /otclient/mods
+COPY --chown=otclient:otclient modules /otclient/modules
+COPY --chown=otclient:otclient init.lua otclientrc.lua cacert.pem /otclient/
 
+USER otclient
 CMD ["./otclient"]
