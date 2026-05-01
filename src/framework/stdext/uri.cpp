@@ -22,7 +22,9 @@
 
 #include "uri.h"
 
+#ifndef USE_PRECOMPILED_HEADERS
 #include <regex>
+#endif
 
 ParsedURI parseURI(const std::string& url) {
     // Regular expression pattern to match URL components

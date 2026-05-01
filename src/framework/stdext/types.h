@@ -22,8 +22,10 @@
 
 #pragma once
 
+#ifndef USE_PRECOMPILED_HEADERS
 #include <cstddef>
 #include <cstdint>
+#endif
 
 using uchar = unsigned char;
 using ushort = unsigned short;

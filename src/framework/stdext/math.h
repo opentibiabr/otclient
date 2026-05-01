@@ -22,10 +22,12 @@
 
 #pragma once
 
+#ifndef USE_PRECOMPILED_HEADERS
 #include <cstddef>
 #include <cstdint>
 #include <random>
 #include <span>
+#endif
 
 namespace stdext
 {

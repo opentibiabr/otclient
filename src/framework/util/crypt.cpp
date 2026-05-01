@@ -22,8 +22,8 @@
 
 #include "crypt.h"
 
+#ifndef USE_PRECOMPILED_HEADERS
 #include <algorithm>
-#include <cppcodec/base64_rfc4648.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -33,6 +33,9 @@
 #include <string>
 #include <utility>
 #include <zlib.h>
+#endif
+
+#include <cppcodec/base64_rfc4648.hpp>
 
 #include "framework/core/graphicalapplication.h"
 #include "framework/core/resourcemanager.h"

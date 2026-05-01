@@ -24,6 +24,7 @@
 #include "exception.h"
 #include "types.h"
 
+#ifndef USE_PRECOMPILED_HEADERS
 #include <algorithm>
 #include <charconv>
 #include <cctype>
@@ -31,6 +32,7 @@
 #include <ctime>
 #include <iterator>
 #include <ranges>
+#endif
 
 #include <utf8cpp/utf8.h>
 

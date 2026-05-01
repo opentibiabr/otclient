@@ -22,34 +22,16 @@
 #include "cssparser.h"
 #include "htmlnode.h"
 
+#ifndef USE_PRECOMPILED_HEADERS
 #include <cctype>
 #include <functional>
-#include <tuple>
 #include <unordered_set>
+#endif
 
 namespace css {
     namespace detail {
         static void collect_pseudos(const std::string& sel, std::vector<PseudoInfo>& outPseudos, bool negated = false);
         static std::vector<std::string> split_selector_list(const std::string&);
-
-        static const std::unordered_set<std::string> kEventPseudos = {
-            "hover","focus","active","focus-visible","focus-within",
-            "checked","disabled","enabled","pressed","dragging"
-        };
-
-        static inline bool isNthLike(const std::string& name) {
-            return name.rfind("nth-child", 0) == 0
-                || name.rfind("nth-last-child", 0) == 0
-                || name.rfind("nth-of-type", 0) == 0
-                || name.rfind("nth-last-of-type", 0) == 0;
-        }
-
-        static inline bool isStructuralPseudo(const std::string& name) {
-            if (isNthLike(name)) return true;
-            return name == "first-child" || name == "last-child" || name == "only-child"
-                || name == "only-of-type" || name == "first-of-type" || name == "last-of-type"
-                || name == "empty" || name == "root" || name == "scope";
-        }
 
         static inline void trim_inplace(std::string& s) {
             size_t a = 0; while (a < s.size() && (unsigned char)s[a] <= ' ') ++a;
@@ -61,20 +43,6 @@ namespace css {
             for (auto& c : s) if (c >= 'A' && c <= 'Z') c = char(c - 'A' + 'a');
         }
 
-        static std::tuple<int, int, int> specificity_of(const std::string& sel);
-
-        static bool is_ident_start(char c) {
-            return std::isalpha((unsigned char)c) || c == '_' || c == '-';
-        }
-        static std::tuple<int, int, int> specificity_max(const std::vector<std::string>& list) {
-            std::tuple<int, int, int> best{ 0,0,0 };
-            for (const auto& s : list) {
-                auto sp = specificity_of(s);
-                if (sp > best) best = sp;
-            }
-            return best;
-        }
-
         static void collect_pseudos(const std::string& sel,
                             std::vector<PseudoInfo>& outPseudos,
                             bool negated)
@@ -82,13 +50,6 @@ namespace css {
             static const std::unordered_set<std::string> kEventPseudos = {
                 "hover","focus","active","focus-visible","focus-within",
                 "checked","disabled","enabled","pressed","dragging"
-            };
-
-            auto isNthLike = [](const std::string& name) {
-                return name.rfind("nth-child", 0) == 0
-                    || name.rfind("nth-last-child", 0) == 0
-                    || name.rfind("nth-of-type", 0) == 0
-                    || name.rfind("nth-last-of-type", 0) == 0;
             };
 
             for (size_t i = 0; i < sel.size();) {
@@ -328,28 +289,6 @@ namespace css {
             return out;
         }
 
-        static std::vector<std::string> split_top_commas(const std::string& s) {
-            std::vector<std::string> parts; std::string cur;
-            int paren = 0, brack = 0, brace = 0; bool in_str = false; char q = 0;
-            for (size_t i = 0; i < s.size(); ++i) {
-                char c = s[i];
-                if (in_str) {
-                    cur.push_back(c);
-                    if (c == q) in_str = false;
-                    else if (c == '\\' && i + 1 < s.size()) cur.push_back(s[++i]);
-                    continue;
-                }
-                if (c == '"' || c == '\'') { in_str = true; q = c; cur.push_back(c); continue; }
-                if (c == '(') ++paren; else if (c == ')') --paren;
-                else if (c == '[') ++brack; else if (c == ']') --brack;
-                else if (c == '{') ++brace; else if (c == '}') --brace;
-                if (c == ',' && paren == 0 && brack == 0 && brace == 0) { if (!cur.empty()) { parts.push_back(cur); cur.clear(); } continue; }
-                cur.push_back(c);
-            }
-            if (!cur.empty()) parts.push_back(cur);
-            return parts;
-        }
-
         struct RawBlock { std::string selectors; std::string block; bool is_at_media{ false }; std::string at_prelude; };
 
         static std::vector<RawBlock> extract_blocks(const std::string& css) {
@@ -454,16 +393,6 @@ namespace css {
             return out;
         }
 
-        static std::tuple<int, int, int> specificity_of(const std::string& sel) {
-            int a = 0, b = 0, c = 0;
-            const char* s = sel.c_str();
-            size_t n = sel.size();
-            for (size_t i = 0; i < n;) {
-                char ch = s[i];
-                if (ch == '#') { ++a; ++i; while (i < n && (std::isalnum((unsigned char)s[i]) || s[i] == '-' || s[i] == '_')) ++i; } else if (ch == '.') { ++b; ++i; while (i < n && (std::isalnum((unsigned char)s[i]) || s[i] == '-' || s[i] == '_')) ++i; } else if (ch == '[') { ++b; int depth = 1; ++i; while (i < n && depth>0) { if (s[i] == '[') ++depth; else if (s[i] == ']') --depth; ++i; } } else if (ch == ':') { ++i; if (i < n && s[i] == ':') { ++c; ++i; } else { ++b; } while (i < n && (std::isalnum((unsigned char)s[i]) || s[i] == '-' || s[i] == '_')) ++i; } else if (std::isalpha((unsigned char)ch) || ch == '*') { if (ch != '*') ++c; while (i < n && (std::isalnum((unsigned char)s[i]) || s[i] == '-' || s[i] == '_')) ++i; } else { ++i; }
-            }
-            return { a,b,c };
-        }
     }
 
     StyleSheet parse(const std::string& cssText) {

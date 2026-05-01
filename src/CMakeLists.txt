@@ -491,6 +491,7 @@ endif()
 if(TOGGLE_PRE_COMPILED_HEADER)
   # === PRECOMPILED HEADER ===
   target_precompile_headers(otclient_core PRIVATE framework/pch.h)
+  target_compile_definitions(otclient_core PRIVATE USE_PRECOMPILED_HEADERS)
   message(STATUS "Use precompiled header: ON")
 else()
   message(STATUS "Use precompiled header: OFF")

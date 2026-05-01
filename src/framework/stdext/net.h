@@ -22,10 +22,12 @@
 
 #pragma once
 
+#ifndef USE_PRECOMPILED_HEADERS
 #include <cstdint>
 #include <string>
 #include <string_view>
 #include <vector>
+#endif
 
 namespace stdext
 {

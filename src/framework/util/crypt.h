@@ -22,9 +22,11 @@
 
 #pragma once
 
+#ifndef USE_PRECOMPILED_HEADERS
 #include <cstdint>
 #include <string>
 #include <string_view>
+#endif
 
 #include <stduuid/uuid.h>
 

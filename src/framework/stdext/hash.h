@@ -22,9 +22,11 @@
 
 #pragma once
 
+#ifndef USE_PRECOMPILED_HEADERS
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#endif
 
 namespace stdext
 {

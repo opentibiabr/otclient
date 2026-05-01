@@ -22,9 +22,11 @@
 
 #include "math.h"
 
+#ifndef USE_PRECOMPILED_HEADERS
 #include <cmath>
 #include <stdexcept>
 #include <utility>
+#endif
 
 #include <zlib.h>
 

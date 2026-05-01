@@ -24,10 +24,12 @@
 
 #include "exception.h"
 
+#ifndef USE_PRECOMPILED_HEADERS
 #include <cstdlib>
 #include <iostream>
 #include <sstream>
 #include <string>
+#endif
 
 namespace stdext
 {

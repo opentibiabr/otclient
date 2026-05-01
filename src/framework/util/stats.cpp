@@ -26,10 +26,12 @@
 #include <framework/ui/ui.h>
 #include <framework/ui/uiwidget.h>
 
+#ifndef USE_PRECOMPILED_HEADERS
 #include <iomanip>
 #include <map>
 #include <sstream>
 #include <utility>
+#endif
 
 Stats g_stats;
 

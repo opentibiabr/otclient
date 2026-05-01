@@ -22,9 +22,11 @@
 
 #include "demangle.h"
 
+#ifndef USE_PRECOMPILED_HEADERS
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
+#endif
 
 #ifdef _MSC_VER
 

@@ -24,7 +24,9 @@
 
 #include "../const.h"
 
+#ifndef USE_PRECOMPILED_HEADERS
 #include <string>
+#endif
 
 namespace Fw
 {

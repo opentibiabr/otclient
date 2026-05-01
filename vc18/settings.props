@@ -13,6 +13,7 @@
         FRAMEWORK_NET;
         FRAMEWORK_SOUND;
         FRAMEWORK_PROTOBUF;
+        USE_PRECOMPILED_HEADERS;
         BUILD_TYPE="RelWithDebInfo";
         NOMINMAX;
     </PREPROCESSOR_DEFS>

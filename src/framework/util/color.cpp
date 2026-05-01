@@ -24,6 +24,7 @@
 
 #include "framework/stdext/string.h"
 
+#ifndef USE_PRECOMPILED_HEADERS
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -35,6 +36,7 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+#endif
 
  // NOTE: AABBGGRR order
 const Color Color::alpha = 0x00000000U;
@@ -190,7 +192,10 @@ namespace {
         }
         if (s.find_first_of(".eE") != std::string::npos) {
             double f = std::strtod(s.data(), nullptr);
-            if (f < 0) f = 0; if (f > 1) f = 1;
+            if (f < 0)
+                f = 0;
+            if (f > 1)
+                f = 1;
             return clamp255(static_cast<int>(std::lround(f * 255.0)));
         }
         return clamp255(std::stoi(s));
@@ -209,18 +214,25 @@ namespace {
     }
 
     static inline void hsl_to_rgb(double h, double s, double l, int& r, int& g, int& b) {
-        h = std::fmod(h, 360.0); if (h < 0) h += 360.0;
+        h = std::fmod(h, 360.0);
+        if (h < 0)
+            h += 360.0;
         s = std::clamp(s, 0.0, 1.0);
         l = std::clamp(l, 0.0, 1.0);
         auto hue2rgb = [](double p, double q, double t) {
-            if (t < 0) t += 1; if (t > 1) t -= 1;
+            if (t < 0)
+                t += 1;
+            if (t > 1)
+                t -= 1;
             if (t < 1.0 / 6) return p + (q - p) * 6 * t;
             if (t < 1.0 / 2) return q;
             if (t < 2.0 / 3) return p + (q - p) * (2.0 / 3 - t) * 6;
             return p;
         };
         double rF, gF, bF;
-        if (s == 0) { rF = gF = bF = l; } else {
+        if (s == 0) {
+            rF = gF = bF = l;
+        } else {
             const double q = l < 0.5 ? l * (1 + s) : l + s - l * s;
             const double p = 2 * l - q;
             const double hk = h / 360.0;
@@ -290,25 +302,35 @@ std::istream& operator>>(std::istream& in, Color& color)
         }
         if (s.find_first_of(".eE") != std::string::npos) {
             double f = std::strtod(s.data(), nullptr);
-            if (f < 0) f = 0; if (f > 1) f = 1;
+            if (f < 0)
+                f = 0;
+            if (f > 1)
+                f = 1;
             return clamp255(static_cast<int>(std::lround(f * 255.0)));
         }
         return clamp255(std::stoi(s));
     };
 
     auto hsl_to_rgb = [&](double h, double s, double l, int& r, int& g, int& b) {
-        h = std::fmod(h, 360.0); if (h < 0) h += 360.0;
+        h = std::fmod(h, 360.0);
+        if (h < 0)
+            h += 360.0;
         s = std::clamp(s, 0.0, 1.0);
         l = std::clamp(l, 0.0, 1.0);
         auto hue2rgb = [](double p, double q, double t) {
-            if (t < 0) t += 1; if (t > 1) t -= 1;
+            if (t < 0)
+                t += 1;
+            if (t > 1)
+                t -= 1;
             if (t < 1.0 / 6) return p + (q - p) * 6 * t;
             if (t < 1.0 / 2) return q;
             if (t < 2.0 / 3) return p + (q - p) * (2.0 / 3 - t) * 6;
             return p;
         };
         double rF, gF, bF;
-        if (s == 0) { rF = gF = bF = l; } else {
+        if (s == 0) {
+            rF = gF = bF = l;
+        } else {
             const double q = l < 0.5 ? l * (1 + s) : l + s - l * s;
             const double p = 2 * l - q;
             const double hk = h / 360.0;

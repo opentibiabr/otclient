@@ -22,7 +22,9 @@
 
 #pragma once
 
+#ifndef USE_PRECOMPILED_HEADERS
 #include <memory>
+#endif
 
 struct DataRoot;
 class HtmlNode;

@@ -190,7 +190,7 @@ bool Image::nextMipmap()
 
     const int iw = m_size.width();
     const int ih = m_size.height();
-    if (iw == 1 && ih == 1 || m_pixels.empty())
+    if ((iw == 1 && ih == 1) || m_pixels.empty())
         return false;
 
     const int ow = iw > 1 ? iw / 2 : 1;
