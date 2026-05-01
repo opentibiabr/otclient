@@ -22,6 +22,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 	cmake \
 	curl \
 	git \
+	jq \
 	libgl1-mesa-dev \
 	libglu1-mesa-dev \
 	libltdl-dev \
@@ -50,7 +51,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 
 WORKDIR /opt
 COPY vcpkg.json /opt/vcpkg.json
-RUN vcpkgCommitId="$(grep '.builtin-baseline' vcpkg.json | awk -F: '{print $2}' | tr -d ',\" ')" \
+RUN vcpkgCommitId="$(jq -r '."builtin-baseline"' vcpkg.json)" \
 	&& echo "vcpkg commit ID: ${vcpkgCommitId}" \
 	&& git clone https://github.com/microsoft/vcpkg.git \
 	&& cd vcpkg \
@@ -60,7 +61,7 @@ RUN vcpkgCommitId="$(grep '.builtin-baseline' vcpkg.json | awk -F: '{print $2}' 
 WORKDIR /opt/vcpkg_manifest
 COPY vcpkg.json /opt/vcpkg_manifest/
 
-RUN --mount=type=secret,id=github_token \
+RUN --mount=type=secret,id=github_token,required=false \
 	--mount=type=cache,target=/opt/vcpkg/downloads \
 	--mount=type=cache,target=/opt/vcpkg/buildtrees \
 	--mount=type=cache,target=/opt/vcpkg/packages \

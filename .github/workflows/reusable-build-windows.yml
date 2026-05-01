@@ -5,7 +5,7 @@ on:
 
 permissions:
   contents: read
-  packages: write
+  packages: read
 
 jobs:
   build:
@@ -31,10 +31,10 @@ jobs:
             artifact: windows-solution-directx
     runs-on: windows-2025
     env:
-      VCPKG_BINARY_CACHE_ACCESS: ${{ secrets.VCPKG_PACKAGES_TOKEN != '' && 'readwrite' || 'read' }}
-      VCPKG_BINARY_SOURCES: "clear;nuget,https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json,${{ secrets.VCPKG_PACKAGES_TOKEN != '' && 'readwrite' || 'read' }};nugettimeout,600"
+      VCPKG_BINARY_CACHE_ACCESS: ${{ secrets.VCPKG_PACKAGES_TOKEN != '' && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch') && 'readwrite' || 'read' }}
+      VCPKG_BINARY_SOURCES: "clear;nuget,https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json,${{ secrets.VCPKG_PACKAGES_TOKEN != '' && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch') && 'readwrite' || 'read' }};nugettimeout,600"
       VCPKG_NUGET_REPOSITORY: https://github.com/${{ github.repository }}.git
-      VCPKG_NUGET_API_KEY: ${{ secrets.VCPKG_PACKAGES_TOKEN || github.token }}
+      VCPKG_NUGET_API_KEY: ${{ secrets.VCPKG_PACKAGES_TOKEN != '' && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch') && secrets.VCPKG_PACKAGES_TOKEN || github.token }}
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       SCCACHE_DIR: ${{ github.workspace }}\.sccache
     steps:
@@ -90,7 +90,7 @@ jobs:
       - name: Setup NuGet source for GitHub Packages
         shell: pwsh
         env:
-          NUGET_AUTH_TOKEN: ${{ secrets.VCPKG_PACKAGES_TOKEN || github.token }}
+          NUGET_AUTH_TOKEN: ${{ env.VCPKG_NUGET_API_KEY }}
         run: |
           $feed = "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
           $nuget = (Get-Command nuget.exe -ErrorAction SilentlyContinue).Source
@@ -98,7 +98,7 @@ jobs:
             throw "nuget.exe not found in PATH"
           }
 
-          & $nuget sources remove -Name "GitHubPackages" | Out-Null 2>$null
+          & $nuget sources remove -Name "GitHubPackages" 2>&1 | Out-Null
           & $nuget sources add `
             -Name "GitHubPackages" `
             -Source $feed `
@@ -157,11 +157,26 @@ jobs:
             Write-Error "No vcpkg manifest logs found."
             exit 1
           }
+          $pushed = $false
           foreach ($log in $logs) {
-            if (Select-String -Path $log.FullName -Pattern "to 0 binary cache\(s\)") {
-              Write-Error "Binary cache push reported 0 caches."
+            if (Select-String -Path $log.FullName -Pattern "to [1-9][0-9]* binary cache\(s\)" -Quiet) {
+              $pushed = $true
+              break
+            }
+          }
+          if (-not $pushed) {
+            $zeroPush = $false
+            foreach ($log in $logs) {
+              if (Select-String -Path $log.FullName -Pattern "to 0 binary cache\(s\)" -Quiet) {
+                $zeroPush = $true
+                break
+              }
+            }
+            if ($zeroPush) {
+              Write-Error "Binary cache push reported 0 caches and no successful push was found."
               exit 1
             }
+            Write-Host "No binary cache push summary found; assuming no package was built for upload."
           }
 
       - name: Upload artifacts (Solution)

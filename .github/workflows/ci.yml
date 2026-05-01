@@ -21,6 +21,7 @@ on:
       - "Dockerfile.browser"
       - "Dockerfile.browser.sh"
       - ".dockerignore"
+      - ".yamllint.yaml"
       - ".reviewdog.yml"
       - ".github/workflows/**"
   merge_group:
@@ -44,6 +45,7 @@ on:
       - "Dockerfile.browser"
       - "Dockerfile.browser.sh"
       - ".dockerignore"
+      - ".yamllint.yaml"
       - ".reviewdog.yml"
       - ".github/workflows/**"
 
@@ -81,9 +83,13 @@ jobs:
               - "vcpkg.json"
               - "CMakeLists.txt"
               - "CMakePresets.json"
+              - ".yamllint.yaml"
+              - ".reviewdog.yml"
               - ".github/workflows/ci.yml"
               - ".github/workflows/reusable-build-linux.yml"
               - ".github/workflows/reusable-build-windows.yml"
+              - ".github/workflows/reusable-checks.yml"
+              - ".github/workflows/reusable-tests-lua.yml"
             docker:
               - "Dockerfile"
               - ".dockerignore"
@@ -92,6 +98,7 @@ jobs:
               - "vcpkg.json"
               - "CMakeLists.txt"
               - "CMakePresets.json"
+              - ".yamllint.yaml"
               - ".github/workflows/ci.yml"
               - ".github/workflows/reusable-build-docker.yml"
             browser:
@@ -102,6 +109,7 @@ jobs:
               - "cmake/**"
               - "vcpkg.json"
               - "CMakeLists.txt"
+              - ".yamllint.yaml"
               - ".github/workflows/ci.yml"
               - ".github/workflows/reusable-build-browser.yml"
 
@@ -129,7 +137,7 @@ jobs:
     if: needs.changes.outputs.compile == 'true' && needs.checks.result == 'success' && needs.tests-lua.result == 'success' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
     permissions:
       contents: read
-      packages: write
+      packages: read
     uses: ./.github/workflows/reusable-build-linux.yml
     secrets: inherit
 
@@ -139,7 +147,7 @@ jobs:
     if: needs.changes.outputs.compile == 'true' && needs.checks.result == 'success' && needs.tests-lua.result == 'success' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
     permissions:
       contents: read
-      packages: write
+      packages: read
     uses: ./.github/workflows/reusable-build-windows.yml
     secrets: inherit
 

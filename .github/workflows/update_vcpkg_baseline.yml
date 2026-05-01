@@ -5,6 +5,10 @@ on:
     - cron: "0 2 * * *"
   workflow_dispatch:
 
+concurrency:
+  group: update-vcpkg-baseline
+  cancel-in-progress: false
+
 jobs:
   update-baseline-on-main:
     runs-on: ubuntu-latest
@@ -91,9 +95,13 @@ jobs:
             jq --arg baseline "${NEW_BASELINE}" '."builtin-baseline" = $baseline' vcpkg.json > vcpkg.json.tmp
             mv vcpkg.json.tmp vcpkg.json
 
-            git add vcpkg.json
-            git commit -m "chore: update vcpkg baseline to ${RELEASE_TAG}"
-            git push origin "${branch_name}"
+            if git diff --quiet -- vcpkg.json; then
+              echo "No baseline change to commit on ${branch_name}"
+            else
+              git add vcpkg.json
+              git commit -m "chore: update vcpkg baseline to ${RELEASE_TAG}"
+              git push origin "${branch_name}"
+            fi
 
             gh pr edit "${existing_pr}" --title "chore: Update vcpkg baseline to ${RELEASE_TAG}"
 
@@ -115,9 +123,13 @@ jobs:
             jq --arg baseline "${NEW_BASELINE}" '."builtin-baseline" = $baseline' vcpkg.json > vcpkg.json.tmp
             mv vcpkg.json.tmp vcpkg.json
 
-            git add vcpkg.json
-            git commit -m "chore: update vcpkg baseline to ${RELEASE_TAG}"
-            git push -f origin "${branch_name}"
+            if git diff --quiet -- vcpkg.json; then
+              echo "No baseline change to commit on ${branch_name}"
+            else
+              git add vcpkg.json
+              git commit -m "chore: update vcpkg baseline to ${RELEASE_TAG}"
+              git push --force-with-lease origin "${branch_name}"
+            fi
 
             printf -v pr_body '## vcpkg Baseline Update\n\nThis PR updates the vcpkg baseline to the latest release.\n\n**Release:** `%s`\n**Previous:** `%s`\n**New:** `%s`\n\n**Release notes:** https://github.com/microsoft/vcpkg/releases/tag/%s\n\n---\nThis PR is automatically updated when new vcpkg releases are published.' \
               "${RELEASE_TAG}" "${PREVIOUS}" "${NEW_BASELINE}" "${RELEASE_TAG}"

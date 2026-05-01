@@ -18,7 +18,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup reviewdog
-        uses: reviewdog/action-setup@v1.0.3
+        uses: reviewdog/action-setup@v1.5.0
 
       - name: Setup dependencies
         run: |
@@ -26,10 +26,10 @@ jobs:
           sudo apt-get install -y cppcheck libxml2-utils lua-check luajit yamllint
 
       - name: Run yamllint
-        run: yamllint .github .yamllint.yaml
+        run: yamllint -c .yamllint.yaml .github
 
       - name: Run analysis with reviewdog
-        if: github.event_name == 'pull_request'
+        if: github.event.pull_request != null && github.event.pull_request.head.repo.full_name == github.repository
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REVIEWDOG_REPORTER: github-pr-check
