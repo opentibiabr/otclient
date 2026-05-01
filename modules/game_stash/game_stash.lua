@@ -470,7 +470,7 @@ function prepareWithdraw(itemId, itemAmount)
         scrollbar:setValue(scrollbar:getMinimum())
     end, W.modal.selectAmount)
     local function withdraw()
-        g_game.stashWithdraw(itemId, itembox:getItemCount(), 1)
+        g_game.stashWithdraw(itemId, scrollbar:getValue(), 1)
         W.modal.selectAmount:unlock()
         resetSelectAmount()
     end
