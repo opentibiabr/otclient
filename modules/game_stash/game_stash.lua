@@ -517,9 +517,12 @@ end
 
 local function ensureWindow()
     if W.window then
-        return
+        return true
     end
     stashHandle = stashController:openModalOtui('StashWindow')
+    if not stashHandle or not stashHandle.ui then
+        return false
+    end
     W.window         = stashHandle.ui
     W.panels.items   = W.window:recursiveGetChildById('itemsPanel')
     W.inputs.search  = W.window:recursiveGetChildById('searchEdit')
@@ -565,6 +568,7 @@ local function ensureWindow()
     W.combos.sort:setCurrentOption(sortOrder[1], true)
     suppressRenderEvents = oldSuppress
     recomputeViewport()
+    return true
 end
 
 -- /*=============================================
@@ -572,7 +576,12 @@ end
 -- =============================================*/
 
 local function onSupplyStashEnter(payload)
-    ensureWindow()
+    if not ensureWindow() then
+        return
+    end
+    if not W.window then
+         return
+    end
     table.clear(payloadSeen)
     table.clear(categorySet)
     table.clear(categoryList)
