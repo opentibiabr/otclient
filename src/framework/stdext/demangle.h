@@ -22,6 +22,9 @@
 
 #pragma once
 
+#include <string>
+#include <typeinfo>
+
 namespace stdext
 {
     /// Demangle names for GNU g++ compiler
