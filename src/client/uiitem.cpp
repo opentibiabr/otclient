@@ -56,10 +56,12 @@ void UIItem::drawSelf(const DrawPoolType drawPane)
         g_drawPool.releaseFrameBuffer(getPaddingRect(), m_flipDirection);
 
         const int displayCount = m_displayCount > 0 ? m_displayCount
-                               : (m_item->isStackable() ? m_item->getCount() : 0);
+                               : (m_item->isStackable() ? m_item->getCount()
+                               : (m_item->getCharges() > 0 ? static_cast<int>(m_item->getCharges()) : 0));
         const bool shouldDrawCount = m_displayCount > 0 ? (displayCount >= 1) : (displayCount > 1);
         if (m_alwaysShowCount && shouldDrawCount) {
-            const auto& countFont = g_gameConfig.getItemCountFont() ? g_gameConfig.getItemCountFont() : m_font;
+            const auto itemCountFont = g_gameConfig.getItemCountFont();
+            const auto& countFont = itemCountFont ? itemCountFont : m_font;
             if (countFont) {
                 static constexpr Color STACK_COLOR(191, 191, 191);
                 const auto count = displayCount;
@@ -121,6 +123,7 @@ void UIItem::setItemSubType(const int subType)
 void UIItem::setItem(const ItemPtr& item)
 {
     m_item = item;
+    m_displayCount = 0;
     if (item)
         m_itemId = item->getClientId();
 

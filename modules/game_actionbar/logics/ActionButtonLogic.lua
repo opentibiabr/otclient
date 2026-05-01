@@ -442,7 +442,7 @@ function updateButtonState(button)
         if modules.client_options.getOption('showHKObjectsBars') then
             button.item:setDisplayCount(itemCount)
         else
-            button.item:setDisplayCount(1)
+            button.item:setDisplayCount(0)
         end
         setupButtonTooltip(button, false)
     end

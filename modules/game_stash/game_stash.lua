@@ -49,23 +49,25 @@ for _, id in ipairs({
     22728, 22730, 23507, 23508, 25694, 25702, 28567, 40529,
 }) do imbuementSet[id] = true end
 
+local function nameAscComparator(a, b)
+    local aName, bName = a.meta.nameLower, b.meta.nameLower
+    if aName == bName then return a.itemId < b.itemId end
+    return aName < bName
+end
+
 local sortFunctions = {
-    ["Name (A-Z)"] = function(a, b)
-        local aName, bName = a.meta.nameLower, b.meta.nameLower
-        if aName == bName then return a.itemId < b.itemId end
-        return aName < bName
-    end,
+    ["Name (A-Z)"] = nameAscComparator,
     ["Name (Z-A)"] = function(a, b)
         local aName, bName = a.meta.nameLower, b.meta.nameLower
         if aName == bName then return a.itemId < b.itemId end
         return aName > bName
     end,
     ["Quantity (High to Low)"] = function(a, b)
-        if a.amount == b.amount then return sortFunctions["Name (A-Z)"](a, b) end
+        if a.amount == b.amount then return nameAscComparator(a, b) end
         return a.amount > b.amount
     end,
     ["Quantity (Low to High)"] = function(a, b)
-        if a.amount == b.amount then return sortFunctions["Name (A-Z)"](a, b) end
+        if a.amount == b.amount then return nameAscComparator(a, b) end
         return a.amount < b.amount
     end,
 }
@@ -295,15 +297,17 @@ local function onStashItemMouseRelease(itemWidget, mousePos, mouseButton)
             end, 100, "showDeliveryItemMarket")
         end)
     end
-    menu:addSeparator()
-    if not moduleQuickLoot.QuickLoot.lootExists(itemId) then
-        menu:addOption(tr('Add to Loot List'), function()
-            moduleQuickLoot.QuickLoot.addLootList(itemId)
-        end)
-    else
-        menu:addOption(tr('Remove from Loot List'), function()
-            moduleQuickLoot.QuickLoot.removeLootList(itemId)
-        end)
+    if moduleQuickLoot and moduleQuickLoot.QuickLoot then
+        menu:addSeparator()
+        if not moduleQuickLoot.QuickLoot.lootExists(itemId) then
+            menu:addOption(tr('Add to Loot List'), function()
+                moduleQuickLoot.QuickLoot.addLootList(itemId)
+            end)
+        else
+            menu:addOption(tr('Remove from Loot List'), function()
+                moduleQuickLoot.QuickLoot.removeLootList(itemId)
+            end)
+        end
     end
     menu:display(mousePos)
 end
@@ -568,7 +572,6 @@ end
 -- =============================================*/
 
 local function onSupplyStashEnter(payload)
-    pdump(payload)
     if not ensureWindow() then
         return
     end
