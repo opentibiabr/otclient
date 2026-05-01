@@ -54,7 +54,7 @@
         dbghelp.lib;
         fmtd.lib;
         gdi32.lib;
-        glew32.lib;
+        $(VcpkgInstalledDir)\$(VcpkgTriplet)\lib\glew32.lib;
         kernel32.lib;
         ole32.lib;
         lua51.lib;
