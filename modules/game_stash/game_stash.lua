@@ -659,9 +659,12 @@ function stashController:onGameStart()
     end
     g_ui.importStyle('game_stash')
     stashController:registerEvents(g_game, {
-        onSupplyStashEnter = onSupplyStashEnter,
-        onGameEnd = onSupplyStashClose
+        onSupplyStashEnter = onSupplyStashEnter
     })
+end
+
+function stashController:onGameEnd()
+    onSupplyStashClose()
 end
 
 function stashController:onTerminate()

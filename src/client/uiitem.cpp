@@ -56,8 +56,7 @@ void UIItem::drawSelf(const DrawPoolType drawPane)
         g_drawPool.releaseFrameBuffer(getPaddingRect(), m_flipDirection);
 
         const int displayCount = m_displayCount > 0 ? m_displayCount
-                               : (m_item->isStackable() ? m_item->getCount()
-                               : (m_item->getCharges() > 0 ? static_cast<int>(m_item->getCharges()) : 0));
+                               : (m_item->isStackable() ? m_item->getCount() : 0);
         const bool shouldDrawCount = m_displayCount > 0 ? (displayCount >= 1) : (displayCount > 1);
         if (m_alwaysShowCount && shouldDrawCount) {
             const auto itemCountFont = g_gameConfig.getItemCountFont();
@@ -145,6 +144,8 @@ void UIItem::onStyleApply(const std::string_view styleName, const OTMLNodePtr& s
             m_showId = node->value<bool>();
         else if (node->tag() == "always-show-count")
             m_alwaysShowCount = node->value<bool>();
+        else if (node->tag() == "display-count")
+            setShowCount(node->value<bool>());
         else if (node->tag() == "flip-direction")
             setFlipDirection(node->value<uint8_t>());
     }

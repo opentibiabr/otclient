@@ -2854,8 +2854,8 @@ function UIItem:setVirtual(virtual) end
 ---@param show boolean
 function UIItem:setShowCount(show) end
 
----@param show boolean
-function UIItem:setDisplayCount(show) end
+---@param count integer
+function UIItem:setDisplayCount(count) end
 
 function UIItem:clearItem() end
 
