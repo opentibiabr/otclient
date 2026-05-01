@@ -271,6 +271,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>false</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalOptions>/IGNORE:4286 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies>freetype.lib;libEGL.lib;libGLESv2.lib;dxgi.lib;d3d9.lib;d3d11.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -330,6 +331,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalOptions>/IGNORE:4286 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies>freetype.lib;libEGL.lib;libGLESv2.lib;dxgi.lib;d3d9.lib;d3d11.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>

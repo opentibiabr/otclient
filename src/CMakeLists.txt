@@ -569,7 +569,11 @@ else()
   log_option_disabled("DEBUG LOG")
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
-target_compile_definitions(otclient_core PRIVATE ENABLE_DISCORD_RPC=${OTCLIENT_ENABLE_DISCORD_RPC})
+target_compile_definitions(otclient_core PRIVATE
+  ENABLE_DISCORD_RPC=${OTCLIENT_ENABLE_DISCORD_RPC}
+  OPENSSL_API_COMPAT=0x10100000L
+  OPENSSL_SUPPRESS_DEPRECATED
+)
 
 # *****************************************************************************
 # Includes and librarys
