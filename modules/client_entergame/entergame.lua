@@ -603,7 +603,6 @@ function EnterGame.toggleStayLoggedBox(clientVersion, init)
     end
 
     if not init then
-        enterGame:breakAnchors()
         enterGame:setY(newY)
         enterGame:bindRectToParent()
     end
@@ -904,7 +903,7 @@ function EnterGame.setUniqueServer(host, port, protocol, windowWidth, windowHeig
     end
     enterGame:setWidth(windowWidth)
     if not windowHeight then
-        windowHeight = 210
+        windowHeight = 229
     end
 
     enterGame:setHeight(windowHeight)
