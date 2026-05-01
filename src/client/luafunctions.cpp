@@ -1136,7 +1136,7 @@ void Client::registerLuaFunctions()
     g_lua.bindClassMemberFunction<UIMap>("setLimitVisibleDimension", &UIMap::setLimitVisibleDimension);
     g_lua.bindClassMemberFunction<UIMap>("setDrawManaBar", &UIMap::setDrawManaBar);
     g_lua.bindClassMemberFunction<UIMap>("setKeepAspectRatio", &UIMap::setKeepAspectRatio);
-    g_lua.bindClassMemberFunction<UIMap>("setShader", &UIMap::setShader);
+    g_lua.bindClassMemberFunction<UIMap>("setShader", static_cast<void (UIMap::*)(std::string_view, float, float)>(&UIMap::setShader));
     g_lua.bindClassMemberFunction<UIMap>("getShader", &UIMap::getShader);
     g_lua.bindClassMemberFunction<UIMap>("getNextShader", &UIMap::getNextShader);
     g_lua.bindClassMemberFunction<UIMap>("isSwitchingShader", &UIMap::isSwitchingShader);
