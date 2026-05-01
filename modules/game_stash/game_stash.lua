@@ -270,7 +270,7 @@ local function onStashItemMouseRelease(itemWidget, mousePos, mouseButton)
         if not cyc then
             return
         end
-        if cyc.controllerCyclopedia.ui and cyc.controllerCyclopedia.ui:isVisible() then
+        if cyc.controllerCyclopedia and cyc.controllerCyclopedia.ui and cyc.controllerCyclopedia.ui:isVisible() then
             cyc.SelectWindow('items', false)
         else
             cyc.show('items')

@@ -323,7 +323,9 @@ function Controller:closeModalHtml(handle)
     local htmlId = handle.htmlId
     handle.htmlId = nil
     handle.ui = nil
-    g_html.destroy(htmlId)
+    if htmlId then
+        g_html.destroy(htmlId)
+    end
 end
 
 function Controller:loadUI(name, parent)
