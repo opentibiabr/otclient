@@ -24,6 +24,11 @@
 
 #include "cast.h"
 
+#include <cstdint>
+#include <string>
+#include <string_view>
+#include <vector>
+
 namespace stdext
 {
     template<typename T> std::string to_string(const T& t) { return unsafe_cast<std::string, T>(t); }

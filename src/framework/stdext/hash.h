@@ -22,6 +22,10 @@
 
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
+#include <functional>
+
 namespace stdext
 {
     // Robin Hood lib

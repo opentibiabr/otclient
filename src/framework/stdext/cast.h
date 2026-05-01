@@ -24,6 +24,11 @@
 
 #include "exception.h"
 
+#include <cstdlib>
+#include <iostream>
+#include <sstream>
+#include <string>
+
 namespace stdext
 {
     // cast a type to another type

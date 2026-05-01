@@ -22,6 +22,9 @@
 
 #pragma once
 
+#include <atomic>
+#include <cstdint>
+
 namespace stdext
 {
     inline int16_t getThreadId() {

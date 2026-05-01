@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include <string>
+
 struct ParsedURI
 {
     std::string protocol;

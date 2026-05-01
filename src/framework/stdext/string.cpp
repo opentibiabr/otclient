@@ -24,9 +24,15 @@
 #include "exception.h"
 #include "types.h"
 
+#include <algorithm>
 #include <charconv>
-#include <utf8cpp/utf8.h>
+#include <cctype>
+#include <cstdint>
+#include <ctime>
 #include <iterator>
+#include <ranges>
+
+#include <utf8cpp/utf8.h>
 
 #ifdef _MSC_VER
 #pragma warning(disable:4267) // '?' : conversion from 'A' to 'B', possible loss of data

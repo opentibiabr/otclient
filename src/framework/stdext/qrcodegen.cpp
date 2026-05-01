@@ -23,6 +23,14 @@
 
 #include "qrcodegen.h"
 
+#include <algorithm>
+#include <cassert>
+#include <climits>
+#include <cmath>
+#include <cstring>
+#include <sstream>
+#include <utility>
+
 using std::int8_t;
 using std::uint8_t;
 using std::size_t;
