@@ -24,60 +24,17 @@
         crypt32.lib;
         dbghelp.lib;
         gdi32.lib;
-        discord-rpc.lib;
-        fmt.lib;
-        libglew32.lib;
         kernel32.lib;
         ole32.lib;
-        physfs-static.lib;
+        opengl32.lib;
         shell32.lib;
         user32.lib;
         winmm.lib;
-        libcrypto.lib;
-
-        libssl.lib;
-        lua51.lib;
-        lzma.lib;
-        ogg.lib;
-        openal32.lib;
-        opengl32.lib;
-        vorbis.lib;
-        vorbisfile.lib;
-        pugixml.lib;
-        zlib.lib;
     </OTCLIENT_LIBDEPS>
 
     <OTCLIENT_LIBDEPS_D>
-        advapi32.lib;
-        avrt.lib;
-        discord-rpc.lib;
-        dbghelp.lib;
-        fmtd.lib;
-        gdi32.lib;
-        libglew32d.lib;
-        kernel32.lib;
-        ole32.lib;
-        lua51.lib;
-        ogg.lib;
-        lzma.lib;
-        libssl.lib;
-        libcrypto.lib;
-
-        opengl32.lib;
-        physfs-static.lib;
-        shell32.lib;
-        user32.lib;
-        vorbis.lib;
-        vorbisfile.lib;
-        winmm.lib;
-        pugixml.lib;
-        zlibd.lib;
-        openal32.lib;
+        $(OTCLIENT_LIBDEPS);
     </OTCLIENT_LIBDEPS_D>
-  </PropertyGroup>
-  <PropertyGroup>
-    <OTCLIENT_LIBDEPS Condition="$(PREPROCESSOR_DEFS.Contains('FRAMEWORK_PROTOBUF'))">$(OTCLIENT_LIBDEPS);libprotobuf.lib;</OTCLIENT_LIBDEPS>
-    <OTCLIENT_LIBDEPS_D Condition="$(PREPROCESSOR_DEFS.Contains('FRAMEWORK_PROTOBUF'))">$(OTCLIENT_LIBDEPS_D);libprotobufd.lib;</OTCLIENT_LIBDEPS_D>
   </PropertyGroup>
   <PropertyGroup>
     <LinkIncremental>false</LinkIncremental>
