@@ -23,6 +23,7 @@
 #pragma once
 
 #include <framework/global.h>
+#include <memory>
 
 #include <AL/al.h>
 #include <AL/alc.h>

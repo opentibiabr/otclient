@@ -24,6 +24,7 @@
 
 #include "glutil.h"
 #include <framework/global.h>
+#include <memory>
 
 enum class CompositionMode
 {

@@ -23,6 +23,7 @@
 #pragma once
 
 #include <framework/global.h>
+#include <memory>
 
 class OTMLNode;
 class OTMLDocument;

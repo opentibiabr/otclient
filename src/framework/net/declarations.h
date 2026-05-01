@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include <memory>
+
 class InputMessage;
 class OutputMessage;
 #ifdef __EMSCRIPTEN__

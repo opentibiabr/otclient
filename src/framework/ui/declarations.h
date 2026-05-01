@@ -23,6 +23,7 @@
 #pragma once
 
 #include <framework/global.h>
+#include <memory>
 
 enum class DrawPoolType : uint8_t;
 enum FlagProp : uint64_t;

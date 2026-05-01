@@ -23,6 +23,7 @@
 #pragma once
 
 #include "global.h"
+#include <memory>
 
 enum FrameGroupType : uint8_t;
 enum ThingCategory : uint8_t;
