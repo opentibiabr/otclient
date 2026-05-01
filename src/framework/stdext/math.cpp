@@ -20,6 +20,14 @@
  * THE SOFTWARE.
  */
 
+#include "math.h"
+
+#include <cmath>
+#include <stdexcept>
+#include <utility>
+
+#include <zlib.h>
+
 #ifdef _MSC_VER
 #pragma warning(disable:4267) // '?' : conversion from 'A' to 'B', possible loss of data
 #endif
