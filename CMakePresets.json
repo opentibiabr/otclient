@@ -16,7 +16,8 @@
           "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
           "type": "FILEPATH"
         },
-        "CMAKE_COLOR_DIAGNOSTICS": "ON"
+        "CMAKE_COLOR_DIAGNOSTICS": "ON",
+        "SPEED_UP_BUILD_UNITY": "ON"
       }
     },
     {
@@ -32,7 +33,6 @@
         "VCPKG_PLATFORM_TOOLSET": "v145",
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "OPTIONS_ENABLE_SCCACHE": "ON",
-        "SPEED_UP_BUILD_UNITY": "OFF",
         "OTCLIENT_BUILD_TESTS": "OFF"
       },
       "architecture": {
@@ -160,6 +160,7 @@
         "DEBUG_LOG": "ON",
         "ASAN_ENABLED": "ON",
         "BUILD_STATIC_LIBRARY": "OFF",
+        "SPEED_UP_BUILD_UNITY": "OFF",
         "VCPKG_BUILD_TYPE": "debug",
         "OTCLIENT_BUILD_TESTS": "ON"
       }
