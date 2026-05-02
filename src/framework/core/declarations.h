@@ -24,6 +24,10 @@
 
 #include <framework/global.h>
 
+#ifndef USE_PRECOMPILED_HEADERS
+#include <memory>
+#endif
+
 class ConfigManager;
 class ModuleManager;
 class ResourceManager;

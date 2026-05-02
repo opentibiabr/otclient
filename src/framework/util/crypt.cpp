@@ -21,6 +21,20 @@
  */
 
 #include "crypt.h"
+
+#ifndef USE_PRECOMPILED_HEADERS
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <functional>
+#include <ranges>
+#include <stdexcept>
+#include <string>
+#include <utility>
+#include <zlib.h>
+#endif
+
 #include <cppcodec/base64_rfc4648.hpp>
 
 #include "framework/core/graphicalapplication.h"
@@ -29,6 +43,12 @@
 #include "framework/stdext/math.h"
 
 #ifndef USE_GMP
+#ifndef OPENSSL_API_COMPAT
+#define OPENSSL_API_COMPAT 0x10100000L
+#endif
+#ifndef OPENSSL_SUPPRESS_DEPRECATED
+#define OPENSSL_SUPPRESS_DEPRECATED
+#endif
 #include <openssl/bn.h>
 #include <openssl/rsa.h>
 #endif

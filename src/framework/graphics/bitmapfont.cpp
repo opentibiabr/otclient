@@ -320,7 +320,6 @@ void BitmapFont::calculateGlyphsPositions(std::string_view text,
         glyphsPositions.reserve(std::max(1024, textLength));
 
     const unsigned char* p = reinterpret_cast<const unsigned char*>(text.data());
-    const Size* __restrict widths = m_glyphsSize;
 
     const bool needLines =
         (align & Fw::AlignRight) || (align & Fw::AlignHorizontalCenter) || (textBoxSize != nullptr);
@@ -426,7 +425,9 @@ namespace {
     bool _isSpace(uint8_t c) { return c == ' ' || c == '\t'; }
     bool _isHyphen(uint8_t c) { return c == '-'; }
     bool _utf8(const char* s, const char* e, uint32_t& cp, int& len) {
-        if (s >= e)return false; unsigned char c0 = (unsigned char)s[0];
+        if (s >= e)
+            return false;
+        unsigned char c0 = (unsigned char)s[0];
         if (c0 < 0x80) { cp = c0; len = 1; return true; }
         if ((c0 & 0xE0) == 0xC0 && s + 1 <= e) { cp = ((c0 & 0x1F) << 6) | ((unsigned char)s[1] & 0x3F); len = 2; return true; }
         if ((c0 & 0xF0) == 0xE0 && s + 2 <= e) { cp = ((c0 & 0x0F) << 12) | (((unsigned char)s[1] & 0x3F) << 6) | ((unsigned char)s[2] & 0x3F); len = 3; return true; }

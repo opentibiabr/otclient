@@ -28,7 +28,11 @@ endif()
 # Cmake Features
 # *****************************************************************************
 set(GNUCXX_MINIMUM_VERSION 9)
-set(CMAKE_CXX_STANDARD 23)
+if(MSVC)
+  set(CMAKE_CXX_STANDARD 20)
+else()
+  set(CMAKE_CXX_STANDARD 23)
+endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -487,6 +491,7 @@ endif()
 if(TOGGLE_PRE_COMPILED_HEADER)
   # === PRECOMPILED HEADER ===
   target_precompile_headers(otclient_core PRIVATE framework/pch.h)
+  target_compile_definitions(otclient_core PRIVATE USE_PRECOMPILED_HEADERS)
   message(STATUS "Use precompiled header: ON")
 else()
   message(STATUS "Use precompiled header: OFF")
@@ -564,23 +569,37 @@ else()
   log_option_disabled("DEBUG LOG")
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
-target_compile_definitions(otclient_core PRIVATE ENABLE_DISCORD_RPC=${OTCLIENT_ENABLE_DISCORD_RPC})
+target_compile_definitions(otclient_core PRIVATE
+  ENABLE_DISCORD_RPC=${OTCLIENT_ENABLE_DISCORD_RPC}
+  OPENSSL_API_COMPAT=0x10100000L
+  OPENSSL_SUPPRESS_DEPRECATED
+)
 
 # *****************************************************************************
 # Includes and librarys
 # *****************************************************************************
 if(MSVC)
 
-  # Set variables to have Windows Vista Value so httplib will build 'inet_pton'
+  # cpp-httplib 0.43+ requires Windows 10 or later.
   target_compile_definitions(otclient_core
           PUBLIC
-          NTDDI_VERSION=0x06000000
-          _WIN32_WINNT=0x0600
+          NTDDI_VERSION=0x0A000000
+          WINVER=0x0A00
+          _WIN32_WINNT=0x0A00
   )
 
   target_compile_definitions(otclient_core PRIVATE CRASH_HANDLER)
 
   target_compile_options(otclient_core PUBLIC /MP /FS /Zf /EHsc /bigobj)
+
+  # MSVC 19.44 ICEs in stdext::safe_cast instantiations with release optimization.
+  set_source_files_properties(
+          framework/luaengine/luavaluecasts.cpp
+          framework/luafunctions.cpp
+          PROPERTIES
+            COMPILE_OPTIONS "/Od;/Ob0"
+            SKIP_PRECOMPILE_HEADERS ON
+  )
 
   if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     string(REPLACE "/Zi" "/Z7" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
@@ -655,7 +674,7 @@ if(MSVC)
           LibLZMA::LibLZMA
           winmm.lib
           pugixml::pugixml
-          fmt::fmt-header-only
+          fmt::fmt
           utf8cpp::utf8cpp
           Freetype::Freetype
   )
@@ -712,7 +731,7 @@ elseif(ANDROID)
           log
           Freetype::Freetype
           pugixml::pugixml
-          fmt::fmt-header-only
+          fmt::fmt
           utf8cpp::utf8cpp
   )
 
@@ -904,7 +923,7 @@ else() # Linux
           OpenSSL::SSL
           OpenSSL::Crypto
           httplib::httplib
-          fmt::fmt-header-only
+          fmt::fmt
           utf8cpp::utf8cpp
           Ogg::ogg
           Vorbis::vorbisfile

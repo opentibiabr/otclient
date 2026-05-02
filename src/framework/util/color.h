@@ -22,6 +22,14 @@
 
 #pragma once
 
+#ifndef USE_PRECOMPILED_HEADERS
+#include <cstddef>
+#include <cstdint>
+#include <istream>
+#include <ostream>
+#include <string_view>
+#endif
+
 class Color
 {
 public:

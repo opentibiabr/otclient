@@ -264,8 +264,8 @@ void UIWidget::insertChild(int32_t index, const UIWidgetPtr& child)
 
     { // cache index
         child->m_childIndex = index + 1;
-        for (auto i = child->m_childIndex; i < m_children.size(); ++i)
-            m_children[i]->m_childIndex = i + 1;
+        for (size_t i = static_cast<size_t>(child->m_childIndex); i < m_children.size(); ++i)
+            m_children[i]->m_childIndex = static_cast<int16_t>(i + 1);
     }
 
     child->setParent(static_self_cast<UIWidget>());
@@ -2174,7 +2174,7 @@ bool UIWidget::propagateOnMouseEvent(const Point& mousePos, UIWidgetList& widget
     if (!checkContainsPoint || containsPoint(mousePos)) {
         widgetList.emplace_back(static_self_cast<UIWidget>());
 
-        if (!isPhantom() && !isOnHtml() || isDraggable())
+        if ((!isPhantom() && !isOnHtml()) || isDraggable())
             ret = true;
     }
 
