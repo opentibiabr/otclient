@@ -388,6 +388,35 @@ public:
     T polymorphicPop() { T v = castValue<T>(); pop(1); return v; }
 
 private:
+    class ScopedState
+    {
+    public:
+        ScopedState(LuaInterface& lua, lua_State* state) :
+            m_lua(lua),
+            m_previousState(lua.L)
+        {
+            m_lua.L = state;
+        }
+
+        ScopedState(const ScopedState&) = delete;
+        ScopedState& operator=(const ScopedState&) = delete;
+
+        ~ScopedState() { restore(); }
+
+        void restore()
+        {
+            if (m_active) {
+                m_lua.L = m_previousState;
+                m_active = false;
+            }
+        }
+
+    private:
+        LuaInterface& m_lua;
+        lua_State* m_previousState{ nullptr };
+        bool m_active{ true };
+    };
+
     lua_State* L{ nullptr };
     int m_weakTableRef{ 0 };
     int m_cppCallbackDepth{ 0 };
