@@ -588,11 +588,13 @@ function Cyclopedia.CreateBestiaryCreaturesItem(data)
         widget.AnimusMastery:setVisible(false)
     end
 
-    if data.currentLevel >= 3 then
+    if data.currentLevel >= 4 then
         widget.Finalized:setVisible(true)
         widget.KillsLabel:setVisible(false)
         widget.Sprite:getCreature():setShader("")
     else
+        widget.Finalized:setVisible(false)
+        widget.KillsLabel:setVisible(true)
         if data.currentLevel < 1 then
             widget.KillsLabel:setText("?")
             widget.Sprite:getCreature():setShader("Outfit - cyclopedia-black")
@@ -600,8 +602,8 @@ function Cyclopedia.CreateBestiaryCreaturesItem(data)
             widget.AnimusMastery:setVisible(false)
         else
             widget.KillsLabel:setText(string.format("%d / 3", data.currentLevel - 1))
+            widget.Sprite:getCreature():setShader("")
         end
-
     end
 
     function widget.ClassBase:onClick()
