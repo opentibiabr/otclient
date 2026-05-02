@@ -1111,9 +1111,14 @@ end
 function onExperienceChange(localPlayer, value)
     setSkillValue('experience', comma_value(value))
     setSkillTooltip('experience', getExperienceTooltip(localPlayer))
+    onLevelChange(localPlayer, localPlayer:getLevel(), localPlayer:getLevelPercent())
 end
 
 function onLevelChange(localPlayer, value, percent)
+    if not localPlayer then
+        return
+    end
+    percent = percent or localPlayer:getLevelPercent()
     setSkillValue('level', comma_value(value))
     local text = tr('You have %s percent to go', 100 - percent)
 
