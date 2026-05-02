@@ -70,11 +70,13 @@ namespace stdext
         localtime_r(&tnow, &ts);
 #endif
 
-        char date[20];
-        if (std::strftime(date, sizeof(date), format, &ts) == 0)
+        std::string date(128, '\0');
+        const auto length = std::strftime(date.data(), date.size(), format, &ts);
+        if (length == 0)
             throw string_error("Failed to format date-time string");
 
-        return std::string(date);
+        date.resize(length);
+        return date;
     }
 
     [[nodiscard]] std::string dec_to_hex(uint64_t num) {
