@@ -144,8 +144,6 @@ void UIItem::onStyleApply(const std::string_view styleName, const OTMLNodePtr& s
             m_showId = node->value<bool>();
         else if (node->tag() == "always-show-count")
             m_alwaysShowCount = node->value<bool>();
-        else if (node->tag() == "display-count")
-            setDisplayCount(node->value<int>());
         else if (node->tag() == "flip-direction")
             setFlipDirection(node->value<uint8_t>());
     }
