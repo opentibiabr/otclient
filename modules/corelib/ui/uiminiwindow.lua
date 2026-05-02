@@ -541,6 +541,8 @@ function UIMiniWindow:lock(dontSave)
         lockButton:setOn(true)
     end
     self:setDraggable(false)
+    self:setBorderWidth(1)
+    self:setBorderColor('#d33c3c')
     if not dontsave then
         self:setSettings({
             locked = true
@@ -556,6 +558,7 @@ function UIMiniWindow:unlock(dontSave)
         lockButton:setOn(false)
     end
     self:setDraggable(true)
+    self:setBorderWidth(0)
     if not dontsave then
         self:setSettings({
             locked = false

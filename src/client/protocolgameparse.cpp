@@ -4276,10 +4276,8 @@ ItemPtr ProtocolGame::getItem(const InputMessagePtr& msg, int id)
 
     if (g_game.getFeature(Otc::GameThingClock)) {
         if (item->hasClockExpire() || item->hasExpire() || item->hasExpireStop()) {
-            if (item->getId() != 23398) {
-                item->setDurationTime(msg->getU32());
-                msg->getU8(); // Is brand-new
-            }
+            item->setDurationTime(msg->getU32());
+            msg->getU8(); // Is brand-new
         }
     }
 
@@ -4291,7 +4289,7 @@ ItemPtr ProtocolGame::getItem(const InputMessagePtr& msg, int id)
     }
 
     if (g_game.getFeature(Otc::GameWrapKit)) {
-        if (item->isDecoKit() || item->getId() == 23398) {
+        if (item->isDecoKit()) {
             msg->getU16();
         }
     }
