@@ -754,7 +754,7 @@ function createThingMenu(menuPosition, lookThing, useThing, creatureThing)
                 shortcut = nil
             end
             if creatureThing:getPosition().z == localPosition.z then
-                if creatureThing:isNpc() and g_game.getClientVersion() < 1511 then
+                if creatureThing:isNpc() then
                     menu:addOption(tr('Talk'), function()
                         g_game.talk("hi")
                     end)
