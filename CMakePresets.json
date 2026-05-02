@@ -160,6 +160,7 @@
         "DEBUG_LOG": "ON",
         "ASAN_ENABLED": "ON",
         "BUILD_STATIC_LIBRARY": "OFF",
+        "SPEED_UP_BUILD_UNITY": "OFF",
         "VCPKG_BUILD_TYPE": "debug",
         "OTCLIENT_BUILD_TESTS": "ON"
       }

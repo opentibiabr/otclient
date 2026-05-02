@@ -776,7 +776,6 @@ elseif(WASM)
           PUBLIC
           ${LUA_LIBRARY}
           ${PHYSFS_LIBRARY}
-          ZLIB::ZLIB
 
           ${NLOHMANN_JSON_LIBRARY}
           ${GLEW_LIBRARY}
@@ -899,7 +898,6 @@ else() # Linux
           PUBLIC
           ${LUAJIT_LIBRARY}
           ${PHYSFS_LIBRARY}
-          ZLIB::ZLIB
           ${NLOHMANN_JSON_LIBRARY}
           ${GLEW_LIBRARY}
           ${OPENGL_LIBRARIES}
