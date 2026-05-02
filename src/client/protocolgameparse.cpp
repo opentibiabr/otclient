@@ -793,8 +793,7 @@ void ProtocolGame::parseBlessings(const InputMessagePtr& msg) const
     if (g_game.getClientVersion() >= 1200) {
         blessVisualState = msg->getU8(); // 1 = Disabled | 2 = normal | 3 = green
     }
-    m_localPlayer->setBlessings(blessings);
-    g_lua.callGlobalField("g_game", "onBlessingsChange", blessings, blessVisualState);
+    m_localPlayer->setBlessings(blessings, blessVisualState);
 }
 
 void ProtocolGame::parsePreset(const InputMessagePtr& msg)

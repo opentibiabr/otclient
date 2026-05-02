@@ -369,12 +369,22 @@ PreviewState = {
 
 Blessings = {
     None = 0,
-    Adventurer = 1,
-    SpiritualShielding = 2,
-    EmbraceOfTibia = 4,
-    FireOfSuns = 8,
-    WisdomOfSolitude = 16,
-    SparkOfPhoenix = 32
+    Adventurer = 1,          -- bit 1
+    TwistOfFate = 2,         -- bit 2
+    WisdomOfSolitude = 4,    -- bit 3
+    SparkOfPhoenix = 8,      -- bit 4
+    FireOfSuns = 16,         -- bit 5
+    SpiritualShielding = 32, -- bit 6
+    EmbraceOfTibia = 64,     -- bit 7
+    HeartOfMountain = 128,   -- bit 8
+    BloodOfMountain = 256,   -- bit 9
+
+    -- Compatibility / Legacy values
+    LegacySpiritualShielding = 2,
+    LegacyEmbraceOfTibia = 4,
+    LegacyFireOfSuns = 8,
+    LegacyWisdomOfSolitude = 16,
+    LegacySparkOfPhoenix = 32
 }
 
 DeathType = {
