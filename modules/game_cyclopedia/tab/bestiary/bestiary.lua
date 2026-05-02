@@ -205,10 +205,19 @@ end
 
 function Cyclopedia.CreateCreatureItems(data)
     UI.ListBase.CreatureInfo.ItemsBase.Itemlist:destroyChildren()
-
+    local itemsPerRow = 15
+    local itemSlotSpacing = 36
     for index, _ in pairs(data) do
         local widget = g_ui.createWidget("BestiaryItemGroup", UI.ListBase.CreatureInfo.ItemsBase.Itemlist)
         widget:setId(index)
+        local rowCount = math.max(1, math.ceil(#data[index] / itemsPerRow))
+        local slotCount = rowCount * itemsPerRow
+        widget:setHeight(45 + ((rowCount - 1) * itemSlotSpacing))
+        widget.Title:breakAnchors()
+        widget.Title:addAnchor(AnchorLeft, "parent", AnchorLeft)
+        widget.Title:addAnchor(AnchorTop, "parent", AnchorTop)
+        widget.Title:setMarginLeft(5)
+        widget.Title:setMarginTop(16)
 
         if index == 0 then
             widget.Title:setText(tr("Common") .. ":")
@@ -222,17 +231,36 @@ function Cyclopedia.CreateCreatureItems(data)
             widget.Title:setText(tr("Very Rare") .. ":")
         end
 
-        for i = 1, 15 do
-            local item = g_ui.createWidget("BestiaryItem", widget.Items)
+        local itemRows = {}
+        local itemWidgets = {}
+        for rowIndex = 1, rowCount do
+            local row = g_ui.createWidget("UIWidget", widget.Items)
+            row:setId("row" .. rowIndex)
+            row:setHeight(34)
+            row:addAnchor(AnchorLeft, "parent", AnchorLeft)
+            row:addAnchor(AnchorRight, "parent", AnchorRight)
+
+            if rowIndex == 1 then
+                row:addAnchor(AnchorTop, "parent", AnchorTop)
+                row:setMarginTop(5)
+            else
+                row:addAnchor(AnchorTop, "row" .. (rowIndex - 1), AnchorBottom)
+                row:setMarginTop(2)
+            end
+
+            itemRows[rowIndex] = row
+        end
+
+        for i = 1, slotCount do
+            local rowIndex = math.ceil(i / itemsPerRow)
+            local item = g_ui.createWidget("BestiaryItem", itemRows[rowIndex])
             item:setId(i)
+            itemWidgets[i] = item
         end
 
         for itemIndex, itemData in ipairs(data[index]) do
             local thing = g_things.getThingType(itemData.id, ThingCategoryItem)
-            local itemWidget = UI.ListBase.CreatureInfo.ItemsBase.Itemlist[index].Items[itemIndex]
-            if not itemWidget then
-                break
-            end
+            local itemWidget = itemWidgets[itemIndex]
             itemWidget:setItemId(itemData.id)
             itemWidget.id = itemData.id
             itemWidget.classification = thing:getClassification()
