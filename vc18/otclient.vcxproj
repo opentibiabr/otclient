@@ -545,7 +545,9 @@
     <ClInclude Include="..\src\client\position.h" />
     <ClInclude Include="..\src\client\protocolcodes.h" />
     <ClInclude Include="..\src\client\protocolgame.h" />
-    <ClInclude Include="..\src\client\spritemanager.h" />
+	<ClCompile Include="..\src\client\satellitemap.cpp" />
+	<ClInclude Include="..\src\client\satellitemap.h" />
+	<ClInclude Include="..\src\client\spritemanager.h" />
     <ClInclude Include="..\src\client\staticdata.h" />
     <ClInclude Include="..\src\client\statictext.h" />
     <ClInclude Include="..\src\client\thing.h" />
