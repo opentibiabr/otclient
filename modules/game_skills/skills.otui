@@ -545,6 +545,13 @@ MiniWindow
       SkillValueLabel
 
     SmallSkillButton
+      id: mantra
+      visible: false
+      SkillNameLabel
+        !text: tr('Mantra Value')
+      SkillValueLabel
+
+    SmallSkillButton
       id: mitigation
       visible: false
       SkillNameLabel

@@ -20,6 +20,7 @@ local statsCache = {
     onslaught = 0,
     defense = 0,
     armor = 0,
+    mantra = 0,
     mitigation = 0,
     dodge = 0,
     damageReflection = 0,
@@ -140,7 +141,7 @@ local SKILL_GROUPS = {
     defence = {
         'physicalResist', 'fireResist', 'earthResist', 'energyResist', 'IceResist', 
         'HolyResist', 'deathResist', 'HealingResist', 'drowResist', 'lifedrainResist', 
-        'manadRainResist', 'defenceValue', 'armorValue', 'mitigation', 'dodge', 
+        'manadRainResist', 'defenceValue', 'armorValue', 'mantraValue', 'mitigation', 'dodge', 
         'damageReflection'
     },
     misc = {
@@ -228,7 +229,7 @@ local function refreshGroupData(groupName)
             onImbuementsChange(player, statsCache.lifeLeech, statsCache.manaLeech, statsCache.critChance, statsCache.critDamage, statsCache.onslaught)
         elseif groupName == 'defence' then
             -- Apply cached defence data
-            onDefenseInfoChange(player, statsCache.defense, statsCache.armor, statsCache.mitigation, statsCache.dodge, statsCache.damageReflection)
+            onDefenseInfoChange(player, statsCache.defense, statsCache.armor, statsCache.mantra, statsCache.mitigation, statsCache.dodge, statsCache.damageReflection)
             onCombatAbsorbValuesChange(player, statsCache.combatAbsorbValues)
         elseif groupName == 'misc' then
             -- Apply cached misc data
@@ -860,7 +861,7 @@ function refresh()
         onAttackInfoChange(player, statsCache.attackValue, statsCache.attackElement)
         onConvertedDamageChange(player, statsCache.convertedDamage, statsCache.convertedElement)
         onImbuementsChange(player, statsCache.lifeLeech, statsCache.manaLeech, statsCache.critChance, statsCache.critDamage, statsCache.onslaught)
-        onDefenseInfoChange(player, statsCache.defense, statsCache.armor, statsCache.mitigation, statsCache.dodge, statsCache.damageReflection)
+        onDefenseInfoChange(player, statsCache.defense, statsCache.armor, statsCache.mantra, statsCache.mitigation, statsCache.dodge, statsCache.damageReflection)
         onCombatAbsorbValuesChange(player, statsCache.combatAbsorbValues)
         onForgeBonusesChange(player, statsCache.momentum, statsCache.transcendence, statsCache.amplification)
     end
@@ -1353,7 +1354,7 @@ local function setSkillValueWithTooltips(id, value, tooltip, showPercentage, col
             'criticalHit', 'lifeLeech', 'manaLeech', 'criticalChance', 'criticalExtraDamage', 'onslaught',
             'physicalResist', 'fireResist', 'earthResist', 'energyResist', 'IceResist', 
             'HolyResist', 'deathResist', 'HealingResist', 'drowResist', 'lifedrainResist', 
-            'manadRainResist', 'defenceValue', 'armorValue', 'mitigation', 'dodge', 
+            'manadRainResist', 'defenceValue', 'armorValue', 'mantraValue', 'mitigation', 'dodge', 
             'damageReflection', 'momentum', 'transcendence', 'amplification'
         }
         
@@ -1533,10 +1534,11 @@ function onCombatAbsorbValuesChange(localPlayer, absorbValues)
     end
 end
 
-function onDefenseInfoChange(localPlayer, defense, armor, mitigation, dodge, damageReflection)
+function onDefenseInfoChange(localPlayer, defense, armor, mantra, mitigation, dodge, damageReflection)
     -- Cache the data regardless of visibility
     statsCache.defense = defense or 0
     statsCache.armor = armor or 0
+    statsCache.mantra = mantra or 0
     statsCache.mitigation = mitigation or 0
     statsCache.dodge = dodge or 0
     statsCache.damageReflection = damageReflection or 0
@@ -1553,12 +1555,14 @@ function onDefenseInfoChange(localPlayer, defense, armor, mitigation, dodge, dam
     local tooltips = {
         defense = "When attacked, you have a +9.6% chance to trigger Dodge, which \nwill fully mitigate the damage.",
         armor = "Mitigation reduces most of the damage you take and varies based\non your shielding skill, equipped weapon, chosen combat tactics \nand any mitigation multipliers acquired in your Wheel of Destiny.",
+        mantra = "Mantra is a special bonus stat granted by certain monk equipment.\nIt improves your monk-specific abilities and combat effectiveness.",
         mitigation = "This shows how well your armor protects you from all physical\nattacks.",
         dodge = "This is your protection against all physical attacks in close combat \nas well as all distance physical attacks. The higher the defence value, the less damage you will take from melee physical hits. The defence\n value is calculated from your shield and/or weapon\n defence and the corresponding skill. Careful! \nYour defence value protects you only from hits of two creatures in a single round."
     }
     
     setSkillValueWithTooltips('defenceValue', defense, tooltips.defense, false)
     setSkillValueWithTooltips('armorValue', armor, tooltips.armor, false)
+    setSkillValueWithTooltips('mantra', mantra, tooltips.mantra, false)
     setSkillValueWithTooltips('mitigation', mitigation, tooltips.mitigation, true)
     setSkillValueWithTooltips('dodge', dodge, tooltips.dodge, true)
     setSkillValueWithTooltips('damageReflection', damageReflection, false, true)

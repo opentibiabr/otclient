@@ -2690,13 +2690,14 @@ void ProtocolGame::parsePlayerSkills(const InputMessagePtr& msg) const
         // Defense info
         const uint16_t defense = msg->getU16();
         const uint16_t armor = msg->getU16();
+        uint16_t mantra = 0;
         if (g_game.getClientVersion() >= 1500) {
-            msg->getU16(); // getMantraTotal
+            mantra = msg->getU16(); // getMantraTotal
         }
         const double mitigation = msg->getDouble();
         const double dodge = msg->getDouble();
         const uint16_t damageReflection = msg->getU16();
-        m_localPlayer->setDefenseInfo(defense, armor, mitigation, dodge, damageReflection);
+        m_localPlayer->setDefenseInfo(defense, armor, mantra, mitigation, dodge, damageReflection);
 
         // Combat absorb values
         const uint8_t combatsCount = msg->getU8();
