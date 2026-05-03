@@ -460,6 +460,9 @@ if (TOGGLE_FRAMEWORK_SOUND)
           framework/sound/soundchannel.cpp
           framework/sound/soundfile.cpp
           framework/sound/soundmanager.cpp
+          framework/sound/soundmanager_debug.cpp
+          framework/sound/soundmanager_itemambience.cpp
+          framework/sound/soundmanager_protocol.cpp
           framework/sound/soundsource.cpp
           framework/sound/streamsoundsource.cpp
           framework/sound/soundeffect.cpp
