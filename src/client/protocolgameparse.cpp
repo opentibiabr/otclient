@@ -2692,7 +2692,7 @@ void ProtocolGame::parsePlayerSkills(const InputMessagePtr& msg) const
         const uint16_t armor = msg->getU16();
         uint16_t mantra = 0;
         if (g_game.getClientVersion() >= 1500) {
-            mantra = msg->getU16(); // getMantraTotal
+            mantra = msg->getU16(); // monk voc
         }
         const double mitigation = msg->getDouble();
         const double dodge = msg->getDouble();
