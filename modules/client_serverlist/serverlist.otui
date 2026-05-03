@@ -23,6 +23,7 @@ ServerWidget < UIWidget
     text-auto-resize: true
     background-color: alpha
     text-offset: 2 0
+    text-overflow-length: 38
 
     $on:
       color: #ffffff
