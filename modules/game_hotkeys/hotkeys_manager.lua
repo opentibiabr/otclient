@@ -189,10 +189,16 @@ function show()
     hotkeysWindow:show()
     hotkeysWindow:raise()
     hotkeysWindow:focus()
+    if hotkeysWindowButton then
+        hotkeysWindowButton:setOn(true)
+    end
 end
 
 function hide()
     hotkeysWindow:hide()
+    if hotkeysWindowButton then
+        hotkeysWindowButton:setOn(false)
+    end
 end
 
 function toggle()

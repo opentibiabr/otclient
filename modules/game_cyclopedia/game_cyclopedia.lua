@@ -365,6 +365,15 @@ function hide()
     end
     resetCyclopediaTabs()
     controllerCyclopedia.ui:hide()
+    if CyclopediaButton then
+        CyclopediaButton:setOn(false)
+    end
+    if ButtonBossSlot then
+        ButtonBossSlot:setOn(false)
+    end
+    if ButtonBestiary then
+        ButtonBestiary:setOn(false)
+    end
 end
 
 function resetCyclopediaTabs()
@@ -379,7 +388,7 @@ function resetCyclopediaTabs()
 end
 
 function show(defaultWindow)
-    if not controllerCyclopedia.ui or not CyclopediaButton then
+    if not controllerCyclopedia.ui then
         return
     end
 
@@ -418,6 +427,15 @@ function SelectWindow(type, isBackButtonPress)
         if window.func then
             window.func(contentContainer)
         end
+    end
+    if CyclopediaButton then
+        CyclopediaButton:setOn(type == "items" or type == "charms" or type == "map" or type == "houses" or type == "character" or type == "magicalArchives")
+    end
+    if ButtonBossSlot then
+        ButtonBossSlot:setOn(type == "bossSlot")
+    end
+    if ButtonBestiary then
+        ButtonBestiary:setOn(type == "bosstiary" or type == "bestiary")
     end
 end
 

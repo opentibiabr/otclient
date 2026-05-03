@@ -991,6 +991,18 @@ function offline()
     g_settings.setNode('skills-hide', skillSettings)
 end
 
+function onMiniWindowOpen()
+    if skillsButton then
+        skillsButton:setOn(true)
+    end
+end
+
+function onMiniWindowClose()
+    if skillsButton then
+        skillsButton:setOn(false)
+    end
+end
+
 function toggle()
     if skillsButton:isOn() then
         skillsWindow:close()

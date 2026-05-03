@@ -113,6 +113,9 @@ function toggle()
     wheelWindow:hide()
     wheelWindow:ungrabMouse()
     wheelWindow:ungrabKeyboard()
+    if wheelButton then
+      wheelButton:setOn(false)
+    end
   else
     wheelWindow:focus()
     loadMenu('wheelMenu')
@@ -126,6 +129,9 @@ function toggle()
     g_game.openWheel(g_game.getLocalPlayer():getId())
     wheelWindow:recursiveGetChildById('tabContent'):setVisible(false)
     WheelOfDestiny.onRemoveClick()
+    if wheelButton then
+      wheelButton:setOn(true)
+    end
   end
 end
 
@@ -133,6 +139,9 @@ function hide()
   wheelWindow:ungrabMouse()
   wheelWindow:ungrabKeyboard()
   wheelWindow:hide()
+  if wheelButton then
+    wheelButton:setOn(false)
+  end
 end
 
 function onGameEnd()

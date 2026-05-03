@@ -175,6 +175,9 @@ function hide()
         return
     end
     highscoreController.ui:hide()
+    if highscoreButton then
+        highscoreButton:setOn(false)
+    end
 end
 
 function show()
@@ -185,6 +188,7 @@ function show()
     highscoreController.ui:show()
     highscoreController.ui:raise()
     highscoreController.ui:focus()
+    highscoreButton:setOn(true)
     requestInfo()
 end
 
