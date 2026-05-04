@@ -63,9 +63,9 @@
       "cacheVariables": {
         "ASAN_ENABLED": "ON",
         "BUILD_STATIC_LIBRARY": "OFF",
-        "VCPKG_TARGET_TRIPLET": "x64-windows-test",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-test-release",
         "VCPKG_HOST_TRIPLET": "x64-windows",
-        "VCPKG_INSTALLED_DIR": "${sourceDir}/vcpkg_installed/x64-windows-test",
+        "VCPKG_INSTALLED_DIR": "${sourceDir}/vcpkg_installed/x64-windows-test-release",
         "OTCLIENT_BUILD_TESTS": "ON",
         "VCPKG_MANIFEST_FEATURES": "tests"
       }
@@ -94,9 +94,9 @@
       "displayName": "Windows - Tests",
       "description": "Windows debug test build with isolated vcpkg triplet",
       "cacheVariables": {
-        "VCPKG_TARGET_TRIPLET": "x64-windows-test",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-test-debug",
         "VCPKG_HOST_TRIPLET": "x64-windows",
-        "VCPKG_INSTALLED_DIR": "${sourceDir}/vcpkg_installed/x64-windows-test",
+        "VCPKG_INSTALLED_DIR": "${sourceDir}/vcpkg_installed/x64-windows-test-debug",
         "VCPKG_MANIFEST_FEATURES": "tests",
         "OTCLIENT_BUILD_TESTS": "ON"
       }
@@ -145,7 +145,7 @@
         "ASAN_ENABLED": "OFF",
         "TOGGLE_PRE_COMPILED_HEADER": "OFF",
         "SPEED_UP_BUILD_UNITY": "OFF",
-        "VCPKG_INSTALLED_DIR": "${sourceDir}/vcpkg_installed/x64-linux-tests",
+        "VCPKG_INSTALLED_DIR": "${sourceDir}/vcpkg_installed/x64-linux-tests-debug",
         "VCPKG_BUILD_TYPE": "debug",
         "VCPKG_MANIFEST_FEATURES": "tests",
         "OTCLIENT_BUILD_TESTS": "ON"
@@ -184,7 +184,7 @@
         "ASAN_ENABLED": "ON",
         "BUILD_STATIC_LIBRARY": "OFF",
         "SPEED_UP_BUILD_UNITY": "OFF",
-        "VCPKG_INSTALLED_DIR": "${sourceDir}/vcpkg_installed/arm64-osx-tests",
+        "VCPKG_INSTALLED_DIR": "${sourceDir}/vcpkg_installed/arm64-osx-tests-debug",
         "VCPKG_BUILD_TYPE": "debug",
         "VCPKG_MANIFEST_FEATURES": "tests",
         "OTCLIENT_BUILD_TESTS": "ON"
