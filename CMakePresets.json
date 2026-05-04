@@ -17,7 +17,8 @@
           "type": "FILEPATH"
         },
         "CMAKE_COLOR_DIAGNOSTICS": "ON",
-        "SPEED_UP_BUILD_UNITY": "ON"
+        "SPEED_UP_BUILD_UNITY": "ON",
+        "VCPKG_INSTALL_OPTIONS": "--binarysource=clear;--binarysource=files,$env{VCPKG_ROOT}/binary-cache,readwrite"
       }
     },
     {
@@ -27,8 +28,10 @@
       "description": "Windows release build with Ninja and vcpkg",
       "cacheVariables": {
         "BUILD_STATIC_LIBRARY": "ON",
-        "VCPKG_TARGET_TRIPLET": "x64-windows-static",
-        "VCPKG_HOST_TRIPLET": "x64-windows-static",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static-release",
+        "VCPKG_HOST_TRIPLET": "x64-windows",
+        "VCPKG_OVERLAY_TRIPLETS": "${sourceDir}/cmake/triplets",
+        "VCPKG_INSTALLED_DIR": "${sourceDir}/vcpkg_installed/x64-windows-static-release",
         "VCPKG_BUILD_TYPE": "release",
         "VCPKG_PLATFORM_TOOLSET": "v145",
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
@@ -60,9 +63,11 @@
       "cacheVariables": {
         "ASAN_ENABLED": "ON",
         "BUILD_STATIC_LIBRARY": "OFF",
-        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-test",
         "VCPKG_HOST_TRIPLET": "x64-windows",
-        "OTCLIENT_BUILD_TESTS": "ON"
+        "VCPKG_INSTALLED_DIR": "${sourceDir}/vcpkg_installed/x64-windows-test",
+        "OTCLIENT_BUILD_TESTS": "ON",
+        "VCPKG_MANIFEST_FEATURES": "tests"
       }
     },
     {
@@ -78,7 +83,21 @@
         "SPEED_UP_BUILD_UNITY": "OFF",
         "VCPKG_TARGET_TRIPLET": "x64-windows",
         "VCPKG_HOST_TRIPLET": "x64-windows",
+        "VCPKG_INSTALLED_DIR": "${sourceDir}/vcpkg_installed/x64-windows",
         "VCPKG_BUILD_TYPE": "debug",
+        "OTCLIENT_BUILD_TESTS": "OFF"
+      }
+    },
+    {
+      "name": "windows-tests",
+      "inherits": "windows-debug",
+      "displayName": "Windows - Tests",
+      "description": "Windows debug test build with isolated vcpkg triplet",
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "x64-windows-test",
+        "VCPKG_HOST_TRIPLET": "x64-windows",
+        "VCPKG_INSTALLED_DIR": "${sourceDir}/vcpkg_installed/x64-windows-test",
+        "VCPKG_MANIFEST_FEATURES": "tests",
         "OTCLIENT_BUILD_TESTS": "ON"
       }
     },
@@ -103,6 +122,7 @@
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "VCPKG_TARGET_TRIPLET": "x64-linux",
         "VCPKG_HOST_TRIPLET": "x64-linux",
+        "VCPKG_INSTALLED_DIR": "${sourceDir}/vcpkg_installed/x64-linux",
         "VCPKG_BUILD_TYPE": "release",
         "OPTIONS_ENABLE_CCACHE": "ON",
         "OTCLIENT_BUILD_TESTS": "OFF"
@@ -125,7 +145,9 @@
         "ASAN_ENABLED": "OFF",
         "TOGGLE_PRE_COMPILED_HEADER": "OFF",
         "SPEED_UP_BUILD_UNITY": "OFF",
+        "VCPKG_INSTALLED_DIR": "${sourceDir}/vcpkg_installed/x64-linux-tests",
         "VCPKG_BUILD_TYPE": "debug",
+        "VCPKG_MANIFEST_FEATURES": "tests",
         "OTCLIENT_BUILD_TESTS": "ON"
       }
     },
@@ -141,6 +163,7 @@
         "CMAKE_CXX_FLAGS_RELEASE": "-O1 -DNDEBUG",
         "VCPKG_TARGET_TRIPLET": "arm64-osx",
         "VCPKG_HOST_TRIPLET": "arm64-osx",
+        "VCPKG_INSTALLED_DIR": "${sourceDir}/vcpkg_installed/arm64-osx",
         "VCPKG_BUILD_TYPE": "release",
         "OTCLIENT_BUILD_TESTS": "OFF"
       },
@@ -161,7 +184,9 @@
         "ASAN_ENABLED": "ON",
         "BUILD_STATIC_LIBRARY": "OFF",
         "SPEED_UP_BUILD_UNITY": "OFF",
+        "VCPKG_INSTALLED_DIR": "${sourceDir}/vcpkg_installed/arm64-osx-tests",
         "VCPKG_BUILD_TYPE": "debug",
+        "VCPKG_MANIFEST_FEATURES": "tests",
         "OTCLIENT_BUILD_TESTS": "ON"
       }
     }
@@ -188,6 +213,10 @@
       "configurePreset": "windows-debug"
     },
     {
+      "name": "windows-tests",
+      "configurePreset": "windows-tests"
+    },
+    {
       "name": "windows-debug-msbuild",
       "configurePreset": "windows-debug-msbuild"
     },
@@ -212,8 +241,8 @@
       }
     },
     {
-      "name": "windows-debug",
-      "configurePreset": "windows-debug",
+      "name": "windows-tests",
+      "configurePreset": "windows-tests",
       "output": {
         "outputOnFailure": true
       },
