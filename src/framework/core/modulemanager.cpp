@@ -223,3 +223,30 @@ void ModuleManager::enableAutoReload() {
         g_asyncDispatcher.detach_task(action);
     }, 500);
 }
+
+void ModuleManager::updateModulesByClientVersion(int clientVersion)
+{
+    if (clientVersion <= 0) {
+        g_logger.debug("Skipping module version check: invalid client version {}", clientVersion);
+        return;
+    }
+    std::vector<ModulePtr> modulesToProcess;
+    for (const auto& mod : m_modules) {
+        if (mod && mod->getMinClientVersion() > 0) {
+            modulesToProcess.push_back(mod);
+        }
+    }
+    for (const auto& mod : modulesToProcess) {
+        const int minVersion = mod->getMinClientVersion();
+        const bool shouldBeLoaded = clientVersion >= minVersion;
+        const bool isLoaded = mod->isLoaded();
+        if (shouldBeLoaded && !isLoaded) {
+            if (!mod->load()) {
+                g_logger.error("Failed to load module '{}' (version requirement met: {} >= {})",
+                    mod->getName(), clientVersion, minVersion);
+            }
+        } else if (!shouldBeLoaded && isLoaded) {
+            mod->unload();
+        }
+    }
+}
