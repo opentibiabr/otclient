@@ -130,38 +130,43 @@
     <TargetName>$(ProjectName)_dx_x64</TargetName>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='OpenGL|Win32'">
-    <VcpkgHostTriplet>
-    </VcpkgHostTriplet>
-    <VcpkgTriplet>x86-windows-static</VcpkgTriplet>
+    <VcpkgHostTriplet>x64-windows</VcpkgHostTriplet>
+    <VcpkgTriplet>x86-windows-static-release</VcpkgTriplet>
     <VcpkgConfiguration>Release</VcpkgConfiguration>
-    <VcpkgInstalledDir>vcpkg_installed</VcpkgInstalledDir>
+    <VcpkgInstalledDir>$(MSBuildProjectDirectory)\..\vcpkg_installed\x86-windows-static-release</VcpkgInstalledDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DirectX|Win32'" Label="Vcpkg">
-    <VcpkgHostTriplet />
-    <VcpkgTriplet>x86-windows-static</VcpkgTriplet>
+    <VcpkgHostTriplet>x64-windows</VcpkgHostTriplet>
+    <VcpkgTriplet>x86-windows-static-release</VcpkgTriplet>
     <VcpkgConfiguration>Release</VcpkgConfiguration>
+    <VcpkgInstalledDir>$(MSBuildProjectDirectory)\..\vcpkg_installed\x86-windows-static-release</VcpkgInstalledDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='OpenGL|x64'" Label="Vcpkg">
-    <VcpkgHostTriplet />
-    <VcpkgTriplet>x64-windows-static</VcpkgTriplet>
+    <VcpkgHostTriplet>x64-windows</VcpkgHostTriplet>
+    <VcpkgTriplet>x64-windows-static-release</VcpkgTriplet>
     <VcpkgConfiguration>Release</VcpkgConfiguration>
+    <VcpkgInstalledDir>$(MSBuildProjectDirectory)\..\vcpkg_installed\x64-windows-static-release</VcpkgInstalledDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DirectX|x64'" Label="Vcpkg">
-    <VcpkgHostTriplet />
-    <VcpkgTriplet>x64-windows-static</VcpkgTriplet>
+    <VcpkgHostTriplet>x64-windows</VcpkgHostTriplet>
+    <VcpkgTriplet>x64-windows-static-release</VcpkgTriplet>
     <VcpkgConfiguration>Release</VcpkgConfiguration>
+    <VcpkgInstalledDir>$(MSBuildProjectDirectory)\..\vcpkg_installed\x64-windows-static-release</VcpkgInstalledDir>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg">
     <VcpkgEnableManifest>true</VcpkgEnableManifest>
     <VcpkgAutoLink>true</VcpkgAutoLink>
-    <VcpkgInstalledDir>vcpkg_installed</VcpkgInstalledDir>
+    <VcpkgAdditionalInstallOptions>--overlay-triplets="$(MSBuildProjectDirectory)\..\cmake\triplets" --binarysource=clear --binarysource=files,$(VcpkgRoot)\binary-cache,readwrite</VcpkgAdditionalInstallOptions>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <VcpkgHostTriplet>x64-windows</VcpkgHostTriplet>
     <VcpkgTriplet>x86-windows-static</VcpkgTriplet>
-    <VcpkgInstalledDir>vcpkg_installed</VcpkgInstalledDir>
+    <VcpkgInstalledDir>$(MSBuildProjectDirectory)\..\vcpkg_installed\x86-windows-static</VcpkgInstalledDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Vcpkg">
+    <VcpkgHostTriplet>x64-windows</VcpkgHostTriplet>
     <VcpkgTriplet>x64-windows-static</VcpkgTriplet>
+    <VcpkgInstalledDir>$(MSBuildProjectDirectory)\..\vcpkg_installed\x64-windows-static</VcpkgInstalledDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

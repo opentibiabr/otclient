@@ -23,7 +23,6 @@
     "bshoshany-thread-pool",
     "fmt",
     "utfcpp",
-    "gtest",
     "freetype",
     {
       "name": "inih",
@@ -48,5 +47,13 @@
       "platform": "windows"
     }
   ],
+  "features": {
+    "tests": {
+      "description": "Dependencies required to build unit tests.",
+      "dependencies": [
+        "gtest"
+      ]
+    }
+  },
   "builtin-baseline": "56bb2411609227288b70117ead2c47585ba07713"
 }
