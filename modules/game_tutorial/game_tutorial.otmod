@@ -2,6 +2,7 @@ Module
   name: game_tutorial
   description: Vocation Selection
   sandboxed: true
+  minClientVersion: 1520
   website: https://github.com/mehah/otclient
   scripts: [ const/vocations, controller/tutorial_controller ]
   @onLoad: TutorialController:init()
