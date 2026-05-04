@@ -18,8 +18,8 @@ SHOP_BACKDROP_IMAGES = {
 -- Display texts for offer types that are not provided by the server (bonus promotion).
 SHOP_BONUS_DEFAULTS = {
     [SHOP_OFFER_TYPE_BONUS_PROMOTION] = {
-        title       = "Wheel Bonus",
-        description = "Gain Wheel of Destiny promotion points.",
+        title       = "Bonus Promotion Point",
+        description = "Earn up to 50 Promotion Points to spend in your Wheel of Destiny.\nAlready purchased %d / 50.",
         image       = '/game_taskboard/assets/images/icon_tasksystem_promotionpoint'
     }
 }

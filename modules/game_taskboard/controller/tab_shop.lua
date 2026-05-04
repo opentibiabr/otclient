@@ -149,8 +149,7 @@ function TaskBoardController:parseShopItem(raw)
         data.currentPurchases = tonumber(raw.currentPurchases) or 0
         data.nextCost = tonumber(raw.nextCost) or 0
         data.price = data.nextCost
-        data.description = data.description .. "\nAlready purchased " .. data.currentPurchases .. " / " ..
-                               data.maxPurchases
+        data.description = string.format(data.description, data.currentPurchases)
         data.lookMount = 0
         data.isBonus = true
         data.previewType = 'icon'
