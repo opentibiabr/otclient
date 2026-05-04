@@ -274,6 +274,7 @@ namespace Proto
         ClientWalkSouthEast = 107,
         ClientWalkSouthWest = 108,
         ClientWalkNorthWest = 109,
+        ClientTutorialChangeVocation = 110,
         ClientTurnNorth = 111,
         ClientTurnEast = 112,
         ClientTurnSouth = 113,

@@ -397,6 +397,7 @@ public:
     void bountyPreferredAction(uint8_t actionType, uint16_t slot, uint16_t raceId);
     void soulsealFightAction(uint16_t raceId);
     void sendStartOfflineTraining(const uint8_t skillType);
+    void sendTutorialChangeVocation(uint8_t vocationClientId);
 
     // exiva related
     void sendExivaOptions(bool allowAll, bool allowOwnGuild, bool allowOwnParty, bool allowVipList,

@@ -313,6 +313,14 @@ void ProtocolGame::sendStartOfflineTraining(const uint8_t skillType)
     send(msg);
 }
 
+void ProtocolGame::sendTutorialChangeVocation(uint8_t vocationClientId)
+{
+    const auto& msg = std::make_shared<OutputMessage>();
+    msg->addU8(Proto::ClientTutorialChangeVocation);
+    msg->addU8(vocationClientId);
+    send(msg);
+}
+
 void ProtocolGame::sendEquipItemWithTier(const uint16_t itemId, const uint8_t tier)
 {
     const auto& msg = std::make_shared<OutputMessage>();

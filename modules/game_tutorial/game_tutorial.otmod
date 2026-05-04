@@ -1,0 +1,8 @@
+Module
+  name: game_tutorial
+  description: Vocation Selection
+  sandboxed: true
+  website: https://github.com/mehah/otclient
+  scripts: [ const/vocations, controller/tutorial_controller ]
+  @onLoad: TutorialController:init()
+  @onUnload: TutorialController:terminate()

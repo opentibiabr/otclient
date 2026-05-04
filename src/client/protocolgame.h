@@ -159,6 +159,7 @@ public:
     void sendOpenWheelOfDestiny(uint32_t playerId);
     void sendApplyWheelOfDestiny(const std::vector<uint16_t>& wheelPointsVec, const std::vector<uint16_t>& activeGemsVec);
     void sendStartOfflineTraining(const uint8_t skillType);
+    void sendTutorialChangeVocation(uint8_t vocationClientId);
     void sendSoulSealsAction(const uint16_t raceId);
     void sendRequestBestiary();
     void sendRequestBestiaryOverview(std::string_view catName, bool search = false, std::vector<uint16_t> raceIds = {});

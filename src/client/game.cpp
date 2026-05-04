@@ -1967,6 +1967,14 @@ void Game::sendStartOfflineTraining(const uint8_t skillType)
     m_protocolGame->sendStartOfflineTraining(skillType);
 }
 
+void Game::sendTutorialChangeVocation(uint8_t vocationClientId)
+{
+    if (!canPerformGameAction())
+        return;
+
+    m_protocolGame->sendTutorialChangeVocation(vocationClientId);
+}
+
 void Game::openPortableForgeRequest()
 {
     if (!canPerformGameAction())

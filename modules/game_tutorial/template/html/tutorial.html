@@ -1,0 +1,92 @@
+<style>
+    /* Tutorial Selection Window */
+    .tutorialMainContainer { width: 957px; height: 453px; display: block; position: relative;  --image-source: /images/ui/3pixel-frame-borderimage; --image-border: 5 }
+    .tutorialHeaderCrest { width: 145px; height: 56px; position: absolute; top: -33px; left: 406px; pointer-events: none; }
+    .tutorialHeaderBanner { width: 299px; height: 44px; position: absolute; top: 14px; pointer-events: none; }
+
+    /* Vocation Selection Step */
+    .vocationSelectionList { width: 925px; height: 361px; position: absolute; top: 35px; left: 7px; display: flex; flex-direction: row; gap: 5px; }
+    .vocationSelectionCard { width: 181px; height: 361px; position: relative; overflow: visible; flex: none; padding: 0; }
+    .vocationCardBackground { width:100%; height: 100%; position: absolute; top: 1px; left: 1px; pointer-events: none; }
+    .vocationInteractionOverlay { width: 181px; height: 361px; position: absolute; top: 0; left: 0; background-color: alpha; }
+    .vocationTitleBanner {  width:100%; height: 57px; position: absolute; pointer-events: none; }
+    .vocationPrimaryDescription, .vocationSecondaryDescription { width: 181px; position: absolute; left: 0; text-align: center; pointer-events: none; }
+    .vocationPrimaryDescription { height: 16px; top: 77px; color: #dfdfdf; }
+    .vocationSecondaryDescription { height: 28px; top: 90px; color: #aaaaaa; text-wrap: true; white-space: pre-wrap; }
+
+    /* Vocation Details (Animated) */
+    .vocationDetailsMask { width: 179px; height: 227px; position: absolute; left: 1px; bottom: -4px; overflow: hidden; pointer-events: none; }
+    .vocationDetailsContent { width: 179px; height: 227px; position: relative; margin-top: 227px; --image-source: /game_tutorial/assets/images/backdrop-vocationinfo; }
+    .vocationSpellList { width: 85px; height: 40px; position: absolute; top: 5px; left: 8px; display: flex; flex-direction: row; gap: 5px; }
+    .vocationSpellSlot { width: 40px; height: 40px; position: relative; flex: none; --image-source: /game_tutorial/assets/images/border-vocationinfo-spells; }
+    .vocationSpellIcon { width: 32px; height: 32px; position: absolute; top: 2px; left: 2px; }
+    .vocationStarterEquipment { width: 112px; height: 72px; position: absolute; top: 35px; left: 34px; display: flex; flex-direction: row; flex-wrap: wrap; gap: 8px; }
+    .starterEquipmentItem { width: 32px; height: 32px; flex: none; }
+
+    /* Buttons */
+    .selectionActionButtonContainer, .confirmationButtonContainer { width: 120px; height: 33px; position: absolute; left: 18px; --image-source: /game_tutorial/assets/images/button_startplaying_idle; }
+    .selectionActionButtonContainer { bottom: 20px; }
+    .confirmationButtonContainer { bottom: 0px; }
+    .actionButton { width: 88px; height: -10px; position: absolute; top: 3px; left: 3px; color: #ffffff; font: cipsoftFont; text-align: center; --image-color:green; }
+    .actionButton:checked { --image-color:#4b4a4a; color:#6F6E6E; --border-width-top: 1; --border-color-top: black; --border-width-left: 1; --border-color-left: black; --border-width-bottom: 1; --border-color-bottom: #747474; --border-width-right: 1; --border-color-right: #747474; --padding: 1 1 1 1;}
+
+    /* Selection State */
+    .vocationSelectionHighlight { width: 181px; height: 361px; position: absolute; top: 0; left: 0; pointer-events: none; }
+
+    /* Welcome Step */
+    .welcomeStepContainer { width: 925px; height: 361px; position: absolute; top: 28px; left: 1px;}
+    .welcomeHintImage { width: 928px; height: 363px; position: absolute; top: 14px; left: 16px; }
+
+</style>
+<html>
+<windows id="tutorialSelectionWindow" class="tutorialMainContainer" placement="center" draggable="false">
+    <img class="tutorialHeaderCrest" src="/images/game/tutorial/backdrop_crest" />
+    <img id="tutorialMainBanner" class="tutorialHeaderBanner" placement="center-top" src="/game_tutorial/assets/images/banner_tutorialpopup01" />
+    
+    <!-- Step 1: Vocation Selection -->
+    <div class="vocationSelectionList" *if="self.tutorialStep == 0">
+        <div class="vocationSelectionCard" *for="local vocation in self.vocations" *for-finished="self:onVocationCardsRendered()" *vocation="vocation">
+            <img class="vocationCardBackground borderQt" *src="'/game_tutorial/assets/images/backdrop_' .. vocation.id" />
+            <div class="vocationInteractionOverlay"></div>
+
+            <img class="vocationTitleBanner" placement="top-center" margin-top="4"
+                 *src="'/game_tutorial/assets/images/banner_vocation_' .. vocation.id" />
+
+            <label class="vocationPrimaryDescription" *text="vocation.role"></label>
+            <label class="vocationSecondaryDescription" *text="vocation.specialties"></label>
+
+            <div class="vocationDetailsMask">
+                <div class="vocationDetailsContent">
+                    <div class="vocationSpellList">
+                        <div class="vocationSpellSlot" *for="local spell in vocation.spells">
+                            <div class="vocationSpellIcon"
+                                 *image-source="self:getSpellIconSource()"
+                                 *image-clip="self:getSpellImageClip(spell)"></div>
+                        </div>
+                    </div>
+                    <div class="vocationStarterEquipment">
+                        <uiitem class="starterEquipmentItem" *for="local itemId in vocation.gear" *item-id="itemId" virtual="true"></uiitem>
+                    </div>
+                </div>
+            </div>
+
+            <div class="selectionActionButtonContainer">
+                <button class="actionButton" *text="'Select ' .. vocation.name" onclick="self:selectVocation(vocation.id)"></button>
+            </div>
+            <div class="confirmationButtonContainer">
+                <button class="actionButton" text="Confirm" onclick="self:confirmVocation()"></button>
+            </div>
+            <img class="vocationSelectionHighlight" src="/game_tutorial/assets/images/big_border" phantom="true" />
+        </div>
+    </div>
+
+    <!-- Step 0: Welcome to Beginner Island -->
+    <div class="welcomeStepContainer" *if="self.tutorialStep == 2">
+        <img id="welcomeHintImage" class="welcomeHintImage borderQt" src="/game_tutorial/assets/images/backdrop_popup_welcometotibia" />
+        <div class="confirmationButtonContainer" style="bottom: 10px; left: 70px;">
+            <button class="actionButton" text="Journey On" onclick="self:setTutorialStep(0)"></button>
+        </div>
+    </div>
+
+</windows>
+</html>
