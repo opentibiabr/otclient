@@ -52,6 +52,7 @@ class X11Window : public PlatformWindow
     void internalCreateGLContext();
     void internalDestroyGLContext();
     void internalConnectGLContext();
+    void restoreMouseCursorNow();
 
     void *getExtensionProcAddress(const char *ext);
     bool isExtensionSupported(const char *ext);
@@ -73,6 +74,7 @@ public:
     void hideMouse();
 
     void setMouseCursor(int cursorId);
+    void setSystemCursor(const std::string& cursorName) override;
     void restoreMouseCursor();
 
     void setTitle(const std::string_view title);
@@ -96,6 +98,7 @@ private:
     Window m_rootWindow;
     Colormap m_colormap;
     std::vector<Cursor> m_cursors;
+    stdext::map<unsigned int, Cursor> m_systemCursors;
     Cursor m_cursor;
     Cursor m_hiddenCursor;
     XIM m_xim;
@@ -116,4 +119,3 @@ private:
 };
 
 #endif
-
