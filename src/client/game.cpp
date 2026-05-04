@@ -2025,6 +2025,18 @@ void Game::requestSendBuyCharmRune(const uint8_t runeId, const uint8_t action, c
     m_protocolGame->sendBuyCharmRune(runeId, action, raceId);
 }
 
+void Game::requestSetCharacterTitle(const uint8_t titleId)
+{
+    if (!canPerformGameAction())
+        return;
+
+    if (getClientVersion() < 1412)
+        return;
+
+    constexpr uint8_t FRIENDSYSTEM_ACTION_SET_TITLE = 0x0E;
+    m_protocolGame->sendFriendSystemAction(FRIENDSYSTEM_ACTION_SET_TITLE, titleId);
+}
+
 void Game::requestSendCharacterInfo(const uint32_t playerId, const Otc::CyclopediaCharacterInfoType_t characterInfoType, const uint16_t entriesPerPage, const uint16_t page)
 {
     if (!canPerformGameAction())

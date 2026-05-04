@@ -1115,6 +1115,15 @@ void ProtocolGame::sendBuyCharmRune(const uint8_t runeId, const uint8_t action, 
     send(msg);
 }
 
+void ProtocolGame::sendFriendSystemAction(const uint8_t state, const uint8_t titleId)
+{
+    const auto& msg = std::make_shared<OutputMessage>();
+    msg->addU8(Proto::ClientFriendSystemAction);
+    msg->addU8(state);
+    msg->addU8(titleId);
+    send(msg);
+}
+
 void ProtocolGame::sendCyclopediaRequestCharacterInfo(const uint32_t playerId, const Otc::CyclopediaCharacterInfoType_t characterInfoType, const uint16_t entriesPerPage, const uint16_t page)
 {
     const auto& msg = std::make_shared<OutputMessage>();
@@ -1166,6 +1175,8 @@ void ProtocolGame::sendCyclopediaHouseAuction(const Otc::CyclopediaHouseAuctionT
         case Otc::CYCLOPEDIA_HOUSE_TYPE_REFECT_TRANSFER:
             msg->addU32(houseId);
             break;
+        default:
+            return;
     }
 
     send(msg);

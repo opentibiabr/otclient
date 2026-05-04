@@ -285,6 +285,7 @@ namespace Proto
         ClientInspectTrade = 126,
         ClientAcceptTrade = 127,
         ClientRejectTrade = 128,
+        ClientFriendSystemAction = 129, // 0x81
         ClientUseItem = 130,
         ClientUseItemWith = 131,
         ClientUseOnCreature = 132,

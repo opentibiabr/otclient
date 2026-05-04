@@ -1,8 +1,14 @@
 local UI = nil
+local ensureHouseMinimap = nil
+local rememberHouseViewState = nil
+local houseViewStateLog = nil
+local dumpHouseViewState = nil
+local applyFilterChecksFromViewState = nil
 
 function showHouse()
     UI = g_ui.loadUI("house", contentContainer)
     UI:show()
+    dumpHouseViewState("showHouse:start")
     UI.LateralBase.LayerScrollbar.decrementButton:setVisible(false)
     UI.LateralBase.LayerScrollbar.incrementButton:setVisible(false)
     UI.LateralBase.LayerScrollbar.sliderButton:setImageSource("")
@@ -30,36 +36,85 @@ function showHouse()
     end
     -- Cyclopedia.House.Data = json_data
 
-    if not Cyclopedia.House.Loaded then
-        for i = 1, #Cyclopedia.StateList do
-            UI.TopBase.StatesOption:addOption(Cyclopedia.StateList[i].Title, i)
-            UI.TopBase.StatesOption.onOptionChange = Cyclopedia.houseChangeState
-        end
+    UI.TopBase.StatesOption:clearOptions()
+    UI.TopBase.CityOption:clearOptions()
+    UI.TopBase.SortOption:clearOptions()
 
-        for i = 0, #Cyclopedia.CityList do
-            UI.TopBase.CityOption:addOption(Cyclopedia.CityList[i].Title, i)
-            UI.TopBase.CityOption.onOptionChange = Cyclopedia.selectTown
-        end
-
-        for i = 1, #Cyclopedia.SortList do
-            UI.TopBase.SortOption:addOption(Cyclopedia.SortList[i].Title, i)
-            UI.TopBase.SortOption.onOptionChange = Cyclopedia.houseSort
-        end
-
-        Cyclopedia.House.Loaded = true
-        Cyclopedia.houseFilter(UI.TopBase.HousesCheck)
+    for i = 1, #Cyclopedia.StateList do
+        UI.TopBase.StatesOption:addOption(Cyclopedia.StateList[i].Title, i)
     end
+    UI.TopBase.StatesOption.onOptionChange = Cyclopedia.houseChangeState
+
+    for i = 0, #Cyclopedia.CityList do
+        UI.TopBase.CityOption:addOption(Cyclopedia.CityList[i].Title, i)
+    end
+    UI.TopBase.CityOption.onOptionChange = Cyclopedia.selectTown
+
+    for i = 1, #Cyclopedia.SortList do
+        UI.TopBase.SortOption:addOption(Cyclopedia.SortList[i].Title, i)
+    end
+    UI.TopBase.SortOption.onOptionChange = Cyclopedia.houseSort
+
+    Cyclopedia.House.Loaded = true
 
     UI.bidArea:setVisible(false)
     UI.ListBase:setVisible(true)
-    Cyclopedia.selectTown({
-        data = 0
-    })
-    UI.TopBase.StatesOption:setOption("All States", true)
-    UI.TopBase.CityOption:setOption("Own Houses", true)
-    UI.TopBase.SortOption:setOption("Sort by name", true)
+    ensureHouseMinimap()
+    local viewState = Cyclopedia.House.ViewState or {}
+    Cyclopedia.House.IsRestoringViewState = true
 
-    Cyclopedia.House.lastTown = nil
+    local desiredFilterMode = viewState.filterMode == "guildhalls" and "guildhalls" or "houses"
+    if desiredFilterMode == "guildhalls" then
+        Cyclopedia.houseFilter(UI.TopBase.GuildhallsCheck)
+    else
+        Cyclopedia.houseFilter(UI.TopBase.HousesCheck)
+    end
+    applyFilterChecksFromViewState()
+
+    local desiredStateText = viewState.stateText or "All States"
+    if not UI.TopBase.StatesOption:isOption(desiredStateText) then
+        desiredStateText = "All States"
+    end
+    UI.TopBase.StatesOption:setOption(desiredStateText, true)
+    Cyclopedia.houseChangeState(UI.TopBase.StatesOption)
+
+    local desiredSortText = viewState.sortText or "Sort by name"
+    if not UI.TopBase.SortOption:isOption(desiredSortText) then
+        desiredSortText = "Sort by name"
+    end
+    UI.TopBase.SortOption:setOption(desiredSortText, true)
+    local sortOption = UI.TopBase.SortOption:getCurrentOption()
+    if sortOption then
+        Cyclopedia.houseSort(UI.TopBase.SortOption, sortOption.text, sortOption.data)
+    end
+
+    local accountHouseCount = Cyclopedia.House.Info and Cyclopedia.House.Info.accountHouseCount or 0
+    houseViewStateLog("showHouse accountHouseCount=%d", accountHouseCount)
+    local desiredCityText = viewState.cityText
+    local desiredCityType = viewState.cityType
+    if not desiredCityText then
+        if accountHouseCount > 0 then
+            desiredCityText = "Own Houses"
+            desiredCityType = 0
+        else
+            desiredCityText = Cyclopedia.CityList[1] and Cyclopedia.CityList[1].Title or "Ab'Dendriel"
+            desiredCityType = 1
+        end
+    elseif desiredCityText == "Own Houses" and accountHouseCount <= 0 then
+        desiredCityText = Cyclopedia.CityList[1] and Cyclopedia.CityList[1].Title or "Ab'Dendriel"
+        desiredCityType = 1
+    end
+
+    if not UI.TopBase.CityOption:isOption(desiredCityText) then
+        desiredCityText = Cyclopedia.CityList[1] and Cyclopedia.CityList[1].Title or "Ab'Dendriel"
+        desiredCityType = 1
+    end
+
+    UI.TopBase.CityOption:setOption(desiredCityText, true)
+    Cyclopedia.selectTown(nil, desiredCityText, desiredCityType or 1)
+    Cyclopedia.House.IsRestoringViewState = false
+    dumpHouseViewState("showHouse:after-restore")
+    rememberHouseViewState()
 end
 
 Cyclopedia.House = {}
@@ -99,6 +154,214 @@ Cyclopedia.SortList = {
     { Title = "Sort by auction end" }
 }
 
+Cyclopedia.House.Data = Cyclopedia.House.Data or {}
+Cyclopedia.House.Info = Cyclopedia.House.Info or {}
+Cyclopedia.House.ViewState = Cyclopedia.House.ViewState or {
+    stateText = "All States",
+    stateType = 1,
+    cityText = nil,
+    cityType = nil,
+    sortText = "Sort by name",
+    sortType = 1,
+    filterMode = "houses",
+    selectedHouseId = nil,
+    houseZoomById = {}
+}
+Cyclopedia.House.IsRestoringViewState = Cyclopedia.House.IsRestoringViewState or false
+Cyclopedia.House.SuppressSelectionPersist = Cyclopedia.House.SuppressSelectionPersist or false
+
+local HOUSE_LUA_LOG_TAG = "[cyclopedia-houses-lua]"
+local HOUSE_LUA_LOG_ENABLED = false
+local HOUSE_VIEWSTATE_LOG_TAG = "[cyclopedia-houses-viewstate]"
+local HOUSE_VIEWSTATE_LOG_ENABLED = false
+local HOUSE_METADATA_WARNED = false
+local HOUSE_MINIMAP_MIN_ZOOM = 1
+local HOUSE_MINIMAP_MAX_ZOOM = 3
+local HOUSE_ZOOM_LOG_TAG = "[cyclopedia-houses-zoom]"
+local HOUSE_ZOOM_LOG_ENABLED = false
+local HOUSE_MARK_ICON = "/game_cyclopedia/images/icon-map-house"
+local HOUSE_MINIMAP_SAMPLE_RADIUS = 4
+local HOUSE_MINIMAP_MIN_KNOWN_TILES = 14
+local HOUSE_MINIMAP_MIN_KNOWN_RATIO = 0.10
+local HOUSE_MINIMAP_NEAR_RADIUS = 1
+local HOUSE_MINIMAP_MIN_NEAR_KNOWN_TILES = 3
+local houseMinimap = nil
+local houseMapCenterButton = nil
+local houseMapMarkButton = nil
+local houseMapZoomInButton = nil
+local houseMapZoomOutButton = nil
+local houseMinimapCenterPos = nil
+local houseMapUnknownLabel = nil
+
+local function houseZoomLog(message, ...)
+    if not HOUSE_ZOOM_LOG_ENABLED then
+        return
+    end
+
+    local text = message
+    if select("#", ...) > 0 then
+        text = string.format(message, ...)
+    end
+    g_logger.info(HOUSE_ZOOM_LOG_TAG .. " " .. text)
+end
+
+local function clampZoomValue(value, minZoom, maxZoom)
+    local zoom = tonumber(value) or 0
+    if zoom < minZoom then
+        return minZoom
+    end
+    if zoom > maxZoom then
+        return maxZoom
+    end
+    return math.floor(zoom)
+end
+
+local function getHouseZoomProfile(sqm)
+    local minZoom = HOUSE_MINIMAP_MIN_ZOOM
+    local maxZoom = HOUSE_MINIMAP_MAX_ZOOM
+    local defaultZoom = 1
+
+    defaultZoom = clampZoomValue(defaultZoom, minZoom, maxZoom)
+    return {
+        minZoom = minZoom,
+        maxZoom = maxZoom,
+        defaultZoom = defaultZoom
+    }
+end
+
+local function getSavedHouseZoom(houseId)
+    local state = Cyclopedia.House.ViewState or {}
+    state.houseZoomById = state.houseZoomById or {}
+    if not houseId then
+        return nil
+    end
+    return state.houseZoomById[houseId]
+end
+
+local function saveHouseZoom(houseId, zoom)
+    if not houseId then
+        return
+    end
+    Cyclopedia.House.ViewState = Cyclopedia.House.ViewState or {}
+    Cyclopedia.House.ViewState.houseZoomById = Cyclopedia.House.ViewState.houseZoomById or {}
+    Cyclopedia.House.ViewState.houseZoomById[houseId] = zoom
+end
+
+local function applyHouseMinimapZoom(data, minimap)
+    if not data or not minimap then
+        return
+    end
+
+    local profile = getHouseZoomProfile(data.sqm)
+    local savedZoom = getSavedHouseZoom(data.id)
+    local appliedZoom = clampZoomValue(savedZoom ~= nil and savedZoom or profile.defaultZoom, profile.minZoom, profile.maxZoom)
+
+    minimap:setMixZoom(profile.minZoom)
+    minimap:setMaxZoom(profile.maxZoom)
+    minimap:setZoom(appliedZoom)
+
+    houseZoomLog("houseId=%s sqm=%s range=[%d..%d] default=%d applied=%d saved=%s", tostring(data.id), tostring(data.sqm),
+        profile.minZoom, profile.maxZoom, profile.defaultZoom, appliedZoom, tostring(savedZoom))
+end
+
+houseViewStateLog = function(message, ...)
+    if not HOUSE_VIEWSTATE_LOG_ENABLED then
+        return
+    end
+
+    local text = message
+    if select("#", ...) > 0 then
+        text = string.format(message, ...)
+    end
+    g_logger.info(HOUSE_VIEWSTATE_LOG_TAG .. " " .. text)
+end
+
+dumpHouseViewState = function(prefix)
+    local state = Cyclopedia.House.ViewState or {}
+    houseViewStateLog(
+        "%s stateText='%s' stateType=%s cityText='%s' cityType=%s sortText='%s' sortType=%s filterMode='%s' selectedHouseId=%s lastTown='%s' restoring=%s",
+        prefix or "viewState",
+        tostring(state.stateText),
+        tostring(state.stateType),
+        tostring(state.cityText),
+        tostring(state.cityType),
+        tostring(state.sortText),
+        tostring(state.sortType),
+        tostring(state.filterMode),
+        tostring(state.selectedHouseId),
+        tostring(Cyclopedia.House.lastTown),
+        tostring(Cyclopedia.House.IsRestoringViewState)
+    )
+end
+
+local function selectHouseWithoutPersist(widget)
+    Cyclopedia.House.SuppressSelectionPersist = true
+    Cyclopedia.selectHouse(widget)
+    Cyclopedia.House.SuppressSelectionPersist = false
+end
+
+rememberHouseViewState = function()
+    if Cyclopedia.House.IsRestoringViewState then
+        houseViewStateLog("remember skipped because restoring=true")
+        return
+    end
+
+    if not Cyclopedia.House.ViewState then
+        return
+    end
+
+    if UI and UI.TopBase then
+        local currentState = UI.TopBase.StatesOption and UI.TopBase.StatesOption:getCurrentOption() or nil
+        if currentState then
+            Cyclopedia.House.ViewState.stateText = currentState.text
+            Cyclopedia.House.ViewState.stateType = currentState.data
+        end
+
+        local currentCity = UI.TopBase.CityOption and UI.TopBase.CityOption:getCurrentOption() or nil
+        if currentCity then
+            Cyclopedia.House.ViewState.cityText = currentCity.text
+            Cyclopedia.House.ViewState.cityType = currentCity.data
+        end
+
+        local currentSort = UI.TopBase.SortOption and UI.TopBase.SortOption:getCurrentOption() or nil
+        if currentSort then
+            Cyclopedia.House.ViewState.sortText = currentSort.text
+            Cyclopedia.House.ViewState.sortType = currentSort.data
+        end
+
+        if UI.TopBase.GuildhallsCheck and UI.TopBase.GuildhallsCheck:isChecked() then
+            Cyclopedia.House.ViewState.filterMode = "guildhalls"
+        else
+            Cyclopedia.House.ViewState.filterMode = "houses"
+        end
+    end
+
+    dumpHouseViewState("remember")
+end
+
+local function houseLog(level, message, ...)
+    if not HOUSE_LUA_LOG_ENABLED then
+        return
+    end
+
+    local text = message
+    if select("#", ...) > 0 then
+        text = string.format(message, ...)
+    end
+
+    if level == "warning" then
+        g_logger.warning(HOUSE_LUA_LOG_TAG .. " " .. text)
+    elseif level == "error" then
+        g_logger.error(HOUSE_LUA_LOG_TAG .. " " .. text)
+    else
+        g_logger.info(HOUSE_LUA_LOG_TAG .. " " .. text)
+    end
+end
+
+local function houseDebug(message, ...)
+    houseLog("info", message, ...)
+end
+
 local function resetButtons()
     if UI.LateralBase:getChildById("bidButton") then
         UI.LateralBase:getChildById("bidButton"):destroy()
@@ -125,6 +388,366 @@ local function resetButtons()
     end
 end
 
+local function createHouseMinimapControls()
+    if not UI or not UI.LateralBase or not UI.LateralBase.MapViewbase then
+        return
+    end
+
+    if houseMapCenterButton and houseMapCenterButton:isDestroyed() then
+        houseMapCenterButton = nil
+    end
+    if houseMapMarkButton and houseMapMarkButton:isDestroyed() then
+        houseMapMarkButton = nil
+    end
+    if houseMapZoomInButton and houseMapZoomInButton:isDestroyed() then
+        houseMapZoomInButton = nil
+    end
+    if houseMapZoomOutButton and houseMapZoomOutButton:isDestroyed() then
+        houseMapZoomOutButton = nil
+    end
+    if houseMapUnknownLabel and houseMapUnknownLabel:isDestroyed() then
+        houseMapUnknownLabel = nil
+    end
+
+    if not houseMapCenterButton then
+        houseMapCenterButton = g_ui.createWidget("Button", UI.LateralBase)
+        houseMapCenterButton:setId("houseMapCenterButton")
+        houseMapCenterButton:setText("House")
+        houseMapCenterButton:setWidth(52)
+        houseMapCenterButton:setHeight(20)
+        houseMapCenterButton:addAnchor(AnchorBottom, "parent", AnchorBottom)
+        houseMapCenterButton:addAnchor(AnchorRight, "parent", AnchorRight)
+        houseMapCenterButton:setMarginBottom(7)
+        houseMapCenterButton:setMarginRight(76)
+    end
+
+    if not houseMapZoomInButton then
+        houseMapZoomInButton = g_ui.createWidget("Button", UI.LateralBase.MapViewbase)
+        houseMapZoomInButton:setId("houseMapZoomInButton")
+        houseMapZoomInButton:setText("+")
+        houseMapZoomInButton:setWidth(18)
+        houseMapZoomInButton:setHeight(18)
+        houseMapZoomInButton:addAnchor(AnchorBottom, "parent", AnchorBottom)
+        houseMapZoomInButton:addAnchor(AnchorRight, "parent", AnchorRight)
+        houseMapZoomInButton:setMarginBottom(24)
+        houseMapZoomInButton:setMarginRight(4)
+    end
+
+    if not houseMapZoomOutButton then
+        houseMapZoomOutButton = g_ui.createWidget("Button", UI.LateralBase.MapViewbase)
+        houseMapZoomOutButton:setId("houseMapZoomOutButton")
+        houseMapZoomOutButton:setText("-")
+        houseMapZoomOutButton:setWidth(18)
+        houseMapZoomOutButton:setHeight(18)
+        houseMapZoomOutButton:addAnchor(AnchorBottom, "parent", AnchorBottom)
+        houseMapZoomOutButton:addAnchor(AnchorRight, "parent", AnchorRight)
+        houseMapZoomOutButton:setMarginBottom(4)
+        houseMapZoomOutButton:setMarginRight(4)
+    end
+
+    if not houseMapMarkButton then
+        houseMapMarkButton = g_ui.createWidget("Button", UI.LateralBase)
+        houseMapMarkButton:setId("houseMapMarkButton")
+        houseMapMarkButton:setText("Mark")
+        houseMapMarkButton:setWidth(52)
+        houseMapMarkButton:setHeight(20)
+        houseMapMarkButton:addAnchor(AnchorBottom, "prev", AnchorBottom)
+        houseMapMarkButton:addAnchor(AnchorRight, "prev", AnchorLeft)
+        houseMapMarkButton:setMarginRight(5)
+    end
+
+    if not houseMapUnknownLabel then
+        houseMapUnknownLabel = g_ui.createWidget("Label", UI.LateralBase.MapViewbase)
+        houseMapUnknownLabel:setId("houseMapUnknownLabel")
+        houseMapUnknownLabel:setVisible(false)
+        houseMapUnknownLabel:setTextAlign(AlignCenter)
+        houseMapUnknownLabel:setFont("verdana-11px-antialised")
+        houseMapUnknownLabel:setColor("#C0C0C0")
+        houseMapUnknownLabel:setTextWrap(true)
+        houseMapUnknownLabel:addAnchor(AnchorHorizontalCenter, "parent", AnchorHorizontalCenter)
+        houseMapUnknownLabel:addAnchor(AnchorVerticalCenter, "parent", AnchorVerticalCenter)
+        houseMapUnknownLabel:setWidth(170)
+        houseMapUnknownLabel:setHeight(54)
+        houseMapUnknownLabel:setPhantom(false)
+    end
+end
+
+ensureHouseMinimap = function()
+    if not UI or not UI.LateralBase or not UI.LateralBase.MapViewbase then
+        return nil
+    end
+
+    if houseMinimap and houseMinimap:isDestroyed() then
+        houseMinimap = nil
+    end
+
+    if houseMinimap and not houseMinimap:isDestroyed() then
+        return houseMinimap
+    end
+
+    houseMinimap = g_ui.createWidget("Minimap", UI.LateralBase.MapViewbase)
+    houseMinimap:setId("houseMinimap")
+    houseMinimap:addAnchor(AnchorTop, "parent", AnchorTop)
+    houseMinimap:addAnchor(AnchorBottom, "parent", AnchorBottom)
+    houseMinimap:addAnchor(AnchorLeft, "parent", AnchorLeft)
+    houseMinimap:addAnchor(AnchorRight, "parent", AnchorRight)
+    houseMinimap:setMarginTop(1)
+    houseMinimap:setMarginBottom(1)
+    houseMinimap:setMarginLeft(1)
+    houseMinimap:setMarginRight(1)
+    houseMinimap:disableAutoWalk()
+    houseMinimap:hideFloor()
+    houseMinimap:hideZoom()
+    houseMinimap:setMixZoom(HOUSE_MINIMAP_MIN_ZOOM)
+    houseMinimap:setMaxZoom(HOUSE_MINIMAP_MAX_ZOOM)
+    houseMinimap:setZoom(0)
+    houseMinimap:setVisible(false)
+
+    createHouseMinimapControls()
+
+    if houseMapCenterButton then
+        houseMapCenterButton.onClick = function()
+            if houseMinimap and houseMinimapCenterPos then
+                houseMinimap:setCameraPosition(houseMinimapCenterPos)
+                houseMinimap:setCrossPosition(houseMinimapCenterPos)
+            end
+        end
+    end
+
+    if houseMapMarkButton then
+        houseMapMarkButton.onClick = function()
+            local selected = Cyclopedia.House and Cyclopedia.House.lastSelectedHouse
+            local data = selected and selected.data or nil
+            if not data or (data.entryx or 0) <= 0 or (data.entryy or 0) <= 0 or (data.entryz or -1) < 0 then
+                displayInfoBox("House Mark", "This house has no valid entry position.")
+                return
+            end
+
+            local minimapUi = nil
+            if modules and modules.game_minimap and type(modules.game_minimap.getMiniMapUi) == "function" then
+                minimapUi = modules.game_minimap.getMiniMapUi()
+            elseif type(getMiniMapUi) == "function" then
+                minimapUi = getMiniMapUi()
+            end
+
+            if not minimapUi then
+                displayInfoBox("House Mark", "Minimap is not available right now.")
+                return
+            end
+
+            local pos = { x = data.entryx, y = data.entryy, z = data.entryz }
+            local description = data.name and data.name ~= "" and data.name or string.format("House %d", data.id or 0)
+
+            local function findFlagByDescription(minimap, targetDescription)
+                if not minimap or not minimap.flags or not targetDescription then
+                    return nil
+                end
+
+                local normalized = targetDescription:lower()
+                for _, flag in pairs(minimap.flags) do
+                    if type(flag.description) == "string" and flag.description:lower() == normalized then
+                        return flag
+                    end
+                end
+                return nil
+            end
+
+            local function ensureHouseMark(minimap, markPos, markDescription)
+                if not minimap then
+                    return false, "minimap unavailable"
+                end
+
+                local byPos = minimap:getFlag(markPos)
+                if byPos and byPos.icon == HOUSE_MARK_ICON and byPos.description == markDescription then
+                    return false, "already exists at this position"
+                end
+
+                local byName = findFlagByDescription(minimap, markDescription)
+                if byName and byName.pos and (byName.pos.x ~= markPos.x or byName.pos.y ~= markPos.y or byName.pos.z ~= markPos.z) then
+                    minimap:removeFlag(byName.pos)
+                end
+
+                if byPos then
+                    minimap:removeFlag(markPos)
+                end
+
+                minimap:addFlag(markPos, HOUSE_MARK_ICON, markDescription, false)
+                return true, "created"
+            end
+
+            local createdMain = ensureHouseMark(minimapUi, pos, description)
+
+            if Cyclopedia and type(Cyclopedia.getMapMinimap) == "function" then
+                local cyclopediaMapMinimap = Cyclopedia.getMapMinimap()
+                if cyclopediaMapMinimap then
+                    ensureHouseMark(cyclopediaMapMinimap, pos, description)
+                    if type(Cyclopedia.applyMapFlagFilters) == "function" then
+                        Cyclopedia.applyMapFlagFilters()
+                    end
+                end
+            end
+
+            if createdMain then
+                displayInfoBox("House Mark", string.format("Map marker added: %s", description))
+            else
+                displayInfoBox("House Mark", string.format("Map marker already exists: %s", description))
+            end
+        end
+    end
+
+    if houseMapZoomInButton then
+        houseMapZoomInButton.onClick = function()
+            if houseMinimap then
+                houseMinimap:zoomIn()
+                local selected = Cyclopedia.House and Cyclopedia.House.lastSelectedHouse
+                local data = selected and selected.data or nil
+                if data and houseMinimap.getZoom then
+                    local currentZoom = houseMinimap:getZoom()
+                    saveHouseZoom(data.id, currentZoom)
+                    houseZoomLog("zoomIn houseId=%s currentZoom=%s", tostring(data.id), tostring(currentZoom))
+                end
+            end
+        end
+    end
+
+    if houseMapZoomOutButton then
+        houseMapZoomOutButton.onClick = function()
+            if houseMinimap then
+                houseMinimap:zoomOut()
+                local selected = Cyclopedia.House and Cyclopedia.House.lastSelectedHouse
+                local data = selected and selected.data or nil
+                if data and houseMinimap.getZoom then
+                    local currentZoom = houseMinimap:getZoom()
+                    saveHouseZoom(data.id, currentZoom)
+                    houseZoomLog("zoomOut houseId=%s currentZoom=%s", tostring(data.id), tostring(currentZoom))
+                end
+            end
+        end
+    end
+
+    return houseMinimap
+end
+
+local function updateHousePreview(data)
+    if not UI or not data then
+        return
+    end
+
+    local minimap = ensureHouseMinimap()
+    local hasEntry = (data.entryx or 0) > 0 and (data.entryy or 0) > 0 and (data.entryz or -1) >= 0
+    local hasMinimapCoverage = false
+    if hasEntry then
+        local samples = 0
+        local known = 0
+        for dx = -HOUSE_MINIMAP_SAMPLE_RADIUS, HOUSE_MINIMAP_SAMPLE_RADIUS do
+            for dy = -HOUSE_MINIMAP_SAMPLE_RADIUS, HOUSE_MINIMAP_SAMPLE_RADIUS do
+                samples = samples + 1
+                local color = g_map.getMinimapColor({ x = data.entryx + dx, y = data.entryy + dy, z = data.entryz }) or 0
+                if color ~= 0 then
+                    known = known + 1
+                end
+            end
+        end
+        local knownRatio = samples > 0 and (known / samples) or 0
+        local centerColor = g_map.getMinimapColor({ x = data.entryx, y = data.entryy, z = data.entryz }) or 0
+        local nearSamples = 0
+        local nearKnown = 0
+        for dx = -HOUSE_MINIMAP_NEAR_RADIUS, HOUSE_MINIMAP_NEAR_RADIUS do
+            for dy = -HOUSE_MINIMAP_NEAR_RADIUS, HOUSE_MINIMAP_NEAR_RADIUS do
+                nearSamples = nearSamples + 1
+                local nearColor = g_map.getMinimapColor({ x = data.entryx + dx, y = data.entryy + dy, z = data.entryz }) or 0
+                if nearColor ~= 0 then
+                    nearKnown = nearKnown + 1
+                end
+            end
+        end
+
+        hasMinimapCoverage = centerColor ~= 0 and nearKnown >= HOUSE_MINIMAP_MIN_NEAR_KNOWN_TILES and
+            known >= HOUSE_MINIMAP_MIN_KNOWN_TILES and knownRatio >= HOUSE_MINIMAP_MIN_KNOWN_RATIO
+        if not hasMinimapCoverage then
+            houseLog("warning",
+                "houseId=%d has low minimap coverage around entry (center=%d near=%d/%d wide=%d/%d %.2f%%), using image fallback",
+                data.id or 0, centerColor, nearKnown, nearSamples, known, samples, knownRatio * 100)
+        end
+    end
+
+    if minimap and hasEntry and hasMinimapCoverage then
+        local centerPos = { x = data.entryx, y = data.entryy, z = data.entryz }
+        houseMinimapCenterPos = centerPos
+        minimap:setVisible(true)
+        applyHouseMinimapZoom(data, minimap)
+        minimap:setCameraPosition(centerPos)
+        minimap:setCrossPosition(centerPos)
+        UI.LateralBase.MapViewbase.noHouse:setVisible(false)
+        UI.LateralBase.MapViewbase.reload:setVisible(false)
+        UI.LateralBase.MapViewbase.houseImage:setVisible(false)
+        if houseMapCenterButton then
+            houseMapCenterButton:setVisible(true)
+        end
+        if houseMapMarkButton then
+            houseMapMarkButton:setVisible(true)
+        end
+        if houseMapZoomInButton then
+            houseMapZoomInButton:setVisible(true)
+        end
+        if houseMapZoomOutButton then
+            houseMapZoomOutButton:setVisible(true)
+        end
+        if houseMapUnknownLabel then
+            houseMapUnknownLabel:setVisible(false)
+        end
+        return
+    end
+
+    if minimap then
+        minimap:setVisible(false)
+    end
+    if houseMapCenterButton then
+        houseMapCenterButton:setVisible(false)
+    end
+    if houseMapMarkButton then
+        houseMapMarkButton:setVisible(hasEntry)
+    end
+    if houseMapZoomInButton then
+        houseMapZoomInButton:setVisible(false)
+    end
+    if houseMapZoomOutButton then
+        houseMapZoomOutButton:setVisible(false)
+    end
+
+    UI.LateralBase.MapViewbase.noHouse:setVisible(false)
+    UI.LateralBase.MapViewbase.reload:setVisible(true)
+    UI.LateralBase.MapViewbase.houseImage:setVisible(false)
+    if houseMapUnknownLabel then
+        houseMapUnknownLabel:setVisible(false)
+    end
+    local imagePath = string.format("/game_cyclopedia/images/houses/%s.png", data.id)
+    if g_resources.fileExists(imagePath) then
+        UI.LateralBase.MapViewbase.reload:setVisible(false)
+        UI.LateralBase.MapViewbase.houseImage:setVisible(true)
+        UI.LateralBase.MapViewbase.houseImage:setImageSource(imagePath)
+        if hasEntry and not hasMinimapCoverage and houseMapUnknownLabel then
+            local townName = Cyclopedia.House.lastTown
+            if townName and townName ~= "" then
+                houseMapUnknownLabel:setText(string.format("House map unknown.\nExplore more of %s to unlock this preview.",
+                    townName))
+            else
+                houseMapUnknownLabel:setText("House map unknown.\nExplore this city to unlock this preview.")
+            end
+            houseMapUnknownLabel:setVisible(true)
+        end
+    elseif hasEntry and not hasMinimapCoverage and houseMapUnknownLabel then
+        local townName = Cyclopedia.House.lastTown
+        if townName and townName ~= "" then
+            houseMapUnknownLabel:setText(string.format("House map unknown.\nExplore more of %s to unlock this preview.",
+                townName))
+        else
+            houseMapUnknownLabel:setText("House map unknown.\nExplore this city to unlock this preview.")
+        end
+        houseMapUnknownLabel:setVisible(true)
+    end
+end
+
 local function resetSelectedInfo()
     UI.LateralBase.yourLimitBidGold:setVisible(false)
     UI.LateralBase.yourLimitBid:setVisible(false)
@@ -138,10 +761,87 @@ local function resetSelectedInfo()
     UI.LateralBase.transferGold:setVisible(false)
 end
 
+local function applyHouseSortByType(sortType)
+    if not Cyclopedia.House.Data then
+        return
+    end
+
+    if sortType == 1 then
+        table.sort(Cyclopedia.House.Data, function(a, b)
+            return a.name < b.name
+        end)
+    elseif sortType == 2 then
+        table.sort(Cyclopedia.House.Data, function(a, b)
+            return a.sqm < b.sqm
+        end)
+    elseif sortType == 4 then
+        table.sort(Cyclopedia.House.Data, function(a, b)
+            if a.hasBid and not b.hasBid then
+                return true
+            elseif not a.hasBid and b.hasBid then
+                return false
+            else
+                return false
+            end
+        end)
+    elseif sortType == 5 then
+        table.sort(Cyclopedia.House.Data, function(a, b)
+            if a.hasBid and not b.hasBid then
+                return true
+            elseif not a.hasBid and b.hasBid then
+                return false
+            else
+                return false
+            end
+        end)
+    end
+end
+
+local function applyHouseVisibilityByViewState()
+    if not Cyclopedia.House.Data then
+        return
+    end
+
+    local viewState = Cyclopedia.House.ViewState or {}
+    local onlyGuildHall = viewState.filterMode == "guildhalls"
+    local stateType = tonumber(viewState.stateType) or 1
+
+    for _, data in ipairs(Cyclopedia.House.Data) do
+        local baseVisible = false
+        if onlyGuildHall then
+            baseVisible = data.gh and true or false
+        else
+            baseVisible = not data.gh
+        end
+        if stateType == 3 then
+            data.visible = baseVisible and (data.rented or data.inTransfer)
+        elseif stateType == 2 then
+            data.visible = baseVisible and not data.rented
+        else
+            data.visible = baseVisible
+        end
+    end
+end
+
+applyFilterChecksFromViewState = function()
+    if not UI or not UI.TopBase or not Cyclopedia.House.ViewState then
+        return
+    end
+
+    local guildhalls = Cyclopedia.House.ViewState.filterMode == "guildhalls"
+    if UI.TopBase.HousesCheck then
+        UI.TopBase.HousesCheck:setChecked(not guildhalls)
+    end
+    if UI.TopBase.GuildhallsCheck then
+        UI.TopBase.GuildhallsCheck:setChecked(guildhalls)
+    end
+end
+
 function Cyclopedia.houseChangeState(widget)
     if Cyclopedia.House.Data then
         local onlyGuildHall = UI.TopBase.GuildhallsCheck:isChecked()
         local type = widget:getCurrentOption().data
+        houseViewStateLog("houseChangeState type=%s onlyGuildHall=%s", tostring(type), tostring(onlyGuildHall))
         for _, data in ipairs(Cyclopedia.House.Data) do
             if onlyGuildHall then
                 data.visible = data.gh
@@ -156,10 +856,148 @@ function Cyclopedia.houseChangeState(widget)
 
         Cyclopedia.reloadHouseList()
         Cyclopedia.House.lastChangeState = widget
+        rememberHouseViewState()
     end
 end
 
+local houseAuctionMessages = {
+    [CyclopediaHouseAuctionTypes.Bid] = {
+        [0] = "Your bid was successful. You are currently holding the highest bid.",
+        [1] = "Your bid was accepted, but there is already a higher bid.",
+        [3] = "Bid failed. Characters from Rookgaard cannot bid on houses.",
+        [5] = "Bid failed. Premium account is required.",
+        [6] = "Bid failed. Only guild leaders can bid on guildhalls.",
+        [7] = "Bid failed. Your account can only hold one house bid at a time.",
+        [17] = "Bid failed. Your bank account balance is too low to pay the bid and the first month rent.",
+        [21] = "Bid failed. The guild bank balance is too low.",
+        [24] = "Bid failed due to an internal server error."
+    },
+    [CyclopediaHouseAuctionTypes.MoveOut] = {
+        [0] = "You have successfully initiated your move out.",
+        [2] = "Move out failed. You are not the owner of this house.",
+        [7] = "Move out failed. Premium account is required.",
+        [16] = "Move out failed. Characters from Rookgaard cannot own houses.",
+        [32] = "Move out failed due to an internal server error."
+    },
+    [CyclopediaHouseAuctionTypes.Transfer] = {
+        [0] = "You have successfully initiated the transfer of your house.",
+        [2] = "House transfer failed. You are not the owner of this house.",
+        [4] = "Setting up a house transfer failed. A character with this name does not exist.",
+        [7] = "House transfer failed. Premium account is required.",
+        [16] = "House transfer failed. The target character is in Rookgaard.",
+        [19] = "House transfer failed. The target character already owns this house.",
+        [25] = "House transfer failed. The target account already has an active house bid.",
+        [32] = "House transfer failed due to an internal server error."
+    },
+    [CyclopediaHouseAuctionTypes.CancelMoveOut] = {
+        [0] = "You have successfully cancelled your move out.",
+        [2] = "Cancel move out failed. You are not the owner of this house.",
+        [32] = "Cancel move out failed due to an internal server error."
+    },
+    [CyclopediaHouseAuctionTypes.CancelTransfer] = {
+        [0] = "You have successfully cancelled the transfer. You will keep the house.",
+        [2] = "Cancel transfer failed. You are not the owner of this house.",
+        [32] = "Cancel transfer failed due to an internal server error."
+    },
+    [CyclopediaHouseAuctionTypes.AcceptTransfer] = {
+        [0] = "You have successfully accepted the transfer.",
+        [2] = "Accept transfer failed. You are not the designated new owner.",
+        [3] = "Accept transfer failed. Your account already has an active house bid.",
+        [7] = "Accept transfer failed. This transfer was already accepted.",
+        [8] = "Accept transfer failed. Characters from Rookgaard cannot own houses.",
+        [9] = "Accept transfer failed. Premium account is required.",
+        [15] = "Accept transfer failed. Your bank account balance is too low.",
+        [19] = "Accept transfer failed due to an internal server error."
+    },
+    [CyclopediaHouseAuctionTypes.RejectTransfer] = {
+        [0] = "You rejected the house transfer successfully. The old owner will keep the house.",
+        [2] = "Reject transfer failed. You are not the designated new owner.",
+        [32] = "Reject transfer failed due to an internal server error."
+    }
+}
+
+local function isHouseActionSuccess(actionType, messageIndex)
+    if actionType == CyclopediaHouseAuctionTypes.Bid then
+        return messageIndex == 0 or messageIndex == 1
+    end
+
+    return messageIndex == 0
+end
+
+local function closeHouseActionPanels(actionType)
+    if actionType == CyclopediaHouseAuctionTypes.Bid then
+        UI.bidArea:setVisible(false)
+    elseif actionType == CyclopediaHouseAuctionTypes.MoveOut or actionType == CyclopediaHouseAuctionTypes.CancelMoveOut then
+        UI.moveOutArea:setVisible(false)
+    elseif actionType == CyclopediaHouseAuctionTypes.Transfer then
+        UI.transferArea:setVisible(false)
+    elseif actionType == CyclopediaHouseAuctionTypes.CancelTransfer then
+        UI.cancelHouseTransferArea:setVisible(false)
+    elseif actionType == CyclopediaHouseAuctionTypes.AcceptTransfer then
+        UI.acceptTransferHouse:setVisible(false)
+    elseif actionType == CyclopediaHouseAuctionTypes.RejectTransfer then
+        UI.rejectTransferHouse:setVisible(false)
+    end
+end
+
+function Cyclopedia.onParseCyclopediaHouseAuctionMessage(houseId, auctionType, index, bidSuccessOrError)
+    houseLog("info", "RX callback=HouseAuctionMessage houseId=%d type=%d index=%d bidExtra=%d", houseId or 0,
+        auctionType or 0, index or 0, bidSuccessOrError or 0)
+    Cyclopedia.houseMessage(houseId, auctionType, index, bidSuccessOrError)
+end
+
+function Cyclopedia.onParseCyclopediaHousesInfo(currentHouseId, accountHouseCount, highlightedEntries, housesList, maxTownHouses,
+    maxGuildHouses, unknownHeaderA, unknownHeaderB)
+    g_logger.info(string.format("[cyclopedia-houses-lua] accountHouseCount=%d", accountHouseCount or 0))
+
+    local highlightedCount = type(highlightedEntries) == "table" and #highlightedEntries or 0
+    local housesCount = type(housesList) == "table" and #housesList or 0
+    houseLog("info",
+        "RX callback=HousesInfo currentHouseId=%d accountHouseCount=%d highlightedCount=%d housesListCount=%d maxTownHouses=%d maxGuildHouses=%d unknownA=%d unknownB=%d",
+        currentHouseId or 0, accountHouseCount or 0, highlightedCount, housesCount, maxTownHouses or 0,
+        maxGuildHouses or 0, unknownHeaderA or 0, unknownHeaderB or 0)
+
+    if highlightedCount > 0 then
+        for idx, entry in ipairs(highlightedEntries) do
+            local entryType = entry[1] or 0
+            local houseId = entry[2] or 0
+            houseLog("info", "RX callback=HousesInfo highlighted[%d]={type=%d, houseId=%d}", idx, entryType, houseId)
+        end
+    end
+
+    if housesCount > 0 then
+        for idx, houseId in ipairs(housesList) do
+            houseLog("info", "RX callback=HousesInfo housesList[%d]=%d", idx, houseId or 0)
+        end
+    end
+
+    Cyclopedia.House.Info = {
+        currentHouseId = currentHouseId or 0,
+        accountHouseCount = accountHouseCount or 0,
+        highlightedEntries = highlightedEntries or {},
+        housesList = housesList or {},
+        maxTownHouses = maxTownHouses or 0,
+        maxGuildHouses = maxGuildHouses or 0,
+        unknownHeaderA = unknownHeaderA or 0,
+        unknownHeaderB = unknownHeaderB or 0
+    }
+end
+
+function Cyclopedia.onParseCyclopediaHouseList(data, other)
+    if not UI then
+        houseLog("warning", "RX callback=HouseList received while UI is nil")
+        return
+    end
+    houseLog("info", "RX callback=HouseList entries=%d extraEntries=%d", type(data) == "table" and #data or 0,
+        type(other) == "table" and #other or 0)
+    Cyclopedia.loadHouseList(data, other)
+end
+
 function Cyclopedia.houseMessage(houseId, type, message)
+    if not UI then
+        return
+    end
+
     local confirmWindow
     local function yesCallback()
         if confirmWindow then
@@ -169,121 +1007,33 @@ function Cyclopedia.houseMessage(houseId, type, message)
         end
     end
 
-    if type == 1 then
-        if message == 0 then
-            if not confirmWindow then
-                confirmWindow = displayGeneralBox(tr("Summary"), tr(
-                    "Your bid was successfull. You are currently holding the highest bid."), {
-                    {
-                        text = tr("Ok"),
-                        callback = yesCallback
-                    },
-                    anchor = AnchorHorizontalCenter
-                }, yesCallback)
+    local typeMessages = houseAuctionMessages[type] or {}
+    local resultMessage = typeMessages[message] or string.format("House action result: %d.", message or -1)
+    local success = isHouseActionSuccess(type, message)
+    local title = success and "Summary" or "House Action Failed"
 
-                UI.ListBase:setVisible(true)
-                UI.bidArea:setVisible(false)
-                Cyclopedia.Toggle(true, false)
-            end
-        elseif message == 17 then
-            confirmWindow = displayGeneralBox(tr("Summary"), tr(
-                "Bid failed.\nYour character's bank acocunt balance is too low to pay the bid and the rent for the first month."),
-                {
-                    {
-                        text = tr("Ok"),
-                        callback = yesCallback
-                    },
-                    anchor = AnchorHorizontalCenter
-                }, yesCallback)
+    houseLog("info", "RX callback=HouseAuctionMessage result houseId=%d type=%d message=%d success=%s", houseId or 0,
+        type or 0, message or 0, success and "true" or "false")
+    if not typeMessages[message] then
+        houseLog("warning", "HouseAuctionMessage without mapped text for type=%s message=%s", tostring(type),
+            tostring(message))
+    end
 
-            UI.ListBase:setVisible(true)
-            UI.bidArea:setVisible(false)
-            Cyclopedia.Toggle(true, false)
-        end
-    elseif type == 2 then
-        if message == 0 then
-            confirmWindow = displayGeneralBox(tr("Summary"), tr("You have sucessfully iniated your move out."), {
-                {
-                    text = tr("Ok"),
-                    callback = yesCallback
-                },
-                anchor = AnchorHorizontalCenter
-            }, yesCallback)
-
-            UI.moveOutArea:setVisible(false)
-            UI.ListBase:setVisible(true)
-            Cyclopedia.Toggle(true, false)
-        end
-    elseif type == 3 then
-        if message == 0 then
-            confirmWindow = displayGeneralBox(tr("Summary"),
-                tr("You have sucessfully initiated the transfer of your house."), {
-                    {
-                        text = tr("Ok"),
-                        callback = yesCallback
-                    },
-                    anchor = AnchorHorizontalCenter
-                }, yesCallback)
-
-            UI.transferArea:setVisible(false)
-            UI.ListBase:setVisible(true)
-            Cyclopedia.Toggle(true, false)
-        elseif message == 4 then
-            confirmWindow = displayGeneralBox(tr("Summary"), tr(
-                "Setting up a house transfer failed.\nA character with this name does not exist."), {
-                {
-                    text = tr("Ok"),
-                    callback = yesCallback
-                },
-                anchor = AnchorHorizontalCenter
-            }, yesCallback)
-
-            UI.transferArea:setVisible(false)
-            UI.ListBase:setVisible(true)
-            Cyclopedia.Toggle(true, false)
-        end
-    elseif type == 5 then
-        if message == 0 then
-            confirmWindow = displayGeneralBox(tr("Summary"), tr(
-                "You have sucessfully cancelled the transfer. You will keep the house."), {
-                {
-                    text = tr("Ok"),
-                    callback = yesCallback
-                },
-                anchor = AnchorHorizontalCenter
-            }, yesCallback)
-
-            UI.cancelHouseTransferArea:setVisible(false)
-            UI.ListBase:setVisible(true)
-            Cyclopedia.Toggle(true, false)
-        end
-    elseif type == 6 then
-        if message == 0 then
-            confirmWindow = displayGeneralBox(tr("Summary"), tr("You have sucessfully accepted the transfer."), {
-                {
-                    text = tr("Ok"),
-                    callback = yesCallback
-                },
-                anchor = AnchorHorizontalCenter
-            }, yesCallback)
-
-            UI.acceptTransferHouse:setVisible(false)
-            UI.ListBase:setVisible(true)
-            Cyclopedia.Toggle(true, false)
-        end
-    elseif type == 7 and message == 0 then
-        confirmWindow = displayGeneralBox(tr("Summary"), tr(
-            "You jected the house transfer sucessfully. The old owner will keep the house."), {
+    if not confirmWindow then
+        confirmWindow = displayGeneralBox(tr(title), tr(resultMessage), {
             {
                 text = tr("Ok"),
                 callback = yesCallback
             },
             anchor = AnchorHorizontalCenter
         }, yesCallback)
-
-        UI.rejectTransferHouse:setVisible(false)
-        UI.ListBase:setVisible(true)
         Cyclopedia.Toggle(true, false)
+    end
+
+    if success then
+        closeHouseActionPanels(type)
+        UI.ListBase:setVisible(true)
+        Cyclopedia.houseRefresh()
     end
 end
 
@@ -309,16 +1059,8 @@ function Cyclopedia.rejectTransfer()
                 Cyclopedia.Toggle(true, false, 5)
             end
 
+            houseLog("info", "TX action=RejectTransfer houseId=%d", house.id or 0)
             g_game.requestRejectHouseTransfer(house.id)
-
-            Cyclopedia.House.ignore = true
-            --[[
-            if Cyclopedia.House.lastTown then
-                g_game.requestShowHouses(Cyclopedia.House.lastTown)
-            else
-                g_game.requestShowHouses("")
-            end
-            ]]--
 
             UI.TopBase.StatesOption:setOption("All States", true)
             UI.TopBase.SortOption:setOption("Sort by name", true)
@@ -351,7 +1093,7 @@ function Cyclopedia.rejectTransfer()
         end
     end
 
-    UI.rejectTransferHouse.name:setText(house.name .. "asdasd")
+    UI.rejectTransferHouse.name:setText(house.name)
     UI.rejectTransferHouse.size:setText(house.sqm .. " sqm")
     UI.rejectTransferHouse.beds:setText(house.beds)
     UI.rejectTransferHouse.rent:setText((house.rent))
@@ -384,10 +1126,8 @@ function Cyclopedia.acceptTransfer()
                 Cyclopedia.Toggle(true, false, 5)
             end
 
+            houseLog("info", "TX action=AcceptTransfer houseId=%d", house.id or 0)
             g_game.requestAcceptHouseTransfer(house.id)
-            Cyclopedia.House.ignore = true
-
-            -- g_game.requestShowHouses("")
             UI.TopBase.StatesOption:setOption("All States", true)
             UI.TopBase.SortOption:setOption("Sort by name", true)
         end
@@ -419,7 +1159,7 @@ function Cyclopedia.acceptTransfer()
         end
     end
 
-    UI.acceptTransferHouse.name:setText(house.name .. "22222")
+    UI.acceptTransferHouse.name:setText(house.name)
     UI.acceptTransferHouse.size:setText(house.sqm .. " sqm")
     UI.acceptTransferHouse.beds:setText(house.beds)
     UI.acceptTransferHouse.rent:setText((house.rent))
@@ -452,16 +1192,8 @@ function Cyclopedia.cancelTransfer()
                 Cyclopedia.Toggle(true, false, 5)
             end
 
+            houseLog("info", "TX action=CancelTransfer houseId=%d", house.id or 0)
             g_game.requestCancelHouseTransfer(house.id)
-
-            Cyclopedia.House.ignore = true
-            --[[
-            if Cyclopedia.House.lastTown then
-                g_game.requestShowHouses(Cyclopedia.House.lastTown)
-            else
-                g_game.requestShowHouses("")
-            end
-            ]]--
 
             UI.TopBase.StatesOption:setOption("All States", true)
             UI.TopBase.SortOption:setOption("Sort by name", true)
@@ -494,7 +1226,7 @@ function Cyclopedia.cancelTransfer()
         end
     end
 
-    UI.cancelHouseTransferArea.name:setText(house.name .. "888")
+    UI.cancelHouseTransferArea.name:setText(house.name)
     UI.cancelHouseTransferArea.size:setText(house.sqm .. " sqm")
     UI.cancelHouseTransferArea.beds:setText(house.beds)
     UI.cancelHouseTransferArea.rent:setText((house.rent))
@@ -519,11 +1251,11 @@ function Cyclopedia.transferHouse()
             day = UI.transferArea.day:getCurrentOption().text
         })
 
-        if timestemp < os.time(os.date("!*t")) then
-            UI.transferArea.move:setEnabled(false)
+        if timestemp < os.time() then
+            UI.transferArea.transfer:setEnabled(false)
             UI.transferArea.error:setVisible(true)
         else
-            UI.transferArea.move:setEnabled(true)
+            UI.transferArea.transfer:setEnabled(true)
             UI.transferArea.error:setVisible(false)
         end
     end
@@ -531,9 +1263,9 @@ function Cyclopedia.transferHouse()
     local function verifyName(widget, text, oldText)
         if text ~= "" then
             UI.transferArea.errorName:setVisible(false)
-            UI.transferArea.transfer:setEnabled(false)
-        else
             UI.transferArea.transfer:setEnabled(true)
+        else
+            UI.transferArea.transfer:setEnabled(false)
             UI.transferArea.errorName:setVisible(true)
         end
     end
@@ -563,16 +1295,9 @@ function Cyclopedia.transferHouse()
                 Cyclopedia.Toggle(true, false, 5)
             end
 
-            g_game.requestTransferHouse(house.id, transfer, tonumber(value))
-
-            Cyclopedia.House.ignore = true
-            --[[
-            if Cyclopedia.House.lastTown then
-                g_game.requestShowHouses(Cyclopedia.House.lastTown)
-            else
-                g_game.requestShowHouses("")
-            end
-            ]]--
+            houseLog("info", "TX action=Transfer houseId=%d timestamp=%d owner=\"%s\" bidValue=%s", house.id or 0,
+                timestemp or 0, transfer or "", tostring(value))
+            g_game.requestTransferHouse(house.id, timestemp, transfer, tonumber(value))
 
             UI.TopBase.StatesOption:setOption("All States", true)
             UI.TopBase.SortOption:setOption("Sort by name", true)
@@ -605,7 +1330,7 @@ function Cyclopedia.transferHouse()
         end
     end
 
-    UI.transferArea.name:setText(house.name .. "44444")
+    UI.transferArea.name:setText(house.name)
     UI.transferArea.size:setText(house.sqm .. " sqm")
     UI.transferArea.beds:setText(house.beds)
     UI.transferArea.rent:setText((house.rent))
@@ -638,7 +1363,7 @@ function Cyclopedia.transferHouse()
     end
 
     UI.transferArea.month:setOption(tonumber(os.date("%m")), true)
-    UI.transferArea.day:setOption(tonumber(os.date("%d") + 1), true)
+    UI.transferArea.day:setOption(math.min(days, tonumber(os.date("%d")) + 1), true)
     UI.transferArea.owner.onTextChange = verifyName
     UI.transferArea.owner:setText("")
     verifyName(UI.transferArea.owner, "", "")
@@ -673,7 +1398,7 @@ function Cyclopedia.moveOutHouse()
             day = UI.moveOutArea.day:getCurrentOption().text
         })
 
-        if timestemp < os.time(os.date("!*t")) then
+        if timestemp < os.time() then
             UI.moveOutArea.move:setEnabled(false)
             UI.moveOutArea.error:setVisible(true)
         else
@@ -705,7 +1430,8 @@ function Cyclopedia.moveOutHouse()
                 Cyclopedia.Toggle(true, false, 5)
             end
 
-            g_game.requestMoveOutHouse(house.id)
+            houseLog("info", "TX action=MoveOut houseId=%d timestamp=%d", house.id or 0, timestemp or 0)
+            g_game.requestMoveOutHouse(house.id, timestemp)
         end
 
         local function noCallback()
@@ -735,7 +1461,7 @@ function Cyclopedia.moveOutHouse()
         end
     end
 
-    UI.moveOutArea.name:setText(house.name .. "9999")
+    UI.moveOutArea.name:setText(house.name)
     UI.moveOutArea.size:setText(house.sqm .. " sqm")
     UI.moveOutArea.beds:setText(house.beds)
     UI.moveOutArea.rent:setText((house.rent))
@@ -767,7 +1493,7 @@ function Cyclopedia.moveOutHouse()
     end
 
     UI.moveOutArea.month:setOption(tonumber(os.date("%m")), true)
-    UI.moveOutArea.day:setOption(tonumber(os.date("%d") + 1), true)
+    UI.moveOutArea.day:setOption(math.min(days, tonumber(os.date("%d")) + 1), true)
 end
 
 function Cyclopedia.bidHouse(widget)
@@ -784,7 +1510,7 @@ function Cyclopedia.bidHouse(widget)
 
     UI.ListBase:setVisible(false)
     UI.bidArea:setVisible(true)
-    UI.bidArea.name:setText(house.name .. "99889")
+    UI.bidArea.name:setText(house.name)
     UI.bidArea.size:setText(house.sqm .. " sqm")
     UI.bidArea.beds:setText(house.beds)
     UI.bidArea.rent:setText((house.rent))
@@ -825,7 +1551,7 @@ function Cyclopedia.bidHouse(widget)
         for index, data in ipairs(labels) do
             local label = g_ui.createWidget("Label", UI.bidArea)
             label:setId(data.id)
-            label:setText(data.name .. "44242")
+            label:setText(data.name)
             label:setColor("#909090")
             label:setWidth(90)
             label:setHeight(15)
@@ -969,6 +1695,7 @@ function Cyclopedia.bidHouse(widget)
                 Cyclopedia.Toggle(true, false, 5)
             end
 
+            houseLog("info", "TX action=Bid houseId=%d bidValue=%s", house.id or 0, tostring(value))
             g_game.requestBidHouse(house.id, value)
         end
 
@@ -1001,68 +1728,52 @@ function Cyclopedia.bidHouse(widget)
 end
 
 function Cyclopedia.houseRefresh()
-    if Cyclopedia.House.lastTown then
-        -- g_game.requestShowHouses(Cyclopedia.House.lastTown)
+    if not UI then
+        return
+    end
 
-        if Cyclopedia.House.lastChangeState then
-            if Cyclopedia.House.refreshEvent then
-                return
-            end
+    if Cyclopedia.House.lastTown ~= nil then
+        houseLog("info", "TX action=Show town=\"%s\" (refresh)", Cyclopedia.House.lastTown or "")
+        g_game.requestShowHouses(Cyclopedia.House.lastTown)
+    end
 
-            Cyclopedia.House.refreshEvent = scheduleEvent(function()
-                Cyclopedia.houseChangeState(Cyclopedia.House.lastChangeState)
-                Cyclopedia.House.refreshEvent = nil
-            end, 100)
+    if Cyclopedia.House.lastChangeState then
+        if Cyclopedia.House.refreshEvent then
+            return
         end
+
+        Cyclopedia.House.refreshEvent = scheduleEvent(function()
+            Cyclopedia.houseChangeState(Cyclopedia.House.lastChangeState)
+            Cyclopedia.House.refreshEvent = nil
+        end, 100)
     end
 end
 
 function Cyclopedia.houseSort(widget, text, type)
     if Cyclopedia.House.Data then
-        if type == 1 then
-            table.sort(Cyclopedia.House.Data, function(a, b)
-                return a.name < b.name
-            end)
-        elseif type == 2 then
-            table.sort(Cyclopedia.House.Data, function(a, b)
-                return a.sqm < b.sqm
-            end)
-        elseif type == 3 then
-            -- block empty
-        elseif type == 4 then
-            table.sort(Cyclopedia.House.Data, function(a, b)
-                if a.hasBid and not b.hasBid then
-                    return true
-                elseif not a.hasBid and b.hasBid then
-                    return false
-                else
-                    return false
-                end
-            end)
-        elseif type == 5 then
-            table.sort(Cyclopedia.House.Data, function(a, b)
-                if a.hasBid and not b.hasBid then
-                    return true
-                elseif not a.hasBid and b.hasBid then
-                    return false
-                else
-                    return false
-                end
-            end)
-        end
+        houseViewStateLog("houseSort type=%s text='%s'", tostring(type), tostring(text))
+        applyHouseSortByType(type)
 
         Cyclopedia.reloadHouseList()
+        rememberHouseViewState()
     end
 end
 
 function Cyclopedia.houseFilter(widget)
     local id = widget:getId()
     local brother
+    houseViewStateLog("houseFilter id='%s'", tostring(id))
 
     if id == "HousesCheck" then
         brother = UI.TopBase.GuildhallsCheck
+        if Cyclopedia.House.ViewState then
+            Cyclopedia.House.ViewState.filterMode = "houses"
+        end
     else
         brother = UI.TopBase.HousesCheck
+        if Cyclopedia.House.ViewState then
+            Cyclopedia.House.ViewState.filterMode = "guildhalls"
+        end
     end
 
     brother:setChecked(false)
@@ -1080,6 +1791,8 @@ function Cyclopedia.houseFilter(widget)
 
         Cyclopedia.reloadHouseList()
     end
+
+    rememberHouseViewState()
 end
 
 function Cyclopedia.reloadHouseList()
@@ -1090,13 +1803,32 @@ function Cyclopedia.reloadHouseList()
         UI.LateralBase.AuctionLabel:setVisible(true)
         UI.LateralBase.AuctionText:setVisible(true)
         UI.ListBase.AuctionList:destroyChildren()
+        local visibleEntries = 0
+        local renderedGuildhalls = 0
+        local renderedHouses = 0
+        local viewState = Cyclopedia.House.ViewState or {}
+        local enforceGuildhalls = viewState.filterMode == "guildhalls"
 
         for _, data in ipairs(Cyclopedia.House.Data) do
-            if data.visible then
+            local passesViewMode = false
+            if enforceGuildhalls then
+                passesViewMode = data.gh and true or false
+            else
+                passesViewMode = not data.gh
+            end
+            if data.visible and passesViewMode then
+                visibleEntries = visibleEntries + 1
+                if data.gh then
+                    renderedGuildhalls = renderedGuildhalls + 1
+                else
+                    renderedHouses = renderedHouses + 1
+                end
                 local widget = g_ui.createWidget("House", UI.ListBase.AuctionList)
                 widget.data = data
                 widget:setId(data.id)
                 widget:setText(data.name)
+                widget:setColor("#C0C0C0")
+                widget:setHeight(56)
                 widget.size:setColoredText("{Size:     , #909090}" .. data.sqm .. " sqm")
                 widget.beds:setColoredText("{Max. Beds: ,#909090} " .. data.beds)
                 widget.rent:setColoredText(data.rent)
@@ -1107,7 +1839,7 @@ function Cyclopedia.reloadHouseList()
                     icon:setTooltip(data.description)
                 end
 
-                if data.state == 0 then
+                if data.state == CyclopediaHouseStates.Available then
                     if data.hasBid then
                         local function format(timestamp)
                             local difference = timestamp - os.time()
@@ -1121,8 +1853,12 @@ function Cyclopedia.reloadHouseList()
                     else
                         widget.status:setColoredText("{Status:  , #909090}{auctioned, #00F000} (no bid yet)")
                     end
-                elseif data.state == 2 then
+                elseif data.state == CyclopediaHouseStates.Rented then
                     widget.status:setColoredText("{Status:  , #909090}rented by " .. data.owner)
+                elseif data.state == CyclopediaHouseStates.Transfer then
+                    widget.status:setColoredText("{Status:  , #909090}transfer to " .. data.transferName)
+                elseif data.state == CyclopediaHouseStates.MoveOut then
+                    widget.status:setColoredText("{Status:  , #909090}move out scheduled")
                 end
 
                 widget.onClick = Cyclopedia.selectHouse
@@ -1150,17 +1886,54 @@ function Cyclopedia.reloadHouseList()
             end
         end
 
-        if Cyclopedia.House.lastSelectedHouse then
-            local last = UI.ListBase.AuctionList:getChildById(Cyclopedia.House.lastSelectedHouse:getId())
+        UI.ListBase.AuctionList:updateLayout()
+        houseViewStateLog("reloadHouseList rendered entries=%d guildhalls=%d houses=%d filterMode='%s'", visibleEntries,
+            renderedGuildhalls, renderedHouses, tostring(viewState.filterMode))
+        houseLog("info", "reloadHouseList visibleEntries=%d renderedChildren=%d", visibleEntries,
+            UI.ListBase.AuctionList:getChildCount())
+
+        local selectedHouseId = Cyclopedia.House.ViewState and Cyclopedia.House.ViewState.selectedHouseId or nil
+        local last = nil
+        if selectedHouseId then
+            last = UI.ListBase.AuctionList:getChildById(selectedHouseId)
+        end
+
+        if not last and Cyclopedia.House.lastSelectedHouse then
+            last = UI.ListBase.AuctionList:getChildById(Cyclopedia.House.lastSelectedHouse:getId())
+        end
+
+        if last then
             last = last or UI.ListBase.AuctionList:getChildByIndex(1)
-            Cyclopedia.selectHouse(last)
+            selectHouseWithoutPersist(last)
+        elseif Cyclopedia.House.lastSelectedHouse then
+            local fallbackLast = UI.ListBase.AuctionList:getChildById(Cyclopedia.House.lastSelectedHouse:getId())
+            fallbackLast = fallbackLast or UI.ListBase.AuctionList:getChildByIndex(1)
+            selectHouseWithoutPersist(fallbackLast)
         else
-            Cyclopedia.selectHouse(UI.ListBase.AuctionList:getChildByIndex(1))
+            selectHouseWithoutPersist(UI.ListBase.AuctionList:getChildByIndex(1))
         end
     else
+        if houseMinimap then
+            houseMinimap:setVisible(false)
+        end
+        if houseMapCenterButton then
+            houseMapCenterButton:setVisible(false)
+        end
+        if houseMapMarkButton then
+            houseMapMarkButton:setVisible(false)
+        end
+        if houseMapZoomInButton then
+            houseMapZoomInButton:setVisible(false)
+        end
+        if houseMapZoomOutButton then
+            houseMapZoomOutButton:setVisible(false)
+        end
         UI.LateralBase.MapViewbase.noHouse:setVisible(true)
         UI.LateralBase.MapViewbase.reload:setVisible(false)
         UI.LateralBase.MapViewbase.houseImage:setVisible(false)
+        if houseMapUnknownLabel then
+            houseMapUnknownLabel:setVisible(false)
+        end
         UI.LateralBase.AuctionLabel:setVisible(false)
         UI.LateralBase.AuctionText:setVisible(false)
         UI.LateralBase.icons:destroyChildren()
@@ -1178,56 +1951,135 @@ function Cyclopedia.reloadHouseList()
     end
 end
 
+local function getHouseMetadata(houseId)
+    local fallback = {
+        id = houseId,
+        name = string.format("House %d", houseId),
+        description = "",
+        rent = "0",
+        beds = "0",
+        sqm = "0",
+        entryx = 0,
+        entryy = 0,
+        entryz = 7,
+        gh = false,
+        shop = false
+    }
+
+    if type(HOUSE) ~= "table" then
+        if not HOUSE_METADATA_WARNED then
+            houseLog("warning", "HOUSE metadata table is unavailable; fallback metadata will be used")
+            HOUSE_METADATA_WARNED = true
+        end
+        return fallback
+    end
+
+    local house = HOUSE[houseId]
+    if not house then
+        houseLog("warning", "No metadata for houseId=%d in HOUSE table; using fallback", houseId or 0)
+        return fallback
+    end
+
+    return {
+        id = houseId,
+        name = house.name or fallback.name,
+        description = house.description or "",
+        rent = house.rent or "-",
+        beds = house.beds or "-",
+        sqm = house.sqm or "-",
+        entryx = house.entryx or 0,
+        entryy = house.entryy or 0,
+        entryz = house.entryz or 7,
+        gh = (house.GH or 0) > 0,
+        shop = (house.shop or 0) > 0
+    }
+end
+
 function Cyclopedia.loadHouseList(data, other)
-    if Cyclopedia.House.ignore then
-        Cyclopedia.House.ignore = false
+    if not UI then
+        houseLog("warning", "loadHouseList aborted because UI is nil")
         return
     end
 
     local houses = {}
+    data = data or {}
+    other = other or {}
+    houseLog("info", "loadHouseList start entries=%d extraEntries=%d", #data, #other)
+    local localPlayer = g_game.getLocalPlayer()
+    local playerName = localPlayer and localPlayer:getName() and localPlayer:getName():lower() or nil
 
-    if not table.empty(data) then
-        for i = 0, #data do
-            local value = data[i]
-            local house = HOUSE[value.houseId]
-            if house then
-                local isGuildHall = house.GH > 0 and true or false
+    if #data ~= #other then
+        houseLog("warning", "loadHouseList payload size mismatch data=%d extra=%d", #data, #other)
+    end
+
+    if table.empty(data) then
+        houseLog("info", "loadHouseList received empty data")
+        Cyclopedia.House.Data = {}
+        UI.ListBase.AuctionList:destroyChildren()
+        Cyclopedia.reloadHouseList()
+        return
+    end
+
+    for index, value in ipairs(data) do
+        if type(value) ~= "table" then
+            houseLog("error", "loadHouseList invalid payload entry index=%d type=%s", index, type(value))
+        else
+            local houseId, state, bidHolderLimit, bidEnd, highestBid, selfCanBid, paidUntil, transferTime, transferValue,
+            hasTransferOwner, canAcceptTransfer, canRejectTransfer, canCancelTransfer, canCancelMoveOut = unpack(value)
+            if not houseId then
+                houseLog("error", "loadHouseList missing houseId at index=%d", index)
+            else
+                local details = other[index] or {}
+                local owner, bidName, transferPlayer = unpack(details)
+
+                local metadata = getHouseMetadata(houseId)
+                local isOwner = owner and playerName and owner:lower() == playerName or false
+                local isGuildHall = metadata.gh
+
                 local data_t = {
-                    id = value.houseId,
-                    name = house.name,
-                    description = house.description,
-                    rent = house.rent,
-                    beds = house.beds,
-                    sqm = house.sqm,
+                    id = houseId,
+                    name = metadata.name,
+                    description = metadata.description,
+                    rent = metadata.rent,
+                    beds = metadata.beds,
+                    sqm = metadata.sqm,
+                    entryx = metadata.entryx or 0,
+                    entryy = metadata.entryy or 0,
+                    entryz = metadata.entryz or 7,
                     gh = isGuildHall,
-                    shop = house.shop > 0 and true or false,
+                    shop = metadata.shop,
                     visible = not isGuildHall,
-                    state = value.state,
-                    owner = other[i].owner and other[i].owner or "?",
-                    isYourBid = data[i].bidHolderLimit and data[i].bidHolderLimit > 0 and true or false,
-                    hasBid = data[i].bidEnd and data[i].bidEnd > 0 and true or false,
-                    bidEnd = data[i].bidEnd and data[i].bidEnd or nil,
-                    hightestBid = data[i].hightestBid and data[i].hightestBid or nil,
-                    bidName = other[i].bidName and other[i].bidName or nil,
-                    bidHolderLimit = data[i].bidHolderLimit and data[i].bidHolderLimit or nil,
-                    canBid = data[i].selfCanBid,
-                    rented = data[i].state == 2 and true or false,
-                    paidUntil = data[i].paidUntil and data[i].paidUntil or nil,
-                    isYourOwner = other[i].owner and other[i].owner:lower() == g_game.getLocalPlayer():getName():lower() and
-                        true or false,
-                    inTransfer = data[i].state == 3 and true or false,
-                    transferName = other[i].transferPlayer and other[i].transferPlayer or nil,
-                    transferTime = data[i].time and data[i].time or 0,
-                    transferValue = data[i].transferValue and data[i].transferValue or 0,
-                    isTransferOwner = data[i].hasTransferOwner and data[i].hasTransferOwner > 0 and true or false,
-                    canAcceptTransfer = data[i].canAcceptTransfer and data[i].canAcceptTransfer or 0
+                    state = state,
+                    owner = owner and owner ~= "" and owner or "?",
+                    isYourBid = (bidHolderLimit or 0) > 0,
+                    hasBid = (bidEnd or 0) > 0,
+                    bidEnd = (bidEnd or 0) > 0 and bidEnd or nil,
+                    hightestBid = (highestBid or 0) > 0 and highestBid or nil,
+                    bidName = bidName and bidName ~= "" and bidName or nil,
+                    bidHolderLimit = (bidHolderLimit or 0) > 0 and bidHolderLimit or nil,
+                    canBid = selfCanBid or 0,
+                    rented = state == CyclopediaHouseStates.Rented,
+                    paidUntil = (paidUntil or 0) > 0 and paidUntil or nil,
+                    isYourOwner = isOwner,
+                    inTransfer = state == CyclopediaHouseStates.Transfer,
+                    movingOut = state == CyclopediaHouseStates.MoveOut,
+                    transferName = transferPlayer and transferPlayer ~= "" and transferPlayer or "?",
+                    transferTime = transferTime or 0,
+                    transferValue = transferValue or 0,
+                    isTransferOwner = (hasTransferOwner or 0) > 0,
+                    canAcceptTransfer = canAcceptTransfer or 0,
+                    canRejectTransfer = canRejectTransfer or 0,
+                    canCancelTransfer = canCancelTransfer or 0,
+                    canCancelMoveOut = canCancelMoveOut or 0
                 }
 
                 table.insert(houses, data_t)
+                houseLog("info",
+                    "loadHouseList parsed index=%d houseId=%d state=%d owner=\"%s\" bidName=\"%s\" transferName=\"%s\" bidEnd=%s transferTime=%s canBid=%d",
+                    index, data_t.id or 0, data_t.state or 0, data_t.owner or "?", data_t.bidName or "",
+                    data_t.transferName or "?", tostring(data_t.bidEnd), tostring(data_t.transferTime), data_t.canBid or 0)
             end
         end
-    else
-        UI.ListBase.AuctionList:destroyChildren()
     end
 
     table.sort(houses, function(a, b)
@@ -1235,18 +2087,30 @@ function Cyclopedia.loadHouseList(data, other)
     end)
 
     Cyclopedia.House.Data = houses
+    applyHouseSortByType((Cyclopedia.House.ViewState and Cyclopedia.House.ViewState.sortType) or 1)
+    applyHouseVisibilityByViewState()
+    applyFilterChecksFromViewState()
+    houseViewStateLog("loadHouseList applied viewState to dataset entries=%d", #houses)
+    dumpHouseViewState("loadHouseList:post-apply")
+    houseLog("info", "loadHouseList finished mappedEntries=%d", #houses)
     Cyclopedia.reloadHouseList()
 end
 
 function Cyclopedia.selectTown(widget, text, type)
-    local name = text
-    if type ~= 0 then
-        -- g_game.requestShowHouses(name)
-        Cyclopedia.House.lastTown = name
-    else
-        -- g_game.requestShowHouses("")
-        Cyclopedia.House.lastTown = ""
+    local name = type ~= 0 and text or ""
+    Cyclopedia.House.lastTown = name
+    if Cyclopedia.House.ViewState then
+        Cyclopedia.House.ViewState.cityText = text
+        Cyclopedia.House.ViewState.cityType = type
     end
+    houseViewStateLog("selectTown text='%s' type=%s requestTown='%s'", tostring(text), tostring(type), tostring(name))
+    if name == "" then
+        houseLog("info", "TX action=Show town=\"\" (own houses)")
+    else
+        houseLog("info", "TX action=Show town=\"%s\"", name)
+    end
+    g_game.requestShowHouses(name)
+    rememberHouseViewState()
 end
 
 function Cyclopedia.selectHouse(widget)
@@ -1311,7 +2175,7 @@ function Cyclopedia.selectHouse(widget)
             UI.LateralBase.yourLimitBid:setText(comma_value(widget.data.bidHolderLimit))
             UI.LateralBase.yourLimitBidGold:setVisible(true)
         end
-    elseif widget.data.rented or widget.data.inTransfer then
+    elseif widget.data.rented or widget.data.inTransfer or widget.data.movingOut then
         local formattedDate = os.date("%b %d, %H:%M", widget.data.paidUntil)
         local date = string.format("%s %s", formattedDate, "CET")
 
@@ -1331,6 +2195,12 @@ function Cyclopedia.selectHouse(widget)
             UI.LateralBase.transferValue:setVisible(true)
             UI.LateralBase.transferGold:setVisible(true)
             UI.LateralBase.transferValue:setText(comma_value(widget.data.transferValue))
+        elseif widget.data.movingOut then
+            formattedDate = os.date("%b %d, %H:%M", widget.data.transferTime)
+            date = string.format("%s %s", formattedDate, "CET")
+            UI.LateralBase.subAuctionLabel:setVisible(true)
+            UI.LateralBase.subAuctionText:setVisible(true)
+            UI.LateralBase.subAuctionText:setColoredText("{Move Out Date:  , #909090}" .. date)
         end
     else
         UI.LateralBase.AuctionLabel:setText("Auction")
@@ -1409,6 +2279,18 @@ function Cyclopedia.selectHouse(widget)
         else
             transferButton:setEnabled(true)
         end
+    elseif widget.data.movingOut then
+        local button = g_ui.createWidget("Button", UI.LateralBase)
+        button:setId("moveOutButton")
+        button:setText("Move Out Pending")
+        button:setColor("#C0C0C0")
+        button:setWidth(86)
+        button:setHeight(20)
+        button:addAnchor(AnchorBottom, "parent", AnchorBottom)
+        button:addAnchor(AnchorRight, "parent", AnchorRight)
+        button:setMarginRight(7)
+        button:setMarginBottom(7)
+        button:setEnabled(false)
     else
         local button = g_ui.createWidget("Button", UI.LateralBase)
         button:setId("bidButton")
@@ -1428,7 +2310,7 @@ function Cyclopedia.selectHouse(widget)
             button:setTooltip("")
         elseif widget.data.canBid == 11 then
             button:setTooltip(
-                "A character of your account already holds the highest bid for \nanother house. You may olny bid for one house at the same time.")
+                "A character of your account already holds the highest bid for \nanother house. You may only bid for one house at the same time.")
             button:setTooltipAlign(AlignTopLeft)
             button:setEnabled(false)
         else
@@ -1438,25 +2320,15 @@ function Cyclopedia.selectHouse(widget)
     end
 
     widget:setChecked(true)
-    UI.LateralBase.MapViewbase.noHouse:setVisible(false)
-    UI.LateralBase.MapViewbase.reload:setVisible(true)
-    UI.LateralBase.MapViewbase.houseImage:setVisible(false)
-
-    local imagePath = string.format("/game_cyclopedia/images/houses/%s.png", widget.data.id)
-    if g_resources.fileExists(imagePath) then
-        UI.LateralBase.MapViewbase.noHouse:setVisible(false)
-        UI.LateralBase.MapViewbase.reload:setVisible(false)
-        UI.LateralBase.MapViewbase.houseImage:setVisible(true)
-        UI.LateralBase.MapViewbase.houseImage:setImageSource(imagePath)
-    end
-
-    --[[
-    UI.LateralBase.MapViewbase.houseImage:setVisible(true)
-    HTTP.downloadImage("https://next-stage.pl/images/houses/A%20Horse%20farm.jpeg", function(path, err)
-        if err then g_logger.warning("HTTP error: " .. err .. " - ") return end
-        UI.LateralBase.MapViewbase.houseImage:setImageSource(path)
-      end)
-    ]]--
+    updateHousePreview(widget.data)
 
     Cyclopedia.House.lastSelectedHouse = widget
+    houseViewStateLog("selectHouse id=%s name='%s' suppressPersist=%s", tostring(widget.data and widget.data.id),
+        tostring(widget.data and widget.data.name), tostring(Cyclopedia.House.SuppressSelectionPersist))
+    if not Cyclopedia.House.SuppressSelectionPersist then
+        if Cyclopedia.House.ViewState then
+            Cyclopedia.House.ViewState.selectedHouseId = widget.data and widget.data.id or nil
+        end
+        rememberHouseViewState()
+    end
 end

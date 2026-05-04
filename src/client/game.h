@@ -440,6 +440,7 @@ public:
     void requestBestiaryOverview(std::string_view catName, bool search = false, std::vector<uint16_t> raceIds = {});
     void requestBestiarySearch(uint16_t raceId);
     void requestSendBuyCharmRune(uint8_t runeId, uint8_t action, uint16_t raceId);
+    void requestSetCharacterTitle(uint8_t titleId);
     void requestSendCharacterInfo(uint32_t playerId, Otc::CyclopediaCharacterInfoType_t characterInfoType, uint16_t entriesPerPage = 0, uint16_t page = 0);
     void requestSendCyclopediaHouseAuction(Otc::CyclopediaHouseAuctionType_t type, uint32_t houseId, uint32_t timestamp = 0, uint64_t bidValue = 0, std::string_view name = "");
     void requestBosstiaryInfo();
