@@ -301,4 +301,5 @@ function UIHTML:setInvertedScroll(inverted)
     -- [HTML] style="overflow: scroll; inverted-scroll: true"
     -- temp fix in [html]add <div inverted-scroll="true"></div>
     self:setInverted(inverted)
+	self:updateScrollBars()
 end

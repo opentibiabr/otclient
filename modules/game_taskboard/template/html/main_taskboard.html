@@ -67,7 +67,7 @@
             </div>
 
             <!-- Three task cards -->
-            <div class="taskCardsWrap borderQt">
+            <div class="taskCardsWrap QtBorder">
                 <div *for="local task in self.bountyTasks" class="taskCard">
                     <div class="taskBackdrop" *image-source="task.backdrop">
                         <label class="taskBackdropLabel">{{task.name}}</label>
@@ -297,7 +297,7 @@
              ══════════════════════════════════════════════════════════ -->
         <div class="contentPanel" *visible="self.activeTab == 3">
             <div class="shopOuter">
-                <div class="shopScroll borderQt"
+                <div class="shopScroll QtBorder"
                     layout="type: grid; cell-size: 305 144; cell-spacing: 5; num-columns: 3">
                         <div *for="local item in self.shopItems" class="shopCard" *title="item.title">
                                 <div class="shopPreview">

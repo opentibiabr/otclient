@@ -78,7 +78,7 @@ TextQtEdit {
   padding: 4;
 }
 
-.borderQt {
+.QtBorder {
   --border-width-top: 1;
   --border-color-top: black;
   --border-width-left: 1;

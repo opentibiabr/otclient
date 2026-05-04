@@ -46,7 +46,7 @@
     <!-- Step 1: Vocation Selection -->
     <div class="vocationSelectionList" *if="self.tutorialStep == 0">
         <div class="vocationSelectionCard" *for="local vocation in self.vocations" *for-finished="self:onVocationCardsRendered()" *vocation="vocation">
-            <img class="vocationCardBackground borderQt" *src="'/game_tutorial/assets/images/backdrop_' .. vocation.id" />
+            <img class="vocationCardBackground QtBorder" *src="'/game_tutorial/assets/images/backdrop_' .. vocation.id" />
             <div class="vocationInteractionOverlay"></div>
 
             <img class="vocationTitleBanner" placement="top-center" margin-top="4"
@@ -82,7 +82,7 @@
 
     <!-- Step 0: Welcome to Beginner Island -->
     <div class="welcomeStepContainer" *if="self.tutorialStep == 2">
-        <img id="welcomeHintImage" class="welcomeHintImage borderQt" src="/game_tutorial/assets/images/backdrop_popup_welcometotibia" />
+        <img id="welcomeHintImage" class="welcomeHintImage QtBorder" src="/game_tutorial/assets/images/backdrop_popup_welcometotibia" />
         <div class="confirmationButtonContainer" style="bottom: 10px; left: 70px;">
             <button class="actionButton" text="Journey On" onclick="self:setTutorialStep(0)"></button>
         </div>
