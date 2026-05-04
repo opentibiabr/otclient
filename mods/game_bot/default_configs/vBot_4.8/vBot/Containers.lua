@@ -403,7 +403,12 @@ if rootWidget then
     renameContui.minimiseCont.onClick = function(widget)
         for i, container in ipairs(getContainers()) do
             local containerWindow = container.window
-            containerWindow:setContentHeight(34)
+            if containerWindow then
+                local layout = containerWindow:getChildById('contentsPanel'):getLayout()
+                local step = layout:getCellSize().height + layout:getCellSpacing()
+                local chromeHeight = container:hasPages() and 55 or 31
+                containerWindow:setContentHeight(step + chromeHeight)
+            end
         end
     end
 
@@ -534,9 +539,6 @@ end
 onContainerOpen(function(container, previousContainer)
     if not container.window then return end
     local containerWindow = container.window
-    if not previousContainer then
-        containerWindow:setContentHeight(34)
-    end
 
     local storageVal = config.list
     if storageVal and #storageVal > 0 then
