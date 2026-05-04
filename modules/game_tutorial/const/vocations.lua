@@ -56,4 +56,6 @@ tutorialStep ={
     ArrivalInThais = 7,
     --8-10 arrivalInThais
     combatBasicMonk = 11,
+    WelcomeToTheMainContinent = 13,
+    theWorldAwaits = 14,
 }
