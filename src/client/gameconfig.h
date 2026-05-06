@@ -91,7 +91,7 @@ private:
 
     // Game
     uint8_t m_spriteSize{ 32 };
-    uint16_t m_lastSupportedVersion{ 1511 };
+    uint16_t m_lastSupportedVersion{ 1522 };
     bool m_drawTyping{ false };
     std::string m_typingIcon{ "/images/game/console/typing" };
 
