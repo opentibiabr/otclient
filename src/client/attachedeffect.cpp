@@ -41,6 +41,9 @@ AttachedEffectPtr AttachedEffect::create(const uint16_t thingId, const ThingCate
     }
 
     const auto& obj = std::make_shared<AttachedEffect>();
+    // Effects created directly from a thing id (instead of manager registration)
+    // still need a stable id so Lua lookups like getAttachedEffectById(...) work.
+    obj->m_id = thingId;
     obj->m_thingId = thingId;
     obj->m_thingCategory = category;
     return obj;
