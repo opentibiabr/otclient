@@ -810,6 +810,7 @@ void ProtocolGame::sendRequestTrackerQuestLog(const std::map<uint16_t, std::stri
     if (g_game.getClientVersion() >= 1511) {
         msg->addU8(0); // TO-DO automaticallyTrackNewQuests
         msg->addU8(0); // TO-DO automaticallyUntrackCompletedQuests
+        msg->addU8(0); // TO-DO extra
     }
     send(msg);
 }
