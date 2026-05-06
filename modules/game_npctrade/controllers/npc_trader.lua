@@ -91,7 +91,7 @@ function onOpenNpcTrade(items, currencyId, currencyName)
         controllerNpcTrader.allTradeItems = (controllerNpcTrader.tradeMode == controllerNpcTrader.BUY) and
                                                 controllerNpcTrader.buyItems or controllerNpcTrader.sellItems
         controllerNpcTrader:filterTradeList(controllerNpcTrader.searchText or "")
-        controllerNpcTrader:refreshPlayerGoods()
+        controllerNpcTrader:refreshPlayerGoods(true)
     end
 end
 
@@ -115,7 +115,7 @@ function controllerNpcTrader:setTradeMode(mode)
 
     self.shouldFocusFirst = true
     self:updateListSource()
-    self:refreshPlayerGoods()
+    self:refreshPlayerGoods(true)
 end
 
 function controllerNpcTrader:updateListSource()
@@ -172,6 +172,16 @@ function controllerNpcTrader:onTradeListRendered()
             local child = list:getChildByIndex(i)
             local item = child.tradeItem
             if item then
+                local canTrade = self:canTradeItem(item)
+                local color = canTrade and '#c0c0c0' or '#707070'
+                local infoBlock = child:getChildByIndex(2)
+                if infoBlock then
+                    local nameLabel = infoBlock:getChildById("nameLabel")
+                    local infoLabel = infoBlock:getChildById("infoLabel")
+                    if nameLabel then nameLabel:setColor(color) end
+                    if infoLabel then infoLabel:setColor(color) end
+                end
+
                 child.onMouseRelease = function(widget, mousePos, mouseButton)
                     self:onTradeItemMouseRelease(item, widget, mousePos, mouseButton)
                 end
@@ -312,14 +322,16 @@ function controllerNpcTrader:getSellQuantity(itemPtr)
         return 0
     end
     local id = itemPtr:getId()
-    local inventoryTotal = self.playerItems and self.playerItems[id] or 0
+    local subType = itemPtr:getSubType()
+    local key = id .. "_" .. subType
+    local inventoryTotal = self.playerItems and self.playerItems[key] or 0
 
     if self.ignoreEquipped then
         local player = g_game.getLocalPlayer()
         local equippedCount = 0
         for i = 1, 10 do
             local item = player:getInventoryItem(i)
-            if item and item:getId() == id then
+            if item and item:getId() == id and item:getSubType() == subType then
                 equippedCount = equippedCount + item:getCount()
             end
         end
@@ -329,6 +341,16 @@ function controllerNpcTrader:getSellQuantity(itemPtr)
     return inventoryTotal
 end
 
+function controllerNpcTrader:canTradeItem(item)
+    if self.tradeMode == controllerNpcTrader.BUY then
+        local playerMoney = self:getPlayerMoney()
+        -- Add capacity check if needed, but for now we'll just check price
+        return playerMoney >= item.price
+    else
+        return self:getSellQuantity(item.ptr) > 0
+    end
+end
+
 function controllerNpcTrader:onPlayerGoods(money, items)
     if not items or type(items) ~= "table" then
         return
@@ -336,24 +358,26 @@ function controllerNpcTrader:onPlayerGoods(money, items)
     self.playerMoney = money
     local newPlayerItems = {}
     for _, itemData in ipairs(items) do
-        local id = itemData[1]:getId()
+        local ptr = itemData[1]
+        local key = ptr:getId() .. "_" .. ptr:getSubType()
         local count = itemData[2]
-        newPlayerItems[id] = (newPlayerItems[id] or 0) + count
+        newPlayerItems[key] = (newPlayerItems[key] or 0) + count
     end
     self.playerItems = newPlayerItems
     self:refreshPlayerGoods()
 end
 
-function controllerNpcTrader:refreshPlayerGoods()
+function controllerNpcTrader:refreshPlayerGoods(skipFilter)
     local money = self:getPlayerMoney()
     local display = self:findWidget("#playerMoneyDisplay")
     if display then
         display:setText(tostring(money))
     end
-    if self.tradeMode == controllerNpcTrader.SELL then
-        if self.selectedItem then
-            self:updateAmount(self.amount)
-        end
+    if not skipFilter and self.tradeMode == controllerNpcTrader.SELL then
+        self:filterTradeList(self.searchText or "")
+    end
+    if self.selectedItem then
+        self:updateAmount(self.amount)
     end
 end
 
@@ -385,32 +409,95 @@ function controllerNpcTrader:filterTradeList(searchText)
     local lowerSearch = searchText:lower()
     local filteredItems = {}
 
-    if searchText == "" then
-        filteredItems = self.allTradeItems
-    else
-        for _, item in ipairs(self.allTradeItems) do
-            if item.name:lower():find(lowerSearch, 1, true) then
-                table.insert(filteredItems, item)
-            end
+    for _, item in ipairs(self.allTradeItems) do
+        local includeItem = true
+        if searchText ~= "" and not item.name:lower():find(lowerSearch, 1, true) then
+            includeItem = false
+        end
+
+        if includeItem then
+            table.insert(filteredItems, item)
         end
     end
 
-    self:sortTradeItems(filteredItems)
+    if self.tradeMode == controllerNpcTrader.SELL then
+        table.sort(filteredItems, function(a, b)
+            local qtyA = self:getSellQuantity(a.ptr)
+            local qtyB = self:getSellQuantity(b.ptr)
+            if qtyA ~= qtyB then
+                return qtyA > qtyB
+            end
+            if self.sortBy == 'price' then
+                return a.price > b.price
+            elseif self.sortBy == 'weight' then
+                return a.weight > b.weight
+            else
+                return a.name:lower() < b.name:lower()
+            end
+        end)
+    else
+        self:sortTradeItems(filteredItems)
+    end
 
     self.currentList = filteredItems
     self.tradeItems = {}
     self.loadedItems = 0
     self:loadNextBatch()
 
-    if #self.tradeItems > 0 then
+    if #self.currentList > 0 then
         local found = false
         if self.selectedItem then
-            for _, item in ipairs(self.tradeItems) do
+            for _, item in ipairs(self.currentList) do
                 if item == self.selectedItem then found = true; break end
             end
         end
         if not found then
             self:selectTradeItem(self.tradeItems[1])
         end
+    else
+        self.selectedItem = nil
+        self:updateAmount(0)
+    end
+end
+
+function controllerNpcTrader:sellAll(delayed, exceptions)
+    if type(delayed) == "table" then
+        exceptions = delayed
+        delayed = false
+    end
+    exceptions = exceptions or {}
+    
+    if self.sellAllWithDelayEvent then
+        removeEvent(self.sellAllWithDelayEvent)
+        self.sellAllWithDelayEvent = nil
+    end
+
+    local queue = {}
+    if self.tradeMode ~= controllerNpcTrader.SELL then
+        return
+    end
+
+    for _, entry in ipairs(self.sellItems or {}) do
+        local id = entry.ptr:getId()
+        if not table.find(exceptions, id) then
+            local sellQuantity = self:getSellQuantity(entry.ptr)
+            while sellQuantity > 0 do
+                local maxPossible = g_game.getFeature(GameDoubleShopSellAmount) and 10000 or 100
+                local maxAmount = math.min(sellQuantity, maxPossible)
+
+                if delayed then
+                    g_game.sellItem(entry.ptr, maxAmount, self.ignoreEquipped)
+                    self.sellAllWithDelayEvent = scheduleEvent(function() self:sellAll(true, exceptions) end, 1100)
+                    return
+                end
+                
+                table.insert(queue, { entry.ptr, maxAmount, self.ignoreEquipped })
+                sellQuantity = sellQuantity - maxAmount
+            end
+        end
+    end
+    
+    for _, entry in ipairs(queue) do
+        g_game.sellItem(entry[1], entry[2], entry[3])
     end
 end

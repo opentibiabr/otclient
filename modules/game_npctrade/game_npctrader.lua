@@ -56,6 +56,12 @@ end
 
 function controllerNpcTrader:onCloseNpcTrade()
     controllerNpcTrader.isTradeOpen = false
+    
+    if controllerNpcTrader.sellAllWithDelayEvent then
+        removeEvent(controllerNpcTrader.sellAllWithDelayEvent)
+        controllerNpcTrader.sellAllWithDelayEvent = nil
+    end
+
     -- Clean up state
     controllerNpcTrader.buyItems = {}
     controllerNpcTrader.sellItems = {}
@@ -75,3 +81,10 @@ function controllerNpcTrader:onCloseNpcTrade()
     end
 end
 
+function sellAll(...) -- Vbot Call
+    if g_game.getFeature(GameNpcWindowRedesign) then
+        controllerNpcTrader:sellAll(...)
+    else
+        controllerNpcTrader:sellAllLegacy(...)
+    end
+end

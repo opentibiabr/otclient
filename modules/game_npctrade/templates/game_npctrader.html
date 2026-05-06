@@ -50,7 +50,7 @@
        ============================================================================================== */
     /* Header & Visuals */
     .img { width: 186px; height: 27px; }
-    .title { margin-left: 90px; margin-top: 8px; display: block; width: 20%; }
+    .title { margin-left: 90px; margin-top: 8px; display: block; width: 75%; }
     .podium { width: 65px; height: 67px; margin-left: 10px; }
     .creature-display { width: 64px; height: 64px; margin-left: 10px; margin-top: 10px; }
 
@@ -167,8 +167,8 @@
                 *class-tradeListItemSelected="self.selectedItem == item">
                 <UIItem class="iconBox item" *item="item.ptr" />
                 <div class="itemInfoBlock">
-                    <label class="tradeItemName fontText colorItemGrey" *text="short_text(item.name, 18)"></label>
-                    <label class="tradeItemInfo fontText colorItemGrey" *text="short_text('Price ' .. item.price .. ', ' .. item.weight .. ' oz', 22)"></label>
+                    <label id="nameLabel" class="tradeItemName fontText" *text="short_text(item.name, 18)"></label>
+                    <label id="infoLabel" class="tradeItemInfo fontText" *text="short_text('Price ' .. item.price .. ', ' .. item.weight .. ' oz', 22)"></label>
                 </div>
             </div>
         </div>
