@@ -132,7 +132,7 @@ function InspectController:onGameStart()
             self:onInspection(...)
         end,
         onInspectionState = function(creatureId, state)
-            print(string.format("[InspectController] onInspectionState: creatureId=%s, erroState=%s",
+            g_logger.info(string.format("[InspectController] onInspectionState: creatureId=%s, state=%s TODO: forward state to UI when behavior is defined" ,
                 tostring(creatureId), tostring(state)))
         end
     })

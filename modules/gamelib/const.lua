@@ -509,7 +509,8 @@ InspectObjectTypes = {
     INSPECT_PROFICIENCY = 4
 }
 
+-- INSPECT_CREATURE is speculative: no public server source confirms the tab value.
+-- If the server rejects unknown tab ids, this may produce a protocol error.
 InspectCreaturesTypes = {
-    -- It’s speculation, this feature isn’t in any public repository.
     INSPECT_CREATURE = 4,
 }

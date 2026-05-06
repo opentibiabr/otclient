@@ -2008,6 +2008,9 @@ void Game::inspectCharacter(const uint32_t creatureId, const uint8_t tab)
     if (!canPerformGameAction())
         return;
 
+    if (creatureId == 0)
+        return;
+    
     m_protocolGame->sendInspectCharacter(creatureId, tab);
 }
 
