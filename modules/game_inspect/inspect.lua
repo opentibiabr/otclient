@@ -318,9 +318,14 @@ function InspectController:renderInventorySlots()
                 w:setItem(entry.item)
                 ItemsDatabase.setTier(w, w:getItem(), false)
                 w:setTooltip(entry.name)
+                w:setIcon("")
             else
                 w:clearItem()
                 w:setTooltip("")
+                local icon = InspectConst.CYCLOPEDIA_SLOT_ICONS[slotIndex]
+                if icon then
+                    w:setIcon(icon)
+                end
             end
         end
     end

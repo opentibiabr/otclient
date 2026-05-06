@@ -26,6 +26,18 @@ InspectConst = {
         [8] = "RingSlot",
         [9] = "ammoSlot"
     },
+    CYCLOPEDIA_SLOT_ICONS = {
+        [0] = "/images/inventory/inventory_head",
+        [1] = "/images/inventory/inventory_neck",
+        [2] = "/images/inventory/inventory_back",
+        [3] = "/images/inventory/inventory_torso",
+        [4] = "/images/inventory/inventory_right_hand",
+        [5] = "/images/inventory/inventory_left_hand",
+        [6] = "/images/inventory/inventory_legs",
+        [7] = "/images/inventory/inventory_feet",
+        [8] = "/images/inventory/inventory_finger",
+        [9] = "/images/inventory/inventory_hip"
+    },
 
     LAYOUTS = {
         NPCTRADE = {
