@@ -1691,7 +1691,7 @@ static CyclopediaCharacterInspection readCyclopediaCharacterInspectionData(Proto
 
 void ProtocolGame::parseCyclopediaItemDetail(const InputMessagePtr& msg)
 {
-    const uint8_t windowsType = msg->getU8(); // 0 = character, 1 = item
+    const uint8_t windowsType = msg->getU8(); // 1 = character, 0 = item
     const uint8_t inspectionType = msg->getU8();  // InspectObjectTypes
     const uint32_t creatureId = msg->getU32();
 
