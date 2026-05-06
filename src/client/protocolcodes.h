@@ -55,6 +55,7 @@ namespace Proto
         GameServerSessionEnd = 24,
         GameServerStoreButtonIndicators = 25,
         GameServerBugReport = 26,
+        GameServerNpcDialog = 28,
         GameServerPingBack = 29,
         GameServerPing = 30,
         GameServerChallenge = 31,
@@ -83,6 +84,7 @@ namespace Proto
         GameServerFloorDescription = 75,
 
         // original tibia ONLY
+        GameServerWeeklyTaskData = 91,
         GameServerWeaponProficiencyExperience = 92,
         GameServerImbuementDurations = 93,
         GameServerPassiveCooldown = 94,
