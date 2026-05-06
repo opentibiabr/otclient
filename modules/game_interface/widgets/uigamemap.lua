@@ -68,8 +68,13 @@ function UIGameMap:onDrop(widget, mousePos)
     end
 
     local thingTile = thing:getTile()
-    if thingPos.x ~= 65535 and not thingTile then
-        return false
+    if thingPos.x ~= 65535 then
+        if not thingTile then
+            return false
+        end
+        if thingTile:getThingStackPos(thing) == -1 then
+            return false
+        end
     end
 
     local toPos = tile:getPosition()
