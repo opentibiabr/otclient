@@ -216,6 +216,7 @@ private:
     void parsePlayerHelpers(const InputMessagePtr& msg) const;
     void parseMessage(const InputMessagePtr& msg);
     void parseBugReport(const InputMessagePtr& msg);
+    void parseNpcDialog(const InputMessagePtr& msg);
     void parsePendingGame(const InputMessagePtr& msg);
     void parseEnterGame(const InputMessagePtr& msg);
     void parseLogin(const InputMessagePtr& msg) const;
@@ -380,6 +381,7 @@ private:
     void parseBestiaryCharmsData(const InputMessagePtr& msg);
 
     // 15x
+    void parseWeeklyTaskData(const InputMessagePtr& msg);
     void parseWeaponProficiencyExperience(const InputMessagePtr& msg);
     void parseWeaponProficiencyInfo(const InputMessagePtr& msg);
 
