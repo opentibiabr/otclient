@@ -2,6 +2,7 @@ local UI = nil
 function showBosstiary()
     UI = g_ui.loadUI("bosstiary", contentContainer)
     UI:show()
+    Cyclopedia.Bosstiary.Page = 1
     g_game.requestBosstiaryInfo()
     UI.FilterBase.BaneIcon:setTooltip(
         "Bane\n\nFor unlocking a level, you will receive the following boss points:\nProwess: 5\nExpertise: 15\nMastery: 30")
@@ -436,8 +437,16 @@ function Cyclopedia.LoadBosstiaryCreatures(data)
 
     Cyclopedia.Bosstiary.Creatures = {}
     Cyclopedia.Bosstiary.NotVisibleCreatures = {}
-    Cyclopedia.Bosstiary.Page = 1
+    Cyclopedia.Bosstiary.Page = Cyclopedia.Bosstiary.Page or 1
     Cyclopedia.Bosstiary.TotalPages = math.ceil(#data / maxCategoriesPerPage)
+
+    if Cyclopedia.Bosstiary.TotalPages < 1 then
+        Cyclopedia.Bosstiary.TotalPages = 1
+    end
+
+    if Cyclopedia.Bosstiary.Page > Cyclopedia.Bosstiary.TotalPages then
+        Cyclopedia.Bosstiary.Page = Cyclopedia.Bosstiary.TotalPages
+    end
 
     UI.PageValue:setText(string.format("%d / %d", Cyclopedia.Bosstiary.Page, Cyclopedia.Bosstiary.TotalPages))
 

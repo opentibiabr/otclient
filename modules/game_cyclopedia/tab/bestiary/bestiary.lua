@@ -141,7 +141,7 @@ function showBestiary()
         end
     end, UI.SearchEdit)
 
-    
+    Cyclopedia.Bestiary.Page = 1
     g_game.requestBestiary()
 end
 
@@ -471,10 +471,18 @@ function Cyclopedia.loadBestiarySearchCreatures(data)
     Cyclopedia.Bestiary.Stage = STAGES.SEARCH
     Cyclopedia.onStageChange()
     Cyclopedia.Bestiary.Search = {}
-    Cyclopedia.Bestiary.Page = 1
+    Cyclopedia.Bestiary.Page = Cyclopedia.Bestiary.Page or 1
 
     local maxCategoriesPerPage = 15
     Cyclopedia.Bestiary.TotalSearchPages = math.ceil(#data / maxCategoriesPerPage)
+
+    if Cyclopedia.Bestiary.TotalSearchPages < 1 then
+        Cyclopedia.Bestiary.TotalSearchPages = 1
+    end
+
+    if Cyclopedia.Bestiary.Page > Cyclopedia.Bestiary.TotalSearchPages then
+        Cyclopedia.Bestiary.Page = Cyclopedia.Bestiary.TotalSearchPages
+    end
 
     UI.PageValue:setText(string.format("%d / %d", Cyclopedia.Bestiary.Page, Cyclopedia.Bestiary.TotalSearchPages))
 
@@ -502,10 +510,18 @@ end
 
 function Cyclopedia.loadBestiaryCreatures(data)
     Cyclopedia.Bestiary.Creatures = {}
-    Cyclopedia.Bestiary.Page = 1
+    Cyclopedia.Bestiary.Page = Cyclopedia.Bestiary.Page or 1
 
     local maxCategoriesPerPage = 15
     Cyclopedia.Bestiary.TotalCreaturesPages = math.ceil(#data / maxCategoriesPerPage)
+
+    if Cyclopedia.Bestiary.TotalCreaturesPages < 1 then
+        Cyclopedia.Bestiary.TotalCreaturesPages = 1
+    end
+
+    if Cyclopedia.Bestiary.Page > Cyclopedia.Bestiary.TotalCreaturesPages then
+        Cyclopedia.Bestiary.Page = Cyclopedia.Bestiary.TotalCreaturesPages
+    end
 
     UI.PageValue:setText(string.format("%d / %d", Cyclopedia.Bestiary.Page, Cyclopedia.Bestiary.TotalCreaturesPages))
 
@@ -963,8 +979,13 @@ function Cyclopedia.onParseCyclopediaTracker(trackerType, data)
         widget:setId(raceId)
         widget.trackerType = trackerType
         widget.creature:setOutfit(raceData.outfit)
-        widget.label:setText(name:len() > 12 and name:sub(1, 9) .. "..." or name)
-        widget.kills:setText(kills .. "/" .. maxKills)
+        local killsText = kills .. "/" .. maxKills
+        widget.kills:setText(killsText)
+
+        local maxLen = math.max(11, 18 - string.len(killsText))
+        widget.label:setTextOverflowLength(maxLen)
+        widget.label:setText(name)
+        
         widget.onMouseRelease = onTrackerClick
 
         Cyclopedia.SetBestiaryProgress(54,widget.killsBar2, widget.ProgressBack33, widget.ProgressBack55, kills, uno, dos, maxKills)
