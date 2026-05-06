@@ -1642,7 +1642,7 @@ void ProtocolGame::parseBosstiaryInfo(const InputMessagePtr& msg)
 static void readInspectionDescriptions(const InputMessagePtr& msg, std::vector<std::pair<std::string, std::string>>& descriptions, const uint8_t count)
 {
     descriptions.reserve(count);
-    for (uint8_t i = 0; i < count; ++i) {
+    for (auto i = 0; std::cmp_less(i, count); ++i) {
         auto key = msg->getString();
         auto value = msg->getString();
         descriptions.emplace_back(std::move(key), std::move(value));
@@ -1656,7 +1656,7 @@ static CyclopediaCharacterInspection readCyclopediaCharacterInspectionData(Proto
     data.creatureId = creatureId;
     data.inventoryItems.reserve(inventoryCount);
 
-    for (uint8_t i = 0; i < inventoryCount; ++i) {
+    for (auto i = 0; std::cmp_less(i, inventoryCount); ++i) {
         InspectionInventoryItem entry;
         entry.slot = msg->getU8();
         entry.name = msg->getString();
@@ -1664,7 +1664,7 @@ static CyclopediaCharacterInspection readCyclopediaCharacterInspectionData(Proto
 
         const uint8_t imbuementCount = msg->getU8();
         entry.imbuements.reserve(imbuementCount);
-        for (uint8_t j = 0; j < imbuementCount; ++j) {
+        for (auto j = 0; std::cmp_less(j, imbuementCount); ++j) {
             entry.imbuements.push_back(msg->getU16());
         }
 
@@ -1691,11 +1691,11 @@ static CyclopediaCharacterInspection readCyclopediaCharacterInspectionData(Proto
 
 void ProtocolGame::parseCyclopediaItemDetail(const InputMessagePtr& msg)
 {
-    auto windowsType = msg->getU8(); // 0 = character, 1 = item
+    const uint8_t windowsType = msg->getU8(); // 0 = character, 1 = item
     const uint8_t inspectionType = msg->getU8();  // InspectObjectTypes
     const uint32_t creatureId = msg->getU32();
 
-    if (windowsType == 1) {
+    if (std::cmp_equal(windowsType, 1)) {
         const uint8_t inventoryCount = msg->getU8();
         auto data = readCyclopediaCharacterInspectionData(*this, msg, inventoryCount, creatureId);
         g_lua.callGlobalField("g_game", "onParseCharacterInspection", data);
@@ -1716,10 +1716,9 @@ void ProtocolGame::parseCyclopediaItemDetail(const InputMessagePtr& msg)
 
 void ProtocolGame::parseInspectionState(const InputMessagePtr& msg)
 {
-    auto creatureId = msg->getU32(); // creatureId
-    auto state = msg->getU8(); //state
-
-    g_logger.debug("[parseInspectionState] creatureId: {} state: {}", creatureId, state);
+    const auto creatureId = msg->getU32();
+    const auto state = msg->getU8();
+    g_game.processInspectionState(creatureId, state);
 }
 
 void ProtocolGame::parseAddInventoryItem(const InputMessagePtr& msg)

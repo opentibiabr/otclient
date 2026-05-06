@@ -631,7 +631,7 @@ function createThingMenu(menuPosition, lookThing, useThing, creatureThing)
         if clientVersion > 1098 and modules.game_inspect and (lookThing:isCreature() or canInspect) then
             menu:addOption(tr('Inspect'), function()
                 if lookThing:isCreature() then
-                    g_game.inspectCharacter(lookThing:getId(), 4)
+                    g_game.inspectCharacter(lookThing:getId(), InspectCreaturesTypes.INSPECT_CREATURE)
                 elseif canInspect then
                     g_game.inspectionNormalObject(lookThing:getPosition())
                 end

@@ -17,7 +17,7 @@
     .cyclopediaSmallSlot { width: 32px; height: 32px; position: absolute; }
 
     /* left column: amulet / left-hand / ring */
-    #amouletSlot { top: 42px; }
+    #amuletSlot { top: 42px; }
     #LeftSlot    { top: 113px; }
     #RingSlot    { top: 184px; }
 
@@ -89,7 +89,7 @@
                 <Item id="armorSlot"   class="cyclopediaSlot" virtual="true" onclick="self:onCyclopediaSlotClick(3)"></Item>
                 <Item id="legsSlot"    class="cyclopediaSlot" virtual="true" onclick="self:onCyclopediaSlotClick(6)"></Item>
                 <Item id="feetSlot"    class="cyclopediaSlot" virtual="true" onclick="self:onCyclopediaSlotClick(7)"></Item>
-                <Item id="amouletSlot" class="cyclopediaSlot" virtual="true" onclick="self:onCyclopediaSlotClick(1)"></Item>
+                <Item id="amuletSlot" class="cyclopediaSlot" virtual="true" onclick="self:onCyclopediaSlotClick(1)"></Item>
                 <Item id="LeftSlot"    class="cyclopediaSlot" virtual="true" onclick="self:onCyclopediaSlotClick(5)"></Item>
                 <Item id="RightSlot"   class="cyclopediaSlot" virtual="true" onclick="self:onCyclopediaSlotClick(4)"></Item>
                 <Item id="RingSlot"    class="cyclopediaSlot" virtual="true" onclick="self:onCyclopediaSlotClick(8)"></Item>
@@ -122,9 +122,9 @@
 
                 <!-- up to 3 imbu slots; renderHeader populates right-to-left (index 3→1) -->
                 <div class="slotRow">
-                    <UIButton id="imbuiSlot1" class="QtBorder" visible="false"></UIButton>
-                    <UIButton id="imbuiSlot2" class="QtBorder" visible="false"></UIButton>
-                    <UIButton id="imbuiSlot3" class="QtBorder" visible="false"></UIButton>
+                    <UIButton id="imbuiSlot1" class="QtBorder imbuementSlot" visible="false"></UIButton>
+                    <UIButton id="imbuiSlot2" class="QtBorder imbuementSlot" visible="false"></UIButton>
+                    <UIButton id="imbuiSlot3" class="QtBorder imbuementSlot" visible="false"></UIButton>
                 </div>
             </div>
 

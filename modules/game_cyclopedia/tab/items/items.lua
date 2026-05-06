@@ -1,4 +1,5 @@
 Cyclopedia.Items = {}
+Cyclopedia.Items.currentItemId = nil
 
 -- Additional variables for new features
 local itemsData = {}
@@ -856,6 +857,7 @@ function Cyclopedia.internalCreateItem(data)
             oldSelected:setBackgroundColor("#00000000")
         end
 
+        Cyclopedia.Items.currentItemId = itemId
         g_game.inspectionObject(3, itemId)
 
         if not lootValue:isVisible() then
@@ -1136,6 +1138,7 @@ end
 -- Inspection handler for item details
 function Cyclopedia.Items.onInspection(data)
     if data.inspectionType ~= InspectObjectTypes.INSPECT_CYCLOPEDIA then return end
+    if not data.item or data.item:getId() ~= Cyclopedia.Items.currentItemId then return end
     if UI and UI.InfoBase and UI.InfoBase.DetailsBase then
         Cyclopedia.loadItemDetail(data)
     end

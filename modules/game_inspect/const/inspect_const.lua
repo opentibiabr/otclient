@@ -16,7 +16,7 @@ InspectConst = {
 
     CYCLOPEDIA_SLOT_WIDGETS = {
         [0] = "headSlot",
-        [1] = "amouletSlot",
+        [1] = "amuletSlot",
         [2] = "BagSlot",
         [3] = "armorSlot",
         [4] = "RightSlot",
@@ -31,7 +31,7 @@ InspectConst = {
         NPCTRADE = {
             inspectWindow  = { width = 450,    height = 258 },
             inspectContent = { width = "100%", height = 216 },
-            cyclopediaPanel = { width = 225,   height = 335 },
+            cyclopediaPanel = { width = 225,   height = 216 },
             mainColumn     = { width = "100%", height = 216 },
             headerRow      = { width = "100%", height = 60  },
             itemInfoScroll = { width = "98%",  height = 145 }

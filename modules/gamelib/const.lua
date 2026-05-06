@@ -508,3 +508,8 @@ InspectObjectTypes = {
     INSPECT_CYCLOPEDIA = 3,
     INSPECT_PROFICIENCY = 4
 }
+
+InspectCreaturesTypes = {
+    -- It’s speculation, this feature isn’t in any public repository.
+    INSPECT_CREATURE = 4,
+}

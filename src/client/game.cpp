@@ -527,6 +527,11 @@ void Game::processCyclopediaCharacterInspection(const CyclopediaCharacterInspect
     g_lua.callGlobalField("g_game", "onParseCyclopediaCharacterInspection", data);
 }
 
+void Game::processInspectionState(const uint32_t creatureId, const uint8_t state)
+{
+    g_lua.callGlobalField("g_game", "onInspectionState", creatureId, state);
+}
+
 void Game::processCyclopediaCharacterItemSummary(const CyclopediaCharacterItemSummary& data)
 {
     g_lua.callGlobalField("g_game", "onUpdateCyclopediaCharacterItemSummary", data);
@@ -1998,7 +2003,7 @@ void Game::inspectionObject(const Otc::InspectObjectTypes inspectionType, const 
     m_protocolGame->sendInspectionObject(inspectionType, itemId, itemCount);
 }
 
-void Game::inspectCharacter(uint32_t creatureId, uint8_t tab)
+void Game::inspectCharacter(const uint32_t creatureId, const uint8_t tab)
 {
     if (!canPerformGameAction())
         return;

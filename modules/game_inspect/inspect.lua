@@ -130,14 +130,25 @@ function InspectController:onGameStart()
         end,
         onParseCharacterInspection = function(...)
             self:onInspection(...)
+        end,
+        onInspectionState = function(creatureId, state)
+            print(string.format("[InspectController] onInspectionState: creatureId=%s, erroState=%s",
+                tostring(creatureId), tostring(state)))
         end
     })
 end
 
 function InspectController:onGameEnd()
+    self.state = nil
+    self.layout = nil
+    self.pendingCreatureId = nil
     self:hide()
 end
+
 function InspectController:onTerminate()
+    self.state = nil
+    self.layout = nil
+    self.pendingCreatureId = nil
     self:hide()
 end
 
@@ -240,6 +251,11 @@ function InspectController:render()
         self:renderInventorySlots()
         self:renderOutfit()
         self:renderPanelMode()
+    else
+        local panel = self:findWidget("#cyclopediaPanel")
+        if panel then
+            panel:setVisible(false)
+        end
     end
     self:_renderActive()
 end
