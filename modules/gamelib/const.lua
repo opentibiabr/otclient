@@ -500,3 +500,11 @@ FlipDirection = {
     Horizontal = 1,
     Vertical = 2,
 }
+
+InspectObjectTypes = {
+    INSPECT_NORMALOBJECT = 0,
+    INSPECT_NPCTRADE = 1,
+    INSPECT_PLAYERTRADE = 2,
+    INSPECT_CYCLOPEDIA = 3,
+    INSPECT_PROFICIENCY = 4
+}

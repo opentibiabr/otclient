@@ -1,0 +1,149 @@
+<style>
+    .inspectWindow { width: 450px; height: 258px; display: block; }
+    .inspectContent { width: 100%; height: 216px; margin: 1px; display: flex; flex-direction: row; align-items: flex-start; gap: 5px; }
+
+    /* ── Cyclopedia left panel ─────────────────────────────────────────────── */
+    /* position:relative so inventoryPanel/outfitPanel can overlap */
+    .cyclopediaPanel { width: 225px; height: 335px; display: block; position: relative; flex-shrink: 0; }
+    /* both view panels share same absolute position; only one visible at a time */
+    .cyclopediaViewPanel { width: 225px; height: 285px; display: block; position: absolute; left: 0px; top: 0px; }
+    .inventoryPanel { display: block; }
+    .outfitPanel { display: flex; align-items: center; justify-content: center; }
+    .outfitCreature { width: 128px; height: 128px; }
+
+    /* ── Slot widgets (absolute-positioned within inventoryPanel) ──────────── */
+    /* border color toggled by renderInventorySlots – transparent=unselected, white=selected */
+    .cyclopediaSlot { width: 63px; height: 63px; position: absolute; --image-source: "/images/ui/item66"; border: 1px solid #16161600; }
+    .cyclopediaSmallSlot { width: 32px; height: 32px; position: absolute; }
+
+    /* left column: amulet / left-hand / ring */
+    #amouletSlot { top: 42px; }
+    #LeftSlot    { top: 113px; }
+    #RingSlot    { top: 184px; }
+
+    /* center column: head / armor / legs / feet */
+    #headSlot  { left: 72px; top: -5px; }
+    #armorSlot { left: 72px; top: 67px; }
+    #legsSlot  { left: 72px; top: 139px; }
+    #feetSlot  { left: 72px; top: 211px; }
+
+    /* right column: bag / right-hand / ammo */
+    #BagSlot   { left: 144px; top: 42px; }
+    #RightSlot { left: 144px; top: 113px; }
+    #ammoSlot  { left: 144px; top: 184px; }
+
+    /* ── Panel-toggle buttons (below the slot grid) ────────────────────────── */
+    #previewOutfit { left: 38px; top: 282px; --icon-source: /game_cyclopedia/images/icon-playerdetails; }
+    #previewWheel  { left: 55px; top: 282px; --icon-source: /game_cyclopedia/images/button_wheel; }
+
+    /* ── Main content column ───────────────────────────────────────────────── */
+    .inspectMainColumn { width: 100%; height: 216px; display: block; flex-shrink: 0; }
+
+    /* headerRow holds item icon (item-inspect only), name label, and imbu slots */
+    .headerRow { width: 100%; height: 60px; display: flex; flex-direction: row; align-items: flex-start; gap: 5px; }
+    .itemPreview { width: 64px; height: 64px; flex-shrink: 0; --virtual: true; --draggable: false; --image-source: ""; }
+    .nameLabel { width: 100%; height: 64px; flex-grow: 1; flex-shrink: 1; color: #c0c0c0; text-wrap: true; text-align: bottomleft; --text-auto-resize: true; --text-vertical-auto-resize: true; }
+
+    /* slotRow holds up to 3 imbuement icons; hidden by default, shown by renderHeader */
+    .slotRow { width: fit-content; height: 66px; display: flex; flex-direction: row; flex-shrink: 0; gap: 5px; }
+    .imbuementSlot { width: 66px; height: 66px; --image-source: /images/game/imbuing/slot; border-width: 1; --border-color-top: #161616; --border-color-left: #161616; --border-color-bottom: #787878; --border-color-right: #787878; }
+
+    /* ── Descriptions scroll area ──────────────────────────────────────────── */
+    /* detailsList is cleared and rebuilt on every _renderActive call */
+    .detailsScroll { width: 98%; height: 150px; margin-top: 5px; overflow: scroll; padding: 3px; background-color: #363636; }
+    .detailsList { width: 100%; display: flex; flex-direction: column; gap: 2px; }
+
+    /* detailRow height is dynamic – resizeDetailRows() adjusts it after DOM settles */
+    .detailRow  { width: 98%; min-height: 19px; display: flex; flex-direction: row; align-items: flex-start; gap: 5px; }
+    .detailKey  { width: 148px; flex-shrink: 0; font: verdana-11px-antialised; color: #c0c0c0; text-align: right; text-wrap: true; --text-vertical-auto-resize: true; }
+    .detailValue { width: 165px; flex-grow: 1; flex-shrink: 1; font: verdana-11px-antialised; color: #c0c0c0; text-align: left; text-wrap: true; --text-vertical-auto-resize: true; }
+
+    /* ── Footer ────────────────────────────────────────────────────────────── */
+    .footerSeparator { width: 100%; height: 2px; }
+    .footerRow { width: 100%; height: 22px; }
+    /* copyButton uses image-clip shift to simulate a pressed state */
+    .copyButton { width: 20px; height: 20px; --image-source: /images/game/wheel/change_preset_icon; --image-clip: 0 0 20 20; float: left; }
+    .copyButton:pressed { --image-clip: 0 20 20 20; }
+    /* cyclopediaButton and proficiencyButton are *if-conditional – absent when not applicable */
+    .closeButton       { width: 23px; height: 0px; float: right; }
+    .cyclopediaButton  { width: 36px; height: 0px; float: right; margin-right: 5px; }
+    .proficiencyButton { width: 33px; height: 0px; float: right; margin-right: 5px; }
+</style>
+<html>
+<!-- window dimensions driven by self.layout (NPCTRADE vs CYCLOPEDIA layout table) -->
+<window id="inspectWindow" class="inspectWindow" placement="center" title="Inspect Object" onescape="self:hide()"
+    *width="self.layout.inspectWindow.width" *height="self.layout.inspectWindow.height">
+
+    <!-- flex row – cyclopediaPanel shown on left only for character inspections -->
+    <div id="inspectContent" class="inspectContent"
+        *width="self.layout.inspectContent.width" *height="self.layout.inspectContent.height">
+
+        <!-- entire panel absent for item-only inspections (*if guard) -->
+        <div id="cyclopediaPanel" class="cyclopediaPanel"
+            *if="self:isCyclopediaInspection()"
+            *width="self.layout.cyclopediaPanel.width" *height="self.layout.cyclopediaPanel.height">
+
+            <!-- inventoryPanel shown when viewState=INVENTORY; slots are 0-based widget indices -->
+            <div id="inventoryPanel" class="cyclopediaViewPanel inventoryPanel">
+                <Item id="headSlot"    class="cyclopediaSlot" virtual="true" onclick="self:onCyclopediaSlotClick(0)"></Item>
+                <Item id="armorSlot"   class="cyclopediaSlot" virtual="true" onclick="self:onCyclopediaSlotClick(3)"></Item>
+                <Item id="legsSlot"    class="cyclopediaSlot" virtual="true" onclick="self:onCyclopediaSlotClick(6)"></Item>
+                <Item id="feetSlot"    class="cyclopediaSlot" virtual="true" onclick="self:onCyclopediaSlotClick(7)"></Item>
+                <Item id="amouletSlot" class="cyclopediaSlot" virtual="true" onclick="self:onCyclopediaSlotClick(1)"></Item>
+                <Item id="LeftSlot"    class="cyclopediaSlot" virtual="true" onclick="self:onCyclopediaSlotClick(5)"></Item>
+                <Item id="RightSlot"   class="cyclopediaSlot" virtual="true" onclick="self:onCyclopediaSlotClick(4)"></Item>
+                <Item id="RingSlot"    class="cyclopediaSlot" virtual="true" onclick="self:onCyclopediaSlotClick(8)"></Item>
+                <Item id="BagSlot"     class="cyclopediaSlot" virtual="true" onclick="self:onCyclopediaSlotClick(2)"></Item>
+                <Item id="ammoSlot"    class="cyclopediaSlot" virtual="true" onclick="self:onCyclopediaSlotClick(9)"></Item>
+            </div>
+
+            <!-- outfitPanel shown when viewState=OUTFIT; starts hidden -->
+            <div id="outfitPanel" class="cyclopediaViewPanel outfitPanel" visible="false">
+                <uicreature id="outfitCreature" class="outfitCreature" center="true" idle-animate="true"></uicreature>
+            </div>
+
+            <!-- previewOutfit icon swaps between equipment/player icons on each toggle -->
+            <UIButton id="previewOutfit" class="Button cyclopediaSmallSlot" virtual="true" onclick="self:toggleCyclopediaPreview()"></UIButton>
+            <UIButton id="previewWheel"  class="Button cyclopediaSmallSlot" virtual="true" onclick="self:showWheel()"></UIButton>
+        </div>
+
+        <!-- main column fills remaining width; height bound to layout table -->
+        <div id="inspectMainColumn" class="inspectMainColumn"
+            *width="self.layout.mainColumn.width" *height="self.layout.mainColumn.height">
+
+            <!-- headerRow – inspectItem absent for cyclopedia view (*if guard) -->
+            <div class="headerRow"
+                *width="self.layout.headerRow.width" *height="self.layout.headerRow.height">
+
+                <!-- item icon only shown for non-cyclopedia (single-item) inspections -->
+                <Item id="inspectItem" class="itemPreview" virtual="true" *if="not self:isCyclopediaInspection()"></Item>
+
+                <label id="inspectName" class="nameLabel"></label>
+
+                <!-- up to 3 imbu slots; renderHeader populates right-to-left (index 3→1) -->
+                <div class="slotRow">
+                    <UIButton id="imbuiSlot1" class="QtBorder" visible="false"></UIButton>
+                    <UIButton id="imbuiSlot2" class="QtBorder" visible="false"></UIButton>
+                    <UIButton id="imbuiSlot3" class="QtBorder" visible="false"></UIButton>
+                </div>
+            </div>
+
+            <!-- itemInfo children are destroyed and rebuilt on every _renderActive call -->
+            <div id="itemInfoScroll" class="detailsScroll QtBorder"
+                *width="self.layout.itemInfoScroll.width" *height="self.layout.itemInfoScroll.height">
+                <div id="itemInfo" class="detailsList"></div>
+            </div>
+        </div>
+    </div>
+
+    <hr class="footerSeparator" />
+
+    <!-- conditional buttons rendered only when item supports feature -->
+    <div class="footerRow">
+        <UIButton id="copyInfo"       class="copyButton"        tooltip="Copy information" onclick="self:copyInformation()"></UIButton>
+        <button   id="closeInspect"   class="closeButton"       onclick="self:hide()"              text="Close"></button>
+        <button   id="viewCyclopedia" class="cyclopediaButton"  onclick="self:toggleCyclopedia()"  text="Cyclopedia"  *if="self:isItemCyclopediaable()"></button>
+        <button   id="proficiency"    class="proficiencyButton" onclick="self:toggleProficiency()" text="Proficiency" *if="self:isItemProficiencyable()"></button>
+    </div>
+</window>
+</html>

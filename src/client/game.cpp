@@ -498,9 +498,9 @@ void Game::processModalDialog(const uint32_t id, const std::string_view title, c
     g_lua.callGlobalField("g_game", "onModalDialog", id, title, message, buttonList, enterButton, escapeButton, choiceList, priority);
 }
 
-void Game::processItemDetail(const uint32_t itemId, const std::vector<std::tuple<std::string, std::string>>& descriptions)
+void Game::processItemDetail(const ItemInspectionData& data)
 {
-    g_lua.callGlobalField("g_game", "onParseItemDetail", itemId, descriptions);
+    g_lua.callGlobalField("g_game", "onParseItemDetail", data);
 }
 
 void Game::processCyclopediaCharacterGeneralStats(const CyclopediaCharacterGeneralStats& stats, const std::vector<std::vector<uint16_t>>& skills,
@@ -520,6 +520,11 @@ void Game::processCyclopediaCharacterGeneralStatsBadge(const uint8_t showAccount
                                                 const std::string_view loyaltyTitle, const std::vector<std::tuple<uint32_t, std::string>>& badgesVector)
 {
     g_lua.callGlobalField("g_game", "onParseCyclopediaCharacterBadges", showAccountInformation, playerOnline, playerPremium, loyaltyTitle, badgesVector);
+}
+
+void Game::processCyclopediaCharacterInspection(const CyclopediaCharacterInspection& data)
+{
+    g_lua.callGlobalField("g_game", "onParseCyclopediaCharacterInspection", data);
 }
 
 void Game::processCyclopediaCharacterItemSummary(const CyclopediaCharacterItemSummary& data)
@@ -1991,6 +1996,14 @@ void Game::inspectionObject(const Otc::InspectObjectTypes inspectionType, const 
         return;
 
     m_protocolGame->sendInspectionObject(inspectionType, itemId, itemCount);
+}
+
+void Game::inspectCharacter(uint32_t creatureId, uint8_t tab)
+{
+    if (!canPerformGameAction())
+        return;
+
+    m_protocolGame->sendInspectCharacter(creatureId, tab);
 }
 
 void Game::requestBestiary()

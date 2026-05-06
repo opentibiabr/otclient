@@ -104,6 +104,8 @@ public:
     bool hasClockExpire() { return Thing::hasClockExpire(); }
     bool hasExpire() { return Thing::hasExpire(); }
     bool hasExpireStop() { return Thing::hasExpireStop(); }
+    uint32_t getCyclopediaType() const { return Thing::getCyclopediaType(); }
+    uint32_t getProficiencyId() const { return Thing::getProficiencyId(); }
 
     void setAsync(const bool enable) { m_async = enable; }
 

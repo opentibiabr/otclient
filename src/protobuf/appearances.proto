@@ -183,7 +183,8 @@ message AppearanceFlags {
 	optional bool deco_kit = 57;
 	optional AppearanceFlagSkillWheelGem skillwheel_gem = 58;
 	optional bool dual_wielding = 59;
-	reserved 60, 61, 62, 63, 64, 65, 66, 67, 68, 69;
+	optional AppearanceFlagProficiency proficiency = 61;
+	reserved 60, 62, 63, 64, 65, 66, 67, 68, 69;
 	optional bool hook_south = 70;
 	optional bool hook_east = 71;
 	optional AppearanceFlagTransparencyLevel transparencylevel = 72;
@@ -288,4 +289,8 @@ enum FIXED_FRAME_GROUP {
 	FIXED_FRAME_GROUP_OUTFIT_IDLE = 0;
 	FIXED_FRAME_GROUP_OUTFIT_MOVING = 1;
 	FIXED_FRAME_GROUP_OBJECT_INITIAL = 2;
+}
+
+message AppearanceFlagProficiency {
+  optional uint32 proficiency_id = 1;
 }

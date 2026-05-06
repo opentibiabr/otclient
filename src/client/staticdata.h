@@ -626,6 +626,34 @@ struct DailyRewardData
     uint8_t maxUnlockableDragons;
 };
 
+struct ItemInspectionData
+{
+    uint8_t inspectionType;
+    uint32_t creatureId;
+    std::string name;
+    ItemPtr item;
+    std::vector<std::pair<std::string, std::string>> descriptions;
+};
+
+struct InspectionInventoryItem
+{
+    uint8_t slot;
+    std::string name;
+    ItemPtr item;
+    std::vector<uint16_t> imbuements;
+    std::vector<std::pair<std::string, std::string>> descriptions;
+};
+
+struct CyclopediaCharacterInspection
+{
+    uint8_t inspectionType;
+    uint32_t creatureId{ 0 };
+    std::vector<InspectionInventoryItem> inventoryItems;
+    std::string playerName;
+    Outfit outfit;
+    std::vector<std::pair<std::string, std::string>> playerDescriptions;
+};
+
 struct CyclopediaCharacterOffenceStats
 {
     double critChanceTotal;

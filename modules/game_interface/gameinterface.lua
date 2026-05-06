@@ -626,6 +626,27 @@ function createThingMenu(menuPosition, lookThing, useThing, creatureThing)
         menu:addOption(tr('Look'), function()
             g_game.look(lookThing)
         end, shortcut)
+        local clientVersion = g_game.getClientVersion()
+        local canInspect = lookThing:isItem() and not lookThing:isNotMoveable() and lookThing:isPickupable()
+        if clientVersion > 1098 and modules.game_inspect and (lookThing:isCreature() or canInspect) then
+            menu:addOption(tr('Inspect'), function()
+                if lookThing:isCreature() then
+                    g_game.inspectCharacter(lookThing:getId(), 4)
+                elseif canInspect then
+                    g_game.inspectionNormalObject(lookThing:getPosition())
+                end
+            end, shortcut)
+        end
+        if clientVersion >= 1310 and canInspect and modules.game_cyclopedia and lookThing:getCyclopediaType() > 0 then
+            menu:addOption(tr('Cyclopedia'), function()
+                modules.game_cyclopedia.Cyclopedia.openItem(lookThing:getId())
+            end, shortcut)
+        end
+        if clientVersion >= 1511 and modules.game_proficiency and lookThing:getProficiencyId() > 0 then
+            menu:addOption(tr("Weapon Proficiency"), function()
+                modules.game_proficiency.requestOpenWindow(lookThing)
+            end, shortcut)
+        end
     end
 
     if not classic and not mobile then
@@ -675,7 +696,7 @@ function createThingMenu(menuPosition, lookThing, useThing, creatureThing)
             menu:addOption(tr('Unwrap'), onWrapItem)
         end
 
-        if g_game.getFeature(GameBrowseField) and useThing:getPosition().x ~= 0xffff then
+        if g_game.getFeature(GameBrowseField) and useThing and useThing:getPosition() and useThing:getPosition().x ~= 0xffff then
             menu:addOption(tr('Browse Field'), function()
                 g_game.browseField(useThing:getPosition())
             end)

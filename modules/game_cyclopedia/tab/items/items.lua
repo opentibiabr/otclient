@@ -1108,17 +1108,20 @@ function Cyclopedia.FillItemList()
     end
 end
 
-function Cyclopedia.loadItemDetail(itemId, descriptions)
+function Cyclopedia.loadItemDetail(data)
+    if not (UI and UI.InfoBase and UI.InfoBase.DetailsBase) then
+        return
+    end
+    
     UI.InfoBase.DetailsBase.List:destroyChildren()
 
+    local itemId = data.item:getId()
     local internalData = g_things.getThingType(itemId, ThingCategoryItem)
     local classification = internalData:getClassification()
 
-    for _, description in ipairs(descriptions) do
+    for _, description in ipairs(data.descriptions) do
         local widget = g_ui.createWidget("UIWidget", UI.InfoBase.DetailsBase.List)
-        local key = description[1]
-        local value = description[2]
-        widget:setText(key .. ": " .. value)
+        widget:setText(description.key .. ": " .. description.value)
         widget:setColor("#C0C0C0")
         widget:setTextWrap(true)
     end
@@ -1131,11 +1134,32 @@ function Cyclopedia.loadItemDetail(itemId, descriptions)
 end
 
 -- Inspection handler for item details
-function Cyclopedia.Items.onInspection(inspectType, itemName, item, descriptions)
-    if inspectType ~= 1 then return end
+function Cyclopedia.Items.onInspection(data)
+    if data.inspectionType ~= InspectObjectTypes.INSPECT_CYCLOPEDIA then return end
     if UI and UI.InfoBase and UI.InfoBase.DetailsBase then
-        Cyclopedia.loadItemDetail(item:getId(), descriptions)
+        Cyclopedia.loadItemDetail(data)
     end
+end
+
+function Cyclopedia.openItem(arg)
+    local itemName
+    if type(arg) == 'number' then
+        local thingType = g_things.getThingType(arg, ThingCategoryItem)
+        itemName = thingType and thingType:getName() or ''
+    else
+        itemName = tostring(arg or '')
+    end
+    if itemName == '' then return end
+    if controllerCyclopedia and controllerCyclopedia.ui and controllerCyclopedia.ui:isVisible() then
+        SelectWindow('items', false)
+    else
+        show('items')
+    end
+    scheduleEvent(function()
+        if Cyclopedia.ItemSearch then
+            Cyclopedia.ItemSearch(itemName, false)
+        end
+    end, 100)
 end
 
 -- Utility function for comma-separated values

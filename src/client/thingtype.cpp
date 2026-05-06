@@ -393,7 +393,10 @@ void ThingType::applyAppearanceFlags(const appearances::AppearanceFlags& flags)
     // charged to expire
     // corpse
     // player_corpse
-    // cyclopediaitem
+    if (flags.has_cyclopediaitem()) {
+        m_cyclopediaType = flags.cyclopediaitem().cyclopedia_type();
+    }
+
     // ammo
     if (flags.has_ammo() && flags.ammo()) {
         m_flags |= ThingFlagAttrAmmo;
@@ -441,6 +444,10 @@ void ThingType::applyAppearanceFlags(const appearances::AppearanceFlags& flags)
 
     if (flags.has_dual_wielding() && flags.dual_wielding()) {
         m_flags |= ThingFlagAttrDualWield;
+    }
+
+    if (flags.has_proficiency()) {
+        m_proficiencyId = flags.proficiency().proficiency_id();
     }
 }
 #endif
