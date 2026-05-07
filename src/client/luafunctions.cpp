@@ -396,6 +396,7 @@ void Client::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_game", "sendGmTeleport", &Game::sendGmTeleport, &g_game);
     g_lua.bindSingletonFunction("g_game", "inspectionNormalObject", &Game::inspectionNormalObject, &g_game);
     g_lua.bindSingletonFunction("g_game", "inspectionObject", &Game::inspectionObject, &g_game);
+    g_lua.bindSingletonFunction("g_game", "inspectCharacter", &Game::inspectCharacter, &g_game);
     g_lua.bindSingletonFunction("g_game", "requestBestiary", &Game::requestBestiary, &g_game);
     g_lua.bindSingletonFunction("g_game", "requestBestiaryOverview", &Game::requestBestiaryOverview, &g_game);
     g_lua.bindSingletonFunction("g_game", "requestBestiarySearch", &Game::requestBestiarySearch, &g_game);
@@ -533,6 +534,8 @@ void Client::registerLuaFunctions()
     g_lua.bindClassMemberFunction<Thing>("isLyingCorpse", &Thing::isLyingCorpse);
     g_lua.bindClassMemberFunction<Thing>("getDefaultAction", &Thing::getDefaultAction);
     g_lua.bindClassMemberFunction<Thing>("getClassification", &Thing::getClassification);
+    g_lua.bindClassMemberFunction<Thing>("getCyclopediaType", &Thing::getCyclopediaType);
+    g_lua.bindClassMemberFunction<Thing>("getProficiencyId", &Thing::getProficiencyId);
     g_lua.bindClassMemberFunction<Thing>("setHighlight", &Thing::lua_setHighlight);
     g_lua.bindClassMemberFunction<Thing>("isHighlighted", &Thing::isHighlighted);
     g_lua.bindClassMemberFunction<Thing>("getExactSize", &Thing::getExactSize);
@@ -766,6 +769,8 @@ void Client::registerLuaFunctions()
     g_lua.bindClassMemberFunction<ThingType>("hasSkillWheelGem", &ThingType::hasSkillWheelGem);
     g_lua.bindClassMemberFunction<ThingType>("getSkillWheelGemQualityId", &ThingType::getSkillWheelGemQualityId);
     g_lua.bindClassMemberFunction<ThingType>("getSkillWheelGemVocationId", &ThingType::getSkillWheelGemVocationId);
+    g_lua.bindClassMemberFunction<ThingType>("getCyclopediaType", &ThingType::getCyclopediaType);
+    g_lua.bindClassMemberFunction<ThingType>("getProficiencyId", &ThingType::getProficiencyId);
 #ifdef FRAMEWORK_EDITOR
     g_lua.bindClassMemberFunction<ThingType>("exportImage", &ThingType::exportImage);
 #endif
@@ -798,6 +803,8 @@ void Client::registerLuaFunctions()
     g_lua.bindClassMemberFunction<Item>("hasClockExpire", &Item::hasClockExpire);
     g_lua.bindClassMemberFunction<Item>("hasExpire", &Item::hasExpire);
     g_lua.bindClassMemberFunction<Item>("hasExpireStop", &Item::hasExpireStop);
+    g_lua.bindClassMemberFunction<Item>("getCyclopediaType", &Item::getCyclopediaType);
+    g_lua.bindClassMemberFunction<Item>("getProficiencyId", &Item::getProficiencyId);
     g_lua.bindClassMemberFunction<Item>("isDualWield", &Item::isDualWield);
 #ifdef FRAMEWORK_EDITOR
     g_lua.bindClassMemberFunction<Item>("getName", &Item::getName);

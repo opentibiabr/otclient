@@ -158,6 +158,8 @@ public:
 
     uint32_t getSkillWheelGemQualityId() { return m_skillWheelGem.gem_quality_id; }
     uint32_t getSkillWheelGemVocationId() { return m_skillWheelGem.vocation_id; }
+    uint32_t getCyclopediaType() { return m_cyclopediaType; }
+    uint32_t getProficiencyId() { return m_proficiencyId; }
 
     bool isDecoKit() { return (m_flags & ThingFlagAttrDecoKit); }
     bool isLoading() const { return m_loading.load(std::memory_order_acquire); }
@@ -245,6 +247,8 @@ private:
     uint16_t m_groundSpeed{ 0 };
     uint16_t m_maxTextLength{ 0 };
     uint16_t m_upgradeClassification{ 0 };
+    uint32_t m_cyclopediaType{ 0 };
+    uint32_t m_proficiencyId{ 0 };
 
     uint64_t m_flags{ 0 };
 

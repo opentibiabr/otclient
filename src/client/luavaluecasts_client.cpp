@@ -1124,6 +1124,93 @@ int push_luavalue(const CyclopediaCharacterRecentPvPKills& data) {
     return 1;
 }
 
+int push_luavalue(const InspectionInventoryItem& entry) {
+    g_lua.createTable(0, 5);
+    g_lua.pushInteger(entry.slot);
+    g_lua.setField("slot");
+    g_lua.pushString(entry.name);
+    g_lua.setField("name");
+    g_lua.pushObject(entry.item);
+    g_lua.setField("item");
+    g_lua.createTable(entry.imbuements.size(), 0);
+    for (size_t i = 0; i < entry.imbuements.size(); ++i) {
+        g_lua.pushInteger(entry.imbuements[i]);
+        g_lua.rawSeti(i + 1);
+    }
+    g_lua.setField("imbuements");
+    g_lua.createTable(entry.descriptions.size(), 0);
+    for (size_t i = 0; i < entry.descriptions.size(); ++i) {
+        g_lua.createTable(0, 2);
+        g_lua.pushString(entry.descriptions[i].first);
+        g_lua.setField("key");
+        g_lua.pushString(entry.descriptions[i].second);
+        g_lua.setField("value");
+        g_lua.rawSeti(i + 1);
+    }
+    g_lua.setField("descriptions");
+    return 1;
+}
+
+int push_luavalue(const CyclopediaCharacterInspection& data) {
+    g_lua.createTable(0, 7);
+    g_lua.pushInteger(data.inspectionType);
+    g_lua.setField("inspectionType");
+    g_lua.pushInteger(data.creatureId);
+    g_lua.setField("creatureId");
+    g_lua.createTable(data.inventoryItems.size(), 0);
+    for (size_t i = 0; i < data.inventoryItems.size(); ++i) {
+        push_luavalue(data.inventoryItems[i]);
+        g_lua.rawSeti(i + 1);
+    }
+    g_lua.setField("inventoryItems");
+    g_lua.pushString(data.playerName);
+    g_lua.setField("playerName");
+    push_luavalue(data.outfit);
+    g_lua.setField("outfit");
+    g_lua.createTable(data.playerDescriptions.size(), 0);
+    for (size_t i = 0; i < data.playerDescriptions.size(); ++i) {
+        g_lua.createTable(0, 2);
+        g_lua.pushString(data.playerDescriptions[i].first);
+        g_lua.setField("key");
+        g_lua.pushString(data.playerDescriptions[i].second);
+        g_lua.setField("value");
+        g_lua.rawSeti(i + 1);
+    }
+    g_lua.setField("playerDescriptions");
+    return 1;
+}
+
+int push_luavalue(const ItemInspectionData& data) {
+    g_lua.createTable(0, 5);
+    g_lua.pushInteger(data.inspectionType);
+    g_lua.setField("inspectionType");
+    g_lua.pushInteger(data.creatureId);
+    g_lua.setField("creatureId");
+    g_lua.pushString(data.name);
+    g_lua.setField("name");
+    g_lua.pushObject(data.item);
+    g_lua.setField("item");
+
+    g_lua.createTable(data.imbuements.size(), 0);
+    for (size_t i = 0; i < data.imbuements.size(); ++i) {
+        g_lua.pushInteger(data.imbuements[i]);
+        g_lua.rawSeti(i + 1);
+    }
+    g_lua.setField("imbuements");
+
+    g_lua.createTable(data.descriptions.size(), 0);
+    for (size_t i = 0; i < data.descriptions.size(); ++i) {
+        g_lua.createTable(0, 2);
+        g_lua.pushString(data.descriptions[i].first);
+        g_lua.setField("key");
+        g_lua.pushString(data.descriptions[i].second);
+        g_lua.setField("value");
+        g_lua.rawSeti(i + 1);
+    }
+    g_lua.setField("descriptions");
+    return 1;
+}
+
 int push_luavalue(const RecentDeathEntry& entry) {
     g_lua.createTable(0, 2);
     g_lua.pushInteger(entry.timestamp);
