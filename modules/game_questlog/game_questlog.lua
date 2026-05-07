@@ -536,11 +536,15 @@ end
 =                        miniWindows                     =
 =================================================== ]] --
 function onOpenTracker()
-    buttonQuestLogTrackerButton:setOn(true)
+    if buttonQuestLogTrackerButton then
+        buttonQuestLogTrackerButton:setOn(true)
+    end
 end
 
 function onCloseTracker()
-    buttonQuestLogTrackerButton:setOn(false)
+    if buttonQuestLogTrackerButton then
+        buttonQuestLogTrackerButton:setOn(false)
+    end
 end
 
 local function showQuestTracker()
