@@ -654,6 +654,11 @@ function EnterGame.tryHttpLogin(clientVersion, httpLogin)
         elseif not path or path == "" then
             path = "/"
         end
+        local hostPort = host:match(":(%d+)$")
+        if hostPort then
+            host = host:gsub(":%d+$", "")
+            G.port = tonumber(hostPort)
+        end
     end
 
     if not G.port then
