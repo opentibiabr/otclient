@@ -137,6 +137,8 @@ ChannelEventFormats = {
 MAX_HISTORY = 500
 MAX_LINES = 100
 HELP_CHANNEL = 9
+local LOOT_CHANNEL_ID = 0xFFF0
+local OWNER_CHANNEL_ID = 0xFFFF
 
 consolePanel = nil
 consoleContentPanel = nil
@@ -164,6 +166,8 @@ local readOnlyButton = nil
 local readOnlyPanel = nil
 local activeactiveReadOnlyTabName = ""
 local readOnlyModeEnabled = false
+local inviteNameWindow = nil
+local excludeNameWindow = nil
 
 -- Option: show underline/dots for highlighted text in console
 local showHighlightedUnderline = false
@@ -470,6 +474,8 @@ function consoleController:onTerminate()
         channelsWindow = nil
     end
 
+    destroyOwnChannelNameWindows()
+
     if communicationWindow then
         communicationWindow:destroy()
         communicationWindow = nil
@@ -603,6 +609,7 @@ function clear()
         end
     end
     channels = {}
+    ownPrivateName = nil
 
     if defaultTab then
         defaultTab.tabPanel:getChildById('consoleBuffer'):destroyChildren()
@@ -627,6 +634,9 @@ function clear()
         channelsWindow:destroy()
         channelsWindow = nil
     end
+
+    destroyOwnChannelNameWindows()
+
     if g_game.getClientVersion() < 862 then
         Keybind.delete("Dialogs", "Open Rule Violation")
     end
@@ -649,6 +659,81 @@ end
 function setTextEditText(text)
     consoleTextEdit:setText(text)
     consoleTextEdit:setCursorPos(-1)
+end
+
+function destroyOwnChannelNameWindows()
+    if inviteNameWindow then
+        inviteNameWindow:destroy()
+        inviteNameWindow = nil
+    end
+
+    if excludeNameWindow then
+        excludeNameWindow:destroy()
+        excludeNameWindow = nil
+    end
+end
+
+function showOwnChannelPlayerWindow(windowType)
+    local isInviteWindow = windowType == 'invite'
+    local window = isInviteWindow and inviteNameWindow or excludeNameWindow
+    local styleName = isInviteWindow and 'InviteNameWindow' or 'ExcludeNameWindow'
+
+    if not window then
+        window = g_ui.createWidget(styleName, rootWidget)
+        if isInviteWindow then
+            inviteNameWindow = window
+        else
+            excludeNameWindow = window
+        end
+    end
+
+    local textEdit = window:recursiveGetChildById('characterName')
+    local okButton = window:recursiveGetChildById('ok')
+    local cancelButton = window:recursiveGetChildById('cancel')
+
+    local closeWindow = function()
+        if textEdit then
+            textEdit:setText('', false)
+        end
+        window:hide()
+    end
+
+    if cancelButton then
+        cancelButton.onClick = closeWindow
+    end
+
+    if okButton then
+        okButton.onClick = function()
+            local characterName = textEdit and textEdit:getText():trim() or ''
+            if #characterName == 0 then
+                return
+            end
+
+            if isInviteWindow then
+                g_game.inviteToOwnChannel(characterName)
+            else
+                g_game.excludeFromOwnChannel(characterName)
+            end
+
+            closeWindow()
+        end
+    end
+
+    window.onEnter = function()
+        if okButton and okButton.onClick then
+            okButton.onClick()
+        end
+    end
+
+    window.onEscape = closeWindow
+
+    window:show()
+    window:raise()
+    window:focus()
+    if textEdit then
+        textEdit:setText('', false)
+        textEdit:focus()
+    end
 end
 
 function openHelp()
@@ -724,13 +809,20 @@ function removeTab(tab)
     elseif tab.violationChatName then
         g_game.closeRuleViolation(tab.violationChatName)
     elseif tab.channelId then
+        if tab.ownerPrivateChannel or tab.channelId == OWNER_CHANNEL_ID then
+            ownPrivateName = nil
+        end
+
         -- notificate the server that we are leaving the channel
         for k, v in pairs(channels) do
             if (k == tab.channelId) then
                 channels[k] = nil
             end
         end
-        g_game.leaveChannel(tab.channelId)
+
+        if tab.channelId ~= LOOT_CHANNEL_ID and tab.channelId ~= OWNER_CHANNEL_ID then
+            g_game.leaveChannel(tab.channelId)
+        end
     elseif tab:getText() == 'NPCs' then
         g_game.closeNpcChannel()
     end
@@ -1319,7 +1411,19 @@ function processChannelTabMenu(tab, mousePos, mouseButton)
 
     local worldName = g_game.getWorldName()
     local characterName = g_game.getCharacterName()
-    channelName = tab:getText()
+    local channelName = tab:getText()
+    local isOwnPrivateTab = tab.ownerPrivateChannel or (ownPrivateName and channelName == ownPrivateName)
+
+    if isOwnPrivateTab then
+        menu:addOption(tr('Invite player'), function()
+            showOwnChannelPlayerWindow('invite')
+        end)
+        menu:addOption(tr('Exclude player'), function()
+            showOwnChannelPlayerWindow('exclude')
+        end)
+        menu:addSeparator()
+    end
+
     if tab ~= defaultTab and tab ~= serverTab then
         menu:addOption(tr('Close'), function()
             removeTab(channelName)
@@ -1536,13 +1640,17 @@ function sendMessage(message, tab)
     end
 
     local speaktypedesc
-    if (channel or tab == defaultTab) and not chatCommandPrivateReady then
-        if tab == defaultTab then
+    local isLootChannelTab = channel == LOOT_CHANNEL_ID
+    if (channel ~= nil or tab == defaultTab or isLootChannelTab) and not chatCommandPrivateReady then
+        if tab == defaultTab or isLootChannelTab then
             speaktypedesc = chatCommandSayMode or
                                 SayModes[consolePanel:getChildById('sayModeButton').sayMode].speakTypeDesc
             if speaktypedesc ~= 'say' then
                 sayModeChange(2)
             end -- head back to say mode
+            if isLootChannelTab then
+                channel = 0
+            end
         else
             speaktypedesc = chatCommandSayMode or 'channelYellow'
         end
@@ -1744,7 +1852,11 @@ function onTalk(name, level, mode, message, channelId, creaturePos)
 end
 
 function onOpenChannel(channelId, channelName)
-    addChannel(channelName, channelId)
+    local tab = addChannel(channelName, channelId)
+    if channelId == OWNER_CHANNEL_ID and tab then
+        tab.ownerPrivateChannel = true
+        ownPrivateName = channelName
+    end
 end
 
 function onOpenPrivateChannel(receiver)
@@ -1754,12 +1866,19 @@ end
 function onOpenOwnPrivateChannel(channelId, channelName)
     local privateTab = getTab(channelName)
     if privateTab == nil then
-        addChannel(channelName, channelId)
+        privateTab = addChannel(channelName, channelId)
+    else
+        privateTab.channelId = channelId
     end
+    privateTab.ownerPrivateChannel = true
     ownPrivateName = channelName
 end
 
 function onCloseChannel(channelId)
+    if channelId == OWNER_CHANNEL_ID then
+        ownPrivateName = nil
+    end
+
     local channel = channels[channelId]
     if channel then
         local tab = getTab(channel)
@@ -1829,10 +1948,23 @@ function doChannelListSubmit()
         if not selectedChannelLabel then
             return
         end
-        if selectedChannelLabel.channelId == 0xFFFF then
+
+        if selectedChannelLabel.channelId == 0 and selectedChannelLabel:getText() == 'NPCs' then
+            local npcTab = getTab('NPCs')
+            if not npcTab then
+                npcTab = addTab('NPCs', true)
+                npcTab.npcChat = true
+            else
+                consoleTabBar:selectTab(npcTab)
+            end
+        elseif selectedChannelLabel.channelId == OWNER_CHANNEL_ID then
             g_game.openOwnChannel()
+        elseif selectedChannelLabel.channelId == LOOT_CHANNEL_ID then
+            local lootTab = getChannelTab(LOOT_CHANNEL_ID) or addChannel(selectedChannelLabel:getText(), LOOT_CHANNEL_ID)
+            if lootTab then
+                consoleTabBar:selectTab(lootTab)
+            end
         else
-            g_game.leaveChannel(selectedChannelLabel.channelId)
             g_game.joinChannel(selectedChannelLabel.channelId)
         end
     end
@@ -1841,8 +1973,30 @@ function doChannelListSubmit()
 end
 
 function onChannelList(channelList)
+    local hasNpcChannel = false
+    local hasLootChannel = false
+    for _, data in ipairs(channelList) do
+        if tonumber(data[1]) == 0 and data[2] == 'NPCs' then
+            hasNpcChannel = true
+        elseif tonumber(data[1]) == LOOT_CHANNEL_ID then
+            hasLootChannel = true
+        end
+        if hasNpcChannel and hasLootChannel then
+            break
+        end
+    end
+
+    if not hasNpcChannel then
+        table.insert(channelList, { 0, 'NPCs' })
+    end
+
+    if not hasLootChannel then
+        table.insert(channelList, { LOOT_CHANNEL_ID, tr('Loot') })
+    end
+
     if channelsWindow then
         channelsWindow:destroy()
+        channelsWindow = nil
     end
     channelsWindow = g_ui.displayUI('channelswindow')
     local channelListPanel = channelsWindow:getChildById('channelList')
@@ -1856,8 +2010,18 @@ function onChannelList(channelList)
     g_keyboard.bindKeyPress('Up', function()
         channelListPanel:focusPreviousChild(KeyboardFocusReason)
     end, channelsWindow)
+    local selectedBackground = "#ffffff22"
+    local count = 0
+    channelListPanel.onChildFocusChange = function(self, focusedChild, oldFocusedChild)
+        if oldFocusedChild and oldFocusedChild.baseBackground then
+            oldFocusedChild:setBackgroundColor(oldFocusedChild.baseBackground)
+        end
+        if focusedChild then
+            focusedChild:setBackgroundColor(selectedBackground)
+        end
+    end
 
-    for k, v in pairs(channelList) do
+    for _, v in ipairs(channelList) do
         local channelId = v[1]
         local channelName = v[2]
 
@@ -1865,10 +2029,18 @@ function onChannelList(channelList)
             local label = g_ui.createWidget('ChannelListLabel', channelListPanel)
             label.channelId = channelId
             label:setText(channelName)
-
+            local backgroundColor = (count % 2 == 0) and "#484848" or "#414141"
+            label.baseBackground = backgroundColor
+            label:setBackgroundColor(backgroundColor)
             label:setPhantom(false)
             label.onDoubleClick = doChannelListSubmit
+            count = count + 1
         end
+    end
+
+    local firstChild = channelListPanel:getFirstChild()
+    if firstChild then
+        channelListPanel:focusChild(firstChild)
     end
 end
 
@@ -2155,7 +2327,11 @@ function consoleController:onGameStart()
         if savedChannels then
             for channelName, channelId in pairs(savedChannels) do
                 channelId = tonumber(channelId)
-                if channelId ~= -1 and channelId < 100 then
+                if channelId == LOOT_CHANNEL_ID then
+                    if not getChannelTab(LOOT_CHANNEL_ID) then
+                        addChannel(channelName, LOOT_CHANNEL_ID)
+                    end
+                elseif channelId ~= -1 and channelId < 100 then
                     if not table.find(channels, channelId) then
                         g_game.joinChannel(channelId)
                         table.insert(ignoredChannels, channelId)

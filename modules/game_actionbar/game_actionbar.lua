@@ -497,7 +497,7 @@ function onSpellsChange(player, list)
     for _, spellId in pairs(list) do
         local spell = Spells.getSpellByClientId(spellId)
         if spell then
-            spellListData[tostring(spellId)] = spell
+            spellListData[tostring(spell.id)] = spell
         end
     end
 end

@@ -33,6 +33,7 @@ PlayerStates = {
 	GoshnarTaint5 = 33554432,
 	NewManaShield = 67108864,
 	Agony = 134217728,
+    Powerless = 268435456,
 -- force icons
 	Rewards = 30
 }
@@ -66,6 +67,7 @@ Icons[PlayerStates.GoshnarTaint4] = { clip = 25, tooltip = tr('You are GoshnarTa
 Icons[PlayerStates.GoshnarTaint5] = { clip = 26, tooltip = tr('You are GoshnarTaint'),  id = 'condition_GoshnarTaint5' }
 Icons[PlayerStates.NewManaShield] = {  clip = 27, tooltip = tr('You are NewManaShield'), id = 'condition_NewManaShield' }
 Icons[PlayerStates.Agony] = { clip = 28, tooltip = tr('You are Agony'),  id = 'condition_Agony' }
+Icons[PlayerStates.Powerless] = { clip = 29, tooltip = tr('You are Powerless'),  id = 'condition_Powerless' }
 Icons[PlayerStates.Rewards] = { clip = 30, tooltip = tr('Rewards'),  id = 'condition_Rewards' }
 Icons[PlayerStates.Hungry] = { clip = 32, tooltip = tr('You are hungry'),  id = 'condition_hungry' }
 

@@ -348,6 +348,9 @@ void ProtocolGame::parseMessage(const InputMessagePtr& msg)
                 case Proto::GameServerSendGameNews:
                     parseGameNews(msg);
                     break;
+                case Proto::GameServerCloseDepotSearch:
+                    parseCloseDepotSearch(msg);
+                    break;
                 case Proto::GameServerSendBlessDialog:
                     parseBlessDialog(msg);
                     break;
@@ -793,8 +796,7 @@ void ProtocolGame::parseBlessings(const InputMessagePtr& msg) const
     if (g_game.getClientVersion() >= 1200) {
         blessVisualState = msg->getU8(); // 1 = Disabled | 2 = normal | 3 = green
     }
-    m_localPlayer->setBlessings(blessings);
-    g_lua.callGlobalField("g_game", "onBlessingsChange", blessings, blessVisualState);
+    m_localPlayer->setBlessings(blessings, blessVisualState);
 }
 
 void ProtocolGame::parsePreset(const InputMessagePtr& msg)
@@ -2821,6 +2823,17 @@ void ProtocolGame::parseOpenOwnPrivateChannel(const InputMessagePtr& msg)
 {
     const uint16_t channelId = msg->getU16();
     const auto& channelName = msg->getString();
+    if (g_game.getFeature(Otc::GameChannelPlayerList)) {
+        const uint16_t joinedPlayers = msg->getU16();
+        for (auto i = 0; i < joinedPlayers; ++i) {
+            g_game.formatCreatureName(msg->getString()); // player name
+        }
+
+        const uint16_t invitedPlayers = msg->getU16();
+        for (auto i = 0; i < invitedPlayers; ++i) {
+            g_game.formatCreatureName(msg->getString()); // player name
+        }
+    }
 
     g_game.processOpenOwnPrivateChannel(channelId, channelName);
 }
@@ -3384,8 +3397,10 @@ void ProtocolGame::parseBestiaryMonsterData(const InputMessagePtr& msg)
             data.combat[elementId] = elementValue;
         }
 
-        msg->getU16();
-        data.location = msg->getString();
+        const uint16_t locationCount = msg->getU16();
+        if (locationCount > 0) {
+            data.location = msg->getString();
+        }
     }
     if (g_game.getClientVersion() < 1410) {
         if (data.currentLevel > 3) {
@@ -4269,10 +4284,8 @@ ItemPtr ProtocolGame::getItem(const InputMessagePtr& msg, int id)
 
     if (g_game.getFeature(Otc::GameThingClock)) {
         if (item->hasClockExpire() || item->hasExpire() || item->hasExpireStop()) {
-            if (item->getId() != 23398) {
-                item->setDurationTime(msg->getU32());
-                msg->getU8(); // Is brand-new
-            }
+            item->setDurationTime(msg->getU32());
+            msg->getU8(); // Is brand-new
         }
     }
 
@@ -4284,7 +4297,7 @@ ItemPtr ProtocolGame::getItem(const InputMessagePtr& msg, int id)
     }
 
     if (g_game.getFeature(Otc::GameWrapKit)) {
-        if (item->isDecoKit() || item->getId() == 23398) {
+        if (item->isDecoKit()) {
             msg->getU16();
         }
     }
@@ -4717,6 +4730,11 @@ void ProtocolGame::parseGameNews(const InputMessagePtr& msg)
     msg->getU8(); // page number
 
     // TODO: implement game news usage
+}
+
+void ProtocolGame::parseCloseDepotSearch(const InputMessagePtr& /*msg*/)
+{
+    // TODO:
 }
 
 void ProtocolGame::parseBlessDialog(const InputMessagePtr& msg)

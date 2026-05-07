@@ -1,4 +1,7 @@
 CaveBotEditorButton < Button
+  width: 80
+  text-align: center
+
 
 CaveBotEditorPanel < Panel
   id: cavebotEditor
@@ -17,7 +20,7 @@ CaveBotEditorPanel < Panel
     margin-top: 2
     layout:
       type: grid
-      cell-size: 86 20
+      cell-size: 80 20
       cell-spacing: 1
       flow: true
       fit-children: true

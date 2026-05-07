@@ -256,8 +256,9 @@ function displayMessage(mode, text)
         (msgtype.consoleOption == nil or modules.client_options.getOption(msgtype.consoleOption)) then
         if msgtype == MessageSettings.loot or msgtype == MessageSettings.valuableLoot then
             local lootColoredText = ItemsDatabase.setColorLootMessage(text)
-            modules.game_console.addText(lootColoredText, msgtype, tr("Server Log"))
-            modules.game_console.addText(lootColoredText, msgtype, tr(msgtype.consoleTab))
+            local lootTabName = tr(msgtype.consoleTab)
+            local targetTab = modules.game_console.getTab(lootTabName) and lootTabName or tr("Server Log")
+            modules.game_console.addText(lootColoredText, msgtype, targetTab)
         else
             modules.game_console.addText(text, msgtype, tr(msgtype.consoleTab))
         end
