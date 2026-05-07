@@ -22,6 +22,10 @@
 
 #pragma once
 
+#ifndef USE_PRECOMPILED_HEADERS
+#include <memory>
+#endif
+
 struct DataRoot;
 class HtmlNode;
 using HtmlNodePtr = std::shared_ptr<HtmlNode>;

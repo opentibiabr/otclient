@@ -23,17 +23,22 @@
 #include "ttfloader.h"
 #include "bitmapfont.h"
 #include "image.h"
+#include "texture.h"
 #include "texturemanager.h"
+
+#ifndef USE_PRECOMPILED_HEADERS
 #include <algorithm>
 #include <cctype>
 #include <cmath>
-#include <framework/core/filestream.h>
-#include <framework/core/logger.h>
-#include <framework/core/resourcemanager.h>
 #include <iomanip>
 #include <memory>
 #include <sstream>
 #include <type_traits>
+#endif
+
+#include <framework/core/filestream.h>
+#include <framework/core/logger.h>
+#include <framework/core/resourcemanager.h>
 
 #ifdef max
 #undef max
@@ -525,7 +530,6 @@ BitmapFontPtr TTFLoader::load(const std::string &file, int fontSize,
 
     // Font metrics for baseline/alignment
     int ascender = (int)(face->size->metrics.ascender >> 6);
-    int descender = (int)(face->size->metrics.descender >> 6);
     int lineHeight = (int)(face->size->metrics.height >> 6);
 
     // Compute vertical extents for baseline normalization

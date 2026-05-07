@@ -41,6 +41,18 @@ void Animator::unserializeAppearance(const appearances::SpriteAnimation& animati
         m_phaseDurations.emplace_back(phase.duration_min(), phase.duration_max());
     }
 
+    // Replace zero-duration phases so they don't cause instant cycling (1ms per phase).
+    // Use the first non-zero duration found; fall back to 1ms if every phase is zero.
+    {
+        int fallbackMin = 1, fallbackMax = 1;
+        for (const auto& [mn, mx] : m_phaseDurations) {
+            if (mn > 0 || mx > 0) { fallbackMin = mn; fallbackMax = mx; break; }
+        }
+        for (auto& [mn, mx] : m_phaseDurations) {
+            if (mn == 0 && mx == 0) { mn = fallbackMin; mx = fallbackMax; }
+        }
+    }
+
     m_phase = getStartPhase();
 
     assert(m_animationPhases == static_cast<int>(m_phaseDurations.size()));

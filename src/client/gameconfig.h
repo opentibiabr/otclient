@@ -71,6 +71,7 @@ public:
     BitmapFontPtr getAnimatedTextFont()  const { return m_animatedTextFont; }
     BitmapFontPtr getStaticTextFont()  const { return m_staticTextFont; }
     BitmapFontPtr getWidgetTextFont()  const { return m_widgetTextFont; }
+    BitmapFontPtr getItemCountFont()  const { return m_itemCountFont; }
 
     std::string getCreatureNameFontName() { return m_creatureNameFont->getName(); }
     std::string getAnimatedTextFontName() { return m_animatedTextFont->getName(); }
@@ -131,11 +132,13 @@ private:
     std::string m_animatedTextFontName{ "verdana-11px-rounded" };
     std::string m_staticTextFontName{ "verdana-11px-rounded" };
     std::string m_widgetTextFontName{ "verdana-11px-antialised" };
+    std::string m_itemCountFontName{ "verdana-8px-rounded" };
 
     BitmapFontPtr m_creatureNameFont;
     BitmapFontPtr m_animatedTextFont;
     BitmapFontPtr m_staticTextFont;
     BitmapFontPtr m_widgetTextFont;
+    BitmapFontPtr m_itemCountFont;
 
     friend class FontManager;
 };

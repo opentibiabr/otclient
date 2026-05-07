@@ -600,7 +600,6 @@ void LocalPlayer::setFlatDamageHealing(uint16_t flatBonus)
     if (m_flatDamageHealing == flatBonus)
         return;
 
-    const uint16_t oldFlatBonus = m_flatDamageHealing;
     m_flatDamageHealing = flatBonus;
 
     callLuaField("onFlatDamageHealingChange", flatBonus);
@@ -611,8 +610,6 @@ void LocalPlayer::setAttackInfo(uint16_t attackValue, uint8_t attackElement)
     if (m_attackValue == attackValue && m_attackElement == attackElement)
         return;
 
-    const uint16_t oldAttackValue = m_attackValue;
-    const uint8_t oldAttackElement = m_attackElement;
     m_attackValue = attackValue;
     m_attackElement = attackElement;
 
@@ -624,8 +621,6 @@ void LocalPlayer::setConvertedDamage(double convertedDamage, uint8_t convertedEl
     if (m_convertedDamage == convertedDamage && m_convertedElement == convertedElement)
         return;
 
-    const double oldConvertedDamage = m_convertedDamage;
-    const uint8_t oldConvertedElement = m_convertedElement;
     m_convertedDamage = convertedDamage;
     m_convertedElement = convertedElement;
 
@@ -637,12 +632,6 @@ void LocalPlayer::setImbuements(double lifeLeech, double manaLeech, double critC
     if (m_lifeLeech == lifeLeech && m_manaLeech == manaLeech && m_critChance == critChance &&
         m_critDamage == critDamage && m_onslaught == onslaught)
         return;
-
-    const double oldLifeLeech = m_lifeLeech;
-    const double oldManaLeech = m_manaLeech;
-    const double oldCritChance = m_critChance;
-    const double oldCritDamage = m_critDamage;
-    const double oldOnslaught = m_onslaught;
 
     m_lifeLeech = lifeLeech;
     m_manaLeech = manaLeech;
@@ -659,12 +648,6 @@ void LocalPlayer::setDefenseInfo(uint16_t defense, uint16_t armor, double mitiga
         m_dodge == dodge && m_damageReflection == damageReflection)
         return;
 
-    const uint16_t oldDefense = m_defense;
-    const uint16_t oldArmor = m_armor;
-    const double oldMitigation = m_mitigation;
-    const double oldDodge = m_dodge;
-    const uint16_t oldDamageReflection = m_damageReflection;
-
     m_defense = defense;
     m_armor = armor;
     m_mitigation = mitigation;
@@ -679,7 +662,6 @@ void LocalPlayer::setCombatAbsorbValues(const std::map<uint8_t, double>& absorbV
     if (m_combatAbsorbValues == absorbValues)
         return;
 
-    const auto oldAbsorbValues = m_combatAbsorbValues;
     m_combatAbsorbValues = absorbValues;
 
     callLuaField("onCombatAbsorbValuesChange", absorbValues);
@@ -689,10 +671,6 @@ void LocalPlayer::setForgeBonuses(double momentum, double transcendence, double 
 {
     if (m_momentum == momentum && m_transcendence == transcendence && m_amplification == amplification)
         return;
-
-    const double oldMomentum = m_momentum;
-    const double oldTranscendence = m_transcendence;
-    const double oldAmplification = m_amplification;
 
     m_momentum = momentum;
     m_transcendence = transcendence;
@@ -706,7 +684,6 @@ void LocalPlayer::setExperienceRate(Otc::ExperienceRate_t type, uint16_t value)
     if (m_experienceRates[type] == value)
         return;
 
-    const uint16_t oldValue = m_experienceRates[type];
     m_experienceRates[type] = value;
 
     callLuaField("onExperienceRateChange", type, value);

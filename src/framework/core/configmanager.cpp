@@ -149,6 +149,7 @@ void ConfigManager::loadPublicConfig(const std::string& fileName) {
         m_publicConfig.font.staticText = reader.Get("font", "static-text", m_publicConfig.font.staticText);
         m_publicConfig.font.animatedText = reader.Get("font", "animated-text", m_publicConfig.font.animatedText);
         m_publicConfig.font.creatureText = reader.Get("font", "creature-text", m_publicConfig.font.creatureText);
+        m_publicConfig.font.itemCount = reader.Get("font", "item-count", m_publicConfig.font.itemCount);
     } catch (const std::exception& e) {
         g_logger.error("Failed to parse public config '{}': {}", fileName, e.what());
     }

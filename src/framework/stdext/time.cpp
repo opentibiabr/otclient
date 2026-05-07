@@ -20,7 +20,13 @@
  * THE SOFTWARE.
  */
 
-#include "types.h"
+#include "time.h"
+
+#ifndef USE_PRECOMPILED_HEADERS
+#include <chrono>
+#include <ctime>
+#include <thread>
+#endif
 
 namespace stdext
 {

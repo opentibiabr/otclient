@@ -37,6 +37,7 @@ public:
     void setItemVisible(const bool visible) { m_itemVisible = visible; }
     void setItem(const ItemPtr& item);
     void setShowCount(const bool value) { m_alwaysShowCount = value; }
+    void setDisplayCount(int count) { m_displayCount = count; }
     void setVirtual(const bool virt) { m_virtual = virt; }
     void setFlipDirection(const uint8_t direction) { m_flipDirection = direction; repaint(); }
     void clearItem() { setItemId(0); }
@@ -63,5 +64,6 @@ protected:
     bool m_showId{ false };
     bool m_itemVisible{ true };
     bool m_alwaysShowCount{ true };
+    int m_displayCount{ 0 };
     uint8_t m_flipDirection{ 0 }; // 0 = none, 1 = horizontal, 2 = vertical
 };

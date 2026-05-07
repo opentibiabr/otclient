@@ -132,8 +132,6 @@ void Tile::drawCreature(const Point& dest, const int flags, const bool forceDraw
     if (!forceDraw && !m_drawTopAndCreature)
         return;
 
-    const auto& newDest = dest - drawElevation * g_drawPool.getScaleFactor();
-
     bool localPlayerDrawed = false;
     if (hasCreatures()) {
         for (const auto& thing : m_things) {

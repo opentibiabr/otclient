@@ -440,9 +440,9 @@ function updateButtonState(button)
             button.item.gray:setVisible(itemCount == 0)
         end
         if modules.client_options.getOption('showHKObjectsBars') then
-            button.item:setItemCount(itemCount)
+            button.item:setDisplayCount(itemCount)
         else
-            button.item:setItemCount(1)
+            button.item:setDisplayCount(0)
         end
         setupButtonTooltip(button, false)
     end
