@@ -1546,7 +1546,7 @@ void ProtocolGame::sendOpenRewardHistory()
 void ProtocolGame::sendGetRewardDaily(const uint8_t bonusShrine, const std::map<uint16_t, uint8_t>& items)
 {
     const auto& msg = std::make_shared<OutputMessage>();
-    msg->addU8(Proto::sendGetRewardDaily);
+    msg->addU8(Proto::ClientGetRewardDaily);
     msg->addU8(bonusShrine);
     msg->addU8(items.size());
     for (const auto& [itemId, count] : items) {
