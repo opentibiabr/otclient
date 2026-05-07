@@ -97,6 +97,7 @@ function UIPopupMenu:addCheckBox(text, checked, callback)
     checkBox:setText(text)
     checkBox:setChecked(checked or false)
     checkBox.onClick = function()
+        checkBox:setChecked(not checkBox:isChecked())
         self:destroy()
         callback(checkBox, checkBox:isChecked())
     end

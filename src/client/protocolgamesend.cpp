@@ -767,17 +767,21 @@ void ProtocolGame::sendRequestBless()
     send(msg);
 }
 
-void ProtocolGame::sendRequestTrackerQuestLog(const std::map<uint16_t, std::string>& quests)
+void ProtocolGame::sendRequestTrackerQuestLog(const std::vector<uint16_t>& missionIds, const bool autoTrackNewQuests, const bool autoUntrackCompletedQuests, const uint8_t extra)
 {
     const auto msg = std::make_shared<OutputMessage>();
     msg->addU8(Proto::ClientRequestTrackerQuestLog);
-    msg->addU8(static_cast<uint8_t>(quests.size()));
-    for (const auto& [questId, questName] : quests) {
-        msg->addU16(questId);
-        if (g_game.getClientVersion() >= 1410) {
-            msg->addString(questName);
-        }
+    const auto missionCount = missionIds.size() > 255 ? 255 : missionIds.size();
+    msg->addU8(static_cast<uint8_t>(missionCount));
+
+    for (size_t i = 0; i < missionCount; ++i) {
+        msg->addU16(missionIds[i]);
     }
+
+    msg->addU8(autoTrackNewQuests ? 1 : 0);
+    msg->addU8(autoUntrackCompletedQuests ? 1 : 0);
+    msg->addU8(extra);
+
     send(msg);
 }
 

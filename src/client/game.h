@@ -449,7 +449,7 @@ public:
     void sendOpenRewardWall();
     void requestOpenRewardHistory();
     void requestGetRewardDaily(const uint8_t bonusShrine, const std::map<uint16_t, uint8_t>& items);
-    void sendRequestTrackerQuestLog(const std::map<uint16_t, std::string>& quests);
+    void sendRequestTrackerQuestLog(const std::vector<uint16_t>& missionIds, bool autoTrackNewQuests, bool autoUntrackCompletedQuests, uint8_t extra = 0x2A);
     void processCyclopediaCharacterOffenceStats(const CyclopediaCharacterOffenceStats& data);
     void processCyclopediaCharacterDefenceStats(const CyclopediaCharacterDefenceStats& data);
     void processCyclopediaCharacterMiscStats(const CyclopediaCharacterMiscStats& data);

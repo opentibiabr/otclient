@@ -3175,11 +3175,11 @@ void ProtocolGame::parseQuestTracker(const InputMessagePtr& msg)
             const uint8_t missionCount = msg->getU8();
             std::vector<std::tuple<uint16_t, uint16_t, std::string, std::string, std::string>> missions;
             for (uint8_t i = 0; i < missionCount; ++i) {
-                uint8_t questId = 0;
+                const uint16_t missionId = msg->getU16();
+                uint16_t questId = 0;
                 if (g_game.getClientVersion() >= 1410) {
                     questId = msg->getU16();
                 }
-                const uint16_t missionId = msg->getU16();
                 const std::string& questName = msg->getString();
                 const std::string& missionName = msg->getString();
                 const std::string& missionDesc = msg->getString();
@@ -3188,7 +3188,7 @@ void ProtocolGame::parseQuestTracker(const InputMessagePtr& msg)
             return g_lua.callGlobalField("g_game", "onQuestTracker", remainingQuests, missions);
         }
         case 0: {
-            uint8_t questId = 0;
+            uint16_t questId = 0;
             if (g_game.getClientVersion() >= 1410) {
                 questId = msg->getU16();
             }

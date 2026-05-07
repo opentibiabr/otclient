@@ -2097,12 +2097,18 @@ void Game::requestGetRewardDaily(const uint8_t bonusShrine, const std::map<uint1
     m_protocolGame->sendGetRewardDaily(bonusShrine, items);
 }
 
-void Game::sendRequestTrackerQuestLog(const std::map<uint16_t, std::string>& quests)
+void Game::sendRequestTrackerQuestLog(const std::vector<uint16_t>& missionIds, const bool autoTrackNewQuests, const bool autoUntrackCompletedQuests, const uint8_t extra)
 {
-    if (!canPerformGameAction())
+    if (!canPerformGameAction()) {
         return;
+    }
 
-    m_protocolGame->sendRequestTrackerQuestLog(quests);
+    m_protocolGame->sendRequestTrackerQuestLog(
+        missionIds,
+        autoTrackNewQuests,
+        autoUntrackCompletedQuests,
+        extra
+    );
 }
 
 void Game::processCyclopediaCharacterOffenceStats(const CyclopediaCharacterOffenceStats& data)
