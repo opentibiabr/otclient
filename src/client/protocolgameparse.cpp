@@ -348,6 +348,9 @@ void ProtocolGame::parseMessage(const InputMessagePtr& msg)
                 case Proto::GameServerSendGameNews:
                     parseGameNews(msg);
                     break;
+                case Proto::GameServerCloseDepotSearch:
+                    parseCloseDepotSearch(msg);
+                    break;
                 case Proto::GameServerSendBlessDialog:
                     parseBlessDialog(msg);
                     break;
@@ -4723,6 +4726,11 @@ void ProtocolGame::parseGameNews(const InputMessagePtr& msg)
     msg->getU8(); // page number
 
     // TODO: implement game news usage
+}
+
+void ProtocolGame::parseCloseDepotSearch(const InputMessagePtr& /*msg*/)
+{
+    // TODO:
 }
 
 void ProtocolGame::parseBlessDialog(const InputMessagePtr& msg)

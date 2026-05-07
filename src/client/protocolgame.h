@@ -345,6 +345,7 @@ private:
     void parsePassiveCooldown(const InputMessagePtr& msg);
     void parseClientCheck(const InputMessagePtr& msg);
     void parseGameNews(const InputMessagePtr& msg);
+    void parseCloseDepotSearch(const InputMessagePtr& /*msg*/);
     void parseBlessDialog(const InputMessagePtr& msg);
     void parseRestingAreaState(const InputMessagePtr& msg);
     void parseUpdateImpactTracker(const InputMessagePtr& msg);
