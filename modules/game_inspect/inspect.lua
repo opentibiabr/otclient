@@ -278,15 +278,41 @@ function InspectController:renderHeader()
             itemWidget:clearItem()
         end
     end
-    for i = 1, 3 do
-        local slot = self:findWidget("#imbuiSlot" .. i)
-        if slot then
+    local slotRow = self:findWidget("#slotRow")
+    local hasImbuements = false
+    if slotRow then
+        slotRow:destroyChildren()
+        for i = 1, 3 do
             local val = s.activeImbu[4 - i]
-            local active = val and tonumber(val) and tonumber(val) > 0
-            slot:setVisible(val ~= nil)
-            slot:setImageSource(active and InspectConst.SLOT_ACTIVE_SOURCE_PREFIX .. val or
-                                    InspectConst.SLOT_INACTIVE_SOURCE)
-            slot:setImageClip(InspectConst.SLOT_EMPTY_CLIP)
+            if val ~= nil then
+                hasImbuements = true
+                local slot = self:createWidgetFromHTML([[<UIButton class="QtBorder imbuementSlot"></UIButton>]], slotRow)
+                local active = val and tonumber(val) and tonumber(val) > 0
+                slot:setImageSource(active and InspectConst.SLOT_ACTIVE_SOURCE_PREFIX .. val or
+                                        InspectConst.SLOT_INACTIVE_SOURCE)
+                slot:setImageClip(InspectConst.SLOT_EMPTY_CLIP)
+            end
+        end
+        slotRow:setVisible(hasImbuements)
+    end
+    local header = self:findWidget("#headerRow")
+    local scroll = self:findWidget("#itemInfoScroll")
+    if header and scroll then
+        local layout = self.layout
+        local baseHeaderHeight = layout.headerRow.height
+        local baseScrollHeight = layout.itemInfoScroll.height
+
+        if hasImbuements then
+            baseHeaderHeight = 66
+            local totalAvailable = layout.mainColumn.height
+            local gap = 11
+            baseScrollHeight = math.max(0, totalAvailable - baseHeaderHeight - gap)
+        end
+        if header:getHeight() ~= baseHeaderHeight then
+            header:setHeight(baseHeaderHeight)
+        end
+        if scroll:getHeight() ~= baseScrollHeight then
+            scroll:setHeight(baseScrollHeight)
         end
     end
 end
@@ -529,7 +555,7 @@ end
 
 function InspectController:showWheel()
     local s = self.state
-    if not s then
+    if not s or not s.creatureId then
         return
     end
     g_game.openWheelOfDestiny(s.creatureId)

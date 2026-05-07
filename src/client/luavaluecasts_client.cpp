@@ -1190,6 +1190,14 @@ int push_luavalue(const ItemInspectionData& data) {
     g_lua.setField("name");
     g_lua.pushObject(data.item);
     g_lua.setField("item");
+
+    g_lua.createTable(data.imbuements.size(), 0);
+    for (size_t i = 0; i < data.imbuements.size(); ++i) {
+        g_lua.pushInteger(data.imbuements[i]);
+        g_lua.rawSeti(i + 1);
+    }
+    g_lua.setField("imbuements");
+
     g_lua.createTable(data.descriptions.size(), 0);
     for (size_t i = 0; i < data.descriptions.size(); ++i) {
         g_lua.createTable(0, 2);

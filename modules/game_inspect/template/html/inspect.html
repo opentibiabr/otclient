@@ -45,8 +45,8 @@
     .nameLabel { width: 100%; height: 64px; flex-grow: 1; flex-shrink: 1; color: #c0c0c0; text-wrap: true; text-align: bottomleft; --text-auto-resize: true; --text-vertical-auto-resize: true; }
 
     /* slotRow holds up to 3 imbuement icons; hidden by default, shown by renderHeader */
-    .slotRow { width: fit-content; height: 66px; display: flex; flex-direction: row; flex-shrink: 0; gap: 5px; }
-    .imbuementSlot { width: 66px; height: 66px; --image-source: /images/game/imbuing/slot; border-width: 1; --border-color-top: #161616; --border-color-left: #161616; --border-color-bottom: #787878; --border-color-right: #787878; }
+    .slotRow { height: 66px; display: flex; flex-direction: row; flex-shrink: 0; gap: 5px; }
+    .imbuementSlot { width: 66px; height: 66px; flex-shrink: 0; --image-source: /images/game/imbuing/slot; border-width: 1; --border-color-top: #161616; --border-color-left: #161616; --border-color-bottom: #787878; --border-color-right: #787878; }
 
     /* ── Descriptions scroll area ──────────────────────────────────────────── */
     /* detailsList is cleared and rebuilt on every _renderActive call */
@@ -112,20 +112,16 @@
             *width="self.layout.mainColumn.width" *height="self.layout.mainColumn.height">
 
             <!-- headerRow – inspectItem absent for cyclopedia view (*if guard) -->
-            <div class="headerRow"
+            <div id="headerRow" class="headerRow" 
                 *width="self.layout.headerRow.width" *height="self.layout.headerRow.height">
 
                 <!-- item icon only shown for non-cyclopedia (single-item) inspections -->
-                <Item id="inspectItem" class="itemPreview" virtual="true" *if="not self:isCyclopediaInspection()"></Item>
+                <Item id="inspectItem" class="itemPreview" virtual="true" *if="not self:isCyclopediaInspection()" ></Item>
 
-                <label id="inspectName" class="nameLabel"></label>
+                <label id="inspectName" class="nameLabel" ></label>
 
                 <!-- up to 3 imbu slots; renderHeader populates right-to-left (index 3→1) -->
-                <div class="slotRow">
-                    <UIButton id="imbuiSlot1" class="QtBorder imbuementSlot" visible="false"></UIButton>
-                    <UIButton id="imbuiSlot2" class="QtBorder imbuementSlot" visible="false"></UIButton>
-                    <UIButton id="imbuiSlot3" class="QtBorder imbuementSlot" visible="false"></UIButton>
-                </div>
+                <div id="slotRow" class="slotRow"></div>
             </div>
 
             <!-- itemInfo children are destroyed and rebuilt on every _renderActive call -->

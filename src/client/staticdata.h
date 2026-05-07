@@ -632,6 +632,7 @@ struct ItemInspectionData
     uint32_t creatureId;
     std::string name;
     ItemPtr item;
+    std::vector<uint16_t> imbuements;
     std::vector<std::pair<std::string, std::string>> descriptions;
 };
 

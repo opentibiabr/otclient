@@ -1708,7 +1708,13 @@ void ProtocolGame::parseCyclopediaItemDetail(const InputMessagePtr& msg)
     msg->getU8(); // 0x01 constant
     data.name = msg->getString();
     data.item = getItem(msg);
-    msg->getU8(); // imbuement count (always 0)
+
+    const uint8_t imbuementCount = msg->getU8();
+    data.imbuements.reserve(imbuementCount);
+    for (auto i = 0; std::cmp_less(i, imbuementCount); ++i) {
+        data.imbuements.push_back(msg->getU16());
+    }
+
     const uint8_t descCount = msg->getU8();
     readInspectionDescriptions(msg, data.descriptions, descCount);
     g_game.processItemDetail(data);
