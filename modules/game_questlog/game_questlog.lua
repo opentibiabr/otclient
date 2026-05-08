@@ -42,6 +42,7 @@ local isNavigating = false   -- Flag to prevent checkbox events during navigatio
 local isUpdatingCheckbox = false  -- Flag to prevent recursive checkbox events
 local isReceivingQuestTracker = false -- Prevent stale local cache from being sent while applying server tracker data
 local questTrackerSettingsLoaded = false
+local saveTimer = nil
 local questLogCache = {
     items = {},
     completed = 0,
@@ -186,6 +187,17 @@ local function save()
     ))
 
     return true
+end
+
+local function deferredSave()
+    if saveTimer then
+        saveTimer:cancel()
+    end
+
+    saveTimer = scheduleEvent(function()
+        saveTimer = nil
+        save()
+    end, 500)
 end
 
 local sortFunctions = {
@@ -894,7 +906,7 @@ local function onQuestTracker(remainingQuests, missions)
         end
     end
 
-    save()
+    deferredSave()
 end
 
 local function onUpdateQuestTracker(questId, missionId, questName, missionName, missionDesc)
@@ -939,7 +951,7 @@ local function onUpdateQuestTracker(questId, missionId, questName, missionName, 
         settings[namePlayer][#settings[namePlayer] + 1] = {missionId, missionName, missionDesc or missionName, questId}
     end
 
-    save()
+    deferredSave()
 end
 
 --[[=================================================
