@@ -1,0 +1,264 @@
+<html>
+<style>
+  window {
+    font-family: Arial, sans-serif;
+    margin: 24px;
+    background-color: #ffffff;
+    color: #222222;
+    height: 100%;
+    margin-top: 0;
+    margin-left: 0;
+    margin-right: 0;
+    display: block !important;
+    --image-source: none;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 100% !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+  .board-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .board-header .title {
+    font-weight: bold;
+    color: #334e68;
+  }
+
+  .board-header .filters {
+    display: flex;
+    gap: 6px;
+    margin-left: auto;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .chip {
+    background-color: #d9e2ec;
+    color: #243b53;
+    border-radius: 12px;
+    padding: 3px 10px;
+    flex-shrink: 0;
+  }
+
+  .board {
+    display: flex;
+    flex-flow: row nowrap;
+    gap: 12px;
+    padding-bottom: 6px;
+    min-height: 480px;
+  }
+
+  .column {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 280px;
+    min-width: 260px;
+    max-width: 360px;
+    min-height: 0;
+    background-color: #ffffff;
+    border: 1px solid #cbd2d9;
+    border-radius: 10px;
+    padding: 10px;
+  }
+
+  .column.is-priority {
+    order: -1;
+    border-color: #f7b267;
+    box-shadow: 0 0 0 2px #ffe8cc;
+  }
+
+  .column-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    margin-bottom: 8px;
+  }
+
+  .column-head .badge {
+    margin-left: auto;
+    background-color: #e4e7eb;
+    border-radius: 999px;
+    padding: 2px 8px;
+    color: #52606d;
+  }
+
+  .cards {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+    overflow: auto;
+    min-height: 0;
+    align-items: stretch;
+  }
+
+  .card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border: 1px solid #d9e2ec;
+    border-radius: 8px;
+    padding: 8px;
+    background-color: #fdfefe;
+    line-height: 1.35;
+    flex: 0 0 auto;
+  }
+
+  .card-title {
+    font-weight: bold;
+    color: #102a43;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    row-gap: 4px;
+    column-gap: 4px;
+    align-items: center;
+  }
+
+  .meta .tag {
+    background-color: #eef2f6;
+    color: #486581;
+    border-radius: 8px;
+    padding: 2px 6px;
+    flex-shrink: 0;
+  }
+
+  .meta .spacer {
+    margin-left: auto;
+    color: #829ab1;
+  }
+
+  .column-foot {
+    display: flex;
+    margin-top: 8px;
+    flex-shrink: 0;
+  }
+
+  .column-foot .btn {
+    margin-left: auto;
+    background-color: #334e68;
+    color: #ffffff;
+    border-radius: 6px;
+    padding: 5px 10px;
+  }
+</style>
+
+<window>
+  <div class="board-header">
+    <div class="title">Advanced Kanban (Flex)</div>
+    <div class="filters">
+      <div class="chip">Sprint 14</div>
+      <div class="chip">Frontend</div>
+      <div class="chip">Backend</div>
+    </div>
+  </div>
+
+  <div class="board">
+    <div class="column is-priority">
+      <div class="column-head">
+        <b>Hotfix</b>
+        <div class="badge">2</div>
+      </div>
+      <div class="cards">
+        <div class="card">
+          <div class="card-title">Fix infinite scroll</div>
+          <div>Validate clipping + nested overflow.</div>
+          <div class="meta">
+            <div class="tag">P1</div>
+            <div class="tag">UI</div>
+            <div class="spacer">Today</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Fix wrap in labels</div>
+          <div>Reflow after flex width change.</div>
+          <div class="meta">
+            <div class="tag">P1</div>
+            <div class="tag">Text</div>
+            <div class="spacer">Today</div>
+          </div>
+        </div>
+      </div>
+      <div class="column-foot">
+        <div class="btn">Add</div>
+      </div>
+    </div>
+
+    <div class="column">
+      <div class="column-head">
+        <b>To Do</b>
+        <div class="badge">3</div>
+      </div>
+      <div class="cards">
+        <div class="card">
+          <div class="card-title">Server-side pagination</div>
+          <div>Define contract and empty states.</div>
+          <div class="meta">
+            <div class="tag">API</div>
+            <div class="tag">UX</div>
+            <div class="spacer">Tomorrow</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Layout telemetry</div>
+          <div>Measure relayout cost per frame.</div>
+          <div class="meta">
+            <div class="tag">Perf</div>
+            <div class="spacer">Thursday</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Document edge cases</div>
+          <div>Auto min-size + nowrap + gaps.</div>
+          <div class="meta">
+            <div class="tag">Docs</div>
+            <div class="spacer">Friday</div>
+          </div>
+        </div>
+      </div>
+      <div class="column-foot">
+        <div class="btn">Add</div>
+      </div>
+    </div>
+
+    <div class="column">
+      <div class="column-head">
+        <b>In Progress</b>
+        <div class="badge">2</div>
+      </div>
+      <div class="cards">
+        <div class="card">
+          <div class="card-title">Refactor shorthand parser</div>
+          <div>Unify color/width/style parsing.</div>
+          <div class="meta">
+            <div class="tag">CSS</div>
+            <div class="tag">Parser</div>
+            <div class="spacer">60%</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Layout Storybook</div>
+          <div>Edge cases with order and align-self.</div>
+          <div class="meta">
+            <div class="tag">QA</div>
+            <div class="spacer">35%</div>
+          </div>
+        </div>
+      </div>
+      <div class="column-foot">
+        <div class="btn">Add</div>
+      </div>
+    </div>
+  </div>
+</window>
+
+</html>

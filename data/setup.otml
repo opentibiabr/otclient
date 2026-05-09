@@ -42,3 +42,4 @@ font
   static-text: verdana-11px-rounded
   animated-text: verdana-11px-rounded
   creature-text: verdana-11px-rounded
+  item-count: verdana-10px-rounded

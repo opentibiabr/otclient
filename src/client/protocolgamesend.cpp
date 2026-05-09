@@ -59,7 +59,7 @@ void ProtocolGame::sendLoginPacket(const uint32_t challengeTimestamp, const uint
     }
 
     if (g_game.getClientVersion() >= 1334) {
-        msg->addString("appearancesHash");
+        msg->addString(g_things.getAssetIdentifier());
     } else if (g_game.getFeature(Otc::GameContentRevision)) {
         msg->addU16(g_things.getContentRevision());
     }

@@ -404,6 +404,11 @@ function controller:onGameStart()
         if Keybind.selectPreset(name) then
             panels.keybindsPanel.presets.list:setCurrentOption(name, true)
             updateKeybinds()
+            if modules.game_actionbar and modules.game_actionbar.selectHotkeySet then
+                if not modules.game_actionbar.selectHotkeySet(name) then
+                    g_logger.warning(string.format("[client_options] Failed to sync action bar hotkey set '%s' on startup.", name))
+                end
+            end
         end
     end
 end

@@ -6,5 +6,5 @@ Module
   sandboxed: false
   minClientVersion: 1180
   scripts: [ game_stash ]
-  @onLoad: init()
-  @onUnload: terminate()
+  @onLoad: stashController:init()
+  @onUnload: stashController:terminate()

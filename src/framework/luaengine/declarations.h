@@ -24,6 +24,10 @@
 
 #include <framework/global.h>
 
+#ifndef USE_PRECOMPILED_HEADERS
+#include <memory>
+#endif
+
 class LuaInterface;
 class LuaObject;
 
