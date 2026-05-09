@@ -1,0 +1,161 @@
+<html>
+<style>
+  window {
+    font-family: Arial, sans-serif;
+    margin: 24px;
+    background-color: #ffffff;
+    color: #222222;
+    height: 100%;
+    margin-top: 0;
+    margin-left: 0;
+    margin-right: 0;
+    display: block !important;
+    --image-source: none;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 100% !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  h1 {
+    margin-bottom: 8px;
+  }
+
+  p {
+    margin-top: 0;
+    color: #555;
+  }
+
+  .example {
+    border: 2px solid #4a69bd;
+    border-radius: 10px;
+    background-color: #fff;
+    padding: 12px;
+    margin-bottom: 18px;
+    width: 94%;
+  }
+
+  .container {
+    display: flex;
+    border: 2px dashed #9aa5b1;
+    padding: 10px;
+    min-height: 100px;
+    gap: 10px;
+    background-color: #eceff1;
+    width: 97%;
+  }
+
+  .item1 {
+    border: 2px solid #2d6cdf;
+    background-color: #dce9ff;
+    border-radius: 8px;
+    padding: 10px;
+    min-width: 90px;
+    text-align: center;
+  }
+
+  .item1 img {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 6px;
+    display: block;
+    margin: 0 auto 8px;
+    border: 1px solid #999;
+  }
+
+  .row {
+    flex-direction: row;
+  }
+
+  .row-reverse {
+    flex-direction: row-reverse;
+  }
+
+  .column {
+    flex-direction: column;
+  }
+
+  .column-reverse {
+    flex-direction: column-reverse;
+  }
+
+  button {
+    margin-top: 6px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #2d6cdf;
+    background-color: #2d6cdf;
+    color: white;
+    cursor: pointer;
+  }
+
+  /* Visual variants per example */
+  .purple .item1 {
+    background-color: #9c27b0;
+  }
+
+  .blue .item1 {
+    background-color: #2196f3;
+  }
+
+  .green .item1 {
+    background-color: #4caf50;
+  }
+
+  .orange .item1 {
+    background-color: #ff9800;
+  }
+
+  .red .item1 {
+    background-color: #f44336;
+  }
+
+  .steel .item1 {
+    background-color: #607d8b;
+  }
+</style>
+<window>
+  <h1>Flexbox: flex-direction</h1>
+  <p>Basic examples with text, button, image, and borders.</p>
+
+  <div class="example purple">
+    <h3>row (default)</h3>
+    <div class="container row">
+      <div class="item1"><img src="/data/images/clienticon.png" alt="img">Box 1<br><button>Button</button></div>
+      <div class="item1">Box 2<br><button>Button</button></div>
+      <div class="item1">Box 3<br><button>Button</button></div>
+    </div>
+  </div>
+
+  <div class="example blue">
+    <h3>row-reverse</h3>
+    <div class="container row-reverse">
+      <div class="item1">Box 1</div>
+      <div class="item1">Box 2</div>
+      <div class="item1">Box 3</div>
+    </div>
+  </div>
+
+  <div class="example green">
+    <h3>column</h3>
+    <div class="container column">
+      <div class="item1">Box 1</div>
+      <div class="item1">Box 2</div>
+      <div class="item1">Box 3</div>
+    </div>
+  </div>
+
+  <div class="example orange">
+    <h3>column-reverse</h3>
+    <div class="container column-reverse">
+      <div class="item1">Box 1</div>
+      <div class="item1">Box 2</div>
+      <div class="item1">Box 3</div>
+    </div>
+  </div>
+</window>
+
+</html>

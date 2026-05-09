@@ -186,25 +186,39 @@ int AttachedEffect::getCurrentAnimationPhase()
         return m_frame;
     }
 
-    const auto thingTye = getThingType();
+    const auto thingType = getThingType();
+    if (!thingType) return 0;
 
-    const auto* animator = thingTye->getIdleAnimator();
-    if (!animator && thingTye->isAnimateAlways())
-        animator = thingTye->getAnimator();
+    const auto* animator = thingType->getIdleAnimator();
+    if (!animator && thingType->isAnimateAlways())
+        animator = thingType->getAnimator();
 
     if (animator)
         return animator->getPhaseAt(m_animationTimer, getSpeed());
 
-    if (thingTye->isEffect()) {
-        const int lastPhase = thingTye->getAnimationPhases() - 1;
-        const int phase = std::min<int>(static_cast<int>(m_animationTimer.ticksElapsed() / (g_gameConfig.getEffectTicksPerFrame() / getSpeed())), lastPhase);
+    if (thingType->isEffect()) {
+        const int animationPhases = thingType->getAnimationPhases();
+        const float speed = getSpeed();
+        if (animationPhases <= 0 || speed <= 0.f) return 0;
+
+        const int lastPhase = animationPhases - 1;
+        const int effectTicksPerFrame = g_gameConfig.getEffectTicksPerFrame();
+        const int ticksPerFrame = std::max<int>(1, static_cast<int>(effectTicksPerFrame / speed));
+        const int phase = std::min<int>(static_cast<int>(m_animationTimer.ticksElapsed() / ticksPerFrame), lastPhase);
         if (phase == lastPhase) m_animationTimer.restart();
         return phase;
     }
 
-    if (thingTye->isCreature() && thingTye->isAnimateAlways()) {
-        const int ticksPerFrame = std::round(1000 / thingTye->getAnimationPhases()) / getSpeed();
-        return (g_clock.millis() % (static_cast<long long>(ticksPerFrame) * thingTye->getAnimationPhases())) / ticksPerFrame;
+    if (thingType->isCreature() && thingType->isAnimateAlways()) {
+        const int animationPhases = thingType->getAnimationPhases();
+        const float speed = getSpeed();
+        if (animationPhases <= 0 || speed <= 0.f) return 0;
+
+        const int ticksPerFrame = std::max<int>(1, static_cast<int>(std::round((1000.0 / animationPhases) / speed)));
+        const long long animationPeriod = static_cast<long long>(ticksPerFrame) * animationPhases;
+        if (animationPeriod <= 0) return 0;
+
+        return static_cast<int>((g_clock.millis() % animationPeriod) / ticksPerFrame);
     }
 
     return 0;

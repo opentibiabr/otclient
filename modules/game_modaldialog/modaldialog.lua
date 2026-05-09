@@ -8,6 +8,13 @@ local MAXIMUM_CHOICES = 10
 local BASE_HEIGHT = 40
 local MAX_CHOICE_TEXT = 28
 
+local function destroyWindow()
+    local ui = controllerModal.ui
+    if ui then
+        controllerModal:unloadHtml()
+    end
+end
+
 function controllerModal:onInit()
     controllerModal:registerEvents(g_game, {
         onModalDialog = onModalDialog
@@ -18,22 +25,66 @@ function controllerModal:onTerminate()
 end
 
 function controllerModal:onGameEnd()
-    local ui = controllerModal.ui
-    if ui and ui:isVisible() then
-        controllerModal:unloadHtml()
-    end
+    destroyWindow()
 end
 
 local function createButtonHandler(id, buttonId, choiceList)
     return function()
-        local choice = (choiceList and choiceList.selectedChoice) or 0xFF
+        local focusedChoice = choiceList and choiceList:getFocusedChild()
+        local choice = (choiceList and choiceList.selectedChoice) or (focusedChoice and focusedChoice.choiceId) or 0xFF
         g_game.answerModalDialog(id, buttonId, choice)
-        controllerModal:unloadHtml()
+        destroyWindow()
     end
+end
+
+local function selectChoiceWidget(choiceList, choiceWidget, reason)
+    if not choiceList or not choiceWidget then
+        return
+    end
+
+    choiceList.selectedChoice = choiceWidget.choiceId
+    choiceList.selectedChoiceIndex = choiceWidget.choiceIndex
+    choiceList:focusChild(choiceWidget, reason or ActiveFocusReason)
+    choiceList:ensureChildVisible(choiceWidget)
 end
 
 local function shortText(text, maxLen)
     return #text <= maxLen and text or text:sub(1, maxLen)
+end
+
+local function resolveModalButtons(buttons, enterButton, escapeButton)
+    if not buttons or #buttons == 0 then
+        return enterButton, escapeButton
+    end
+
+    local buttonExistsById = {}
+    for i = 1, #buttons do
+        local buttonId = buttons[i][1]
+        buttonExistsById[buttonId] = true
+    end
+
+    local firstButtonId = buttons[1][1]
+    local lastButtonId = buttons[#buttons][1]
+
+    if not buttonExistsById[enterButton] then
+        enterButton = firstButtonId
+    end
+
+    if not buttonExistsById[escapeButton] then
+        escapeButton = #buttons > 1 and lastButtonId or enterButton
+    end
+
+    if enterButton == escapeButton and #buttons > 1 then
+        for i = #buttons, 1, -1 do
+            local candidateId = buttons[i][1]
+            if candidateId ~= enterButton then
+                escapeButton = candidateId
+                break
+            end
+        end
+    end
+
+    return enterButton, escapeButton
 end
 
 local function calculateAndSetWidth(ui, messageLabel, buttonsWidth, message)
@@ -68,16 +119,29 @@ local function applyFinalHeight(ui, messageLabel, additionalHeight)
 end
 
 function onModalDialog(id, title, message, buttons, enterButton, escapeButton, choices, priority)
-    if controllerModal.ui then
-        controllerModal:unloadHtml()
+    destroyWindow()
+
+    -- C++ parse currently uses clientVersion for enter/escape byte order.
+    local protocolVersion = g_game.getProtocolVersion()
+    local clientVersion = g_game.getClientVersion()
+    local protocolAfter970 = protocolVersion > 970
+    local clientAfter970 = clientVersion > 970
+    if protocolAfter970 ~= clientAfter970 then
+        enterButton, escapeButton = escapeButton, enterButton
     end
+    enterButton, escapeButton = resolveModalButtons(buttons, enterButton, escapeButton)
     local MINIMUM_WIDTH = g_game.getFeature(GameEnterGameShowAppearance) and MINIMUM_WIDTH_OLD or MINIMUM_WIDTH_QT
     controllerModal:loadHtml('modaldialog.html')
     local ui = controllerModal.ui
     ui:hide()
+    ui:grabKeyboard()
     local messageLabel = controllerModal:findWidget('#messageLabel')
     local choiceList = controllerModal:findWidget('#choiceList')
     local buttonsPanel = controllerModal:findWidget('#buttonsPanel')
+    local enterFunc = createButtonHandler(id, enterButton, choiceList)
+    local escapeFunc = createButtonHandler(id, escapeButton, choiceList)
+    local confirmKeysEnabledAt = g_clock.millis() + 180
+    local firstChoiceWidget = nil
     ui:setTitle(title)
     messageLabel:html(message)
     local labelHeight = nil
@@ -102,24 +166,14 @@ function onModalDialog(id, title, message, buttons, enterButton, escapeButton, c
                     labelHeight = choiceWidget:getHeight()
                 end
                 choiceWidget.onClick = function()
-                    choiceList.selectedChoice = choiceId
-                    choiceList.selectedChoiceIndex = i
+                    selectChoiceWidget(choiceList, choiceWidget, MouseFocusReason)
+                end
+                choiceWidget.onDoubleClick = enterFunc
+                if not firstChoiceWidget then
+                    firstChoiceWidget = choiceWidget
                 end
             end
         end
-        local firstChild = choiceList:getChildByIndex(1)
-        if firstChild then
-            firstChild:onClick()
-            firstChild:focus()
-        end
-        g_keyboard.bindKeyPress('Up', function()
-            choiceList:focusPreviousChild(KeyboardFocusReason)
-            choiceList:ensureChildVisible(choiceList:getFocusedChild())
-        end, choiceList)
-        g_keyboard.bindKeyPress('Down', function()
-            choiceList:focusNextChild(KeyboardFocusReason)
-            choiceList:ensureChildVisible(choiceList:getFocusedChild())
-        end, choiceList)
     else
         choiceList:setVisible(false)
     end
@@ -134,15 +188,52 @@ function onModalDialog(id, title, message, buttons, enterButton, escapeButton, c
             buttonsWidth = buttonsWidth + button:getWidth() + button:getMarginLeft() + button:getMarginRight()
         end
     end
-    ui.onEnter = createButtonHandler(id, enterButton, choiceList)
-    ui.onEscape = createButtonHandler(id, escapeButton, choiceList)
-    if choiceList then
-        choiceList.onDoubleClick = createButtonHandler(id, enterButton, choiceList)
+    ui.onKeyDown = function(_, keyCode, keyboardModifiers)
+        if keyboardModifiers ~= KeyboardNoModifier then
+            return false
+        end
+
+        if keyCode == KeyEscape then
+            if not ui:isVisible() or g_clock.millis() < confirmKeysEnabledAt then
+                return true
+            end
+            escapeFunc()
+            return true
+        end
+
+        if keyCode == KeyEnter then
+            if not ui:isVisible() or g_clock.millis() < confirmKeysEnabledAt then
+                return true
+            end
+            enterFunc()
+            return true
+        end
+
+        if keyCode == KeyUp and choiceList and choiceList:isVisible() then
+            choiceList:focusPreviousChild(KeyboardFocusReason)
+            selectChoiceWidget(choiceList, choiceList:getFocusedChild(), KeyboardFocusReason)
+            return true
+        end
+
+        if keyCode == KeyDown and choiceList and choiceList:isVisible() then
+            choiceList:focusNextChild(KeyboardFocusReason)
+            selectChoiceWidget(choiceList, choiceList:getFocusedChild(), KeyboardFocusReason)
+            return true
+        end
+
+        return false
     end
     calculateAndSetWidth(ui, messageLabel, buttonsWidth, message)
     local additionalHeight = calculateChoicesHeight(choiceList, choices, labelHeight)
     controllerModal:scheduleEvent(function()
         applyFinalHeight(ui, messageLabel, additionalHeight)
         ui:show()
+        ui:raise()
+        ui:focus()
+        ui:grabKeyboard()
+        confirmKeysEnabledAt = g_clock.millis() + 180
+        if firstChoiceWidget then
+            selectChoiceWidget(choiceList, firstChoiceWidget, KeyboardFocusReason)
+        end
     end, 222, "lazyHeightHtml")
 end

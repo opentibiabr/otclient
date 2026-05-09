@@ -38,4 +38,4 @@ uint8_t getThreadCount() {
     return std::clamp<int_fast8_t>(std::thread::hardware_concurrency() - 1, MIN_THREADS, MAX_THREADS);
 }
 
-BS::thread_pool g_asyncDispatcher{ getThreadCount() };
+AsyncDispatcher g_asyncDispatcher{ getThreadCount() };

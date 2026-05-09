@@ -107,6 +107,9 @@ void Effect::onAppear()
             return;
 
         m_duration = animator->getTotalDuration();
+        if (animator->isInfiniteLoop()) {
+            m_permanent = true;
+        }
     } else {
         m_duration = g_gameConfig.getEffectTicksPerFrame();
 
@@ -120,8 +123,10 @@ void Effect::onAppear()
 
     m_animationTimer.restart();
 
-    // schedule removal
-    g_dispatcher.scheduleEvent([self = asEffect()] { g_map.removeThing(self); }, m_duration);
+    if (!m_permanent) {
+        // schedule removal
+        g_dispatcher.scheduleEvent([self = asEffect()] { g_map.removeThing(self); }, m_duration);
+    }
 }
 
 bool Effect::waitFor(const EffectPtr& effect)

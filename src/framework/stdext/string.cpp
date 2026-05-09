@@ -24,9 +24,17 @@
 #include "exception.h"
 #include "types.h"
 
+#ifndef USE_PRECOMPILED_HEADERS
+#include <algorithm>
 #include <charconv>
-#include <utf8cpp/utf8.h>
+#include <cctype>
+#include <cstdint>
+#include <ctime>
 #include <iterator>
+#include <ranges>
+#endif
+
+#include <utf8cpp/utf8.h>
 
 #ifdef _MSC_VER
 #pragma warning(disable:4267) // '?' : conversion from 'A' to 'B', possible loss of data
@@ -62,11 +70,13 @@ namespace stdext
         localtime_r(&tnow, &ts);
 #endif
 
-        char date[20];
-        if (std::strftime(date, sizeof(date), format, &ts) == 0)
+        std::string date(128, '\0');
+        const auto length = std::strftime(date.data(), date.size(), format, &ts);
+        if (length == 0)
             throw string_error("Failed to format date-time string");
 
-        return std::string(date);
+        date.resize(length);
+        return date;
     }
 
     [[nodiscard]] std::string dec_to_hex(uint64_t num) {
@@ -237,7 +247,7 @@ namespace stdext
         while (p < end) {
             const char* token_start = p;
 
-            while (p < end && !separators.contains(*p)) {
+            while (p < end && separators.find(*p) == std::string_view::npos) {
                 ++p;
             }
 
@@ -245,7 +255,7 @@ namespace stdext
                 result.emplace_back(token_start, p - token_start);
             }
 
-            while (p < end && separators.contains(*p)) {
+            while (p < end && separators.find(*p) != std::string_view::npos) {
                 ++p;
             }
         }

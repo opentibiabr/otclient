@@ -57,28 +57,6 @@ namespace {
         {"src", "image-source"}
     };
 
-    static const std::unordered_map<std::string, std::string> cssMap = {
-        {"active", "active"},
-        {"focus", "focus"},
-        {"hover", "hover"},
-        {"pressed", "pressed"},
-        {"checked", "checked"},
-        {"disabled", "disabled"},
-        {"first-child", "first"},
-        {"middle", "middle"},
-        {"last-child", "last"},
-        {"nth-child(even)", "alternate"},
-        {"nth-child(odd)", "alternate"},
-        {"on", "on"},
-        {"[aria-pressed='true']", "on"},
-        {"[data-on]", "on"},
-        {"dragging", "dragging"},
-        {"hidden", "hidden"},
-        {"[hidden]", "hidden"},
-        {"mobile", "mobile"},
-        {"@media", "mobile"}
-    };
-
     static const std::unordered_set<std::string_view> kProps = {
         "color",
         "cursor",
@@ -124,12 +102,6 @@ namespace {
         }
     }
 
-    std::string cssToState(const std::string& css) {
-        if (auto it = cssMap.find(css); it != cssMap.end())
-            return it->second;
-        return "";
-    }
-
     void parseAttrPropList(std::string_view attrsStr, std::map<std::string, std::string>& attrsMap) {
         for (auto& data : stdext::split(attrsStr, ";")) {
             stdext::trim(data);
@@ -142,7 +114,7 @@ namespace {
         }
     }
 
-    void translateAttribute(std::string_view styleName, std::string_view tagName, std::string& attr, std::string& value) {
+    void translateAttribute(std::string_view styleName, std::string_view tagName, std::string& attr, std::string& /*value*/) {
         if (attr == "*style") {
             attr = "*mergeStyle";
         } else if (attr == "*if") {
@@ -337,19 +309,19 @@ void applyAttributesAndStyles(UIWidget* widget, HtmlNode* node, std::unordered_m
 
     std::map<std::string, StyleValue> stylesMerge;
 
-    for (const auto [key, stylesMap] : node->getStyles()) {
+    for (const auto& [key, stylesMap] : node->getStyles()) {
         if (key != "styles") {
             auto meta = std::make_shared<OTMLNode>();
             meta->setTag(key);
             styles->addChild(meta);
 
-            for (const auto [prop, value] : stylesMap) {
+            for (const auto& [prop, value] : stylesMap) {
                 auto nodeAttr = std::make_shared<OTMLNode>();
                 nodeAttr->setTag(prop);
                 nodeAttr->setValue(value.value);
                 meta->addChild(nodeAttr);
             }
-        } else for (const auto [prop, value] : stylesMap) {
+        } else for (const auto& [prop, value] : stylesMap) {
             stylesMerge[prop] = value;
         }
     }
@@ -358,7 +330,7 @@ void applyAttributesAndStyles(UIWidget* widget, HtmlNode* node, std::unordered_m
         stylesMerge[prop] = { value , "", false };
     }
 
-    for (const auto [prop, value] : stylesMerge) {
+    for (const auto& [prop, value] : stylesMerge) {
         auto nodeAttr = std::make_shared<OTMLNode>();
         nodeAttr->setTag(prop);
         nodeAttr->setValue(value.value);
@@ -370,7 +342,7 @@ void applyAttributesAndStyles(UIWidget* widget, HtmlNode* node, std::unordered_m
     if (node->getTag() == "input" && node->getAttr("type") == "radio")
         createRadioGroup(node, groups);
 
-    for (const auto [key, v] : node->getAttributesMap()) {
+    for (const auto& [key, v] : node->getAttributesMap()) {
         auto attr = key;
         auto value = v;
         translateAttribute(widget->getStyleName(), node->getTag(), attr, value);
@@ -503,7 +475,7 @@ uint32_t HtmlManager::load(const std::string& moduleName, const std::string& htm
     auto path = "/modules/" + moduleName + "/";
     auto htmlContent = g_resources.readFileContents(path + htmlPath);
 
-    auto root = DataRoot{ parseHtml(htmlContent), nullptr, moduleName };
+    auto root = DataRoot{ parseHtml(htmlContent), nullptr, moduleName, {}, {} };
 
     if (root.node->getChildren().empty())
         return 0;

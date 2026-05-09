@@ -830,6 +830,8 @@ void Client::registerLuaFunctions()
     g_lua.registerClass<Effect, Thing>();
     g_lua.bindClassStaticFunction<Effect>("create", [] { return std::make_shared<Effect>(); });
     g_lua.bindClassMemberFunction<Effect>("setId", &Effect::setId);
+    g_lua.bindClassMemberFunction<Effect>("setPermanent", &Effect::setPermanent);
+    g_lua.bindClassMemberFunction<Effect>("isPermanent", &Effect::isPermanent);
 
     g_lua.registerClass<Missile, Thing>();
     g_lua.bindClassStaticFunction<Missile>("create", [] { return std::make_shared<Missile>(); });
@@ -1058,6 +1060,7 @@ void Client::registerLuaFunctions()
     g_lua.bindClassMemberFunction<UIItem>("setItem", &UIItem::setItem);
     g_lua.bindClassMemberFunction<UIItem>("setVirtual", &UIItem::setVirtual);
     g_lua.bindClassMemberFunction<UIItem>("setShowCount", &UIItem::setShowCount);
+    g_lua.bindClassMemberFunction<UIItem>("setDisplayCount", &UIItem::setDisplayCount);
     g_lua.bindClassMemberFunction<UIItem>("clearItem", &UIItem::clearItem);
     g_lua.bindClassMemberFunction<UIItem>("getItemId", &UIItem::getItemId);
     g_lua.bindClassMemberFunction<UIItem>("getItemCount", &UIItem::getItemCount);
@@ -1137,7 +1140,7 @@ void Client::registerLuaFunctions()
     g_lua.bindClassMemberFunction<UIMap>("setLimitVisibleDimension", &UIMap::setLimitVisibleDimension);
     g_lua.bindClassMemberFunction<UIMap>("setDrawManaBar", &UIMap::setDrawManaBar);
     g_lua.bindClassMemberFunction<UIMap>("setKeepAspectRatio", &UIMap::setKeepAspectRatio);
-    g_lua.bindClassMemberFunction<UIMap>("setShader", &UIMap::setShader);
+    g_lua.bindClassMemberFunction<UIMap>("setShader", static_cast<void (UIMap::*)(std::string_view, float, float)>(&UIMap::setShader));
     g_lua.bindClassMemberFunction<UIMap>("getShader", &UIMap::getShader);
     g_lua.bindClassMemberFunction<UIMap>("getNextShader", &UIMap::getNextShader);
     g_lua.bindClassMemberFunction<UIMap>("isSwitchingShader", &UIMap::isSwitchingShader);

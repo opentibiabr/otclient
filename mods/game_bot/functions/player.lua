@@ -155,15 +155,11 @@ context.useRune = function(itemid, target, lastSpellTimeout)
 end
 context.userune = context.useRune
 
-context.findItem = function(itemId, subType)
-  if subType == nil then
-    subType = -1
-  end
-  local ammo = context.player:getInventoryItem(InventorySlotAmmo)
-  if ammo and ammo:getId() == itemId and (subType == -1 or ammo:getSubType() == subType) then
-    return ammo
-  end
-  return g_game.findItemInContainers(itemId, subType)
+context.findItem = function(itemId, subType, tier)
+  -- Delegate to the canonical helper so the bot shares the same inventory
+  -- traversal order as the rest of the client (equipped slots from HEAD to
+  -- AMMO, then open containers) and inherits its tier support.
+  return g_game.findPlayerItem(itemId, subType or -1, tier)
 end
 
 context.attack = g_game.attack

@@ -1555,6 +1555,7 @@ local function handleItemInteraction(item, widget, callback)
     local cancelButton = widget:getChildById('buttonCancel')
     local cancelFunc = function()
         cancelButton:getParent():destroy()
+        countWindow = nil
         widget = nil
     end
 
@@ -1572,6 +1573,13 @@ function stashItem(item)
             item:getStackPos(), 0)
         return
     end
+    if countWindow then
+        if countWindow:isDestroyed() then
+            countWindow = nil
+        else
+            return
+        end
+    end
     countWindow = g_ui.createWidget('CountStashWindow', rootWidget)
 
     handleItemInteraction(item, countWindow, function(amount)
@@ -1583,7 +1591,11 @@ end
 
 function moveStackableItem(item, toPos)
     if countWindow then
-        return
+        if countWindow:isDestroyed() then
+            countWindow = nil
+        else
+            return
+        end
     end
     if g_keyboard.isShiftPressed() then
         g_game.move(item, toPos, 1)

@@ -74,6 +74,7 @@ public:
 
     uint32_t getDatSignature() { return m_datSignature; }
     uint16_t getContentRevision() { return m_contentRevision; }
+    const std::string& getAssetIdentifier() { return m_assetIdentifier; }
 
     bool isDatLoaded() { return m_datLoaded; }
     bool isValidDatId(const uint16_t id, const ThingCategory category) const { return category < ThingLastCategory && id >= 1 && id < m_thingTypes[category].size(); }
@@ -88,6 +89,7 @@ private:
 
     uint32_t m_datSignature{ 0 };
     uint16_t m_contentRevision{ 0 };
+    std::string m_assetIdentifier;
 
 #ifdef FRAMEWORK_EDITOR
     ItemTypePtr m_nullItemType;

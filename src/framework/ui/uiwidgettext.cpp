@@ -176,10 +176,11 @@ void UIWidget::updateText()
 
     if (isTextWrap() && m_rect.isValid()) {
         m_drawTextColors = m_textColors;
+        const auto& wrapOptions = getTextWrapOptions();
         if (m_textOverflowLength > 0 && m_text.length() > m_textOverflowLength)
-            m_drawText = m_font->wrapText(m_text.substr(0, m_textOverflowLength - m_textOverflowCharacter.length()) + m_textOverflowCharacter, getWidth() - m_textOffset.x, WrapOptions{}, &m_drawTextColors);
+            m_drawText = m_font->wrapText(m_text.substr(0, m_textOverflowLength - m_textOverflowCharacter.length()) + m_textOverflowCharacter, getWidth() - m_textOffset.x, wrapOptions, &m_drawTextColors);
         else
-            m_drawText = m_font->wrapText(m_text, getWidth() - m_textOffset.x, WrapOptions{}, &m_drawTextColors);
+            m_drawText = m_font->wrapText(m_text, getWidth() - m_textOffset.x, wrapOptions, &m_drawTextColors);
     } else {
         if (m_textOverflowLength > 0 && m_text.length() > m_textOverflowLength)
             m_drawText = m_text.substr(0, m_textOverflowLength - m_textOverflowCharacter.length()) + m_textOverflowCharacter;
@@ -290,8 +291,11 @@ void UIWidget::parseTextStyle(const OTMLNodePtr& styleNode)
         }
         else if (tag == "font-scale")
             setFontScale(node->value<float>());
-        else if (tag == "font-size")
-            setFontScale(node->value<int>() / 10.f);
+        else if (tag == "font-size") {
+            const float fontSize = stdext::to_number(node->value<std::string>());
+            if (fontSize > 0.f)
+                setFontScale(fontSize / 10.f);
+        }
         else if (tag == "word-break")
             m_textWrapOptions.wordBreakMode = parseWordBreakMode(node->value());
         else if (tag == "overflow-wrap")
@@ -638,6 +642,15 @@ void UIWidget::applyWhiteSpace() {
     auto whiteSpace = m_htmlNode->getStyle("white-space");
     if (whiteSpace.empty())
         whiteSpace = "normal";
+
+    WrapOptions* wrapOptionsOwner = &m_textWrapOptions;
+    if (m_parent && m_htmlNode && m_htmlNode->getType() == NodeType::Text)
+        wrapOptionsOwner = &m_parent->m_textWrapOptions;
+
+    if (m_htmlNode->getStyle("overflow-wrap").empty())
+        wrapOptionsOwner->overflowWrapMode = OverflowWrapMode::Normal;
+    if (m_htmlNode->getStyle("word-break").empty())
+        wrapOptionsOwner->wordBreakMode = WordBreakMode::Normal;
 
     setProp(PropTextHorizontalAutoResize, false);
     setProp(PropTextVerticalAutoResize, false);
