@@ -25,6 +25,7 @@ static/
 cmake-build-*/
 vcpkg_installed/
 vc17/
+vc18/
 /build-emscripten-web/
 
 # MSTest test Results
