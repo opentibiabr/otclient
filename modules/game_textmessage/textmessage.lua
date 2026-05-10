@@ -236,6 +236,7 @@ function displayMessage(mode, text)
         MessageTypes[MessageModes.Guild] = MessageSettings.statusOwn
         MessageTypes[MessageModes.Party] = MessageSettings.statusOwn
     else
+        MessageTypes[MessageModes.PrivateFrom] = MessageSettings.privateNpcToPlayer
         MessageTypes[MessageModes.Loot] = MessageSettings.centerGreen
         MessageTypes[MessageModes.ValuableLoot] = MessageSettings.centerGreen
         MessageTypes[MessageModes.Guild] = MessageSettings.centerGreen
