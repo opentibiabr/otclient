@@ -454,6 +454,9 @@ void LocalPlayer::setInventoryItem(const Otc::InventorySlot inventory, const Ite
     const auto& oldItem = m_inventoryItems[inventory];
     m_inventoryItems[inventory] = item;
 
+    if (item && g_game.getFeature(Otc::GameThingClock) && item->getDurationTime() > 0)
+        item->setDecaying(true);
+
     callLuaField("onInventoryChange", inventory, item, oldItem);
 }
 

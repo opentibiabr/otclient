@@ -441,4 +441,38 @@ void Item::serializeItem(const OutputBinaryTreePtr& out)
 
 #endif
 
+void Item::setDurationTime(uint32_t duration)
+{
+    m_duration = duration;
+    m_decaying = false;
+    m_durationEnd = 0;
+}
+
+void Item::setDecaying(bool decaying)
+{
+    if (m_decaying == decaying) return;
+    m_decaying = decaying;
+
+    if (decaying) {
+        m_durationEnd = g_clock.millis() + static_cast<int64_t>(m_duration) * 1000;
+    } else {
+        m_durationEnd = 0;
+    }
+}
+
+uint32_t Item::getDurationTime() const
+{
+    if (m_decaying) {
+        const auto remaining = m_durationEnd - g_clock.millis();
+        return remaining > 0 ? static_cast<uint32_t>(remaining / 1000) : 0;
+    }
+    return m_duration;
+}
+
+int Item::getClothSlot()
+{
+    auto* type = getThingType();
+    return type ? type->getClothSlot() : 0;
+}
+
 /* vim: set ts=4 sw=4 et :*/
