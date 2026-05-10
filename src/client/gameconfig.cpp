@@ -182,6 +182,8 @@ void GameConfig::loadMapNode(const OTMLNodePtr& mainNode) {
             m_mapUndergroundFloorRange = node->value<int>();
         else if (node->tag() == "aware-underground-floor-range")
             m_mapAwareUndergroundFloorRange = node->value<int>();
+        else if (node->tag() == "extended-view-ui")
+            m_extendedViewUI = node->value<bool>();
     }
 }
 

@@ -44,6 +44,7 @@ public:
     uint8_t getMapSeaFloor() const { return m_mapSeaFloor; }
     uint8_t getMapUndergroundFloorRange() const { return m_mapUndergroundFloorRange; }
     uint8_t getMapAwareUndergroundFloorRange() const { return m_mapAwareUndergroundFloorRange; }
+    bool isExtendedViewUI() const { return m_extendedViewUI; }
 
     uint8_t getTileMaxElevation() const { return m_tileMaxElevation; }
     uint8_t getTileMaxThings() const { return m_tileMaxThings; }
@@ -101,6 +102,7 @@ private:
     uint8_t m_mapSeaFloor{ 7 };
     uint8_t m_mapUndergroundFloorRange{ 2 };
     uint8_t m_mapAwareUndergroundFloorRange{ 2 };
+    bool m_extendedViewUI{ false };
 
     // Tile
     uint8_t m_tileMaxElevation{ 24 };
