@@ -285,7 +285,7 @@ function show()
     end
 
     setupViewMode(0)
-    if g_platform.isMobile() or (g_gameConfig.isExtendedViewUI and g_gameConfig.isExtendedViewUI()) then
+    if g_platform.isMobile() or g_gameConfig.isExtendedViewUI() then
         setupViewMode(1)
         setupViewMode(2)
     end
