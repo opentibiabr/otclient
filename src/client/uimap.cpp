@@ -258,17 +258,29 @@ void UIMap::onHoverChange(bool hovered)
 {
     UIWidget::onHoverChange(hovered);
     if (!hovered && m_mapView->hasCursorAnimations() && !g_mouse.isCursorChanged()) {
-        g_window.restoreMouseCursor();
+        const int defaultId = g_mouse.getCursorId("default");
+        if (defaultId != -1)
+            g_window.setMouseCursor(defaultId);
+        else
+            g_window.restoreMouseCursor();
     }
 }
 
 bool UIMap::onMouseMove(const Point& mousePos, const Point& mouseMoved)
 {
     const auto& pos = getPosition(mousePos);
-    if (!pos.isValid())
+    if (!pos.isValid()) {
+        if (isHovered() && m_mapView->hasCursorAnimations() && !g_mouse.isCursorChanged()) {
+            const int defaultId = g_mouse.getCursorId("default");
+            if (defaultId != -1)
+                g_window.setMouseCursor(defaultId);
+            else
+                g_window.restoreMouseCursor();
+        }
         return false;
+    }
 
-    if (m_mapView->getLastMousePosition() != pos) {
+    if (isHovered() && m_mapView->getLastMousePosition() != pos) {
         m_mapView->onMouseMove(pos);
         m_mapView->setLastMousePosition(pos);
     }
