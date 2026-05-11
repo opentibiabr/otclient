@@ -423,6 +423,7 @@ void Client::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_gameConfig", "isDrawingInformationByWidget", &GameConfig::isDrawingInformationByWidget, &g_gameConfig);
     g_lua.bindSingletonFunction("g_gameConfig", "isAdjustCreatureInformationBasedCropSize", &GameConfig::isAdjustCreatureInformationBasedCropSize, &g_gameConfig);
     g_lua.bindSingletonFunction("g_gameConfig", "isUseCropSizeForUIDraw", &GameConfig::isUseCropSizeForUIDraw, &g_gameConfig);
+    g_lua.bindSingletonFunction("g_gameConfig", "isExtendedViewUI", &GameConfig::isExtendedViewUI, &g_gameConfig);
 
     g_lua.bindSingletonFunction("g_gameConfig", "getShieldBlinkTicks", &GameConfig::getShieldBlinkTicks, &g_gameConfig);
     g_lua.bindSingletonFunction("g_gameConfig", "getCreatureNameFontName", &GameConfig::getCreatureNameFontName, &g_gameConfig);
@@ -1064,6 +1065,8 @@ void Client::registerLuaFunctions()
     g_lua.bindClassMemberFunction<UIItem>("setItem", &UIItem::setItem);
     g_lua.bindClassMemberFunction<UIItem>("setVirtual", &UIItem::setVirtual);
     g_lua.bindClassMemberFunction<UIItem>("setShowCount", &UIItem::setShowCount);
+    g_lua.bindClassMemberFunction<UIItem>("setShowDuration", &UIItem::setShowDuration);
+    g_lua.bindClassMemberFunction<UIItem>("setShowCharges", &UIItem::setShowCharges);
     g_lua.bindClassMemberFunction<UIItem>("setDisplayCount", &UIItem::setDisplayCount);
     g_lua.bindClassMemberFunction<UIItem>("clearItem", &UIItem::clearItem);
     g_lua.bindClassMemberFunction<UIItem>("getItemId", &UIItem::getItemId);

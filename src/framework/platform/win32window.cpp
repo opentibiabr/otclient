@@ -620,7 +620,7 @@ LRESULT WIN32Window::windowProc(const HWND hWnd, const uint32_t uMsg, const WPAR
     switch (uMsg) {
         case WM_SETCURSOR:
         {
-            if (m_cursor)
+            if (LOWORD(lParam) == HTCLIENT && m_cursor)
                 SetCursor(m_cursor);
             else
                 return DefWindowProc(hWnd, uMsg, wParam, lParam);

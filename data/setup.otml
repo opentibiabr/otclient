@@ -6,6 +6,7 @@ game
   
   map
     viewport: 8 6
+    extended-view-ui: false
     max-z: 15
     sea-floor: 7
     underground-floor: 8

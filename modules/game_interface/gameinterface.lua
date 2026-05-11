@@ -42,6 +42,27 @@ local mobileConfig = {
     mobileHeightJoystick = 0,
     mobileHeightShortcuts = 0
 }
+local isExtendedViewActive = false
+
+local function updateSidePanelButtons()
+    leftIncreaseSidePanels:setEnabled(not modules.client_options.getOption('showLeftExtraPanel'))
+    if g_platform.isMobile() then
+        leftDecreaseSidePanels:setEnabled(false)
+    else
+        leftDecreaseSidePanels:setEnabled(
+            modules.client_options.getOption('showLeftPanel') or
+            modules.client_options.getOption('showLeftExtraPanel'))
+    end
+    rightIncreaseSidePanels:setEnabled(not modules.client_options.getOption('showRightExtraPanel'))
+    rightDecreaseSidePanels:setEnabled(modules.client_options.getOption('showRightExtraPanel'))
+end
+
+local function applyMobileMargins()
+    if g_platform.isMobile() then
+        gameRightPanel:setMarginBottom(mobileConfig.mobileHeightShortcuts)
+        gameLeftPanel:setMarginBottom(mobileConfig.mobileHeightJoystick)
+    end
+end
 
 function init()
     g_ui.importStyle('styles/countwindow')
@@ -102,21 +123,8 @@ function init()
     gameRightLockPanel = gameRootPanel:recursiveGetChildById('rightLock')
     gameLeftLockPanel = gameRootPanel:recursiveGetChildById('leftLock')
 
-    leftIncreaseSidePanels:setEnabled(not modules.client_options.getOption('showLeftExtraPanel'))
-    if g_platform.isMobile() then
-        leftDecreaseSidePanels:setEnabled(false)
-    else
-        local hasLeftPanels = modules.client_options.getOption('showLeftPanel') or
-        modules.client_options.getOption('showLeftExtraPanel')
-        leftDecreaseSidePanels:setEnabled(hasLeftPanels)
-    end
-    rightIncreaseSidePanels:setEnabled(not modules.client_options.getOption('showRightExtraPanel'))
-    rightDecreaseSidePanels:setEnabled(modules.client_options.getOption('showRightExtraPanel'))
-
-    if g_platform.isMobile() then
-        gameRightPanel:setMarginBottom(mobileConfig.mobileHeightShortcuts)
-        gameLeftPanel:setMarginBottom(mobileConfig.mobileHeightJoystick)
-    end
+    updateSidePanelButtons()
+    applyMobileMargins()
 
     panelsList = { {
         panel = gameRightPanel,
@@ -249,22 +257,8 @@ end
 
 function onGameStart()
     show()
-
-    leftIncreaseSidePanels:setEnabled(not modules.client_options.getOption('showLeftExtraPanel'))
-    if g_platform.isMobile() then
-        leftDecreaseSidePanels:setEnabled(false)
-    else
-        local hasLeftPanels = modules.client_options.getOption('showLeftPanel') or
-        modules.client_options.getOption('showLeftExtraPanel')
-        leftDecreaseSidePanels:setEnabled(hasLeftPanels)
-    end
-    rightIncreaseSidePanels:setEnabled(not modules.client_options.getOption('showRightExtraPanel'))
-    rightDecreaseSidePanels:setEnabled(modules.client_options.getOption('showRightExtraPanel'))
-
-    if g_platform.isMobile() then
-        gameRightPanel:setMarginBottom(mobileConfig.mobileHeightShortcuts)
-        gameLeftPanel:setMarginBottom(mobileConfig.mobileHeightJoystick)
-    end
+    updateSidePanelButtons()
+    applyMobileMargins()
 end
 
 function onGameEnd()
@@ -283,12 +277,15 @@ function show()
     updateStretchShrink()
     logoutButton:setTooltip(tr('Logout'))
 
-    setupViewMode(0)
     if g_platform.isMobile() then
         mobileConfig.mobileWidthJoystick = modules.game_joystick.getPanel():getWidth()
         mobileConfig.mobileWidthShortcuts = modules.game_shortcuts.getPanel():getWidth()
         mobileConfig.mobileHeightJoystick = modules.game_joystick.getPanel():getHeight()
         mobileConfig.mobileHeightShortcuts = modules.game_shortcuts.getPanel():getHeight()
+    end
+
+    setupViewMode(0)
+    if g_platform.isMobile() or g_gameConfig.isExtendedViewUI() then
         setupViewMode(1)
         setupViewMode(2)
     end
@@ -1747,21 +1744,7 @@ function setupViewMode(mode)
         return
     end
 
-    leftIncreaseSidePanels:setEnabled(not modules.client_options.getOption('showLeftExtraPanel'))
-    if g_platform.isMobile() then
-        leftDecreaseSidePanels:setEnabled(false)
-    else
-        local hasLeftPanels = modules.client_options.getOption('showLeftPanel') or
-        modules.client_options.getOption('showLeftExtraPanel')
-        leftDecreaseSidePanels:setEnabled(hasLeftPanels)
-    end
-    rightIncreaseSidePanels:setEnabled(not modules.client_options.getOption('showRightExtraPanel'))
-    rightDecreaseSidePanels:setEnabled(modules.client_options.getOption('showRightExtraPanel'))
-
-    if g_platform.isMobile() then
-        gameRightPanel:setMarginBottom(mobileConfig.mobileHeightShortcuts)
-        gameLeftPanel:setMarginBottom(mobileConfig.mobileHeightJoystick)
-    end
+    updateSidePanelButtons()
 
     if currentViewMode == 2 then
         gameMapPanel:addAnchor(AnchorLeft, 'gameLeftPanel', AnchorRight)
@@ -1781,10 +1764,6 @@ function setupViewMode(mode)
         gameRightExtraPanel:setMarginTop(0)
         gameLeftExtraPanel:setMarginTop(0)
         gameBottomPanel:setImageColor('white')
-        if g_platform.isMobile() then
-            gameRightPanel:setMarginBottom(mobileConfig.mobileHeightShortcuts)
-            gameLeftPanel:setMarginBottom(mobileConfig.mobileHeightJoystick)
-        end
     end
 
     if mode == 0 then
@@ -1795,10 +1774,6 @@ function setupViewMode(mode)
             width = 15,
             height = 11
         })
-        if g_platform.isMobile() then
-            gameRightPanel:setMarginBottom(mobileConfig.mobileHeightShortcuts)
-            gameLeftPanel:setMarginBottom(mobileConfig.mobileHeightJoystick)
-        end
     elseif mode == 1 then
         gameMapPanel:setKeepAspectRatio(false)
         gameMapPanel:setLimitVisibleRange(true)
@@ -1807,10 +1782,6 @@ function setupViewMode(mode)
             width = 15,
             height = 11
         })
-        if g_platform.isMobile() then
-            gameRightPanel:setMarginBottom(mobileConfig.mobileHeightShortcuts)
-            gameLeftPanel:setMarginBottom(mobileConfig.mobileHeightJoystick)
-        end
     elseif mode == 2 then
         local limit = limitedZoom and not g_game.isGM()
         gameMapPanel:setLimitVisibleRange(limit)
@@ -1834,14 +1805,11 @@ function setupViewMode(mode)
         gameLeftExtraPanel:setVisible(false)
         gameMapPanel:setOn(true)
         gameBottomPanel:setImageColor('#ffffff88')
-        if g_platform.isMobile() then
-            gameRightPanel:setMarginBottom(mobileConfig.mobileHeightShortcuts)
-            gameLeftPanel:setMarginBottom(mobileConfig.mobileHeightJoystick)
-        end
     end
 
+    applyMobileMargins()
     currentViewMode = mode
-    testExtendedView(mode)
+    applyExtendedViewLayout(mode == 2)
 end
 
 function limitZoom()
@@ -1973,13 +1941,16 @@ function checkAndOpenLeftPanel()
     end
 end
 
-function testExtendedView(mode)
-    local extendedView = mode == 2
+function applyExtendedViewLayout(extendedView)
+    if extendedView == isExtendedViewActive then return end
+    isExtendedViewActive = extendedView
+
+    local buttons = { leftIncreaseSidePanels, rightIncreaseSidePanels,
+        rightDecreaseSidePanels, leftDecreaseSidePanels }
+
     if extendedView then
-        local buttons = { leftIncreaseSidePanels, rightIncreaseSidePanels, rightDecreaseSidePanels,
-            leftDecreaseSidePanels }
-        for _, button in ipairs(buttons) do
-            button:hide()
+        for _, btn in ipairs(buttons) do
+            btn:hide()
         end
 
         if not g_platform.isMobile() then
@@ -2014,12 +1985,9 @@ function testExtendedView(mode)
         gameRightActionPanel:setImageSource('/images/ui/actionbar/actionbar_background-light')
         gameLeftActionPanel:setBorderWidthRight(1)
         gameRightActionPanel:setBorderWidthLeft(1)
-        local buttons = { leftIncreaseSidePanels, rightIncreaseSidePanels, rightDecreaseSidePanels,
-            leftDecreaseSidePanels }
-
-        for _, button in ipairs(buttons) do
-            button:setMarginTop(0)
-            button:show()
+        for _, btn in ipairs(buttons) do
+            btn:setMarginTop(0)
+            btn:show()
         end
 
         -- Reset bottom panel
@@ -2044,6 +2012,7 @@ function testExtendedView(mode)
             end
         end
     end
+
     addEvent(function()
         modules.game_console.setExtendedView(extendedView)
         modules.game_minimap.extendedView(extendedView)
