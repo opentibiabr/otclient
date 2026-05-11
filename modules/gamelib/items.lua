@@ -194,35 +194,4 @@ function ItemsDatabase.setTier(widget, item, isSmall)
     widget.tier:setVisible(true)
 end
 
-function ItemsDatabase.setCharges(widget, item, style)
-    if not g_game.getFeature(GameThingCounter) or not widget then
-        return
-    end
 
-    if item and item:getCharges() > 0 then
-        widget.charges:setText(item:getCharges())
-    else
-        widget.charges:setText("")
-    end
-
-    if style then
-        widget:setStyle(style)
-    end
-end
-
-function ItemsDatabase.setDuration(widget, item, style)
-    if not g_game.getFeature(GameThingClock) or not widget then
-        return
-    end
-
-    if item and item:getDurationTime() > 0 then
-        local durationTimeLeft = item:getDurationTime()
-        widget.duration:setText(string.format("%dm%02d", durationTimeLeft / 60, durationTimeLeft % 60))
-    else
-        widget.duration:setText("")
-    end
-
-    if style then
-        widget:setStyle(style)
-    end
-end

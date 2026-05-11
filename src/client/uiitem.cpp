@@ -55,25 +55,42 @@ void UIItem::drawSelf(const DrawPoolType drawPane)
         m_item->draw(Point(exactSize - g_gameConfig.getSpriteSize()) + m_item->getDisplacement());
         g_drawPool.releaseFrameBuffer(getPaddingRect(), m_flipDirection);
 
+        const auto itemCountFont = g_gameConfig.getItemCountFont();
+        const auto& countFont = itemCountFont ? itemCountFont : m_font;
+
         const int displayCount = m_displayCount > 0 ? m_displayCount
                                : (m_item->isStackable() ? m_item->getCount() : 0);
         const bool shouldDrawCount = m_displayCount > 0 ? (displayCount >= 1) : (displayCount > 1);
-        if (m_alwaysShowCount && shouldDrawCount) {
-            const auto itemCountFont = g_gameConfig.getItemCountFont();
-            const auto& countFont = itemCountFont ? itemCountFont : m_font;
-            if (countFont) {
-                static constexpr Color STACK_COLOR(191, 191, 191);
-                const auto count = displayCount;
-                std::string countText;
-                if (count < 1000) {
-                    countText = std::to_string(count);
-                } else if (count < 10000) {
-                    countText = fmt::format("{},{:03d}", count / 1000, count % 1000);
-                } else {
-                    countText = fmt::format("{}K", count / 1000);
-                }
-                countFont->drawText(countText, Rect(m_rect.topLeft(), m_rect.bottomRight() ), STACK_COLOR, Fw::AlignBottomRight);
+        if (countFont && m_alwaysShowCount && shouldDrawCount) {
+            static constexpr Color STACK_COLOR(191, 191, 191);
+            std::string countText;
+            if (displayCount < 1000) {
+                countText = std::to_string(displayCount);
+            } else if (displayCount < 10000) {
+                countText = fmt::format("{},{:03d}", displayCount / 1000, displayCount % 1000);
+            } else {
+                countText = fmt::format("{}K", displayCount / 1000);
             }
+            countFont->drawText(countText, Rect(m_rect.topLeft(), m_rect.bottomRight()), STACK_COLOR, Fw::AlignBottomRight);
+        }
+
+        if (countFont && m_showDuration) {
+            const auto secs = m_item->getDurationTime();
+            if (secs > 0) {
+                std::string durationText;
+                if (secs >= 3600) {
+                    durationText = fmt::format("{}h{:02}m", secs / 3600, (secs % 3600) / 60);
+                } else if (secs >= 60) {
+                    durationText = fmt::format("{}m{:02}", secs / 60, secs % 60);
+                } else {
+                    durationText = fmt::format("{}s", secs);
+                }
+                countFont->drawText(durationText, Rect(m_rect.topLeft(), m_rect.bottomRight()), Color::white, Fw::AlignBottomLeft);
+            }
+        }
+
+        if (countFont && m_showCharges && m_item->getCharges() > 0) {
+            countFont->drawText(std::to_string(m_item->getCharges()), Rect(m_rect.x() + 2, m_rect.y() + 2, m_rect.width(), m_rect.height()), Color::white, Fw::AlignTopLeft);
         }
 
 #ifdef FRAMEWORK_EDITOR

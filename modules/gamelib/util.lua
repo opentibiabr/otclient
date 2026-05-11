@@ -209,5 +209,3 @@ function pdumpItemId(itemId)
     g_logger.info(" ")
 
 end
-
-

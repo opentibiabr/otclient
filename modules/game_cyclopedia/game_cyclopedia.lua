@@ -553,3 +553,7 @@ function Cyclopedia.onResourcesBalanceChange()
             ResourceTypes.MINOR_CHARM, ResourceTypes.MAX_MINOR_CHARM))
     end
 end
+
+function isVisible()
+    return controllerCyclopedia and controllerCyclopedia.ui and controllerCyclopedia.ui:isVisible()
+end
