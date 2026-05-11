@@ -444,8 +444,8 @@ void Item::serializeItem(const OutputBinaryTreePtr& out)
 void Item::setDurationTime(uint32_t duration)
 {
     m_duration = duration;
-    m_decaying = false;
-    m_durationEnd = 0;
+    if (m_decaying)
+        m_durationEnd = g_clock.millis() + static_cast<int64_t>(m_duration) * 1000;
 }
 
 void Item::setDecaying(bool decaying)
@@ -456,6 +456,8 @@ void Item::setDecaying(bool decaying)
     if (decaying) {
         m_durationEnd = g_clock.millis() + static_cast<int64_t>(m_duration) * 1000;
     } else {
+        const int64_t remaining_ms = m_durationEnd - g_clock.millis();
+        m_duration = static_cast<uint32_t>(std::max<int64_t>(0, (remaining_ms + 999) / 1000));
         m_durationEnd = 0;
     }
 }

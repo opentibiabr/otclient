@@ -79,13 +79,13 @@ void UIItem::drawSelf(const DrawPoolType drawPane)
             if (secs > 0) {
                 std::string durationText;
                 if (secs >= 3600) {
-                    durationText = fmt::format("{}h{}m", secs / 3600, (secs % 3600) / 60);
+                    durationText = fmt::format("{}h{:02}m", secs / 3600, (secs % 3600) / 60);
                 } else if (secs >= 60) {
-                    durationText = fmt::format("{}m{}", secs / 60, secs % 60);
+                    durationText = fmt::format("{}m{:02}", secs / 60, secs % 60);
                 } else {
                     durationText = fmt::format("{}s", secs);
                 }
-                countFont->drawText(durationText, Rect(m_rect.topLeft(), m_rect.bottomRight() - Point(2, 0)), Color::white, Fw::AlignBottomRight);
+                countFont->drawText(durationText, Rect(m_rect.topLeft(), m_rect.bottomRight()), Color::white, Fw::AlignBottomLeft);
             }
         }
 
