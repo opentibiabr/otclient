@@ -1062,7 +1062,9 @@ void ProtocolGame::sendInspectionNormalObject(const Position& position)
 
 void ProtocolGame::sendInspectionObject(const Otc::InspectObjectTypes inspectionType, const uint16_t itemId, const uint8_t itemCount)
 {
-    if (inspectionType != Otc::INSPECT_NPCTRADE && inspectionType != Otc::INSPECT_CYCLOPEDIA) {
+    if (inspectionType != Otc::INSPECT_NPCTRADE &&
+        inspectionType != Otc::INSPECT_CYCLOPEDIA &&
+        inspectionType != Otc::INSPECT_PROFICIENCY) {
         return;
     }
 
@@ -1078,6 +1080,15 @@ void ProtocolGame::sendRequestBestiary()
 {
     const auto& msg = std::make_shared<OutputMessage>();
     msg->addU8(Proto::ClientBestiaryRequest);
+    send(msg);
+}
+
+void ProtocolGame::sendInspectCharacter(const uint32_t creatureId, const uint8_t tab)
+{
+    const auto& msg = std::make_shared<OutputMessage>();
+    msg->addU8(Proto::ClientInspectionCharacter);
+    msg->addU8(tab);
+    msg->addU32(creatureId);
     send(msg);
 }
 
