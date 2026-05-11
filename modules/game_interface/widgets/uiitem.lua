@@ -110,7 +110,10 @@ function UIItem:onHoverChange(hovered)
     UIWidget.onHoverChange(self, hovered)
 
     if self:isVirtual() or not self:isDraggable() then
-        UIDragIcon:hide()
+        local draggingWidget = g_ui.getDraggingWidget()
+        if not draggingWidget or draggingWidget == self then
+            UIDragIcon:hide()
+        end
         return
     end
 
