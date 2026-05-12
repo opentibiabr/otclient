@@ -246,7 +246,6 @@
 
 .multiplierLabel {
     display: inline-block;
-    width: 127px;
     text-align: center;
     font: verdana-11px-rounded;
     color: #c0c0c0;
@@ -277,7 +276,6 @@
     width: 1px;
     height: 100%;
     background-color: #555555;
-    margin: 0 52px;
 }
 
 .progressFill {
@@ -294,12 +292,10 @@
     position: absolute;
     top: 45px;
     left: 60px;
+    width: 85%;
 }
 
-.threshLabelRight {
-    position: absolute;
-    right: 10px;
-}
+
 
 .rewardInfoRow {
     display: block;

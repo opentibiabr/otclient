@@ -209,29 +209,29 @@
                     <div class="weeklyProgRightCol">
                         <!-- NO whitespace between multiplier labels — each 127px, 5×127=635px -->
                         <div class="multiplierRow">
-                            <label class="multiplierLabel">x1</label>
-                            <label class="multiplierLabel">x2</label>
-                            <label class="multiplierLabel">x3</label>
-                            <label class="multiplierLabel">x5</label>
-                            <label class="multiplierLabel">x8</label>
+                            <label class="multiplierLabel" style="position: absolute;left: 45px;">x1</label>
+                            <label class="multiplierLabel" style="position: absolute;left: 109px;">x2</label>
+                            <label class="multiplierLabel" style="position: absolute;left: 173px;">x3</label>
+                            <label class="multiplierLabel" style="position: absolute;left: 237px;">x5</label>
+                            <label class="multiplierLabel" style="position: absolute;left: 290px;">x8</label>
                         </div>
                         <div class="diveVertical">
-                            <div class="VerticalSeparator VerticalSeparatorTasks"></div>
-                            <div class="VerticalSeparator VerticalSeparatorTasks"></div>
-                            <div class="VerticalSeparator VerticalSeparatorTasks"></div>
-                            <div class="VerticalSeparator VerticalSeparatorTasks"></div>
+                            <div class="VerticalSeparator VerticalSeparatorTasks" style="position: absolute;top:-41px;left:-6px;" ></div>
+                            <div class="VerticalSeparator VerticalSeparatorTasks" style="position: absolute;top:-41px;left: 61px;"></div>
+                            <div class="VerticalSeparator VerticalSeparatorTasks" style="position: absolute;top:-41px;left: 126px;"></div>
+                            <div class="VerticalSeparator VerticalSeparatorTasks" style="position: absolute;top:-41px;left: 194px;" ></div>
                         </div>
                         <div class="progressTrack" *tooltip="self.weeklyProgressTooltip">
                             <div class="progressFill" *style-width="tostring(self.weeklyProgressPct) .. '%'"></div>
                         </div>
 
                         <div class="thresholdRow">
-                            <label class="multiplierLabel">0</label>
-                            <label class="multiplierLabel">4</label>
-                            <label class="multiplierLabel">8</label>
-                            <label class="multiplierLabel">12</label>
-                            <label class="multiplierLabel">16</label>
-                            <label class="threshLabelRight">18</label>
+                            <label class="multiplierLabel" style="position: absolute;left: 15px;">0</label> 
+                            <label class="multiplierLabel" style="position: absolute;left: 78px;">4</label>
+                            <label class="multiplierLabel" style="position: absolute;left: 142px;">8</label>    
+                            <label class="multiplierLabel" style="position: absolute;left: 206px;">12</label>
+                            <label class="multiplierLabel" style="position: absolute;left: 270px;">16</label>
+                            <label class="multiplierLabel" style="position: absolute;right: 15px;">18</label>
                         </div>
                     </div>
                 </div>
