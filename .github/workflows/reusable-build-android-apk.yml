@@ -1,4 +1,4 @@
-name: Build - Android APK
+name: Reusable Android APK Build
 
 on:
   workflow_call:
@@ -31,7 +31,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -124,23 +124,12 @@ jobs:
           "${VCPKG_ROOT}/bootstrap-vcpkg.sh" -disableMetrics
 
       - name: Export vcpkg GitHub Actions cache variables
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
             core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
             core.exportVariable('VCPKG_BINARY_SOURCES', 'clear;x-gha,readwrite');
-
-      - name: Preinstall vcpkg dependencies for Android
-        env:
-          VCPKG_ROOT: ${{ env.VCPKG_ROOT }}
-        run: |
-          set -euo pipefail
-          "${VCPKG_ROOT}/vcpkg" install \
-            --triplet "${CI_VCPKG_TRIPLET}" \
-            --x-manifest-root="${GITHUB_WORKSPACE}" \
-            --allow-unsupported \
-            --clean-after-build
 
       - name: Cache LuaJIT Android libraries
         id: luajit-cache
@@ -224,7 +213,7 @@ jobs:
         run: find android/app/build/outputs/apk/release -maxdepth 1 -type f -name "*.apk" -print
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: otclient-android-release-${{ github.sha }}
           path: android/app/build/outputs/apk/release/*.apk
