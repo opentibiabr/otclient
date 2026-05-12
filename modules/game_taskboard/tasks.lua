@@ -188,7 +188,6 @@ function TaskBoardController:onGameEnd()
         self:hideSoulseal()
     end
     self:resetSessionState()
-    self:terminateTracker()
 end
 
 function TaskBoardController:onTerminate()
@@ -203,6 +202,7 @@ function TaskBoardController:onTerminate()
     if self.ui then
         self:unloadHtml()
     end
+    self:terminateTracker()
 end
 
 --  Window management

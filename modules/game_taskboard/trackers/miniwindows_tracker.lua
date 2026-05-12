@@ -97,10 +97,6 @@ function TaskBoardController:terminateTracker()
         restoreEvent = nil
     end
     Keybind.delete("Windows", "Show/Hide kill tracker")
-    if taskboardTrackerButton then
-        taskboardTrackerButton:destroy()
-        taskboardTrackerButton = nil
-    end
     if preyTracker then
         preyTracker:destroy()
         preyTracker = nil
