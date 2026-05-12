@@ -117,7 +117,7 @@ function controllerNpcTrader:setupWindowDragBehavior()
 end
 
 function controllerNpcTrader:initNpcWindow(creature, buttons)
-    if not g_game.getFeature(GameNpcWindowRedesign) then
+    if self:isLegacyMode() then
         return
     end
     self.widthConsole = self.DEFAULT_CONSOLE_WIDTH
@@ -147,7 +147,7 @@ function controllerNpcTrader:initNpcWindow(creature, buttons)
 end
 
 function onNpcChatWindow(data)
-    if not g_game.getFeature(GameNpcWindowRedesign) then
+    if controllerNpcTrader:isLegacyMode() then
         controllerNpcTrader:legacy_show()
         return
     end

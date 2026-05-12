@@ -1,4 +1,4 @@
-function onOpenNpcTrade(items, currencyId, currencyName)
+function controllerNpcTrader:onOpenNpcTrade(items, currencyId, currencyName)
     local ui = controllerNpcTrader.ui
     if not ui or not ui:isVisible() then
         controllerNpcTrader:initNpcWindow()

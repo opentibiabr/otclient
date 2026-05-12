@@ -4,87 +4,102 @@ controllerNpcTrader.creatureName = ""
 controllerNpcTrader.outfit = nil
 controllerNpcTrader.buttons = {}
 controllerNpcTrader.isTradeOpen = false
+controllerNpcTrader.legacyMode = false
+
+function controllerNpcTrader:isLegacyMode()
+    return self.legacyMode
+end
 
 function controllerNpcTrader:onInit()
 
 end
 
 function controllerNpcTrader:onGameStart()
-    if not g_game.getFeature(GameNpcWindowRedesign) then
+    self.legacyMode = not g_game.getFeature(GameNpcWindowRedesign)
+    if self:isLegacyMode() then
         self:legacy_init()
     end
 
     self:registerEvents(g_game, {
-        onNpcChatWindow = onNpcChatWindow,
+        onNpcChatWindow = function(data)
+            onNpcChatWindow(data)
+        end,
         onOpenNpcTrade = function(...)
-            if not g_game.getFeature(GameNpcWindowRedesign) then
-                self:onOpenNpcTradeLegacy(...)
-            else
+            if self:isLegacyMode() then
                 onOpenNpcTrade(...)
+            else
+                self:onOpenNpcTrade(...)
             end
         end,
         onPlayerGoods = function(money, items)
-            if not g_game.getFeature(GameNpcWindowRedesign) then
-                self:onPlayerGoodsLegacy(money, items)
+            if self:isLegacyMode() then
+                onPlayerGoods(money, items)
             else
                 self:onPlayerGoods(money, items)
             end
         end,
         onNpcChatWindowClose = function()
-            self:onCloseNpcTrade()
+            if self:isLegacyMode() then
+                self:legacy_hide()
+            else
+                self:onCloseNpcTrade()
+            end
         end,
         onCloseNpcTrade = function()
-            self:onCloseNpcTrade()
+            if self:isLegacyMode() then
+                self:legacy_hide()
+            else
+                self:onCloseNpcTrade()
+            end
         end,
         onTalk = onNpcTalk
     })
 end
 
 function controllerNpcTrader:onTerminate()
-    self:onCloseNpcTrade()
-    if  not g_game.getFeature(GameNpcWindowRedesign) then
+    if self:isLegacyMode() then
         self:legacy_terminate()
+    else
+        self:onCloseNpcTrade()
     end
 end
 
 function controllerNpcTrader:onGameEnd()
-    self:onCloseNpcTrade()
-    if not g_game.getFeature(GameNpcWindowRedesign) then
+    if self:isLegacyMode() then
         self:legacy_hide()
+    else
+        self:onCloseNpcTrade()
     end
 end
 
 function controllerNpcTrader:onCloseNpcTrade()
-    controllerNpcTrader.isTradeOpen = false
-    
-    if controllerNpcTrader.sellAllWithDelayEvent then
-        removeEvent(controllerNpcTrader.sellAllWithDelayEvent)
-        controllerNpcTrader.sellAllWithDelayEvent = nil
-    end
-
-    -- Clean up state
-    controllerNpcTrader.buyItems = {}
-    controllerNpcTrader.sellItems = {}
-    controllerNpcTrader.playerItems = {}
-    controllerNpcTrader.playerMoney = nil
-    controllerNpcTrader.selectedItem = nil
-    controllerNpcTrader.tradeItems = {}
-    controllerNpcTrader.currentList = {}
-    controllerNpcTrader.allTradeItems = {}
-
-    if not g_game.getFeature(GameNpcWindowRedesign) then
+    if self:isLegacyMode() then
         self:legacy_hide()
-    end
-
-    if controllerNpcTrader.ui and controllerNpcTrader.ui:isVisible() then
-        controllerNpcTrader:unloadHtml()
+    else
+        if controllerNpcTrader.ui and controllerNpcTrader.ui:isVisible() then
+            controllerNpcTrader:unloadHtml()
+        end
+        controllerNpcTrader.isTradeOpen = false
+        if controllerNpcTrader.sellAllWithDelayEvent then
+            removeEvent(controllerNpcTrader.sellAllWithDelayEvent)
+            controllerNpcTrader.sellAllWithDelayEvent = nil
+        end
+        -- Clean up state
+        controllerNpcTrader.buyItems = {}
+        controllerNpcTrader.sellItems = {}
+        controllerNpcTrader.playerItems = {}
+        controllerNpcTrader.playerMoney = nil
+        controllerNpcTrader.selectedItem = nil
+        controllerNpcTrader.tradeItems = {}
+        controllerNpcTrader.currentList = {}
+        controllerNpcTrader.allTradeItems = {}
     end
 end
 
 function sellAll(...) -- Vbot Call
-    if g_game.getFeature(GameNpcWindowRedesign) then
-        controllerNpcTrader:sellAll(...)
+    if controllerNpcTrader:isLegacyMode() then
+        sellAllLegacy(...)
     else
-        controllerNpcTrader:sellAllLegacy(...)
+        controllerNpcTrader:sellAll(...)
     end
 end

@@ -1802,6 +1802,10 @@ void ProtocolGame::parseOpenNpcTrade(const InputMessagePtr& msg)
     const uint16_t listCount = g_game.getClientVersion() >= 900 ? msg->getU16() : msg->getU8();
     std::vector<std::tuple<ItemPtr, std::string, uint32_t, uint32_t, uint32_t>> items;
 
+    const auto normalizeNpcTradePrice = [](const uint32_t price) {
+        return price == UINT32_MAX ? 0 : price;
+    };
+
     for (auto i = 0; i < listCount; ++i) {
         const uint16_t itemId = msg->getU16();
         const uint8_t itemCount = msg->getU8();
@@ -1811,8 +1815,8 @@ void ProtocolGame::parseOpenNpcTrade(const InputMessagePtr& msg)
 
         const auto& itemName = msg->getString();
         const uint32_t itemWeight = msg->getU32();
-        const uint32_t itemBuyPrice = msg->getU32();
-        const uint32_t itemSellPrice = msg->getU32();
+        const uint32_t itemBuyPrice = normalizeNpcTradePrice(msg->getU32());
+        const uint32_t itemSellPrice = normalizeNpcTradePrice(msg->getU32());
 
         items.emplace_back(item, itemName, itemWeight, itemBuyPrice, itemSellPrice);
     }
