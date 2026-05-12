@@ -1,45 +1,7 @@
 name: Build - Android APK
 
 on:
-  workflow_dispatch:
   workflow_call:
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
-    paths:
-      - "src/**"
-      - "android/**"
-      - "cmake/**"
-      - "data/**"
-      - "mods/**"
-      - "modules/**"
-      - "CMakeLists.txt"
-      - "vcpkg.json"
-      - "init.lua"
-      - "otclientrc.lua"
-      - "cacert.pem"
-      - "config.ini"
-      - "build_luajit_android.sh"
-      - "setup_android_deps.sh"
-      - ".github/workflows/reusable-build-android-apk.yml"
-  push:
-    branches:
-      - main
-    paths:
-      - "src/**"
-      - "android/**"
-      - "cmake/**"
-      - "data/**"
-      - "mods/**"
-      - "modules/**"
-      - "CMakeLists.txt"
-      - "vcpkg.json"
-      - "init.lua"
-      - "otclientrc.lua"
-      - "cacert.pem"
-      - "config.ini"
-      - "build_luajit_android.sh"
-      - "setup_android_deps.sh"
-      - ".github/workflows/reusable-build-android-apk.yml"
 
 permissions:
   contents: read
