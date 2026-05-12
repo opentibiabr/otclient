@@ -782,9 +782,11 @@ void ProtocolGame::sendRequestTrackerQuestLog(const std::vector<uint16_t>& missi
         msg->addU16(missionIds[i]);
     }
 
-    msg->addU8(autoTrackNewQuests ? 1 : 0);
-    msg->addU8(autoUntrackCompletedQuests ? 1 : 0);
-    msg->addU8(extra);
+    if (g_game.getClientVersion() >= 1410) {
+        msg->addU8(autoTrackNewQuests ? 1 : 0);
+        msg->addU8(autoUntrackCompletedQuests ? 1 : 0);
+        msg->addU8(extra);
+    }
 
     send(msg);
 }
