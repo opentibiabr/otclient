@@ -496,6 +496,7 @@ elseif(APPLE AND NOT ANDROID AND NOT WASM)
           framework/platform/cocoaview.mm
   )
   set_source_files_properties(
+    framework/net/httplogin.cpp
     framework/platform/cocoawindow.mm
     framework/platform/cocoaview.mm
     PROPERTIES
