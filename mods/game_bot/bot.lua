@@ -174,7 +174,6 @@ function loadConfigsList()
     end
   end
 
-  -- Fallback handlers; refresh() overwrites these with full online versions
   enableButton.onClick = function(widget)
     if g_game.isOnline() then
       refresh()
@@ -194,8 +193,7 @@ function refresh()
   clear()
 
   loadConfigsList()
-  local configs = g_resources.listDirectoryFiles("/bot", false, false)
-  if #configs == 0 then
+  if not configList.options or #configList.options == 0 then
     statusLabel:setOn(true)
     statusLabel:setText("No configs found in " .. g_resources.getWriteDir() .. "bot/")
     return

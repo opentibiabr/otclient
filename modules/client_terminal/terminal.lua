@@ -298,7 +298,6 @@ function show()
     terminalWindow:show()
     terminalWindow:raise()
     terminalWindow:focus()
-
     if terminalButton then
         terminalButton:setOn(true)
     end

@@ -1965,6 +1965,7 @@ function doChannelListSubmit()
                 consoleTabBar:selectTab(lootTab)
             end
         else
+            g_game.leaveChannel(selectedChannelLabel.channelId)
             g_game.joinChannel(selectedChannelLabel.channelId)
         end
     end
@@ -1976,9 +1977,11 @@ function onChannelList(channelList)
     local hasNpcChannel = false
     local hasLootChannel = false
     for _, data in ipairs(channelList) do
-        if tonumber(data[1]) == 0 and data[2] == 'NPCs' then
+        local channelId = tonumber(data[1])
+        local channelName = data[2]
+        if channelId == 0 and channelName == 'NPCs' then
             hasNpcChannel = true
-        elseif tonumber(data[1]) == LOOT_CHANNEL_ID then
+        elseif channelId == LOOT_CHANNEL_ID or (channelName and channelName:lower() == 'loot') then
             hasLootChannel = true
         end
         if hasNpcChannel and hasLootChannel then
@@ -2329,7 +2332,7 @@ function consoleController:onGameStart()
                 channelId = tonumber(channelId)
                 if channelId == LOOT_CHANNEL_ID then
                     if not getChannelTab(LOOT_CHANNEL_ID) then
-                        addChannel(channelName, LOOT_CHANNEL_ID)
+                        addChannel(tr('Loot'), LOOT_CHANNEL_ID)
                     end
                 elseif channelId ~= -1 and channelId < 100 then
                     if not table.find(channels, channelId) then

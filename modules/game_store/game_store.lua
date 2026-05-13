@@ -198,9 +198,12 @@ local function addDescriptionLine(container, lineText, color)
     if not lineText:match("%S") then return end
     lineText = lineText:gsub("<[^>]+>", ""):gsub("&nbsp;", " "):gsub("&#8226;", "- ")
 
-    local widget   = g_ui.createWidget('DescriptionLine', container)
+    local widget = g_ui.createWidget('DescriptionLine', container)
+    if not widget then return end
+
     local iconWidget = widget:getChildById('icon')
     local textWidget = widget:getChildById('text')
+    if not iconWidget or not textWidget then return end
     if color then textWidget:setColor(color) end
 
     local info, tagEnd, cap = matchIconTag(lineText)
@@ -1279,4 +1282,3 @@ function search()
     end
     g_game.sendRequestStoreSearch(controllerShop.ui.SearchEdit:getText(), 0, 1)
 end
-

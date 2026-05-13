@@ -188,7 +188,9 @@ function show()
     highscoreController.ui:show()
     highscoreController.ui:raise()
     highscoreController.ui:focus()
-    highscoreButton:setOn(true)
+    if highscoreButton then
+        highscoreButton:setOn(true)
+    end
     requestInfo()
 end
 

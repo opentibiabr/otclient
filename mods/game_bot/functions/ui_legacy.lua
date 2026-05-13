@@ -35,8 +35,9 @@ context.addTab = function(name)
     return tab.tabPanel.content
   end
 
-
-  local newTab = context.tabs:addTabGrid(name, g_ui.createWidget('BotPanel'), nil,modules.game_bot.getBotTabs()).tabPanel.content
+  local tabGrid = context.tabs:addTabGrid(name, g_ui.createWidget('BotPanel'), nil, modules.game_bot.getBotTabs())
+  local tabPanel = tabGrid.tabPanel
+  local newTab = tabPanel.content
   context.tabs:setOn(true)
     for k,tab in pairs(context.tabs.tabs) do
       if string.len(tab:getText()) > 7 then

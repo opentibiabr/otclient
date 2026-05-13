@@ -61,7 +61,8 @@ function quickLootController:onGameStart()
     QuickLoot.lastSelectBag = nil
     QuickLoot.ErrorWindow = nil
 
-    quickLootController.ui.information.vipPanel.premium:setOn(not (g_game.getLocalPlayer() and g_game.getLocalPlayer():isPremium()))
+    local player = g_game.getLocalPlayer()
+    quickLootController.ui.information.vipPanel.premium:setOn(not (player and player:isPremium()))
     QuickLoot.load()
 
     g_game.requestQuickLootBlackWhiteList(getFilter(QuickLoot.data.filter),
