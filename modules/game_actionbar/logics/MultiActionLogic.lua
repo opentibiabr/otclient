@@ -32,6 +32,26 @@ local function getActionName(actionType)
     return nil
 end
 
+local function clearSingleActionCache(button, barID, buttonID)
+    button.cache.param = ""
+    button.cache.sendAutomatic = false
+    button.cache.itemId = 0
+    button.cache.actionType = 0
+    button.cache.upgradeTier = 0
+    button.cache.smartMode = false
+
+    local entry = ApiJson.getMapping(tonumber(barID), tonumber(buttonID))
+    local actionsetting = entry and entry["actionsetting"]
+    if actionsetting then
+        actionsetting["chatText"] = nil
+        actionsetting["sendAutomatically"] = nil
+        actionsetting["useObject"] = nil
+        actionsetting["useType"] = nil
+        actionsetting["upgradeTier"] = nil
+        actionsetting["useEquipSmartMode"] = nil
+    end
+end
+
 local function playerCanUseSpellLocal(spellData)
     if not g_game.isOnline() or not spellData then
         return false
@@ -597,23 +617,29 @@ function assignMultiAction(button, skipPrefill)
         if multiActionsEmpty then
             local prefilled = false
             if button.cache.param and button.cache.param ~= "" then
+                local param = button.cache.param
+                local sendAutomatic = button.cache.sendAutomatic
                 button.cache.multiActions[1] = {
-                    chatText = button.cache.param,
-                    sendAutomatically = button.cache.sendAutomatic
+                    chatText = param,
+                    sendAutomatically = sendAutomatic
                 }
-                ApiJson.createOrUpdateMultiText(tonumber(barID), tonumber(buttonID), 1, button.cache.param,
-                    button.cache.sendAutomatic)
+                ApiJson.createOrUpdateMultiText(tonumber(barID), tonumber(buttonID), 1, param, sendAutomatic)
+                clearSingleActionCache(button, barID, buttonID)
                 prefilled = true
             elseif button.cache.itemId and button.cache.itemId > 100 then
+                local itemId = button.cache.itemId
+                local useType = getActionName(button.cache.actionType) or "Use"
+                local upgradeTier = button.cache.upgradeTier or 0
+                local smartMode = button.cache.smartMode or false
                 button.cache.multiActions[1] = {
-                    useObject = button.cache.itemId,
-                    useType = getActionName(button.cache.actionType) or "Use",
-                    upgradeTier = button.cache.upgradeTier or 0,
-                    useEquipSmartMode = button.cache.smartMode or false
+                    useObject = itemId,
+                    useType = useType,
+                    upgradeTier = upgradeTier,
+                    useEquipSmartMode = smartMode
                 }
-                ApiJson.createOrUpdateMultiAction(tonumber(barID), tonumber(buttonID), 1,
-                    getActionName(button.cache.actionType) or "Use", button.cache.itemId,
-                    button.cache.upgradeTier or 0, button.cache.smartMode or false)
+                ApiJson.createOrUpdateMultiAction(tonumber(barID), tonumber(buttonID), 1, useType, itemId,
+                    upgradeTier, smartMode)
+                clearSingleActionCache(button, barID, buttonID)
                 prefilled = true
             end
             if prefilled then

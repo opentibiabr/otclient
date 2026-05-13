@@ -1854,7 +1854,7 @@ void Game::bountyTaskAction(const uint8_t actionType, const uint16_t value)
             m_protocolGame->sendTaskBoardAction(Otc::TASK_BOARD_OPTION_BOUNTY_REROLL);
             break;
         case Otc::BOUNTY_ACTION_SELECT:
-            m_protocolGame->sendTaskBoardAction(Otc::TASK_BOARD_OPTION_BOUNTY_SELECT_TASK, static_cast<uint8_t>(value));
+            m_protocolGame->sendTaskBoardAction(Otc::TASK_BOARD_OPTION_BOUNTY_SELECT_TASK, value);
             break;
         case Otc::BOUNTY_ACTION_CLAIM_REWARD:
             m_protocolGame->sendTaskBoardAction(Otc::TASK_BOARD_OPTION_BOUNTY_CLAIM_REWARD);
@@ -1884,7 +1884,7 @@ void Game::weeklyTaskAction(const uint8_t actionType, const uint16_t value)
             m_protocolGame->sendTaskBoardAction(Otc::TASK_BOARD_OPTION_WEEKLY_SELECT_DIFFICULTY, toServerDifficulty(value));
             break;
         case Otc::WEEKLY_ACTION_DELIVER_ITEM:
-            m_protocolGame->sendTaskBoardAction(Otc::TASK_BOARD_OPTION_WEEKLY_DELIVER, static_cast<uint8_t>(value));
+            m_protocolGame->sendTaskBoardAction(Otc::TASK_BOARD_OPTION_WEEKLY_DELIVER, value);
             break;
         default:
             g_logger.warning("Unknown weekly task action type {}", static_cast<int>(actionType));

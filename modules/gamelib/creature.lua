@@ -137,7 +137,7 @@ function getIconImagePath(iconId)
     elseif iconId == NpcIconTraveler then
         path = '/images/game/npcicons/icon_traveler'
     elseif iconId == NpcIconHireling then
-        path = '/images/game/npcicons/npc-hilering'
+        path = '/images/game/npcicons/npc_hireling'
 	end
     return path
 end

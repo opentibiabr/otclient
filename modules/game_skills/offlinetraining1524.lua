@@ -1,6 +1,8 @@
 -- Offline Training Dialog (15.24). Opened by server packet onMultiOfflineTrainingDialog.
 -- NOTE: The packet's magic-skill id is 5 — this collides with Skill.Shielding in the
 -- Skill enum but the server treats 5 as "magic level" for offline training only.
+skillController.OFFLINE_TRAINING_MAGIC_SKILL = 5
+
 local offlineTrainingDefs = {
     {
         valueId = 'magicValue',

@@ -208,6 +208,7 @@ function Tracker.Prey.updateWidget(slot, state, currentHolderOutfit, preySlot, s
 
     if state == SLOT_STATE_ACTIVE then
         local creatureAndBonus = preySlot.active.creatureAndBonus
+        local duration = creatureAndBonus.timeLeft:getText()
         trackerSlot.creature:setOutfit(currentHolderOutfit)
         trackerSlot.creatureName:setText(short_text(preySlot.title:getText(), 12))
         trackerSlot.time:setPercent(creatureAndBonus.timeLeft:getPercent())
@@ -218,6 +219,8 @@ function Tracker.Prey.updateWidget(slot, state, currentHolderOutfit, preySlot, s
         trackerSlot.onClick = function()
             showCallback()
         end
+        trackerSlot:setTooltip(tr("Creature: %s\nDuration: %s\n\nClick in this window to open the prey dialog.",
+            preySlot.title:getText(), duration))
     else
         trackerSlot.creature:hide()
         trackerSlot.noCreature:show()
@@ -239,7 +242,8 @@ function Tracker.Prey.updateTimeLeft(slot, timeLeft)
     if not trackerSlot then
         return
     end
-    local updated = string.gsub(trackerSlot:getTooltip(), "[^\n]*Duration: [^\n]*\n?",
+    local tooltip = trackerSlot:getTooltip() or "Duration: \n"
+    local updated = string.gsub(tooltip, "[^\n]*Duration: [^\n]*\n?",
         "Duration: " .. Tracker.Prey.timeleftTranslation(timeLeft) .. "\n")
     trackerSlot:setTooltip(updated)
     local percent = (timeLeft / (2 * 60 * 60)) * 100

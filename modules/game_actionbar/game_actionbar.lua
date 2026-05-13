@@ -307,6 +307,22 @@ end
 -- =            Controller             =
 -- =============================================*/
 ActionBarController = Controller:new()
+
+local function cleanupMultiActionState()
+    if closeCurrentMultiActionPanel then
+        closeCurrentMultiActionPanel()
+    end
+    if multiActionCooldownEvents then
+        for buttonId, events in pairs(multiActionCooldownEvents) do
+            for _, eventId in pairs(events) do
+                removeEvent(eventId)
+            end
+            multiActionCooldownEvents[buttonId] = nil
+        end
+    end
+    cacheMultiActionButtons = {}
+end
+
 --- Initializes the action bar controller
 function ActionBarController:onInit()
     g_ui.importStyle("otui/style.otui")
@@ -321,18 +337,7 @@ end
 --- Handles termination event
 function ActionBarController:onTerminate()
     ApiJson.saveData()
-    if closeCurrentMultiActionPanel then
-        closeCurrentMultiActionPanel()
-    end
-    if multiActionCooldownEvents then
-        for buttonId, events in pairs(multiActionCooldownEvents) do
-            for _, eventId in pairs(events) do
-                removeEvent(eventId)
-            end
-            multiActionCooldownEvents[buttonId] = nil
-        end
-    end
-    cacheMultiActionButtons = {}
+    cleanupMultiActionState()
     for _, actionbar in pairs(actionBars) do
         if actionbar and not actionbar:isDestroyed() then
             actionbar:destroy()
@@ -386,18 +391,7 @@ end
 
 function ActionBarController:onGameEnd()
     isLoaded = false
-    if closeCurrentMultiActionPanel then
-        closeCurrentMultiActionPanel()
-    end
-    if multiActionCooldownEvents then
-        for buttonId, events in pairs(multiActionCooldownEvents) do
-            for _, eventId in pairs(events) do
-                removeEvent(eventId)
-            end
-            multiActionCooldownEvents[buttonId] = nil
-        end
-    end
-    cacheMultiActionButtons = {}
+    cleanupMultiActionState()
     for _, actionbar in pairs(activeActionBars) do
         unbindActionBarEvent(actionbar)
     end

@@ -27,6 +27,8 @@
 class Client : public ApplicationDrawEvents
 {
 public:
+    Client();
+
     void init(std::vector<std::string>& args);
     void terminate();
     static void registerLuaFunctions();
@@ -69,7 +71,7 @@ public:
 
 private:
     UIMapPtr m_mapWidget;
-    std::array<float, Otc::ME_SOURCE_LAST + 1> m_effectAlphas{ 1.f, 1.f, 1.f, 1.f, 1.f };
+    std::array<float, Otc::ME_SOURCE_LAST + 1> m_effectAlphas{};
     float m_missileAlpha{ 1.f };
 };
 

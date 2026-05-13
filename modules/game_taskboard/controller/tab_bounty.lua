@@ -112,7 +112,7 @@ function TaskBoardController:onBountyKillUpdate(raceId, currentKills, totalKills
 
     -- Update the active task entry in bountyTasks if window is open
     for i, task in ipairs(self.bountyTasks) do
-        if task.raceId == raceId or (task.isActive and #self.bountyTasks == 1) then
+        if task.raceId == raceId then
             self.bountyTasks[i].current = currentKills
             self.bountyTasks[i].total = totalKills
             self.bountyTasks[i].canClaim = (not self.bountyTasks[i].isCompleted) and task.isActive and currentKills >=

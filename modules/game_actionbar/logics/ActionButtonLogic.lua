@@ -49,6 +49,26 @@ local function getActionName(actionType)
         end
     end
 end
+
+local function resolveMultiUseType(useType)
+    if type(useType) == "string" and tonumber(useType) == nil then
+        return useType
+    end
+    return getActionName(tonumber(useType) or useType) or "Use"
+end
+
+local function hasMultiActions(multiActions)
+    if type(multiActions) ~= "table" then
+        return false
+    end
+    for i = 1, 3 do
+        if type(multiActions[i]) == "table" and not table.empty(multiActions[i]) then
+            return true
+        end
+    end
+    return false
+end
+
 --- Gets item name by ID
 local function getItemNameById(itemId)
     for _, k in pairs(hotkeyItemList) do
@@ -1316,6 +1336,8 @@ function onDragItemLeave(self, mousePos, button)
         lastHighlightWidget:setBorderColor('alpha')
     end
 
+    button.cache = getButtonCache(button)
+
     local clickedWidget = gameRootPanel:recursiveGetChildByPos(mousePos, false)
 
     if clickedWidget and clickedWidget:getParent() then
@@ -1328,7 +1350,26 @@ function onDragItemLeave(self, mousePos, button)
                 local tBarID, tButtonID = string.match(targetButton:getId(), "(.*)%.(.*)")
                 local sourceBarID, sourceButtonID = string.match(button:getId(), "(.*)%.(.*)")
 
-                if button.cache.actionType == UseTypes["chatText"] and button.cache.param and button.cache.param ~= "" then
+                if hasMultiActions(button.cache.multiActions) then
+                    targetButton.cache = getButtonCache(targetButton)
+                    targetButton.cache.multiActions = {{}, {}, {}}
+                    for i = 1, 3 do
+                        local slotData = button.cache.multiActions[i] or {}
+                        if not table.empty(slotData) then
+                            targetButton.cache.multiActions[i] = table.copy(slotData)
+                            if slotData["chatText"] then
+                                ApiJson.createOrUpdateMultiText(tonumber(tBarID), tonumber(tButtonID), i,
+                                    slotData["chatText"], slotData["sendAutomatically"])
+                            elseif slotData["useObject"] then
+                                ApiJson.createOrUpdateMultiAction(tonumber(tBarID), tonumber(tButtonID), i,
+                                    resolveMultiUseType(slotData["useType"]), slotData["useObject"],
+                                    slotData["upgradeTier"] or 0, slotData["useEquipSmartMode"] or false)
+                            end
+                        else
+                            ApiJson.removeMultiAction(tonumber(tBarID), tonumber(tButtonID), i)
+                        end
+                    end
+                elseif button.cache.actionType == UseTypes["chatText"] and button.cache.param and button.cache.param ~= "" then
                     ApiJson.createOrUpdateMultiText(tonumber(tBarID), tonumber(tButtonID), targetIndex,
                         button.cache.param, button.cache.sendAutomatic)
                     targetButton.cache = getButtonCache(targetButton)
@@ -1338,7 +1379,7 @@ function onDragItemLeave(self, mousePos, button)
                         sendAutomatically = button.cache.sendAutomatic
                     }
                 elseif button.cache.itemId and button.cache.itemId > 100 then
-                    local useTypeName = getActionName(button.cache.actionType) or "Use"
+                    local useTypeName = resolveMultiUseType(button.cache.actionType)
                     ApiJson.createOrUpdateMultiAction(tonumber(tBarID), tonumber(tButtonID), targetIndex, useTypeName,
                         button.cache.itemId, button.cache.upgradeTier or 0, button.cache.smartMode or false)
                     targetButton.cache = getButtonCache(targetButton)
@@ -1429,8 +1470,9 @@ function onDragItemLeave(self, mousePos, button)
                     ApiJson.createOrUpdateMultiText(tonumber(destBarID), tonumber(destButtonID), i,
                         slotData["chatText"], slotData["sendAutomatically"])
                 elseif slotData["useObject"] then
+                    local useTypeName = resolveMultiUseType(slotData["useType"])
                     ApiJson.createOrUpdateMultiAction(tonumber(destBarID), tonumber(destButtonID), i,
-                        getActionName(slotData["useType"]) or "Use", slotData["useObject"],
+                        useTypeName, slotData["useObject"],
                         slotData["upgradeTier"] or 0, slotData["useEquipSmartMode"] or false)
                 end
             else

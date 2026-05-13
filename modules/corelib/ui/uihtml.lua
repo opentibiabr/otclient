@@ -109,7 +109,7 @@ function UIHTML:onStyleApply(styleName, styleNode)
                 end
             end)
         elseif name == 'inverted-scroll' then
-            self:setInverted(value)
+            self:setInvertedScroll(value == true or value == 'true' or value == '1')
         elseif name == 'always-scroll-maximum' then
             self:setAlwaysScrollMaximum(value)
         end
@@ -185,7 +185,9 @@ function UIHTML:setHorizontalScrollBar(scrollbar)
     connect(self.horizontalScrollBar, 'onValueChange', function(scrollbar, value)
         local virtualOffset = self:getVirtualOffset()
         virtualOffset.x = value
+        self._isScrollbarDrivenScroll = true
         self:setVirtualOffset(virtualOffset)
+        self._isScrollbarDrivenScroll = false
         signalcall(self.onScrollChange, self, virtualOffset)
     end)
     self:updateScrollBars()

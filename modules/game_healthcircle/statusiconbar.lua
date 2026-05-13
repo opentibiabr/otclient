@@ -46,7 +46,7 @@ end
 
 local function defaultSettings()
     return {
-        ordenered = {},
+        ordered = {},
         visibleHud = {},
         visibleBar = {},
         showInHud = true,
@@ -57,8 +57,8 @@ end
 local function normalizeSettings(settings)
     settings = settings or {}
 
-    if type(settings.ordenered) ~= 'table' then
-        settings.ordenered = {}
+    if type(settings.ordered) ~= 'table' then
+        settings.ordered = {}
     end
     if type(settings.visibleHud) ~= 'table' then
         settings.visibleHud = {}
@@ -80,7 +80,7 @@ function ConditionsHUD.syncMissingOrderEntries()
     local order = {}
     local seen = {}
 
-    for _, conditionId in ipairs(ConditionsHUD.settings.ordenered) do
+    for _, conditionId in ipairs(ConditionsHUD.settings.ordered) do
         local condition = conditionLookup[conditionId]
         if condition and not condition.hidden and not seen[conditionId] then
             table.insert(order, conditionId)
@@ -94,7 +94,7 @@ function ConditionsHUD.syncMissingOrderEntries()
         end
     end
 
-    ConditionsHUD.settings.ordenered = order
+    ConditionsHUD.settings.ordered = order
 end
 
 function ConditionsHUD.loadSettings()
@@ -128,7 +128,7 @@ function ConditionsHUD.getOrderedConditions()
     ConditionsHUD.syncMissingOrderEntries()
 
     local ordered = {}
-    for _, conditionId in ipairs(ConditionsHUD.settings.ordenered) do
+    for _, conditionId in ipairs(ConditionsHUD.settings.ordered) do
         local condition = conditionLookup[conditionId]
         if condition and not condition.hidden then
             table.insert(ordered, condition)
@@ -254,7 +254,7 @@ function ConditionsHUD.syncOrderFromList()
         end
     end
 
-    ConditionsHUD.settings.ordenered = order
+    ConditionsHUD.settings.ordered = order
     ConditionsHUD.syncMissingOrderEntries()
 end
 

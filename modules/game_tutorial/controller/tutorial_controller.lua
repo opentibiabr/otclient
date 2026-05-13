@@ -209,7 +209,7 @@ end
 -- =============================================*/
 
 function TutorialController:onGameStart()
-    if g_game:getClientVersion() > 1520 then
+    if g_game.getClientVersion() > 1520 then
         self:registerEvents(g_game, {
             onTutorialHint = function(...)
                 self:onTutorialHint(...)
@@ -239,7 +239,7 @@ function TutorialController:onTutorialHint(id)
         self:setTutorialStep(id)
         self:show()
     else
-        print("[game_tutorial] unexpected tutorial hint: " .. id)
+        print("[game_tutorial] unexpected tutorial hint: " .. tostring(id))
     end
 end
 

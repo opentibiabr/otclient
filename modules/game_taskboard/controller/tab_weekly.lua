@@ -179,6 +179,10 @@ function TaskBoardController:onWeeklyKillUpdate(raceId, currentKills, totalKills
     if Tracker and Tracker.Weekly then
         Tracker.Weekly.onKillUpdate(raceId, currentKills, totalKills, isCompleted)
     end
+    if type(self.weeklyMonsters) ~= "table" then
+        self.weeklyMonsters = {}
+        return
+    end
 
     -- Update matching entry in weeklyMonsters
     local completionChanged = false
@@ -268,17 +272,18 @@ function TaskBoardController:onDeliveryItemsRendered()
     local ctrl = self
     for i = 1, container:getChildCount() do
         local card = container:getChildByIndex(i)
-        if not card or card:isDestroyed() then break end
-        if not card.__for_values then break end
-        local item = card.__for_values[1]
-        if not item then break end
-        local itemId = tonumber(item.itemId) or 0
-        local itemName = tostring(item.itemName or "")
-        if itemId > 0 then
-            card.onMouseRelease = function(widget, mousePos, mouseButton)
-                if mouseButton == MouseRightButton then
-                    ctrl:showDeliveryItemMenu(itemId, itemName, mousePos)
-                    return true
+        if card and not card:isDestroyed() and card.__for_values then
+            local item = card.__for_values[1]
+            if item then
+                local itemId = tonumber(item.itemId) or 0
+                local itemName = tostring(item.itemName or "")
+                if itemId > 0 then
+                    card.onMouseRelease = function(widget, mousePos, mouseButton)
+                        if mouseButton == MouseRightButton then
+                            ctrl:showDeliveryItemMenu(itemId, itemName, mousePos)
+                            return true
+                        end
+                    end
                 end
             end
         end

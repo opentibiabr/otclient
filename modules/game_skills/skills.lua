@@ -1562,7 +1562,7 @@ function onDefenseInfoChange(localPlayer, defense, armor, mantra, mitigation, do
     
     setSkillValueWithTooltips('defenceValue', defense, tooltips.defense, false)
     setSkillValueWithTooltips('armorValue', armor, tooltips.armor, false)
-    setSkillValueWithTooltips('mantra', mantra, tooltips.mantra, false)
+    setSkillValueWithTooltips('mantraValue', mantra, tooltips.mantra, false)
     setSkillValueWithTooltips('mitigation', mitigation, tooltips.mitigation, true)
     setSkillValueWithTooltips('dodge', dodge, tooltips.dodge, true)
     setSkillValueWithTooltips('damageReflection', damageReflection, false, true)

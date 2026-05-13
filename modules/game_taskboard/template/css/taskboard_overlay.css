@@ -32,7 +32,7 @@
     display: block;
     height: 16px;
     text-align: center;
-    font: verdana-11px-rounded;
+    font: "verdana-11px-rounded";
     color: #c0c0c0;
 }
 
@@ -59,7 +59,7 @@
 
 .diffSummaryLabel {
     display: block;
-    font: verdana-11px-rounded;
+    font: "verdana-11px-rounded";
     color: #c0c0c0;
     margin-bottom: 2px;
     text-align: center;
@@ -77,7 +77,7 @@
 .diffSummaryEarnedAnd {
     display: inline-block;
     vertical-align: middle;
-    font: verdana-11px-rounded;
+    font: "verdana-11px-rounded";
     color: #c0c0c0;
 }
 
@@ -102,7 +102,7 @@
     display: block;
     margin: 0 auto 10px auto;
     text-align: center;
-    font: verdana-11px-rounded;
+    font: "verdana-11px-rounded";
     color: #c0c0c0;
     margin-left: 25px
 }
@@ -126,7 +126,7 @@
     width: 158px;
     height: 0px;
     margin: 0 auto;
-    font: verdana-11px-rounded;
+    font: "verdana-11px-rounded";
     text-align: center;
 }
 

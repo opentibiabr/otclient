@@ -291,7 +291,14 @@ function check()
             preyButton = modules.game_mainpanel.addToggleButton('preyButton', tr('Prey Dialog'),
                 '/images/options/button_preydialog', toggle)
         end
-        if not preyTrackerButton and (not g_game.getFeature(GameTaskboard)) then
+        if g_game.getFeature(GameTaskboard) then
+            if preyTrackerButton then
+                preyTrackerButton:destroy()
+                preyTrackerButton = nil
+            end
+            return
+        end
+        if not preyTrackerButton then
             preyTrackerButton = modules.game_mainpanel.addToggleButton('preyTrackerButton', tr('Prey Tracker'),
                 '/images/options/button_prey', toggleTracker)
         end

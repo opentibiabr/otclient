@@ -83,6 +83,8 @@ public:
     void loadFonts();
 
 private:
+    static constexpr uint16_t kSafeProtocolFallbackVersion = 740;
+
     void loadGameNode(const OTMLNodePtr& node);
     void loadFontNode(const OTMLNodePtr& node);
     void loadMapNode(const OTMLNodePtr& node);
@@ -93,7 +95,7 @@ private:
 
     // Game
     uint8_t m_spriteSize{ 32 };
-    uint16_t m_lastSupportedVersion{ 1 };
+    uint16_t m_lastSupportedVersion{ kSafeProtocolFallbackVersion };
     bool m_drawTyping{ false };
     std::string m_typingIcon{ "/images/game/console/typing" };
 

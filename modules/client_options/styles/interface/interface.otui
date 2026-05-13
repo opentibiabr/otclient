@@ -98,7 +98,7 @@ UIWidget
     OptionCheckBoxMarked
       id: showInfoBanner
       !text: tr('Show Info Banner')
-      !tooltip: tr('Tick this box to display an info banner for certain ingame events.')
+      !tooltip: tr('Tick this box to display an info banner for certain in-game events.')
 
 
   SmallReversedQtPanel

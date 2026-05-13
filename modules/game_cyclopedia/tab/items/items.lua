@@ -4,8 +4,19 @@ Cyclopedia.Items.currentItemId = nil
 -- Additional variables for new features
 local itemsData = {}
 local lastSelectedItem = nil
+local lastSelectedItemId = nil
 local oldBuyChild = nil
 local oldSaleChild = nil
+
+local function getItemWidgetId(widget)
+    if not widget then
+        return nil
+    end
+    if widget.getId then
+        return tonumber(widget:getId())
+    end
+    return tonumber(widget.id)
+end
 
 Cyclopedia.CategoryItems = {
     { id = 1, name = "Armors" },
@@ -871,6 +882,7 @@ function Cyclopedia.internalCreateItem(data)
 
         -- Store reference to selected item
         lastSelectedItem = widget
+        lastSelectedItemId = itemId
 
         -- Update item price display
         if data then
@@ -1009,7 +1021,11 @@ function Cyclopedia.ItemSearch(text, clearTextEdit)
 
         local firstChild = UI.ItemListBase.List:getFirstChild()
         if firstChild and firstChild.onClick then
-            firstChild:onClick()
+            local firstChildItemId = getItemWidgetId(firstChild)
+            if firstChildItemId and firstChildItemId ~= lastSelectedItemId then
+                lastSelectedItemId = firstChildItemId
+                firstChild:onClick()
+            end
         end
     else
         UI.SelectedItem.Sprite:setItemId(0)

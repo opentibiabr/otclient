@@ -100,11 +100,15 @@ function init()
     connect(g_game, {
         onGameStart = setPlayerValues
     })
-    StatusIconBar.init()
+    if StatusIconBar and StatusIconBar.init then
+        StatusIconBar.init()
+    end
 end
 
 function terminate()
-    StatusIconBar.terminate()
+    if StatusIconBar and StatusIconBar.terminate then
+        StatusIconBar.terminate()
+    end
     healthCircle:destroy()
     healthCircle = nil
     manaCircle:destroy()

@@ -1662,11 +1662,11 @@ void ProtocolGame::sendTaskBoardAction(const uint8_t option, const uint16_t valu
         case Otc::TASK_BOARD_OPTION_BOUNTY_TALISMAN_UPGRADE:
         case Otc::TASK_BOARD_OPTION_WEEKLY_DELIVER:
         case Otc::TASK_BOARD_OPTION_WEEKLY_SELECT_DIFFICULTY:
-            msg->addU8(static_cast<uint8_t>(value));
+            msg->addU8(static_cast<uint8_t>(std::clamp<uint16_t>(value, 0, std::numeric_limits<uint8_t>::max())));
             break;
         case Otc::TASK_BOARD_OPTION_HUNTING_SHOP_BUY_OFFER:
-            msg->addU8(static_cast<uint8_t>(value));
-            msg->addU8(static_cast<uint8_t>(extraValue));
+            msg->addU8(static_cast<uint8_t>(std::clamp<uint16_t>(value, 0, std::numeric_limits<uint8_t>::max())));
+            msg->addU8(static_cast<uint8_t>(std::clamp<uint16_t>(extraValue, 0, std::numeric_limits<uint8_t>::max())));
             break;
         case Otc::TASK_BOARD_OPTION_PREFERRED_UNLOCK:
         case Otc::TASK_BOARD_OPTION_PREFERRED_CLEAR:

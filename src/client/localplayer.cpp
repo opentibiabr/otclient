@@ -667,7 +667,7 @@ void LocalPlayer::setImbuements(double lifeLeech, double manaLeech, double critC
 
 void LocalPlayer::setDefenseInfo(uint16_t defense, uint16_t armor, uint16_t mantra, double mitigation, double dodge, uint16_t damageReflection)
 {
-    if (m_defense == defense && m_armor == armor && m_mantra == armor && m_mitigation == mitigation &&
+    if (m_defense == defense && m_armor == armor && m_mantra == mantra && m_mitigation == mitigation &&
         m_dodge == dodge && m_damageReflection == damageReflection)
         return;
 

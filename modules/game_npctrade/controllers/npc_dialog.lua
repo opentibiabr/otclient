@@ -151,6 +151,9 @@ function onNpcChatWindow(data)
         controllerNpcTrader:legacy_show()
         return
     end
+    if type(data) ~= "table" or type(data.npcIds) ~= "table" or #data.npcIds == 0 then
+        return
+    end
     local creature = g_map.getCreatureById(data.npcIds[1])
     if creature then
         controllerNpcTrader:initNpcWindow(creature, data.buttons)

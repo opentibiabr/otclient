@@ -991,7 +991,7 @@ function Cyclopedia.configureCharacterCategories()
                         open = "OffenceStats"
                     })
                     table.insert(categories, {
-                        text = "Deffence Stats",
+                        text = "Defence Stats",
                         icon = "/game_cyclopedia/images/character_icons/icon-character-generalstats-defence",
                         open = "DeffenceStats"
                     })
@@ -1613,7 +1613,7 @@ end
              end
         end
 
-        renderAndSkipZeroStats(stats, leftPanel, rightPanel, clientCombat)
+        renderAndSkipZeroStats(stats, leftPanel, rightPanel, Cyclopedia.clientCombat)
 
         -- temp fix
         controllerCyclopedia:scheduleEvent(function()

@@ -4741,8 +4741,7 @@ void ProtocolGame::parseTaskBoardData(const InputMessagePtr& msg)
             parseTaskBoardShopData(msg);
             break;
         default:
-            g_logger.warning("[ProtocolGame::parseTaskBoardData] Unknown subtype {}", static_cast<uint8_t>(subtype));
-            break;
+            throw stdext::exception("[ProtocolGame::parseTaskBoardData] Unknown subtype {}", static_cast<uint8_t>(subtype));
     }
 }
 
@@ -4755,7 +4754,6 @@ void ProtocolGame::parseTaskBoardBountyData(const InputMessagePtr& msg)
 
     const uint8_t offerCount = msg->getU8();
     monsters.reserve(offerCount);
-    const bool hasSingleOffer = offerCount == 1;
 
     for (auto i = 0; std::cmp_less(i, offerCount); ++i) {
         TaskBoardBountyMonsterData monster;
@@ -4765,12 +4763,12 @@ void ProtocolGame::parseTaskBoardBountyData(const InputMessagePtr& msg)
         monster.rewardXp = msg->getU32();
         monster.rewardPoints = msg->getU8();
         monster.currentKills = msg->getU16();
-        msg->getU8(); // claim reward state (used by retail client button state)
+        const auto bountyState = msg->getU8(); // retail button state: 0 available, 1 active, 2 claimable, 3 claimed/completed
         monster.rarity = std::min<uint8_t>(msg->getU8(), 2);
         // Server does not expose per-monster reroll reward; assume 1 for UI display.
         monster.rewardReroll = 1;
-        monster.isActive = hasSingleOffer ? 1 : 0;
-        monster.isCompleted = (!hasSingleOffer && monster.totalKills > 0 && monster.currentKills >= monster.totalKills) ? 1 : 0;
+        monster.isActive = (bountyState == 1 || bountyState == 2) ? 1 : 0;
+        monster.isCompleted = bountyState == 3 ? 1 : 0;
         monsters.emplace_back(monster);
     }
 
@@ -7062,7 +7060,7 @@ void ProtocolGame::parseClientEvent(const InputMessagePtr& msg)
             break;
         }
         default:
-            break;
+            throw stdext::exception("[ProtocolGame::parseClientEvent] Unknown event type {}", static_cast<uint8_t>(type));
     }
 }
 

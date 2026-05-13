@@ -53,9 +53,9 @@ tutorialStep ={
     combatBasicPaladin = 4,
     combatBasicSorcerer = 5,
     combatBasicDruid = 6,
-    ArrivalInThais = 7,
+    arrivalInThais = 7,
     --8-10 arrivalInThais
     combatBasicMonk = 11,
-    WelcomeToTheMainContinent = 13,
+    welcomeToTheMainContinent = 13,
     theWorldAwaits = 14,
 }
