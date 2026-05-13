@@ -131,7 +131,8 @@ end
 
 -- Slots
 function TaskBoardController:rebuildPreferredSlots()
-    local result = {}
+    local result = self.preferredSlots or {}
+    table.clear(result)
     local actionCost = getPreferredActionCost()
     local selectedRaceId = tonumber(self.selectedRaceId) or 0
     local player = g_game.getLocalPlayer()
@@ -205,6 +206,11 @@ function TaskBoardController:getPreferredMonsterScrollWidget()
     return self.preferredModal.ui:querySelector("#monsterListScroll")
 end
 
+function TaskBoardController:onPreferredMonsterScrollChange(widget, virtualOffset)
+    if self._preferredApplyingScrollSnap then return end
+    self:refreshMonsterViewport((virtualOffset and virtualOffset.y) or 0)
+end
+
 function TaskBoardController:bindPreferredMonsterScroll()
     local scrollWidget = self:getPreferredMonsterScrollWidget()
     if not scrollWidget then return end
@@ -220,23 +226,13 @@ function TaskBoardController:bindPreferredMonsterScroll()
     -- removeChild), shifting focus to an adjacent row without any user interaction.
     scrollWidget:setAutoFocusPolicy(AutoFocusNone)
 
-    -- Fallback for when there is no vertical scrollbar (setVirtualOffset path).
-    -- When a scrollbar exists, onValueChange below handles all scroll events.
     scrollWidget.onScrollChange = function(widget, virtualOffset)
-        if self._preferredApplyingScrollSnap or scrollWidget.verticalScrollBar then return end
-        self:refreshMonsterViewport((virtualOffset and virtualOffset.y) or 0)
+        self:onPreferredMonsterScrollChange(widget, virtualOffset)
     end
 
     if scrollWidget.verticalScrollBar then
         local sb = scrollWidget.verticalScrollBar
         sb:setStep(self:getPreferredMonsterRowHeight(scrollWidget))
-        if not sb._preferredValueHook then
-            sb._preferredValueHook = function(_, value)
-                if self._preferredApplyingScrollSnap then return end
-                self:refreshMonsterViewport(value)
-            end
-            connect(sb, 'onValueChange', sb._preferredValueHook)
-        end
     end
 end
 
@@ -359,7 +355,9 @@ function TaskBoardController:refreshMonsterViewport(scrollValue)
     end
 
     if total == 0 then
-        self.visibleMonsters = {}
+        local visible = self.visibleMonsters or {}
+        table.clear(visible)
+        self.visibleMonsters = visible
         self.availableMonsters = self.visibleMonsters
         self.monsterTopSpacerPxA, self.monsterTopSpacerPxB, self.monsterTopSpacerPxC = 0, 0, 0
         self.monsterBottomSpacerPxA, self.monsterBottomSpacerPxB, self.monsterBottomSpacerPxC = 0, 0, 0
@@ -402,7 +400,8 @@ function TaskBoardController:refreshMonsterViewport(scrollValue)
         return
     end
 
-    local visible = {}
+    local visible = self.visibleMonsters or {}
+    table.clear(visible)
     for i = startIndex, endIndex do
         visible[#visible + 1] = list[i]
     end

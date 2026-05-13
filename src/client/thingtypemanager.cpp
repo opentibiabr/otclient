@@ -248,6 +248,8 @@ namespace {
             RaceType otcRaceType = RaceType();
             otcRaceType.raceId = protobufRace.raceid();
             otcRaceType.name = protobufRace.name();
+            otcRaceType.hasCategory = protobufRace.has_category();
+            otcRaceType.category = protobufRace.category();
             otcRaceType.boss = boss;
 
             Outfit otcOutfit;
@@ -266,8 +268,8 @@ namespace {
                 }
             }
 
-            otcRaceType.outfit = otcOutfit;
-            otcRaceList.emplace_back(otcRaceType);
+            otcRaceType.outfit = std::move(otcOutfit);
+            otcRaceList.emplace_back(std::move(otcRaceType));
         }
     }
 }

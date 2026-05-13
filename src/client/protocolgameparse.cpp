@@ -4469,6 +4469,8 @@ namespace
     constexpr uint8_t TASK_BOARD_WEEKLY_EXPANDED_SLOTS = 9;
     constexpr uint32_t TASK_BOARD_SECONDS_PER_DAY = 24 * 60 * 60;
 
+    using TaskBoardRaceIdSet = std::unordered_set<uint16_t>;
+
     uint8_t getTaskBoardTalismanMaxLevel(const uint8_t pathIndex)
     {
         switch (pathIndex) {
@@ -4527,7 +4529,7 @@ namespace
 
     std::vector<uint16_t> getAllMonsterRaceIds()
     {
-        const auto races = g_things.getRacesByName("");
+        const auto& races = g_things.getAllRaces();
         std::vector<uint16_t> raceIds;
         raceIds.reserve(races.size());
 
@@ -4542,6 +4544,82 @@ namespace
         std::sort(raceIds.begin(), raceIds.end());
         raceIds.erase(std::unique(raceIds.begin(), raceIds.end()), raceIds.end());
         return raceIds;
+    }
+
+    constexpr uint16_t getSoulsealPointsForCategory(const uint32_t category) noexcept
+    {
+        // (category + 1) * 10 — max category that fits uint16_t is 6552; beyond that, clamp.
+        const uint32_t points = (category + 1U) * 10U;
+        return static_cast<uint16_t>(std::min<uint32_t>(points, std::numeric_limits<uint16_t>::max()));
+    }
+
+    constexpr uint8_t toSoulsealCategoryIndex(const RaceType& raceData) noexcept
+    {
+        return raceData.hasCategory
+            ? static_cast<uint8_t>(std::min<uint32_t>(raceData.category, std::numeric_limits<uint8_t>::max()))
+            : 0;
+    }
+
+    constexpr bool isTaskBoardSoulsealRace(const RaceType& raceData) noexcept
+    {
+        return raceData.hasCategory && !raceData.boss
+            && raceData.raceId != 0
+            && raceData.raceId <= std::numeric_limits<uint16_t>::max();
+    }
+
+    TaskBoardSoulsealEntryData makeTaskBoardSoulsealEntry(const uint16_t raceId, const RaceType& raceData, const bool done)
+    {
+        TaskBoardSoulsealEntryData entry;
+        entry.raceId = raceId;
+        entry.category = toSoulsealCategoryIndex(raceData);
+        entry.soulsealPoints = raceData.hasCategory ? getSoulsealPointsForCategory(raceData.category) : 0;
+        entry.done = done ? 1 : 0;
+        entry.outfit = raceData.outfit;
+        if (raceData.name.empty()) {
+            entry.name = std::to_string(raceId);
+        } else {
+            entry.name = raceData.name;
+        }
+        return entry;
+    }
+
+    TaskBoardRaceIdSet readTaskBoardMasteredRaceIds(const InputMessagePtr& msg)
+    {
+        const uint16_t masteredCount = msg->getU16();
+        TaskBoardRaceIdSet masteredRaceIds;
+        masteredRaceIds.reserve(masteredCount);
+
+        for (auto i = 0; std::cmp_less(i, masteredCount); ++i) {
+            const uint16_t raceId = msg->getU16();
+            if (raceId != 0) {
+                masteredRaceIds.insert(raceId);
+            }
+        }
+
+        return masteredRaceIds;
+    }
+
+    std::vector<TaskBoardSoulsealEntryData> buildTaskBoardSoulsealEntries(TaskBoardRaceIdSet&& masteredRaceIds)
+    {
+        const auto& races = g_things.getAllRaces();
+        std::vector<TaskBoardSoulsealEntryData> entries;
+        entries.reserve(races.size());
+
+        for (const auto& raceData : races) {
+            if (!isTaskBoardSoulsealRace(raceData)) {
+                continue;
+            }
+
+            const auto raceId = static_cast<uint16_t>(raceData.raceId);
+            const bool done = masteredRaceIds.erase(raceId) > 0;
+            entries.emplace_back(makeTaskBoardSoulsealEntry(raceId, raceData, done));
+        }
+
+        for (const auto raceId : masteredRaceIds) {
+            entries.emplace_back(makeTaskBoardSoulsealEntry(raceId, g_things.getRaceData(raceId), true));
+        }
+
+        return entries;
     }
 
     std::map<std::string, uint32_t> toBountyHeaderMap(const TaskBoardBountyHeaderData& header)
@@ -4647,16 +4725,6 @@ namespace
         };
     }
 
-    std::map<std::string, std::string> toSoulsealEntryMap(const TaskBoardSoulsealEntryData& entry)
-    {
-        return {
-            { "name", entry.name },
-            { "raceId", std::to_string(entry.raceId) },
-            { "soulsealPoints", std::to_string(entry.soulsealPoints) },
-            { "category", std::to_string(entry.category) },
-            { "done", std::to_string(entry.done) }
-        };
-    }
 }
 
 void ProtocolGame::parseTaskBoardData(const InputMessagePtr& msg)
@@ -4913,25 +4981,7 @@ void ProtocolGame::parseTaskBoardShopData(const InputMessagePtr& msg)
 void ProtocolGame::parseTaskHuntingBasicData(const InputMessagePtr& msg)
 {
     if (g_game.getClientVersion() >= 1521) {
-        const uint16_t masteredCount = msg->getU16();
-        std::vector<std::map<std::string, std::string>> soulsealEntries;
-        soulsealEntries.reserve(masteredCount);
-
-        for (auto i = 0; std::cmp_less(i, masteredCount); ++i) {
-            const uint16_t raceId = msg->getU16();
-            if (raceId == 0) {
-                continue;
-            }
-
-            TaskBoardSoulsealEntryData entry;
-            entry.raceId = raceId;
-
-            const auto& raceData = g_things.getRaceData(raceId);
-            entry.name = raceData.name.empty() ? std::to_string(raceId) : raceData.name;
-
-            soulsealEntries.emplace_back(toSoulsealEntryMap(entry));
-        }
-
+        auto soulsealEntries = buildTaskBoardSoulsealEntries(readTaskBoardMasteredRaceIds(msg));
         g_lua.callGlobalField("g_game", "onSoulsealsData", soulsealEntries);
     } else {
         const uint16_t preys = msg->getU16();

@@ -61,6 +61,12 @@ TaskBoardController.soulsealSelectedHint  = "Select a creature from the list."
 TaskBoardController.soulsealHasSelection  = false
 TaskBoardController.soulsealHasEntries    = false
 TaskBoardController.soulsealEmptyText     = "No Soulseal creatures available."
+TaskBoardController.soulsealTopSpacerPxA  = 0
+TaskBoardController.soulsealTopSpacerPxB  = 0
+TaskBoardController.soulsealTopSpacerPxC  = 0
+TaskBoardController.soulsealBottomSpacerPxA = 0
+TaskBoardController.soulsealBottomSpacerPxB = 0
+TaskBoardController.soulsealBottomSpacerPxC = 0
 
 -- Info bar (always visible)
 TaskBoardController.bountyPoints          = 0
@@ -168,7 +174,7 @@ function TaskBoardController:onGameStart()
         onBountyKillUpdate       = function(...) self:onBountyKillUpdate(...) end,
         onWeeklyKillUpdate       = function(...) self:onWeeklyKillUpdate(...) end,
         onBountyPreferredData    = function(...) self:onPreferredServerData(...) end,
-        onSoulsealsData          = function(...) pdump(...) self:onSoulsealsData(...) end,
+        onSoulsealsData          = function(...) self:onSoulsealsData(...) end,
     })
 -- LuaFormatter on
     if not TaskBoardButton then

@@ -78,10 +78,12 @@ private:
 
 struct RaceType
 {
-    uint32_t raceId;
+    uint32_t raceId{ 0 };
+    uint32_t category{ 0 };
     std::string name;
     Outfit outfit;
-    bool boss;
+    bool hasCategory{ false };
+    bool boss{ false };
 };
 
 struct PreyMonster
@@ -184,6 +186,7 @@ struct TaskBoardSoulsealEntryData
     uint16_t soulsealPoints{ 0 };
     uint8_t category{ 0 };
     uint8_t done{ 1 };
+    Outfit outfit;
 };
 
 struct Imbuement

@@ -1,7 +1,7 @@
 /* Soulseal modal */
 .soulsealWindow {
     width: 365px;
-    height: 410px;
+    height: 398px;
     display: block;
 }
 
@@ -26,23 +26,6 @@
     display: block;
 }
 
-.soulsealSearchInput {
-    width: 180px;
-    height: 22px;
-    display: inline-block;
-    vertical-align: middle;
-    --placeholder: "Type to search";
-    --placeholder-color: #6E706F;
-}
-
-.soulsealClearBtn {
-    width: 22px;
-    height:0px;
-    display: inline-block;
-    vertical-align: middle;
-    margin-left: 4px;
-}
-
 .soulsealCategorySelect {
     width: 90px;
     height: 22px;
@@ -55,13 +38,20 @@
     display: block;
     position: relative;
     background-color: #343434;
-      --border-width-bottom: 1;
-  --border-color-bottom: #747474;
+    --border-width-bottom: 1;
+    --border-color-bottom: #747474;
 }
 
 .soulsealListHeaderLeft {
     float: left;
     margin-left: 4px;
+    color: #ffffff;
+    font: Verdana Bold-11px;
+}
+
+.soulsealListHeaderCategory {
+    position: absolute;
+    left: 190px;
     color: #ffffff;
     font: Verdana Bold-11px;
 }
@@ -75,7 +65,7 @@
 
 .soulsealListFrame {
     width: 100%;
-    height: 205px;
+    height: 225px;
     display: block;
     margin-top: 4px;
     --image-source: /images/ui/2pixel_up_frame_borderimage_dark_reversed;
@@ -86,9 +76,15 @@
 
 .soulsealListScroll {
     width: 99%;
-    height: 199px;
+    height: 200px;
     display: block;
     overflow: scroll;
+}
+
+.soulsealListSpacer {
+    display: block;
+    width: 100%;
+    height: 0;
 }
 
 .soulsealRow {
@@ -122,9 +118,17 @@
     position: absolute;
     top: 12px;
     left: 42px;
-    right: 64px;
+    right: 160px;
     color: #c0c0c0;
     font: Verdana Bold-11px;
+}
+
+.soulsealRowCategory {
+    position: absolute;
+    top: 12px;
+    left: 190px;
+    width: 88px;
+    color: #b7a36a;
 }
 
 .soulsealRowDoneIcon {
@@ -191,7 +195,23 @@
     width: 230px;
     height: 66px;
     margin-left: 12px;
-    margin-top: 18px;
+    margin-top: 4px;
+}
+
+.soulsealSelectedName {
+    display: block;
+    width: 226px;
+    height: 14px;
+    color: #c0c0c0;
+    font: Verdana Bold-11px;
+}
+
+.soulsealSelectedCategory {
+    display: block;
+    width: 226px;
+    height: 14px;
+    margin-bottom: 4px;
+    color: #b7a36a;
 }
 
 .soulsealFightBtn {
@@ -253,7 +273,7 @@
 }
 
 .soulsealBalanceLabel {
-     font: verdana-11px-rounded;
+    font: verdana-11px-rounded;
     color: #c0c0c0;
     text-align: right;
     float: right;
@@ -273,19 +293,42 @@
 .soulsealCloseBtn {
     float: right;
     min-width: 60px;
-    
+    height: 0px;
+
 }
 
 .soulsealHeaderSep {
     top: 0;
     position: absolute;
-    right:48px;
+    right: 50px;
     height: 20px;
 }
 
 .soulsealRowSep {
-    top: 0;
     position: absolute;
-    right:48px;
+    right: 48px;
     height: 100%;
+}
+
+
+/* Search Bar */
+.tradeSearchRow {
+    margin: 0px 5px;
+    width: 240px;
+    display: inline-block;
+}
+
+.tradeSearchInput {
+    margin-left: -5px;
+    --placeholder: "Type to search";
+    --placeholder-color: #6E706F;
+    width: 100%;
+    display: block;
+    float: left;
+}
+
+.tradeSearchClear {
+    --image-source: /game_cyclopedia/images/button_clear_search;
+    float: right;
+    margin-right: 6px;
 }

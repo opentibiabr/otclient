@@ -42,7 +42,7 @@
             </div>
             <div class="slotsSep"></div>
             <hr style="height: 2px;width: 100%;"/>
-            <div *for="local slot in self.preferredSlots" class="slotRow">
+            <div *for="local slot in self.preferredSlots; trackBy: slot.slotNum" class="slotRow">
 
                 <!-- Locked state -->
                 <div class="slotLockedBox" *visible="slot.locked == 1">
@@ -98,7 +98,7 @@
     </div><!-- /prefBody -->
 
     <div class="prefFooter">
-        <button class="prefCloseBtn" onclick="self:hidePreferred()">Close</button>
+        <button class="prefCloseBtn" onclick="self:hidePreferred()" text="Close"></button>
     </div>
 
 </window>

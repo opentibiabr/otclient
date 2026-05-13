@@ -102,6 +102,9 @@ int push_luavalue(const CyclopediaCharacterMiscStats& data);
 // bestiary
 int push_luavalue(const RaceType& raceData);
 
+// task board
+int push_luavalue(const TaskBoardSoulsealEntryData& entry);
+
 // rewardWall
 int push_luavalue(const DailyRewardItem& item);
 int push_luavalue(const DailyRewardBundle& bundle);

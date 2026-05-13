@@ -536,7 +536,7 @@
 
 .prefCloseBtn {
     float: right;
-    height: 1px;
+    min-width: 60px;
+    height: 0px;
     padding: 0 10px;
-    font: verdana-11px-antialised;
 }

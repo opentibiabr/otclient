@@ -1313,15 +1313,37 @@ int push_luavalue(const CharacterInfoFamiliar& familiar) {
 
 int push_luavalue(const RaceType& raceData)
 {
-    g_lua.createTable(0, 4);
+    g_lua.createTable(0, 6);
     g_lua.pushInteger(raceData.raceId);
     g_lua.setField("raceId");
     g_lua.pushString(raceData.name);
     g_lua.setField("name");
     push_luavalue(raceData.outfit);
     g_lua.setField("outfit");
+    g_lua.pushInteger(raceData.category);
+    g_lua.setField("category");
+    g_lua.pushBoolean(raceData.hasCategory);
+    g_lua.setField("hasCategory");
     g_lua.pushBoolean(raceData.boss);
     g_lua.setField("boss");
+    return 1;
+}
+
+int push_luavalue(const TaskBoardSoulsealEntryData& entry)
+{
+    g_lua.createTable(0, 6);
+    g_lua.pushString(entry.name);
+    g_lua.setField("name");
+    g_lua.pushInteger(entry.raceId);
+    g_lua.setField("raceId");
+    g_lua.pushInteger(entry.soulsealPoints);
+    g_lua.setField("soulsealPoints");
+    g_lua.pushInteger(entry.category);
+    g_lua.setField("category");
+    g_lua.pushBoolean(entry.done != 0);
+    g_lua.setField("done");
+    push_luavalue(entry.outfit);
+    g_lua.setField("outfit");
     return 1;
 }
 

@@ -544,19 +544,34 @@ function ngfor_exec(content, env, fn)
     local list = evalIterable(env)
     if type(list) ~= "table" then return end
 
-    local count = #list
-    for i, val in ipairs(list) do
+    local function buildLocals(i, val)
         local locals = {
             [variable] = val,
             index      = i - 1,
             first      = (i == 1),
-            last       = (i == count),
+            last       = (i == #list),
             even       = (i % 2 == 0),
             odd        = (i % 2 == 1)
         }
         for a = 1, #aliases do
             locals[aliases[a].name] = locals[aliases[a].source]
         end
+        return locals
+    end
+
+    local keyOf = nil
+    if evalKey then
+        keyOf = function(val, i)
+            local menv = setmetatable(buildLocals(i or 1, val), { __index = env })
+            local ok, key = pcall(evalKey, menv)
+            return ok and key or val
+        end
+    end
+
+    local count = #list
+    for i, val in ipairs(list) do
+        local locals = buildLocals(i, val)
+        locals.last = (i == count)
         local menv = setmetatable(locals, { __index = env })
 
         local pass = true
@@ -574,7 +589,7 @@ function ngfor_exec(content, env, fn)
             local old_keys, old_values = FOR_CTX.__keys, FOR_CTX.__values
             FOR_CTX.__keys             = keys_str
             FOR_CTX.__values           = values
-            FOR_CTX.__key              = evalKey and (pcall(evalKey, menv) and evalKey(menv) or nil) or nil
+            FOR_CTX.__key              = keyOf and keyOf(val, i) or nil
 
             fn({
                 __keys   = keys_str,
@@ -586,7 +601,7 @@ function ngfor_exec(content, env, fn)
         end
     end
 
-    return list, keys_str
+    return list, keys_str, keyOf
 end
 
 function UIWidget:__childFor(moduleName, expr, html, index, onFinished)
@@ -631,7 +646,7 @@ function UIWidget:__childFor(moduleName, expr, html, index, onFinished)
         local outer_keys   = widget.__for_keys or ''
         local outer_values = widget.__for_values
 
-        local list, keys   = ngfor_exec(expr, env, function(c)
+        local list, keys, keyOf = ngfor_exec(expr, env, function(c)
             if not isFirst then return end
             childindex = childindex + 1
 
@@ -671,6 +686,7 @@ function UIWidget:__childFor(moduleName, expr, html, index, onFinished)
         if isFirst then
             hasChanges = true
             local watch = table.watchList(list, {
+                keyOf = keyOf,
                 onInsert = function(i, it)
                     hasChanges = true
                     local outer_keys    = widget.__for_keys or ''
@@ -702,6 +718,24 @@ function UIWidget:__childFor(moduleName, expr, html, index, onFinished)
                     FOR_CTX.__keys   = ''
                     FOR_CTX.__values = nil
                 end,
+                onUpdate = function(i, it)
+                    local child = widget:getChildByIndex(index + i)
+                    if not child or not child.__for_values then return end
+
+                    local values = child.__for_values
+                    local pos = 0
+                    if outer_values and type(outer_values) == 'table' then
+                        for j = 1, #outer_values do
+                            pos = pos + 1
+                            values[pos] = outer_values[j]
+                        end
+                    end
+                    pos = pos + 1; values[pos] = it
+                    pos = pos + 1; values[pos] = i
+                    for j = pos + 1, #values do
+                        values[j] = nil
+                    end
+                end,
                 onRemove = function(i)
                     hasChanges = true
                     local child = widget:getChildByIndex(index + i)
@@ -725,6 +759,7 @@ function UIWidget:__childFor(moduleName, expr, html, index, onFinished)
             self.watchList = watch
         else
             self.watchList.list = list
+            self.watchList.keyOf = keyOf or self.watchList.keyOf
         end
 
         self.watchList:scan()
