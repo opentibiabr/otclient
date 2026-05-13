@@ -8,6 +8,7 @@ on:
       - "src/**"
       - "tests/**"
       - "cmake/**"
+      - "android/**"
       - "browser/**"
       - "data/**"
       - "mods/**"
@@ -20,6 +21,12 @@ on:
       - "Dockerfile"
       - "Dockerfile.browser"
       - "Dockerfile.browser.sh"
+      - "build_luajit_android.sh"
+      - "setup_android_deps.sh"
+      - "init.lua"
+      - "otclientrc.lua"
+      - "cacert.pem"
+      - "config.ini"
       - ".dockerignore"
       - ".yamllint.yaml"
       - ".reviewdog.yml"
@@ -32,6 +39,7 @@ on:
       - "src/**"
       - "tests/**"
       - "cmake/**"
+      - "android/**"
       - "browser/**"
       - "data/**"
       - "mods/**"
@@ -44,6 +52,12 @@ on:
       - "Dockerfile"
       - "Dockerfile.browser"
       - "Dockerfile.browser.sh"
+      - "build_luajit_android.sh"
+      - "setup_android_deps.sh"
+      - "init.lua"
+      - "otclientrc.lua"
+      - "cacert.pem"
+      - "config.ini"
       - ".dockerignore"
       - ".yamllint.yaml"
       - ".reviewdog.yml"
@@ -61,6 +75,7 @@ jobs:
       contents: read
     outputs:
       compile: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') && 'true' || steps.filter.outputs.compile }}
+      android: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') && 'true' || steps.filter.outputs.android }}
       docker: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') && 'true' || steps.filter.outputs.docker }}
       browser: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') && 'true' || steps.filter.outputs.browser }}
     steps:
@@ -90,6 +105,16 @@ jobs:
               - ".github/workflows/reusable-build-windows.yml"
               - ".github/workflows/reusable-checks.yml"
               - ".github/workflows/reusable-tests-lua.yml"
+            android:
+              - "src/**"
+              - "android/**"
+              - "cmake/**"
+              - "CMakeLists.txt"
+              - "vcpkg.json"
+              - "build_luajit_android.sh"
+              - "setup_android_deps.sh"
+              - ".github/workflows/ci.yml"
+              - ".github/workflows/reusable-build-android-apk.yml"
             docker:
               - "Dockerfile"
               - ".dockerignore"
@@ -149,6 +174,16 @@ jobs:
       contents: read
       packages: read
     uses: ./.github/workflows/reusable-build-windows.yml
+    secrets: inherit
+
+  build-android-apk:
+    name: Build - Android APK
+    needs: [changes, checks, tests-lua]
+    if: needs.changes.outputs.android == 'true' && needs.checks.result == 'success' && needs.tests-lua.result == 'success' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: ./.github/workflows/reusable-build-android-apk.yml
     secrets: inherit
 
   build-docker:
