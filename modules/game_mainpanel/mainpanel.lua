@@ -417,15 +417,15 @@ local function updateList(listWidget, isVisibleList)
 end
 
 function updateDisplayedButtonsList()
-    updateList(optionPanel.panelDisplayedButtons.displayedButtonsList, true)
+    updateList(optionPanel.optionControlButtonsScrollArea.panelDisplayedButtons.displayedButtonsList, true)
 end
 
 function updateAvailableButtonsList()
-    updateList(optionPanel.panelAvailableButtons.displayedAvailableButtonsList, false)
+    updateList(optionPanel.optionControlButtonsScrollArea.panelAvailableButtons.displayedAvailableButtonsList, false)
 end
 
 function moveToAvailable()
-    local displayedList = optionPanel.panelDisplayedButtons.displayedButtonsList
+    local displayedList = optionPanel.optionControlButtonsScrollArea.panelDisplayedButtons.displayedButtonsList
     local selectedItem = displayedList:getFocusedChild()
 
     if not selectedItem then
@@ -477,7 +477,7 @@ function moveButtonUp()
         return
     end
 
-    local displayedList = optionPanel.panelDisplayedButtons.displayedButtonsList
+    local displayedList = optionPanel.optionControlButtonsScrollArea.panelDisplayedButtons.displayedButtonsList
     local selectedItem = displayedList:getFocusedChild()
 
     if not selectedItem then
@@ -504,7 +504,7 @@ function moveButtonDown()
         return
     end
 
-    local displayedList = optionPanel.panelDisplayedButtons.displayedButtonsList
+    local displayedList = optionPanel.optionControlButtonsScrollArea.panelDisplayedButtons.displayedButtonsList
     local selectedItem = displayedList:getFocusedChild()
 
     if not selectedItem then
