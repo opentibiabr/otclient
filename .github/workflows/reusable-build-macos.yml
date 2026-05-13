@@ -1,21 +1,11 @@
-name: Build - macOS
+name: Reusable macOS Build
 
 on:
-  workflow_dispatch:
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
-    paths:
-      - "src/**"
-      - ".github/workflows/build-macos.yml"
-      - "CMakePresets.json"
-  merge_group:
-  push:
-    branches:
-      - main
-    paths:
-      - "src/**"
-      - ".github/workflows/build-macos.yml"
-      - "CMakePresets.json"
+  workflow_call:
+
+permissions:
+  contents: read
+  pull-requests: read
 
 env:
   LUKKA_RUN_VCPKG_SHA: "${{ vars.LUKKA_RUN_VCPKG_SHA != '' && vars.LUKKA_RUN_VCPKG_SHA || 'b3dd708d38df5c856fe1c18dc0d59ab771f93921' }}"
@@ -23,22 +13,8 @@ env:
   MAKEFLAGS: "-j 2"
 
 jobs:
-  cancel-runs:
-    if: github.event_name == 'pull_request' && github.ref != 'refs/heads/main'
-    permissions:
-      contents: read
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.12.1
-        with:
-          access_token: ${{ github.token }}
-
   build:
     if: ${{ github.event_name == 'push' || !github.event.pull_request.draft }}
-    permissions:
-      contents: read
-      pull-requests: read
     name: ${{ matrix.os }}-${{ matrix.buildtype }}
     runs-on: ${{ matrix.os }}
 

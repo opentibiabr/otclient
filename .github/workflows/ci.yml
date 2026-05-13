@@ -75,6 +75,7 @@ jobs:
       contents: read
     outputs:
       compile: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') && 'true' || steps.filter.outputs.compile }}
+      macos: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') && 'true' || steps.filter.outputs.macos }}
       android: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') && 'true' || steps.filter.outputs.android }}
       docker: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') && 'true' || steps.filter.outputs.docker }}
       browser: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') && 'true' || steps.filter.outputs.browser }}
@@ -105,6 +106,14 @@ jobs:
               - ".github/workflows/reusable-build-windows.yml"
               - ".github/workflows/reusable-checks.yml"
               - ".github/workflows/reusable-tests-lua.yml"
+            macos:
+              - "src/**"
+              - "cmake/**"
+              - "vcpkg.json"
+              - "CMakeLists.txt"
+              - "CMakePresets.json"
+              - ".github/workflows/ci.yml"
+              - ".github/workflows/reusable-build-macos.yml"
             android:
               - "src/**"
               - "android/**"
@@ -174,6 +183,16 @@ jobs:
       contents: read
       packages: read
     uses: ./.github/workflows/reusable-build-windows.yml
+    secrets: inherit
+
+  build-macos:
+    name: Build - macOS
+    needs: [changes, checks, tests-lua]
+    if: needs.changes.outputs.macos == 'true' && needs.checks.result == 'success' && needs.tests-lua.result == 'success' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: ./.github/workflows/reusable-build-macos.yml
     secrets: inherit
 
   build-android-apk:
