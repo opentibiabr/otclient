@@ -3,6 +3,14 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+val ciAbiFilters = providers.gradleProperty("otclient.android.abis")
+    .orElse(providers.environmentVariable("OTCLIENT_ANDROID_ABIS"))
+    .orNull
+    ?.split(",")
+    ?.map { it.trim() }
+    ?.filter { it.isNotEmpty() }
+    ?: listOf("arm64-v8a", "armeabi-v7a", "x86_64", "x86")
+
 android {
     namespace = "com.github.otclient"
     compileSdk = 36
@@ -16,7 +24,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         ndk {
-            abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64", "x86")
+            abiFilters += ciAbiFilters
         }
 
         externalNativeBuild {

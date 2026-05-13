@@ -1,218 +1,237 @@
 UIWidget
   anchors.fill: parent
   visible: false
-  SmallReversedQtPanel
+
+  UIScrollArea
+    id: generalScrollArea
     anchors.left: parent.left
-    anchors.right: parent.right
+    anchors.right: generalScrollBar.left
     anchors.top: parent.top
-    height: 22
+    anchors.bottom: parent.bottom
+    vertical-scrollbar: generalScrollBar
 
-    OptionCheckBoxMarked
-      id: showPing
-      !text: tr('Show connection ping')
-      !tooltip: tr('Display connection speed to the server (milliseconds)')
-
-  SmallReversedQtPanel
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.top: prev.bottom
-    height: 32
-    margin-top: 7
-
-    $mobile:
-      height: 0
-      margin-top: 0
-      visible: false
-
-    Label
-      id: mouseControlLabel
+    SmallReversedQtPanel
       anchors.left: parent.left
-      margin-left: 18
-      color: #c0c0c0ff
-      anchors.verticalCenter: parent.verticalCenter
-      text-align: left
-      !text: tr('Mouse Control:')
-      
-    QtComboBox
-      id: mouseControlMode
-      width: 120
-      margin-left: 10
-      anchors.verticalCenter: prev.verticalCenter
-      anchors.left: prev.right
-      mouse-scroll: false
-      !tooltip: tr('Regular Controls: Right-click opens menu, use Ctrl+Click for direct item use\nClassic Controls: Right-click for direct use\nLeft Smart-Click: Left-click for direct item use, look at non-walkable objects, or walk to walkable objects. Right-click opens menu')
-      
+      anchors.right: parent.right
+      anchors.top: parent.top
+      height: 22
+
+      OptionCheckBoxMarked
+        id: showPing
+        !text: tr('Show connection ping')
+        !tooltip: tr('Display connection speed to the server (milliseconds)')
+
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      height: 32
+      margin-top: 7
+
       $mobile:
+        height: 0
+        margin-top: 0
         visible: false
-        
-    QtComboBox
-      id: lootControlMode
-      width: 120
-      margin-left: 10
-      anchors.verticalCenter: prev.verticalCenter
-      anchors.left: prev.right
-      mouse-scroll: false
-      !tooltip: tr('Choose how to loot items when using Classic Controls\nLoot: Right - Use right-click to quickloot AND open containers/corpses\nLoot: SHIFT+Right - Use SHIFT+right-click for quick looting (right-click maintains normal use/open behavior)\nLoot: Left - Use left-click for quick looting only (right-click maintains normal use/open behavior)')
+
+      Label
+        id: mouseControlLabel
+        anchors.left: parent.left
+        margin-left: 18
+        color: #c0c0c0ff
+        anchors.verticalCenter: parent.verticalCenter
+        text-align: left
+        !text: tr('Mouse Control:')
+
+      QtComboBox
+        id: mouseControlMode
+        width: 120
+        margin-left: 10
+        anchors.verticalCenter: prev.verticalCenter
+        anchors.left: prev.right
+        mouse-scroll: false
+        !tooltip: tr('Regular Controls: Right-click opens menu, use Ctrl+Click for direct item use\nClassic Controls: Right-click for direct use\nLeft Smart-Click: Left-click for direct item use, look at non-walkable objects, or walk to walkable objects. Right-click opens menu')
+
+        $mobile:
+          visible: false
+
+      QtComboBox
+        id: lootControlMode
+        width: 120
+        margin-left: 10
+        anchors.verticalCenter: prev.verticalCenter
+        anchors.left: prev.right
+        mouse-scroll: false
+        !tooltip: tr('Choose how to loot items when using Classic Controls\nLoot: Right - Use right-click to quickloot AND open containers/corpses\nLoot: SHIFT+Right - Use SHIFT+right-click for quick looting (right-click maintains normal use/open behavior)\nLoot: Left - Use left-click for quick looting only (right-click maintains normal use/open behavior)')
+        visible: false
+
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 7
+      height: 22
+
+      OptionCheckBox
+        id: autoChaseOverride
+        !text: tr('Allow auto chase override')
+
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 7
+      height: 22
+
+      OptionCheckBox
+        id: talkOnRightClick
+        !text: tr('Right-click talk to NPC')
+
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 7
+      height: 22
+
+      OptionCheckBoxMarked
+        id: returnDisablesChat
+        !text: tr('Enter to disable chat')
+        !tooltip: tr('Enables disabling chat and enabling WASD when pressed Enter.')
+
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 7
+      height: 22
+
+      OptionCheckBox
+        id: moveStack
+        !text: tr('Move stacks directly')
+
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 7
+      height: 22
+
+      OptionCheckBoxMarked
+        id: smartWalk
+        !text: tr('Enable smart walking')
+        !tooltip: tr('Will detect when to use diagonal step based on the\nkeys you are pressing')
+
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 7
+      height: 22
+
+      OptionCheckBox
+        id: openMaximized
+        !text: tr('Open containers maximized')
+
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 7
+      height: 22
+
+      OptionCheckBox
+        id: displayText
+        !text: tr('Display text messages')
+
+    SmallReversedQtPanel
+      id: hotkeyDelay_label
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 7
+      height: 22
+
+      OptionScaleScroll
+        id: hotkeyDelay
+        !text: tr('Hotkey delay: 30ms')
+        anchors.fill: parent
+        &minimumScrollValue: 30
+        &maximumScrollValue: 250
+        &scrollSize: 21
+        @onSetup: |
+          local value = modules.client_options.getOption('hotkeyDelay')
+          self:setText(tr('Hotkey delay: %dms', value))
+
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 7
+      height: 22
+
+      OptionScaleScroll
+        id: walkTurnDelay
+        !text: tr('Walk delay after turn: 50ms')
+        anchors.fill: parent
+        &minimumScrollValue: 10
+        &maximumScrollValue: 500
+        &scrollSize: 21
+        @onSetup: |
+          local value = modules.client_options.getOption('walkTurnDelay')
+          self:setText(tr('Walk delay after turn: %dms', value))
+
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 7
+      height: 22
+
+      OptionScaleScroll
+        id: walkTeleportDelay
+        !text: tr('Walk delay after teleport: 200ms')
+        anchors.fill: parent
+        &minimumScrollValue: 50
+        &maximumScrollValue: 500
+        &scrollSize: 21
+        @onSetup: |
+          local value = modules.client_options.getOption('walkTeleportDelay')
+          self:setText(tr('Walk delay after turn: %dms', value))
+
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 7
+      height: 22
+
+      OptionScaleScroll
+        id: walkStairsDelay
+        !text: tr('Walk delay after floor change: 200ms')
+        anchors.fill: parent
+        &minimumScrollValue: 50
+        &maximumScrollValue: 500
+        &scrollSize: 21
+        @onSetup: |
+          local value = modules.client_options.getOption('walkStairsDelay')
+          self:setText(tr('Walk delay after turn: %dms', value))
+
+    QtButton
+      id: hotkeysButton
+      !text: tr('Hotkeys Manager')
+      @onClick: modules.game_hotkeys.show()
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 12
+
+      size: 120 20
+
+  VerticalScrollBar
+    id: generalScrollBar
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    anchors.right: parent.right
+    step: 14
+    pixels-scroll: true
+    $!mobile:
       visible: false
-
-  SmallReversedQtPanel
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.top: prev.bottom
-    margin-top: 7
-    height: 22
-  
-    OptionCheckBox
-      id: autoChaseOverride
-      !text: tr('Allow auto chase override')
-
-  SmallReversedQtPanel
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.top: prev.bottom
-    margin-top: 7
-    height: 22
-  
-    OptionCheckBox
-      id: talkOnRightClick
-      !text: tr('Right-click talk to NPC')
-
-  SmallReversedQtPanel
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.top: prev.bottom
-    margin-top: 7
-    height: 22
-  
-    OptionCheckBoxMarked
-      id: returnDisablesChat
-      !text: tr('Enter to disable chat')
-      !tooltip: tr('Enables disabling chat and enabling WASD when pressed Enter.')
-
-  SmallReversedQtPanel
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.top: prev.bottom
-    margin-top: 7
-    height: 22
-  
-    OptionCheckBox
-      id: moveStack
-      !text: tr('Move stacks directly')
-
-  SmallReversedQtPanel
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.top: prev.bottom
-    margin-top: 7
-    height: 22
-  
-    OptionCheckBoxMarked
-      id: smartWalk
-      !text: tr('Enable smart walking')
-      !tooltip: tr('Will detect when to use diagonal step based on the\nkeys you are pressing')
-
-  SmallReversedQtPanel
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.top: prev.bottom
-    margin-top: 7
-    height: 22
-  
-    OptionCheckBox
-      id: openMaximized
-      !text: tr('Open containers maximized')
-
-  SmallReversedQtPanel
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.top: prev.bottom
-    margin-top: 7
-    height: 22
-  
-    OptionCheckBox
-      id: displayText
-      !text: tr('Display text messages')
-      
-  SmallReversedQtPanel
-    id: hotkeyDelay_label
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.top: prev.bottom
-    margin-top: 7
-    height: 22
-
-    OptionScaleScroll
-      id: hotkeyDelay
-      !text: tr('Hotkey delay: 30ms')
-      anchors.fill: parent
-      &minimumScrollValue: 30
-      &maximumScrollValue: 250
-      &scrollSize: 21
-      @onSetup: |
-        local value = modules.client_options.getOption('hotkeyDelay')
-        self:setText(tr('Hotkey delay: %dms', value))
-
-  SmallReversedQtPanel
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.top: prev.bottom
-    margin-top: 7
-    height: 22
-
-    OptionScaleScroll
-      id: walkTurnDelay
-      !text: tr('Walk delay after turn: 50ms')
-      anchors.fill: parent
-      &minimumScrollValue: 10
-      &maximumScrollValue: 500
-      &scrollSize: 21
-      @onSetup: |
-        local value = modules.client_options.getOption('walkTurnDelay')
-        self:setText(tr('Walk delay after turn: %dms', value))
-
-  SmallReversedQtPanel
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.top: prev.bottom
-    margin-top: 7
-    height: 22
-
-    OptionScaleScroll
-      id: walkTeleportDelay
-      !text: tr('Walk delay after teleport: 200ms')
-      anchors.fill: parent
-      &minimumScrollValue: 50
-      &maximumScrollValue: 500
-      &scrollSize: 21
-      @onSetup: |
-        local value = modules.client_options.getOption('walkTeleportDelay')
-        self:setText(tr('Walk delay after turn: %dms', value))
-
-  SmallReversedQtPanel
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.top: prev.bottom
-    margin-top: 7
-    height: 22
-
-    OptionScaleScroll
-      id: walkStairsDelay
-      !text: tr('Walk delay after floor change: 200ms')
-      anchors.fill: parent
-      &minimumScrollValue: 50
-      &maximumScrollValue: 500
-      &scrollSize: 21
-      @onSetup: |
-        local value = modules.client_options.getOption('walkStairsDelay')
-        self:setText(tr('Walk delay after turn: %dms', value))
-
-  QtButton
-    id: hotkeysButton
-    !text: tr('Hotkeys Manager')
-    @onClick: modules.game_hotkeys.show()
-    anchors.top: prev.bottom
-    anchors.left: parent.left
-    margin-top: 12
-
-    size: 120 20
