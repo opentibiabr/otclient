@@ -568,16 +568,15 @@ void LocalPlayer::setSpells(const std::vector<uint16_t>& spells)
     callLuaField("onSpellsChange", spells, oldSpells);
 }
 
-void LocalPlayer::setBlessings(const uint16_t blessings, const uint8_t blessVisualState)
+void LocalPlayer::setBlessings(const uint16_t blessings)
 {
-    if (blessings == m_blessings && blessVisualState == m_blessVisualState)
+    if (blessings == m_blessings)
         return;
 
     const uint16_t oldBlessings = m_blessings;
     m_blessings = blessings;
-    m_blessVisualState = blessVisualState;
 
-    callLuaField("onBlessingsChange", blessings, oldBlessings, blessVisualState);
+    callLuaField("onBlessingsChange", blessings, oldBlessings);
 }
 
 void LocalPlayer::takeScreenshot(const uint8_t type)
