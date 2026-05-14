@@ -21,7 +21,9 @@ function executeBot(config, storage, tabs, msgCallback, saveConfigCallback, relo
   local context = {}
   context.configDir = "/bot/".. config
   context.tabs = tabs
-  context.mainTab = context.tabs:addTab("Main", g_ui.createWidget('BotPanel')).tabPanel.content
+  local tabGrid = context.tabs:addTabGrid("Main", g_ui.createWidget('BotPanel'), nil, modules.game_bot.getBotTabs())
+  local tabPanel = tabGrid.tabPanel
+  context.mainTab = tabPanel.content
   context.panel = context.mainTab
   context.saveConfig = saveConfigCallback
   context.reload = reloadCallback
