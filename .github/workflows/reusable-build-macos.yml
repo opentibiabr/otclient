@@ -25,10 +25,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-26]
+        os: [macos-15]
         buildtype: [macos-release]
         include:
-          - os: macos-26
+          - os: macos-15
             triplet: arm64-osx
             cmake_build_type: Release
 
