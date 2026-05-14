@@ -332,8 +332,11 @@ PhantomMiniWindow
       margin-top: 3
       &slotPosition: {x = 65535, y = 10, z = 0}
 
-    MainInventoryItem
+    UIWidget
       id: soulPanel
+      image-source: /images/inventory/containerslot
+      image-border: 3
+      phantom: false
       anchors.left: amulet.left
       anchors.right: amulet.right
       anchors.bottom: boots.bottom
@@ -358,8 +361,11 @@ PhantomMiniWindow
         anchors.bottom: parent.bottom
         color: #c0c0c0ff
 
-    MainInventoryItem
+    UIWidget
       id: capacityPanel
+      image-source: /images/inventory/containerslot
+      image-border: 3
+      phantom: false
       anchors.left: backpack.left
       anchors.right: backpack.right
       anchors.bottom: boots.bottom
@@ -404,8 +410,11 @@ PhantomMiniWindow
       $pressed !disabled:
         image-clip: 12 0 12 12
 
-    MainInventoryItem
+    UIWidget
       id: soulAndCapacity
+      image-source: /images/inventory/containerslot
+      image-border: 3
+      phantom: false
       anchors.left: changeSize.right
       anchors.top: changeSize.top
       margin-left: 4
