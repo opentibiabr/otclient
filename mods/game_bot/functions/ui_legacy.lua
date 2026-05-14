@@ -35,14 +35,13 @@ context.addTab = function(name)
     return tab.tabPanel.content
   end
 
-  local tabGrid = context.tabs:addTabGrid(name, g_ui.createWidget('BotPanel'), nil, modules.game_bot.getBotTabs())
-  local tabPanel = tabGrid.tabPanel
-  local newTab = tabPanel.content
+  local smallTabs = #(context.tabs.tabs) >= 5
+  local newTab = context.tabs:addTab(name, g_ui.createWidget('BotPanel')).tabPanel.content
   context.tabs:setOn(true)
+  if smallTabs then
     for k,tab in pairs(context.tabs.tabs) do
-      if string.len(tab:getText()) > 7 then
-        tab:setFont('small-9px')
-      end
+      tab:setFont('small-9px')
+    end
   end
 
   return newTab
