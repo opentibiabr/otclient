@@ -6,9 +6,6 @@ trackerButtonBosstiary = nil
 trackerMiniWindowBosstiary = nil
 contentContainer = nil
 
--- Track current character to detect character changes
-local currentCharacter = nil
-
 local buttonSelection = nil
 local items = nil
 local bestiary = nil
@@ -39,10 +36,24 @@ controllerCyclopedia = Controller:new()
 controllerCyclopedia:setUI('game_cyclopedia')
 
 function controllerCyclopedia:onInit()
+    -- pre m_gameInitialized
+    self:registerEvents(g_game, {
+        onParseCyclopediaTracker = function(trackerType, data)
+            if Cyclopedia.onParseCyclopediaTracker then
+                Cyclopedia.onParseCyclopediaTracker(trackerType, data)
+            end
+        end
+    })
 end
 
 function controllerCyclopedia:onGameStart()
-    if g_game.getClientVersion() >= 1310 then
+    local versionClient = g_game.getClientVersion()
+    if versionClient < 1310 then
+        controllerCyclopedia:scheduleEvent(function()
+            g_modules.getModule("game_cyclopedia"):unload()
+        end, 100, "unloadModule")
+        return
+    else
         CyclopediaButton = modules.game_mainpanel.addToggleButton('CyclopediaButton', tr('Cyclopedia'),
             '/images/options/cooldowns', function() toggle("items") end, false, 7)
         ButtonBossSlot = modules.game_mainpanel.addToggleButton("bossSlot", tr("Open Boss Slots dialog"),
@@ -84,8 +95,6 @@ function controllerCyclopedia:onGameStart()
             onParseBestiaryRaces = Cyclopedia.loadBestiaryCategories,
             onParseBestiaryOverview = Cyclopedia.loadBestiaryOverview,
             onUpdateBestiaryMonsterData = Cyclopedia.loadBestiarySelectedCreature,
-            -- bosstiary // bestiary
-            onParseCyclopediaTracker = Cyclopedia.onParseCyclopediaTracker,
             -- bosstiary
             onParseSendBosstiary = Cyclopedia.LoadBosstiaryCreatures,
             -- boss_slot
@@ -167,41 +176,9 @@ function controllerCyclopedia:onGameStart()
                 end
             end
 
-            -- Hook into the onOpen event to ensure data is loaded when window is shown
             trackerMiniWindow.onOpen = function()
                 trackerButton:setOn(true)
-                -- Aggressive data loading when window becomes visible
-                scheduleEvent(function()
-                    local char = g_game.getCharacterName()
-                    if char and #char > 0 then
-                        -- Always ensure data is initialized
-                        Cyclopedia.initializeTrackerData()
-                        
-                        -- Force refresh if no data is visible
-                        if not Cyclopedia.storedTrackerData or #Cyclopedia.storedTrackerData == 0 then
-                            -- Try to load from cache first
-                            local cachedData = Cyclopedia.loadTrackerData("bestiary")
-                            if cachedData and #cachedData > 0 then
-                                Cyclopedia.storedTrackerData = cachedData
-                                Cyclopedia.onParseCyclopediaTracker(0, Cyclopedia.storedTrackerData)
-                            end
-                        end
-                        
-                        -- Always try to refresh, regardless of cached data
-                        Cyclopedia.refreshBestiaryTracker()
-                        
-                        -- Request fresh data from server
-                        g_game.requestBestiary()
-                        
-                        -- Additional fallback check
-                        scheduleEvent(function()
-                            if trackerMiniWindow:isVisible() and trackerMiniWindow.contentsPanel:getChildCount() == 0 then
-                                -- If still no data after all attempts, force another refresh
-                                Cyclopedia.refreshBestiaryTracker()
-                            end
-                        end, 500)
-                    end
-                end, 50)
+                Cyclopedia.refreshBestiaryTracker()
             end
 
             trackerMiniWindow.onClose = function()
@@ -274,41 +251,15 @@ function controllerCyclopedia:onGameStart()
                 end
             end
 
-            -- Hook into the onOpen event to ensure data is loaded when window is shown
             trackerMiniWindowBosstiary.onOpen = function()
                 trackerButtonBosstiary:setOn(true)
-                -- Aggressive data loading when window becomes visible
-                scheduleEvent(function()
-                    local char = g_game.getCharacterName()
-                    if char and #char > 0 then
-                        -- Always ensure data is initialized
-                        Cyclopedia.initializeTrackerData()
-                        
-                        -- Force refresh if no data is visible
-                        if not Cyclopedia.storedBosstiaryTrackerData or #Cyclopedia.storedBosstiaryTrackerData == 0 then
-                            -- Try to load from cache first
-                            local cachedData = Cyclopedia.loadTrackerData("bosstiary")
-                            if cachedData and #cachedData > 0 then
-                                Cyclopedia.storedBosstiaryTrackerData = cachedData
-                                Cyclopedia.onParseCyclopediaTracker(1, Cyclopedia.storedBosstiaryTrackerData)
-                            end
-                        end
-                        
-                        -- Always try to refresh, regardless of cached data
-                        Cyclopedia.refreshBosstiaryTracker()
-                        
-                        -- Request fresh data from server
-                        g_game.requestBestiary()
-                        
-                        -- Additional fallback check
-                        scheduleEvent(function()
-                            if trackerMiniWindowBosstiary:isVisible() and trackerMiniWindowBosstiary.contentsPanel:getChildCount() == 0 then
-                                -- If still no data after all attempts, force another refresh
-                                Cyclopedia.refreshBosstiaryTracker()
-                            end
-                        end, 500)
+                if not Cyclopedia.BosstiaryTrackerPending then
+                    if trackerMiniWindowBosstiary.contentsPanel then
+                        trackerMiniWindowBosstiary.contentsPanel:destroyChildren()
                     end
-                end, 50)
+                    Cyclopedia.refreshBosstiaryTracker()
+                end
+                Cyclopedia.scheduleBosstiaryTrackerRetry(1000)
             end
 
             trackerMiniWindowBosstiary.onClose = function()
@@ -322,11 +273,7 @@ function controllerCyclopedia:onGameStart()
         trackerMiniWindowBosstiary:setupOnStart()
         Cyclopedia.loadTrackerFilters("bestiary")
         Cyclopedia.loadTrackerFilters("bosstiary")
-        
-        -- Populate any visible trackers with cached data after windows are set up
-        Cyclopedia.populateVisibleTrackersWithCachedData()
-        
-        -- Also set up proper tracker button states based on window visibility
+
         if trackerMiniWindow:isVisible() then
             trackerButton:setOn(true)
         end
@@ -347,76 +294,25 @@ function controllerCyclopedia:onGameStart()
             type = KEY_DOWN,
             callback = Cyclopedia.toggleBestiaryTracker
         }})
-        
-        -- Initialize cached tracker data for immediate loading with delay to ensure character name is available
-        scheduleEvent(function()
-            local char = g_game.getCharacterName()
-            if char and #char > 0 then
-                -- Only clear data if character has changed
-                if currentCharacter and currentCharacter ~= char then
-                    if Cyclopedia.clearTrackerDataForCharacterChange then
-                        Cyclopedia.clearTrackerDataForCharacterChange()
-                    end
-                end
-                
-                -- Update current character
-                currentCharacter = char
-                
-                -- Initialize tracker data for current character
-                Cyclopedia.initializeTrackerData()
-                
-                -- Populate any visible trackers with cached data
-                Cyclopedia.populateVisibleTrackersWithCachedData()
-                
-                -- Request fresh bestiary data from server
-                g_game.requestBestiary()
-                
-                -- Additional refresh after delays to ensure everything is loaded
-                scheduleEvent(function()
-                    Cyclopedia.populateVisibleTrackersWithCachedData()
-                    Cyclopedia.refreshAllVisibleTrackers()
-                end, 500)
-                
-                -- Final fallback check
-                scheduleEvent(function()
-                    Cyclopedia.refreshAllVisibleTrackers()
-                end, 2000)
-            end
-        end, 500)
     end
-    if g_game.getClientVersion() >= 1410 then
+    if versionClient >= 1410 then
         controllerCyclopedia.ui.CharmsBase.Icon:setImageSource("/game_cyclopedia/images/monster-icon-bonuspoints")
     end
 end
 
 
 function controllerCyclopedia:onGameEnd()
-    if trackerMiniWindow then
-        trackerMiniWindow.contentsPanel:destroyChildren()
-    end
-    if trackerMiniWindowBosstiary then
-        trackerMiniWindowBosstiary.contentsPanel:destroyChildren()
-    end
     hide()
     
-    -- Save tracker filters and data for current character
     if Cyclopedia.saveTrackerFilters then
         Cyclopedia.saveTrackerFilters("bestiary")
         Cyclopedia.saveTrackerFilters("bosstiary")
     end
-    
-    -- Save current tracker data for current character
-    if Cyclopedia.saveTrackerData then
-        if Cyclopedia.storedTrackerData then
-            Cyclopedia.saveTrackerData("bestiary", Cyclopedia.storedTrackerData)
-        end
-        if Cyclopedia.storedBosstiaryTrackerData then
-            Cyclopedia.saveTrackerData("bosstiary", Cyclopedia.storedBosstiaryTrackerData)
-        end
+
+    if Cyclopedia.clearTrackerDataForCharacterChange then
+        Cyclopedia.clearTrackerDataForCharacterChange()
     end
-    
-    -- Don't clear currentCharacter here - keep it for character change detection
-    
+
     Keybind.delete("Windows", "Show/hide Bosstiary Tracker")
     Keybind.delete("Windows", "Show/hide Bestiary Tracker")
 end
@@ -455,9 +351,6 @@ function controllerCyclopedia:onTerminate()
         ButtonBestiary = nil
     end
     
-    -- Clear character tracking on module termination
-    currentCharacter = nil
-    
     -- Save items data if available
     if Cyclopedia and Cyclopedia.Items and Cyclopedia.Items.terminate then
         Cyclopedia.Items.terminate()
@@ -472,6 +365,15 @@ function hide()
     end
     resetCyclopediaTabs()
     controllerCyclopedia.ui:hide()
+    if CyclopediaButton then
+        CyclopediaButton:setOn(false)
+    end
+    if ButtonBossSlot then
+        ButtonBossSlot:setOn(false)
+    end
+    if ButtonBestiary then
+        ButtonBestiary:setOn(false)
+    end
 end
 
 function resetCyclopediaTabs()
@@ -486,7 +388,7 @@ function resetCyclopediaTabs()
 end
 
 function show(defaultWindow)
-    if not controllerCyclopedia.ui or not CyclopediaButton then
+    if not controllerCyclopedia.ui then
         return
     end
 
@@ -525,6 +427,15 @@ function SelectWindow(type, isBackButtonPress)
         if window.func then
             window.func(contentContainer)
         end
+    end
+    if CyclopediaButton then
+        CyclopediaButton:setOn(type == "items" or type == "charms" or type == "map" or type == "houses" or type == "character" or type == "magicalArchives")
+    end
+    if ButtonBossSlot then
+        ButtonBossSlot:setOn(type == "bossSlot")
+    end
+    if ButtonBestiary then
+        ButtonBestiary:setOn(type == "bosstiary" or type == "bestiary")
     end
 end
 

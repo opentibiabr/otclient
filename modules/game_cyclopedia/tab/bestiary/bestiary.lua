@@ -8,10 +8,95 @@ local STAGES = {
 }
 
 local storedRaceIDs = {}
--- Move tracker data to global Cyclopedia namespace to persist across module reloads
-Cyclopedia.storedTrackerData = Cyclopedia.storedTrackerData or nil
-Cyclopedia.storedBosstiaryTrackerData = Cyclopedia.storedBosstiaryTrackerData or nil
+Cyclopedia.storedTrackerData = Cyclopedia.storedTrackerData or {}
+Cyclopedia.storedBosstiaryTrackerData = Cyclopedia.storedBosstiaryTrackerData or {}
 local animusMasteryPoints = 0
+
+local function copyTrackerEntry(entry)
+    return {unpack(entry)}
+end
+
+local function setBestiaryTrackCheck(widget, checked)
+    local originalCallback = widget.onCheckChange
+    widget.onCheckChange = nil
+    widget:setChecked(checked)
+    widget.onCheckChange = originalCallback
+    widget.bestiaryTrackerState = checked
+end
+
+local function addStoredRaceId(raceId)
+    if not table.find(storedRaceIDs, raceId) then
+        table.insert(storedRaceIDs, raceId)
+    end
+end
+
+local function removeStoredRaceId(raceId)
+    for index, storedRaceId in ipairs(storedRaceIDs) do
+        if storedRaceId == raceId then
+            table.remove(storedRaceIDs, index)
+            return
+        end
+    end
+end
+
+function Cyclopedia.setBestiaryTrackerStatus(raceId, checked, trackerEntry, sendToServer)
+    raceId = tonumber(raceId)
+    if not raceId then
+        return
+    end
+
+    Cyclopedia.storedTrackerData = Cyclopedia.storedTrackerData or {}
+
+    local trackerData = {}
+    for _, entry in ipairs(Cyclopedia.storedTrackerData) do
+        if entry[1] ~= raceId then
+            table.insert(trackerData, copyTrackerEntry(entry))
+        end
+    end
+
+    if checked then
+        addStoredRaceId(raceId)
+        if trackerEntry then
+            table.insert(trackerData, copyTrackerEntry(trackerEntry))
+        end
+    else
+        removeStoredRaceId(raceId)
+    end
+
+    Cyclopedia.storedTrackerData = trackerData
+
+    if trackerMiniWindow and Cyclopedia.onParseCyclopediaTracker then
+        Cyclopedia.onParseCyclopediaTracker(0, trackerData)
+    elseif trackerMiniWindow and trackerMiniWindow.contentsPanel and #trackerData == 0 then
+        trackerMiniWindow.contentsPanel:destroyChildren()
+    end
+
+    if UI and UI.ListBase and UI.ListBase.CreatureInfo and UI.ListBase.CreatureInfo.LeftBase then
+        local trackCheck = UI.ListBase.CreatureInfo.LeftBase.TrackCheck
+        if trackCheck and tonumber(trackCheck.raceId) == raceId then
+            setBestiaryTrackCheck(trackCheck, checked)
+        end
+    end
+
+    if sendToServer ~= false then
+        g_game.sendStatusTrackerBestiary(raceId, checked)
+    end
+end
+
+function Cyclopedia.onBestiaryTrackCheckChange(widget)
+    local raceId = tonumber(widget.raceId)
+    if not raceId then
+        return
+    end
+
+    local checked = widget:isChecked()
+    if widget.bestiaryTrackerState == checked then
+        return
+    end
+
+    widget.bestiaryTrackerState = checked
+    Cyclopedia.setBestiaryTrackerStatus(raceId, checked, widget.trackerData, true)
+end
 
 function Cyclopedia.loadBestiaryOverview(name, creatures, animusMasteryPoints)
     if (name == "Result" or name == "") and #creatures > 0 then
@@ -46,8 +131,6 @@ function showBestiary()
         controllerCyclopedia.ui.CharmsBase1410:hide()
     end
     
-    -- Initialize tracker data and storedRaceIDs when bestiary is opened
-    -- This ensures Track Kills status is properly loaded from cache
     Cyclopedia.initializeTrackerData()
     Cyclopedia.ensureStoredRaceIDsPopulated()
 
@@ -58,7 +141,7 @@ function showBestiary()
         end
     end, UI.SearchEdit)
 
-    
+    Cyclopedia.Bestiary.Page = 1
     g_game.requestBestiary()
 end
 
@@ -122,10 +205,19 @@ end
 
 function Cyclopedia.CreateCreatureItems(data)
     UI.ListBase.CreatureInfo.ItemsBase.Itemlist:destroyChildren()
-
+    local itemsPerRow = 15
+    local itemSlotSpacing = 36
     for index, _ in pairs(data) do
         local widget = g_ui.createWidget("BestiaryItemGroup", UI.ListBase.CreatureInfo.ItemsBase.Itemlist)
         widget:setId(index)
+        local rowCount = math.max(1, math.ceil(#data[index] / itemsPerRow))
+        local slotCount = rowCount * itemsPerRow
+        widget:setHeight(45 + ((rowCount - 1) * itemSlotSpacing))
+        widget.Title:breakAnchors()
+        widget.Title:addAnchor(AnchorLeft, "parent", AnchorLeft)
+        widget.Title:addAnchor(AnchorTop, "parent", AnchorTop)
+        widget.Title:setMarginLeft(5)
+        widget.Title:setMarginTop(16)
 
         if index == 0 then
             widget.Title:setText(tr("Common") .. ":")
@@ -139,14 +231,36 @@ function Cyclopedia.CreateCreatureItems(data)
             widget.Title:setText(tr("Very Rare") .. ":")
         end
 
-        for i = 1, 15 do
-            local item = g_ui.createWidget("BestiaryItem", widget.Items)
+        local itemRows = {}
+        local itemWidgets = {}
+        for rowIndex = 1, rowCount do
+            local row = g_ui.createWidget("UIWidget", widget.Items)
+            row:setId("row" .. rowIndex)
+            row:setHeight(34)
+            row:addAnchor(AnchorLeft, "parent", AnchorLeft)
+            row:addAnchor(AnchorRight, "parent", AnchorRight)
+
+            if rowIndex == 1 then
+                row:addAnchor(AnchorTop, "parent", AnchorTop)
+                row:setMarginTop(5)
+            else
+                row:addAnchor(AnchorTop, "row" .. (rowIndex - 1), AnchorBottom)
+                row:setMarginTop(2)
+            end
+
+            itemRows[rowIndex] = row
+        end
+
+        for i = 1, slotCount do
+            local rowIndex = math.ceil(i / itemsPerRow)
+            local item = g_ui.createWidget("BestiaryItem", itemRows[rowIndex])
             item:setId(i)
+            itemWidgets[i] = item
         end
 
         for itemIndex, itemData in ipairs(data[index]) do
             local thing = g_things.getThingType(itemData.id, ThingCategoryItem)
-            local itemWidget = UI.ListBase.CreatureInfo.ItemsBase.Itemlist[index].Items[itemIndex]
+            local itemWidget = itemWidgets[itemIndex]
             itemWidget:setItemId(itemData.id)
             itemWidget.id = itemData.id
             itemWidget.classification = thing:getClassification()
@@ -207,6 +321,14 @@ function Cyclopedia.loadBestiarySelectedCreature(data)
     UI.ListBase.CreatureInfo.ProgressBorder3:setTooltip(string.format(" %d / %d %s", data.killCounter,
         data.lastProgressKillCount, fullText))
     UI.ListBase.CreatureInfo.LeftBase.TrackCheck.raceId = data.id
+    UI.ListBase.CreatureInfo.LeftBase.TrackCheck.trackerData = {
+        data.id,
+        data.killCounter,
+        data.thirdDifficulty,
+        data.secondUnlock,
+        data.lastProgressKillCount,
+        1
+    }
 
     -- TODO investigate when it can be track-- idk when
     --[[     if data.currentLevel == 1 then
@@ -215,13 +337,12 @@ function Cyclopedia.loadBestiarySelectedCreature(data)
         UI.ListBase.CreatureInfo.LeftBase.TrackCheck:disable()
     end ]]
 
-    -- Ensure storedRaceIDs is populated from cached tracker data before checking
     Cyclopedia.ensureStoredRaceIDsPopulated()
 
     if table.find(storedRaceIDs, data.id) then
-        UI.ListBase.CreatureInfo.LeftBase.TrackCheck:setChecked(true)
+        setBestiaryTrackCheck(UI.ListBase.CreatureInfo.LeftBase.TrackCheck, true)
     else
-        UI.ListBase.CreatureInfo.LeftBase.TrackCheck:setChecked(false)
+        setBestiaryTrackCheck(UI.ListBase.CreatureInfo.LeftBase.TrackCheck, false)
     end
 
     if data.currentLevel > 1 then
@@ -350,10 +471,18 @@ function Cyclopedia.loadBestiarySearchCreatures(data)
     Cyclopedia.Bestiary.Stage = STAGES.SEARCH
     Cyclopedia.onStageChange()
     Cyclopedia.Bestiary.Search = {}
-    Cyclopedia.Bestiary.Page = 1
+    Cyclopedia.Bestiary.Page = Cyclopedia.Bestiary.Page or 1
 
     local maxCategoriesPerPage = 15
     Cyclopedia.Bestiary.TotalSearchPages = math.ceil(#data / maxCategoriesPerPage)
+
+    if Cyclopedia.Bestiary.TotalSearchPages < 1 then
+        Cyclopedia.Bestiary.TotalSearchPages = 1
+    end
+
+    if Cyclopedia.Bestiary.Page > Cyclopedia.Bestiary.TotalSearchPages then
+        Cyclopedia.Bestiary.Page = Cyclopedia.Bestiary.TotalSearchPages
+    end
 
     UI.PageValue:setText(string.format("%d / %d", Cyclopedia.Bestiary.Page, Cyclopedia.Bestiary.TotalSearchPages))
 
@@ -381,10 +510,18 @@ end
 
 function Cyclopedia.loadBestiaryCreatures(data)
     Cyclopedia.Bestiary.Creatures = {}
-    Cyclopedia.Bestiary.Page = 1
+    Cyclopedia.Bestiary.Page = Cyclopedia.Bestiary.Page or 1
 
     local maxCategoriesPerPage = 15
     Cyclopedia.Bestiary.TotalCreaturesPages = math.ceil(#data / maxCategoriesPerPage)
+
+    if Cyclopedia.Bestiary.TotalCreaturesPages < 1 then
+        Cyclopedia.Bestiary.TotalCreaturesPages = 1
+    end
+
+    if Cyclopedia.Bestiary.Page > Cyclopedia.Bestiary.TotalCreaturesPages then
+        Cyclopedia.Bestiary.Page = Cyclopedia.Bestiary.TotalCreaturesPages
+    end
 
     UI.PageValue:setText(string.format("%d / %d", Cyclopedia.Bestiary.Page, Cyclopedia.Bestiary.TotalCreaturesPages))
 
@@ -467,11 +604,13 @@ function Cyclopedia.CreateBestiaryCreaturesItem(data)
         widget.AnimusMastery:setVisible(false)
     end
 
-    if data.currentLevel >= 3 then
+    if data.currentLevel >= 4 then
         widget.Finalized:setVisible(true)
         widget.KillsLabel:setVisible(false)
         widget.Sprite:getCreature():setShader("")
     else
+        widget.Finalized:setVisible(false)
+        widget.KillsLabel:setVisible(true)
         if data.currentLevel < 1 then
             widget.KillsLabel:setText("?")
             widget.Sprite:getCreature():setShader("Outfit - cyclopedia-black")
@@ -479,8 +618,8 @@ function Cyclopedia.CreateBestiaryCreaturesItem(data)
             widget.AnimusMastery:setVisible(false)
         else
             widget.KillsLabel:setText(string.format("%d / 3", data.currentLevel - 1))
+            widget.Sprite:getCreature():setShader("")
         end
-
     end
 
     function widget.ClassBase:onClick()
@@ -679,111 +818,50 @@ end
 ]]
 
 function Cyclopedia.refreshBestiaryTracker()
-    -- First check if we have a character
     local char = g_game.getCharacterName()
     if not char or #char == 0 then
         return
     end
-    
-    -- Ensure tracker data is initialized
-    if not Cyclopedia.storedTrackerData then
-        Cyclopedia.initializeTrackerData()
+
+    Cyclopedia.initializeTrackerData()
+
+    if trackerMiniWindow and trackerMiniWindow.contentsPanel then
+        Cyclopedia.onParseCyclopediaTracker(0, Cyclopedia.storedTrackerData)
     end
-    
-    -- Always try to load cached data for immediate display
-    local cachedData = Cyclopedia.loadTrackerData("bestiary")
-    if cachedData and #cachedData > 0 then
-        Cyclopedia.storedTrackerData = cachedData
-        -- Immediately populate if we have tracker window
-        if trackerMiniWindow then
-            Cyclopedia.onParseCyclopediaTracker(0, Cyclopedia.storedTrackerData)
-        end
-    end
-    
-    -- Always request fresh data from server
+
     g_game.requestBestiary()
 end
 
 function Cyclopedia.refreshBosstiaryTracker()
-    -- First check if we have a character
     local char = g_game.getCharacterName()
     if not char or #char == 0 then
         return
     end
-    
-    -- Ensure tracker data is initialized
-    if not Cyclopedia.storedBosstiaryTrackerData then
-        Cyclopedia.initializeTrackerData()
-    end
-    
-    -- Always try to load cached data for immediate display
-    local cachedData = Cyclopedia.loadTrackerData("bosstiary")
-    if cachedData and #cachedData > 0 then
-        Cyclopedia.storedBosstiaryTrackerData = cachedData
-        -- Immediately populate if we have tracker window
-        if trackerMiniWindowBosstiary then
-            Cyclopedia.onParseCyclopediaTracker(1, Cyclopedia.storedBosstiaryTrackerData)
-        end
-    end
-    
-    -- Always request fresh data from server
-    g_game.requestBestiary()
-end
 
-function Cyclopedia.refreshAllVisibleTrackers()
-    -- Refresh bestiary tracker if it's visible
-    if trackerMiniWindow and trackerMiniWindow:isVisible() then
-        Cyclopedia.refreshBestiaryTracker()
-    end
-    
-    -- Refresh bosstiary tracker if it's visible
-    if trackerMiniWindowBosstiary and trackerMiniWindowBosstiary:isVisible() then
-        Cyclopedia.refreshBosstiaryTracker()
-    end
-end
-
--- Force refresh function that can be called manually to reload data
-function Cyclopedia.forceRefreshTrackers()
-    local char = g_game.getCharacterName()
-    if not char or #char == 0 then
-        print("Debug: No character name available")
-        return
-    end
-    
-    print("Debug: Force refreshing trackers for character: " .. char)
-    
-    -- Clear stored data to force reload
-    Cyclopedia.storedTrackerData = {}
-    Cyclopedia.storedBosstiaryTrackerData = {}
-    
-    -- Initialize and load fresh data
     Cyclopedia.initializeTrackerData()
-    
-    -- Request fresh data from server
-    g_game.requestBestiary()
-    
-    -- Refresh all visible trackers
-    scheduleEvent(function()
-        Cyclopedia.refreshAllVisibleTrackers()
-    end, 100)
+
+    if trackerMiniWindowBosstiary and trackerMiniWindowBosstiary.contentsPanel then
+        trackerMiniWindowBosstiary.contentsPanel:destroyChildren()
+    end
+
+    -- Bosstiary tracker state comes from BosstiaryInfo, not the bestiary request.
+    Cyclopedia.BosstiaryTrackerPending = true
+    g_game.requestBosstiaryInfo()
 end
 
--- Debug function to check tracker state
-function Cyclopedia.debugTrackerState()
-    local char = g_game.getCharacterName()
-    print("=== Tracker Debug Info ===")
-    print("Character: " .. (char or "nil"))
-    print("Bestiary data count: " .. (Cyclopedia.storedTrackerData and #Cyclopedia.storedTrackerData or "nil"))
-    print("Bosstiary data count: " .. (Cyclopedia.storedBosstiaryTrackerData and #Cyclopedia.storedBosstiaryTrackerData or "nil"))
-    print("Bestiary window visible: " .. tostring(trackerMiniWindow and trackerMiniWindow:isVisible()))
-    print("Bosstiary window visible: " .. tostring(trackerMiniWindowBosstiary and trackerMiniWindowBosstiary:isVisible()))
-    if trackerMiniWindow then
-        print("Bestiary panel children: " .. trackerMiniWindow.contentsPanel:getChildCount())
+function Cyclopedia.scheduleBosstiaryTrackerRetry(delay)
+    if Cyclopedia.BosstiaryTrackerRetryScheduled then
+        return
     end
-    if trackerMiniWindowBosstiary then
-        print("Bosstiary panel children: " .. trackerMiniWindowBosstiary.contentsPanel:getChildCount())
-    end
-    print("========================")
+
+    Cyclopedia.BosstiaryTrackerRetryScheduled = true
+    scheduleEvent(function()
+        Cyclopedia.BosstiaryTrackerRetryScheduled = false
+
+        if trackerMiniWindowBosstiary and trackerMiniWindowBosstiary:isVisible() and Cyclopedia.BosstiaryTrackerPending then
+            Cyclopedia.refreshBosstiaryTracker()
+        end
+    end, delay or 1000)
 end
 
 function Cyclopedia.toggleBestiaryTracker()
@@ -803,38 +881,8 @@ function Cyclopedia.toggleBestiaryTracker()
             end
             panel:addChild(trackerMiniWindow)
         end
-        
-        -- Ensure data is loaded before opening
-        local char = g_game.getCharacterName()
-        if char and #char > 0 then
-            Cyclopedia.initializeTrackerData()
-            -- Try to load immediately if we have cached data
-            if Cyclopedia.storedTrackerData and #Cyclopedia.storedTrackerData > 0 then
-                Cyclopedia.onParseCyclopediaTracker(0, Cyclopedia.storedTrackerData)
-            end
-        end
-        
+
         trackerMiniWindow:open()
-        
-        -- Multiple fallback attempts
-        scheduleEvent(function()
-            if trackerMiniWindow:isVisible() then
-                if trackerMiniWindow.contentsPanel:getChildCount() == 0 then
-                    Cyclopedia.refreshBestiaryTracker()
-                end
-                
-                -- Another fallback check
-                scheduleEvent(function()
-                    if trackerMiniWindow:isVisible() and trackerMiniWindow.contentsPanel:getChildCount() == 0 then
-                        -- Force request fresh data if still empty
-                        g_game.requestBestiary()
-                        scheduleEvent(function()
-                            Cyclopedia.refreshBestiaryTracker()
-                        end, 1000)
-                    end
-                end, 500)
-            end
-        end, 100)
     end
 end
 
@@ -855,44 +903,12 @@ function Cyclopedia.toggleBosstiaryTracker()
             end
             panel:addChild(trackerMiniWindowBosstiary)
         end
-        
-        -- Ensure data is loaded before opening
-        local char = g_game.getCharacterName()
-        if char and #char > 0 then
-            Cyclopedia.initializeTrackerData()
-            -- Try to load immediately if we have cached data
-            if Cyclopedia.storedBosstiaryTrackerData and #Cyclopedia.storedBosstiaryTrackerData > 0 then
-                Cyclopedia.onParseCyclopediaTracker(1, Cyclopedia.storedBosstiaryTrackerData)
-            end
-        end
-        
+
         trackerMiniWindowBosstiary:open()
-        
-        -- Multiple fallback attempts
-        scheduleEvent(function()
-            if trackerMiniWindowBosstiary:isVisible() then
-                if trackerMiniWindowBosstiary.contentsPanel:getChildCount() == 0 then
-                    Cyclopedia.refreshBosstiaryTracker()
-                end
-                
-                -- Another fallback check
-                scheduleEvent(function()
-                    if trackerMiniWindowBosstiary:isVisible() and trackerMiniWindowBosstiary.contentsPanel:getChildCount() == 0 then
-                        -- Force request fresh data if still empty
-                        g_game.requestBestiary()
-                        scheduleEvent(function()
-                            Cyclopedia.refreshBosstiaryTracker()
-                        end, 1000)
-                    end
-                end, 500)
-            end
-        end, 100)
     end
 end
 
 function Cyclopedia.onTrackerClose(temp)
-    -- Button states are now handled by onClose callbacks
-    -- This function can be removed or kept for backwards compatibility
 end
 
 function Cyclopedia.setBarPercent(widget, percent)
@@ -918,50 +934,58 @@ function Cyclopedia.onParseCyclopediaTracker(trackerType, data)
         return
     end
 
-    -- If server returns empty data, don't clear existing cached data
-    if #data == 0 then
-        return
-    end
-
     local isBoss = trackerType == 1
     local window = isBoss and trackerMiniWindowBosstiary or trackerMiniWindow
 
-    -- Store the original data for re-sorting
+    if isBoss and Cyclopedia.mergeBosstiaryTrackerOverrides and not Cyclopedia.BosstiaryTrackerLocalRender then
+        data = Cyclopedia.mergeBosstiaryTrackerOverrides(data)
+    end
+
     if isBoss then
+        Cyclopedia.BosstiaryTrackerPending = false
         Cyclopedia.storedBosstiaryTrackerData = data
-        -- Save to persistent storage
-        Cyclopedia.saveTrackerData("bosstiary", data)
     else
         Cyclopedia.storedTrackerData = data
-        -- Save to persistent storage
-        Cyclopedia.saveTrackerData("bestiary", data)
-        
-        -- Clear and repopulate storedRaceIDs only for bestiary tracker
+        -- Keep checkbox state available even when the miniwindow is still closed.
         storedRaceIDs = {}
+        for _, entry in ipairs(data) do
+            addStoredRaceId(entry[1])
+        end
+    end
+
+    if #data == 0 then
+        if window and window.contentsPanel then
+            window.contentsPanel:destroyChildren()
+        end
+        return
+    end
+
+    if not window or not window.contentsPanel then
+        return
     end
 
     window.contentsPanel:destroyChildren()
 
-    -- Sort the data for both trackers
     local trackerTypeStr = isBoss and "bosstiary" or "bestiary"
     data = Cyclopedia.sortTrackerData(data, trackerTypeStr)
 
     for _, entry in ipairs(data) do
         local raceId, kills, uno, dos, maxKills = unpack(entry)
         
-        -- Only add to storedRaceIDs for bestiary tracker
-        if not isBoss then
-            table.insert(storedRaceIDs, raceId)
-        end
-        
         local raceData = g_things.getRaceData(raceId)
         local name = raceData.name
 
         local widget = g_ui.createWidget("TrackerButton", window.contentsPanel)
         widget:setId(raceId)
+        widget.trackerType = trackerType
         widget.creature:setOutfit(raceData.outfit)
-        widget.label:setText(name:len() > 12 and name:sub(1, 9) .. "..." or name)
-        widget.kills:setText(kills .. "/" .. maxKills)
+        local killsText = kills .. "/" .. maxKills
+        widget.kills:setText(killsText)
+
+        local maxLen = math.max(11, 18 - string.len(killsText))
+        widget.label:setTextOverflowLength(maxLen)
+        widget.label:setText(name)
+        
         widget.onMouseRelease = onTrackerClick
 
         Cyclopedia.SetBestiaryProgress(54,widget.killsBar2, widget.ProgressBack33, widget.ProgressBack55, kills, uno, dos, maxKills)
@@ -1022,181 +1046,32 @@ function Cyclopedia.saveTrackerFilters(trackerType)
     })
 end
 
--- New functions to save/load tracker data (character-specific)
-function Cyclopedia.saveTrackerData(trackerType, data)
-    local char = g_game.getCharacterName()
-    if not char or #char == 0 then
-        return
-    end
-    
-    local dataKey = trackerType == "bosstiary" and "bosstiaryTrackerData" or "bestiaryTrackerData"
-    local charDataKey = string.format("%s_%s", dataKey, char)
-    
-    g_settings.mergeNode(charDataKey, {
-        ['data'] = data,
-        ['timestamp'] = os.time(),
-        ['character'] = char
-    })
-end
-
-function Cyclopedia.loadTrackerData(trackerType)
-    local char = g_game.getCharacterName()
-    if not char or #char == 0 then
-        return nil
-    end
-    
-    local dataKey = trackerType == "bosstiary" and "bosstiaryTrackerData" or "bestiaryTrackerData"
-    local charDataKey = string.format("%s_%s", dataKey, char)
-    
-    local settings = g_settings.getNode(charDataKey)
-    if settings and settings['data'] and settings['character'] == char then
-        -- Check if data is not too old (older than 1 hour = stale)
-        local timestamp = settings['timestamp'] or 0
-        local currentTime = os.time()
-        if currentTime - timestamp < 3600 then -- 1 hour in seconds
-            return settings['data']
-        end
-    end
-    return nil
-end
-
 function Cyclopedia.initializeTrackerData()
-    local char = g_game.getCharacterName()
-    if not char or #char == 0 then
-        -- Character name not available yet, skip initialization
-        return
-    end
-    
-    -- Only initialize if we don't already have data loaded for this character
-    if not Cyclopedia.storedTrackerData then
-        Cyclopedia.storedTrackerData = {}
-    end
-    if not Cyclopedia.storedBosstiaryTrackerData then
-        Cyclopedia.storedBosstiaryTrackerData = {}
-    end
-    
-    -- Load cached bestiary tracker data for current character (only if not already loaded)
-    if #Cyclopedia.storedTrackerData == 0 then
-        local cachedBestiaryData = Cyclopedia.loadTrackerData("bestiary")
-        if cachedBestiaryData and #cachedBestiaryData > 0 then
-            Cyclopedia.storedTrackerData = cachedBestiaryData
-        end
-    end
-    
-    -- Load cached bosstiary tracker data for current character (only if not already loaded)
-    if #Cyclopedia.storedBosstiaryTrackerData == 0 then
-        local cachedBosstiaryData = Cyclopedia.loadTrackerData("bosstiary")
-        if cachedBosstiaryData and #cachedBosstiaryData > 0 then
-            Cyclopedia.storedBosstiaryTrackerData = cachedBosstiaryData
-        end
-    end
+    Cyclopedia.storedTrackerData = Cyclopedia.storedTrackerData or {}
+    Cyclopedia.storedBosstiaryTrackerData = Cyclopedia.storedBosstiaryTrackerData or {}
 end
 
--- Function to ensure storedRaceIDs is populated from cached tracker data
 function Cyclopedia.ensureStoredRaceIDsPopulated()
-    -- If storedRaceIDs is already populated, don't need to do anything
-    if storedRaceIDs and #storedRaceIDs > 0 then
-        return
-    end
-    
-    -- Initialize tracker data if not already done
     Cyclopedia.initializeTrackerData()
-    
-    -- Populate storedRaceIDs from cached bestiary tracker data
-    if Cyclopedia.storedTrackerData and #Cyclopedia.storedTrackerData > 0 then
-        storedRaceIDs = {}
-        for _, entry in ipairs(Cyclopedia.storedTrackerData) do
-            local raceId = entry[1] -- First element is the race ID
-            table.insert(storedRaceIDs, raceId)
-        end
+
+    storedRaceIDs = {}
+    for _, entry in ipairs(Cyclopedia.storedTrackerData) do
+        addStoredRaceId(entry[1])
     end
 end
 
--- Function to clear tracker data when character changes
 function Cyclopedia.clearTrackerDataForCharacterChange()
-    -- Clear in-memory data
     Cyclopedia.storedTrackerData = {}
     Cyclopedia.storedBosstiaryTrackerData = {}
-    
-    -- Clear visual tracker displays
+    Cyclopedia.BosstiaryTrackerPending = false
+    Cyclopedia.BosstiaryTrackerRetryScheduled = false
+    storedRaceIDs = {}
+
     if trackerMiniWindow and trackerMiniWindow.contentsPanel then
         trackerMiniWindow.contentsPanel:destroyChildren()
     end
     if trackerMiniWindowBosstiary and trackerMiniWindowBosstiary.contentsPanel then
         trackerMiniWindowBosstiary.contentsPanel:destroyChildren()
-    end
-    
-    -- Clear stored race IDs
-    storedRaceIDs = {}
-end
-
--- Function to clean up old character data (optional maintenance function)
-function Cyclopedia.clearTrackerDataForCharacterChange()
-    -- Clear in-memory data
-    Cyclopedia.storedTrackerData = {}
-    Cyclopedia.storedBosstiaryTrackerData = {}
-    
-    -- Clear visual tracker displays
-    if trackerMiniWindow and trackerMiniWindow.contentsPanel then
-        trackerMiniWindow.contentsPanel:destroyChildren()
-    end
-    if trackerMiniWindowBosstiary and trackerMiniWindowBosstiary.contentsPanel then
-        trackerMiniWindowBosstiary.contentsPanel:destroyChildren()
-    end
-    
-    -- Clear stored race IDs
-    storedRaceIDs = {}
-end
-
--- Function to clean up old character data (optional maintenance function)
-function Cyclopedia.cleanupOldTrackerData(daysOld)
-    daysOld = daysOld or 30 -- Default: clean data older than 30 days
-    local cutoffTime = os.time() - (daysOld * 24 * 60 * 60)
-    
-    -- Get all settings and find tracker-related keys
-    local allSettings = g_settings.getSettings()
-    for key, value in pairs(allSettings) do
-        if string.match(key, "^bestiaryTrackerData_") or 
-           string.match(key, "^bosstiaryTrackerData_") or
-           string.match(key, "^bestiaryTracker_") or
-           string.match(key, "^bosstiaryTracker_") then
-            
-            if value.timestamp and value.timestamp < cutoffTime then
-                g_settings.remove(key)
-            end
-        end
-    end
-end
-
--- New function to populate visible trackers with cached data
-function Cyclopedia.populateVisibleTrackersWithCachedData()
-    -- Check if we have a valid character
-    local char = g_game.getCharacterName()
-    if not char or #char == 0 then
-        return
-    end
-    
-    -- Ensure tracker data is initialized for this character (but don't force reload if data exists)
-    Cyclopedia.initializeTrackerData()
-    
-    -- Populate bestiary tracker if it's visible and has cached data
-    if trackerMiniWindow and trackerMiniWindow:isVisible() then
-        if Cyclopedia.storedTrackerData and #Cyclopedia.storedTrackerData > 0 then
-            Cyclopedia.onParseCyclopediaTracker(0, Cyclopedia.storedTrackerData)
-        else
-            -- Try to load cached data and populate
-            Cyclopedia.refreshBestiaryTracker()
-        end
-    end
-    
-    -- Populate bosstiary tracker if it's visible and has cached data
-    if trackerMiniWindowBosstiary and trackerMiniWindowBosstiary:isVisible() then
-        if Cyclopedia.storedBosstiaryTrackerData and #Cyclopedia.storedBosstiaryTrackerData > 0 then
-            Cyclopedia.onParseCyclopediaTracker(1, Cyclopedia.storedBosstiaryTrackerData)
-        else
-            -- Try to load cached data and populate
-            Cyclopedia.refreshBosstiaryTracker()
-        end
     end
 end
 
@@ -1240,7 +1115,7 @@ end
 
 function Cyclopedia.refreshTracker(trackerType)
     if trackerType == "bosstiary" then
-        if trackerMiniWindowBosstiary and Cyclopedia.storedBosstiaryTrackerData then
+        if trackerMiniWindowBosstiary and Cyclopedia.storedBosstiaryTrackerData and not Cyclopedia.BosstiaryTrackerPending then
             Cyclopedia.onParseCyclopediaTracker(1, Cyclopedia.storedBosstiaryTrackerData)
         end
     else
@@ -1373,7 +1248,13 @@ function onTrackerClick(widget, mousePosition, mouseButton)
 
     menu:setGameMenu(true)
     menu:addOption("stop Tracking " .. widget.label:getText(), function()
-        g_game.sendStatusTrackerBestiary(taskId, false)
+        if widget.trackerType == 1 and Cyclopedia.setBosstiaryTrackerStatus then
+            Cyclopedia.setBosstiaryTrackerStatus(taskId, false, true)
+        elseif Cyclopedia.setBestiaryTrackerStatus then
+            Cyclopedia.setBestiaryTrackerStatus(taskId, false, nil, true)
+        else
+            g_game.sendStatusTrackerBestiary(taskId, false)
+        end
     end)
     menu:display(menuPosition)
 
