@@ -116,6 +116,7 @@ function clear()
 
   botTabs:clearTabs()
   botTabs:setOn(false)
+  botTabs:setHeight(0)
 
   botMessages:destroyChildren()
   botMessages:updateLayout()
@@ -151,6 +152,23 @@ function clear()
   if g_sounds then
     g_sounds.getChannel(SoundChannels.Bot):stop()
   end
+end
+
+local function updateBotTabsHeight()
+  botTabs:updateLayout()
+  local layout = botTabs:getLayout()
+  if not botTabs:isOn() or not (layout and layout:isUIGridLayout()) then
+    botTabs:setHeight(0)
+    return
+  end
+
+  local lines = layout:getNumLines()
+  if lines <= 0 then
+    botTabs:setHeight(0)
+    return
+  end
+
+  botTabs:setHeight(lines * layout:getCellSize().height)
 end
 
 function loadConfigsList()
@@ -271,6 +289,7 @@ function refresh()
     return onError(result)
   end
 
+  updateBotTabsHeight()
   statusLabel:setOn(false)
   botExecutor = result
   check()
@@ -850,8 +869,4 @@ end
 function botInventoryChange(player, slot, item, oldItem)
   if botExecutor == nil then return false end
   safeBotCall(function() botExecutor.callbacks.onInventoryChange(player, slot, item, oldItem) end)
-end
-
-function getBotTabs()
-  return botTabs
 end
