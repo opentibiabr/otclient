@@ -849,6 +849,34 @@ function Cyclopedia.refreshBosstiaryTracker()
     g_game.requestBosstiaryInfo()
 end
 
+function Cyclopedia.openTrackedCreature(trackerType, raceId)
+    raceId = tonumber(raceId)
+    if not raceId then
+        return false
+    end
+
+    if trackerType == 1 then
+        Cyclopedia.pendingBosstiaryRaceId = raceId
+        if not Cyclopedia.openTab or not Cyclopedia.openTab("bosstiary") then
+            return false
+        end
+
+        if Cyclopedia.focusBosstiaryRace then
+            Cyclopedia.focusBosstiaryRace(raceId)
+        end
+        return true
+    end
+
+    if not Cyclopedia.openTab or not Cyclopedia.openTab("bestiary") then
+        return false
+    end
+
+    UI.BackPageButton:setEnabled(true)
+    g_game.requestBestiarySearch(raceId)
+    Cyclopedia.ShowBestiaryCreature()
+    return true
+end
+
 function Cyclopedia.scheduleBosstiaryTrackerRetry(delay)
     if Cyclopedia.BosstiaryTrackerRetryScheduled then
         return
@@ -987,6 +1015,7 @@ function Cyclopedia.onParseCyclopediaTracker(trackerType, data)
         widget.label:setText(name)
         
         widget.onMouseRelease = onTrackerClick
+        widget.onDoubleClick = onTrackerDoubleClick
 
         Cyclopedia.SetBestiaryProgress(54,widget.killsBar2, widget.ProgressBack33, widget.ProgressBack55, kills, uno, dos, maxKills)
     end
@@ -1243,6 +1272,10 @@ function test(index)
 end
 
 function onTrackerClick(widget, mousePosition, mouseButton)
+    if mouseButton ~= MouseRightButton then
+        return false
+    end
+
     local taskId = tonumber(widget:getId())
     local menu = g_ui.createWidget("PopupMenu")
 
@@ -1256,9 +1289,13 @@ function onTrackerClick(widget, mousePosition, mouseButton)
             g_game.sendStatusTrackerBestiary(taskId, false)
         end
     end)
-    menu:display(menuPosition)
+    menu:display(mousePosition)
 
     return true
+end
+
+function onTrackerDoubleClick(widget)
+    return Cyclopedia.openTrackedCreature(widget.trackerType, widget:getId())
 end
 
 function onAddLootClick(widget, mousePosition, mouseButton)

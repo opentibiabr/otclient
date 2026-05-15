@@ -500,6 +500,12 @@ function Cyclopedia.LoadBosstiaryCreatures(data)
         end
     end
 
+    if Cyclopedia.pendingBosstiaryRaceId and Cyclopedia.focusBosstiaryRace and
+        Cyclopedia.focusBosstiaryRace(Cyclopedia.pendingBosstiaryRaceId) then
+        Cyclopedia.pendingBosstiaryRaceId = nil
+        return
+    end
+
     Cyclopedia.LoadBosstiaryCreature(Cyclopedia.Bosstiary.Page)
     Cyclopedia.verifyBosstiaryButtons()
 end
@@ -514,6 +520,26 @@ function Cyclopedia.LoadBosstiaryCreature(page)
     for _, data in ipairs(Cyclopedia.Bosstiary.Creatures[page]) do
         Cyclopedia.CreateBosstiaryCreature(data)
     end
+end
+
+function Cyclopedia.focusBosstiaryRace(raceId)
+    raceId = tonumber(raceId)
+    if not raceId or not Cyclopedia.Bosstiary or not Cyclopedia.Bosstiary.Creatures then
+        return false
+    end
+
+    for page, creatures in ipairs(Cyclopedia.Bosstiary.Creatures) do
+        for _, creature in ipairs(creatures) do
+            if creature.raceId == raceId then
+                Cyclopedia.Bosstiary.Page = page
+                Cyclopedia.LoadBosstiaryCreature(page)
+                Cyclopedia.verifyBosstiaryButtons()
+                return true
+            end
+        end
+    end
+
+    return false
 end
 
 function Cyclopedia.verifyBosstiaryButtons()

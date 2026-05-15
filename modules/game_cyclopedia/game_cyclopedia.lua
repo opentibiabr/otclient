@@ -399,6 +399,23 @@ function show(defaultWindow)
     controllerCyclopedia.ui.GoldBase.Value:setText(Cyclopedia.formatGold(g_game.getLocalPlayer():getTotalMoney()))
 end
 
+function Cyclopedia.openTab(tabName)
+    if not controllerCyclopedia.ui then
+        return false
+    end
+
+    if not controllerCyclopedia.ui:isVisible() then
+        show(tabName)
+        return true
+    end
+
+    if previousType ~= tabName then
+        SelectWindow(tabName, false)
+    end
+
+    return true
+end
+
 function toggleBack()
     local previousTab = table.remove(tabStack, #tabStack)
     if #tabStack < 1 then
