@@ -22,6 +22,10 @@
 
 #pragma once
 
+#include <atomic>
+#include <cstdint>
+#include <string>
+
 #include <framework/luaengine/luaobject.h>
 
 class LoginHttp final : public LuaObject
