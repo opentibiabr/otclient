@@ -973,8 +973,7 @@ BosstiaryItem < UIWidget
     !text: tr('Track')
     text-auto-resize: true
     color: #C1C1C1
-    @onCheckChange: |
-      g_game.sendStatusTrackerBestiary(self:getParent():getId(),self:isChecked())
+    @onCheckChange: modules.game_cyclopedia.Cyclopedia.onBosstiaryTrackCheckChange(self)
   UICreature
     id: Sprite
     anchors.bottom: TrackCheck.top
