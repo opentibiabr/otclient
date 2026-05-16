@@ -301,22 +301,6 @@ local function hideOldClientStats()
     setSkillGroupVisibility('GameAdditionalSkills', features.additionalSkills)
     setSkillGroupVisibility('GameForgeSkillStats1332', features.forgeSkills and version >= 1332)
     setSkillGroupVisibility('GameForgeSkillStats', features.forgeSkills)
-    -- For very old clients (before 1098) the skills list fits without a slider.
-    -- Keep the scrollbar track visible but hide the draggable slider so it's not interactive.
-    if version < 1098 then
-        local scroll = skillsWindow:recursiveGetChildById('miniwindowScrollBar')
-        if scroll then
-            local slider = scroll:getChildById('sliderButton')
-            if slider then
-                slider:setVisible(false)
-            end
-        end
-         -- Also hide the offence info separator for old clients
-        local sep = skillsWindow:recursiveGetChildById('separadorOnOffenceInfoChange')
-        if sep then
-            sep:setVisible(false)
-        end
-    end
 end
 
 local function hideMenuOptionsForOldClients(menu)
@@ -1040,11 +1024,15 @@ function checkExpSpeed()
 end
 
 function onMiniWindowOpen()
-    skillsButton:setOn(true)
+    if skillsButton then
+        skillsButton:setOn(true)
+    end
 end
 
 function onMiniWindowClose()
-    skillsButton:setOn(false)
+    if skillsButton then
+        skillsButton:setOn(false)
+    end
 end
 
 function onSkillButtonClick(button)
@@ -1109,11 +1097,19 @@ local function getExperienceTooltip(localPlayer)
 end
 
 function onExperienceChange(localPlayer, value)
+    if not localPlayer then
+        return
+    end
     setSkillValue('experience', comma_value(value))
     setSkillTooltip('experience', getExperienceTooltip(localPlayer))
+    onLevelChange(localPlayer, localPlayer:getLevel(), localPlayer:getLevelPercent())
 end
 
 function onLevelChange(localPlayer, value, percent)
+    if not localPlayer then
+        return
+    end
+    percent = percent or localPlayer:getLevelPercent()
     setSkillValue('level', comma_value(value))
     local text = tr('You have %s percent to go', 100 - percent)
 

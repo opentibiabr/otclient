@@ -536,6 +536,9 @@ local function hide()
         return
     end
     questLogController.ui:hide()
+    if questLogButton then
+        questLogButton:setOn(false)
+    end
 end
 
 function show()
@@ -546,6 +549,9 @@ function show()
     questLogController.ui:show()
     questLogController.ui:raise()
     questLogController.ui:focus()
+    if questLogButton then
+        questLogButton:setOn(true)
+    end
 end
 
 local function toggle()

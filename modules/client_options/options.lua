@@ -474,12 +474,18 @@ function show()
     controller.ui:show()
     controller.ui:raise()
     controller.ui:focus()
+    if extraWidgets.optionsButton then
+        extraWidgets.optionsButton:setOn(true)
+    end
 end
 
 function hide()
     -- Save all settings when closing the options window
     g_settings.save()
     controller.ui:hide()
+    if extraWidgets.optionsButton then
+        extraWidgets.optionsButton:setOn(false)
+    end
 end
 
 function saveOptions()
