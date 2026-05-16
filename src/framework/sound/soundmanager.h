@@ -23,61 +23,12 @@
 #pragma once
 
 #include "declarations.h"
-
-using DelayedSoundEffect = std::pair<uint32_t, uint32_t>;
-using DelayedSoundEffects = std::vector<DelayedSoundEffect>;
-using ItemCountSoundEffect = std::pair<uint32_t, uint32_t>;
-using ItemCountSoundEffects = std::vector<ItemCountSoundEffect>;
+#include "soundmanager_types.h"
 
 class StreamSoundSource;
 class CombinedSoundSource;
 class SoundFile;
 class SoundBuffer;
-
-enum ClientSoundType
-{
-    NUMERIC_SOUND_TYPE_UNKNOWN = 0,
-    NUMERIC_SOUND_TYPE_SPELL_ATTACK = 1,
-    NUMERIC_SOUND_TYPE_SPELL_HEALING = 2,
-    NUMERIC_SOUND_TYPE_SPELL_SUPPORT = 3,
-    NUMERIC_SOUND_TYPE_WEAPON_ATTACK = 4,
-    NUMERIC_SOUND_TYPE_CREATURE_NOISE = 5,
-    NUMERIC_SOUND_TYPE_CREATURE_DEATH = 6,
-    NUMERIC_SOUND_TYPE_CREATURE_ATTACK = 7,
-    NUMERIC_SOUND_TYPE_AMBIENCE_STREAM = 8,
-    NUMERIC_SOUND_TYPE_FOOD_AND_DRINK = 9,
-    NUMERIC_SOUND_TYPE_ITEM_MOVEMENT = 10,
-    NUMERIC_SOUND_TYPE_EVENT = 11,
-    NUMERIC_SOUND_TYPE_UI = 12,
-    NUMERIC_SOUND_TYPE_WHISPER_WITHOUT_OPEN_CHAT = 13,
-    NUMERIC_SOUND_TYPE_CHAT_MESSAGE = 14,
-    NUMERIC_SOUND_TYPE_PARTY = 15,
-    NUMERIC_SOUND_TYPE_VIP_LIST = 16,
-    NUMERIC_SOUND_TYPE_RAID_ANNOUNCEMENT = 17,
-    NUMERIC_SOUND_TYPE_SERVER_MESSAGE = 18,
-    NUMERIC_SOUND_TYPE_SPELL_GENERIC = 19
-};
-
-enum ClientMusicType
-{
-    MUSIC_TYPE_UNKNOWN = 0,
-    MUSIC_TYPE_MUSIC = 1,
-    MUSIC_TYPE_MUSIC_IMMEDIATE = 2,
-    MUSIC_TYPE_MUSIC_TITLE = 3,
-};
-
-// client sound effect parsed from the protobuf file
-struct ClientSoundEffect
-{
-    uint32_t clientId;
-    ClientSoundType type;
-    float pitchMin;
-    float pitchMax;
-    float volumeMin;
-    float volumeMax;
-    uint32_t soundId = 0;
-    std::vector<uint32_t> randomSoundId;
-};
 
 // client location ambient parsed from the protobuf file
 struct ClientLocationAmbient
@@ -95,6 +46,7 @@ struct ClientItemAmbient
 {
     uint32_t id;
     std::vector<uint32_t> clientIds;
+    uint32_t maxSoundDistance;
 
     // this is a very specific client mechanic
     // depending on how many items are on the game screen
@@ -135,17 +87,121 @@ public:
     void setPosition(const Point& pos);
     bool isEaxEnabled();
     bool loadClientFiles(const std::string& directory);
-    std::string getAudioFileNameById(int32_t audioFileId);
+    std::string getAudioFileNameById(int32_t audioFileId) const;
+    std::vector<uint32_t> getRandomSoundIds(uint32_t id);
+    ClientSoundType getSoundEffectType(uint32_t id);
+    SoundDebugSnapshot getDebugSnapshot();
+    void refreshProtocolSoundSettings();
+    void playProtocolSoundMain(uint8_t soundSource, uint16_t soundEffectId, const Position& pos);
+    void playProtocolSoundSecondary(uint8_t soundEnum, uint8_t soundSource, uint16_t soundEffectId, const Position& pos);
+    void toggleDebugMode() { m_debugProtocolSounds = !m_debugProtocolSounds; }
+    bool isDebugMode() const { return m_debugProtocolSounds; }
+    void markItemAmbienceDirty() { m_itemAmbienceDirty = true; }
+    void onItemTileChanged(const Position& pos);
+    void onListenerPositionChanged(const Position& newPos, const Position& oldPos);
+    void stopItemAmbience();
+    void resetItemAmbience();
+    void stopAllChannelsExcept(int excludedChannel);
+    void playUiSoundById(int soundId);
+
+    static constexpr int CHANNEL_MUSIC = 1;
+    static constexpr int CHANNEL_AMBIENT = 2;
+    static constexpr int CHANNEL_EFFECT_MAIN = 3;
+    static constexpr int CHANNEL_UI = 10;
+    static constexpr int CHANNEL_EFFECT_SECONDARY = 12;
 
     void preload(std::string filename);
     SoundSourcePtr play(const std::string& filename, float fadetime = 0, float gain = 0, float pitch = 0);
+    SoundSourcePtr playChannelSound(int channelId, const std::string& filename, float fadetime = 0, float gain = 1.0f, float pitch = 1.0f);
     SoundChannelPtr getChannel(int channel);
+    void stopChannelSounds(int channelId, const SoundSource* except = nullptr);
     SoundEffectPtr createSoundEffect();
 
     std::string resolveSoundFile(const std::string& file);
     void ensureContext() const;
 
 private:
+    struct ActiveItemAmbientSource
+    {
+        uint32_t audioFileId{ 0 };
+        SoundSourcePtr source;
+    };
+
+    struct AmbientEffectState
+    {
+        uint32_t itemCount{ 0 };
+        double nearestDistance{ std::numeric_limits<double>::max() };
+        Position nearestPosition;
+        bool keepActive{ false };
+    };
+
+    using TileEffectCounts = std::unordered_map<uint32_t, uint32_t>;
+    using EffectTileCounts = std::unordered_map<Position, uint32_t, Position::Hasher>;
+
+    struct TrackedAmbientTile
+    {
+        TileEffectCounts activeEffects;
+        bool hasAmbientItems{ false };
+        uint32_t minEffectDistance{ std::numeric_limits<uint32_t>::max() };
+        uint32_t maxEffectDistance{ 0 };
+    };
+
+    struct ProtocolSoundSettings
+    {
+        int ownBattleVolume{ 100 };
+        int otherPlayersVolume{ 100 };
+        int creatureVolume{ 100 };
+        bool ownAttack{ true };
+        bool ownHealing{ true };
+        bool ownSupport{ true };
+        bool ownWeapons{ true };
+        bool othersAttack{ true };
+        bool othersHealing{ true };
+        bool othersSupport{ true };
+        bool othersWeapons{ true };
+        bool creatureNoises{ true };
+        bool creatureNoisesDeath{ true };
+        bool creatureAttacksAndSpells{ true };
+    };
+
+    uint32_t resolveItemAmbientAudioFileId(const ClientItemAmbient& ambientEffect, uint32_t itemCount) const;
+    uint32_t getItemAmbienceScanDistance() const;
+    bool isWithinItemAmbienceRange(const Position& listenerPos, const Position& tilePos) const;
+    bool shouldRescanTrackedAmbientTile(const TrackedAmbientTile& tileState, double previousDistance, double newDistance) const;
+    void rebuildItemAmbience();
+    void clearTrackedItemAmbience();
+    TrackedAmbientTile scanTrackedAmbientTile(const Position& tilePos) const;
+    void applyTrackedAmbientTile(const Position& tilePos, const TrackedAmbientTile& tileState);
+    void applyAmbientEffectTileChange(uint32_t effectId, const Position& tilePos, uint32_t oldCount, uint32_t newCount);
+    void updateTrackedAmbientTile(const Position& tilePos);
+    void recalculateAmbientEffectNearest(uint32_t effectId);
+    void updateAllAmbientNearestStates();
+    void updateItemAmbienceSources();
+    SoundDebugItemState buildDebugItemState(uint32_t effectId, const AmbientEffectState& state) const;
+    static std::string getDebugChannelName(int channelId);
+    void cleanupProtocolDebugEvents(uint64_t now);
+    void recordProtocolDebugEvent(uint8_t soundSource, uint16_t soundEffectId, uint32_t audioFileId, const Position& pos, int channelId, float gain, float distance, bool secondary);
+    std::string buildProtocolSoundPath(const std::string& fileName);
+    void updateSoundPathPrefix();
+    void stopItemAmbienceSource(uint32_t effectId);
+    bool shouldPlayProtocolSound(uint8_t soundSource, uint16_t soundEffectId);
+    bool isProtocolSubChannelEnabled(uint8_t soundSource, ClientSoundType soundType);
+    int getProtocolVolumeSetting(uint8_t soundSource);
+    static std::string getSettingValue(const std::string& key);
+    static bool getBooleanSetting(const std::string& key, bool defaultValue);
+    static int getIntSetting(const std::string& key, int defaultValue);
+    bool shouldSkipProtocolCooldown(uint16_t soundEffectId);
+    static constexpr float PROTOCOL_MAX_DISTANCE = 8.0f;
+    static constexpr uint32_t PROTOCOL_COOLDOWN_MS = 1000;
+    static constexpr uint32_t PROTOCOL_COOLDOWN_CLEANUP_MS = 10000;
+    static constexpr uint32_t SOUND_DEBUG_EVENT_TTL_MS = 2500;
+    static constexpr size_t SOUND_DEBUG_EVENT_LIMIT = 32;
+    static constexpr uint32_t ITEM_AMBIENCE_DEFAULT_MAX_DISTANCE = 8;
+    const ClientSoundEffect* getClientSoundEffect(uint32_t id) const;
+    std::optional<uint32_t> chooseProtocolAudioFileId(uint16_t soundEffectId);
+    bool playProtocolAudioFileId(uint32_t audioFileId, const Position& pos, int channelId);
+    void logProtocolDebug(uint8_t soundSource, uint16_t soundEffectId, uint32_t audioFileId, const Position& pos, int channelId, float gain) const;
+
     SoundSourcePtr createSoundSource(const std::string& name);
     bool loadFromProtobuf(const std::string& directory, const std::string& fileName);
 
@@ -165,9 +221,28 @@ private:
     std::map<uint32_t, ClientLocationAmbient> m_clientAmbientEffects;
     std::map<uint32_t, ClientItemAmbient> m_clientItemAmbientEffects;
     std::map<uint32_t, ClientMusic> m_clientMusic;
+    std::unordered_map<uint32_t, std::vector<uint32_t>> m_itemAmbientEffectsByClientId;
+    std::unordered_map<Position, TrackedAmbientTile, Position::Hasher> m_trackedAmbientTiles;
+    std::unordered_map<uint32_t, EffectTileCounts> m_effectTiles;
+    std::unordered_map<uint32_t, ActiveItemAmbientSource> m_activeItemAmbientSources;
+    std::unordered_map<uint32_t, AmbientEffectState> m_ambientEffectStates;
+    std::unordered_set<Position, Position::Hasher> m_pendingDirtyTiles;
 
     std::vector<SoundSourcePtr> m_sources;
     bool m_audioEnabled{ true };
+    bool m_itemAmbienceDirty{ false };
+    bool m_itemAmbienceTilesDirty{ false };
+    bool m_itemAmbienceListenerTracked{ false };
+    uint32_t m_maxItemAmbientDistance{ 0 };
+    Position m_itemAmbienceListenerPos;
+    std::unordered_map<uint16_t, ticks_t> m_protocolLastPlayedAt;
+    std::deque<SoundDebugEventState> m_recentProtocolDebugEvents;
+    ticks_t m_lastCooldownCleanup{ 0 };
+    bool m_debugProtocolSounds{ false };
+    ProtocolSoundSettings m_protocolSoundSettings;
+    std::string m_soundPathPrefix;
+    int m_cachedProtocolVersion{ -1 };
+    mutable std::mt19937 m_randomEngine{ std::random_device{}() };
 };
 
 extern SoundManager g_sounds;

@@ -85,7 +85,9 @@ local function load(version)
         -- loading client files was successful, try to load sounds now
         -- sound files are optional, this means that failing to load them
         -- will not block logging into game
-        g_sounds.loadClientFiles(resolvepath(string.format('/sounds/%d/', version)))
+        if g_sounds then
+            g_sounds.loadClientFiles(resolvepath(string.format('/sounds/%d/', version)))
+        end
         return
     end
 

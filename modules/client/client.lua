@@ -4,6 +4,23 @@ if g_sounds then
     musicChannel = g_sounds.getChannel(SoundChannels.Music)
 end
 
+local function onGameStart()
+    if not musicChannel then
+        return
+    end
+
+    musicChannel:stop(3)
+end
+
+local function onGameEnd()
+    if not musicChannel then
+        return
+    end
+
+    g_sounds.stopAll()
+    musicChannel:enqueue(musicFilename, 3)
+end
+
 function setMusic(filename)
     musicFilename = filename
 
@@ -16,17 +33,6 @@ end
 function startup()
     if musicChannel then
         musicChannel:enqueue(musicFilename, 3)
-        connect(g_game, {
-            onGameStart = function()
-                musicChannel:stop(3)
-            end
-        })
-        connect(g_game, {
-            onGameEnd = function()
-                g_sounds.stopAll()
-                musicChannel:enqueue(musicFilename, 3)
-            end
-        })
     end
 
     -- Check for startup errors
@@ -66,6 +72,10 @@ function init()
 
     if musicChannel then
         g_sounds.preload(musicFilename)
+        connect(g_game, {
+            onGameStart = onGameStart,
+            onGameEnd = onGameEnd
+        })
     end
 end
 
@@ -77,6 +87,13 @@ function terminate()
     else
         disconnect(g_app, {
             onRun = startup,
+        })
+    end
+
+    if musicChannel then
+        disconnect(g_game, {
+            onGameStart = onGameStart,
+            onGameEnd = onGameEnd
         })
     end
 end

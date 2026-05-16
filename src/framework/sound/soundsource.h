@@ -32,6 +32,7 @@ protected:
 
 public:
     enum FadeState { NoFading, FadingOn, FadingOff };
+    enum SourceKind : uint8_t { KindBasic, KindStreaming, KindCombined };
 
     SoundSource();
     ~SoundSource() override;
@@ -58,6 +59,12 @@ public:
     std::string getName() const { return m_name; }
     uint8_t getChannel() const { return m_channel; }
     float getGain() const { return m_gain; }
+    float getPitch() const { return m_pitch; }
+    Point getPosition() const { return m_position; }
+    Point getVelocity() const { return m_velocity; }
+    bool isLooping() const { return m_looping; }
+    bool isRelative() const { return m_relative; }
+    SourceKind getSourceKind() const { return m_sourceKind; }
     float getReferenceDistance();
 
 protected:
@@ -66,18 +73,26 @@ protected:
 
     virtual void update();
     friend class SoundManager;
+    friend class SoundChannel;
     friend class CombinedSoundSource;
 
     float m_fadeStartTime{ 0 };
     float m_fadeTime{ 0 };
     float m_fadeGain{ 0 };
     float m_gain{ 1.f };
-    uint m_effectId;
+    float m_pitch{ 1.f };
+    uint m_effectId{ 0 };
 
     FadeState m_fadeState{ NoFading };
 
     uint32_t m_sourceId{ 0 };
     uint8_t m_channel{ 0 };
+    bool m_looping{ false };
+    bool m_relative{ false };
+    SourceKind m_sourceKind{ KindBasic };
+
+    Point m_position;
+    Point m_velocity;
 
     std::string m_name;
 

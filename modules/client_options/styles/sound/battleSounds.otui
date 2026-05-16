@@ -1,0 +1,147 @@
+UIWidget
+  anchors.fill: parent
+  visible: false
+  Label
+    id: info
+    text: "The sound is currently deactivated. \nIncrease the master volume in the Options menu 'Sound'."
+    text-vertical-auto-resize: true
+    color: #FF9854
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: parent.top
+
+  SmallReversedQtPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    height: 100
+    margin-top: 7
+
+    OptionScaleScroll
+      id: battleSoundOwnBattle
+      anchors.left: parent.left
+      anchors.right: parent.right
+      &minimumScrollValue: 1
+      &maximumScrollValue: 100
+      &scrollSize: 21
+      margin-left: -15
+      @onSetup: |
+        local value = modules.client_options.getOption('battleSoundOwnBattle')
+        self:setText(tr('Own Battle Sounds: %d %%', value))
+
+    OptionCheckBox
+      id: battleSoundOwnBattlesubChannelsSpells
+      !text: tr('Spells')
+      anchors.top: prev.bottom
+      margin-top:5
+
+    MiniWindowContents
+      id: panelOwnBattleSubChannels
+      padding-left: 10
+      padding-right: 5
+      padding-top: 10
+      layout: verticalBox
+      QtCheckBox
+        id: battleSoundOwnBattleSubChannelsAttack
+        !text: tr('Attack')
+        @onCheckChange: modules.client_options.setOption(self:getId(), self:isChecked())
+      QtCheckBox
+        id: battleSoundOwnBattleSoundSubChannelsHealing
+        !text: tr('Healing')
+        @onCheckChange: modules.client_options.setOption(self:getId(), self:isChecked())
+      QtCheckBox
+        id: battleSoundOwnBattleSoundSubChannelsSupport
+        !text: tr('Support')
+        @onCheckChange: modules.client_options.setOption(self:getId(), self:isChecked())
+
+    OptionCheckBox
+      id: battleSoundOwnBattleSoundSubChannelsWeapons
+      anchors.top: prev.bottom
+      !text: tr('Weapons')
+      margin-top: -10
+
+  SmallReversedQtPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    margin-top: 7
+    height: 100
+    OptionScaleScroll
+      id: battleSoundOtherPlayers
+      anchors.left: parent.left
+      anchors.right: parent.right
+      &minimumScrollValue: 1
+      &maximumScrollValue: 100
+      &scrollSize: 21
+      margin-left: -15
+      @onSetup: |
+        local value = modules.client_options.getOption('battleSoundOtherPlayers') or 0
+        self:setText(tr('Others Players: %d %%', value))
+
+    OptionCheckBox
+      id: battleSoundOtherPlayersSubChannelsSpells
+      !text: tr('Spells')
+      anchors.top: prev.bottom
+      margin-top:5
+
+
+    MiniWindowContents
+      id: panelOtherPlayersSubChannels
+      padding-left: 10
+      padding-right: 5
+      padding-top: 10
+
+      layout: verticalBox
+      QtCheckBox
+        id: battleSoundOtherPlayersSubChannelsAttack
+        !text: tr('Attack')
+        @onCheckChange: modules.client_options.setOption(self:getId(), self:isChecked())
+      QtCheckBox
+        id: battleSoundOtherPlayersSubChannelsHealing
+        !text: tr('Healing')
+        @onCheckChange: modules.client_options.setOption(self:getId(), self:isChecked())
+      QtCheckBox
+        id: battleSoundOtherPlayersSubChannelsSupport
+        !text: tr('Support')
+        @onCheckChange: modules.client_options.setOption(self:getId(), self:isChecked())
+
+    OptionCheckBox
+      id: battleSoundOtherPlayersSubChannelsWeapons
+      anchors.top: prev.bottom
+      !text: tr('Weapons')
+      margin-top: -10
+
+  SmallReversedQtPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    margin-top: 7
+    height: 75
+    OptionScaleScroll
+      id: battleSoundCreature
+      anchors.left: parent.left
+      anchors.right: parent.right
+      &minimumScrollValue: 1
+      &maximumScrollValue: 100
+      &scrollSize: 21
+      margin-left: -15
+      @onSetup: |
+        local value = modules.client_options.getOption('battleSoundCreature')
+        self:setText(tr('Creature: %d %%', value))
+
+    OptionCheckBox
+      id: battleSoundCreatureSubChannelsNoises
+      !text: tr('Creature Noises')
+      anchors.top: prev.bottom
+      margin-top:5
+
+    OptionCheckBox
+      id: battleSoundCreatureSubChannelsNoisesDeath
+      !text: tr('Death')
+      anchors.top: prev.bottom
+    OptionCheckBox
+      id: battleSoundCreatureSubChannelsAttacksAndSpells
+      !text: tr('Attacks And Spells')
+      anchors.top: prev.bottom
+
+

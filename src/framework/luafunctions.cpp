@@ -231,6 +231,7 @@ void Application::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_modules", "getModules", &ModuleManager::getModules, &g_modules);
     g_lua.bindSingletonFunction("g_modules", "getCurrentModule", &ModuleManager::getCurrentModule, &g_modules);
     g_lua.bindSingletonFunction("g_modules", "enableAutoReload", &ModuleManager::enableAutoReload, &g_modules);
+    g_lua.bindSingletonFunction("g_modules", "isAutoReloadEnabled", &ModuleManager::isAutoReloadEnabled, &g_modules);
 
     // EventDispatcher
     g_lua.registerSingletonClass("g_dispatcher");
@@ -560,6 +561,9 @@ void Application::registerLuaFunctions()
     g_lua.bindClassMemberFunction<UIWidget>("setEnabled", &UIWidget::setEnabled);
     g_lua.bindClassMemberFunction<UIWidget>("setDisabled", &UIWidget::setDisabled);
     g_lua.bindClassMemberFunction<UIWidget>("setVisible", &UIWidget::setVisible);
+    g_lua.bindClassMemberFunction<UIWidget>("setClickSound", &UIWidget::setClickSound);
+    g_lua.bindClassMemberFunction<UIWidget>("addSound", &UIWidget::addSound);
+    g_lua.bindClassMemberFunction<UIWidget>("removeSound", &UIWidget::removeSound);
     g_lua.bindClassMemberFunction<UIWidget>("setDisplay", &UIWidget::setDisplay);
     g_lua.bindClassMemberFunction<UIWidget>("getDisplay", &UIWidget::getDisplay);
     g_lua.bindClassMemberFunction<UIWidget>("setConditionIf", &UIWidget::setResultConditionIf);
@@ -1092,6 +1096,11 @@ void Application::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_sounds", "isEaxEnabled", &SoundManager::isEaxEnabled, &g_sounds);
     g_lua.bindSingletonFunction("g_sounds", "loadClientFiles", &SoundManager::loadClientFiles, &g_sounds);
     g_lua.bindSingletonFunction("g_sounds", "getAudioFileNameById", &SoundManager::getAudioFileNameById, &g_sounds);
+    g_lua.bindSingletonFunction("g_sounds", "getRandomSoundIds", &SoundManager::getRandomSoundIds, &g_sounds);
+    g_lua.bindSingletonFunction("g_sounds", "getSoundEffectType", &SoundManager::getSoundEffectType, &g_sounds);
+    g_lua.bindSingletonFunction("g_sounds", "refreshProtocolSoundSettings", &SoundManager::refreshProtocolSoundSettings, &g_sounds);
+    g_lua.bindSingletonFunction("g_sounds", "toggleDebugMode", &SoundManager::toggleDebugMode, &g_sounds);
+    g_lua.bindSingletonFunction("g_sounds", "isDebugMode", &SoundManager::isDebugMode, &g_sounds);
 
     g_lua.registerClass<SoundSource>();
     g_lua.bindClassStaticFunction<SoundSource>("create", [] { return std::make_shared<SoundSource>(); });

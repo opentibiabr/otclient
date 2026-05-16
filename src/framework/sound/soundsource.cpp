@@ -78,11 +78,13 @@ void SoundSource::setBuffer(const SoundBufferPtr& buffer)
 void SoundSource::setLooping(const bool looping)
 {
     alSourcei(m_sourceId, AL_LOOPING, looping ? AL_TRUE : AL_FALSE);
+    m_looping = looping;
 }
 
 void SoundSource::setRelative(const bool relative)
 {
     alSourcei(m_sourceId, AL_SOURCE_RELATIVE, relative ? AL_TRUE : AL_FALSE);
+    m_relative = relative;
 }
 
 void SoundSource::setReferenceDistance(const float distance)
@@ -106,11 +108,13 @@ void SoundSource::setGain(const float gain)
 void SoundSource::setPitch(const float pitch)
 {
     alSourcef(m_sourceId, AL_PITCH, pitch);
+    m_pitch = pitch;
 }
 
 void SoundSource::setPosition(const Point& pos)
 {
     alSource3f(m_sourceId, AL_POSITION, pos.x, pos.y, 0);
+    m_position = pos;
 }
 
 void SoundSource::setRolloff(const float rolloff)
@@ -121,6 +125,7 @@ void SoundSource::setRolloff(const float rolloff)
 void SoundSource::setVelocity(const Point& velocity)
 {
     alSource3f(m_sourceId, AL_VELOCITY, velocity.x, velocity.y, 0);
+    m_velocity = velocity;
 }
 
 void SoundSource::setFading(const FadeState state, const float fadeTime)

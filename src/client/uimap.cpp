@@ -27,6 +27,8 @@
 #include "mapview.h"
 #include "framework/graphics/drawpoolmanager.h"
 #include "framework/otml/otmlnode.h"
+#include <algorithm>
+#include <cmath>
 #include <framework/platform/platformwindow.h>
 #include <framework/input/mouse.h>
 
@@ -151,6 +153,29 @@ Otc::FloorViewMode UIMap::getFloorViewMode() { return m_mapView->getFloorViewMod
 CreaturePtr UIMap::getFollowingCreature() { return m_mapView->getFollowingCreature(); }
 
 Position UIMap::getCameraPosition() { return m_mapView->getCameraPosition(); }
+
+Point UIMap::getTilePoint(const Position& pos)
+{
+    if (!pos.isMapPosition() || !m_mapView || !m_mapView->isInRange(pos))
+        return {};
+
+    auto point = m_mapView->transformPositionTo2D(pos) - m_mapView->m_posInfo.drawOffset;
+    point.x *= m_mapView->m_posInfo.horizontalStretchFactor;
+    point.y *= m_mapView->m_posInfo.verticalStretchFactor;
+    point += m_mapviewRect.topLeft();
+    return point;
+}
+
+Rect UIMap::getTileRect(const Position& pos)
+{
+    if (!pos.isMapPosition() || !m_mapView || !m_mapView->isInRange(pos))
+        return {};
+
+    const auto point = getTilePoint(pos);
+    const auto width = std::max<int>(1, std::lround(static_cast<float>(m_mapView->m_tileSize) * m_mapView->m_posInfo.horizontalStretchFactor));
+    const auto height = std::max<int>(1, std::lround(static_cast<float>(m_mapView->m_tileSize) * m_mapView->m_posInfo.verticalStretchFactor));
+    return { point.x, point.y, width, height };
+}
 
 Position UIMap::getPosition(const Point& mousePos) { return m_mapView->getPosition(mousePos); }
 

@@ -479,6 +479,9 @@
     <ClCompile Include="..\src\framework\sound\soundeffect.cpp" />
     <ClCompile Include="..\src\framework\sound\soundfile.cpp" />
     <ClCompile Include="..\src\framework\sound\soundmanager.cpp" />
+    <ClCompile Include="..\src\framework\sound\soundmanager_debug.cpp" />
+    <ClCompile Include="..\src\framework\sound\soundmanager_itemambience.cpp" />
+    <ClCompile Include="..\src\framework\sound\soundmanager_protocol.cpp" />
     <ClCompile Include="..\src\framework\sound\soundsource.cpp" />
     <ClCompile Include="..\src\framework\sound\streamsoundsource.cpp" />
     <ClCompile Include="..\src\framework\stdext\demangle.cpp" />

@@ -200,32 +200,11 @@ return {
     enableAudio                       = {
         value = true,
         action = function(value, options, controller, panels, extraWidgets)
-            if g_sounds then
-                g_sounds.setAudioEnabled(value)
-            end
-
             if value then
-                extraWidgets.audioButton:setIcon('/images/topbuttons/button_mute_up')
+                setOption("soundMaster", 100)
             else
-                extraWidgets.audioButton:setIcon('/images/topbuttons/button_mute_pressed')
+                setOption("soundMaster", 1)
             end
-        end
-    },
-    enableMusicSound                  = {
-        value = true,
-        action = function(value, options, controller, panels, extraWidgets)
-            if g_sounds then
-                g_sounds.getChannel(SoundChannels.Music):setEnabled(value)
-            end
-        end
-    },
-    musicSoundVolume                  = {
-        value = 100,
-        action = function(value, options, controller, panels, extraWidgets)
-            if g_sounds then
-                g_sounds.getChannel(SoundChannels.Music):setGain(value / 100)
-            end
-            panels.soundPanel:recursiveGetChildById('musicSoundVolume'):setText(tr('Music volume: %d', value))
         end
     },
     enableLights                      = {
@@ -590,16 +569,20 @@ return {
         value = 0,
         action = function(value, options, controller, panels, extraWidgets)
             local bar = modules.game_healthcircle.optionPanel:recursiveGetChildById('distFromCenScrollbar')
-            bar:setText(tr('Distance: %s', bar:recursiveGetChildById('valueBar'):getValue()))
-            modules.game_healthcircle.setDistanceFromCenter(bar:recursiveGetChildById('valueBar'):getValue())
+            if bar then
+                bar:setText(tr('Distance: %s', bar:recursiveGetChildById('valueBar'):getValue()))
+                modules.game_healthcircle.setDistanceFromCenter(bar:recursiveGetChildById('valueBar'):getValue())
+            end
         end
     },
     opacityScrollbar                  = {
         value = 0,
         action = function(value, options, controller, panels, extraWidgets)
             local bar = modules.game_healthcircle.optionPanel:recursiveGetChildById('opacityScrollbar')
-            bar:setText(tr('Opacity: %s', bar:recursiveGetChildById('valueBar'):getValue() / 100))
-            modules.game_healthcircle.setCircleOpacity(bar:recursiveGetChildById('valueBar'):getValue() / 100)
+            if bar then
+                bar:setText(tr('Opacity: %s', bar:recursiveGetChildById('valueBar'):getValue() / 100))
+                modules.game_healthcircle.setCircleOpacity(bar:recursiveGetChildById('valueBar'):getValue() / 100)
+            end
         end
     },
     profile                           = {
@@ -677,6 +660,204 @@ return {
     listKeybindsPanel                 = {
         action = function(value, options, controller, panels, extraWidgets)
             listKeybindsComboBox(value)
+        end
+    },
+    -- Sound routing is handled by C++ SoundManager (protocol + filters).
+     battleSoundOwnBattlesubChannelsSpells              = {
+        value = true,
+        action = function(value, options, controller, panels, extraWidgets)
+            if value then
+                panels.battleSoundsPanel:recursiveGetChildById("panelOwnBattleSubChannels"):enable()
+
+            else
+                panels.battleSoundsPanel:recursiveGetChildById("panelOwnBattleSubChannels"):disable()
+
+            end
+        end
+    },
+    battleSoundOwnBattleSubChannelsAttack = true,
+    battleSoundOwnBattleSoundSubChannelsHealing = true,
+    battleSoundOwnBattleSoundSubChannelsSupport = true,
+    battleSoundOwnBattleSoundSubChannelsWeapons = true,
+    battleSoundOtherPlayersSubChannelsSpells              = {
+        value = true,
+        action = function(value, options, controller, panels, extraWidgets)
+            if value then
+                panels.battleSoundsPanel:recursiveGetChildById("panelOtherPlayersSubChannels"):enable()
+
+            else
+                panels.battleSoundsPanel:recursiveGetChildById("panelOtherPlayersSubChannels"):disable()
+
+            end
+        end
+    },
+    battleSoundOtherPlayersSubChannelsAttack = true,
+    battleSoundOtherPlayersSubChannelsHealing = true,
+    battleSoundOtherPlayersSubChannelsSupport = true,
+    battleSoundOtherPlayersSubChannelsWeapons = true,
+    battleSoundCreatureSubChannelsNoises = true,
+    battleSoundCreatureSubChannelsNoisesDeath = true,
+    battleSoundCreatureSubChannelsAttacksAndSpells = true,
+    soundAnthem = true,
+    soundFoodAndBeverages = true,
+    soundMoveItem = true,
+    soundUIsubChannelsInteractions = {
+        value = true,
+        action = function(value, options, controller, panels, extraWidgets)
+            if not g_sounds then
+                return
+            end
+
+            local uiChannel = g_sounds.getChannel(SoundChannels.SoundUI)
+            if not uiChannel then
+                return
+            end
+
+            uiChannel:setEnabled(value)
+        end
+    },
+    soundUIsubChannelsJoinLeaveParty = true,
+    soundUIsubChannelsVipLoginLogout = true,
+    soundNotificationUIInteractions = true,
+    soundNotificationsubChannelsParty = true,
+    soundNotificationsubChannelsGuild = true,
+    soundNotificationsubChannelsLocalChat = true,
+    soundNotificationsubChannelsPrivateMessages = true,
+    soundNotificationsubChannelsNPC = true,
+    soundNotificationsubChannelsGlobal = true,
+    soundNotificationsubChannelsTeamFinder = true,
+    soundNotificationsubChannelsRaidAnnouncements = true,
+    soundNotificationsubChannelsSystemAnnouncements = true,
+    battleSoundOwnBattle = {
+        value = 100,
+        action = function(value, options, controller, panels, extraWidgets)
+            panels.battleSoundsPanel:recursiveGetChildById('battleSoundOwnBattle'):setText(tr(
+                'Own Battle Sounds: %d %%', value))
+        end
+    },
+    battleSoundOtherPlayers = {
+        value = 100,
+        action = function(value, options, controller, panels, extraWidgets)
+            panels.battleSoundsPanel:recursiveGetChildById('battleSoundOtherPlayers'):setText(tr(
+                'Others Players: %d %%', value))
+        end
+    },
+    battleSoundCreature = {
+        value = 100,
+        action = function(value, options, controller, panels, extraWidgets)
+            panels.battleSoundsPanel:recursiveGetChildById('battleSoundCreature'):setText(tr('Creature: %d %%', value))
+        end
+    },
+    soundUI = {
+        value = 100,
+        action = function(value, options, controller, panels, extraWidgets)
+            panels.iuSoundPanel:recursiveGetChildById('soundUI'):setText(tr('UI Volume: %d %%', value))
+            if not g_sounds then
+                return
+            end
+
+            local uiChannel = g_sounds.getChannel(SoundChannels.SoundUI)
+            if not uiChannel then
+                return
+            end
+
+            uiChannel:setGain(value / 100)
+        end
+    },
+    soundMaster = {
+        value = 100,
+        aux = true,
+        action = function(value, options, controller, panels, extraWidgets)
+            if not g_sounds then
+                return
+            end
+            local soundMasterWidget = panels.soundPanel:recursiveGetChildById('soundMaster')
+            soundMasterWidget:setText(string.format('Master Volume: %d %%', value))
+            for channelName, channelId in pairs(SoundChannels) do
+                g_sounds.getChannel(channelId):setGain(value / 100)
+            end
+            local shouldDisable = value <= 1
+            local hasChanged = shouldDisable ~= (options.soundMaster.aux or false)
+            if not hasChanged then
+                return
+            end
+            options.soundMaster.aux = shouldDisable
+            if shouldDisable then
+                g_sounds.setAudioEnabled(false)
+                extraWidgets.audioButton:setIcon('/images/topbuttons/button_mute_pressed')
+            else
+                g_sounds.setAudioEnabled(true)
+                extraWidgets.audioButton:setIcon('/images/topbuttons/button_mute_up')
+            end
+            local function togglePanel(panel)
+                if not panel then
+                    return
+                end
+                local infoPanel = panel:recursiveGetChildById('info')
+                local children = panel:getChildren()
+                for _, widget in ipairs(children) do
+                    if widget:getStyle().__class ~= "UILabel" then
+                        widget:setEnabled(not shouldDisable)
+                    end
+                end
+                infoPanel:setVisible(shouldDisable)
+                infoPanel:setHeight(shouldDisable and 30 or 0)
+            end
+            togglePanel(panels.battleSoundsPanel)
+            togglePanel(panels.iuSoundPanel)
+        end
+    },
+    soundMusic = {
+        value = 100,
+        aux = true,
+        event = nil,
+        action = function(value, options, controller, panels, extraWidgets)
+            panels.soundPanel:recursiveGetChildById('soundMusic'):setText(tr('Music Volume: %d %%', value))
+            if not g_sounds then
+                return
+            end
+            g_sounds.getChannel(SoundChannels.Music):setGain(value / 100)
+            local shouldBeDisabled = value <= 1
+            if shouldBeDisabled ~= (not options.soundMusic.aux) then
+                options.soundMusic.aux = not shouldBeDisabled
+                if options.soundMusic.event ~= nil then
+                    removeEvent(options.soundMusic.event)
+                end
+                options.soundMusic.event = scheduleEvent(function()
+                    if shouldBeDisabled then
+                        g_sounds.getChannel(SoundChannels.Music):setEnabled(false)
+                    else
+                        g_sounds.getChannel(SoundChannels.Music):setEnabled(true)
+                    end
+                end, 100)  
+            end
+        end
+    },
+    soundAmbience = {
+        value = 100,
+        action = function(value, options, controller, panels, extraWidgets)
+            panels.soundPanel:recursiveGetChildById('soundAmbience'):setText(tr('Ambience Volume: %d %%', value))
+            if g_sounds then
+                g_sounds.getChannel(SoundChannels.Ambient):setGain(value / 100)
+            end
+        end
+    },
+    soundItems = {
+        value = 100,
+        action = function(value, options, controller, panels, extraWidgets)
+            panels.soundPanel:recursiveGetChildById('soundItems'):setText(tr('Item Volume: %d %%', value))
+            if g_sounds then
+                g_sounds.getChannel(SoundChannels.Item):setGain(value / 100)
+            end
+        end
+    },
+    soundEventVolume = {
+        value = 100,
+        action = function(value, options, controller, panels, extraWidgets)
+            panels.soundPanel:recursiveGetChildById('soundEventVolume'):setText(tr('Event Volume: %d %%', value))
+            if g_sounds then
+                g_sounds.getChannel(SoundChannels.Event):setGain(value / 100)
+            end
         end
     },
     graphicalCooldown = {

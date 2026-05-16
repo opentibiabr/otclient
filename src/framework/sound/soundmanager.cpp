@@ -22,6 +22,7 @@
 
 #include "soundmanager.h"
 #include <nlohmann/json.hpp>
+#include <algorithm>
 #ifdef FRAMEWORK_PROTOBUF
 #include <sounds.pb.h>
 #endif
@@ -70,11 +71,14 @@ void SoundManager::init()
     if (alcMakeContextCurrent(m_context) != ALC_TRUE) {
         g_logger.error(fmt::format("unable to make context current: {}", alcGetString(m_device, alcGetError(m_device))));
     }
+
+    refreshProtocolSoundSettings();
 }
 
 void SoundManager::terminate()
 {
     ensureContext();
+    resetItemAmbience();
 
     for (auto& streamFile : m_streamFiles) {
         auto& future = streamFile.second;
@@ -85,6 +89,13 @@ void SoundManager::terminate()
     m_sources.clear();
     m_buffers.clear();
     m_channels.clear();
+    m_itemAmbientEffectsByClientId.clear();
+    m_clientItemAmbientEffects.clear();
+    m_protocolLastPlayedAt.clear();
+    m_recentProtocolDebugEvents.clear();
+    m_pendingDirtyTiles.clear();
+    m_soundPathPrefix.clear();
+    m_cachedProtocolVersion = -1;
 
     m_audioEnabled = false;
 
@@ -115,6 +126,19 @@ void SoundManager::poll()
     lastUpdate = now;
 
     ensureContext();
+
+    if (m_itemAmbienceDirty) {
+        rebuildItemAmbience();
+        m_itemAmbienceDirty = false;
+        m_itemAmbienceTilesDirty = false;
+        m_pendingDirtyTiles.clear();
+    } else if (m_itemAmbienceTilesDirty) {
+        for (const auto& tilePos : m_pendingDirtyTiles)
+            updateTrackedAmbientTile(tilePos);
+        m_pendingDirtyTiles.clear();
+        m_itemAmbienceTilesDirty = false;
+        updateItemAmbienceSources();
+    }
 
     for (auto it = m_streamFiles.begin(); it != m_streamFiles.end();) {
         const auto& source = it->first;
@@ -171,6 +195,11 @@ void SoundManager::setAudioEnabled(const bool enable)
         for (const auto& source : m_sources) {
             source->stop();
         }
+        resetItemAmbience();
+        m_protocolLastPlayedAt.clear();
+        m_recentProtocolDebugEvents.clear();
+    } else {
+        m_itemAmbienceDirty = true;
     }
 }
 
@@ -237,15 +266,90 @@ SoundChannelPtr SoundManager::getChannel(int channel)
     return m_channels[channel];
 }
 
+SoundSourcePtr SoundManager::playChannelSound(const int channelId, const std::string& filename, const float fadetime, float gain, float pitch)
+{
+    const auto channel = getChannel(channelId);
+    if (!channel || !channel->isEnabled())
+        return nullptr;
+
+    if (gain == 0)
+        gain = 1.0f;
+
+    if (pitch == 0)
+        pitch = 1.0f;
+
+    const auto source = play(filename, fadetime, channel->getGain() * gain, channel->getPitch() * pitch);
+    if (!source)
+        return nullptr;
+
+    source->setChannel(static_cast<uint8_t>(channelId));
+    source->setPosition(channel->getPosition());
+    return source;
+}
+
+void SoundManager::playUiSoundById(const int soundId)
+{
+    if (soundId <= 0)
+        return;
+
+    std::string fileName = getAudioFileNameById(soundId);
+    if (fileName.empty()) {
+        const auto soundIds = getRandomSoundIds(soundId);
+        if (!soundIds.empty())
+            fileName = getAudioFileNameById(soundIds.front());
+    }
+
+    if (fileName.empty())
+        return;
+
+    playChannelSound(CHANNEL_UI, buildProtocolSoundPath(fileName));
+}
+
+void SoundManager::stopChannelSounds(const int channelId, const SoundSource* except)
+{
+    ensureContext();
+
+    for (const auto& source : m_sources) {
+        if (!source || source.get() == except || source->getChannel() != channelId)
+            continue;
+
+        source->stop();
+    }
+}
+
 void SoundManager::stopAll()
 {
     ensureContext();
+    resetItemAmbience();
+    m_protocolLastPlayedAt.clear();
+    m_recentProtocolDebugEvents.clear();
     for (const auto& source : m_sources) {
         source->stop();
     }
 
     for (const auto& it : m_channels) {
         it.second->stop();
+    }
+}
+
+void SoundManager::stopAllChannelsExcept(const int excludedChannel)
+{
+    ensureContext();
+    resetItemAmbience();
+    m_protocolLastPlayedAt.clear();
+    m_recentProtocolDebugEvents.clear();
+
+    for (const auto& [channelId, channel] : m_channels) {
+        if (!channel || channelId == excludedChannel)
+            continue;
+        channel->stop();
+    }
+
+    for (const auto& source : m_sources) {
+        if (!source || source->getChannel() == excludedChannel)
+            continue;
+
+        source->stop();
     }
 }
 
@@ -348,6 +452,26 @@ bool SoundManager::isEaxEnabled()
         return true;
     }
     return false;
+}
+
+void SoundManager::updateSoundPathPrefix()
+{
+    const int protocolVersion = g_game.getProtocolVersion();
+    if (protocolVersion == m_cachedProtocolVersion)
+        return;
+
+    m_cachedProtocolVersion = protocolVersion;
+    m_soundPathPrefix = protocolVersion > 0 ? fmt::format("/sounds/{}/", protocolVersion) : "";
+}
+
+std::string SoundManager::buildProtocolSoundPath(const std::string& fileName)
+{
+    updateSoundPathPrefix();
+
+    if (m_soundPathPrefix.empty())
+        return fileName;
+
+    return m_soundPathPrefix + fileName;
 }
 
 #ifdef FRAMEWORK_PROTOBUF
@@ -475,6 +599,11 @@ bool SoundManager::loadFromProtobuf(const std::string& directory, const std::str
         }
 
         // deserialize item ambients
+        resetItemAmbience();
+        m_clientItemAmbientEffects.clear();
+        m_itemAmbientEffectsByClientId.clear();
+        m_maxItemAmbientDistance = 0;
+
         for (const auto& protobufItemAmbient : protobufSounds.ambience_object_stream()) {
             std::vector<uint32_t> itemClientIds = {};
             for (const auto& itemId : protobufItemAmbient.counted_appearance_types()) {
@@ -487,12 +616,22 @@ bool SoundManager::loadFromProtobuf(const std::string& directory, const std::str
             }
 
             uint32_t effectId = protobufItemAmbient.id();
+            const auto maxSoundDistance = protobufItemAmbient.max_sound_distance() > 0 ? protobufItemAmbient.max_sound_distance() : 8;
             m_clientItemAmbientEffects.emplace(effectId, ClientItemAmbient{
                 effectId,
                 std::move(itemClientIds),
+                maxSoundDistance,
                 std::move(soundEffects)
             });
+
+            const auto& itemAmbientEffect = m_clientItemAmbientEffects.at(effectId);
+            m_maxItemAmbientDistance = std::max(m_maxItemAmbientDistance, itemAmbientEffect.maxSoundDistance);
+
+            for (const auto itemClientId : itemAmbientEffect.clientIds)
+                m_itemAmbientEffectsByClientId[itemClientId].push_back(effectId);
         }
+
+        m_itemAmbienceDirty = true;
 
         // deserialize music
         for (const auto& protobufMusicTemplate : protobufSounds.music_template()) {
@@ -538,11 +677,21 @@ bool SoundManager::loadClientFiles(const std::string& directory)
     }
 }
 
-std::string SoundManager::getAudioFileNameById(int32_t audioFileId)
+std::string SoundManager::getAudioFileNameById(int32_t audioFileId) const
 {
-    if (m_clientSoundFiles.contains(audioFileId)) {
-        return m_clientSoundFiles[audioFileId];
-    }
+    const auto it = m_clientSoundFiles.find(audioFileId);
+    return it != m_clientSoundFiles.end() ? it->second : "";
+}
 
-    return "";
+std::vector<uint32_t> SoundManager::getRandomSoundIds(uint32_t id)
+{
+    const auto it = m_clientSoundEffects.find(id);
+    if (it == m_clientSoundEffects.end())
+        return {};
+    const auto& soundEffect = it->second;
+    if (!soundEffect.randomSoundId.empty())
+        return soundEffect.randomSoundId;
+    if (soundEffect.soundId != 0)
+        return { soundEffect.soundId };
+    return {};
 }

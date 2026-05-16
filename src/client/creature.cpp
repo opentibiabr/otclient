@@ -44,6 +44,9 @@
 #include "framework/graphics/painter.h"
 #include "framework/graphics/shadermanager.h"
 #include "framework/ui/uiwidget.h"
+#ifdef FRAMEWORK_SOUND
+#include <framework/sound/soundmanager.h>
+#endif
 #include <framework/core/graphicalapplication.h>
 #include <framework/util/stats.h>
 
@@ -599,6 +602,11 @@ void Creature::updateJump()
 
 void Creature::onPositionChange(const Position& newPos, const Position& oldPos)
 {
+#ifdef FRAMEWORK_SOUND
+    if (isLocalPlayer())
+        g_sounds.onListenerPositionChanged(newPos, oldPos);
+#endif
+
     callLuaFieldUnchecked("onPositionChange", newPos, oldPos);
 }
 
