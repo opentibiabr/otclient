@@ -343,6 +343,15 @@ void LocalPlayer::setTotalCapacity(const uint32_t totalCapacity)
     callLuaField("onTotalCapacityChange", totalCapacity, oldTotalCapacity);
 }
 
+void LocalPlayer::setBaseCapacity(const uint32_t baseCapacity)
+{
+    if (m_baseCapacity == baseCapacity)
+        return;
+
+    m_baseCapacity = baseCapacity;
+    callLuaField("onBaseCapacityChange", baseCapacity);
+}
+
 void LocalPlayer::setExperience(const uint64_t experience)
 {
     if (m_experience == experience)
@@ -354,18 +363,23 @@ void LocalPlayer::setExperience(const uint64_t experience)
     callLuaField("onExperienceChange", experience, oldExperience);
 }
 
-void LocalPlayer::setLevel(const uint16_t level, const uint8_t levelPercent)
+void LocalPlayer::setLevel(const uint16_t level, const uint16_t levelPercent)
 {
     if (m_level == level && m_levelPercent == levelPercent)
         return;
 
     const uint16_t oldLevel = m_level;
-    const uint8_t oldLevelPercent = m_levelPercent;
+    const uint16_t oldLevelPercent = m_levelPercent;
 
     m_level = level;
     m_levelPercent = levelPercent;
 
     callLuaField("onLevelChange", level, levelPercent, oldLevel, oldLevelPercent);
+}
+
+uint16_t LocalPlayer::getLevelPercent()
+{
+    return g_game.getFeature(Otc::GameLevelPercentU16) ? m_levelPercent / 100 : m_levelPercent;
 }
 
 void LocalPlayer::setMana(const uint32_t mana, const uint32_t maxMana)
@@ -582,7 +596,12 @@ void LocalPlayer::setBlessings(const uint16_t blessings, const uint8_t blessVisu
 
 void LocalPlayer::takeScreenshot(const uint8_t type)
 {
-    g_lua.callGlobalField("LocalPlayer", "onTakeScreenshot", type);
+    callLuaField("onTakeScreenshot", type);
+}
+
+void LocalPlayer::openMultiOfflineTrainingDialog()
+{
+    callLuaField("onMultiOfflineTrainingDialog");
 }
 
 void LocalPlayer::setResourceBalance(const Otc::ResourceTypes_t type, const uint64_t value)
@@ -647,19 +666,20 @@ void LocalPlayer::setImbuements(double lifeLeech, double manaLeech, double critC
     callLuaField("onImbuementsChange", lifeLeech, manaLeech, critChance, critDamage, onslaught);
 }
 
-void LocalPlayer::setDefenseInfo(uint16_t defense, uint16_t armor, double mitigation, double dodge, uint16_t damageReflection)
+void LocalPlayer::setDefenseInfo(uint16_t defense, uint16_t armor, uint16_t mantra, double mitigation, double dodge, uint16_t damageReflection)
 {
-    if (m_defense == defense && m_armor == armor && m_mitigation == mitigation &&
+    if (m_defense == defense && m_armor == armor && m_mantra == mantra && m_mitigation == mitigation &&
         m_dodge == dodge && m_damageReflection == damageReflection)
         return;
 
     m_defense = defense;
     m_armor = armor;
+    m_mantra = mantra;
     m_mitigation = mitigation;
     m_dodge = dodge;
     m_damageReflection = damageReflection;
 
-    callLuaField("onDefenseInfoChange", defense, armor, mitigation, dodge, damageReflection);
+    callLuaField("onDefenseInfoChange", defense, armor,mantra, mitigation, dodge, damageReflection);
 }
 
 void LocalPlayer::setCombatAbsorbValues(const std::map<uint8_t, double>& absorbValues)

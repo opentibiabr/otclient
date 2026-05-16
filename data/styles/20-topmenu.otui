@@ -59,6 +59,13 @@ MainToggleButton < UIButton
   $on:
     image-clip: 20 0 20 20
 
+  UIWidget
+    id: highlight
+    phantom: true
+    anchors.fill: parent
+    visible: false
+    image-source: /images/options/button_highlight
+
 TopMenuButtonsPanel < Panel
   layout:
     type: horizontalBox

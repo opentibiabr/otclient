@@ -390,6 +390,17 @@ public:
     void preyAction(uint8_t slot, uint8_t actionType, uint16_t index);
     void preyRequest();
 
+    // Task Board / SoulSeals / Offline Training related
+    void bountyTaskAction(uint8_t actionType, uint16_t value = 0);
+    void weeklyTaskAction(uint8_t actionType, uint16_t value = 0);
+    void taskHuntingShopRequest();
+    void taskHuntingShopPurchase(uint8_t offerIndex);
+    void bountyTalismanUpgrade(uint8_t pathIndex);
+    void bountyPreferredAction(uint8_t actionType, uint16_t slot, uint16_t raceId);
+    void soulsealFightAction(uint16_t raceId);
+    void sendStartOfflineTraining(const uint8_t skillType);
+    void sendTutorialChangeVocation(uint8_t vocationClientId);
+
     // exiva related
     void sendExivaOptions(bool allowAll, bool allowOwnGuild, bool allowOwnParty, bool allowVipList,
                           bool allowPlayerWhitelist, bool allowGuildWhitelist,

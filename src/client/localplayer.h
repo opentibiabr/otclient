@@ -42,8 +42,9 @@ public:
     void setHealth(uint32_t health, uint32_t maxHealth);
     void setFreeCapacity(uint32_t freeCapacity);
     void setTotalCapacity(uint32_t totalCapacity);
+    void setBaseCapacity(uint32_t baseCapacity);
     void setExperience(uint64_t experience);
-    void setLevel(uint16_t level, uint8_t levelPercent);
+    void setLevel(uint16_t level, uint16_t levelPercent);
     void setMana(uint32_t mana, uint32_t maxMana);
     void setManaShield(uint32_t manaShield, uint32_t maxManaShield);
     void setMagicLevel(uint16_t magicLevel, uint16_t magicLevelPercent);
@@ -61,11 +62,12 @@ public:
     void setBlessings(uint16_t blessings, uint8_t blessVisualState = 0);
     void setResourceBalance(Otc::ResourceTypes_t type, uint64_t value);
     void takeScreenshot(uint8_t type);
+    void openMultiOfflineTrainingDialog();
     void setFlatDamageHealing(uint16_t flatBonus);
     void setAttackInfo(uint16_t attackValue, uint8_t attackElement);
     void setConvertedDamage(double convertedDamage, uint8_t convertedElement);
     void setImbuements(double lifeLeech, double manaLeech, double critChance, double critDamage, double onslaught);
-    void setDefenseInfo(uint16_t defense, uint16_t armor, double mitigation, double dodge, uint16_t damageReflection);
+    void setDefenseInfo(uint16_t defense, uint16_t armor, uint16_t mantra, double mitigation, double dodge, uint16_t damageReflection);
     void setCombatAbsorbValues(const std::map<uint8_t, double>& absorbValues);
     void setForgeBonuses(double momentum, double transcendence, double amplification);
     void setExperienceRate(Otc::ExperienceRate_t type, uint16_t value);
@@ -75,12 +77,13 @@ public:
 
     uint32_t getFreeCapacity() { return m_freeCapacity; }
     uint32_t getTotalCapacity() { return m_totalCapacity; }
+    uint32_t getBaseCapacity() { return m_baseCapacity; }
 
     uint16_t getMagicLevel() { return m_magicLevel; }
     uint16_t getMagicLevelPercent() { return m_magicLevelPercent; }
     uint16_t getBaseMagicLevel() { return m_baseMagicLevel; }
     uint8_t getSoul() { return m_soul; }
-    uint8_t getLevelPercent() { return m_levelPercent; }
+    uint16_t getLevelPercent();
     uint8_t getHarmony() { return m_harmony; }
 
     uint16_t getLevel() { return m_level; }
@@ -203,12 +206,13 @@ private:
 
     uint32_t m_freeCapacity{ 0 };
     uint32_t m_totalCapacity{ 0 };
+    uint32_t m_baseCapacity{ 0 };
 
     uint32_t m_health{ 0 };
     uint32_t m_maxHealth{ 0 };
     uint64_t m_experience{ 0 };
     uint16_t m_level{ 0 };
-    uint8_t m_levelPercent{ 0 };
+    uint16_t m_levelPercent{ 0 };
     uint32_t m_mana{ 0 };
     uint32_t m_maxMana{ 0 };
     uint32_t m_manaShield{ 0 };
@@ -230,6 +234,7 @@ private:
     uint16_t m_attackValue{ 0 };
     uint16_t m_defense{ 0 };
     uint16_t m_armor{ 0 };
+    uint16_t m_mantra{ 0 };
     uint16_t m_damageReflection{ 0 };
 
     double m_convertedDamage{ 0 };
