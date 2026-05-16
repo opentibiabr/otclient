@@ -77,8 +77,10 @@ jobs:
           vcpkgJsonGlob: 'vcpkg.json'
 
       - name: Validate vcpkg baseline SHA
+        env:
+          VCPKG_GIT_COMMIT_ID: ${{ steps.vcpkg-step.outputs.vcpkgGitCommitId }}
         run: |
-          SHAS="${{ steps.vcpkg-step.outputs.vcpkgGitCommitId }}"
+          SHAS="${VCPKG_GIT_COMMIT_ID}"
           if [ -z "${SHAS}" ]; then
             echo "::error title=Missing vcpkg baseline::Provide a full 40-char vcpkgGitCommitId."
             exit 1
@@ -100,25 +102,32 @@ jobs:
             cmake-dir-${{ matrix.buildtype }}
 
       - name: Configure and Build
+        env:
+          BUILD_DIR: build-${{ matrix.buildtype }}
+          CMAKE_BUILD_TYPE: ${{ matrix.cmake_build_type }}
+          VCPKG_TARGET_TRIPLET: ${{ matrix.triplet }}
         run: |
-          cmake -G Ninja -S . -B build-${{ matrix.buildtype }} \
-            -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
+          cmake -G Ninja -S . -B "${BUILD_DIR}" \
+            -DCMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE}" \
             -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
-            -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }} \
+            -DVCPKG_TARGET_TRIPLET="${VCPKG_TARGET_TRIPLET}" \
             -DTOGGLE_BIN_FOLDER=ON \
             -DOPTIONS_ENABLE_IPO=OFF \
             -DCMAKE_CXX_FLAGS_RELEASE="-O2 -DNDEBUG" \
             -DCMAKE_C_FLAGS_RELEASE="-O2 -DNDEBUG" \
             -DTOGGLE_BOT_PROTECTION=OFF
 
-          cmake --build build-${{ matrix.buildtype }} --target otclient
+          cmake --build "${BUILD_DIR}" --target otclient
 
       - name: Create app bundle archive
+        env:
+          BUILD_DIR: build-${{ matrix.buildtype }}
+          ARTIFACT_NAME: otclient-${{ matrix.os }}-${{ matrix.buildtype }}
         run: |
-          cd build-${{ matrix.buildtype }}/bin
+          cd "${BUILD_DIR}/bin"
           xattr -cr OTClient.app
           codesign --force --deep --sign - OTClient.app
-          ditto -c -k --keepParent OTClient.app otclient-${{ matrix.os }}-${{ matrix.buildtype }}.zip
+          ditto -c -k --keepParent OTClient.app "${ARTIFACT_NAME}.zip"
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
