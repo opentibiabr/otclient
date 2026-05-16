@@ -322,7 +322,24 @@ function Spells.getSpellList()
 end
 
 function Spells.getSpellByName(name)
-    return SpellInfo[Spells.getSpellProfileByName(name)][name]
+    if type(name) ~= "string" or name == "" then
+        return nil
+    end
+
+    local profile = Spells.getSpellProfileByName(name)
+    if profile and SpellInfo[profile] and SpellInfo[profile][name] then
+        return SpellInfo[profile][name]
+    end
+
+    for _, data in pairs(SpellInfo) do
+        for _, spell in pairs(data) do
+            if spell.name == name then
+                return spell
+            end
+        end
+    end
+
+    return nil
 end
 
 function Spells.getSpellByWords(words)
@@ -356,6 +373,27 @@ function Spells.getSpellIconIds()
         end
     end
     return ids
+end
+
+function Spells.getSpellIconId(spellName)
+    if not spellName then
+        return 0
+    end
+
+    local spellData = Spells.getSpellByName(spellName)
+    if not spellData then
+        return 0
+    end
+
+    if type(spellData.clientId) == "number" and spellData.clientId >= 0 then
+        return spellData.clientId
+    end
+
+    if type(spellData.id) == "number" and spellData.id >= 0 then
+        return spellData.id
+    end
+
+    return 0
 end
 
 function Spells.getSpellProfileById(id)
@@ -494,8 +532,13 @@ function Spells.isRuneSpell(spellId)
 end
 
 function Spells.getSpellProfileByName(spellName)
+    if type(spellName) ~= "string" or spellName == "" then
+        return nil
+    end
+
+    local normalizedName = spellName:trim()
     for profile, data in pairs(SpellInfo) do
-        if table.findbykey(data, spellName:trim(), true) then
+        if table.findbykey(data, normalizedName, true) then
             return profile
         end
     end

@@ -1,5 +1,107 @@
 local characterPanel = nil
 local UI = nil
+local characterTitlesCache = {}
+local characterTitlesCurrentTitle = 0
+local CHARACTER_APPEARANCES_ANIMATED_PREVIEW = false
+
+local function getCharacterViewState()
+    local defaults = {
+        selectedOption = "InfoBase",
+        characterButtonState = 1,
+        itemsSearchText = "",
+        itemsListMode = "list",
+        itemsFilters = {},
+        appearancesFilter = "outfits",
+        titlesSearchText = "",
+        titlesFilterMode = "all",
+        titlesTypeFilter = "all",
+        titlesUnlockFilter = "none"
+    }
+
+    if Cyclopedia.getTabState then
+        return Cyclopedia.getTabState("character", defaults)
+    end
+
+    return defaults
+end
+
+local function saveCharacterViewState(statePatch)
+    if Cyclopedia.saveTabState then
+        Cyclopedia.saveTabState("character", statePatch)
+    end
+end
+
+local function snapshotCharacterItemsFilters()
+    local filters = {}
+    if not UI or not UI.CharacterItems or not UI.CharacterItems.filters then
+        return filters
+    end
+
+    local parent = UI.CharacterItems.filters
+    for i = 1, parent:getChildCount() do
+        local child = parent:getChildByIndex(i)
+        if child and child.getId and child.isChecked then
+            local id = child:getId()
+            if id and id ~= "" then
+                filters[id] = child:isChecked()
+            end
+        end
+    end
+    return filters
+end
+
+local function findCharacterButtonByOpen(openName)
+    if not UI or not UI.OptionsBase or not openName then
+        return nil
+    end
+
+    for i = 1, UI.OptionsBase:getChildCount() do
+        local widget = UI.OptionsBase:getChildByIndex(i)
+        if widget then
+            if widget.open == openName and widget.Button then
+                return widget.Button
+            end
+
+            if widget.subCategories then
+                for subId, _ in ipairs(widget.subCategories) do
+                    local subWidget = widget:getChildById(subId)
+                    if subWidget and subWidget.open == openName and subWidget.Button then
+                        return subWidget.Button
+                    end
+                end
+            end
+        end
+    end
+
+    return nil
+end
+
+local function restoreCharacterViewState()
+    local state = getCharacterViewState()
+    if not UI then
+        return
+    end
+
+    if state.characterButtonState == 2 and UI.InfoBase and UI.InfoBase.CharacterButton and UI.InfoBase.CharacterButton.state == 1 then
+        Cyclopedia.characterButton(UI.InfoBase.CharacterButton)
+    end
+
+    local selectedOption = state.selectedOption
+    if not selectedOption or selectedOption == "InfoBase" then
+        return
+    end
+
+    scheduleEvent(function()
+        if not UI or not UI:isVisible() then
+            return
+        end
+
+        local button = findCharacterButtonByOpen(selectedOption)
+        if button and button.onClick then
+            button:onClick()
+        end
+    end, 10)
+end
 
 local function close(parent)
     if table.empty(parent.subCategories) then
@@ -27,7 +129,7 @@ local function reset()
         Cyclopedia.characterButton(characterPanel.InfoBase.CharacterButton)
     end
 
-    Cyclopedia.selectCharacterPage()
+    Cyclopedia.selectCharacterPage(false)
     characterPanel.openedCategory = nil
 end
 
@@ -97,6 +199,7 @@ function showCharacter()
     end
 
     reset()
+    restoreCharacterViewState()
     controllerCyclopedia.ui.CharmsBase:setVisible(true)
     controllerCyclopedia.ui.GoldBase:setVisible(true)
     controllerCyclopedia.ui.BestiaryTrackerButton:setVisible(false)
@@ -160,6 +263,7 @@ function Cyclopedia.characterAppearancesFilter(widget)
     end
 
     widget:setChecked(true)
+    saveCharacterViewState({ appearancesFilter = widget:getId() })
 
     for _, data in ipairs(Cyclopedia.Character.Appearances) do
         if data.type == widget:getId() then
@@ -180,7 +284,9 @@ function Cyclopedia.reloadCharacterAppearances()
             local widget = g_ui.createWidget("CharacterAppearance", UI.CharacterAppearances.ListBase.list)
             widget.name:setText(data.name)
             widget.creature:setOutfit(data.outfit)
-            widget.creature:getCreature():setStaticWalking(1000)
+            if CHARACTER_APPEARANCES_ANIMATED_PREVIEW then
+                widget.creature:getCreature():setStaticWalking(1000)
+            end
         end
     end
 end
@@ -226,7 +332,10 @@ function Cyclopedia.loadCharacterAppearances(color, outfits, mounts, familiars)
     process(familiars, "familiars")
 
     Cyclopedia.Character.Appearances = data
-    Cyclopedia.characterAppearancesFilter(UI.CharacterAppearances.listFilter.outfits)
+    local viewState = getCharacterViewState()
+    local filterId = viewState.appearancesFilter or "outfits"
+    local filterWidget = UI.CharacterAppearances.listFilter[filterId] or UI.CharacterAppearances.listFilter.outfits
+    Cyclopedia.characterAppearancesFilter(filterWidget)
 end
 
 function Cyclopedia.characterItemsSearch(text)
@@ -249,6 +358,7 @@ function Cyclopedia.characterItemsSearch(text)
     end
 
     Cyclopedia.reloadCharacterItems()
+    saveCharacterViewState({ itemsSearchText = text or "" })
 end
 
 function Cyclopedia.characterItemsFilter(widget, force)
@@ -266,6 +376,7 @@ function Cyclopedia.characterItemsFilter(widget, force)
     end
 
     Cyclopedia.reloadCharacterItems()
+    saveCharacterViewState({ itemsFilters = snapshotCharacterItemsFilters() })
 end
 
 function Cyclopedia.reloadCharacterItems()
@@ -370,6 +481,32 @@ function Cyclopedia.loadCharacterItems(data)
     table.sort(sortedItems, compareByName)
     Cyclopedia.Character.Items = sortedItems
     Cyclopedia.characterItemsFilter(UI.CharacterItems.filters.inventory, true)
+
+    local viewState = getCharacterViewState()
+    local savedFilters = viewState.itemsFilters or {}
+    local hasSavedFilters = false
+
+    for filterId, enabled in pairs(savedFilters) do
+        local filterWidget = UI.CharacterItems.filters[filterId]
+        if filterWidget and enabled == true then
+            filterWidget:setChecked(true)
+            hasSavedFilters = true
+        elseif filterWidget and enabled == false then
+            filterWidget:setChecked(false)
+        end
+    end
+
+    if not hasSavedFilters and UI.CharacterItems.filters.inventory then
+        UI.CharacterItems.filters.inventory:setChecked(true)
+    end
+
+    Cyclopedia.characterItemsSearch(viewState.itemsSearchText or "")
+
+    if viewState.itemsListMode == "grid" then
+        Cyclopedia.characterItemListFilter(UI.CharacterItems.listFilter.grid)
+    else
+        Cyclopedia.characterItemListFilter(UI.CharacterItems.listFilter.list)
+    end
 end
 
 function Cyclopedia.loadCharacterAchievements()
@@ -382,6 +519,207 @@ function Cyclopedia.loadCharacterAchievements()
     end
 end
 
+function Cyclopedia.loadCharacterTitles(currentTitle, titles)
+    if not UI or not UI.CharacterTitles or not UI.CharacterTitles.ListBase or not UI.CharacterTitles.ListBase.List then
+        return
+    end
+
+    local viewState = getCharacterViewState()
+    if UI.CharacterTitles.filters and UI.CharacterTitles.filters.SearchEdit and UI.CharacterTitles.filters.SearchEdit:getText() ~= (viewState.titlesSearchText or "") then
+        UI.CharacterTitles.filters.SearchEdit:setText(viewState.titlesSearchText or "")
+    end
+
+    characterTitlesCurrentTitle = tonumber(currentTitle) or 0
+    characterTitlesCache = titles or {}
+    local legacyMode = viewState.titlesFilterMode or "all"
+    local typeMode = viewState.titlesTypeFilter or ((legacyMode == "permanent" or legacyMode == "temporary") and legacyMode or "all")
+    local unlockMode = viewState.titlesUnlockFilter or ((legacyMode == "unlocked" or legacyMode == "locked") and legacyMode or "none")
+    Cyclopedia.characterTitlesTypeFilter(nil, typeMode)
+    Cyclopedia.characterTitlesUnlockFilter(nil, unlockMode)
+    Cyclopedia.refreshCharacterTitles(currentTitle)
+end
+
+function Cyclopedia.refreshCharacterTitles(currentTitle)
+    if not UI or not UI.CharacterTitles or not UI.CharacterTitles.ListBase or not UI.CharacterTitles.ListBase.List then
+        return
+    end
+
+    local list = UI.CharacterTitles.ListBase.List
+    list:destroyChildren()
+
+    local viewState = getCharacterViewState()
+    local searchText = string.lower((viewState.titlesSearchText or ""):trim())
+    local legacyMode = viewState.titlesFilterMode or "all"
+    local typeFilter = viewState.titlesTypeFilter or ((legacyMode == "permanent" or legacyMode == "temporary") and legacyMode or "all")
+    local unlockFilter = viewState.titlesUnlockFilter or ((legacyMode == "unlocked" or legacyMode == "locked") and legacyMode or "none")
+    local color = "#484848"
+    local selectedTitleId = tonumber(currentTitle)
+    if selectedTitleId == nil then
+        selectedTitleId = characterTitlesCurrentTitle
+    end
+    local selectedTitleText = "(No character title selected)"
+
+    for _, entry in ipairs(characterTitlesCache or {}) do
+        local titleId = tonumber(entry[1]) or 0
+        local titleName = entry[2] or "?"
+        local titleDescription = entry[3] or ""
+        local isPermanent = entry[4] == true
+        local isUnlocked = entry[5] == true
+        local lowerName = string.lower(titleName)
+        local lowerDescription = string.lower(titleDescription)
+        local matchesSearch = searchText == "" or lowerName:find(searchText, 1, true) or lowerDescription:find(searchText, 1, true)
+        local matchesTypeFilter = typeFilter == "all" or
+            (typeFilter == "permanent" and isPermanent) or
+            (typeFilter == "temporary" and not isPermanent)
+        local matchesUnlockFilter = unlockFilter == "none" or
+            (unlockFilter == "unlocked" and isUnlocked) or
+            (unlockFilter == "locked" and not isUnlocked)
+
+        if selectedTitleId > 0 and titleId == selectedTitleId then
+            selectedTitleText = titleName
+        end
+
+        if matchesSearch and matchesTypeFilter and matchesUnlockFilter then
+            local row = g_ui.createWidget("CharacterTitleListRow", list)
+            local isSelected = selectedTitleId > 0 and selectedTitleId == titleId
+
+            if row.Background then
+                row.Background:setBackgroundColor(isSelected and "#545454" or color)
+            end
+
+            if row.Name then
+                row.Name:setText(titleName)
+                row.Name:setColor(isUnlocked and "#C0C0C0" or "#8A8A8A")
+            end
+
+            if row.PermanentValue then
+                row.PermanentValue:setText(isPermanent and "Yes" or "No")
+                row.PermanentValue:setColor(isPermanent and "#59C659" or "#C64545")
+            end
+
+            if row.UnlockedValue then
+                row.UnlockedValue:setText(isUnlocked and "Yes" or "No")
+                row.UnlockedValue:setColor(isUnlocked and "#59C659" or "#C64545")
+            end
+
+            if row.SelectedMarker then
+                row.SelectedMarker:setText(isSelected and "*" or "")
+            end
+
+            row:setTooltip(titleDescription ~= "" and titleDescription or titleName)
+            row.onClick = function()
+                if not isUnlocked then
+                    return
+                end
+
+                if g_game.getClientVersion and g_game.getClientVersion() < 1412 then
+                    return
+                end
+
+                if selectedTitleId == titleId then
+                    return
+                end
+
+                if g_game.requestSelectCharacterTitle then
+                    g_game.requestSelectCharacterTitle(titleId)
+                elseif g_game.requestSetCharacterTitle then
+                    g_game.requestSetCharacterTitle(titleId)
+                end
+            end
+
+            color = color == "#484848" and "#414141" or "#484848"
+        end
+    end
+
+    if UI.CharacterTitles.CurrentTitleValue then
+        UI.CharacterTitles.CurrentTitleValue:setText(selectedTitleText)
+    end
+end
+
+function Cyclopedia.characterTitlesSearch(text)
+    saveCharacterViewState({ titlesSearchText = text or "" })
+    Cyclopedia.refreshCharacterTitles()
+end
+
+function Cyclopedia.characterTitlesTypeFilter(widget, forceMode)
+    if not UI or not UI.CharacterTitles or not UI.CharacterTitles.filters then
+        return
+    end
+
+    local mode = forceMode or "all"
+    if widget and widget.getId then
+        if widget.isChecked and not widget:isChecked() then
+            return
+        end
+        mode = widget:getId() or mode
+    end
+
+    local validModes = {
+        all = true,
+        permanent = true,
+        temporary = true
+    }
+    if not validModes[mode] then
+        mode = "all"
+    end
+
+    local parent = UI.CharacterTitles.filters.filterOptionsType
+    if parent then
+        for i = 1, parent:getChildCount() do
+            local child = parent:getChildByIndex(i)
+            if child and child.setChecked and child.getId then
+                child:setChecked(child:getId() == mode)
+            end
+        end
+    end
+
+    saveCharacterViewState({ titlesTypeFilter = mode, titlesFilterMode = mode })
+    Cyclopedia.refreshCharacterTitles()
+end
+
+function Cyclopedia.characterTitlesUnlockFilter(widget, forceMode)
+    if not UI or not UI.CharacterTitles or not UI.CharacterTitles.filters then
+        return
+    end
+
+    local mode = forceMode or "none"
+    local validModes = {
+        none = true,
+        unlocked = true,
+        locked = true
+    }
+
+    if widget and widget.getId then
+        local widgetId = widget:getId()
+        if widgetId == "unlocked" or widgetId == "locked" then
+            if widget.isChecked and widget:isChecked() then
+                mode = widgetId
+            else
+                mode = "none"
+            end
+        end
+    end
+
+    if not validModes[mode] then
+        mode = "none"
+    end
+
+    local parent = UI.CharacterTitles.filters.filterOptionsUnlock
+    if parent then
+        for i = 1, parent:getChildCount() do
+            local child = parent:getChildByIndex(i)
+            if child and child.setChecked and child.getId then
+                local childId = child:getId()
+                local checked = (mode ~= "none" and childId == mode)
+                child:setChecked(checked)
+            end
+        end
+    end
+
+    saveCharacterViewState({ titlesUnlockFilter = mode })
+    Cyclopedia.refreshCharacterTitles()
+end
+
 function Cyclopedia.characterItemListFilter(widget)
     local parent = widget:getParent()
     for i = 1, parent:getChildCount() do
@@ -392,6 +730,7 @@ function Cyclopedia.characterItemListFilter(widget)
     end
 
     widget:setChecked(true)
+    saveCharacterViewState({ itemsListMode = widget:getId() })
 
     if widget:getId() == "list" then
         UI.CharacterItems.ListBase:setVisible(true)
@@ -611,8 +950,6 @@ function Cyclopedia.loadCharacterCombatStats(data, mitigation, additionalSkillsA
                     width = 9,
                     height = 9
                 })
-            else
-                print(string.format("WARNING: Element not found for combat array index %d with key %s.", i, tostring(combatsArray[i][1])))
             end
             local valor = combatsArray[i][2]
             local porcentaje = valor / 100
@@ -924,9 +1261,11 @@ function Cyclopedia.onSkillChange(localPlayer, id, level, percent)
     Cyclopedia.onBaseCharacterSkillChange(localPlayer, id, localPlayer:getSkillBaseLevel(id))
 end
 
-function Cyclopedia.selectCharacterPage()
+function Cyclopedia.selectCharacterPage(persistViewState)
     local selectedOption = UI.selectedOption
-    UI[selectedOption]:setVisible(false)
+    if UI[selectedOption] then
+        UI[selectedOption]:setVisible(false)
+    end
     UI.InfoBase:setVisible(true)
     Cyclopedia.closeCharacterButtons()
 
@@ -936,6 +1275,9 @@ function Cyclopedia.selectCharacterPage()
     end
 
     UI.selectedOption = "InfoBase"
+    if persistViewState ~= false then
+        saveCharacterViewState({ selectedOption = "InfoBase" })
+    end
 end
 
 function Cyclopedia.closeCharacterButtons()
@@ -1083,7 +1425,9 @@ function Cyclopedia.configureCharacterCategories()
                     subWidget.Button.Arrow:setVisible(true)
                     subWidget.Button.Arrow:setImageSource("/game_cyclopedia/images/icon-arrow7x7-right")
                     subWidget.Button.Icon:setChecked(true)
-                    UI[selectedOption]:setVisible(false)
+                    if UI[selectedOption] then
+                        UI[selectedOption]:setVisible(false)
+                    end
                     UI[subWidget.open]:setVisible(true)
 
                     if subWidget.open == "CharacterStats" then
@@ -1104,6 +1448,7 @@ function Cyclopedia.configureCharacterCategories()
                     end
 
                     UI.selectedOption = subWidget.open
+                    saveCharacterViewState({ selectedOption = subWidget.open })
                 end
 
                 if subId == 1 then
@@ -1136,6 +1481,8 @@ function Cyclopedia.configureCharacterCategories()
                 Cyclopedia.characterItemListFilter(UI.CharacterItems.listFilter.list)
             elseif widget.open == "CharacterAppearances" then
                 g_game.requestCharacterInfo(0, CyclopediaCharacterInfoTypes.OutfitsAndMounts)
+            elseif widget.open == "CharacterTitles" then
+                g_game.requestCharacterInfo(0, CyclopediaCharacterInfoTypes.Titles)
             elseif widget.open == "StoreSummary" then
                 g_game.requestCharacterInfo(0, CyclopediaCharacterInfoTypes.StoreSummary)
             end
@@ -1165,9 +1512,12 @@ function Cyclopedia.configureCharacterCategories()
 
                 this:setChecked(true)
                 this.Icon:setChecked(true)
-                UI[selectedOption]:setVisible(false)
+                if UI[selectedOption] then
+                    UI[selectedOption]:setVisible(false)
+                end
                 UI[parent.open]:setVisible(true)
                 UI.selectedOption = parent.open
+                saveCharacterViewState({ selectedOption = parent.open })
             end
         end
     end
@@ -1202,11 +1552,13 @@ function Cyclopedia.characterButton(widget)
         widget:setIcon("/game_cyclopedia/images/icon-equipmentdetails")
         UI.InfoBase.inventoryPanel:setVisible(false)
         UI.InfoBase.outfitPanel:setVisible(true)
+        saveCharacterViewState({ characterButtonState = 2 })
     else
         widget.state = 1
         widget:setIcon("/game_cyclopedia/images/icon-playerdetails")
         UI.InfoBase.inventoryPanel:setVisible(true)
         UI.InfoBase.outfitPanel:setVisible(false)
+        saveCharacterViewState({ characterButtonState = 1 })
     end
 end
 

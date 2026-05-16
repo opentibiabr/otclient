@@ -12,6 +12,27 @@ local storedRaceIDs = {}
 Cyclopedia.storedTrackerData = Cyclopedia.storedTrackerData or nil
 Cyclopedia.storedBosstiaryTrackerData = Cyclopedia.storedBosstiaryTrackerData or nil
 local animusMasteryPoints = 0
+local pendingBestiaryRestoreCategory = nil
+
+local function getBestiaryViewState()
+    local defaults = {
+        searchText = "",
+        selectedCategory = nil,
+        stage = STAGES.CATEGORY
+    }
+
+    if Cyclopedia.getTabState then
+        return Cyclopedia.getTabState("bestiary", defaults)
+    end
+
+    return defaults
+end
+
+local function saveBestiaryViewState(statePatch)
+    if Cyclopedia.saveTabState then
+        Cyclopedia.saveTabState("bestiary", statePatch)
+    end
+end
 
 function Cyclopedia.loadBestiaryOverview(name, creatures, animusMasteryPoints)
     if (name == "Result" or name == "") and #creatures > 0 then
@@ -33,12 +54,16 @@ end
 function showBestiary()
     UI = g_ui.loadUI("bestiary", contentContainer)
     UI:show()
+    local viewState = getBestiaryViewState()
 
     UI.ListBase.CategoryList:setVisible(true)
     UI.ListBase.CreatureList:setVisible(false)
     UI.ListBase.CreatureInfo:setVisible(false)
 
     Cyclopedia.Bestiary.Stage = STAGES.CATEGORY
+    pendingBestiaryRestoreCategory = viewState.selectedCategory
+    UI.SearchEdit:setText(viewState.searchText or "")
+    Cyclopedia.BestiarySearchText(UI.SearchEdit:getText() or "")
     controllerCyclopedia.ui.CharmsBase:setVisible(true)
     controllerCyclopedia.ui.GoldBase:setVisible(true)
     controllerCyclopedia.ui.BestiaryTrackerButton:setVisible(true)
@@ -319,6 +344,10 @@ function Cyclopedia.ShowBestiaryCreatures(Category)
     UI.ListBase.CategoryList:setVisible(false)
     UI.ListBase.CreatureInfo:setVisible(false)
     UI.ListBase.CreatureList:setVisible(true)
+    saveBestiaryViewState({
+        selectedCategory = Category,
+        stage = STAGES.CREATURES
+    })
     g_game.requestBestiaryOverview(Category, false, {})
 end
 
@@ -427,9 +456,14 @@ function Cyclopedia.BestiarySearch()
 
     g_game.requestBestiaryOverview("Result", true, list)
     UI.SearchEdit:setText("")
+    saveBestiaryViewState({
+        searchText = "",
+        stage = STAGES.SEARCH
+    })
 end
 
 function Cyclopedia.BestiarySearchText(text)
+    saveBestiaryViewState({ searchText = text or "" })
     if text ~= "" then
         UI.SearchButton:enable(true)
     else
@@ -545,6 +579,29 @@ function Cyclopedia.loadBestiaryCategories(data)
 
     Cyclopedia.loadBestiaryCategory(Cyclopedia.Bestiary.Page)
     Cyclopedia.verifyBestiaryButtons()
+
+    if pendingBestiaryRestoreCategory and pendingBestiaryRestoreCategory ~= "" then
+        local hasCategory = false
+        for _, pages in pairs(Cyclopedia.Bestiary.Categories) do
+            for _, category in ipairs(pages) do
+                if category.name == pendingBestiaryRestoreCategory then
+                    hasCategory = true
+                    break
+                end
+            end
+            if hasCategory then
+                break
+            end
+        end
+
+        if hasCategory then
+            Cyclopedia.ShowBestiaryCreatures(pendingBestiaryRestoreCategory)
+            Cyclopedia.Bestiary.Stage = STAGES.CREATURES
+            Cyclopedia.onStageChange()
+        end
+
+        pendingBestiaryRestoreCategory = nil
+    end
 end
 
 function Cyclopedia.loadBestiaryCategory(page)
@@ -561,12 +618,14 @@ end
 
 function Cyclopedia.onStageChange()
     Cyclopedia.Bestiary.Page = 1
+    saveBestiaryViewState({ stage = Cyclopedia.Bestiary.Stage })
 
     if Cyclopedia.Bestiary.Stage == STAGES.CATEGORY then
         UI.BackPageButton:setEnabled(false)
         UI.ListBase.CategoryList:setVisible(true)
         UI.ListBase.CreatureList:setVisible(false)
         UI.ListBase.CreatureInfo:setVisible(false)
+        saveBestiaryViewState({ selectedCategory = nil })
     end
 
     if Cyclopedia.Bestiary.Stage == STAGES.CREATURES then

@@ -1,7 +1,53 @@
+VocationIcon < UIWidget
+  size: 9 9
+  image-source: /images/icons/icons-vocations
+  image-clip: 0 0 9 9
+
+SpellListItem < UIWidget
+  size: 168 24
+  margin-left: 2
+  background-opacity: 0.4
+  background-color: alpha
+  focusable: true
+
+  $focus:
+    background-color: #404040
+
+  $hover !focus:
+    background-color: #303030
+
+  UIWidget
+    id: spellIcon
+    size: 20 20
+    image-size: 20 20
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 2
+
+  Panel
+    id: grayOverlay
+    size: 20 20
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 2
+    background-color: #00000088
+    visible: false
+
+  Label
+    id: spellName
+    anchors.left: spellIcon.right
+    anchors.verticalCenter: parent.verticalCenter
+    anchors.right: parent.right
+    margin-left: 5
+    font: verdana-11px-rounded
+    color: #c0c0c0
+    text-auto-resize: true
+
 UIWidget
   id: Cat5
   anchors.fill: parent
   visible: false
+  
   UIWidget
     id: InformationBase
     anchors.top: parent.top
@@ -9,7 +55,8 @@ UIWidget
     anchors.bottom: parent.bottom
     margin-bottom: 8
     margin-top: 10
-    width: 180
+    width: 195
+    
     MiniPanel
       id: selectSpell
       anchors.fill: parent
@@ -18,34 +65,741 @@ UIWidget
       margin-bottom: 25
       !text: tr('Select Spell')
       layout:
-        type: verticalBox
-        spacing: 6
+        type: anchor
 
-      ComboBox
-      TextListQuestLog
-        height: 330
-      TextEditQuestLog
+      // Spell List Panel
+      Panel
+        id: spellListPanel
+        anchors.fill: parent
+        margin-top: 18
+        margin-left: 5
+        margin-right: 5
+        margin-bottom: 5
+        visible: true
+        layout:
+          type: anchor
+
+        Button
+          id: filterBtn
+          anchors.top: parent.top
+          anchors.left: parent.left
+          anchors.right: parent.right
+          height: 22
+          image-source: /images/ui/combobox_new
+          image-border: 3
+          image-color: #ffffff
+          color: #c0c0c0
+          text-align: center
+          font: verdana-11px-rounded
+          !text: tr('Filter')
+          text-offset: -2 0
+
+          UIWidget
+            id: filterArrow
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            margin-right: 6
+            size: 8 5
+            image-source: /game_cyclopedia/images/icon-downarrow-disabled
+        
+        Panel
+          id: spellListContainer
+          anchors.top: filterBtn.bottom
+          anchors.left: parent.left
+          anchors.right: parent.right
+          anchors.bottom: searchPanel.top
+          margin-top: 5
+          margin-bottom: 5
+          image-source: /images/ui/panel_flat
+          image-border: 1
+          layout:
+            type: anchor
+          
+          ScrollablePanel
+            id: spellList
+            anchors.fill: parent
+            vertical-scrollbar: spellListScrollBar
+            padding: 2
+            layout:
+              type: verticalBox
+              spacing: 1
+          
+          VerticalScrollBar
+            id: spellListScrollBar
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            anchors.right: parent.right
+            step: 24
+            pixels-scroll: true
+        
+        Panel
+          id: searchPanel
+          anchors.bottom: parent.bottom
+          anchors.left: parent.left
+          anchors.right: parent.right
+          height: 22
+
+          TextEditQuestLog
+            id: searchEdit
+            anchors.fill: parent
+            placeholder: Type to search
 
   MiniPanel
     id: spellAndRune
-    text: Spell / Rune Information
+    !text: tr('Spell/Rune Information')
     anchors.top: InformationBase.top
     anchors.left: InformationBase.right
     anchors.right: parent.right
     anchors.bottom: InformationBase.bottom
     margin-left: 10
     margin-bottom: 25
-
-    Label
+    padding: 10
+    layout:
+      type: anchor
+    
+    UIWidget
+      id: emptyState
       anchors.centerIn: parent
-      text: select a spell to view detailed information. 
-    Label
-      id: deleteme
-      anchors.centerIn: parent
-      !text: tr("\nis this in the protobuf ?\n in http post ? \nor modify gamelib/spells.lua?")
-      font-scale: 2
-      margin-top: 32
-      text-auto-resize: true
+      visible: true
+      
+      Label
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.top: parent.top
+        !text: tr('Select a spell to view detailed information.')
+        text-align: center
+        text-auto-resize: true
+        font: verdana-11px-rounded
+        color: #909090
+    
+    UIWidget
+      id: spellDetails
+      anchors.fill: parent
+      margin-top: 12
+      visible: false
+      layout:
+        type: anchor
+      
+      // Header with spell info
+      Panel
+        id: headerPanel
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: 36
+        image-source: /images/ui/panel_flat
+        image-border: 1
+        
+        UIWidget
+          id: spellIcon
+          anchors.left: parent.left
+          anchors.verticalCenter: parent.verticalCenter
+          margin-left: 3
+          size: 32 32
+          image-size: 32 32
+        
+        Label
+          id: spellName
+          anchors.left: spellIcon.right
+          anchors.top: parent.top
+          margin-left: 4
+          margin-top: 2
+          font: verdana-11px-rounded
+          color: #ffffff
+          text-auto-resize: true
+        
+        Label
+          id: spellWords
+          anchors.left: spellIcon.right
+          anchors.top: spellName.bottom
+          margin-left: 4
+          margin-top: 1
+          font: verdana-11px-rounded
+          color: #909090
+          text-auto-resize: true
 
+        // Vocation icons panel (right side)
+        Panel
+          id: vocationPanel
+          anchors.top: parent.top
+          anchors.right: parent.right
+          margin-top: 3
+          margin-right: 3
+          size: 60 9
+          layout:
+            type: horizontalBox
+            spacing: 2
 
+        Label
+          id: spellLevel
+          anchors.right: parent.right
+          anchors.bottom: parent.bottom
+          margin-bottom: 3
+          margin-right: 3
+          font: verdana-11px-rounded
+          color: #909090
+          text-auto-resize: true
+      
+      // Tabs with icons from RTC sprite
+      Panel
+        id: tabsPanel
+        anchors.top: headerPanel.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: 36
+        margin-top: 3
+        image-source: /images/ui/back-icons
+        image-border: 1
+        
+        UIButton
+          id: combatStatsTab
+          anchors.left: parent.left
+          anchors.top: parent.top
+          anchors.bottom: parent.bottom
+          width: 147
+          margin-left: 1
+          margin-top: 1
+          margin-bottom: 1
+          image-source: /images/game/cyclopedia/ui/archive-menu
+          image-clip: 0 0 159 36
+          image-size: 147 36
+          image-smooth: true
+          checked: true
+          checkable: true
+          
+          $hover !checked:
+            image-clip: 0 0 159 36
+          
+          $pressed:
+            image-clip: 0 36 159 36
+          
+          $checked:
+            image-clip: 0 36 159 36
+        
+        UIButton
+          id: additionalTab
+          anchors.left: combatStatsTab.right
+          anchors.top: parent.top
+          anchors.bottom: parent.bottom
+          width: 147
+          margin-left: 1
+          margin-top: 1
+          margin-bottom: 1
+          image-source: /images/game/cyclopedia/ui/archive-menu
+          image-clip: 159 0 159 36
+          image-size: 147 36
+          image-smooth: true
+          checkable: true
+          
+          $hover !checked:
+            image-clip: 159 0 159 36
+          
+          $pressed:
+            image-clip: 159 36 159 36
+          
+          $checked:
+            image-clip: 159 36 159 36
 
+        UIButton
+          id: runeSpellTab
+          anchors.left: additionalTab.right
+          anchors.top: parent.top
+          anchors.bottom: parent.bottom
+          width: 147
+          margin-left: 1
+          margin-top: 1
+          margin-bottom: 1
+          image-source: /images/game/cyclopedia/ui/archive-menu
+          image-clip: 318 0 159 36
+          image-size: 147 36
+          image-smooth: true
+          checkable: true
+          visible: false
+          
+          $hover !checked:
+            image-clip: 318 0 159 36
+          
+          $pressed:
+            image-clip: 318 36 159 36
+          
+          $checked:
+            image-clip: 318 36 159 36
+      
+      // Combat Stats Content (column layout like Global)
+      Panel
+        id: combatStatsContent
+        anchors.top: tabsPanel.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: 70
+        margin-top: 3
+        image-source: /images/ui/panel_flat
+        image-border: 1
+        layout:
+          type: anchor
+        
+        // Left titles panel
+        Panel
+          id: titlesLeft
+          anchors.top: parent.top
+          anchors.left: parent.left
+          anchors.bottom: parent.bottom
+          width: 100
+          padding: 4
+          layout:
+            type: verticalBox
+            spacing: 2
+          
+          Label
+            !text: tr('Mana / SP')
+            font: verdana-11px-rounded
+            color: #909090
+          
+          Label
+            !text: tr('Spell group')
+            font: verdana-11px-rounded
+            color: #909090
+          
+          Label
+            !text: tr('Base Power')
+            font: verdana-11px-rounded
+            color: #909090
+          
+          Label
+            !text: tr('Scales with')
+            font: verdana-11px-rounded
+            color: #909090
+        
+        // Left values panel
+        Panel
+          id: valuesLeft
+          anchors.top: parent.top
+          anchors.left: titlesLeft.right
+          anchors.bottom: parent.bottom
+          width: 100
+          padding: 4
+          layout:
+            type: verticalBox
+            spacing: 2
+          
+          Label
+            id: manaValue
+            text: -
+            font: verdana-11px-rounded
+            color: #c0c0c0
+          
+          Label
+            id: groupValue
+            text: -
+            font: verdana-11px-rounded
+            color: #c0c0c0
+          
+          Label
+            id: powerValue
+            text: -
+            font: verdana-11px-rounded
+            color: #c0c0c0
+          
+          Label
+            id: scalesValue
+            text: -
+            font: verdana-11px-rounded
+            color: #c0c0c0
+        
+        // Right titles panel
+        Panel
+          id: titlesRight
+          anchors.top: parent.top
+          anchors.left: valuesLeft.right
+          anchors.bottom: parent.bottom
+          width: 110
+          padding: 4
+          layout:
+            type: verticalBox
+            spacing: 2
+          
+          Label
+            !text: tr('Cooldown')
+            font: verdana-11px-rounded
+            color: #909090
+          
+          Label
+            !text: tr('Group Cooldown')
+            font: verdana-11px-rounded
+            color: #909090
+          
+          Label
+            !text: tr('Magic Type')
+            font: verdana-11px-rounded
+            color: #909090
+          
+          Label
+            !text: tr('Range')
+            font: verdana-11px-rounded
+            color: #909090
+        
+        // Right values panel
+        Panel
+          id: valuesRight
+          anchors.top: parent.top
+          anchors.left: titlesRight.right
+          anchors.right: parent.right
+          anchors.bottom: parent.bottom
+          padding: 4
+          layout:
+            type: verticalBox
+            spacing: 2
+          
+          Label
+            id: cooldownValue
+            text: -
+            font: verdana-11px-rounded
+            color: #c0c0c0
+          
+          Label
+            id: groupCooldownValue
+            text: -
+            font: verdana-11px-rounded
+            color: #c0c0c0
+          
+          Label
+            id: typeValue
+            text: -
+            font: verdana-11px-rounded
+            color: #c0c0c0
+          
+          Label
+            id: rangeValue
+            text: -
+            font: verdana-11px-rounded
+            color: #c0c0c0
+      
+      // Additional Content
+      Panel
+        id: additionalContent
+        anchors.top: tabsPanel.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: 70
+        margin-top: 3
+        visible: false
+        image-source: /images/ui/panel_flat
+        image-border: 1
+        padding: 4
+        layout:
+          type: verticalBox
+          spacing: 2
+        
+        Label
+          id: sourceLabel
+          !text: tr('Source')
+          font: verdana-11px-rounded
+          color: #909090
+        
+        Label
+          id: sourceValue
+          text: -
+          font: verdana-11px-rounded
+          color: #c0c0c0
+        
+        Label
+          id: learnLabel
+          !text: tr('Learn in')
+          font: verdana-11px-rounded
+          color: #909090
+          margin-top: 2
+        
+        Label
+          id: learnValue
+          text: -
+          font: verdana-11px-rounded
+          color: #c0c0c0
+
+      // Rune Spell Content (only for Conjure spells)
+      Panel
+        id: runeSpellContent
+        anchors.top: tabsPanel.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: 70
+        margin-top: 3
+        visible: false
+        image-source: /images/ui/panel_flat
+        image-border: 1
+        layout:
+          type: anchor
+        
+        // Left titles panel
+        Panel
+          id: runeTitlesLeft
+          anchors.top: parent.top
+          anchors.left: parent.left
+          anchors.bottom: parent.bottom
+          width: 100
+          padding: 4
+          layout:
+            type: verticalBox
+            spacing: 2
+          
+          Label
+            !text: tr('Mana / SP')
+            font: verdana-11px-rounded
+            color: #909090
+          
+          Label
+            !text: tr('Spell group')
+            font: verdana-11px-rounded
+            color: #909090
+          
+          Label
+            !text: tr('Restriction')
+            font: verdana-11px-rounded
+            color: #909090
+          
+          Label
+            !text: tr('Amount')
+            font: verdana-11px-rounded
+            color: #909090
+        
+        // Left values panel
+        Panel
+          id: runeValuesLeft
+          anchors.top: parent.top
+          anchors.left: runeTitlesLeft.right
+          anchors.bottom: parent.bottom
+          width: 100
+          padding: 4
+          layout:
+            type: verticalBox
+            spacing: 2
+          
+          Label
+            id: runeManaValue
+            text: -
+            font: verdana-11px-rounded
+            color: #c0c0c0
+          
+          Label
+            id: runeGroupValue
+            text: -
+            font: verdana-11px-rounded
+            color: #c0c0c0
+          
+          Label
+            id: runeRestrictionValue
+            text: -
+            font: verdana-11px-rounded
+            color: #c0c0c0
+          
+          Label
+            id: runeAmountValue
+            text: -
+            font: verdana-11px-rounded
+            color: #c0c0c0
+        
+        // Right titles panel
+        Panel
+          id: runeTitlesRight
+          anchors.top: parent.top
+          anchors.left: runeValuesLeft.right
+          anchors.bottom: parent.bottom
+          width: 110
+          padding: 4
+          layout:
+            type: verticalBox
+            spacing: 2
+          
+          Label
+            !text: tr('Cooldown')
+            font: verdana-11px-rounded
+            color: #909090
+          
+          Label
+            !text: tr('Group Cooldown')
+            font: verdana-11px-rounded
+            color: #909090
+          
+          Label
+            !text: tr('Vocations')
+            font: verdana-11px-rounded
+            color: #909090
+        
+        // Right values panel
+        Panel
+          id: runeValuesRight
+          anchors.top: parent.top
+          anchors.left: runeTitlesRight.right
+          anchors.right: parent.right
+          anchors.bottom: parent.bottom
+          padding: 4
+          layout:
+            type: verticalBox
+            spacing: 2
+          
+          Label
+            id: runeCooldownValue
+            text: -
+            font: verdana-11px-rounded
+            color: #c0c0c0
+          
+          Label
+            id: runeGroupCooldownValue
+            text: -
+            font: verdana-11px-rounded
+            color: #c0c0c0
+          
+          Panel
+            id: runeVocationsPanel
+            size: 60 9
+            layout:
+              type: horizontalBox
+              spacing: 3
+
+  // Assign to Action Bar button
+  Button
+    id: assignSpellBtn
+    !text: tr('Assign Spell to Action Bar')
+    anchors.bottom: parent.bottom
+    anchors.left: InformationBase.left
+    width: 180
+    height: 22
+    margin-bottom: 5
+
+  // Aim at Target checkbox - shows for directional/aggressive spells
+  CheckBox
+    id: aimTargetBox
+    !text: tr('Aim at Target')
+    !tooltip: tr('When enabled, directional spells (waves, beams) will aim towards your target instead of straight ahead. Applies to all directional spells.')
+    anchors.left: assignSpellBtn.right
+    anchors.verticalCenter: assignSpellBtn.verticalCenter
+    margin-left: 10
+    width: 110
+    font: verdana-11px-rounded
+    color: #c0c0c0
+    text-offset: 15 0
+    visible: false
+
+FilterPopupCheckBox < CheckBox
+  font: verdana-11px-rounded
+  color: #c0c0c0
+  text-offset: 15 0
+  height: 16
+  
+  $hover !disabled:
+    color: #ffffff
+
+FilterPopup < Panel
+  id: filterPopup
+  width: 170
+  height: 349
+  image-source: /images/ui/panel_flat
+  image-border: 4
+  phantom: false
+  padding: 5
+  layout:
+    type: verticalBox
+    spacing: 2
+
+  FilterPopupCheckBox
+    id: charVocationFilter
+    !text: tr('Character Vocation')
+    checked: true
+
+  FilterPopupCheckBox
+    id: charLevelFilter
+    !text: tr('Character Level')
+    checked: false
+
+  FilterPopupCheckBox
+    id: learntSpellsFilter
+    !text: tr('Learnt Spells')
+    checked: false
+
+  HorizontalSeparator
+    height: 2
+    margin-top: 3
+    margin-bottom: 3
+
+  FilterPopupCheckBox
+    id: druidFilter
+    !text: tr('Druid')
+    checked: true
+
+  FilterPopupCheckBox
+    id: knightFilter
+    !text: tr('Knight')
+    checked: true
+
+  FilterPopupCheckBox
+    id: paladinFilter
+    !text: tr('Paladin')
+    checked: true
+
+  FilterPopupCheckBox
+    id: sorcererFilter
+    !text: tr('Sorcerer')
+    checked: true
+
+  FilterPopupCheckBox
+    id: monkFilter
+    !text: tr('Monk')
+    checked: true
+
+  FilterPopupCheckBox
+    id: allVocationsFilter
+    !text: tr('All Vocations')
+    checked: true
+
+  HorizontalSeparator
+    height: 2
+    margin-top: 3
+    margin-bottom: 3
+
+  FilterPopupCheckBox
+    id: attackFilter
+    !text: tr('Attack')
+    checked: true
+
+  FilterPopupCheckBox
+    id: healingFilter
+    !text: tr('Healing')
+    checked: true
+
+  FilterPopupCheckBox
+    id: supportFilter
+    !text: tr('Support')
+    checked: true
+
+  FilterPopupCheckBox
+    id: allSpellGroupsFilter
+    !text: tr('All Spell Groups')
+    checked: true
+
+  HorizontalSeparator
+    height: 2
+    margin-top: 3
+    margin-bottom: 3
+
+  FilterPopupCheckBox
+    id: premiumFilter
+    !text: tr('Premium Account')
+    checked: true
+
+  FilterPopupCheckBox
+    id: freeFilter
+    !text: tr('Free Account')
+    checked: true
+
+  HorizontalSeparator
+    height: 2
+    margin-top: 3
+    margin-bottom: 3
+
+  FilterPopupCheckBox
+    id: runeSpellsFilter
+    !text: tr('Rune Spells')
+    checked: true
+
+  FilterPopupCheckBox
+    id: instantSpellsFilter
+    !text: tr('Instant Spells')
+    checked: true

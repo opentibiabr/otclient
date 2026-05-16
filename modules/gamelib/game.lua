@@ -118,3 +118,61 @@ function g_game.closeContainerByItemId(itemId, tier)
     end
     return #containersToClose > 0
 end
+
+local function normalizePositiveNumber(value)
+    value = tonumber(value) or 0
+    if value < 0 then
+        return 0
+    end
+    return math.floor(value)
+end
+
+function g_game.requestShowHouses(townName)
+    g_game.sendCyclopediaHouseAuction(CyclopediaHouseAuctionTypes.Show, 0, 0, 0, townName or "")
+end
+
+function g_game.requestBidHouse(houseId, bidValue)
+    g_game.sendCyclopediaHouseAuction(CyclopediaHouseAuctionTypes.Bid, normalizePositiveNumber(houseId), 0,
+        normalizePositiveNumber(bidValue), "")
+end
+
+function g_game.requestMoveOutHouse(houseId, timestamp)
+    g_game.sendCyclopediaHouseAuction(CyclopediaHouseAuctionTypes.MoveOut, normalizePositiveNumber(houseId),
+        normalizePositiveNumber(timestamp), 0, "")
+end
+
+function g_game.requestTransferHouse(houseId, timestamp, newOwner, bidValue)
+    g_game.sendCyclopediaHouseAuction(CyclopediaHouseAuctionTypes.Transfer, normalizePositiveNumber(houseId),
+        normalizePositiveNumber(timestamp), normalizePositiveNumber(bidValue), newOwner or "")
+end
+
+function g_game.requestCancelMoveOutHouse(houseId)
+    g_game.sendCyclopediaHouseAuction(CyclopediaHouseAuctionTypes.CancelMoveOut, normalizePositiveNumber(houseId), 0, 0, "")
+end
+
+function g_game.requestCancelHouseTransfer(houseId)
+    g_game.sendCyclopediaHouseAuction(CyclopediaHouseAuctionTypes.CancelTransfer, normalizePositiveNumber(houseId), 0, 0, "")
+end
+
+function g_game.requestAcceptHouseTransfer(houseId)
+    g_game.sendCyclopediaHouseAuction(CyclopediaHouseAuctionTypes.AcceptTransfer, normalizePositiveNumber(houseId), 0, 0, "")
+end
+
+function g_game.requestRejectHouseTransfer(houseId)
+    g_game.sendCyclopediaHouseAuction(CyclopediaHouseAuctionTypes.RejectTransfer, normalizePositiveNumber(houseId), 0, 0, "")
+end
+
+function g_game.requestSelectCharacterTitle(titleId)
+    titleId = normalizePositiveNumber(titleId)
+    if titleId <= 0 then
+        return
+    end
+
+    if g_game.getClientVersion and g_game.getClientVersion() < 1412 then
+        return
+    end
+
+    if g_game.requestSetCharacterTitle then
+        g_game.requestSetCharacterTitle(titleId)
+    end
+end

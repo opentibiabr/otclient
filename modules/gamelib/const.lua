@@ -85,6 +85,24 @@ DirectionString = {
     [NorthWest] = "North West"
 }
 
+CyclopediaHouseStates = {
+    Available = 0,
+    Rented = 2,
+    Transfer = 3,
+    MoveOut = 4
+}
+
+CyclopediaHouseAuctionTypes = {
+    Show = 0,
+    Bid = 1,
+    MoveOut = 2,
+    Transfer = 3,
+    CancelMoveOut = 4,
+    CancelTransfer = 5,
+    AcceptTransfer = 6,
+    RejectTransfer = 7
+}
+
 FightOffensive = 1
 FightBalanced = 2
 FightDefensive = 3

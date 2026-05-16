@@ -263,9 +263,30 @@ local charms = {
 }
 
 local isModernUI = false
+
+local function getCharmsViewState()
+    local defaults = {
+        selectedCharmId = nil,
+        charmType = "major"
+    }
+
+    if Cyclopedia.getTabState then
+        return Cyclopedia.getTabState("charms", defaults)
+    end
+
+    return defaults
+end
+
+local function saveCharmsViewState(statePatch)
+    if Cyclopedia.saveTabState then
+        Cyclopedia.saveTabState("charms", statePatch)
+    end
+end
+
 function showCharms()
     isModernUI = g_game.getClientVersion() >= 1410
     local UIUX = isModernUI and "charms1410" or "charms"
+    local viewState = getCharmsViewState()
     UI = g_ui.loadUI(UIUX, contentContainer)
     UI:show()
     g_game.requestBestiary()
@@ -277,7 +298,11 @@ function showCharms()
         TypeCharmRadioGroup = UIRadioGroup.create()
         TypeCharmRadioGroup:addWidget(UI.mainPanelCharmsType.typeCharmPanel.MajorCharms)
         TypeCharmRadioGroup:addWidget(UI.mainPanelCharmsType.typeCharmPanel.MinorCharms)
-        TypeCharmRadioGroup:selectWidget(TypeCharmRadioGroup:getFirstWidget())
+        if viewState.charmType == "minor" then
+            TypeCharmRadioGroup:selectWidget(UI.mainPanelCharmsType.typeCharmPanel.MinorCharms)
+        else
+            TypeCharmRadioGroup:selectWidget(UI.mainPanelCharmsType.typeCharmPanel.MajorCharms)
+        end
         connect(TypeCharmRadioGroup, {
             onSelectionChange = onTypeCharmRadioGroup
         })
@@ -466,11 +491,27 @@ function Cyclopedia.loadCharms(charmsData)
         end
     end
 
-    local firstCharm = Cyclopedia.Charms.redirect and CharmList:getChildById(Cyclopedia.Charms.redirect) or
-                           CharmList:getChildByIndex(1)
+    local viewState = getCharmsViewState()
+    local selectedCharmId = Cyclopedia.Charms.redirect or viewState.selectedCharmId
+    local selectedCharm = selectedCharmId and CharmList:getChildById(selectedCharmId) or nil
 
-    if firstCharm then
-        Cyclopedia.selectCharm(firstCharm, firstCharm:isChecked())
+    if selectedCharm and selectedCharm:isVisible() then
+        Cyclopedia.selectCharm(selectedCharm, selectedCharm:isChecked())
+    else
+        local firstVisibleCharm = nil
+        for _, charmWidget in ipairs(CharmList:getChildren()) do
+            if charmWidget:isVisible() then
+                firstVisibleCharm = charmWidget
+                break
+            end
+        end
+
+        if firstVisibleCharm then
+            Cyclopedia.selectCharm(firstVisibleCharm, firstVisibleCharm:isChecked())
+        end
+    end
+
+    if selectedCharm or CharmList:getChildCount() > 0 then
         Cyclopedia.Charms.redirect = nil
     end
 end
@@ -625,6 +666,8 @@ function Cyclopedia.selectCharm(widget, isChecked)
     if not isChecked then
         widget:setChecked(true)
     end
+
+    saveCharmsViewState({ selectedCharmId = widget:getId() })
 
     UI_BASE.TextBase:setText(widget.data.description)
     UI_BASE.ItemBase.image:setImageSource(widget.charmBase.image:getImageSource())
@@ -929,6 +972,10 @@ function Cyclopedia.actionCharmButton(widget)
 end
 
 function onTypeCharmRadioGroup(radioGroup, selectedWidget)
+    saveCharmsViewState({
+        charmType = selectedWidget:getId() == "MajorCharms" and "major" or "minor"
+    })
+
     local charmCategory = selectedWidget:getId() == "MajorCharms" and charmCategory_t.CHARM_MAJOR or
                               charmCategory_t.CHARM_MINOR
     local CharmList = UI.mainPanelCharmsType.panelCharmList.CharmList
@@ -948,6 +995,13 @@ function onTypeCharmRadioGroup(radioGroup, selectedWidget)
     end
 
     CharmList:getLayout():update()
+
+    for _, widget in ipairs(CharmList:getChildren()) do
+        if widget:isVisible() then
+            Cyclopedia.selectCharm(widget, widget:isChecked())
+            break
+        end
+    end
 end
 
 function Cyclopedia.actionSelectCharmButton(widget)

@@ -78,6 +78,7 @@ UIWidget
             id: 20
             icon: /game_cyclopedia/images/icon-map-npc
             icon-offset: 4 4
+            @onCheckChange: modules.game_cyclopedia.Cyclopedia.toggleMapFlag(self, self:isChecked())
           CheckBoxButton
             id: 5
             icon: /game_cyclopedia/images/markers
@@ -134,6 +135,7 @@ UIWidget
           CheckBoxButton
             id: 21
             icon: /game_cyclopedia/images/icon-map-house
+            @onCheckChange: modules.game_cyclopedia.Cyclopedia.toggleMapFlag(self, self:isChecked())
           CheckBoxButton
             id: 15
             icon: /game_cyclopedia/images/markers

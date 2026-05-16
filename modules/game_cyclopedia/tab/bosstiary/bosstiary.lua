@@ -1,7 +1,146 @@
 local UI = nil
+local CATEGORY = nil
+local CONFIG = nil
+local BOSSTIARY_FILTER_IDS = {
+    "BaneCheck",
+    "ArchfoeCheck",
+    "NemesisCheck",
+    "NoKillsCheck",
+    "FewKillsCheck",
+    "ProwessCheck",
+    "ExpertiseCheck",
+    "MasteryCheck"
+}
+
+local function getBosstiaryViewState()
+    local defaults = {
+        searchText = "",
+        filters = {}
+    }
+
+    if Cyclopedia.getTabState then
+        return Cyclopedia.getTabState("bosstiary", defaults)
+    end
+
+    return defaults
+end
+
+local function saveBosstiaryViewState(statePatch)
+    if Cyclopedia.saveTabState then
+        Cyclopedia.saveTabState("bosstiary", statePatch)
+    end
+end
+
+local function snapshotBosstiaryFilters()
+    local filters = {}
+    if not UI or not UI.FilterBase then
+        return filters
+    end
+
+    for _, filterId in ipairs(BOSSTIARY_FILTER_IDS) do
+        local widget = UI.FilterBase[filterId]
+        if widget then
+            filters[filterId] = widget:isChecked()
+        end
+    end
+
+    return filters
+end
+
+local function iterateBosstiaryCreatures()
+    local allCreatures = {}
+
+    for _, creatures in ipairs(Cyclopedia.Bosstiary.Creatures or {}) do
+        for _, creature in ipairs(creatures) do
+            table.insert(allCreatures, creature)
+        end
+    end
+
+    for _, creature in ipairs(Cyclopedia.Bosstiary.NotVisibleCreatures or {}) do
+        table.insert(allCreatures, creature)
+    end
+
+    return allCreatures
+end
+
+local function getBosstiaryCurrentState()
+    local text = ""
+    if UI and UI.SearchEdit then
+        text = UI.SearchEdit:getText() or ""
+    end
+
+    return {
+        searchText = text,
+        filters = snapshotBosstiaryFilters()
+    }
+end
+
+local function applyBosstiaryState(viewState)
+    if not UI or not UI.FilterBase then
+        return
+    end
+
+    viewState = viewState or {}
+    local filters = viewState.filters or {}
+    local searchText = (viewState.searchText or ""):lower()
+
+    for _, filterId in ipairs(BOSSTIARY_FILTER_IDS) do
+        local widget = UI.FilterBase[filterId]
+        if widget and filters[filterId] ~= nil then
+            widget:setChecked(filters[filterId] == true)
+        end
+    end
+
+    if UI.SearchEdit then
+        UI.SearchEdit:setText(viewState.searchText or "")
+    end
+
+    local allCreatures = iterateBosstiaryCreatures()
+    for _, creature in ipairs(allCreatures) do
+        local visible = true
+
+        if searchText ~= "" then
+            visible = creature.unlocked and string.find(creature.name:lower(), searchText, 1, true) ~= nil
+        end
+
+        if visible then
+            local categoryFilterEnabled = true
+            if creature.category == CATEGORY.BANE then
+                categoryFilterEnabled = filters.BaneCheck ~= false
+            elseif creature.category == CATEGORY.ARCHFOE then
+                categoryFilterEnabled = filters.ArchfoeCheck ~= false
+            elseif creature.category == CATEGORY.NEMESIS then
+                categoryFilterEnabled = filters.NemesisCheck ~= false
+            end
+            visible = categoryFilterEnabled
+        end
+
+        if visible then
+            if creature.kills < 1 then
+                visible = filters.NoKillsCheck ~= false
+            elseif creature.kills < CONFIG[creature.category].PROWESS then
+                visible = filters.FewKillsCheck ~= false
+            elseif creature.kills >= CONFIG[creature.category].PROWESS and creature.kills <= CONFIG[creature.category].EXPERTISE then
+                visible = filters.ProwessCheck ~= false
+            elseif creature.kills >= CONFIG[creature.category].EXPERTISE and creature.kills <= CONFIG[creature.category].MASTERY then
+                visible = filters.ExpertiseCheck ~= false
+            elseif creature.kills >= CONFIG[creature.category].MASTERY then
+                visible = filters.MasteryCheck ~= false
+            end
+        end
+
+        creature.visible = visible
+    end
+
+    Cyclopedia.ReadjustPages()
+end
+
 function showBosstiary()
     UI = g_ui.loadUI("bosstiary", contentContainer)
     UI:show()
+    local viewState = getBosstiaryViewState()
+    Cyclopedia.Bosstiary.PendingViewState = viewState
+    UI.SearchEdit:setText(viewState.searchText or "")
     g_game.requestBosstiaryInfo()
     UI.FilterBase.BaneIcon:setTooltip(
         "Bane\n\nFor unlocking a level, you will receive the following boss points:\nProwess: 5\nExpertise: 15\nMastery: 30")
@@ -30,12 +169,12 @@ end
 
 Cyclopedia.Bosstiary = {}
 
-local CATEGORY = {
+CATEGORY = {
     BANE = 0,
     NEMESIS = 2,
     ARCHFOE = 1
 }
-local CONFIG = {
+CONFIG = {
     [0] = {
         EXPERTISE = 100,
         PROWESS = 25,
@@ -228,8 +367,14 @@ function Cyclopedia.LoadBosstiaryCreatures(data)
         end
     end
 
-    Cyclopedia.LoadBosstiaryCreature(Cyclopedia.Bosstiary.Page)
-    Cyclopedia.verifyBosstiaryButtons()
+    local pendingState = Cyclopedia.Bosstiary.PendingViewState
+    if pendingState then
+        Cyclopedia.Bosstiary.PendingViewState = nil
+        applyBosstiaryState(pendingState)
+    else
+        Cyclopedia.LoadBosstiaryCreature(Cyclopedia.Bosstiary.Page)
+        Cyclopedia.verifyBosstiaryButtons()
+    end
 end
 
 function Cyclopedia.LoadBosstiaryCreature(page)
@@ -312,6 +457,7 @@ function Cyclopedia.BosstiarySearchText(text, clear)
     end
 
     Cyclopedia.ReadjustPages()
+    saveBosstiaryViewState(getBosstiaryCurrentState())
 end
 
 function Cyclopedia.changeBosstiaryFilter(widget, isCheck)
@@ -367,6 +513,7 @@ function Cyclopedia.changeBosstiaryFilter(widget, isCheck)
     end
 
     Cyclopedia.ReadjustPages()
+    saveBosstiaryViewState(getBosstiaryCurrentState())
 end
 
 function Cyclopedia.ReadjustPages()
