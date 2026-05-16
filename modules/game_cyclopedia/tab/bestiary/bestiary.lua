@@ -101,8 +101,13 @@ end
 function Cyclopedia.loadBestiaryOverview(name, creatures, animusMasteryPoints)
     if (name == "Result" or name == "") and #creatures > 0 then
         if #creatures == 1 then
-            g_game.requestBestiarySearch(creatures[1].id)
-            Cyclopedia.ShowBestiaryCreature()
+            if Cyclopedia.pendingBestiaryDetailBackStage == STAGES.SEARCH then
+                Cyclopedia.loadBestiarySearchCreatures(creatures)
+            end
+
+            Cyclopedia.openBestiaryCreatureDetail(creatures[1].id,
+                Cyclopedia.pendingBestiaryDetailBackStage or Cyclopedia.Bestiary.Stage)
+            Cyclopedia.pendingBestiaryDetailBackStage = nil
         else
         Cyclopedia.loadBestiarySearchCreatures(creatures)
         end
@@ -147,6 +152,7 @@ end
 
 Cyclopedia.Bestiary = {}
 Cyclopedia.Bestiary.Stage = STAGES.CATEGORY
+Cyclopedia.Bestiary.DetailBackStage = STAGES.CATEGORY
 
 function Cyclopedia.SetBestiaryProgress(fit, firstBar, secondBar, thirdBar, killCount, firstGoal, secondGoal, thirdGoal)
     local function calculateWidth(value, max)
@@ -435,6 +441,18 @@ function Cyclopedia.ShowBestiaryCreature()
     Cyclopedia.onStageChange()
 end
 
+function Cyclopedia.openBestiaryCreatureDetail(raceId, backStage)
+    raceId = tonumber(raceId)
+    if not raceId then
+        return false
+    end
+
+    Cyclopedia.Bestiary.DetailBackStage = backStage or Cyclopedia.Bestiary.Stage or STAGES.CATEGORY
+    g_game.requestBestiarySearch(raceId)
+    Cyclopedia.ShowBestiaryCreature()
+    return true
+end
+
 function Cyclopedia.ShowBestiaryCreatures(Category)
     UI.ListBase.CreatureList:destroyChildren()
     UI.ListBase.CategoryList:setVisible(false)
@@ -444,8 +462,6 @@ function Cyclopedia.ShowBestiaryCreatures(Category)
 end
 
 function Cyclopedia.CreateBestiaryCategoryItem(Data)
-    UI.BackPageButton:setEnabled(false)
-
     local widget = g_ui.createWidget("BestiaryCategory", UI.ListBase.CategoryList)
     widget:setText(Data.name)
     widget.ClassIcon:setImageSource("/game_cyclopedia/images/bestiary/creatures/" .. Data.name:lower():gsub(" ", "_"))
@@ -628,8 +644,7 @@ function Cyclopedia.CreateBestiaryCreaturesItem(data)
         end
 
         UI.BackPageButton:setEnabled(true)
-        g_game.requestBestiarySearch(widget:getId())
-        Cyclopedia.ShowBestiaryCreature()
+        Cyclopedia.openBestiaryCreatureDetail(widget:getId(), Cyclopedia.Bestiary.Stage)
     end
 end
 
@@ -739,7 +754,7 @@ function Cyclopedia.onStageChange()
         UI.ListBase.CreatureInfo:setVisible(true)
 
         function UI.BackPageButton.onClick()
-            Cyclopedia.Bestiary.Stage = STAGES.CREATURES
+            Cyclopedia.Bestiary.Stage = Cyclopedia.Bestiary.DetailBackStage or STAGES.CREATURES
             Cyclopedia.onStageChange()
         end
     end
@@ -828,7 +843,6 @@ function Cyclopedia.refreshBestiaryTracker()
     if trackerMiniWindow and trackerMiniWindow.contentsPanel then
         Cyclopedia.onParseCyclopediaTracker(0, Cyclopedia.storedTrackerData)
     end
-
     g_game.requestBestiary()
 end
 
@@ -871,9 +885,8 @@ function Cyclopedia.openTrackedCreature(trackerType, raceId)
         return false
     end
 
-    UI.BackPageButton:setEnabled(true)
-    g_game.requestBestiarySearch(raceId)
-    Cyclopedia.ShowBestiaryCreature()
+    Cyclopedia.pendingBestiaryDetailBackStage = STAGES.SEARCH
+    g_game.requestBestiaryOverview("Result", true, {raceId})
     return true
 end
 
@@ -1013,9 +1026,11 @@ function Cyclopedia.onParseCyclopediaTracker(trackerType, data)
         local maxLen = math.max(11, 18 - string.len(killsText))
         widget.label:setTextOverflowLength(maxLen)
         widget.label:setText(name)
-        
-        widget.onMouseRelease = onTrackerClick
-        widget.onDoubleClick = onTrackerDoubleClick
+
+        bindTrackerWidgetClicks(widget.creature, widget)
+        bindTrackerWidgetClicks(widget.spacer, widget)
+        bindTrackerWidgetClicks(widget.label, widget)
+        bindTrackerWidgetClicks(widget.kills, widget)
 
         Cyclopedia.SetBestiaryProgress(54,widget.killsBar2, widget.ProgressBack33, widget.ProgressBack55, kills, uno, dos, maxKills)
     end
@@ -1271,7 +1286,21 @@ function test(index)
     trackerMiniWindow.contentsPanel:moveChildToIndex(trackerMiniWindow.contentsPanel:getLastChild(), index)
 end
 
+function bindTrackerWidgetClicks(clickableWidget, trackerWidget)
+    if not clickableWidget then
+        return
+    end
+
+    clickableWidget.onMouseRelease = function(_, mousePosition, mouseButton)
+        return onTrackerClick(trackerWidget, mousePosition, mouseButton)
+    end
+end
+
 function onTrackerClick(widget, mousePosition, mouseButton)
+    if mouseButton == MouseLeftButton then
+        return Cyclopedia.openTrackedCreature(widget.trackerType, widget:getId())
+    end
+
     if mouseButton ~= MouseRightButton then
         return false
     end
@@ -1292,10 +1321,6 @@ function onTrackerClick(widget, mousePosition, mouseButton)
     menu:display(mousePosition)
 
     return true
-end
-
-function onTrackerDoubleClick(widget)
-    return Cyclopedia.openTrackedCreature(widget.trackerType, widget:getId())
 end
 
 function onAddLootClick(widget, mousePosition, mouseButton)
