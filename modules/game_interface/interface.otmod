@@ -53,7 +53,8 @@ Module
     - game_creatureinformation
     - game_rewardwall
     - game_forge
-    - game_wheel
     - game_inspect
+    - game_wheel
+
   @onLoad: init()
   @onUnload: terminate()
