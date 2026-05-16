@@ -56,5 +56,6 @@ Module
     - game_tutorial
     - game_inspect
     - game_taskboard
+    - game_wheel
   @onLoad: init()
   @onUnload: terminate()
