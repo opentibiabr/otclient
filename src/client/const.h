@@ -646,12 +646,22 @@ namespace Otc
     enum Blessings : uint32_t
     {
         BlessingNone = 0,
-        BlessingAdventurer = 1,
-        BlessingSpiritualShielding = 1 << 1,
-        BlessingEmbraceOfTibia = 1 << 2,
-        BlessingFireOfSuns = 1 << 3,
-        BlessingWisdomOfSolitude = 1 << 4,
-        BlessingSparkOfPhoenix = 1 << 5
+        BlessingAdventurer = 1,              // bit 1
+        BlessingTwistOfFate = 1 << 1,        // bit 2
+        BlessingWisdomOfSolitude = 1 << 2,   // bit 3
+        BlessingSparkOfPhoenix = 1 << 3,     // bit 4
+        BlessingFireOfSuns = 1 << 4,         // bit 5
+        BlessingSpiritualShielding = 1 << 5, // bit 6
+        BlessingEmbraceOfTibia = 1 << 6,     // bit 7
+        BlessingHeartOfMountain = 1 << 7,    // bit 8
+        BlessingBloodOfMountain = 1 << 8,    // bit 9
+
+        // Legacy / Compatibility
+        LegacySpiritualShielding = 1 << 1,
+        LegacyEmbraceOfTibia = 1 << 2,
+        LegacyFireOfSuns = 1 << 3,
+        LegacyWisdomOfSolitude = 1 << 4,
+        LegacySparkOfPhoenix = 1 << 5
     };
 
     enum DeathType : uint8_t

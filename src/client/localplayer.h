@@ -58,7 +58,7 @@ public:
     void setRegenerationTime(uint16_t regenerationTime);
     void setOfflineTrainingTime(uint16_t offlineTrainingTime);
     void setSpells(const std::vector<uint16_t>& spells);
-    void setBlessings(uint16_t blessings);
+    void setBlessings(uint16_t blessings, uint8_t blessVisualState = 0);
     void setResourceBalance(Otc::ResourceTypes_t type, uint64_t value);
     void takeScreenshot(uint8_t type);
     void setFlatDamageHealing(uint16_t flatBonus);
@@ -199,6 +199,7 @@ private:
     uint64_t m_states{ 0 };
     uint8_t m_vocation{ 0 };
     uint16_t m_blessings{ Otc::BlessingNone };
+    uint8_t m_blessVisualState{ 0 };
 
     uint32_t m_freeCapacity{ 0 };
     uint32_t m_totalCapacity{ 0 };
