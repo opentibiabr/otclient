@@ -500,3 +500,17 @@ FlipDirection = {
     Horizontal = 1,
     Vertical = 2,
 }
+
+InspectObjectTypes = {
+    INSPECT_NORMALOBJECT = 0,
+    INSPECT_NPCTRADE = 1,
+    INSPECT_PLAYERTRADE = 2,
+    INSPECT_CYCLOPEDIA = 3,
+    INSPECT_PROFICIENCY = 4
+}
+
+-- INSPECT_CREATURE is speculative: no public server source confirms the tab value.
+-- If the server rejects unknown tab ids, this may produce a protocol error.
+InspectCreaturesTypes = {
+    INSPECT_CREATURE = 4,
+}

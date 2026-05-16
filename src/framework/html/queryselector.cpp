@@ -134,7 +134,8 @@ struct Selector
                         val = tok.substr(vs, i - vs); while (!val.empty() && isSpace((unsigned char)val.back())) val.pop_back();
                     }
                 }
-                while (i < tok.size() && tok[i] != ']') ++i; if (i < tok.size()) ++i;
+                while (i < tok.size() && tok[i] != ']') ++i;
+                if (i < tok.size()) ++i;
                 s.attrs.push_back({ key,val,op });
             } else if (c == ':') {
                 ++i; size_t ps = i; while (i < tok.size() && tok[i] != ':') ++i; s.pseudos.push_back(tok.substr(ps, i - ps));

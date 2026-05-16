@@ -1,0 +1,86 @@
+<html>
+<style>
+  window {
+    font-family: Arial, sans-serif;
+    margin: 24px;
+    background-color: #ffffff;
+    color: #222222;
+    height: 100%;
+    margin-top: 0;
+    margin-left: 0;
+    margin-right: 0;
+    display: block !important;
+    --image-source: none;
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  .example {
+    border: 2px solid #6a1b9a;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 16px;
+  }
+
+  /* Card grid: equal-height cards using align-items: stretch */
+  .grid {
+    display: flex;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .card {
+    flex: 1;
+    background-color: #f3e5f5;
+    padding: 12px;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .title {
+    font-weight: bold;
+    margin-bottom: 8px;
+  }
+
+  .content1 {
+    flex: 1;
+    color: #333;
+  }
+
+  .actions {
+    margin-top: auto;
+  }
+</style>
+
+<window>
+  <h1>Flex: Equal-height Cards</h1>
+  <p>Cards keep the same height because the grid uses align-items: stretch and each card is a column flex container.</p>
+
+  <div class="example">
+    <div class="grid">
+      <div class="card">
+        <div class="title">Card A</div>
+        <div class="content1">Short text.</div>
+        <div class="actions">Buttons</div>
+      </div>
+      <div class="card">
+        <div class="title">Card B</div>
+        <div class="content1">A bit more content1 that makes this card taller than Card A unless equalized by flexbox.
+        </div>
+        <div class="actions">Buttons</div>
+      </div>
+      <div class="card">
+        <div class="title">Card C</div>
+        <div class="content1">Even more content1 to test stretching behaviour. The middle area expands while actions
+          stay at the bottom.</div>
+        <div class="actions">Buttons</div>
+      </div>
+    </div>
+  </div>
+</window>
+
+</html>

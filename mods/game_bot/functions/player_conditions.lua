@@ -11,6 +11,7 @@ context.isBurning = function() return context.hasCondition(PlayerStates.Burn) en
 context.isEnergized = function() return context.hasCondition(PlayerStates.Energy) end
 context.isDrunk = function() return context.hasCondition(PlayerStates.Drunk) end
 context.hasManaShield = function() return context.hasCondition(PlayerStates.ManaShield) end
+context.hasNewManaShield = function() return context.hasCondition(PlayerStates.NewManaShield) end
 context.isParalyzed = function() return context.hasCondition(PlayerStates.Paralyze) end
 context.hasHaste = function() return context.hasCondition(PlayerStates.Haste) end
 context.hasSwords = function() return context.hasCondition(PlayerStates.Swords) end

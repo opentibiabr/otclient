@@ -26,6 +26,12 @@
 #include "framework/core/resourcemanager.h"
 #include "framework/luaengine/luainterface.h"
 #include "framework/platform/platform.h"
+#ifdef ANDROID
+#include <android/log.h>
+#define ALOGD(...) __android_log_print(ANDROID_LOG_DEBUG, "OTClientMobile", __VA_ARGS__)
+#else
+#define ALOGD(...)
+#endif
 #ifdef FRAMEWORK_EDITOR
 #include "tools/datdump.h"
 #endif
@@ -77,12 +83,16 @@ void printHelp(const std::string& executableName)
 
         // process args encoding
         g_platform.init(args);
+        ALOGD("main: platform init done");
 
         // initialize resources
 #ifdef ANDROID
     // Unzip Android assets/data.zip
+        ALOGD("main: starting unZipAssetData...");
         g_androidManager.unZipAssetData();
+        ALOGD("main: unZipAssetData complete");
         g_resources.init(nullptr);
+        ALOGD("main: resources init done");
 #else
         g_resources.init(args[0].data());
 #endif
@@ -104,8 +114,10 @@ void printHelp(const std::string& executableName)
         }
 
         // find script init.lua and run it
+        ALOGD("main: discovering work dir...");
         if (!g_resources.discoverWorkDir("init.lua"))
             g_logger.fatal("Unable to find work directory, the application cannot be initialized.");
+        ALOGD("main: work dir found: %s", g_resources.getWorkDir().c_str());
 
         if (shouldShowHelp(args)) {
             printHelp(args[0]);
@@ -119,8 +131,10 @@ void printHelp(const std::string& executableName)
 #endif
 
         // initialize application framework and otclient
+        ALOGD("main: initializing app framework...");
         const auto drawEvents = ApplicationDrawEventsPtr(&g_client, [](ApplicationDrawEvents*) {});
         g_app.init(args, new GraphicalApplicationContext(g_gameConfig.getSpriteSize(), drawEvents));
+        ALOGD("main: app framework initialized");
 
 #ifndef ANDROID
 #if ENABLE_DISCORD_RPC == 1
@@ -142,13 +156,16 @@ void printHelp(const std::string& executableName)
 #endif
 #endif
 
+        ALOGD("main: initializing client...");
         g_client.init(args);
 #ifdef FRAMEWORK_NET
         g_http.init();
 #endif
 
+        ALOGD("main: running init.lua...");
         if (!g_lua.safeRunScript("init.lua"))
             g_logger.fatal("Unable to run script init.lua!");
+        ALOGD("main: init.lua executed successfully");
 
         // the run application main loop
         g_app.run();

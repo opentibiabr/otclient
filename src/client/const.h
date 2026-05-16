@@ -832,7 +832,8 @@ namespace Otc
         INSPECT_NORMALOBJECT = 0,
         INSPECT_NPCTRADE = 1,
         INSPECT_PLAYERTRADE = 2,
-        INSPECT_CYCLOPEDIA = 3
+        INSPECT_CYCLOPEDIA = 3,
+        INSPECT_PROFICIENCY = 4
     };
 
     enum GameStoreInfoType_t : uint8_t

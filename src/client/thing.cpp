@@ -575,6 +575,18 @@ uint16_t Thing::getClassification() {
     return 0;
 }
 
+uint32_t Thing::getCyclopediaType() const {
+    if (const auto t = getThingType(); t)
+        return t->getCyclopediaType();
+    return 0;
+}
+
+uint32_t Thing::getProficiencyId() const {
+    if (const auto t = getThingType(); t)
+        return t->getProficiencyId();
+    return 0;
+}
+
 bool Thing::canDraw(const Color& color) const {
     if (const auto t = getThingType(); t)
         return m_canDraw && m_clientId > 0 && color.aF() > Fw::MIN_ALPHA && t->getOpacity() > Fw::MIN_ALPHA;

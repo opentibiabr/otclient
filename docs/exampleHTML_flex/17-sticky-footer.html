@@ -1,0 +1,70 @@
+<html>
+<style>
+  window {
+    font-family: Arial, sans-serif;
+    background-color: #ffffff;
+    color: #222222;
+    height: 100%;
+    margin-top: 0;
+    margin-left: 0;
+    margin-right: 0;
+    display: block !important;
+    --image-source: none;
+    display: block !important;
+    width: 99% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+  .example {
+    border: 7px solid #455a64;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 16px;
+  }
+
+  /* Sticky footer using column flex container */
+  .page {
+    display: flex;
+    flex-direction: column;
+    min-height: 260px;
+  }
+
+  .header {
+    padding: 10px;
+    background-color: #90a4ae;
+    border-radius: 6px;
+  }
+
+  .content1 {
+    flex: 1;
+    padding: 12px;
+    background-color: #ffffff;
+    margin: 8px 0;
+    border-radius: 6px;
+  }
+
+  .pageFooter {
+    padding: 10px;
+    background-color: #37474f;
+    color: #ffffff;
+    border-radius: 6px;
+  }
+</style>
+
+<window>
+  <h1>Flex: Sticky Footer</h1>
+  <p>Footer stays at the bottom of the component using flex-direction: column and content1 with flex: 1.</p>
+
+  <div class="example">
+    <div class="page">
+      <div class="header">Top header</div>
+      <div class="content1">
+        <p>Main content1 grows to fill available space. The footer will remain at the bottom.</p>
+      </div>
+      <div class="pageFooter">Footer area</div>
+    </div>
+  </div>
+</window>
+
+</html>

@@ -1,0 +1,30 @@
+name: Reusable Browser Build
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Browser Bundle
+    runs-on: ubuntu-latest
+    env:
+      BUILD_LOG: docker-browser-build.log
+      OUTPUT_DIR: build-emscripten-web
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Build browser bundle with Docker
+        run: bash Dockerfile.browser.sh
+
+      - name: Upload browser artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: otclient-browser-${{ github.sha }}
+          path: |
+            ${{ env.BUILD_LOG }}
+            ${{ env.OUTPUT_DIR }}
+          retention-days: 14

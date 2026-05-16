@@ -22,8 +22,14 @@
 
 #pragma once
 
-#include "demangle.h"
 #include "exception.h"
+
+#ifndef USE_PRECOMPILED_HEADERS
+#include <cstdlib>
+#include <iostream>
+#include <sstream>
+#include <string>
+#endif
 
 namespace stdext
 {
@@ -132,31 +138,22 @@ namespace stdext
     class cast_exception final : public exception
     {
     public:
+        using exception::exception;
         ~cast_exception() noexcept override = default;
-
-        template<class T, class R>
-        void update_what()
-        {
-            std::stringstream ss;
-            ss << "failed to cast value of type '" << demangle_type<T>() << "' to type '" << demangle_type<R>() << "'";
-            m_what = ss.str();
-        }
-
-        const char* what() const noexcept override { return m_what.c_str(); }
-    private:
-        std::string m_what;
     };
+
+    [[noreturn]] inline void throw_cast_exception()
+    {
+        throw cast_exception("failed to cast value");
+    }
 
     // cast a type to another type, any error throws a cast_exception
     template<typename R, typename T>
     R safe_cast(const T& t)
     {
-        R r;
-        if (!cast(t, r)) {
-            cast_exception e;
-            e.update_what<T, R>();
-            throw e;
-        }
+        R r{};
+        if (!cast(t, r))
+            throw_cast_exception();
         return r;
     }
 

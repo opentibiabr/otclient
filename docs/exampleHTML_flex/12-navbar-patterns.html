@@ -1,0 +1,227 @@
+<html>
+<style>
+  window {
+    font-family: Arial, sans-serif;
+    background-color: #ffffff;
+    color: #222222;
+    height: 100%;
+    margin-top: 0;
+    margin-left: 0;
+    margin-right: 0;
+    display: block !important;
+    --image-source: none;
+    display: block !important;
+    width: 98% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+  h2 {
+    color: #333;
+    margin-bottom: 6px;
+    margin-top: 20px;
+  }
+
+  /* Navbar 1: left logo, centered links, right button */
+  .nav1 {
+    display: flex;
+    align-items: center;
+    background-color: #1976d2;
+    padding: 10px 16px;
+    gap: 8px;
+    border-radius: 8px;
+  }
+
+  .nav1 .logo {
+    color: #fff;
+    font-weight: bold;
+  }
+
+  .nav1 .links {
+    display: flex;
+    gap: 6px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .nav1 .link {
+    color: #bbdefb;
+    padding: 4px 10px;
+    border-radius: 4px;
+    white-space: nowrap;
+    width: fit-content;
+    flex-shrink: 0;
+  }
+
+  .nav1 .link:hover {
+    background-color: #1565c0;
+    color: #ff0000;
+  }
+
+  .nav1 .cta {
+    background-color: #fff;
+    color: #1976d2;
+    border-radius: 4px;
+    padding: 5px 12px;
+    font-weight: bold;
+    margin-left: auto;
+  }
+
+  .nav1 .cta:hover {
+    background-color: #e3f2fd;
+  }
+
+
+  /* Navbar 2: icon + title + right actions */
+  .nav2 {
+    display: flex;
+    align-items: center;
+    background-color: #37474f;
+    padding: 8px 16px;
+    gap: 10px;
+    border-radius: 8px;
+  }
+
+  .nav2 .icon {
+    width: 32px;
+    height: 32px;
+    background-color: #78909c;
+    border-radius: 6px;
+    flex-shrink: 0;
+  }
+
+  .nav2 .title {
+    color: #fff;
+    font-weight: bold;
+    flex: 1;
+  }
+
+  .nav2 .actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .nav2 .btn {
+    border: 1px solid #78909c;
+    background-color: transparent;
+    color: #cfd8dc;
+    border-radius: 4px;
+    padding: 4px 10px;
+    white-space: nowrap;
+    width: fit-content;
+    flex-shrink: 0;
+  }
+
+  .nav2 .btn:hover {
+    background-color: #455a64;
+    color: #ff0000;
+    border-color: #90a4ae;
+  }
+
+  .nav2 .btn-primary {
+    background-color: #ff7043;
+    border-color: #ff7043;
+    color: #666666;
+  }
+
+  .nav2 .btn-primary:hover {
+    background-color: #ff8a65;
+    border-color: #ff8a65;
+  }
+
+
+  /* Navbar 3: tabs */
+  .nav3 {
+    display: flex;
+    background-color: #263238;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .nav3 .tab {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+    color: #90a4ae;
+  }
+
+  .nav3 .tab:hover {
+    background-color: #2c3e50;
+    color: #ff0000;
+  }
+
+  .nav3 .tab.active {
+    background-color: #37474f;
+    color: #fff;
+    --border-width-bottom: 2px;
+    --border-color-bottom: #42a5f5;
+  }
+
+
+  /* Navbar 4: centered with justify-content */
+  .nav4 {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    background-color: #4a148c;
+    padding: 10px;
+    border-radius: 8px;
+  }
+
+  .nav4 .item1 {
+    color: #ce93d8;
+    padding: 4px 12px;
+    border-radius: 4px;
+  }
+
+  .nav4 .item1:hover {
+    background-color: #6a1b9a;
+    color: #ff0000;
+  }
+
+  .nav4 .item1.active {
+    background-color: #7b1fa2;
+    color: #fff;
+  }
+</style>
+<window>
+  <h2>Nav 1: Logo | Centered links | Right CTA</h2>
+  <div class="nav1">
+    <div class="logo">MyApp</div>
+    <div class="links">
+      <div class="link">Home</div>
+      <div class="link">Docs</div>
+      <div class="link">Blog</div>
+    </div>
+    <div class="cta">Sign up</div>
+  </div>
+
+  <h2>Nav 2: Icon + Title + Actions</h2>
+  <div class="nav2">
+    <img class="icon" src="/data/images/clienticon.png" width="32" height="32" />
+    <div class="title">Control panel</div>
+    <div class="actions">
+      <div class="btn">Export</div>
+      <div class="btn btn-primary">Save</div>
+    </div>
+  </div>
+
+  <h2>Nav 3: Tabs with flex: 1</h2>
+  <div class="nav3">
+    <div class="tab active">General</div>
+    <div class="tab">Statistics</div>
+    <div class="tab">Settings</div>
+    <div class="tab">Help</div>
+  </div>
+
+  <h2>Nav 4: Centered with justify-content: center</h2>
+  <div class="nav4">
+    <div class="item1 active">Home</div>
+    <div class="item1">Explore</div>
+    <div class="item1">Favorites</div>
+    <div class="item1">Profile</div>
+  </div>
+</window>
+
+</html>

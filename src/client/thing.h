@@ -164,6 +164,8 @@ public:
 
     PLAYER_ACTION getDefaultAction();
     uint16_t getClassification();
+    uint32_t getCyclopediaType() const;
+    uint32_t getProficiencyId() const;
 
     bool canDraw(const Color& color = Color::white) const;
 

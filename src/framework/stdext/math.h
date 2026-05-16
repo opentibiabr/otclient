@@ -22,6 +22,13 @@
 
 #pragma once
 
+#ifndef USE_PRECOMPILED_HEADERS
+#include <cstddef>
+#include <cstdint>
+#include <random>
+#include <span>
+#endif
+
 namespace stdext
 {
     inline bool is_power_of_two(const size_t v) { return ((v != 0) && !(v & (v - 1))); }

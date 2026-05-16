@@ -50,7 +50,7 @@ protected:
 private:
     void scheduleNextUpdate();
     void updateProgress();
-    void updateText(uint32_t remainingTimeMs);
+    void updateProgressText(uint32_t remainingTimeMs);
 
     float m_percent{ 0 };
     ScheduledEventPtr m_updateEvent{ nullptr };
