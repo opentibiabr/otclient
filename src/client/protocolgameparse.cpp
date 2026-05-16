@@ -351,6 +351,9 @@ void ProtocolGame::parseMessage(const InputMessagePtr& msg)
                 case Proto::GameServerSendGameNews:
                     parseGameNews(msg);
                     break;
+                case Proto::GameServerCloseDepotSearch:
+                    parseCloseDepotSearch(msg);
+                    break;
                 case Proto::GameServerSendBlessDialog:
                     parseBlessDialog(msg);
                     break;
@@ -4336,10 +4339,8 @@ ItemPtr ProtocolGame::getItem(const InputMessagePtr& msg, int id)
 
     if (g_game.getFeature(Otc::GameThingClock)) {
         if (item->hasClockExpire() || item->hasExpire() || item->hasExpireStop()) {
-            if (item->getId() != 23398) {
-                item->setDurationTime(msg->getU32());
-                msg->getU8(); // Is brand-new
-            }
+            item->setDurationTime(msg->getU32());
+            msg->getU8(); // Is brand-new
         }
     }
 
@@ -4351,7 +4352,7 @@ ItemPtr ProtocolGame::getItem(const InputMessagePtr& msg, int id)
     }
 
     if (g_game.getFeature(Otc::GameWrapKit)) {
-        if (item->isDecoKit() || item->getId() == 23398) {
+        if (item->isDecoKit()) {
             msg->getU16();
         }
     }
@@ -4784,6 +4785,11 @@ void ProtocolGame::parseGameNews(const InputMessagePtr& msg)
     msg->getU8(); // page number
 
     // TODO: implement game news usage
+}
+
+void ProtocolGame::parseCloseDepotSearch(const InputMessagePtr& /*msg*/)
+{
+    // TODO:
 }
 
 void ProtocolGame::parseBlessDialog(const InputMessagePtr& msg)
