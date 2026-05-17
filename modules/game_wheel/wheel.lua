@@ -17,6 +17,19 @@ if not SkillwheelStringsLibrary then
   SkillwheelStringsLibrary = {}
 end
 
+local function onGameStart()
+  if g_game.getClientVersion() >= 1310 then 
+    local ret = WheelOfDestiny.loadWheelPresets()
+    if not ret then
+      print("[wheel] Error loading wheel presets")
+    end
+  else
+    scheduleEvent(function()
+      g_modules.getModule("game_wheel"):unload()
+    end, 100)
+  end
+end
+
 function init()
   wheelWindow = g_ui.displayUI('wheel')
   mainPanel = wheelWindow:getChildById('mainPanel')
@@ -80,7 +93,7 @@ function init()
   hide()
   connect(g_game, {
     onGameEnd = onGameEnd,
-    onGameStart = WheelOfDestiny.loadWheelPresets,
+    onGameStart = onGameStart,
     onDestinyWheel = WheelOfDestiny.onDestinyWheel,
     --onUnlockGem = GemAtelier.onUnlockGem, --disabled because it's in TODO
     onResourceBalance = onResourceBalance,
@@ -96,7 +109,7 @@ end
 function terminate()
   disconnect(g_game, {
     onGameEnd = onGameEnd,
-    onGameStart = WheelOfDestiny.loadWheelPresets,
+    onGameStart = onGameStart,
     onDestinyWheel = WheelOfDestiny.onDestinyWheel,
     --onUnlockGem = GemAtelier.onUnlockGem, --disabled because it's in TODO
     onResourceBalance = onResourceBalance
@@ -105,6 +118,10 @@ function terminate()
   if wheelWindow then
     wheelWindow:destroy()
     wheelWindow = nil
+  end
+  if wheelButton then
+    wheelButton:destroy()
+    wheelButton = nil
   end
 end
 
