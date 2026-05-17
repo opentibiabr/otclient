@@ -196,6 +196,8 @@ public:
     std::string getName() { return m_name; }
     std::string getDescription() { return m_description; }
 
+    uint32_t getProficiencyId() const { return m_proficiencyId; } // game feature proficiency
+
 private:
     static ThingFlagAttr thingAttrToThingFlagAttr(ThingAttr attr);
     static Size getBestTextureDimension(int w, int h, int count);
@@ -270,5 +272,6 @@ private:
 
     std::string m_name;
     std::string m_description;
+    uint32_t m_proficiencyId{0}; // game feature proficiency
     SkillWheelGem m_skillWheelGem;
 };

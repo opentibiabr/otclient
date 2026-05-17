@@ -349,6 +349,7 @@ namespace Proto
         ClientBosstiaryRequestSlotAction = 176,
         ClientRequestHighscore = 177,
         ClientSoulSealsAction = 186,
+        ClientWeaponProficiency = 179,
         ClientCancelAttackAndFollow = 190,
         ClientForgeEnter = 191,
         ClientForgeBrowseHistory = 192,
