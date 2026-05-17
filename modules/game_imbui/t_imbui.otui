@@ -1,0 +1,902 @@
+PickItemButton < UIButton
+  id: itemButton
+  size: 96 64
+  anchors.top: parent.top
+  anchors.left: parent.left
+  image-source: /images/game/imbuing/pick-item-button
+  image-clip: 0 0 96 64
+  @onClick: modules.game_imbui.Imbuement.onSelectItem()
+  $hover !pressed:
+    image-clip: 0 0 96 64
+  $pressed:
+    image-clip: 0 64 96 64
+  
+ScrollItemButton < UIButton
+  id: scrollButton
+  size: 96 64
+  anchors.top: parent.top
+  anchors.left: itemButton.right
+  margin-left: 6
+  image-source: /images/game/imbuing/imbue-scroll-button
+  image-clip: 0 0 96 64
+  @onClick: modules.game_imbui.Imbuement.onSelectScroll()
+  $hover !pressed:
+    image-clip: 0 0 96 64
+  $pressed:
+    image-clip: 0 64 96 64
+
+SlotImbuing < UIButton
+  size: 66 66
+  border-width: 1
+  border-color-top: #797979
+  border-color-left: #797979
+  border-color-bottom: #2e2e2e
+  border-color-right: #2e2e2e
+  $checked:
+    border-color-top: #181818
+    border-color-left: #181818
+    border-color-bottom: #727272
+    border-color-right: #727272
+  UIWidget
+    id: resource
+    size: 64 64
+    anchors.left: parent.left
+    margin-left: 1
+    anchors.verticalCenter: parent.verticalCenter
+    image-source: /images/game/imbuing/imbuement-icons-64
+    image-clip: 0 0 64 64
+    phantom: true
+
+RequiredItem < UIWidget
+  size: 66 90
+  UIItem
+    id: item
+    size: 66 66
+    anchors.left: parent.left
+    anchors.top: parent.top
+    priceable: false
+    virtual: true
+    phantom: true
+    image-source: /images/ui/item66
+    draggable: false
+  FlatLabel
+    id: count
+    margin-top: 3
+    text-align: center
+    anchors.left: prev.left
+    anchors.right: prev.right
+    anchors.top: prev.bottom
+    image-source: /images/ui/infoPanel
+    font: verdana-11px-rounded
+    color: white
+    text-offset: -2 1
+
+SelectItemOrScroll < UIWidget
+  anchors.fill: parent
+  Panel
+    id: itemOrScrollPanel
+    height: 93
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    image-source: /images/ui/t2pixel-up-frame-borderimage
+    image-border: 5
+    Label
+      id: title
+      anchors.top: parent.top
+      anchors.horizontalCenter: parent.horizontalCenter
+      margin-top: 2
+      !text: tr('Pick Item or Imbue a Blank Scroll')
+      font: verdana-11px-rounded
+      color: #AAAAAA
+      text-auto-resize: true
+    Panel
+      id: itemOrScrollContent
+      anchors.fill: parent
+      margin: 22 12 10 12
+      PickItemButton
+      ScrollItemButton
+        
+  UIWidget
+    id: blockedPanels
+    size: 708 198
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    image-source: /images/game/imbuing/blocked-panels
+    margin-top: 11
+
+SelectImbue < UIWidget
+  anchors.fill: parent
+  Panel
+    id: itemOrScrollPanel
+    height: 103
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    image-source: /images/ui/t2pixel-up-frame-borderimage
+    image-border: 5
+    Label
+      id: title
+      anchors.top: parent.top
+      anchors.horizontalCenter: parent.horizontalCenter
+      margin-top: 2
+      !text: tr('Pick Item or Imbue a Blank Scroll')
+      font: verdana-11px-rounded
+      color: #AAAAAA
+      text-auto-resize: true
+    Panel
+      id: itemOrScrollContent
+      anchors.fill: parent
+      margin: 27 12 10 12
+      PickItemButton
+      ScrollItemButton
+        
+
+      Panel
+        id: slots
+        size: 208 66
+        anchors.top: prev.top
+        anchors.right: parent.right
+        margin-top: -1
+        margin-right: 18
+        SlotImbuing
+          id: slot0
+          margin-right: 6
+          &slot: 0
+          anchors.right: next.left
+          @onClick: modules.game_imbui.ImbuementItem.onSelectSlot(self)
+        SlotImbuing
+          id: slot1
+          margin-right: 6
+          anchors.right: next.left
+          &slot: 1
+          phantom: false
+          @onClick: modules.game_imbui.ImbuementItem.onSelectSlot(self)
+        SlotImbuing
+          id: slot2
+          &slot: 2
+          anchors.right: parent.right
+          @onClick: modules.game_imbui.ImbuementItem.onSelectSlot(self)
+
+      UIItem
+        id: item
+        size: 64 64
+        anchors.top: prev.top
+        anchors.right: prev.left
+        priceable: false
+        virtual: true
+        margin-top: 1
+        margin-right: 22
+        phantom: true
+        draggable: false
+      Label
+        id: titleInformation
+        anchors.top: prev.top
+        anchors.right: prev.left
+        !text: tr('Item Information')
+        font: verdana-11px-rounded
+        color: white
+        text-auto-resize: true
+        margin-top: 24
+        margin-right: 22
+
+  Panel
+    id: qualityAndImbuementPanel
+    height: 177
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    image-source: /images/ui/t2pixel-up-frame-borderimage
+    image-border: 17
+    margin-top: 11
+    Label
+      id: title
+      anchors.top: parent.top
+      anchors.horizontalCenter: parent.horizontalCenter
+      margin-top: 2
+      !text: tr('Select Quality and Imbuement')
+      font: verdana-11px-rounded
+      color: #AAAAAA
+      text-auto-resize: true
+    Panel
+      id: qualityAndImbuementContent
+      anchors.fill: parent
+      margin: 27 12 9 12
+      UIButton
+        id: basicButton
+        size: 144 37
+        anchors.top: parent.top
+        anchors.left: parent.left
+        &baseImbuement: 0
+        margin-left: 116
+        image-source: /images/game/imbuing/basic-button
+        image-clip: 0 0 144 37
+        $hover !pressed:
+          image-clip: 0 0 144 37
+        $pressed:
+          image-clip: 0 37 144 37
+        $on:
+          image-clip: 0 37 144 37
+        @onClick: modules.game_imbui.ImbuementItem.selectBaseType(self:getId())
+        
+      UIButton
+        id: intricateButton
+        size: 144 37
+        anchors.top: parent.top
+        anchors.left: prev.right
+        &baseImbuement: 1
+        margin-left: 11
+        image-source: /images/game/imbuing/intricate-button
+        image-clip: 0 0 144 37
+        $hover !pressed:
+          image-clip: 0 0 144 37
+        $pressed:
+          image-clip: 0 37 144 37
+        $on:
+          image-clip: 0 37 144 37
+        @onClick: modules.game_imbui.ImbuementItem.selectBaseType(self:getId())
+        
+      UIButton
+        id: powerfullButton
+        size: 144 37
+        anchors.top: parent.top
+        anchors.left: prev.right
+        &baseImbuement: 2
+        margin-left: 11
+        image-source: /images/game/imbuing/powerfull-button
+        image-clip: 0 0 144 37
+        $hover !pressed:
+          image-clip: 0 0 144 37
+        $pressed:
+          image-clip: 0 37 144 37
+        $on:
+          image-clip: 0 37 144 37
+        @onClick: modules.game_imbui.ImbuementItem.selectBaseType(self:getId())
+
+      ScrollablePanel
+        id: imbuementsList
+        height: 70
+        width: 70
+        &originalwidth: 680
+        &maxWidth: 675
+        &incrementwidth: 73
+        anchors.top: prev.bottom
+        anchors.horizontalCenter: parent.horizontalCenter
+        margin-top: 11
+        layout: 
+          type: grid
+          cell-spacing: 5
+          cell-size: 66 66
+          num-columns: 9
+          num-rows: 3
+
+      Label
+        id: imbuementsDetails
+        anchors.bottom: parent.bottom
+        anchors.left: parent.left
+        !text: tr('Raises your walking speed by 30. Lasts for 20h 0min while equipped.')
+        font: verdana-11px-rounded
+        color: white
+        text-auto-resize: true
+
+  Panel
+    id: imbuementReqPanel
+    height: 141
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    image-source: /images/ui/t2pixel-up-frame-borderimage
+    image-border: 17
+    margin-top: 11
+    Label
+      id: title
+      anchors.top: parent.top
+      anchors.horizontalCenter: parent.horizontalCenter
+      margin-top: 2
+      !text: tr('Imbue Empty Slot with "Imbuement Name"')
+      font: verdana-11px-rounded
+      color: #AAAAAA
+      text-auto-resize: true
+    Panel
+      id: imbuementReqContent
+      anchors.fill: parent
+      margin: 27 12 10 12
+      Panel
+        id: requiredItems
+        width: 210
+        height: 90
+        anchors.top: parent.top
+        anchors.left: parent.left
+        RequiredItem
+          id: item1
+          anchors.top: parent.top
+          anchors.left: parent.left
+        RequiredItem
+          id: item2
+          anchors.top: parent.top
+          anchors.left: prev.right
+          margin-left: 6
+        RequiredItem
+          id: item3
+          anchors.top: parent.top
+          anchors.left: prev.right
+          margin-left: 6
+      
+      UIWidget
+        id: horizontalArrow
+        size: 14 25
+        anchors.left: prev.right
+        anchors.verticalCenter: requiredItems.verticalCenter
+        margin-left: 171
+        image-source: /images/ui/right-arrow
+        phantom: false
+
+      Label
+        id: itensDetails
+        anchors.bottom: parent.bottom
+        anchors.left: parent.left
+        !text: tr('')
+        font: verdana-11px-rounded
+        color: white
+        text-auto-resize: true
+        visible: true
+
+      UIButton
+        id: imbueApply
+        size: 128 66
+        anchors.top: requiredItems.top
+        anchors.right: parent.right
+        image-source: /images/game/imbuing/imbue_empty
+        image-clip: 0 0 128 66
+        $pressed:
+          image-clip: 0 66 128 66
+
+      FlatLabel
+        id: costPanel
+        margin-top: 3
+        anchors.left: prev.left
+        anchors.right: prev.right
+        anchors.top: prev.bottom
+        image-source: /images/ui/infoPanel
+        Label
+          id: cost
+          anchors.horizontalCenter: parent.horizontalCenter
+          anchors.top: parent.top
+          margin-right: 5
+          margin-top: 3
+          text: 200
+          text-align: center
+          font: verdana-11px-rounded
+          color: white
+          text-auto-resize: true
+        UIWidget
+          size: 9 9
+          anchors.top: cost.top
+          anchors.left: cost.right
+          margin-top: 3
+          margin-left: 2
+          image-source: /images/game/cyclopedia/icons/icon-goldcoin
+
+  UIWidget
+    id: blockedPanels
+    size: 708 141
+    anchors.top: prev.top
+    anchors.left: prev.left
+    image-source: /images/game/imbuing/blocked-panel
+    visible: false
+
+ClearImbue < UIWidget
+  anchors.fill: parent
+  Panel
+    id: itemOrScrollPanel
+    height: 103
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    image-source: /images/ui/t2pixel-up-frame-borderimage
+    image-border: 5
+    Label
+      id: title
+      anchors.top: parent.top
+      anchors.horizontalCenter: parent.horizontalCenter
+      margin-top: 2
+      !text: tr('Pick Item or Imbue a Blank Scroll')
+      font: verdana-11px-rounded
+      color: #AAAAAA
+      text-auto-resize: true
+    Panel
+      id: itemOrScrollContent
+      anchors.fill: parent
+      margin: 27 12 10 12
+      PickItemButton
+      ScrollItemButton
+
+      Panel
+        id: slots
+        size: 208 66
+        anchors.top: prev.top
+        anchors.right: parent.right
+        margin-top: -1
+        margin-right: 18
+        SlotImbuing
+          id: slot0
+          margin-right: 6
+          &slot: 0
+          anchors.right: next.left
+          @onClick: modules.game_imbui.ImbuementItem.onSelectSlot(self)
+        SlotImbuing
+          id: slot1
+          margin-right: 6
+          anchors.right: next.left
+          &slot: 1
+          phantom: false
+          @onClick: modules.game_imbui.ImbuementItem.onSelectSlot(self)
+        SlotImbuing
+          id: slot2
+          &slot: 2
+          anchors.right: parent.right
+          @onClick: modules.game_imbui.ImbuementItem.onSelectSlot(self)
+
+      UIItem
+        id: item
+        size: 64 64
+        anchors.top: prev.top
+        anchors.right: prev.left
+        priceable: false
+        virtual: true
+        phantom: true
+        draggable: false
+        margin-top: 1
+        margin-right: 22
+      Label
+        id: titleInformation
+        anchors.top: prev.top
+        anchors.right: prev.left
+        !text: tr('Item Information')
+        font: verdana-11px-rounded
+        color: white
+        text-auto-resize: true
+        margin-top: 24
+        margin-right: 22
+
+  Panel
+    id: selectedImbuementPanel
+    height: 152
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    image-source: /images/ui/t2pixel-up-frame-borderimage
+    image-border: 17
+    margin-top: 11
+    Label
+      id: title
+      anchors.top: parent.top
+      anchors.horizontalCenter: parent.horizontalCenter
+      margin-top: 2
+      !text: tr('Selected Imbuement')
+      font: verdana-11px-rounded
+      color: #AAAAAA
+      text-auto-resize: true
+    Panel
+      id: selectedImbuementContent
+      anchors.fill: parent
+      margin: 27 12 9 12
+      ScrollablePanel
+        id: clearImbuementsList
+        height: 70
+        width: 70
+        &originalwidth: 680
+        anchors.top: parent.top
+        anchors.horizontalCenter: parent.horizontalCenter
+        margin-top: 20
+        layout: 
+          type: grid
+          cell-spacing: 6
+          cell-size: 66 66
+          num-columns: 9
+          num-rows: 3
+
+      Label
+        id: imbuementsDetails
+        anchors.bottom: parent.bottom
+        anchors.left: parent.left
+        !text: tr('Raises your walking speed by 30. Lasts for 20h 0min while equipped.')
+        font: verdana-11px-rounded
+        color: white
+        text-auto-resize: true
+
+  Panel
+    id: cleanImbuePanel
+    height: 141
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    image-source: /images/ui/t2pixel-up-frame-borderimage
+    image-border: 17
+    margin-top: 11
+    Label
+      id: title
+      anchors.top: parent.top
+      anchors.horizontalCenter: parent.horizontalCenter
+      margin-top: 2
+      !text: tr('Clear Imbuement "Imbuement Name"')
+      font: verdana-11px-rounded
+      color: #AAAAAA
+      text-auto-resize: true
+    Panel
+      id: imbuementReqContent
+      anchors.fill: parent
+      margin: 27 12 10 12
+      Panel
+        id: time
+        size: 279 20
+        image-source: /images/game/imbuing/imbui-timer-bg
+        anchors.top: parent.top
+        anchors.left: parent.left
+        margin-top: 34
+        margin-left: 91
+        phantom: false
+        ProgressBarSD
+          id: timeRemaining
+          size: 277 18
+          anchors.fill: parent
+          image-source: /images/game/imbuing/imbui-progress
+          margin: 1 1 1 1
+          phantom: true
+          percent: 1
+        Label
+          id: textLabel
+          anchors.top: parent.top
+          anchors.horizontalCenter: parent.horizontalCenter
+          text-align: center
+          font: verdana-11px-rounded
+          color: white
+          text-auto-resize: true
+          margin-top: 2
+          phantom: true
+
+      Label
+        id: cleanImbuementsDetails
+        anchors.bottom: parent.bottom
+        anchors.left: parent.left
+        font: verdana-11px-rounded
+        color: white
+        text-auto-resize: true
+
+      UIButton
+        id: clear
+        size: 128 66
+        anchors.top: parent.top
+        anchors.right: parent.right
+        image-source: /images/game/imbuing/clear
+        image-clip: 0 0 128 66
+        $pressed:
+          image-clip: 0 66 128 66
+      FlatLabel
+        id: costPanel
+        margin-top: 3
+        anchors.left: prev.left
+        anchors.right: prev.right
+        anchors.top: prev.bottom
+        image-source: /images/ui/infoPanel
+        Label
+          id: cost
+          anchors.horizontalCenter: parent.horizontalCenter
+          anchors.top: parent.top
+          margin-right: 5
+          margin-top: 3
+          text: 200
+          text-align: center
+          font: verdana-11px-rounded
+          color: white
+          text-auto-resize: true
+        UIWidget
+          size: 9 9
+          anchors.top: cost.top
+          anchors.left: cost.right
+          margin-top: 3
+          margin-left: 2
+          image-source: /images/game/cyclopedia/icons/icon-goldcoin
+
+ScrollImbue < UIWidget
+  anchors.fill: parent
+  Panel
+    id: itemOrScrollPanel
+    height: 93
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    image-source: /images/ui/t2pixel-up-frame-borderimage
+    image-border: 5
+    Label
+      id: title
+      anchors.top: parent.top
+      anchors.horizontalCenter: parent.horizontalCenter
+      margin-top: 2
+      !text: tr('Pick Item or Imbue a Blank Scroll')
+      font: verdana-11px-rounded
+      color: #AAAAAA
+      text-auto-resize: true
+    Panel
+      id: itemOrScrollContent
+      anchors.fill: parent
+      margin: 22 12 10 12
+      PickItemButton
+      ScrollItemButton
+        
+      UIItem
+        id: itemScroll
+        size: 64 64
+        anchors.top: prev.top
+        anchors.right: parent.right
+        priceable: false
+        virtual: true
+        draggable: false
+        phantom: true
+        margin-top: 1
+        margin-right: 77
+
+      Label
+        id: titleScroll
+        anchors.top: prev.top
+        anchors.right: prev.left
+        !text: tr('Blank Imbuement Scroll')
+        font: verdana-11px-rounded
+        color: white
+        text-auto-resize: true
+        margin-top: 24
+        margin-right: 22
+
+  Panel
+    id: selectImbuementPanel
+    height: 314
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    image-source: /images/ui/t2pixel-up-frame-borderimage
+    image-border: 17
+    margin-top: 11
+    Label
+      id: title
+      anchors.top: parent.top
+      anchors.horizontalCenter: parent.horizontalCenter
+      margin-top: 2
+      !text: tr('Select an Imbuement')
+      font: verdana-11px-rounded
+      color: #AAAAAA
+      text-auto-resize: true
+    Panel
+      id: qualityAndImbuementContent
+      anchors.fill: parent
+      margin: 22 12 9 12
+      UIButton
+        id: intricateButton
+        size: 144 37
+        anchors.top: parent.top
+        anchors.left: parent.left
+        margin-left: 193
+        &baseImbuement: 1
+        image-source: /images/game/imbuing/intricate-button
+        image-clip: 0 0 144 37
+        $hover !pressed:
+          image-clip: 0 0 144 37
+        $pressed:
+          image-clip: 0 37 144 37
+        $on:
+          image-clip: 0 37 144 37
+        @onClick: modules.game_imbui.ImbuementScroll.selectBaseType(self:getId())
+      
+      UIButton
+        id: powerfullButton
+        size: 144 37
+        anchors.top: parent.top
+        anchors.left: prev.right
+        margin-left: 11
+        &baseImbuement: 2
+        image-source: /images/game/imbuing/powerfull-button
+        image-clip: 0 0 144 37
+        $hover !pressed:
+          image-clip: 0 0 144 37
+        $pressed:
+          image-clip: 0 37 144 37
+        $on:
+          image-clip: 0 37 144 37
+        @onClick: modules.game_imbui.ImbuementScroll.selectBaseType(self:getId())
+
+      ScrollablePanel
+        id: imbuementsList
+        height: 206
+        width: 680
+        anchors.top: prev.bottom
+        anchors.horizontalCenter: parent.horizontalCenter
+        margin-top: 6
+        padding-left: 25
+        layout: 
+          type: grid
+          cell-spacing: 4
+          cell-size: 66 66
+          num-columns: 9
+          num-rows: 3
+      Label
+        id: imbuementsDetails
+        anchors.bottom: parent.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        !text: tr('Raises your walking speed by 30. Lasts for 20h 0min while equipped.')
+        font: verdana-11px-rounded
+        color: white
+        text-auto-resize: true
+        text-wrap: true
+
+  Panel
+    id: imbuementReqPanel
+    height: 141
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    image-source: /images/ui/t2pixel-up-frame-borderimage
+    image-border: 17
+    margin-top: 11
+    Label
+      id: title
+      anchors.top: parent.top
+      anchors.horizontalCenter: parent.horizontalCenter
+      margin-top: 2
+      !text: tr('Imbue Blank Scroll with "Imbuement Name"')
+      font: verdana-11px-rounded
+      color: #AAAAAA
+      text-auto-resize: true
+    Panel
+      id: imbuementReqContent
+      anchors.fill: parent
+      margin: 27 12 10 12
+      Panel
+        id: requiredItems
+        width: 280
+        height: 90
+        anchors.top: parent.top
+        anchors.left: parent.left
+        RequiredItem
+          id: item1
+          anchors.top: parent.top
+          anchors.left: parent.left
+        RequiredItem
+          id: item2
+          anchors.top: parent.top
+          anchors.left: prev.right
+          margin-left: 6
+        RequiredItem
+          id: item3
+          anchors.top: parent.top
+          anchors.left: prev.right
+          margin-left: 6
+        RequiredItem
+          id: item4
+          anchors.top: parent.top
+          anchors.left: prev.right
+          margin-left: 6
+      
+      UIWidget
+        id: horizontalArrow
+        size: 14 25
+        anchors.left: prev.right
+        anchors.verticalCenter: requiredItems.verticalCenter
+        margin-left: 171
+        image-source: /images/ui/right-arrow
+        phantom: false
+
+      Label
+        id: itensDetails
+        anchors.bottom: parent.bottom
+        anchors.left: parent.left
+        !text: tr('')
+        font: verdana-11px-rounded
+        color: white
+        text-auto-resize: true
+        visible: true
+
+      UIButton
+        id: imbuescrollApply
+        size: 128 66
+        anchors.top: requiredItems.top
+        anchors.right: parent.right
+        image-source: /images/game/imbuing/imbue_empty
+        image-clip: 0 0 128 66
+        $pressed:
+          image-clip: 0 0 128 66
+
+      FlatLabel
+        id: costPanel
+        margin-top: 3
+        anchors.left: prev.left
+        anchors.right: prev.right
+        anchors.top: prev.bottom
+        image-source: /images/ui/infoPanel
+        Label
+          id: cost
+          anchors.horizontalCenter: parent.horizontalCenter
+          anchors.top: parent.top
+          margin-right: 5
+          margin-top: 3
+          text: 200
+          text-align: center
+          font: verdana-11px-rounded
+          color: white
+          text-auto-resize: true
+        UIWidget
+          size: 9 9
+          anchors.top: cost.top
+          anchors.left: cost.right
+          margin-top: 3
+          margin-left: 2
+          image-source: /images/game/cyclopedia/icons/icon-goldcoin
+
+NewMainWindow
+  id: imbuingWindow
+  !text: tr('Imbuement Shrine')
+  size: 740 640
+  @onEscape: modules.game_imbui.Imbuement.close()
+  Panel
+    id: contentPanel
+    anchors.fill: parent
+    margin: 12 12 12 12
+
+    SelectItemOrScroll
+      id: selectItemOrScroll
+      main-window-size: 740 388
+      visible: true
+
+    ScrollImbue
+      id: scrollImbue
+      main-window-size: 740 655
+      visible: false
+
+    SelectImbue
+      id: selectImbue
+      main-window-size: 740 528
+      visible: false
+    
+    ClearImbue
+      id: clearImbue
+      main-window-size: 740 502
+      visible: false
+
+    HorizontalSeparator
+      id: bottomSep
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: close.top
+      margin-bottom: 11
+    Button
+      id: close
+      !text: tr('Close')
+      size: 43 20
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
+      @onClick: modules.game_imbui.Imbuement.close()
+    Panel
+      id: gold
+      size: 160 20
+      anchors.left: parent.left
+      anchors.bottom: parent.bottom
+      image-source: /images/game/prey/balanceBg
+      UIWidget
+        id: goldIcon
+        anchors.top: parent.top
+        anchors.right: parent.right
+        margin-top: 6
+        margin-right: 3
+        image-source: /images/game/prey/prey_gold
+      UIWidget
+        id: gold
+        anchors.top: parent.top
+        anchors.right: prev.left
+        anchors.left: parent.left
+        margin-top: 3
+        margin-right: 2
+        text-align: right
+        text: 0
+        font: verdana-11px-rounded
+        color: white
+        text-auto-resize: true
