@@ -1,20 +1,19 @@
-if not ImbuementScroll then
-  ImbuementScroll = {
+return function(context)
+  local scrollApi = {
     window = nil,
     itemId = 51442,
     confirmWindow = nil,
     availableImbuements = {},
     needItems = {}
   }
-end
 
-ImbuementScroll.__index = ImbuementScroll
+  scrollApi.__index = scrollApi
 
-local self = ImbuementScroll
-function ImbuementScroll.setup(availableImbuements, needItems)
+  local self = scrollApi
+function scrollApi.setup(availableImbuements, needItems)
     self.availableImbuements = availableImbuements or {}
     self.needItems = needItems or {}
-    self.window = Imbuement.scrollImbue
+    self.window = context.imbuement.scrollImbue
 
     local itemWidget = self.window:recursiveGetChildById("itemScroll")
     if itemWidget then
@@ -26,19 +25,24 @@ function ImbuementScroll.setup(availableImbuements, needItems)
     self.onSelectSlotImbue()
 end
 
-function ImbuementScroll:shutdown()
+function scrollApi:shutdown()
+    if self.confirmWindow then
+        self.confirmWindow:destroy()
+    end
+
     self.window = nil
     self.confirmWindow = nil
+    self.lastselectedwidget = nil
     self.availableImbuements = {}
     self.needItems = {}
 end
 
-function ImbuementScroll.onSelectSlotImbue()
+function scrollApi.onSelectSlotImbue()
     self.selectBaseType('powerfullButton')
     self.window:recursiveGetChildById('imbuementsDetails'):setVisible(false)
 end
 
-function ImbuementScroll.selectBaseType(selectedButtonId)
+function scrollApi.selectBaseType(selectedButtonId)
     local qualityAndImbuementContent = self.window:recursiveGetChildById("qualityAndImbuementContent")
     if not qualityAndImbuementContent then
         return
@@ -47,11 +51,11 @@ function ImbuementScroll.selectBaseType(selectedButtonId)
     local intricateButton = qualityAndImbuementContent.intricateButton
     local powerfullButton = qualityAndImbuementContent.powerfullButton
 
-    local baseImbuement = 1
+    local selectedBaseType = 1
     for _, button in pairs({intricateButton, powerfullButton}) do
         button:setOn(button:getId() == selectedButtonId)
         if button:getId() == selectedButtonId then
-            baseImbuement = button.baseImbuement or 1
+            selectedBaseType = button.baseImbuement or 1
         end
     end
 
@@ -73,19 +77,19 @@ function ImbuementScroll.selectBaseType(selectedButtonId)
             end
         end
                 
-        if imbuementType == baseImbuement then
+        if imbuementType == selectedBaseType then
             matchedCount = matchedCount + 1
             local widget = g_ui.createWidget("SlotImbuing", imbuementsList)
             widget:setId(tostring(id))
-            widget.resource:setImageSource("/images/game/imbuing/icons/" .. imbuement.imageId)
+            widget.resource:setImageSource("//images/game/imbuing/icons//" .. imbuement.imageId)
 
             if not selected then
-                ImbuementScroll.selectImbuementWidget(widget, imbuement)
+                scrollApi.selectImbuementWidget(widget, imbuement)
                 selected = true
             end
 
             widget.onClick = function()
-                ImbuementScroll.selectImbuementWidget(widget, imbuement)
+                scrollApi.selectImbuementWidget(widget, imbuement)
             end
 
         end
@@ -93,7 +97,7 @@ function ImbuementScroll.selectBaseType(selectedButtonId)
     
 end
 
-function ImbuementScroll.selectImbuementWidget(widget, imbuement)
+function scrollApi.selectImbuementWidget(widget, imbuement)
     if self.lastselectedwidget then
         self.lastselectedwidget:setBorderWidth(1)
         self.lastselectedwidget:setBorderColorTop("#797979")
@@ -157,8 +161,8 @@ function ImbuementScroll.selectImbuementWidget(widget, imbuement)
     local costPanel = self.window:recursiveGetChildById("costPanel")
     if costPanel then
         local cost = imbuement.cost or 0
-        costPanel.cost:setText(comma_value(cost))
-        local balance = getPlayerBalance()
+        costPanel.cost:setText(context.commaValue(cost))
+        local balance = context.getPlayerBalance()
 
         if balance < cost then
             hasRequiredItems = false
@@ -171,10 +175,10 @@ function ImbuementScroll.selectImbuementWidget(widget, imbuement)
     if imbuescrollApply then
         imbuescrollApply:setEnabled(hasRequiredItems)
         if not hasRequiredItems then
-           imbuescrollApply:setImageSource("/images/game/imbuing/imbue_empty")
+           imbuescrollApply:setImageSource("/game_imbuing/images/imbue_empty")
            imbuescrollApply:setImageClip("0 0 128 66")
         else
-            imbuescrollApply:setImageSource("/images/game/imbuing/imbue_green")
+            imbuescrollApply:setImageSource("/game_imbuing/images/imbue_green")
         end
 
         imbuescrollApply.onHoverChange = function(widget, hovered, itemName, hasItem)
@@ -194,14 +198,14 @@ function ImbuementScroll.selectImbuementWidget(widget, imbuement)
                 self.confirmWindow = nil
             end
 
-            Imbuement.hide()
+            context.imbuement.hide()
 
             local function confirm()
                 g_game.applyImbuement(0, imbuement.id)
                 self.confirmWindow:destroy()
                 self.confirmWindow = nil
 
-                Imbuement.show()
+                context.imbuement.show()
             end
 
             local function cancelFunc()
@@ -210,10 +214,10 @@ function ImbuementScroll.selectImbuementWidget(widget, imbuement)
                     self.confirmWindow = nil
                 end
 
-                Imbuement.show()
+                context.imbuement.show()
             end
 
-            self.confirmWindow = displayGeneralBox(tr('Confirm Imbuing'), tr("You are about to imbue your item with \"%s\". This will consume the required astral sources and %s\ngold coins. Do you wish to proceed?", string.capitalize(imbuement.name), comma_value(imbuement.cost)),
+            self.confirmWindow = displayGeneralBox(tr('Confirm Imbuing'), tr("You are about to imbue your item with \"%s\". This will consume the required astral sources and %s\ngold coins. Do you wish to proceed?", context.capitalize(imbuement.name), context.commaValue(imbuement.cost)),
             { { text=tr('Yes'), callback=confirm },
                 { text=tr('No'), callback=cancelFunc },
             }, confirm, cancelFunc)
@@ -221,7 +225,7 @@ function ImbuementScroll.selectImbuementWidget(widget, imbuement)
     end
 end
 
-function ImbuementScroll.onSelectImbuement(widget)
+function scrollApi.onSelectImbuement(widget)
     local imbuementId = tonumber(widget:getId())
     local imbuement = self.availableImbuements[imbuementId]
     if not imbuement then
@@ -237,4 +241,7 @@ function ImbuementScroll.onSelectImbuement(widget)
     if itensDetails then
         itensDetails:setText("")
     end
+end
+
+  return scrollApi
 end

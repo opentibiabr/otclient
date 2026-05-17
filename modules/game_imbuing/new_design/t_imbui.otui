@@ -3,9 +3,9 @@ PickItemButton < UIButton
   size: 96 64
   anchors.top: parent.top
   anchors.left: parent.left
-  image-source: /images/game/imbuing/pick-item-button
+  image-source: /game_imbuing/new_design/images/pick-item-button
   image-clip: 0 0 96 64
-  @onClick: modules.game_imbui.Imbuement.onSelectItem()
+  @onClick: modules.game_imbuing.onSelectItem()
   $hover !pressed:
     image-clip: 0 0 96 64
   $pressed:
@@ -17,9 +17,9 @@ ScrollItemButton < UIButton
   anchors.top: parent.top
   anchors.left: itemButton.right
   margin-left: 6
-  image-source: /images/game/imbuing/imbue-scroll-button
+  image-source: /game_imbuing/new_design/images/imbue-scroll-button
   image-clip: 0 0 96 64
-  @onClick: modules.game_imbui.Imbuement.onSelectScroll()
+  @onClick: modules.game_imbuing.onSelectScroll()
   $hover !pressed:
     image-clip: 0 0 96 64
   $pressed:
@@ -43,7 +43,7 @@ SlotImbuing < UIButton
     anchors.left: parent.left
     margin-left: 1
     anchors.verticalCenter: parent.verticalCenter
-    image-source: /images/game/imbuing/imbuement-icons-64
+    image-source: /game_imbuing/new_design/images/imbuement-icons-64
     image-clip: 0 0 64 64
     phantom: true
 
@@ -55,7 +55,6 @@ RequiredItem < UIWidget
     anchors.left: parent.left
     anchors.top: parent.top
     priceable: false
-    virtual: true
     phantom: true
     image-source: /images/ui/item66
     draggable: false
@@ -103,7 +102,7 @@ SelectItemOrScroll < UIWidget
     anchors.top: prev.bottom
     anchors.left: parent.left
     anchors.right: parent.right
-    image-source: /images/game/imbuing/blocked-panels
+    image-source: /game_imbuing/new_design/images/blocked-panels
     margin-top: 11
 
 SelectImbue < UIWidget
@@ -145,19 +144,19 @@ SelectImbue < UIWidget
           margin-right: 6
           &slot: 0
           anchors.right: next.left
-          @onClick: modules.game_imbui.ImbuementItem.onSelectSlot(self)
+          @onClick: modules.game_imbuing.onItemSlot(self)
         SlotImbuing
           id: slot1
           margin-right: 6
           anchors.right: next.left
           &slot: 1
           phantom: false
-          @onClick: modules.game_imbui.ImbuementItem.onSelectSlot(self)
+          @onClick: modules.game_imbuing.onItemSlot(self)
         SlotImbuing
           id: slot2
           &slot: 2
           anchors.right: parent.right
-          @onClick: modules.game_imbui.ImbuementItem.onSelectSlot(self)
+          @onClick: modules.game_imbuing.onItemSlot(self)
 
       UIItem
         id: item
@@ -210,7 +209,7 @@ SelectImbue < UIWidget
         anchors.left: parent.left
         &baseImbuement: 0
         margin-left: 116
-        image-source: /images/game/imbuing/basic-button
+        image-source: /game_imbuing/new_design/images/basic-button
         image-clip: 0 0 144 37
         $hover !pressed:
           image-clip: 0 0 144 37
@@ -218,7 +217,7 @@ SelectImbue < UIWidget
           image-clip: 0 37 144 37
         $on:
           image-clip: 0 37 144 37
-        @onClick: modules.game_imbui.ImbuementItem.selectBaseType(self:getId())
+        @onClick: modules.game_imbuing.onItemBaseType(self:getId())
         
       UIButton
         id: intricateButton
@@ -227,7 +226,7 @@ SelectImbue < UIWidget
         anchors.left: prev.right
         &baseImbuement: 1
         margin-left: 11
-        image-source: /images/game/imbuing/intricate-button
+        image-source: /game_imbuing/new_design/images/intricate-button
         image-clip: 0 0 144 37
         $hover !pressed:
           image-clip: 0 0 144 37
@@ -235,7 +234,7 @@ SelectImbue < UIWidget
           image-clip: 0 37 144 37
         $on:
           image-clip: 0 37 144 37
-        @onClick: modules.game_imbui.ImbuementItem.selectBaseType(self:getId())
+        @onClick: modules.game_imbuing.onItemBaseType(self:getId())
         
       UIButton
         id: powerfullButton
@@ -244,7 +243,7 @@ SelectImbue < UIWidget
         anchors.left: prev.right
         &baseImbuement: 2
         margin-left: 11
-        image-source: /images/game/imbuing/powerfull-button
+        image-source: /game_imbuing/new_design/images/powerfull-button
         image-clip: 0 0 144 37
         $hover !pressed:
           image-clip: 0 0 144 37
@@ -252,7 +251,7 @@ SelectImbue < UIWidget
           image-clip: 0 37 144 37
         $on:
           image-clip: 0 37 144 37
-        @onClick: modules.game_imbui.ImbuementItem.selectBaseType(self:getId())
+        @onClick: modules.game_imbuing.onItemBaseType(self:getId())
 
       ScrollablePanel
         id: imbuementsList
@@ -347,7 +346,7 @@ SelectImbue < UIWidget
         size: 128 66
         anchors.top: requiredItems.top
         anchors.right: parent.right
-        image-source: /images/game/imbuing/imbue_empty
+        image-source: /game_imbuing/images/imbue_empty
         image-clip: 0 0 128 66
         $pressed:
           image-clip: 0 66 128 66
@@ -383,7 +382,7 @@ SelectImbue < UIWidget
     size: 708 141
     anchors.top: prev.top
     anchors.left: prev.left
-    image-source: /images/game/imbuing/blocked-panel
+    image-source: /game_imbuing/new_design/images/blocked-panel
     visible: false
 
 ClearImbue < UIWidget
@@ -424,19 +423,19 @@ ClearImbue < UIWidget
           margin-right: 6
           &slot: 0
           anchors.right: next.left
-          @onClick: modules.game_imbui.ImbuementItem.onSelectSlot(self)
+          @onClick: modules.game_imbuing.onItemSlot(self)
         SlotImbuing
           id: slot1
           margin-right: 6
           anchors.right: next.left
           &slot: 1
           phantom: false
-          @onClick: modules.game_imbui.ImbuementItem.onSelectSlot(self)
+          @onClick: modules.game_imbuing.onItemSlot(self)
         SlotImbuing
           id: slot2
           &slot: 2
           anchors.right: parent.right
-          @onClick: modules.game_imbui.ImbuementItem.onSelectSlot(self)
+          @onClick: modules.game_imbuing.onItemSlot(self)
 
       UIItem
         id: item
@@ -531,7 +530,7 @@ ClearImbue < UIWidget
       Panel
         id: time
         size: 279 20
-        image-source: /images/game/imbuing/imbui-timer-bg
+        image-source: /game_imbuing/images/imbui-timer-bg
         anchors.top: parent.top
         anchors.left: parent.left
         margin-top: 34
@@ -541,7 +540,7 @@ ClearImbue < UIWidget
           id: timeRemaining
           size: 277 18
           anchors.fill: parent
-          image-source: /images/game/imbuing/imbui-progress
+          image-source: /game_imbuing/images/imbui-progress
           margin: 1 1 1 1
           phantom: true
           percent: 1
@@ -569,7 +568,7 @@ ClearImbue < UIWidget
         size: 128 66
         anchors.top: parent.top
         anchors.right: parent.right
-        image-source: /images/game/imbuing/clear
+        image-source: /game_imbuing/images/clear
         image-clip: 0 0 128 66
         $pressed:
           image-clip: 0 66 128 66
@@ -677,7 +676,7 @@ ScrollImbue < UIWidget
         anchors.left: parent.left
         margin-left: 193
         &baseImbuement: 1
-        image-source: /images/game/imbuing/intricate-button
+        image-source: /game_imbuing/new_design/images/intricate-button
         image-clip: 0 0 144 37
         $hover !pressed:
           image-clip: 0 0 144 37
@@ -685,7 +684,7 @@ ScrollImbue < UIWidget
           image-clip: 0 37 144 37
         $on:
           image-clip: 0 37 144 37
-        @onClick: modules.game_imbui.ImbuementScroll.selectBaseType(self:getId())
+        @onClick: modules.game_imbuing.onScrollBaseType(self:getId())
       
       UIButton
         id: powerfullButton
@@ -694,7 +693,7 @@ ScrollImbue < UIWidget
         anchors.left: prev.right
         margin-left: 11
         &baseImbuement: 2
-        image-source: /images/game/imbuing/powerfull-button
+        image-source: /game_imbuing/new_design/images/powerfull-button
         image-clip: 0 0 144 37
         $hover !pressed:
           image-clip: 0 0 144 37
@@ -702,7 +701,7 @@ ScrollImbue < UIWidget
           image-clip: 0 37 144 37
         $on:
           image-clip: 0 37 144 37
-        @onClick: modules.game_imbui.ImbuementScroll.selectBaseType(self:getId())
+        @onClick: modules.game_imbuing.onScrollBaseType(self:getId())
 
       ScrollablePanel
         id: imbuementsList
@@ -801,7 +800,7 @@ ScrollImbue < UIWidget
         size: 128 66
         anchors.top: requiredItems.top
         anchors.right: parent.right
-        image-source: /images/game/imbuing/imbue_empty
+        image-source: /game_imbuing/images/imbue_empty
         image-clip: 0 0 128 66
         $pressed:
           image-clip: 0 0 128 66
@@ -836,7 +835,7 @@ NewMainWindow
   id: imbuingWindow
   !text: tr('Imbuement Shrine')
   size: 740 640
-  @onEscape: modules.game_imbui.Imbuement.close()
+  @onEscape: modules.game_imbuing.close()
   Panel
     id: contentPanel
     anchors.fill: parent
@@ -874,7 +873,7 @@ NewMainWindow
       size: 43 20
       anchors.right: parent.right
       anchors.bottom: parent.bottom
-      @onClick: modules.game_imbui.Imbuement.close()
+      @onClick: modules.game_imbuing.close()
     Panel
       id: gold
       size: 160 20

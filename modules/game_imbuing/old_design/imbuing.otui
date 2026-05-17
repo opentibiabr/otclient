@@ -73,12 +73,12 @@ ItemInformation < Panel
       !text: tr("Slot 1")
       text-align: center
       anchors.left: parent.left
-      image-source: /images/game/imbuing/slot_inactive
+      image-source: /game_imbuing/old_design/images/slot_inactive
       image-clip: 0 0 66 66
       $hover !pressed:
         image-clip: 0 0 66 66
       $pressed:
-        image-source: /images/game/imbuing/slot
+        image-source: /game_imbuing/old_design/images/slot
         image-clip: 0 0 66 66
 
     Slot
@@ -86,12 +86,12 @@ ItemInformation < Panel
       !text: tr("Slot 2")
       anchors.left: prev.right
       margin-left: 10
-      image-source: /images/game/imbuing/slot_inactive
+      image-source: /game_imbuing/old_design/images/slot_inactive
       image-clip: 0 0 66 66
       $hover !pressed:
         image-clip: 0 0 66 66
       $pressed:
-        image-source: /images/game/imbuing/slot
+        image-source: /game_imbuing/old_design/images/slot
         image-clip: 0 0 66 66
 
     Slot
@@ -100,12 +100,12 @@ ItemInformation < Panel
       text-align: center
       margin-left: 10
       anchors.left: prev.right
-      image-source: /images/game/imbuing/slot_inactive
+      image-source: /game_imbuing/old_design/images/slot_inactive
       image-clip: 0 0 66 66
       $hover !pressed:
         image-clip: 0 0 66 66
       $pressed:
-        image-source: /images/game/imbuing/slot
+        image-source: /game_imbuing/old_design/images/slot
         image-clip: 0 0 66 66
 
   Label
@@ -201,7 +201,7 @@ EmptyImbue < Panel
     height: 66
     anchors.top: prev.top
     anchors.left: prev.right
-    image-source: /images/game/imbuing/100percent
+    image-source: /game_imbuing/old_design/images/100percent
     image-clip: 0 0 66 66
     margin-left: 15
     !tooltip: ("Bribe the fates! Click here to raise your chance to 100%. For guaranteed success use gold.")
@@ -233,7 +233,7 @@ EmptyImbue < Panel
     height: 66
     anchors.top: requiredItems.top
     anchors.right: parent.right
-    image-source: /images/game/imbuing/imbue_empty
+    image-source: /game_imbuing/images/imbue_empty
     image-clip: 0 0 128 66
     margin-left: 15
     !tooltip: tr("Click here to carry out the selected imbuement. This will consume the required astral sources and gold.")
@@ -312,13 +312,13 @@ ClearImbue < Panel
       id: timerContainer
       size: 277 18
       anchors.centerIn: parent
-      image-source: /images/game/imbuing/imbui-timer-bg
+      image-source: /game_imbuing/images/imbui-timer-bg
       
       ProgressBarSD
         id: timeRemaining
         size: 277 18
         anchors.fill: parent
-        image-source: /images/game/imbuing/imbui-progress
+        image-source: /game_imbuing/images/imbui-progress
         margin: 1
         phantom: true
         percent: 1
@@ -339,7 +339,7 @@ ClearImbue < Panel
     height: 66
     anchors.top: time.top
     anchors.right: parent.right
-    image-source: /images/game/imbuing/clear
+    image-source: /game_imbuing/images/clear
     image-clip: 0 0 128 66
     margin-left: 15
     !tooltip: tr("Your needs have changed? Click here to clear the imbuement from your item for a fee.")

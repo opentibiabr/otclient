@@ -239,7 +239,7 @@ namespace Proto
         GameServerChannelEvent = 243,
         GameServerItemInfo = 244,
         GameServerPlayerInventory = 245,
-        GameServerInventoryImbuements = 96, // 0x60 - Inventory Imbuements opcode from server
+        GameServerInventoryImbuements = 96,
         GameServerMarketEnter = 246,
         GameServerMarketLeave = 247, /* Unused */
         GameServerMarketDetail = 248,
@@ -343,6 +343,7 @@ namespace Proto
         ClientBosstiaryRequestSlotInfo = 175,
         ClientBosstiaryRequestSlotAction = 176,
         ClientRequestHighscore = 177,
+        ClientImbuementWindowAction = 178,
         ClientCancelAttackAndFollow = 190,
         ClientForgeEnter = 191,
         ClientForgeBrowseHistory = 192,

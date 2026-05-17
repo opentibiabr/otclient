@@ -830,7 +830,6 @@ void ProtocolGame::parseResourceBalance(const InputMessagePtr& msg) const
             break;
     }
     m_localPlayer->setResourceBalance(type, value);
-    g_lua.callGlobalField("g_game", "onResourceBalance", type, value);
 }
 
 void ProtocolGame::parseWorldTime(const InputMessagePtr& msg)
@@ -5913,145 +5912,70 @@ Imbuement ProtocolGame::getImbuementInfo(const InputMessagePtr& msg)
 
 void ProtocolGame::parseImbuementWindow(const InputMessagePtr& msg)
 {
-    if (g_game.getClientVersion() >= 1510) {
-        const uint8_t windowType = msg->getU8();
-
-        if (windowType > 2) {
+    const bool isModernImbuementWindow = g_game.getClientVersion() >= 1510;
+    uint8_t windowType = Otc::IMBUEMENT_WINDOW_SELECT_ITEM;
+    if (isModernImbuementWindow) {
+        windowType = static_cast<Otc::Imbuement_Window_t>(msg->getU8()); // window type
+        if (std::cmp_greater(windowType, static_cast<uint8_t>(Otc::IMBUEMENT_WINDOW_SCROLL))) {
             g_logger.warning(fmt::format("ProtocolGame::parseImbuementWindow: unexpected windowType {}", windowType));
             return;
         }
-
-        // 0 = CHOICE (select item or scroll)
-        if (windowType == 0) {
-            msg->getU8();   // unknown
-            msg->getU16();  // padding
-            msg->getU32();  // padding
-            g_lua.callGlobalField("g_game", "onOpenImbuementWindow");
-            return;
-        }
-
-        // 1 = SELECT_ITEM
-        if (windowType == 1) {
-            msg->getU8(); // unknown
-
-            const uint16_t itemId = msg->getU16();
-            const auto& item = Item::create(itemId);
-            if (!item || item->getId() == 0) {
-                throw Exception("ProtocolGame::parseImbuementWindow: unable to create item with invalid id {}", itemId);
-            }
-
-            uint8_t tier = 0;
-            if (item->getClassification() > 0) {
-                tier = msg->getU8();
-            }
-
-            const uint8_t slots = msg->getU8();
-            std::unordered_map<int, std::tuple<Imbuement, uint32_t, uint32_t>> activeSlots;
-            for (auto i = 0; i < slots; i++) {
-                const uint8_t firstByte = msg->getU8();
-                if (firstByte == 0x01) {
-                    Imbuement imbuement = getImbuementInfo(msg);
-                    const uint32_t duration = msg->getU32();
-                    const uint32_t removalCost = msg->getU32();
-                    activeSlots[i] = std::make_tuple(imbuement, duration, removalCost);
-                }
-            }
-
-            const uint16_t imbuementsSize = msg->getU16();
-            std::vector<Imbuement> imbuements;
-            imbuements.reserve(imbuementsSize);
-            for (auto i = 0; i < imbuementsSize; ++i) {
-                imbuements.push_back(getImbuementInfo(msg));
-            }
-
-            const uint32_t neededItemsListCount = msg->getU32();
-            std::vector<ItemPtr> neededItemsList;
-            neededItemsList.reserve(neededItemsListCount);
-            for (uint32_t i = 0; i < neededItemsListCount; ++i) {
-                const uint16_t needItemId = msg->getU16();
-                const uint16_t count = msg->getU16();
-                const auto& needItem = Item::create(needItemId);
-                needItem->setCount(count);
-                neededItemsList.push_back(needItem);
-            }
-            g_lua.callGlobalField("g_game", "onImbuementItem", itemId, tier, slots, activeSlots, imbuements, neededItemsList);
-            return;
-        }
-
-        // 2 = SCROLL
-        if (windowType == 2) {
-            msg->getU8(); // unknown
-            msg->getU8(); // unknown
-            msg->getU8(); // unknown
-
-            const uint16_t imbuementsSize = msg->getU16();
-            std::vector<Imbuement> imbuements;
-            imbuements.reserve(imbuementsSize);
-            for (auto i = 0; i < imbuementsSize; ++i) {
-                imbuements.push_back(getImbuementInfo(msg));
-            }
-
-            const uint32_t neededItemsListCount = msg->getU32();
-            std::vector<ItemPtr> neededItemsList;
-            neededItemsList.reserve(neededItemsListCount);
-            for (uint32_t i = 0; i < neededItemsListCount; ++i) {
-                const uint16_t needItemId = msg->getU16();
-                const uint16_t count = msg->getU16();
-                const auto& needItem = Item::create(needItemId);
-                needItem->setCount(count);
-                neededItemsList.push_back(needItem);
-            }
-            g_lua.callGlobalField("g_game", "onImbuementScroll", imbuements, neededItemsList);
-            return;
-        }
-    }
-    uint8_t windowType = Otc::IMBUEMENT_WINDOW_SELECT_ITEM;
-    if (g_game.getClientVersion() >= 1510) {
-        windowType = static_cast<Otc::Imbuement_Window_t>(msg->getU8()); // window type
-        msg->getU8(); // unknown byte
     }
     switch (windowType) {
         case Otc::IMBUEMENT_WINDOW_CHOICE: {
+            if (isModernImbuementWindow) {
+                msg->getU8(); // unknown
+            }
             const uint16_t itemId = msg->getU16(); // item client ID
             const uint32_t unknown = msg->getU32(); // unknown
-
             g_lua.callGlobalField("g_game", "onOpenImbuementWindow", itemId, unknown);
             break;
         }
         case Otc::IMBUEMENT_WINDOW_SCROLL: {
             msg->getU8(); // unknown byte
             msg->getU8(); // unknown byte
+            if (isModernImbuementWindow) {
+                msg->getU8(); // unknown byte
+            }
             const uint16_t imbuementsSize = msg->getU16();
             std::vector<Imbuement> imbuements;
-            for (auto i = 0; i < imbuementsSize; ++i) {
+            imbuements.reserve(imbuementsSize);
+            for (uint16_t i = 0; std::cmp_less(i, imbuementsSize); ++i) {
                 imbuements.push_back(getImbuementInfo(msg));
             }
             const uint32_t neededItemsListCount = msg->getU32();
             std::vector<ItemPtr> neededItemsList;
             neededItemsList.reserve(neededItemsListCount);
-            for (uint32_t i = 0; i < neededItemsListCount; ++i) {
+            for (uint32_t i = 0; std::cmp_less(i, neededItemsListCount); ++i) {
                 const uint16_t needItemId = msg->getU16();
                 const uint16_t count = msg->getU16();
                 const auto& needItem = Item::create(needItemId);
                 needItem->setCount(count);
                 neededItemsList.push_back(needItem);
             }
-
             g_lua.callGlobalField("g_game", "onImbuementScroll", imbuements, neededItemsList);
             break;
         }
         case Otc::IMBUEMENT_WINDOW_SELECT_ITEM: {
-            const uint16_t itemId = msg->getU16(); // item client ID
+            uint16_t itemId = 0;
+            uint8_t tier = 0;
+            if (isModernImbuementWindow) {
+                msg->getU8(); // unknown
+            }
+            itemId = msg->getU16(); // item client ID
             const auto& thing = g_things.getThingType(itemId, ThingCategoryItem);
+            if (isModernImbuementWindow && !thing) {
+                throw Exception("ProtocolGame::parseImbuementWindow: unable to resolve thing type for item id {}", itemId);
+            }
             if (thing) {
                 const uint16_t classification = thing->getClassification();
-                if (classification > 0) {
-                    msg->getU8(); // upgradeClass
+                if (std::cmp_greater(classification, 0)) {
+                    tier = msg->getU8();
                 }
             }
-            const uint8_t slot = msg->getU8();
+            const uint8_t slots = msg->getU8();
             std::unordered_map<int, std::tuple<Imbuement, uint32_t, uint32_t>> activeSlots;
-            for (auto i = 0; i < slot; i++) {
+            for (uint8_t i = 0; std::cmp_less(i, slots); ++i) {
                 const uint8_t firstByte = msg->getU8();
                 if (firstByte == 0x01) {
                     Imbuement imbuement = getImbuementInfo(msg);
@@ -6062,20 +5986,25 @@ void ProtocolGame::parseImbuementWindow(const InputMessagePtr& msg)
             }
             const uint16_t imbuementsSize = msg->getU16();
             std::vector<Imbuement> imbuements;
-            for (auto i = 0; i < imbuementsSize; ++i) {
+            imbuements.reserve(imbuementsSize);
+            for (uint16_t i = 0; std::cmp_less(i, imbuementsSize); ++i) {
                 imbuements.push_back(getImbuementInfo(msg));
             }
             const uint32_t neededItemsListCount = msg->getU32();
             std::vector<ItemPtr> neededItemsList;
             neededItemsList.reserve(neededItemsListCount);
-            for (uint32_t i = 0; i < neededItemsListCount; ++i) {
+            for (uint32_t i = 0; std::cmp_less(i, neededItemsListCount); ++i) {
                 const uint16_t needItemId = msg->getU16();
                 const uint16_t count = msg->getU16();
                 const auto& needItem = Item::create(needItemId);
                 needItem->setCount(count);
                 neededItemsList.push_back(needItem);
             }
-            g_lua.callGlobalField("g_game", "onImbuementWindow", itemId, slot, activeSlots, imbuements, neededItemsList);
+            if (isModernImbuementWindow) {
+                g_lua.callGlobalField("g_game", "onImbuementItem", itemId, tier, slots, activeSlots, imbuements, neededItemsList);
+            } else {
+                g_lua.callGlobalField("g_game", "onImbuementWindow", itemId, slots, activeSlots, imbuements, neededItemsList);
+            }
             break;
         }
     }

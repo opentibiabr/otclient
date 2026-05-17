@@ -1893,7 +1893,7 @@ void Game::selectImbuementItem(const uint16_t itemId, const Position& pos, const
     if (!canPerformGameAction())
         return;
 
-    m_protocolGame->sendImbuementWindowAction(1, itemId, pos, stackpos);
+    m_protocolGame->sendImbuementWindowAction(Otc::IMBUEMENT_WINDOW_SELECT_ITEM, itemId, pos, stackpos);
 }
 
 void Game::selectImbuementScroll()
@@ -1901,7 +1901,7 @@ void Game::selectImbuementScroll()
     if (!canPerformGameAction())
         return;
 
-    m_protocolGame->sendImbuementWindowAction(2);
+    m_protocolGame->sendImbuementWindowAction(Otc::IMBUEMENT_WINDOW_SCROLL);
 }
 
 void Game::imbuementDurations(const bool isOpen)
@@ -1910,22 +1910,6 @@ void Game::imbuementDurations(const bool isOpen)
         return;
 
     m_protocolGame->sendImbuementDurations(isOpen);
-}
-
-void Game::openWheelOfDestiny(uint32_t playerId)
-{
-    if (!playerId || !canPerformGameAction())
-        return;
-
-    m_protocolGame->sendOpenWheelOfDestiny(playerId);
-}
-
-void Game::applyWheelOfDestiny(const std::vector<uint16_t>& wheelPointsVec, const std::vector<uint16_t>& activeGemsVec)
-{
-    if (!canPerformGameAction())
-        return;
-
-    m_protocolGame->sendApplyWheelOfDestiny(wheelPointsVec, activeGemsVec);
 }
 
 void Game::stashWithdraw(const uint16_t itemId, const uint32_t count, const uint8_t stackpos)

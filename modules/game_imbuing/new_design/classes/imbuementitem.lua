@@ -1,5 +1,5 @@
-if not ImbuementItem then
-  ImbuementItem = {
+return function(context)
+  local itemApi = {
     window = nil,
     confirmWindow = nil,
     lastselectedwidget = nil,
@@ -11,12 +11,11 @@ if not ImbuementItem then
     availableImbuements = {},
     needItems = {},
   }
-end
 
-ImbuementItem.__index = ImbuementItem
+  itemApi.__index = itemApi
 
-local self = ImbuementItem
-function ImbuementItem.setup(itemId, tier, slots, activeSlots, availableImbuements, needItems)
+  local self = itemApi
+function itemApi.setup(itemId, tier, slots, activeSlots, availableImbuements, needItems)
     self.itemId = itemId
     self.tier = tier
     self.slots = slots
@@ -29,8 +28,8 @@ function ImbuementItem.setup(itemId, tier, slots, activeSlots, availableImbuemen
     self.needItems = needItems or {}
 
     for i = 0, 2 do
-        Imbuement.clearImbue:recursiveGetChildById("slot"..i):setBorderWidth(0)
-        Imbuement.selectImbue:recursiveGetChildById("slot"..i):setBorderWidth(0)
+        context.imbuement.clearImbue:recursiveGetChildById("slot"..i):setBorderWidth(0)
+        context.imbuement.selectImbue:recursiveGetChildById("slot"..i):setBorderWidth(0)
     end
 
     self.selectedSlot = 0
@@ -40,22 +39,22 @@ function ImbuementItem.setup(itemId, tier, slots, activeSlots, availableImbuemen
     local imbuement = self.activeSlots["slot0"]
     self.updateWindowState(imbuement)
 
-    self.configureWindow(Imbuement.selectImbue)
-    self.configureWindow(Imbuement.clearImbue)
+    self.configureWindow(context.imbuement.selectImbue)
+    self.configureWindow(context.imbuement.clearImbue)
 end
 
-function ImbuementItem.configureWindow(window)
+function itemApi.configureWindow(window)
     local slots = window:recursiveGetChildById("slots")
     for i = 1, 3 do
         local slotWidget = slots:getChildById("slot"..i - 1)
         if slotWidget then
-            slotWidget.resource:setImageSource("/images/game/imbuing/icons/0")
+            slotWidget.resource:setImageSource("//images/game/imbuing/icons//0")
             if i <= self.slots then
                 slotWidget:setVisible(true)
                 local imbuement = self.activeSlots["slot"..i - 1]
                 if imbuement and imbuement[1] then
                     if imbuement[1].id and imbuement[1].id ~= 0 then
-                        slotWidget.resource:setImageSource("/images/game/imbuing/icons/" .. imbuement[1]["imageId"])
+                        slotWidget.resource:setImageSource("//images/game/imbuing/icons//" .. imbuement[1]["imageId"])
                     end
                 end
             else
@@ -64,7 +63,7 @@ function ImbuementItem.configureWindow(window)
         end
     end
     
-    local itemName = getItemNameById(self.itemId)
+    local itemName = context.getItemNameById(self.itemId)
     local itemWidget = window:recursiveGetChildById("item")
     if itemWidget then
         itemWidget:setItemId(self.itemId)
@@ -74,41 +73,41 @@ function ImbuementItem.configureWindow(window)
 
     local itemInformation = window:recursiveGetChildById("titleInformation")
     if itemInformation then
-        itemInformation:setText(string.capitalize(itemName))
+        itemInformation:setText(context.capitalize(itemName))
     end
 end
 
-function ImbuementItem.onSelectSlot(widget)
+function itemApi.onSelectSlot(widget)
     local slot = widget:getId()
-    ImbuementItem.onSelectImbuementSlot(widget.slot)
+    itemApi.onSelectImbuementSlot(widget.slot)
     local imbuement = self.activeSlots[slot]
     self.updateWindowState(imbuement)
 end
 
-function ImbuementItem.updateWindowState(imbuement)
+function itemApi.updateWindowState(imbuement)
     if imbuement and imbuement[1] and imbuement[1].id ~= 0 then
-        Imbuement:toggleMenu("clearImbue")
-        self.window = Imbuement.clearImbue
+        context.imbuement:toggleMenu("clearImbue")
+        self.window = context.imbuement.clearImbue
         self.onSelectSlotClear(imbuement)
     else
-        Imbuement:toggleMenu("selectImbue")
-        self.window = Imbuement.selectImbue
+        context.imbuement:toggleMenu("selectImbue")
+        self.window = context.imbuement.selectImbue
         self.onSelectSlotImbue()
     end
 end
 
-function ImbuementItem.onSelectImbuementSlot(slot)
-    Imbuement.clearImbue:recursiveGetChildById("slot"..self.selectedSlot):setBorderWidth(0)
-    Imbuement.selectImbue:recursiveGetChildById("slot"..self.selectedSlot):setBorderWidth(0)
+function itemApi.onSelectImbuementSlot(slot)
+    context.imbuement.clearImbue:recursiveGetChildById("slot"..self.selectedSlot):setBorderWidth(0)
+    context.imbuement.selectImbue:recursiveGetChildById("slot"..self.selectedSlot):setBorderWidth(0)
 
     self.selectedSlot = slot
-    Imbuement.clearImbue:recursiveGetChildById("slot"..slot):setBorderWidth(1)
-    Imbuement.clearImbue:recursiveGetChildById("slot"..slot):setBorderColor("white")
-    Imbuement.selectImbue:recursiveGetChildById("slot"..slot):setBorderWidth(1)
-    Imbuement.selectImbue:recursiveGetChildById("slot"..slot):setBorderColor("white")
+    context.imbuement.clearImbue:recursiveGetChildById("slot"..slot):setBorderWidth(1)
+    context.imbuement.clearImbue:recursiveGetChildById("slot"..slot):setBorderColor("white")
+    context.imbuement.selectImbue:recursiveGetChildById("slot"..slot):setBorderWidth(1)
+    context.imbuement.selectImbue:recursiveGetChildById("slot"..slot):setBorderColor("white")
 end
 
-function ImbuementItem:shutdown()
+function itemApi:shutdown()
     self.window = nil
     self.itemId = 0
     self.tier = 0
@@ -127,7 +126,7 @@ function ImbuementItem:shutdown()
     self.confirmWindow = nil
 end
 
-function ImbuementItem.onSelectSlotClear(imbuement)
+function itemApi.onSelectSlotClear(imbuement)
     local title = self.window.cleanImbuePanel:getChildById("title")
     if title then
         title:setText(string.format('Clear Imbuement "%s"', imbuement[1].name))
@@ -165,7 +164,7 @@ function ImbuementItem.onSelectSlotClear(imbuement)
     clearImbuementsList:destroyChildren()
 
     local widget = g_ui.createWidget("SlotImbuing", clearImbuementsList)
-    widget.resource:setImageSource("/images/game/imbuing/icons/" .. imbuement[1]["imageId"])
+    widget.resource:setImageSource("//images/game/imbuing/icons//" .. imbuement[1]["imageId"])
     widget:setBorderWidth(1)
     widget:setBorderColor("white")
 
@@ -177,7 +176,7 @@ function ImbuementItem.onSelectSlotClear(imbuement)
         end
     end
 
-    local balance = getPlayerBalance()
+    local balance = context.getPlayerBalance()
     local clearButton = self.window:recursiveGetChildById("clear")
     if clearButton then
         clearButton:setEnabled(balance >= imbuement[3])
@@ -187,14 +186,14 @@ function ImbuementItem.onSelectSlotClear(imbuement)
                 self.confirmWindow = nil
             end
 
-            Imbuement.hide()
+            context.imbuement.hide()
 
             local function confirm()
                 g_game.clearImbuement(self.selectedSlot)
                 self.confirmWindow:destroy()
                 self.confirmWindow = nil
 
-                Imbuement.show()
+                context.imbuement.show()
             end
 
             local function cancelFunc()
@@ -203,20 +202,20 @@ function ImbuementItem.onSelectSlotClear(imbuement)
                     self.confirmWindow = nil
                 end
 
-                Imbuement.show()
+                context.imbuement.show()
             end
 
-            self.confirmWindow = displayGeneralBox(tr('Confirm Clearing'), tr("Do you wish to spend %s gold coins to clear the imbuement \"%s\" from your item?", comma_value(imbuement[3]), string.capitalize(imbuement[1].name)),
+            self.confirmWindow = displayGeneralBox(tr('Confirm Clearing'), tr("Do you wish to spend %s gold coins to clear the imbuement \"%s\" from your item?", context.commaValue(imbuement[3]), context.capitalize(imbuement[1].name)),
             { { text=tr('Yes'), callback=confirm },
                 { text=tr('No'), callback=cancelFunc },
             }, confirm, cancelFunc)
         end
 
         if balance >= imbuement[3] then
-            clearButton:setImageSource("/images/game/imbuing/clear")
+            clearButton:setImageSource("/game_imbuing/images/clear")
             clearButton:setImageClip("0 0 128 66")
         else
-            clearButton:setImageSource("/images/game/imbuing/imbue_empty")
+            clearButton:setImageSource("/game_imbuing/images/imbue_empty")
         end
 
         clearButton.onHoverChange = function(widget, hovered, itemName, hasItem)
@@ -230,18 +229,18 @@ function ImbuementItem.onSelectSlotClear(imbuement)
 
     local costPanel = self.window:recursiveGetChildById("costPanel")
     if costPanel then
-        costPanel.cost:setText(comma_value(imbuement[3]))
+        costPanel.cost:setText(context.commaValue(imbuement[3]))
         costPanel.cost:setColor(balance < imbuement[3] and "#C04040" or "#C0C0C0")
     end
 end
 
-function ImbuementItem.onSelectSlotImbue()
+function itemApi.onSelectSlotImbue()
     self.selectBaseType('basicButton')
 
     self.window:recursiveGetChildById('imbuementsDetails'):setVisible(false)
 end
 
-function ImbuementItem.selectBaseType(selectedButtonId)
+function itemApi.selectBaseType(selectedButtonId)
     self.window:recursiveGetChildById('blockedPanels'):setVisible(true)
     local qualityAndImbuementContent = self.window:recursiveGetChildById("qualityAndImbuementContent")
     if not qualityAndImbuementContent then
@@ -252,11 +251,11 @@ function ImbuementItem.selectBaseType(selectedButtonId)
     local intricateButton = qualityAndImbuementContent.intricateButton
     local powerfullButton = qualityAndImbuementContent.powerfullButton
 
-    local baseImbuement = 0
+    local selectedBaseType = 0
     for _, button in pairs({basicButton, intricateButton, powerfullButton}) do
         button:setOn(button:getId() == selectedButtonId)
         if button:getId() == selectedButtonId then
-            baseImbuement = button.baseImbuement or 0
+            selectedBaseType = button.baseImbuement or 0
         end
     end
 
@@ -276,13 +275,13 @@ function ImbuementItem.selectBaseType(selectedButtonId)
             elseif imbuement.group == 'Powerful' then imbuementType = 2
             end
         end
-        if imbuementType == baseImbuement then
+        if imbuementType == selectedBaseType then
             local widget = g_ui.createWidget("SlotImbuing", imbuementsList)
             widget:setId(tostring(id))
-            widget.resource:setImageSource("/images/game/imbuing/icons/" .. imbuement.imageId)
+            widget.resource:setImageSource("//images/game/imbuing/icons//" .. imbuement.imageId)
 
             widget.onClick = function()
-                ImbuementItem.selectImbuementWidget(widget, imbuement)
+                itemApi.selectImbuementWidget(widget, imbuement)
             end
 
             maxWidth = math.min(imbuementsList.maxWidth, maxWidth + imbuementsList.incrementwidth)
@@ -292,7 +291,7 @@ function ImbuementItem.selectBaseType(selectedButtonId)
     imbuementsList:setWidth(maxWidth)
 end
 
-function ImbuementItem.onSelectImbuement(widget)
+function itemApi.onSelectImbuement(widget)
     local imbuementId = tonumber(widget:getId())
     local imbuement = self.availableImbuements[imbuementId]
     if not imbuement then
@@ -311,7 +310,7 @@ function ImbuementItem.onSelectImbuement(widget)
     end
 end
 
-function ImbuementItem.selectImbuementWidget(widget, imbuement)
+function itemApi.selectImbuementWidget(widget, imbuement)
     if self.lastselectedwidget then
         self.lastselectedwidget:setBorderWidth(1)
         self.lastselectedwidget:setBorderColorTop("#797979")
@@ -375,8 +374,8 @@ function ImbuementItem.selectImbuementWidget(widget, imbuement)
     local costPanel = self.window:recursiveGetChildById("costPanel")
     if costPanel then
         local cost = imbuement.cost or 0
-        costPanel.cost:setText(comma_value(cost))
-        local balance = getPlayerBalance()
+        costPanel.cost:setText(context.commaValue(cost))
+        local balance = context.getPlayerBalance()
 
         if balance < cost then
             hasRequiredItems = false
@@ -389,10 +388,10 @@ function ImbuementItem.selectImbuementWidget(widget, imbuement)
     if imbueApply then
         imbueApply:setEnabled(hasRequiredItems)
         if not hasRequiredItems then
-           imbueApply:setImageSource("/images/game/imbuing/imbue_empty")
+           imbueApply:setImageSource("/game_imbuing/images/imbue_empty")
            imbueApply:setImageClip("0 0 128 66")
         else
-            imbueApply:setImageSource("/images/game/imbuing/imbue_green")
+            imbueApply:setImageSource("/game_imbuing/images/imbue_green")
         end
 
         imbueApply.onHoverChange = function(widget, hovered, itemName, hasItem)
@@ -412,14 +411,14 @@ function ImbuementItem.selectImbuementWidget(widget, imbuement)
                 self.confirmWindow = nil
             end
 
-            Imbuement.hide()
+            context.imbuement.hide()
 
             local function confirm()
                 g_game.applyImbuement(self.selectedSlot, imbuement.id)
                 self.confirmWindow:destroy()
                 self.confirmWindow = nil
 
-                Imbuement.show()
+                context.imbuement.show()
             end
 
             local function cancelFunc()
@@ -428,13 +427,16 @@ function ImbuementItem.selectImbuementWidget(widget, imbuement)
                     self.confirmWindow = nil
                 end
 
-                Imbuement.show()
+                context.imbuement.show()
             end
 
-            self.confirmWindow = displayGeneralBox(tr('Confirm Imbuing'), tr("You are about to imbue your item with \"%s\". This will consume the required astral sources and %s\ngold coins. Do you wish to proceed?", string.capitalize(imbuement.name), comma_value(imbuement.cost)),
+            self.confirmWindow = displayGeneralBox(tr('Confirm Imbuing'), tr("You are about to imbue your item with \"%s\". This will consume the required astral sources and %s\ngold coins. Do you wish to proceed?", context.capitalize(imbuement.name), context.commaValue(imbuement.cost)),
             { { text=tr('Yes'), callback=confirm },
                 { text=tr('No'), callback=cancelFunc },
             }, confirm, cancelFunc)
         end
     end
+end
+
+  return itemApi
 end

@@ -96,7 +96,7 @@ function init()
     onGameStart = onGameStart,
     onDestinyWheel = WheelOfDestiny.onDestinyWheel,
     --onUnlockGem = GemAtelier.onUnlockGem, --disabled because it's in TODO
-    onResourceBalance = onResourceBalance,
+    onResourcesBalanceChange = onResourceBalance,
   })
   
   if modules.game_mainpanel then
@@ -112,7 +112,7 @@ function terminate()
     onGameStart = onGameStart,
     onDestinyWheel = WheelOfDestiny.onDestinyWheel,
     --onUnlockGem = GemAtelier.onUnlockGem, --disabled because it's in TODO
-    onResourceBalance = onResourceBalance
+    onResourcesBalanceChange = onResourceBalance
   })
 
   if wheelWindow then

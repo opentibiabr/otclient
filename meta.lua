@@ -1200,7 +1200,7 @@ function g_game.imbuementDurations(isOpen) end
 function g_game.imbuementDurations(isOpen) end
 
 ---@param playerId integer
-function g_game.openWheelOfDestiny(playerId) end
+function g_game.openWheel(playerId) end
 
 ---@param wheelPoints table<integer, integer>
 ---@param activeGems table<integer, integer>
