@@ -439,7 +439,7 @@ void ThingType::applyAppearanceFlags(const appearances::AppearanceFlags& flags)
     // proficiency flag
     if (flags.has_proficiency()) {
         if (g_game.getFeature(Otc::GameProficiency)) {
-            m_proficiencyId = flags.proficiency().id();
+            m_proficiencyId = flags.proficiency().proficiency_id();
             m_flags |= ThingFlagAttrProficiency;
         }
     }

@@ -194,10 +194,6 @@ message AppearanceFlags {
 	optional AppearanceFlagTransparencyLevel transparencylevel = 72;
 }
 
-message AppearanceFlagProficiency {
-  optional uint32 id = 1;
-}
-
 message AppearanceFlagUpgradeClassification {
 	optional uint32 upgrade_classification = 1;
 }
