@@ -1,3 +1,99 @@
+InviteNameWindow < NewMainWindow
+  id: inviteCharacterName
+  !text: tr('Invite player to selected chat channel')
+  anchors.horizontalCenter: parent.horizontalCenter
+  size: 360 121
+
+  Panel
+    id: contentPanel
+    anchors.fill: parent
+    margin: 12 12 12 13
+
+    Label
+      id: nameLabel
+      anchors.top: parent.top
+      anchors.left: parent.left
+      !text: tr('Please Enter a character name:')
+
+    TextEdit
+      id: characterName
+      size: 328 16
+      focusable: true
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 7
+
+    HorizontalSeparator
+      id: separator
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 10
+
+    Button
+      id: cancel
+      anchors.bottom: parent.bottom
+      anchors.right: parent.right
+      !text: tr('Cancel')
+      size: 43 20
+
+    Button
+      id: ok
+      anchors.bottom: parent.bottom
+      anchors.right: prev.left
+      !text: tr('Ok')
+      size: 43 20
+      margin-right: 10
+
+ExcludeNameWindow < NewMainWindow
+  id: excludeCharacterName
+  !text: tr('Exclude player from selected chat channel')
+  anchors.horizontalCenter: parent.horizontalCenter
+  size: 360 121
+
+  Panel
+    id: contentPanel
+    anchors.fill: parent
+    margin: 12 12 12 13
+
+    Label
+      id: nameLabel
+      anchors.top: parent.top
+      anchors.left: parent.left
+      !text: tr('Please Enter a character name:')
+
+    TextEdit
+      id: characterName
+      size: 328 16
+      focusable: true
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 7
+
+    HorizontalSeparator
+      id: separator
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 10
+
+    Button
+      id: cancel
+      anchors.bottom: parent.bottom
+      anchors.right: parent.right
+      !text: tr('Cancel')
+      size: 43 20
+
+    Button
+      id: ok
+      anchors.bottom: parent.bottom
+      anchors.right: prev.left
+      !text: tr('Ok')
+      size: 43 20
+      margin-right: 10
+
 ConsoleLabel < UITextEdit
   font: verdana-11px-antialised
   height: 14

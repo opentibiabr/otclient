@@ -311,6 +311,7 @@ end
 function toggleTracker()
     if preyTracker:isVisible() then
         preyTracker:hide()
+        onMiniWindowClose()
     else
         if not preyTracker:getParent() then
             local panel = modules.game_interface.findContentPanelAvailable(preyTracker, preyTracker:getMinimumHeight())
@@ -321,6 +322,7 @@ function toggleTracker()
             panel:addChild(preyTracker)
         end
         preyTracker:show()
+        onMiniWindowOpen()
     end
 end
 
@@ -398,6 +400,9 @@ end
 
 function hide()
     preyWindow:hide()
+    if preyButton then
+        preyButton:setOn(false)
+    end
     if msgWindow then
         msgWindow:destroy()
         msgWindow = nil
@@ -411,6 +416,9 @@ function show()
     preyWindow:show()
     preyWindow:raise()
     preyWindow:focus()
+    if preyButton then
+        preyButton:setOn(true)
+    end
     g_game.preyRequest() -- update preys, it's for tibia 12
 end
 
@@ -422,11 +430,15 @@ function toggle()
 end
 
 function onMiniWindowOpen()
-    -- Called when the MiniWindow is opened
+    if preyTrackerButton then
+        preyTrackerButton:setOn(true)
+    end
 end
 
 function onMiniWindowClose()
-    -- Called when the MiniWindow is closed
+    if preyTrackerButton then
+        preyTrackerButton:setOn(false)
+    end
 end
 
 function onPreyFreeRerolls(slot, timeleft)

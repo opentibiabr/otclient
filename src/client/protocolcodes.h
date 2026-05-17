@@ -44,6 +44,8 @@ namespace Proto
 
     enum GameServerOpcodes : uint8_t
     {
+        GameServerSessionCreatureData = 3, /* Unused */
+        GameServerSessionDumpStart = 4, /* Unused */
         GameServerLoginOrPendingState = 10,
         GameServerGMActions = 11,
         GameServerEnterGame = 15,
@@ -64,6 +66,8 @@ namespace Proto
         GameServerSupplyStash = 41,
         GameServerSpecialContainer = 42,
         GameServerPartyAnalyzer = 43,
+        GameServerTeamFinderTeamLeader = 44, /* Unused */
+        GameServerTeamFinderTeamMember = 45, /* Unused */
 
         // all in game opcodes must be greater than 50
         GameServerFirstGameOpcode = 50,
@@ -90,6 +94,7 @@ namespace Proto
         GameServerImbuementDurations = 93,
         GameServerPassiveCooldown = 94,
         GameServerOpenWheelWindow = 95, // 0x5F
+        GameServerUndiscoveredItemList = 96, /* Unused */
         GameServerBosstiaryData = 97,
         GameServerBosstiarySlots = 98,
         GameServerSendClientCheck = 99,
@@ -109,6 +114,7 @@ namespace Proto
         GameServerChangeInContainer = 113,
         GameServerDeleteInContainer = 114,
         GameServerBosstiaryInfo = 115,
+        GameServerFriendSystemData = 116, /* Unused */
         GameServerTakeScreenshot = 117,
         GameServerCyclopediaItemDetail = 118,
         GameServerInspectionState = 119,
@@ -120,6 +126,8 @@ namespace Proto
         GameServerOwnTrade = 125,
         GameServerCounterTrade = 126,
         GameServerCloseTrade = 127,
+        GameServerCharacterTradeConfiguration = 128, /* Unused */
+        GameServerReportTextUI = 129, /* Unused */
         GameServerAmbient = 130,
         GameServerGraphicalEffect = 131,
         GameServerTextEffect = 132,
@@ -134,15 +142,17 @@ namespace Proto
         GameServerCreatureLight = 141,
         GameServerCreatureOutfit = 142,
         GameServerCreatureSpeed = 143,
-        GameServerCreatureSkull = 144,
+        GameServerCreatureSkull = 144, // GameServerExaltationForgeExit = 144
         GameServerCreatureParty = 145,
         GameServerCreatureUnpass = 146,
         GameServerCreatureMarks = 147,
-        GameServerPlayerHelpers = 148,
+        GameServerPlayerHelpers = 148, // GameServerDepotSearchResults = 148
         GameServerCreatureType = 149,
         GameServerEditText = 150,
         GameServerEditList = 151,
         GameServerSendGameNews = 152,
+        GameServerDepotSearchDetailList = 153, /* Unused */
+        GameServerCloseDepotSearch = 154,
         GameServerSendBlessDialog = 155,
         GameServerBlessings = 156,
         GameServerPreset = 157,
@@ -162,10 +172,10 @@ namespace Proto
         GameServerChannels = 171,
         GameServerOpenChannel = 172,
         GameServerOpenPrivateChannel = 173,
-        GameServerRuleViolationChannel = 174,
-        GameServerRuleViolationRemove = 175,
+        GameServerRuleViolationChannel = 174, // GameServerEditGuildMessage = 174
+        GameServerRuleViolationRemove = 175, // GameServerExperienceTracker = 175
         GameServerRuleViolationCancel = 176,
-        GameServerRuleViolationLock = 177,
+        GameServerRuleViolationLock = 177, // GameServerHighscores = 177
         GameServerOpenOwnChannel = 178,
         GameServerCloseChannel = 179,
         GameServerTextMessage = 180,
@@ -182,11 +192,14 @@ namespace Proto
         GameServerLootContainers = 192,
         GameServerMonkData = 193,
         GameServerCyclopediaHouseAuctionMessage = 195,
-        GameServerWeaponProficiencyInfo = 196,
+        GameServerWeaponProficiencyInfo = 196, // TournamentInformation = 196
+        GameServerTournamentLeaderboard = 197, /* Unused */
         GameServerCyclopediaHousesInfo = 198,
         GameServerCyclopediaHouseList = 199,
         GameServerChooseOutfit = 200,
+        GameServerExivaSuppressed = 201, /* Unused */
         GameServerExivaRestrictions = 202,
+        GameServerTransactionDetails = 203, /* Unused */
         GameServerSendUpdateImpactTracker = 204,
         GameServerSendItemsPrice = 205,
         GameServerSendUpdateSupplyTracker = 206,
@@ -202,6 +215,7 @@ namespace Proto
         GameServerBestiaryCharmsData = 216,
         GameServerBestiaryEntryChanged = 217,
         GameServerCyclopediaCharacterInfoData = 218,
+        GameServerHirelingNameChange = 219, /* Unused */
         GameServerTutorialHint = 220,
         GameServerAutomapFlag = 221,
         GameServerSendDailyRewardCollectionState = 222,
@@ -209,6 +223,7 @@ namespace Proto
         GameServerStoreError = 224,
         GameServerRequestPurchaseData = 225,
         GameServerSendOpenRewardWall = 226,
+        GameServerSendCloseRewardWall = 227, /* Unused */
         GameServerSendDailyReward = 228,
         GameServerSendRewardHistory = 229,
         GameServerSendPreyFreeRerolls = 230, // GameServerSendBosstiaryEntryChanged = 230,
@@ -228,7 +243,7 @@ namespace Proto
         GameServerItemInfo = 244,
         GameServerPlayerInventory = 245,
         GameServerMarketEnter = 246,
-        GameServerMarketLeave = 247,
+        GameServerMarketLeave = 247, /* Unused */
         GameServerMarketDetail = 248,
         GameServerMarketBrowse = 249,
         GameServerModalDialog = 250,
@@ -240,7 +255,7 @@ namespace Proto
 
     enum ClientOpcodes : uint8_t
     {
-        ClientEnterAccount = 1,
+        ClientEnterAccount = 1, /* Unused */
         ClientPendingGame = 10,
         ClientEnterGame = 15,
         ClientLeaveGame = 20,
@@ -324,7 +339,7 @@ namespace Proto
         ClientPassLeadership = 166,
         ClientLeaveParty = 167,
         ClientShareExperience = 168,
-        ClientDisbandParty = 169,
+        ClientDisbandParty = 169, /* Unused */
         ClientOpenOwnChannel = 170,
         ClientInviteToOwnChannel = 171,
         ClientExcludeFromOwnChannel = 172,
@@ -337,7 +352,7 @@ namespace Proto
         ClientCancelAttackAndFollow = 190,
         ClientForgeEnter = 191,
         ClientForgeBrowseHistory = 192,
-        ClientUpdateTile = 201,
+        ClientUpdateTile = 201, /* Unused */
         ClientRefreshContainer = 202, // > 11.00 ClientExivaRestrictions 
         ClientBrowseField = 203,
         ClientSeekInContainer = 204,
@@ -353,7 +368,7 @@ namespace Proto
         ClientCloseImbuingWindow = 215,
         ClientOpenRewardWall = 216,
         ClientOpenRewardHistory = 217,
-        sendGetRewardDaily = 218,
+        ClientGetRewardDaily = 218,
         ClientAddVip = 220,
         ClientRemoveVip = 221,
         ClientEditVip = 222,

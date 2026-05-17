@@ -61,7 +61,8 @@ function quickLootController:onGameStart()
     QuickLoot.lastSelectBag = nil
     QuickLoot.ErrorWindow = nil
 
-    quickLootController.ui.information.vipPanel.premium:setOn(not g_game.getLocalPlayer():isPremium())
+    local player = g_game.getLocalPlayer()
+    quickLootController.ui.information.vipPanel.premium:setOn(not (player and player:isPremium()))
     QuickLoot.load()
 
     g_game.requestQuickLootBlackWhiteList(getFilter(QuickLoot.data.filter),
@@ -160,8 +161,12 @@ function QuickLoot.Define()
     end
 
     function QuickLoot.load()
+        local player = g_game.getLocalPlayer()
+        if not player then
+            return
+        end
         local file = string.format("/settings/%s_containers.json",
-            g_game.getLocalPlayer():getName():lower():gsub("%s+", "_"))
+            player:getName():lower():gsub("%s+", "_"))
 
         if g_resources.fileExists(file) then
             local status, result = pcall(function()
