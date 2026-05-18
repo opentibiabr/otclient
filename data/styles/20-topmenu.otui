@@ -67,6 +67,7 @@ MainToggleButton < UIButton
     phantom: true
     visible: false
     image-source: /images/ui/bright-x20
+
   UIWidget
     id: highlight
     size: 22 22
