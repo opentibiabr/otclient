@@ -291,25 +291,27 @@ function onGameEnd()
 end
 
 -- Called when server sends proficiency info (opcode 0xC4)
-function onWeaponProficiency(itemId, experience, perks, marketCategory)
-    -- Ensure perks is a table
-    if type(perks) ~= "table" then
-        perks = {}
+function onWeaponProficiency(itemId, experience, levels, perkPositions, marketCategory)
+    -- Ensure parallel arrays are tables
+    if type(levels) ~= "table" then
+        levels = {}
+    end
+    if type(perkPositions) ~= "table" then
+        perkPositions = {}
     end
     
     -- IMPORTANT: Server sends perks in 0-indexed format, convert to 1-indexed for Lua
     -- Also filter out invalid perks (values >= 200 are clearly invalid, likely from uninitialized data)
     local convertedPerks = {}
-    for _, perk in ipairs(perks) do
-        if type(perk) == "table" and #perk >= 2 then
-            local level = perk[1]
-            local perkPos = perk[2]
-            -- Filter out invalid values (255 becomes 256 after +1, which is invalid)
-            -- Valid levels are 0-6 (0-indexed), valid perk positions are 0-2 (0-indexed)
-            if level >= 0 and level <= 10 and perkPos >= 0 and perkPos <= 10 then
-                -- Convert from 0-indexed (server) to 1-indexed (Lua)
-                table.insert(convertedPerks, {level + 1, perkPos + 1})
-            end
+    local perkCount = math.min(#levels, #perkPositions)
+    for i = 1, perkCount do
+        local level = levels[i]
+        local perkPos = perkPositions[i]
+        -- Filter out invalid values (255 becomes 256 after +1, which is invalid)
+        -- Valid levels are 0-6 (0-indexed), valid perk positions are 0-2 (0-indexed)
+        if level >= 0 and level <= 10 and perkPos >= 0 and perkPos <= 10 then
+            -- Convert from 0-indexed (server) to 1-indexed (Lua)
+            table.insert(convertedPerks, {level + 1, perkPos + 1})
         end
     end
     

@@ -187,7 +187,7 @@ public:
     // Weapon Proficiency
     void parseWeaponProficiencyExperience(const InputMessagePtr& msg);
     void sendWeaponProficiencyAction(uint8_t actionType, uint16_t itemId = 0);
-    void sendWeaponProficiencyApply(uint16_t itemId, const std::vector<std::pair<uint8_t, uint8_t>>& perks);
+    void sendWeaponProficiencyApply(uint16_t itemId, const std::vector<uint8_t>& levels, const std::vector<uint8_t>& perkPositions);
     
     // otclient only
     void sendChangeMapAwareRange(uint8_t xrange, uint8_t yrange);
