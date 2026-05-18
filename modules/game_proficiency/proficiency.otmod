@@ -1,8 +1,6 @@
 Module
   name: game_proficiency
   description: Weapon Proficiency System
-  author: OTClient Team
-  website: https://github.com/mehah/otclient
   sandboxed: true
   scripts: [ const, proficiency_data, proficiency ]
   autoload: true

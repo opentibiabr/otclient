@@ -380,4 +380,3 @@ UnknownCategories = {
     [WEAPON_WANDROD or 4] = MarketCategory.WandsRods,
     [WEAPON_CROSSBOW or 9]= MarketCategory.DistanceWeapons
 }
-
