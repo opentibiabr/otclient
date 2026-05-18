@@ -6512,15 +6512,11 @@ void ProtocolGame::parseWeaponProficiencyInfo(const InputMessagePtr& msg)
     const uint16_t itemId = msg->getU16();
     const uint32_t experience = msg->getU32();
     const uint8_t perksCount = msg->getU8();
-    std::vector<uint8_t> levels;
-    std::vector<uint8_t> perkPositions;
-    levels.reserve(perksCount);
-    perkPositions.reserve(perksCount);
+    std::vector<std::pair<uint8_t, uint8_t>> perks;
     for (int i = 0; i < perksCount; ++i) {
         const uint8_t level = msg->getU8();
         const uint8_t perkPosition = msg->getU8();
-        levels.emplace_back(level);
-        perkPositions.emplace_back(perkPosition);
+        perks.emplace_back(level, perkPosition);
     }
     constexpr uint16_t MarketCategoryWeaponsAll = 32;
     uint16_t marketCategory = MarketCategoryWeaponsAll;
@@ -6534,7 +6530,7 @@ void ProtocolGame::parseWeaponProficiencyInfo(const InputMessagePtr& msg)
         }
     }
     
-    g_lua.callGlobalField("g_game", "onWeaponProficiency", itemId, experience, levels, perkPositions, marketCategory);
+    g_lua.callGlobalField("g_game", "onWeaponProficiency", itemId, experience, perks, marketCategory);
 }
 
 // 0x5F - parse destiny wheel window

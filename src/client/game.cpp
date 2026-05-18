@@ -1904,12 +1904,26 @@ void Game::sendWeaponProficiencyAction(const uint8_t actionType, const uint16_t 
     m_protocolGame->sendWeaponProficiencyAction(actionType, itemId);
 }
 
-void Game::sendWeaponProficiencyApply(const uint16_t itemId, const std::vector<uint8_t>& levels, const std::vector<uint8_t>& perkPositions)
+void Game::sendWeaponProficiencyApply(const uint16_t itemId, const std::vector<std::pair<uint8_t, uint8_t>>& perks)
 {
     if (!canPerformGameAction())
         return;
 
-    m_protocolGame->sendWeaponProficiencyApply(itemId, levels, perkPositions);
+    m_protocolGame->sendWeaponProficiencyApply(itemId, perks);
+}
+
+void Game::sendWeaponProficiencyApplyLua(const uint16_t itemId, const std::vector<uint8_t>& levels, const std::vector<uint8_t>& perkPositions)
+{
+    if (!canPerformGameAction())
+        return;
+
+    std::vector<std::pair<uint8_t, uint8_t>> perks;
+    size_t count = std::min(levels.size(), perkPositions.size());
+    for (size_t i = 0; i < count; ++i) {
+        perks.emplace_back(levels[i], perkPositions[i]);
+    }
+    
+    m_protocolGame->sendWeaponProficiencyApply(itemId, perks);
 }
 
 void Game::openWheelOfDestiny(uint32_t playerId)
