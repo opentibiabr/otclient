@@ -52,67 +52,21 @@ local WEAPON_KEYWORDS = {
 
 local DEFAULT_PROFICIENCIES_FILE = "/json/proficiencies.json"
 
-local function getCurrentThingsVersion()
-    if not g_game or not g_game.getClientVersion then
-        return nil
-    end
-
-    local version = g_game.getClientVersion()
-    if not version or version <= 0 then
-        return nil
-    end
-
-    return tostring(version)
-end
-
-local function getProficienciesFileFromCatalog(basePath)
-    local catalogFile = basePath .. "/catalog-content.json"
-    if not g_resources.fileExists(catalogFile) then
-        return nil
-    end
-
-    local status, catalog = pcall(function()
-        return json.decode(g_resources.readFileContents(catalogFile))
-    end)
-
-    if not status or type(catalog) ~= "table" then
-        return nil
-    end
-
-    for _, entry in pairs(catalog) do
-        if type(entry) == "table" then
-            local entryType = entry.type or entry.Type
-            local entryFile = entry.file or entry.File
-            if entryType == "proficiencies" and entryFile then
-                local file = string.sub(entryFile, 1, 1) == "/" and entryFile or basePath .. "/" .. entryFile
-                if g_resources.fileExists(file) then
-                    return file
-                end
-                return nil
-            end
-        end
-    end
-
-    return nil
-end
-
 local function resolveProficienciesFile()
-    local version = getCurrentThingsVersion()
-    if version then
-        local basePaths = {
-            "/things/" .. version,
-            "/data/things/" .. version
-        }
+    if not g_game.getFeature(GameProficiency) then
+        return nil
+    end
 
-        for _, basePath in ipairs(basePaths) do
-            local file = getProficienciesFileFromCatalog(basePath)
-            if file then
-                return file
-            end
+    if g_things and g_things.getProficienciesFile then
+        local file = g_things.getProficienciesFile()
+        if file and file ~= "" then
+            return file
         end
+
     end
 
     if g_resources.fileExists(DEFAULT_PROFICIENCIES_FILE) then
+        g_logger.warning("[game_proficiency] The proficiencies-<hash>.json file was not found in the assets folder. A generic JSON file will be used: " .. DEFAULT_PROFICIENCIES_FILE)
         return DEFAULT_PROFICIENCIES_FILE
     end
 
@@ -439,6 +393,12 @@ function ProficiencyData:getDefaultProficiencyId(weaponType)
         [7] = 13,  -- WEAPON_BOW (alt) -> Proficiency ID 13 (Bow)
         [8] = 13,  -- WEAPON_THROW -> Proficiency ID 13 (Bow)
         [9] = 13,  -- WEAPON_CROSSBOW -> Proficiency ID 13 (Bow - same base perks)
+        [17] = 8,  -- MarketCategory.Axes
+        [18] = 9,  -- MarketCategory.Clubs
+        [19] = 13, -- MarketCategory.DistanceWeapons
+        [20] = 6,  -- MarketCategory.Swords
+        [21] = 15, -- MarketCategory.WandsRods
+        [27] = 14, -- MarketCategory.FistWeapons
     }
     return defaultMap[weaponType] or 6
 end
@@ -646,6 +606,11 @@ function ProficiencyData:getImageSourceAndClip(perkData)
         local skillData = SkillTypes[perkData.SkillId]
         return imagePath, skillData and skillData.imageOffset or "0 0"
     end
+
+    if perkType == PERK_PIERCE then
+        local pierceData = PierceElementMask[perkData.DamageType]
+        return imagePath, pierceData and pierceData.imageOffset or "0 0"
+    end
     
     return imagePath, data.offset or "0 0"
 end
@@ -666,9 +631,10 @@ function ProficiencyData:getBonusNameAndTooltip(perkData)
         local augmentData = AugmentPerkIcons[perkData.AugmentType]
         
         if spellData and augmentData then
-            value = self:formatFloatValue(perkData.Value, true, perkType)
             if perkData.AugmentType == AUGMENT_COOLDOWN then
-                value = value / 100
+                value = (perkData.Value or 0) / 1000
+            else
+                value = self:formatFloatValue(perkData.Value, true, perkType)
             end
             
             local description = string.format(augmentData.desc, value, spellData.name)
@@ -702,6 +668,13 @@ function ProficiencyData:getBonusNameAndTooltip(perkData)
     if FlatDamageBonus_t[perkType] then
         local skillData = SkillTypes[perkData.SkillId]
         local description = string.format(data.desc, value, skillData and skillData.name or "Unknown")
+        return bonusName, description
+    end
+
+    if perkType == PERK_PIERCE then
+        local pierceData = PierceElementMask[perkData.DamageType]
+        local elementName = pierceData and pierceData.name or "Unknown"
+        local description = string.format(data.desc, value, elementName)
         return bonusName, description
     end
     
@@ -810,6 +783,14 @@ end
 function ProficiencyData:getWeaponProfessionType(displayItem, thingType)
     if not displayItem and not thingType then
         return "regular"
+    end
+
+    local proficiencyId = self:getProficiencyIdForItem(displayItem, thingType)
+    if proficiencyId and proficiencyId > 0 then
+        local profEntry = self:getContentById(proficiencyId)
+        if profEntry and profEntry.Category then
+            return profEntry.Category
+        end
     end
     
     -- PRIORITY: Use thingType for market data (more reliable)

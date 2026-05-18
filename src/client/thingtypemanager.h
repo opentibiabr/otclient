@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include <nlohmann/json.hpp>
+
 #include "staticdata.h"
 
 using RaceList = std::vector<RaceType>;
@@ -37,6 +39,7 @@ public:
     bool loadOtml(std::string file);
     bool loadAppearances(const std::string& file);
     bool loadStaticData(const std::string& file);
+    bool loadProficiencies(const std::string& file);
 
 #ifdef FRAMEWORK_EDITOR
     void parseItemType(uint16_t id, pugi::xml_node node);
@@ -61,6 +64,9 @@ public:
 #endif
 
     ThingTypeList findThingTypeByAttr(ThingAttr attr, ThingCategory category);
+    ThingTypeList getProficiencyThings();
+    std::string getCyclopediaItemName(uint16_t id);
+    std::string getProficienciesFile();
 
     const RaceType& getRaceData(uint32_t raceId);
     RaceList getRacesByName(const std::string& searchString);
@@ -80,6 +86,9 @@ public:
     bool isValidDatId(const uint16_t id, const ThingCategory category) const { return category < ThingLastCategory && id >= 1 && id < m_thingTypes[category].size(); }
 
 private:
+    const nlohmann::json& getCatalogContent(const std::string& file);
+    void clearCatalogContent();
+
     ThingTypeList m_thingTypes[ThingLastCategory];
     RaceList m_monsterRaces;
 
@@ -90,6 +99,10 @@ private:
     uint32_t m_datSignature{ 0 };
     uint16_t m_contentRevision{ 0 };
     std::string m_assetIdentifier;
+    std::string m_proficienciesFile;
+    std::string m_catalogContentBasePath;
+    std::string m_catalogContentPath;
+    nlohmann::json m_catalogContent;
 
 #ifdef FRAMEWORK_EDITOR
     ItemTypePtr m_nullItemType;

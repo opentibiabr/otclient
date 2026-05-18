@@ -5,7 +5,7 @@
 if not WeaponProficiency then
     WeaponProficiency = {}
     WeaponProficiency.__index = WeaponProficiency
-    
+
     WeaponProficiency.window = nil
     WeaponProficiency.displayItemPanel = nil
     WeaponProficiency.perkPanel = nil
@@ -14,6 +14,7 @@ if not WeaponProficiency then
     WeaponProficiency.optionFilter = nil
     WeaponProficiency.itemListScroll = nil
     WeaponProficiency.vocationWarning = nil
+    WeaponProficiency.warningWindow = nil
     WeaponProficiency.button = nil
     
     WeaponProficiency.itemList = {}
@@ -77,12 +78,131 @@ WeaponProficiency.listMinWidgets = WeaponProficiency.listMinWidgets or 0
 WeaponProficiency.listMaxWidgets = WeaponProficiency.listMaxWidgets or 0
 WeaponProficiency.offset = WeaponProficiency.offset or 0
 
+local function getNumericCall(obj, methodName)
+    if not obj or not obj[methodName] then
+        return 0
+    end
+
+    local ok, value = pcall(function()
+        return obj[methodName](obj)
+    end)
+    if not ok then
+        return 0
+    end
+    return tonumber(value) or 0
+end
+
+local function getLeftSlotItem()
+    local player = g_game.getLocalPlayer()
+    return player and player:getInventoryItem(InventorySlotLeft) or nil
+end
+
+local function getPlayerWheelVocation()
+    local player = g_game.getLocalPlayer()
+    if not player then
+        return 0
+    end
+
+    if translateWheelVocation then
+        return translateWheelVocation(player:getVocation())
+    end
+
+    local vocation = player:getVocation()
+    return vocation > 10 and vocation - 10 or vocation
+end
+
+local function hasBit(mask, bitMask)
+    if Bit and Bit.hasBit then
+        return Bit.hasBit(mask, bitMask)
+    end
+    return math.floor(mask / bitMask) % 2 == 1
+end
+
+local function vocationBit(vocation)
+    if vocation <= 0 then
+        return 0
+    end
+    if Bit and Bit.bit then
+        return Bit.bit(vocation)
+    end
+    return 2 ^ (vocation - 1)
+end
+
+local function vocationRestrictionMatches(restrictVocation, playerVocation)
+    if not restrictVocation or restrictVocation == 0 then
+        return true
+    end
+
+    if type(restrictVocation) == "table" then
+        for _, vocationId in pairs(restrictVocation) do
+            local normalized = vocationId > 10 and vocationId - 10 or vocationId
+            if normalized == playerVocation then
+                return true
+            end
+        end
+        return false
+    end
+
+    local bitMask = vocationBit(playerVocation)
+    return bitMask > 0 and hasBit(restrictVocation, bitMask)
+end
+
+local function categoryMatchesPlayerVocation(category)
+    local requiredMask = WeaponCategoryVocation and WeaponCategoryVocation[category] or 0
+    if requiredMask == 0 then
+        return true
+    end
+
+    local bitMask = vocationBit(getPlayerWheelVocation())
+    return bitMask > 0 and hasBit(requiredMask, bitMask)
+end
+
+local function getVocationWarningDecision(marketData, thingType)
+    local player = g_game.getLocalPlayer()
+    local rawVocation = player and player:getVocation() or 0
+    local playerLevel = player and player:getLevel() or 0
+    local playerVocation = getPlayerWheelVocation()
+    local playerBit = vocationBit(playerVocation)
+    local category = marketData and marketData.category or nil
+    local requiredMask = WeaponCategoryVocation and WeaponCategoryVocation[category] or 0
+    local restrictVocation = marketData and marketData.restrictVocation or 0
+    local minimumLevel = getNumericCall(thingType, "getMinimumLevel")
+    if minimumLevel == 0 and marketData and marketData.requiredLevel then
+        minimumLevel = tonumber(marketData.requiredLevel) or 0
+    end
+
+    local categoryMatch = categoryMatchesPlayerVocation(category)
+    local hasRestrictVocation = restrictVocation and restrictVocation ~= 0
+    local restrictMatch = vocationRestrictionMatches(restrictVocation, playerVocation)
+    local levelMatch = minimumLevel == 0 or playerLevel >= minimumLevel
+    local vocationMatch = hasRestrictVocation and restrictMatch or categoryMatch
+
+    local showWarning = not vocationMatch or not levelMatch
+
+    return {
+        rawVocation = rawVocation,
+        playerLevel = playerLevel,
+        playerVocation = playerVocation,
+        playerBit = playerBit,
+        category = category,
+        requiredMask = requiredMask,
+        categoryMatch = categoryMatch,
+        restrictVocation = restrictVocation,
+        hasRestrictVocation = hasRestrictVocation,
+        restrictMatch = restrictMatch,
+        vocationMatch = vocationMatch,
+        minimumLevel = minimumLevel,
+        levelMatch = levelMatch,
+        showWarning = showWarning
+    }
+end
+
 function init()
     -- Load proficiency JSON data
-    ProficiencyData:loadProficiencyJson()
-
-    -- Create item cache from market data
-    WeaponProficiency:createItemCache()
+    if ProficiencyData:loadProficiencyJson() then
+        -- Create item cache from market data
+        WeaponProficiency:createItemCache()
+    end
 
     -- Connect to game events
     connect(g_game, {
@@ -105,6 +225,11 @@ function terminate()
         WeaponProficiency.window:destroy()
         WeaponProficiency.window = nil
     end
+
+    if WeaponProficiency.warningWindow then
+        WeaponProficiency.warningWindow:destroy()
+        WeaponProficiency.warningWindow = nil
+    end
 end
 
 function onGameStart()
@@ -123,7 +248,7 @@ function onGameStart()
     
     -- Add button to main panel (only for clients that support proficiency system)
     -- Use addToggleButton for notification support (20x40 vertical image)
-    if modules.game_mainpanel and g_game.getFeature(GameWeaponProficiency) then
+    if modules.game_mainpanel and g_game.getFeature(GameProficiency) then
         WeaponProficiency.button = modules.game_mainpanel.addToggleButton(
             'ProficiencyButton', 
             tr('Open Weapon Proficiency'),
@@ -535,15 +660,7 @@ end
 
 function hide()
     if not WeaponProficiency.window then return end
-    
-    -- Check if there are pending selections
-    local hasPending = WeaponProficiency.pendingSelections and next(WeaponProficiency.pendingSelections) ~= nil
-    
-    if hasPending then
-        -- For now, just apply and close (we can add dialog later)
-        WeaponProficiency:applyPendingSelections()
-    end
-    
+
     -- Close window
     WeaponProficiency.window:hide()
     
@@ -566,9 +683,49 @@ function hide()
     WeaponProficiency.selectedMarketItem = nil
 end
 
+function WeaponProficiency:onCloseWindow()
+    local hasPending = self.pendingSelections and next(self.pendingSelections) ~= nil
+    if not hasPending then
+        hide()
+        return true
+    end
+
+    if self.warningWindow then
+        self.warningWindow:destroy()
+        self.warningWindow = nil
+    end
+
+    local yesButton = function()
+        if self.warningWindow then
+            self.warningWindow:destroy()
+            self.warningWindow = nil
+        end
+        self:applyPendingSelections()
+        hide()
+    end
+
+    local noButton = function()
+        if self.warningWindow then
+            self.warningWindow:destroy()
+            self.warningWindow = nil
+        end
+        self.pendingSelections = {}
+        self:updateApplyButtonState()
+        hide()
+    end
+
+    self.warningWindow = displayGeneralBox('Save?',
+        "You did not save the changes you have made to your perks.\n\nWould you like to save your perks?",
+        {
+            { text = tr('Yes'), callback = yesButton },
+            { text = tr('No'), callback = noButton }
+        }, yesButton, noButton)
+    return false
+end
+
 function toggle()
     if WeaponProficiency.window and WeaponProficiency.window:isVisible() then
-        hide()
+        WeaponProficiency:onCloseWindow()
     else
         requestOpenWindow()
     end
@@ -576,19 +733,19 @@ end
 
 -- Request to open proficiency window with optional item redirect
 function requestOpenWindow(redirectItem)
+    WeaponProficiency:ensureItemCache()
+
     local category = "Weapons: All"
     local targetItemId = nil
+    local targetMarketItem = nil
     
     -- Check left hand slot for equipped weapon
-    local player = g_game.getLocalPlayer()
-    if player then
-        local leftSlotItem = player:getInventoryItem(InventorySlotLeft)
-        if leftSlotItem then
-            local weaponType = leftSlotItem.getWeaponType and leftSlotItem:getWeaponType() or 0
-            if weaponType > 0 then
-                category = getWeaponCategoryString(weaponType)
-                targetItemId = leftSlotItem:getId()
-            end
+    local leftSlotItem = getLeftSlotItem()
+    if leftSlotItem then
+        local weaponType = leftSlotItem.getWeaponType and leftSlotItem:getWeaponType() or 0
+        if weaponType > 0 then
+            category = getWeaponCategoryString(weaponType)
+            targetItemId = leftSlotItem:getId()
         end
     end
     
@@ -599,6 +756,16 @@ function requestOpenWindow(redirectItem)
             targetItemId = redirectItem:getId()
         end
     end
+
+    if not targetItemId and WeaponProficiency.firstItemRequested then
+        targetItemId = WeaponProficiency.firstItemRequested:getId()
+        local weaponType = WeaponProficiency.firstItemRequested.getWeaponType and WeaponProficiency.firstItemRequested:getWeaponType() or 0
+        category = getWeaponCategoryString(weaponType)
+    end
+
+    if targetItemId then
+        targetMarketItem = WeaponProficiency:findMarketItem(targetItemId)
+    end
     
     -- Request all proficiencies from server
     if not WeaponProficiency.allProficiencyRequested then
@@ -608,10 +775,28 @@ function requestOpenWindow(redirectItem)
     end
     
     show()
+
+    if WeaponProficiency.optionFilter and category then
+        WeaponProficiency.optionFilter:setCurrentOption(category, true)
+        WeaponProficiency:refreshItemList()
+    end
+
+    if targetMarketItem then
+        scheduleEvent(function()
+            if WeaponProficiency.window and WeaponProficiency.window:isVisible() then
+                local displayId = targetMarketItem.displayId or targetMarketItem.originalId or targetItemId
+                WeaponProficiency:selectItem(displayId, targetMarketItem)
+            end
+        end, 50)
+    end
 end
 
 -- Helper function to get weapon category string
 function getWeaponCategoryString(weaponType)
+    if WeaponCategoryToString[weaponType] then
+        return WeaponCategoryToString[weaponType]
+    end
+
     local categoryMap = {
         [1] = "Weapons: Clubs",     -- WEAPON_CLUB
         [2] = "Weapons: Axes",      -- WEAPON_AXE
@@ -687,6 +872,12 @@ function WeaponProficiency:reset()
     self.cacheList = {}
     self.allProficiencyRequested = false
     self.itemList = {}
+    self._itemCacheReady = false
+end
+
+function WeaponProficiency:ensureItemCache()
+    if self._itemCacheReady then return end
+    self:createItemCache()
 end
 
 -- Create item cache from proficiency things
@@ -711,46 +902,56 @@ function WeaponProficiency:createItemCache()
         [MarketCategory.WandsRods] = true,
         [MarketCategory.FistWeapons] = true,
     }
-    
-    -- Get all item types and filter by weapon categories
-    local allItems = g_things.getThingTypes(ThingCategoryItem)
-    
-    for _, itemType in pairs(allItems) do
+
+    local itemTypes = {}
+    local useProficiencyThings = g_things.getProficiencyThings ~= nil
+    if useProficiencyThings then
+        itemTypes = g_things.getProficiencyThings()
+    else
+        itemTypes = g_things.getThingTypes(ThingCategoryItem)
+    end
+
+    for _, itemType in pairs(itemTypes) do
         local marketData = itemType.getMarketData and itemType:getMarketData() or {}
-        
-        -- Check if item has market data and is a weapon category
-        if marketData and marketData.name and marketData.name ~= "" then
-            local category = marketData.category
-            
-            -- Only process weapon categories
-            if weaponCategories[category] then
-                local originalId = itemType:getId()
-                local item = Item.create(originalId)
-                
-                if not self.itemList[category] then
-                    category = getUnknownMarketCategory(itemType)
-                end
-                
-                -- Use showAs for display, but fall back to originalId if showAs is 0 or nil
-                local showAs = marketData.showAs
-                if not showAs or showAs == 0 then
-                    showAs = originalId
-                end
-                item:setId(showAs)
-                
-                -- Store both originalId (server uses this for cache) and showAs (display ID)
-                local marketItem = { 
-                    displayItem = item, 
-                    thingType = itemType, 
-                    marketData = marketData,
-                    originalId = originalId,  -- The server uses this ID for proficiency data
-                    displayId = showAs        -- The display/showAs ID (never 0)
-                }
-                if self.itemList[category] then
-                    table.insert(self.itemList[category], marketItem)
-                end
-                table.insert(self.itemList[MarketCategory.WeaponsAll], marketItem)
+
+        local category = marketData and marketData.category or nil
+        if not weaponCategories[category] then
+            category = getUnknownMarketCategory(itemType)
+        end
+
+        if self.itemList[category] and (useProficiencyThings or weaponCategories[category]) then
+            local originalId = itemType:getId()
+            local showAs = marketData and marketData.showAs or nil
+            if not showAs or showAs == 0 then
+                showAs = originalId
             end
+
+            local name = marketData and marketData.name or nil
+            if (not name or name == "") and g_things.getCyclopediaItemName then
+                name = g_things.getCyclopediaItemName(originalId)
+            end
+            if not name or name == "" then
+                name = itemType.getName and itemType:getName() or tostring(originalId)
+            end
+
+            local item = Item.create(originalId)
+            item:setId(showAs)
+
+            marketData = marketData or {}
+            marketData.category = category
+            marketData.showAs = showAs
+            marketData.name = name
+
+            local marketItem = {
+                displayItem = item,
+                thingType = itemType,
+                marketData = marketData,
+                originalId = originalId,
+                displayId = showAs
+            }
+
+            table.insert(self.itemList[category], marketItem)
+            table.insert(self.itemList[MarketCategory.WeaponsAll], marketItem)
         end
     end
     
@@ -764,7 +965,12 @@ function WeaponProficiency:createItemCache()
     for _, v in pairs(self.itemList) do
         table.sort(v, sortByName)
     end
-    
+
+    if not self.firstItemRequested and self.itemList[MarketCategory.WeaponsAll][1] then
+        self.firstItemRequested = self.itemList[MarketCategory.WeaponsAll][1].displayItem
+    end
+
+    self._itemCacheReady = true
 end
 
 -- Sort weapons by experience (highest first), then by name
@@ -775,20 +981,8 @@ function sortWeaponProficiency(marketCategory)
     if not itemList then return end
     
     table.sort(itemList, function(a, b)
-        -- Use showAs (marketData.showAs) for cache lookup - explicitly check for nil to handle showAs==0
-        local idA
-        if a.marketData and a.marketData.showAs ~= nil then
-            idA = a.marketData.showAs
-        else
-            idA = a.displayId or a.originalId
-        end
-        
-        local idB
-        if b.marketData and b.marketData.showAs ~= nil then
-            idB = b.marketData.showAs
-        else
-            idB = b.displayId or b.originalId
-        end
+        local idA = a.originalId or a.displayId or (a.marketData and a.marketData.showAs)
+        local idB = b.originalId or b.displayId or (b.marketData and b.marketData.showAs)
         
         local expA = WeaponProficiency.cacheList[idA] and WeaponProficiency.cacheList[idA].exp or 0
         local expB = WeaponProficiency.cacheList[idB] and WeaponProficiency.cacheList[idB].exp or 0
@@ -800,6 +994,19 @@ function sortWeaponProficiency(marketCategory)
         end
         return expA > expB
     end)
+end
+
+function WeaponProficiency:findMarketItem(itemId)
+    local allItems = self.itemList[MarketCategory.WeaponsAll] or {}
+    for _, marketItem in ipairs(allItems) do
+        local originalId = marketItem.originalId
+        local displayId = marketItem.displayId
+        local showAs = marketItem.marketData and marketItem.marketData.showAs
+        if itemId == originalId or itemId == displayId or itemId == showAs then
+            return marketItem
+        end
+    end
+    return nil
 end
 
 -- Check if mastery is achieved for an item
@@ -824,6 +1031,9 @@ end
 -- Get unknown market category for item
 function getUnknownMarketCategory(itemType)
     local weaponType = itemType.getWeaponType and itemType:getWeaponType() or 0
+    if WeaponCategoryToString[weaponType] then
+        return weaponType
+    end
     return UnknownCategories[weaponType] or MarketCategory.WeaponsAll
 end
 
@@ -894,6 +1104,17 @@ function WeaponProficiency:toggleFilterOption(button)
     if not button then return end
     
     local buttonId = button:getId()
+
+    if buttonId == "oneButton" and self.filters["twoButton"] then
+        self.filters["twoButton"] = false
+        local twoButton = self.window and self.window:recursiveGetChildById("twoButton")
+        if twoButton then twoButton:setOn(false) end
+    elseif buttonId == "twoButton" and self.filters["oneButton"] then
+        self.filters["oneButton"] = false
+        local oneButton = self.window and self.window:recursiveGetChildById("oneButton")
+        if oneButton then oneButton:setOn(false) end
+    end
+
     self.filters[buttonId] = not self.filters[buttonId]
     
     -- Update button visual state
@@ -944,7 +1165,7 @@ function WeaponProficiency:refreshItemList()
             local thingType = item.thingType
             if thingType then
                 local slotType = thingType.getClothSlot and thingType:getClothSlot() or 0
-                if slotType ~= 2 then -- Not two-handed (slotType 2 is two-handed)
+                if slotType == 6 then
                     table.insert(filteredItems, item)
                 end
             else
@@ -959,7 +1180,7 @@ function WeaponProficiency:refreshItemList()
             local thingType = item.thingType
             if thingType then
                 local slotType = thingType.getClothSlot and thingType:getClothSlot() or 0
-                if slotType == 2 then -- Two-handed
+                if slotType == 0 then
                     table.insert(filteredItems, item)
                 end
             end
@@ -992,13 +1213,7 @@ function WeaponProficiency:refreshItemList()
         if itemWidget and marketItem.displayItem then
             -- Use stored displayId (guaranteed non-zero) instead of displayItem:getId()
             local displayId = marketItem.displayId or marketItem.originalId
-            -- Use showAs (displayId) as cache key - explicitly check for nil to handle showAs==0
-            local cacheId
-            if marketItem.marketData and marketItem.marketData.showAs ~= nil then
-                cacheId = marketItem.marketData.showAs
-            else
-                cacheId = displayId
-            end
+            local cacheId = marketItem.originalId or displayId
             itemWidget:setItemId(displayId)
             
             -- Add tooltip with item name
@@ -1101,10 +1316,15 @@ function WeaponProficiency:selectItem(itemId, marketItem)
     end
     
     local currentData = self.cacheList[cacheId]
-    
-    -- Get proficiency ID using wrapper function, passing thingType and marketData for proper category lookup
     local thingType = marketItem.thingType
     local marketData = marketItem.marketData
+
+    local vocationDecision = getVocationWarningDecision(marketData, thingType)
+    if self.vocationWarning then
+        self.vocationWarning:setVisible(vocationDecision.showWarning)
+    end
+
+    -- Get proficiency ID using wrapper function, passing thingType and marketData for proper category lookup
     local proficiencyId = ProficiencyData:getProficiencyIdForItem(displayItem, thingType, marketData)
     local profEntry = ProficiencyData:getContentById(proficiencyId)
     
@@ -1766,7 +1986,10 @@ function WeaponProficiency:applyLevelFilter(items)
     local filteredItems = {}
     
     for _, item in ipairs(items) do
-        local requiredLevel = item.marketData.requiredLevel or 0
+        local requiredLevel = getNumericCall(item.thingType, "getMinimumLevel")
+        if requiredLevel == 0 then
+            requiredLevel = item.marketData.requiredLevel or 0
+        end
         if playerLevel >= requiredLevel then
             table.insert(filteredItems, item)
         end
@@ -1779,49 +2002,19 @@ end
 function WeaponProficiency:applyVocationFilter(items)
     if not self.filters["vocButton"] then return items end
     
-    local player = g_game.getLocalPlayer()
-    if not player then return items end
-    
-    local playerVocation = player:getVocation()
+    local playerVocation = getPlayerWheelVocation()
     local filteredItems = {}
     
     for _, item in ipairs(items) do
-        local restrictVocation = item.marketData.restrictVocation or 0
-        -- If no restriction (0), show item - any vocation can use it
-        if restrictVocation == 0 then
-            table.insert(filteredItems, item)
-        else
-            -- Check if player's vocation bit is set in the restriction mask
-            -- restrictVocation is a bitmask: bit N is set if vocation N can use the item
-            -- playerVocation is 1-based (1=Knight, 2=Paladin, etc.)
-            -- Ensure playerVocation is valid (>=1)
-            if playerVocation >= 1 then
-                -- Compute integer bit mask
-                local vocBit
-                if bit32 then
-                    -- Use bit32 library if available
-                    vocBit = bit32.lshift(1, playerVocation - 1)
-                else
-                    -- Fallback: build the mask with integer multiplication
-                    vocBit = 1
-                    for i = 1, playerVocation - 1 do
-                        vocBit = vocBit * 2
-                    end
-                end
-                
-                if bit32 then
-                    -- Use bit32 library if available
-                    if bit32.band(restrictVocation, vocBit) ~= 0 then
-                        table.insert(filteredItems, item)
-                    end
-                else
-                    -- Fallback: use modulo arithmetic for bitwise AND
-                    local shifted = math.floor(restrictVocation / vocBit)
-                    if shifted % 2 == 1 then
-                        table.insert(filteredItems, item)
-                    end
-                end
+        local restrictVocation = item.marketData and item.marketData.restrictVocation or 0
+        local category = item.marketData and item.marketData.category or nil
+
+        if restrictVocation and restrictVocation ~= 0 then
+            if vocationRestrictionMatches(restrictVocation, playerVocation) then
+                table.insert(filteredItems, item)
             end
+        elseif categoryMatchesPlayerVocation(category) then
+            table.insert(filteredItems, item)
         end
     end
     
@@ -1836,13 +2029,10 @@ function WeaponProficiency:applyOneHandedFilter(items)
     for _, item in ipairs(items) do
         local thingType = item.thingType
         if thingType then
-            -- Check if weapon is one-handed (not two-handed slot)
             local slotType = thingType.getClothSlot and thingType:getClothSlot() or 0
-            if slotType ~= 2 then -- Not two-handed
+            if slotType == 6 then
                 table.insert(filteredItems, item)
             end
-        else
-            table.insert(filteredItems, item)
         end
     end
     return filteredItems
@@ -1857,7 +2047,7 @@ function WeaponProficiency:applyTwoHandedFilter(items)
         local thingType = item.thingType
         if thingType then
             local slotType = thingType.getClothSlot and thingType:getClothSlot() or 0
-            if slotType == 2 then -- Two-handed
+            if slotType == 0 then
                 table.insert(filteredItems, item)
             end
         end

@@ -36,6 +36,10 @@ PERK_ATTACK_RANGE = 24
 PERK_MELEE_SKILL_FLAT_DAMAGE = 25
 PERK_SPELL_SKILL_FLAT_DAMAGE = 26
 PERK_HEALING_SKILL_FLAT_DAMAGE = 27
+PERK_ARMOR_PENETRATION = 28
+PERK_PIERCE = 29
+PERK_DAMAGE_VS_FULL_HP = 30
+PERK_DAMAGE_VS_LOW_HP = 31
 
 -- Perk Augment Types
 AUGMENT_NONE = 0
@@ -77,6 +81,16 @@ ElementalMask = {
     [8192]    = {name = "Agony", imageOffset = "0 0"},
     [16384]   = {name = "Undefined", imageOffset = "0 0"},
     [1048576] = {name = "Healing", imageOffset = "0 0"}
+}
+
+PierceElementMask = {
+    [0]       = {name = "Physical", imageOffset = "0 0"},
+    [8]       = {name = "Fire", imageOffset = "64 0"},
+    [16]      = {name = "Earth", imageOffset = "192 0"},
+    [32]      = {name = "Energy", imageOffset = "128 0"},
+    [64]      = {name = "Ice", imageOffset = "256 0"},
+    [128]     = {name = "Holy", imageOffset = "384 0"},
+    [256]     = {name = "Death", imageOffset = "320 0"}
 }
 
 -- Magic Boost Masks
@@ -193,6 +207,7 @@ SpellAugmentIcons = {
     [292] = {name = "Greater Tiger Clash", imageOffset = "0 192"},
     [293] = {name = "Devastating Knockout", imageOffset = "64 192"},
     [294] = {name = "Sweeping Takedown", imageOffset = "128 192"},
+    [56]  = {name = "Wrath of Nature", imageOffset = "256 192"},
 }
 
 -- Augment Perk Icons
@@ -235,7 +250,11 @@ PerkVisualData = {
     [PERK_ATTACK_RANGE]              = {source = "icons-0", offset = "1152 0"},
     [PERK_MELEE_SKILL_FLAT_DAMAGE]   = {source = "icons-4", offset = "0 0"},
     [PERK_SPELL_SKILL_FLAT_DAMAGE]   = {source = "icons-5", offset = "0 0"},
-    [PERK_HEALING_SKILL_FLAT_DAMAGE] = {source = "icons-6", offset = "0 0"}
+    [PERK_HEALING_SKILL_FLAT_DAMAGE] = {source = "icons-6", offset = "0 0"},
+    [PERK_ARMOR_PENETRATION]         = {source = "icons-0", offset = "1344 0"},
+    [PERK_PIERCE]                    = {source = "icons-weaponmastery-elementalPiercing", offset = "0 0"},
+    [PERK_DAMAGE_VS_FULL_HP]         = {source = "icons-0", offset = "1216 0"},
+    [PERK_DAMAGE_VS_LOW_HP]          = {source = "icons-0", offset = "1280 0"}
 }
 
 -- Perk Text Data (names and descriptions)
@@ -267,7 +286,11 @@ PerkTextData = {
     [PERK_ATTACK_RANGE]              = {name = "Attack Range", desc = "+%d range"},
     [PERK_MELEE_SKILL_FLAT_DAMAGE]   = {name = "Skill Percentage Auto-Attack Damage", desc = "+%s%% of your %s as extra damage for auto-attacks"},
     [PERK_SPELL_SKILL_FLAT_DAMAGE]   = {name = "Skill Percentage Spell Damage", desc = "+%s%% of your %s as extra damage for your spells"},
-    [PERK_HEALING_SKILL_FLAT_DAMAGE] = {name = "Skill Percentage Spell Healing", desc = "+%s%% of your %s as extra healing for your spells"}
+    [PERK_HEALING_SKILL_FLAT_DAMAGE] = {name = "Skill Percentage Spell Healing", desc = "+%s%% of your %s as extra healing for your spells"},
+    [PERK_ARMOR_PENETRATION]         = {name = "Armor Penetration", desc = "+%s%% armor penetration"},
+    [PERK_PIERCE]                    = {name = "Elemental Pierce", desc = "+%s%% %s pierce"},
+    [PERK_DAMAGE_VS_FULL_HP]         = {name = "Damage vs Full HP", desc = "+%s%% damage against targets with full hit points"},
+    [PERK_DAMAGE_VS_LOW_HP]          = {name = "Damage vs Low HP", desc = "+%s%% damage against targets below 30%% hit points"}
 }
 
 -- Types that require elemental critical calculation
@@ -306,6 +329,16 @@ WeaponCategoryToString = {
     [32] = "Weapons: All",
 }
 
+-- Vocation bitmask per weapon category (Bit.bit: Knight=1, Paladin=2, Sorcerer=4, Druid=8, Monk=16)
+WeaponCategoryVocation = {
+    [17] = 1,   -- Axes: Knight
+    [18] = 1,   -- Clubs: Knight
+    [19] = 2,   -- Distance: Paladin
+    [20] = 1,   -- Swords: Knight
+    [21] = 12,  -- Wands/Rods: Sorcerer + Druid
+    [27] = 16,  -- Fist: Monk
+}
+
 -- Types that use percentage format
 PercentageTypes = {
     PERK_HIT_CHANCE,
@@ -313,7 +346,11 @@ PercentageTypes = {
     PERK_MELEE_CRITICAL_DAMAGE,
     PERK_SPELL_SKILL_FLAT_DAMAGE,
     PERK_MELEE_SKILL_FLAT_DAMAGE,
-    PERK_HEALING_SKILL_FLAT_DAMAGE
+    PERK_HEALING_SKILL_FLAT_DAMAGE,
+    PERK_ARMOR_PENETRATION,
+    PERK_PIERCE,
+    PERK_DAMAGE_VS_FULL_HP,
+    PERK_DAMAGE_VS_LOW_HP
 }
 
 -- Market Category mappings
@@ -328,6 +365,12 @@ MarketCategory.WeaponsAll = 32
 
 -- Unknown market category fallbacks
 UnknownCategories = {
+    [17] = MarketCategory.Axes,
+    [18] = MarketCategory.Clubs,
+    [19] = MarketCategory.DistanceWeapons,
+    [20] = MarketCategory.Swords,
+    [21] = MarketCategory.WandsRods,
+    [27] = MarketCategory.FistWeapons,
     [WEAPON_AXE or 2]     = MarketCategory.Axes,
     [WEAPON_BOW or 7]     = MarketCategory.DistanceWeapons,
     [WEAPON_CLUB or 1]    = MarketCategory.Clubs,
@@ -337,5 +380,4 @@ UnknownCategories = {
     [WEAPON_WANDROD or 4] = MarketCategory.WandsRods,
     [WEAPON_CROSSBOW or 9]= MarketCategory.DistanceWeapons
 }
-
 

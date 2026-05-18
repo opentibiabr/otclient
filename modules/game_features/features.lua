@@ -272,7 +272,7 @@ controller:registerEvents(g_game, {
         end
 
         if version >= 1510 then
-            g_game.enableFeature(GameWeaponProficiency)
+            g_game.enableFeature(GameProficiency)
         end
     end
 })

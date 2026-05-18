@@ -52,6 +52,9 @@ local function load(version)
         if not g_things.loadStaticData(filePath) then
             errorList[#errorList + 1] = "Couldn't load staticdata"
         end
+        if g_game.getFeature(GameProficiency) and g_things.loadProficiencies then
+            g_things.loadProficiencies(filePath)
+        end
     else
         local datPath, sprPath
         if filename then

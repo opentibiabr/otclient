@@ -22,8 +22,6 @@
 
 #include "thingtypemanager.h"
 
-#include <nlohmann/json.hpp>
-#include <nlohmann/json_fwd.hpp>
 
 #include "game.h"
 #include "spriteappearances.h"
@@ -45,6 +43,25 @@ using json = nlohmann::json;
 
 ThingTypeManager g_things;
 
+const nlohmann::json& ThingTypeManager::getCatalogContent(const std::string& file)
+{
+    const auto path = g_resources.resolvePath(g_resources.guessFilePath(file + "catalog-content", "json"));
+    if (path != m_catalogContentPath) {
+        m_catalogContent = nlohmann::json::parse(g_resources.readFileContents(path));
+        m_catalogContentBasePath = file;
+        m_catalogContentPath = path;
+    }
+
+    return m_catalogContent;
+}
+
+void ThingTypeManager::clearCatalogContent()
+{
+    m_catalogContentBasePath.clear();
+    m_catalogContentPath.clear();
+    m_catalogContent = nlohmann::json();
+}
+
 void ThingTypeManager::init()
 {
     m_nullThingType = std::make_shared<ThingType>();
@@ -62,6 +79,8 @@ void ThingTypeManager::terminate()
         m_thingType.clear();
 
     m_nullThingType = nullptr;
+    m_proficienciesFile.clear();
+    clearCatalogContent();
 
 #ifdef FRAMEWORK_EDITOR
     m_itemTypes.clear();
@@ -159,7 +178,7 @@ bool ThingTypeManager::loadAppearances(const std::string& file)
             g_spriteAppearances.unload();
             int spritesCount = 0;
             std::string appearancesFile;
-            json document = json::parse(g_resources.readFileContents(g_resources.resolvePath(g_resources.guessFilePath(file + "catalog-content", "json"))));
+            const auto& document = getCatalogContent(file);
             for (const auto& obj : document) {
                 const auto& type = obj["type"];
                 if (type == "appearances") {
@@ -277,7 +296,7 @@ bool ThingTypeManager::loadStaticData(const std::string& file)
     try {
         std::string staticDataFile;
 
-        json document = json::parse(g_resources.readFileContents(g_resources.resolvePath(g_resources.guessFilePath(file + "catalog-content", "json"))));
+        const auto& document = getCatalogContent(file);
         for (const auto& obj : document) {
             const auto& type = obj["type"];
             if (type == "staticdata") {
@@ -322,6 +341,42 @@ bool ThingTypeManager::loadStaticData(const std::string& file)
 }
 #endif
 
+bool ThingTypeManager::loadProficiencies(const std::string& file)
+{
+    m_proficienciesFile.clear();
+
+    if (!g_game.getFeature(Otc::GameProficiency)) {
+        return false;
+    }
+
+    try {
+        std::string proficienciesFile;
+
+        const auto& document = getCatalogContent(file);
+        for (const auto& obj : document) {
+            const auto& type = obj["type"];
+            if (type == "proficiencies") {
+                proficienciesFile = obj["file"];
+            }
+        }
+
+        if (proficienciesFile.empty()) {
+            return false;
+        }
+
+        const auto proficienciesPath = fmt::format("{}{}", file, proficienciesFile);
+        if (!g_resources.fileExists(proficienciesPath)) {
+            return false;
+        }
+
+        m_proficienciesFile = proficienciesPath;
+        return true;
+    } catch (const std::exception&) {
+        m_proficienciesFile.clear();
+        return false;
+    }
+}
+
 const ThingTypeList& ThingTypeManager::getThingTypes(const ThingCategory category)
 {
     if (category < ThingLastCategory)
@@ -354,6 +409,39 @@ ThingTypeList ThingTypeManager::findThingTypeByAttr(const ThingAttr attr, const 
         if (type->hasAttr(attr))
             ret.emplace_back(type);
     return ret;
+}
+
+ThingTypeList ThingTypeManager::getProficiencyThings()
+{
+    ThingTypeList ret;
+    for (const auto& type : m_thingTypes[ThingCategoryItem]) {
+        if (type && type->getProficiencyId() > 0) {
+            ret.emplace_back(type);
+        }
+    }
+    return ret;
+}
+
+std::string ThingTypeManager::getCyclopediaItemName(uint16_t id)
+{
+    auto type = getThingType(id, ThingCategoryItem);
+    if (!type) return "";
+    if (!type->getMarketData().name.empty()) return type->getMarketData().name;
+    return type->getName();
+}
+
+std::string ThingTypeManager::getProficienciesFile()
+{
+    if (!g_game.getFeature(Otc::GameProficiency)) {
+        return "";
+    }
+
+    if (!m_proficienciesFile.empty() && g_resources.fileExists(m_proficienciesFile)) {
+        return m_proficienciesFile;
+    }
+
+
+    return "";
 }
 
 const RaceType& ThingTypeManager::getRaceData(uint32_t raceId)

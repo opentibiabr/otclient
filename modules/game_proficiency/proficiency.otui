@@ -222,7 +222,7 @@ MainWindow
   id: weaponProficiencyWindow
   !text: tr('Weapon Proficiency')
   size: 1000 572
-  @onEscape: modules.game_proficiency.hide()
+  @onEscape: modules.game_proficiency.WeaponProficiency:onCloseWindow()
 
   Panel
     id: contentPanel
@@ -503,7 +503,7 @@ MainWindow
     size: 60 20
     margin-bottom: 12
     margin-right: 12
-    @onClick: modules.game_proficiency.hide()
+    @onClick: modules.game_proficiency.WeaponProficiency:onCloseWindow()
 
   Button
     id: reset

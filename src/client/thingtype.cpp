@@ -454,6 +454,30 @@ void ThingType::applyAppearanceFlags(const appearances::AppearanceFlags& flags)
     if (flags.has_dual_wielding() && flags.dual_wielding()) {
         m_flags |= ThingFlagAttrDualWield;
     }
+
+    if (flags.has_imbueable()) {
+        m_imbueSlots = flags.imbueable().slot_count();
+        m_flags |= ThingFlagAttrImbueable;
+    }
+
+    for (int i = 0; i < flags.restrict_to_vocation_size(); ++i) {
+        m_restrictVocation.push_back(static_cast<uint32_t>(flags.restrict_to_vocation(i)));
+    }
+
+    if (flags.has_minimum_level()) {
+        m_minimumLevel = flags.minimum_level();
+    }
+
+    if (flags.has_weapon_type()) {
+        auto wt = flags.weapon_type();
+        if (wt == otclient::protobuf::appearances::WEAPON_TYPE_SWORD) m_weaponType = 20;
+        else if (wt == otclient::protobuf::appearances::WEAPON_TYPE_AXE) m_weaponType = 17;
+        else if (wt == otclient::protobuf::appearances::WEAPON_TYPE_CLUB) m_weaponType = 18;
+        else if (wt == otclient::protobuf::appearances::WEAPON_TYPE_FIST) m_weaponType = 27;
+        else if (wt == otclient::protobuf::appearances::WEAPON_TYPE_BOW || wt == otclient::protobuf::appearances::WEAPON_TYPE_CROSSBOW || wt == otclient::protobuf::appearances::WEAPON_TYPE_THROW) m_weaponType = 19;
+        else if (wt == otclient::protobuf::appearances::WEAPON_TYPE_WAND_ROD) m_weaponType = 21;
+        else m_weaponType = 0;
+    }
 }
 #endif
 

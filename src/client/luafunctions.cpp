@@ -74,6 +74,7 @@ void Client::registerLuaFunctions()
     g_lua.registerSingletonClass("g_things");
     g_lua.bindSingletonFunction("g_things", "loadAppearances", &ThingTypeManager::loadAppearances, &g_things);
     g_lua.bindSingletonFunction("g_things", "loadStaticData", &ThingTypeManager::loadStaticData, &g_things);
+    g_lua.bindSingletonFunction("g_things", "loadProficiencies", &ThingTypeManager::loadProficiencies, &g_things);
     g_lua.bindSingletonFunction("g_things", "loadDat", &ThingTypeManager::loadDat, &g_things);
     g_lua.bindSingletonFunction("g_things", "loadOtml", &ThingTypeManager::loadOtml, &g_things);
     g_lua.bindSingletonFunction("g_things", "isDatLoaded", &ThingTypeManager::isDatLoaded, &g_things);
@@ -82,8 +83,11 @@ void Client::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_things", "getThingType", &ThingTypeManager::getThingType, &g_things);
     g_lua.bindSingletonFunction("g_things", "getThingTypes", &ThingTypeManager::getThingTypes, &g_things);
     g_lua.bindSingletonFunction("g_things", "findThingTypeByAttr", &ThingTypeManager::findThingTypeByAttr, &g_things);
+    g_lua.bindSingletonFunction("g_things", "getProficiencyThings", &ThingTypeManager::getProficiencyThings, &g_things);
+    g_lua.bindSingletonFunction("g_things", "getCyclopediaItemName", &ThingTypeManager::getCyclopediaItemName, &g_things);
     g_lua.bindSingletonFunction("g_things", "getRaceData", &ThingTypeManager::getRaceData, &g_things);
     g_lua.bindSingletonFunction("g_things", "getRacesByName", &ThingTypeManager::getRacesByName, &g_things);
+    g_lua.bindSingletonFunction("g_things", "getProficienciesFile", &ThingTypeManager::getProficienciesFile, &g_things);
 
 #ifdef FRAMEWORK_EDITOR
     g_lua.bindSingletonFunction("g_things", "getItemType", &ThingTypeManager::getItemType, &g_things);
@@ -774,6 +778,9 @@ void Client::registerLuaFunctions()
     g_lua.bindClassMemberFunction<ThingType>("getSkillWheelGemVocationId", &ThingType::getSkillWheelGemVocationId);
     g_lua.bindClassMemberFunction<ThingType>("getCyclopediaType", &ThingType::getCyclopediaType);
     g_lua.bindClassMemberFunction<ThingType>("getProficiencyId", &ThingType::getProficiencyId);
+    g_lua.bindClassMemberFunction<ThingType>("getWeaponType", &ThingType::getWeaponType);
+    g_lua.bindClassMemberFunction<ThingType>("getMinimumLevel", &ThingType::getMinimumLevel);
+    g_lua.bindClassMemberFunction<ThingType>("getImbueSlots", &ThingType::getImbueSlots);
 #ifdef FRAMEWORK_EDITOR
     g_lua.bindClassMemberFunction<ThingType>("exportImage", &ThingType::exportImage);
 #endif
@@ -808,6 +815,9 @@ void Client::registerLuaFunctions()
     g_lua.bindClassMemberFunction<Item>("hasExpireStop", &Item::hasExpireStop);
     g_lua.bindClassMemberFunction<Item>("getCyclopediaType", &Item::getCyclopediaType);
     g_lua.bindClassMemberFunction<Item>("getProficiencyId", &Item::getProficiencyId);
+    g_lua.bindClassMemberFunction<Item>("getWeaponType", &Item::getWeaponType);
+    g_lua.bindClassMemberFunction<Item>("getMinimumLevel", &Item::getMinimumLevel);
+    g_lua.bindClassMemberFunction<Item>("getImbueSlots", &Item::getImbueSlots);
     g_lua.bindClassMemberFunction<Item>("isDualWield", &Item::isDualWield);
 #ifdef FRAMEWORK_EDITOR
     g_lua.bindClassMemberFunction<Item>("getName", &Item::getName);
