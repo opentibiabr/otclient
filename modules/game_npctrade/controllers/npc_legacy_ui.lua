@@ -306,7 +306,7 @@ function refreshItem(item)
         quantityScroll:setMaximum(finalCount)
     else
         quantityScroll:setMinimum(1)
-        quantityScroll:setMaximum(math.max(0, math.min(getMaxAmount(), getSellQuantity(item.ptr))))
+        quantityScroll:setMaximum(math.max(0, math.min(getMaxAmount(), getSellQuantityLegacy(item.ptr))))
     end
 
     onQuantityValueChange(quantityScroll:getValue())
@@ -375,7 +375,7 @@ function refreshPlayerGoods()
         local itemWidget = itemsPanel:getChildByIndex(i)
         local item = itemWidget.item
 
-        local canTrade = canTradeItem(item)
+        local canTrade = canTradeItemLegacy(item)
         itemWidget:setOn(canTrade)
         itemWidget:setEnabled(canTrade)
 
@@ -500,7 +500,7 @@ function checkSellAllTooltip()
     for key, amount in pairs(playerItems) do
         local data = getTradeItemData(key, SELL)
         if data then
-            amount = getSellQuantity(data.ptr)
+            amount = getSellQuantityLegacy(data.ptr)
             if amount > 0 then
                 if data and amount > 0 then
                     info = info .. (not first and '\n' or '') .. amount .. ' ' .. data.name .. ' (' .. data.price *
@@ -552,7 +552,7 @@ end
 function sellAllLegacy()
     for itemid, item in pairs(playerItems) do
         local item = Item.create(itemid)
-        local amount = getSellQuantity(item)
+        local amount = getSellQuantityLegacy(item)
         if amount > 0 then
             g_game.sellItem(item, amount, ignoreEquipped:isChecked())
         end

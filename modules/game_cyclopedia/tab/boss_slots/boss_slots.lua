@@ -380,7 +380,7 @@ function Cyclopedia.readjustSelectBoss(selectBoss, text)
     selectBoss.ListBase.List:destroyChildren()
 
     for _, internalData in ipairs(Cyclopedia.BossSlots.UnlockBosses) do
-        if text == "" or string.find(internalData.name:lower(), text:lower()) ~= nil then
+        if text == "" or string.find(internalData.name:lower(), text:lower(), 1, true) ~= nil then
             local raceData = g_things.getRaceData(internalData.bossId)
             local internalWidget = g_ui.createWidget("SelectBossBossSlots", selectBoss.ListBase.List)
             internalWidget:setId(internalData.bossId)

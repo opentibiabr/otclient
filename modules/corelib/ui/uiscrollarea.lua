@@ -95,11 +95,11 @@ end
 
 function UIScrollArea:setInverted(inverted)
     self.inverted = inverted
+    self:updateScrollBars()
 end
 
 function UIScrollArea:setInvertedScroll(inverted)
     self:setInverted(inverted)
-    self:updateScrollBars()
 end
 
 function UIScrollArea:setAlwaysScrollMaximum(value)

@@ -485,11 +485,13 @@ end
 -- =============================================*/
 function closeCurrentMultiActionPanel()
     if dragButton and dragItem then
+        local reparentedDragItem = false
         if dragButton.multiButtonIndex and dragButton.parentButton then
             if dragItem and not dragItem:isDestroyed() then
                 dragItem:setPhantom(false)
                 dragItem:setParent(dragButton)
                 dragItem:fill('parent')
+                reparentedDragItem = true
             end
             if dragButton.cooldown then
                 dragButton.cooldown:setBorderWidth(0)
@@ -498,7 +500,7 @@ function closeCurrentMultiActionPanel()
                 dragButton.cache.isDragging = false
             end
         end
-        if dragItem and not dragItem:isDestroyed() then
+        if not reparentedDragItem and dragItem and not dragItem:isDestroyed() then
             dragItem:destroy()
         end
         dragButton = nil
