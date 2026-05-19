@@ -308,12 +308,12 @@ function QuickLoot.Define()
         local color = "#484848"
 
         for _, itemId in ipairs(QuickLoot.data.loots[QuickLoot.data.filter]) do
-            local internalData = g_things.getThingType(itemId, ThingCategoryItem):getMarketData()
+            local name = g_things.getThingType(itemId, ThingCategoryItem):getName()
             local widget = g_ui.createWidget("QuicLootIgnoreItem", quickLootController.ui.ignoreList)
 
             widget:setId(itemId)
             widget:setBackgroundColor(color)
-            widget.label:setText(internalData.name)
+            widget.label:setText(name ~= "" and name or "Unknown")
             widget.item:setItemId(itemId)
 
             color = color == "#484848" and "#414141" or "#484848"
