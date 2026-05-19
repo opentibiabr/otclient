@@ -622,6 +622,14 @@ function setupButtonTooltip(button, isEmpty)
 
     local actionDesc = ""
     local spellData = cache.spellData
+    local function spellStatsTooltip(data)
+        if not data then
+            return ""
+        end
+        local cooldown = ((data.exhaustion or 0) / 1000)
+        local mana = data.mana or 0
+        return " Cooldown:  " .. cooldown .. "s\n" .. "         Mana:  " .. mana
+    end
 
     if cache.actionType == UseTypes["chatText"] then
         if not cache.isSpell then
@@ -630,6 +638,7 @@ function setupButtonTooltip(button, isEmpty)
         else
             actionDesc = "Cast " .. Spells.getSpellNameByWords(spellData.words) .. "\n"
             actionDesc = actionDesc .. "   Formula:  " .. cache.param .. "\n"
+            actionDesc = actionDesc .. spellStatsTooltip(spellData)
         end
     elseif cache.actionType == UseTypes["specialAction"] then
         local specialAction = getActionBarSpecialAction(cache.specialAction)
@@ -653,6 +662,9 @@ function setupButtonTooltip(button, isEmpty)
 
         local itemCount = player:getInventoryCount(button.cache.itemId, button.cache.upgradeTier)
         actionDesc = actionDesc .. "\n    Amount:  " .. itemCount
+        if cache.isRuneSpell and spellData then
+            actionDesc = actionDesc .. "\n" .. spellStatsTooltip(spellData)
+        end
     end
 
     local hotkeyDesc = cache.hotkey ~= nil and cache.hotkey or "None"
@@ -883,6 +895,19 @@ function updateButton(button)
         widget:setId(actionId .. "." .. buttonId)
         updateButton(widget)
         return
+    end
+
+    if button.multiPanel then
+        if closeCurrentMultiActionPanel and multiPanel and button.multiPanel == multiPanel then
+            closeCurrentMultiActionPanel()
+        else
+            button.onGeometryChange = nil
+            button.onVisibilityChange = nil
+            if not button.multiPanel:isDestroyed() then
+                button.multiPanel:destroy()
+            end
+            button.multiPanel = nil
+        end
     end
 
     buttonData = ApiJson.getMapping(barIndex, buttonIndex)

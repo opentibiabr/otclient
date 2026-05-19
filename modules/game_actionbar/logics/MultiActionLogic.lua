@@ -92,127 +92,135 @@ local function getSpellCooldownRemaining(spellId)
     return remaining > 0 and remaining or 0
 end
 
-local function getActionSpellId(data)
-    if not data or table.empty(data) then
-        return nil
+local function getSpellGroupCooldownRemaining(spellData)
+    if not spellData or not spellData.group or not spellGroupCooldownCache then
+        return 0
     end
-    if data["chatText"] then
-        local spellData = Spells.getSpellDataByParamWords(data["chatText"]:lower())
-        return spellData and spellData.id or nil
-    elseif data["useObject"] then
-        local runeSpellData = Spells.getRuneSpellByItem(data["useObject"])
-        return runeSpellData and runeSpellData.id or nil
+
+    local groupIds = Spells.getGroupIds(spellData)
+    if not groupIds then
+        return 0
     end
-    return nil
+
+    local maxRemaining = 0
+    for _, groupId in pairs(groupIds) do
+        local groupCooldown = spellGroupCooldownCache[groupId]
+        if groupCooldown then
+            local remaining = (groupCooldown.startTime + groupCooldown.exhaustion) - g_clock.millis()
+            if remaining > 0 and remaining > maxRemaining then
+                maxRemaining = remaining
+            end
+        end
+    end
+    return maxRemaining
+end
+
+local function applySpellCooldownsToButton(button, spellData)
+    if not button or not spellData then
+        return
+    end
+
+    checkRemainSpellCooldown(button, spellData.id)
+    if not hasActiveSpellCooldown(spellData.id) then
+        local groupCooldownRemaining = getSpellGroupCooldownRemaining(spellData)
+        if groupCooldownRemaining > 0 then
+            updateCooldown(button, groupCooldownRemaining)
+            if button.cache.removeCooldownEvent then
+                removeEvent(button.cache.removeCooldownEvent)
+            end
+            button.cache.removeCooldownEvent = scheduleEvent(function()
+                removeCooldown(button)
+            end, groupCooldownRemaining)
+        end
+    end
 end
 
 -- /*=============================================
 -- =           Rotation engine                   =
 -- =============================================*/
-local function findNextAvailableAction(multiActions, currentSpellId, forceRotation)
+local function findNextAvailableAction(multiActions)
     if not multiActions or table.empty(multiActions) then
         return nil
     end
 
+    local bestAction = nil
+    local closestCooldownAction = nil
+    local closestCooldownTime = math.huge
+    local firstValidAction = nil
     local onlyOneSpell = true
-    local firstSpellId = nil
+    local firstSpellData = nil
     local spellCount = 0
-    local currentIndex = nil
 
     for i, data in ipairs(multiActions) do
-        if data and not table.empty(data) then
-            local spellId = getActionSpellId(data)
-            if spellId then
+        if not data or table.empty(data) then
+            goto continue
+        end
+
+        if data["chatText"] then
+            local spellData = Spells.getSpellDataByParamWords(data["chatText"]:lower())
+            if spellData then
                 spellCount = spellCount + 1
-                if not firstSpellId then
-                    firstSpellId = spellId
-                elseif firstSpellId ~= spellId then
+                if not firstSpellData then
+                    firstSpellData = spellData
+                elseif firstSpellData.id ~= spellData.id then
                     onlyOneSpell = false
                 end
-                if currentSpellId and spellId == currentSpellId and not currentIndex then
-                    currentIndex = i
-                end
-            end
-        end
-    end
 
-    local function findInRange(startIndex, endIndex)
-        local bestAction = nil
-        local closestCooldownAction = nil
-        local closestCooldownTime = math.huge
-        local firstValidAction = nil
-
-        for i = startIndex, endIndex do
-            local data = multiActions[i]
-            if data and not table.empty(data) then
-                if data["chatText"] then
-                    local spellData = Spells.getSpellDataByParamWords(data["chatText"]:lower())
-                    if spellData then
-                        local canUse = playerCanUseSpellLocal(spellData)
-                        if not canUse and onlyOneSpell and spellCount == 1 then
-                            firstValidAction = firstValidAction or data
-                        elseif canUse then
-                            firstValidAction = firstValidAction or data
-                            local inCooldown = hasActiveSpellCooldown(spellData.id)
-                            if not inCooldown then
-                                bestAction = bestAction or data
-                            else
-                                local remaining = getSpellCooldownRemaining(spellData.id)
-                                if remaining > 0 and remaining < closestCooldownTime then
-                                    closestCooldownTime = remaining
-                                    closestCooldownAction = data
-                                end
-                            end
-                        end
-                    else
-                        firstValidAction = firstValidAction or data
-                        bestAction = bestAction or data
-                    end
-                elseif data["useObject"] then
-                    local itemId = data["useObject"]
-                    local upgradeTier = data["upgradeTier"] or 0
-                    local itemCount = player and player:getInventoryCount(itemId, upgradeTier) or 0
+                local canUse = playerCanUseSpellLocal(spellData)
+                if not canUse and onlyOneSpell and spellCount == 1 then
                     firstValidAction = firstValidAction or data
-
-                    local runeSpellData = Spells.getRuneSpellByItem(itemId)
-                    if runeSpellData then
-                        local inCooldown = hasActiveSpellCooldown(runeSpellData.id)
-                        if not inCooldown and itemCount > 0 then
-                            bestAction = bestAction or data
-                        elseif itemCount > 0 then
-                            local remaining = getSpellCooldownRemaining(runeSpellData.id)
-                            if remaining > 0 and remaining < closestCooldownTime then
-                                closestCooldownTime = remaining
-                                closestCooldownAction = data
-                            end
-                        end
-                    elseif itemCount > 0 then
-                        bestAction = bestAction or data
-                    end
+                    goto continue
                 end
+
+                if not canUse then
+                    goto continue
+                end
+
+                firstValidAction = firstValidAction or data
+                local spellCooldownRemaining = getSpellCooldownRemaining(spellData.id)
+                local groupCooldownRemaining = getSpellGroupCooldownRemaining(spellData)
+                local totalCooldownRemaining = math.max(spellCooldownRemaining, groupCooldownRemaining)
+
+                if totalCooldownRemaining <= 0 then
+                    bestAction = bestAction or data
+                elseif totalCooldownRemaining < closestCooldownTime then
+                    closestCooldownTime = totalCooldownRemaining
+                    closestCooldownAction = data
+                end
+            else
+                firstValidAction = firstValidAction or data
+                bestAction = bestAction or data
+            end
+        elseif data["useObject"] then
+            local itemId = data["useObject"]
+            local upgradeTier = data["upgradeTier"] or 0
+            local itemCount = player and player:getInventoryCount(itemId, upgradeTier) or 0
+            firstValidAction = firstValidAction or data
+
+            local runeSpellData = Spells.getRuneSpellByItem(itemId)
+            if runeSpellData then
+                local spellCooldownRemaining = getSpellCooldownRemaining(runeSpellData.id)
+                local groupCooldownRemaining = getSpellGroupCooldownRemaining(runeSpellData)
+                local totalCooldownRemaining = math.max(spellCooldownRemaining, groupCooldownRemaining)
+
+                if totalCooldownRemaining <= 0 and itemCount > 0 then
+                    bestAction = bestAction or data
+                elseif itemCount > 0 and totalCooldownRemaining < closestCooldownTime then
+                    closestCooldownTime = totalCooldownRemaining
+                    closestCooldownAction = data
+                end
+            elseif itemCount > 0 then
+                bestAction = bestAction or data
             end
         end
 
-        return bestAction or closestCooldownAction or firstValidAction
+        ::continue::
     end
 
-    local startIndex = 1
-    if (forceRotation or currentSpellId) and currentIndex then
-        startIndex = currentIndex + 1
-        if startIndex > #multiActions then
-            startIndex = 1
-        end
-    end
-
-    local action = findInRange(startIndex, #multiActions)
-    if action or startIndex == 1 then
-        return action
-    end
-
-    return findInRange(1, startIndex - 1)
+    return bestAction or closestCooldownAction or firstValidAction
 end
 
-function updateMultiButtonState(button, forceRotation)
+function updateMultiButtonState(button)
     if not button or not button.item or not player or not button.cache then
         return
     end
@@ -223,14 +231,7 @@ function updateMultiButtonState(button, forceRotation)
         return
     end
 
-    local currentSpellId = nil
-    if forceRotation and button.cache.isSpell and button.cache.spellID then
-        currentSpellId = button.cache.spellID
-    elseif button.cache.isSpell and button.cache.spellID and hasActiveSpellCooldown(button.cache.spellID) then
-        currentSpellId = button.cache.spellID
-    end
-
-    local action = findNextAvailableAction(button.cache.multiActions, currentSpellId, forceRotation)
+    local action = findNextAvailableAction(button.cache.multiActions)
     if not action then
         action = button.cache.multiActions[1]
     end
@@ -248,6 +249,7 @@ function updateMultiButtonState(button, forceRotation)
 
     if action["useObject"] then
         button.cache.isSpell = false
+        button.cache.isRuneSpell = false
         button.cache.spellID = 0
         button.cache.spellData = nil
         button.cache.primaryGroup = nil
@@ -271,6 +273,15 @@ function updateMultiButtonState(button, forceRotation)
         if button.cache.actionType == UseTypes["Equip"] then
             local equipped = player and player:hasEquippedItemId(button.cache.itemId, button.cache.upgradeTier)
             button.item:setChecked(itemCount ~= 0 and equipped)
+        end
+
+        local runeSpellData = Spells.getRuneSpellByItem(button.cache.itemId)
+        if runeSpellData then
+            button.cache.isRuneSpell = true
+            button.cache.spellData = runeSpellData
+            button.cache.primaryGroup = runeSpellData.group and Spells.getGroupIds(runeSpellData) and
+                                            Spells.getGroupIds(runeSpellData)[1] or nil
+            applySpellCooldownsToButton(button, runeSpellData)
         end
     elseif action["chatText"] then
         local spellData, param = Spells.getSpellDataByParamWords(action["chatText"]:lower())
@@ -302,9 +313,11 @@ function updateMultiButtonState(button, forceRotation)
                 button.item.text.gray:setVisible(not playerCanUseSpellLocal(spellData))
             end
 
-            checkRemainSpellCooldown(button, spellData.id)
+            button.cache.isRuneSpell = false
+            applySpellCooldownsToButton(button, spellData)
         else
             button.cache.isSpell = false
+            button.cache.isRuneSpell = false
             button.cache.spellID = 0
             button.cache.spellData = nil
             button.cache.primaryGroup = nil
@@ -329,6 +342,32 @@ end
 -- /*=============================================
 -- =         Cooldown event scheduling           =
 -- =============================================*/
+function scheduleMultiActionCooldownEvent(button, eventKey, delay)
+    if not button or not eventKey or not delay then
+        return
+    end
+
+    local buttonId = button:getId()
+    if not multiActionCooldownEvents[buttonId] then
+        multiActionCooldownEvents[buttonId] = {}
+    end
+
+    if multiActionCooldownEvents[buttonId][eventKey] then
+        removeEvent(multiActionCooldownEvents[buttonId][eventKey])
+    end
+
+    local eventId = scheduleEvent(function()
+        if button and not button:isDestroyed() then
+            updateMultiButtonState(button)
+        end
+        if multiActionCooldownEvents[buttonId] then
+            multiActionCooldownEvents[buttonId][eventKey] = nil
+        end
+    end, delay + 100)
+
+    multiActionCooldownEvents[buttonId][eventKey] = eventId
+end
+
 function registerMultiActionCooldownEvents(button)
     if not button or not button.cache or not button.cache.multiActions or
         table.empty(button.cache.multiActions) then
@@ -347,22 +386,21 @@ function registerMultiActionCooldownEvents(button)
         if actionData and actionData["chatText"] then
             local spellData = Spells.getSpellDataByParamWords(actionData["chatText"]:lower())
             if spellData then
-                local cooldownData = spellCooldownCache[spellData.id]
-                if cooldownData then
-                    local remaining = (cooldownData.startTime + cooldownData.exhaustion) - g_clock.millis()
-                    if remaining > 0 then
-                        if not multiActionCooldownEvents[buttonId] then
-                            multiActionCooldownEvents[buttonId] = {}
-                        end
-                        local eventKey = "spell_" .. spellData.id
-                        local eventId = scheduleEvent(function()
-                            updateMultiButtonState(button, true)
-                            if multiActionCooldownEvents[buttonId] then
-                                multiActionCooldownEvents[buttonId][eventKey] = nil
-                            end
-                        end, remaining + 100)
-                        multiActionCooldownEvents[buttonId][eventKey] = eventId
-                    end
+                local remaining = math.max(getSpellCooldownRemaining(spellData.id),
+                    getSpellGroupCooldownRemaining(spellData))
+                if remaining > 0 then
+                    local eventKey = "spell_" .. spellData.id
+                    scheduleMultiActionCooldownEvent(button, eventKey, remaining)
+                end
+            end
+        elseif actionData and actionData["useObject"] then
+            local runeSpellData = Spells.getRuneSpellByItem(actionData["useObject"])
+            if runeSpellData then
+                local remaining = math.max(getSpellCooldownRemaining(runeSpellData.id),
+                    getSpellGroupCooldownRemaining(runeSpellData))
+                if remaining > 0 then
+                    local eventKey = "rune_" .. runeSpellData.id
+                    scheduleMultiActionCooldownEvent(button, eventKey, remaining)
                 end
             end
         end
@@ -455,7 +493,9 @@ function closeCurrentMultiActionPanel()
             refButton.onVisibilityChange = nil
             refButton.multiPanel = nil
         end
-        gameRootPanel.onMouseRelease = multiPanel.prevMouseReleaseHandler
+        if gameRootPanel then
+            gameRootPanel.onMouseRelease = multiPanel.prevMouseReleaseHandler
+        end
         if not multiPanel:isDestroyed() then
             multiPanel:destroy()
         end
@@ -575,8 +615,12 @@ function assignMultiAction(button, skipPrefill)
         if multiPanel and not multiPanel:isDestroyed() then
             if multiPanel.button then
                 multiPanel.button.onGeometryChange = nil
+                multiPanel.button.onVisibilityChange = nil
+                multiPanel.button.multiPanel = nil
             end
-            gameRootPanel.onMouseRelease = multiPanel.prevMouseReleaseHandler
+            if gameRootPanel then
+                gameRootPanel.onMouseRelease = multiPanel.prevMouseReleaseHandler
+            end
             multiPanel:destroy()
         end
 
@@ -746,6 +790,14 @@ function assignMultiAction(button, skipPrefill)
                     if actionButton.cache.actionType == UseTypes["Equip"] then
                         local equipped = player:hasEquippedItemId(data["useObject"], data["upgradeTier"] or 0)
                         actionButton.item:setChecked(itemCount ~= 0 and equipped)
+                    end
+                    local runeSpellData = Spells.getRuneSpellByItem(data["useObject"])
+                    if runeSpellData then
+                        actionButton.cache.isRuneSpell = true
+                        actionButton.cache.spellData = runeSpellData
+                        actionButton.cache.primaryGroup = runeSpellData.group and Spells.getGroupIds(runeSpellData) and
+                                                             Spells.getGroupIds(runeSpellData)[1] or nil
+                        applySpellCooldownsToButton(actionButton, runeSpellData)
                     end
                 elseif data["chatText"] then
                     local spellData, param = Spells.getSpellDataByParamWords(data["chatText"]:lower())
