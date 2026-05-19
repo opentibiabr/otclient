@@ -326,6 +326,7 @@ function TaskBoardController:refreshSoulsealViewport(scrollValue)
         self.soulsealBottomSpacerPxA, self.soulsealBottomSpacerPxB, self.soulsealBottomSpacerPxC = 0, 0, 0
         self._soulsealViewportStart = 0
         self._soulsealViewportEnd = 0
+        self:updateSoulsealScrollRange(0, viewportHeight, rowHeight)
         self._soulsealViewportRefreshing = false
         return
     end

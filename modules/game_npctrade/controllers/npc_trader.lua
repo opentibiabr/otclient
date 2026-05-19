@@ -242,29 +242,37 @@ function controllerNpcTrader:updateAmount(amount)
     amount = tonumber(amount) or 1
     if self.selectedItem then
         local maxAmount = controllerNpcTrader.MAX_AMOUNT_NORMAL
+        local minAmount = controllerNpcTrader.MIN_AMOUNT
         if self.tradeMode == controllerNpcTrader.BUY then
             local playerMoney = self:getPlayerMoney()
             local maxByMoney = math.floor(playerMoney / self.selectedItem.price)
-            maxAmount = math.max(controllerNpcTrader.MIN_AMOUNT,
-                math.min(controllerNpcTrader.MAX_AMOUNT_NORMAL, maxByMoney))
+            local maxByCapacity = controllerNpcTrader.MAX_AMOUNT_NORMAL
+            if not self.ignoreCapacity then
+                local player = g_game.getLocalPlayer()
+                local freeCapacity = player and player:getFreeCapacity() or 0
+                local itemWeight = tonumber(self.selectedItem.weight) or 0
+                maxByCapacity = itemWeight > 0 and math.floor(freeCapacity / itemWeight) or maxByCapacity
+            end
+            maxAmount = math.max(minAmount, math.min(controllerNpcTrader.MAX_AMOUNT_NORMAL, maxByMoney, maxByCapacity))
             if self.selectedItem.ptr and self.selectedItem.ptr:isStackable() then
-                maxAmount = math.max(controllerNpcTrader.MIN_AMOUNT,
-                    math.min(controllerNpcTrader.MAX_AMOUNT_STACKABLE, maxByMoney))
+                maxAmount = math.max(minAmount,
+                    math.min(controllerNpcTrader.MAX_AMOUNT_STACKABLE, maxByMoney, maxByCapacity))
             end
         else
             local sellable = self:getSellQuantity(self.selectedItem.ptr)
-            maxAmount = math.max(controllerNpcTrader.MIN_AMOUNT, sellable)
+            minAmount = sellable > 0 and controllerNpcTrader.MIN_AMOUNT or 0
+            maxAmount = math.max(minAmount, sellable)
         end
         if amount > maxAmount then
             amount = maxAmount
         end
-        if amount < controllerNpcTrader.MIN_AMOUNT then
-            amount = controllerNpcTrader.MIN_AMOUNT
+        if amount < minAmount then
+            amount = minAmount
         end
         local scroll = self:findWidget("#amountScrollBar")
         if scroll then
             scroll:setMaximum(maxAmount)
-            scroll:setMinimum(controllerNpcTrader.MIN_AMOUNT)
+            scroll:setMinimum(minAmount)
             if scroll:getValue() ~= amount then
                 scroll:setValue(amount)
             end

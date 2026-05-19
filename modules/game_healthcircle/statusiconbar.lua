@@ -7,6 +7,7 @@ local statusIconPanel = nil
 local activeIcons = {} -- conditionId -> widget
 local conditionLookup = {}
 local visibleConditions = {}
+local hudRetryEvents = {}
 
 local config = {
     maxIcons = 8,
@@ -28,6 +29,18 @@ local function safeCall(obj, method, ...)
         return obj[method](obj, ...)
     end
     return nil
+end
+
+local function removeHudRetryEvent(event)
+    if not event then return end
+    table.removevalue(hudRetryEvents, event)
+end
+
+local function cancelHudRetryEvents()
+    for _, event in pairs(hudRetryEvents) do
+        removeEvent(event)
+    end
+    table.clear(hudRetryEvents)
 end
 
 local function buildConditionCache()
@@ -738,9 +751,12 @@ local function ensureHudSetup(retries)
     end
 
     if retries > 0 then
-        scheduleEvent(function()
+        local event
+        event = scheduleEvent(function()
+            removeHudRetryEvent(event)
             ensureHudSetup(retries - 1)
         end, 200)
+        table.insert(hudRetryEvents, event)
     end
 end
 
@@ -815,6 +831,7 @@ function StatusIconBar.terminate()
         onGameEnd = StatusIconBar.onGameEnd
     })
 
+    cancelHudRetryEvents()
     StatusIconBar.clearAll()
 
     if statusIconPanel then

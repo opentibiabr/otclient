@@ -42,7 +42,7 @@ end
 function TaskBoardController:buyItem(itemId)
     local item = nil
     local itemIndex = nil
-    for index, it in ipairs(self.shopItems) do
+    for index, it in ipairs(self.shopItems or {}) do
         if it.id == tonumber(itemId) then
             item = it
             itemIndex = index
@@ -76,9 +76,10 @@ function TaskBoardController:buyItem(itemId)
 end
 
 function TaskBoardController:updateShopBalance(balance)
+    balance = tonumber(balance) or 0
     self.shopBalance = balance
     -- shopItems canAfford field needs to be updated
-    for i, item in ipairs(self.shopItems) do
+    for i, item in ipairs(self.shopItems or {}) do
         self.shopItems[i].canAfford = balance >= item.price
     end
     self.shopItems = self.shopItems
@@ -155,10 +156,10 @@ function TaskBoardController:parseShopItem(raw)
         data.previewType = 'icon'
     end
 
-    local balance = self.shopBalance
-    if balance <= 0 then
+    local balance = tonumber(self.shopBalance)
+    if not balance or balance <= 0 then
         local player = g_game.getLocalPlayer()
-        balance = player and player:getResourceBalance(ResourceTypes.TASK_HUNTING) or balance
+        balance = player and player:getResourceBalance(ResourceTypes.TASK_HUNTING) or balance or 0
     end
 
     data.canAfford = balance >= data.price

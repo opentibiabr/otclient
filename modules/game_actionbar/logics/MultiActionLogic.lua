@@ -92,6 +92,20 @@ local function getSpellCooldownRemaining(spellId)
     return remaining > 0 and remaining or 0
 end
 
+local function getActionSpellId(data)
+    if not data or table.empty(data) then
+        return nil
+    end
+    if data["chatText"] then
+        local spellData = Spells.getSpellDataByParamWords(data["chatText"]:lower())
+        return spellData and spellData.id or nil
+    elseif data["useObject"] then
+        local runeSpellData = Spells.getRuneSpellByItem(data["useObject"])
+        return runeSpellData and runeSpellData.id or nil
+    end
+    return nil
+end
+
 -- /*=============================================
 -- =           Rotation engine                   =
 -- =============================================*/
@@ -100,96 +114,102 @@ local function findNextAvailableAction(multiActions, currentSpellId, forceRotati
         return nil
     end
 
-    local bestAction = nil
-    local closestCooldownAction = nil
-    local closestCooldownTime = math.huge
-    local firstValidAction = nil
     local onlyOneSpell = true
     local firstSpellId = nil
     local spellCount = 0
+    local currentIndex = nil
 
     for i, data in ipairs(multiActions) do
         if data and not table.empty(data) then
-            if data["chatText"] then
-                local spellData = Spells.getSpellDataByParamWords(data["chatText"]:lower())
-                if spellData then
-                    spellCount = spellCount + 1
-                    if not firstSpellId then
-                        firstSpellId = spellData.id
-                    elseif firstSpellId ~= spellData.id then
-                        onlyOneSpell = false
-                    end
-
-                    local canUse = playerCanUseSpellLocal(spellData)
-                    if not canUse and onlyOneSpell and spellCount == 1 then
-                        if not firstValidAction then
-                            firstValidAction = data
-                        end
-                    elseif canUse then
-                        if not firstValidAction then
-                            firstValidAction = data
-                        end
-                        local inCooldown = hasActiveSpellCooldown(spellData.id)
-                        if not inCooldown then
-                            if not bestAction then
-                                bestAction = data
-                            end
-                        else
-                            local remaining = getSpellCooldownRemaining(spellData.id)
-                            if remaining > 0 and remaining < closestCooldownTime then
-                                closestCooldownTime = remaining
-                                closestCooldownAction = data
-                            end
-                        end
-                    end
-                else
-                    if not firstValidAction then
-                        firstValidAction = data
-                    end
-                    if not bestAction then
-                        bestAction = data
-                    end
+            local spellId = getActionSpellId(data)
+            if spellId then
+                spellCount = spellCount + 1
+                if not firstSpellId then
+                    firstSpellId = spellId
+                elseif firstSpellId ~= spellId then
+                    onlyOneSpell = false
                 end
-            elseif data["useObject"] then
-                local itemId = data["useObject"]
-                local upgradeTier = data["upgradeTier"] or 0
-                local itemCount = player and player:getInventoryCount(itemId, upgradeTier) or 0
-                if not firstValidAction then
-                    firstValidAction = data
-                end
-
-                local runeSpellData = Spells.getRuneSpellByItem(itemId)
-                if runeSpellData then
-                    local inCooldown = hasActiveSpellCooldown(runeSpellData.id)
-                    if not inCooldown and itemCount > 0 then
-                        if not bestAction then
-                            bestAction = data
-                        end
-                    elseif itemCount > 0 then
-                        local remaining = getSpellCooldownRemaining(runeSpellData.id)
-                        if remaining > 0 and remaining < closestCooldownTime then
-                            closestCooldownTime = remaining
-                            closestCooldownAction = data
-                        end
-                    end
-                else
-                    if itemCount > 0 then
-                        if not bestAction then
-                            bestAction = data
-                        end
-                    end
+                if currentSpellId and spellId == currentSpellId and not currentIndex then
+                    currentIndex = i
                 end
             end
         end
     end
 
-    if bestAction then
-        return bestAction
-    elseif closestCooldownAction then
-        return closestCooldownAction
-    else
-        return firstValidAction
+    local function findInRange(startIndex, endIndex)
+        local bestAction = nil
+        local closestCooldownAction = nil
+        local closestCooldownTime = math.huge
+        local firstValidAction = nil
+
+        for i = startIndex, endIndex do
+            local data = multiActions[i]
+            if data and not table.empty(data) then
+                if data["chatText"] then
+                    local spellData = Spells.getSpellDataByParamWords(data["chatText"]:lower())
+                    if spellData then
+                        local canUse = playerCanUseSpellLocal(spellData)
+                        if not canUse and onlyOneSpell and spellCount == 1 then
+                            firstValidAction = firstValidAction or data
+                        elseif canUse then
+                            firstValidAction = firstValidAction or data
+                            local inCooldown = hasActiveSpellCooldown(spellData.id)
+                            if not inCooldown then
+                                bestAction = bestAction or data
+                            else
+                                local remaining = getSpellCooldownRemaining(spellData.id)
+                                if remaining > 0 and remaining < closestCooldownTime then
+                                    closestCooldownTime = remaining
+                                    closestCooldownAction = data
+                                end
+                            end
+                        end
+                    else
+                        firstValidAction = firstValidAction or data
+                        bestAction = bestAction or data
+                    end
+                elseif data["useObject"] then
+                    local itemId = data["useObject"]
+                    local upgradeTier = data["upgradeTier"] or 0
+                    local itemCount = player and player:getInventoryCount(itemId, upgradeTier) or 0
+                    firstValidAction = firstValidAction or data
+
+                    local runeSpellData = Spells.getRuneSpellByItem(itemId)
+                    if runeSpellData then
+                        local inCooldown = hasActiveSpellCooldown(runeSpellData.id)
+                        if not inCooldown and itemCount > 0 then
+                            bestAction = bestAction or data
+                        elseif itemCount > 0 then
+                            local remaining = getSpellCooldownRemaining(runeSpellData.id)
+                            if remaining > 0 and remaining < closestCooldownTime then
+                                closestCooldownTime = remaining
+                                closestCooldownAction = data
+                            end
+                        end
+                    elseif itemCount > 0 then
+                        bestAction = bestAction or data
+                    end
+                end
+            end
+        end
+
+        return bestAction or closestCooldownAction or firstValidAction
     end
+
+    local startIndex = 1
+    if (forceRotation or currentSpellId) and currentIndex then
+        startIndex = currentIndex + 1
+        if startIndex > #multiActions then
+            startIndex = 1
+        end
+    end
+
+    local action = findInRange(startIndex, #multiActions)
+    if action or startIndex == 1 then
+        return action
+    end
+
+    return findInRange(1, startIndex - 1)
 end
 
 function updateMultiButtonState(button, forceRotation)

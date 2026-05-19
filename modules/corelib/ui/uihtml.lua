@@ -109,7 +109,7 @@ function UIHTML:onStyleApply(styleName, styleNode)
                 end
             end)
         elseif name == 'inverted-scroll' then
-            self:setInvertedScroll(value == true or value == 'true' or value == '1')
+            self:setInvertedScroll(value)
         elseif name == 'always-scroll-maximum' then
             self:setAlwaysScrollMaximum(value)
         end

@@ -489,7 +489,7 @@ ConditionIcons = {
         )
     },
     -- Hidden entries for specific states not in top 35
-    [36] = { state = PlayerStates.MagicShield, clip = 5, tooltip = tr('You are protected by a magic shield'),  id = 'condition_magic_shield', hidden = true },
+    [36] = { state = PlayerStates.ManaShield, clip = 5, tooltip = tr('You are protected by a magic shield'),  id = 'condition_magic_shield', hidden = true },
     [37] = { state = PlayerStates.GoshnarTaint1, clip = 22, tooltip = tr('You are GoshnarTaint'),  id = 'condition_GoshnarTaint1', hidden = true },
     [38] = { state = PlayerStates.GoshnarTaint2, clip = 23, tooltip = tr('You are GoshnarTaint'),  id = 'condition_GoshnarTaint2', hidden = true },
     [39] = { state = PlayerStates.GoshnarTaint3, clip = 24, tooltip = tr('You are GoshnarTaint'),  id = 'condition_GoshnarTaint3', hidden = true },

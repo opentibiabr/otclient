@@ -1347,6 +1347,10 @@ function onDragItemLeave(self, mousePos, button)
             local panel = clickedWidget:getParent():getParent()
             if panel and panel.button then
                 local targetButton = panel.button
+                if panel.button == button then
+                    resetDragWidget(self, button)
+                    return true
+                end
                 local tBarID, tButtonID = string.match(targetButton:getId(), "(.*)%.(.*)")
                 local sourceBarID, sourceButtonID = string.match(button:getId(), "(.*)%.(.*)")
 
@@ -1461,6 +1465,14 @@ function onDragItemLeave(self, mousePos, button)
         if destHasMulti then
             resetDragWidget(self, button)
             return
+        end
+        local destHasSingleAction = destButtonCache and
+                                        ((destButtonCache.actionType == UseTypes["chatText"] and
+                                            destButtonCache.param and destButtonCache.param ~= "") or
+                                            (destButtonCache.itemId and destButtonCache.itemId > 100))
+        if destHasSingleAction then
+            resetDragWidget(self, button)
+            return true
         end
 
         for i = 1, 3 do

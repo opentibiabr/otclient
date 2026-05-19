@@ -448,7 +448,7 @@ function notificationsController:processNext()
         elseif data.extraData.raceId then
             local raceId = data.extraData.raceId
             local raceData = g_things.getRaceData(raceId)
-            if not raceData or (raceData.raceId == 0 and raceData.outfit.type == 0) then
+            if not raceData or (raceData.raceId == 0 and (not raceData.outfit or raceData.outfit.type == 0)) then
                 g_logger.warning(string.format("Creature with race id %s was not found.", raceId))
             else
                 local html = string.format([[

@@ -364,6 +364,7 @@ function TaskBoardController:refreshMonsterViewport(scrollValue)
         self._preferredViewportStart = 0
         self._preferredViewportEnd = 0
         self._preferredViewportRowHeight = rowHeight
+        self:updatePreferredMonsterScrollRange(0, viewportHeight, rowHeight)
         self._preferredViewportRefreshing = false
         return
     end

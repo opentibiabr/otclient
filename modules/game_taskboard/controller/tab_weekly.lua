@@ -74,6 +74,12 @@ function TaskBoardController:refreshWeeklySummary()
 end
 
 function TaskBoardController:onWeeklyServerData(header, monsters, items)
+    if type(header) ~= 'table' then
+        return
+    end
+    monsters = type(monsters) == 'table' and monsters or {}
+    items = type(items) == 'table' and items or {}
+
     -- Update tracker regardless of UI state
     if Tracker and Tracker.Weekly then
         Tracker.Weekly.loadFromServerData(monsters)
@@ -98,6 +104,7 @@ function TaskBoardController:onWeeklyServerData(header, monsters, items)
     -- Build weeklyMonsters list
     local monsterList = {}
     for _, m in ipairs(monsters) do
+        m = type(m) == 'table' and m or {}
         local raceId = tonumber(m.raceId) or 0
         local raceData = raceId > 0 and g_things.getRaceData(raceId) or nil
         local fullName = raceId == 0 and 'Any Creature' or ((raceData and raceData.name) or 'Unknown')
@@ -126,6 +133,7 @@ function TaskBoardController:onWeeklyServerData(header, monsters, items)
     -- Build weeklyItems list
     local itemList = {}
     for i, it in ipairs(items) do
+        it = type(it) == 'table' and it or {}
         local itemId = tonumber(it.itemId) or 0
         local itemName = itemId > 0 and (getItemServerName(itemId) or tostring(itemId)) or
                              "Unknown Item"

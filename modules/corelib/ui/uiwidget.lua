@@ -93,8 +93,10 @@ local function getControllerUiName(controller)
 end
 
 local function getFncByExpr(exp, nodeStr, widget, controller, onError)
+    local controllerName = controller and controller.name or '<unknown-controller>'
+    local uiName = controller and getControllerUiName(controller) or '<unknown-ui>'
     local f, syntaxErr = check_load(exp,
-        ("Controller: %s | %s"):format(controller.name, getControllerUiName(controller)))
+        ("Controller: %s | %s"):format(controllerName, uiName))
     if not f then
         ExprHandlerError(false, syntaxErr, widget, controller, nodeStr, onError)
         return
@@ -722,6 +724,7 @@ function UIWidget:__childFor(moduleName, expr, html, index, onFinished)
                     local child = widget:getChildByIndex(index + i)
                     if not child or not child.__for_values then return end
 
+                    hasChanges = true
                     local values = child.__for_values
                     local pos = 0
                     if outer_values and type(outer_values) == 'table' then

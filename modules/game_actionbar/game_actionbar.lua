@@ -514,7 +514,10 @@ function onSpellGroupCooldown(groupId, delay)
                 for _, data in pairs(button.cache.multiActions) do
                     if data and data["chatText"] then
                         local spellData = Spells.getSpellDataByParamWords(data["chatText"]:lower())
-                        if spellData and spellData.group and Spells.getCooldownByGroup(spellData, groupId) then
+                        local groupCooldown = spellData and spellData.group and
+                                                  (Spells.getCooldownByGroup(spellData, groupId) or
+                                                      Spells.getCooldownBySecondaryGroup(spellData, groupId))
+                        if groupCooldown then
                             spellCooldownCache[spellData.id] = {
                                 exhaustion = delay,
                                 startTime = g_clock.millis()

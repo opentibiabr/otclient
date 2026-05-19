@@ -10,10 +10,10 @@ local function getHighlightedText(text, color, highlightColor)
     end
     local parts = {}
     local lastPos = 1
-    if firstBrace > 1 then
-        parts[#parts + 1] = string.format("{%s, %s}", text:sub(1, firstBrace - 1), color)
-    end
     for startPos, content, endPos in text:gmatch("()%{([^}]*)%}()") do
+        if startPos > lastPos then
+            parts[#parts + 1] = string.format("{%s, %s}", text:sub(lastPos, startPos - 1), color)
+        end
         local textPart = content:match("([^,]+)") or content
         local trimmed = textPart
         local highlighted = trimmed
@@ -23,12 +23,10 @@ local function getHighlightedText(text, color, highlightColor)
             highlighted = string.format("[text-event]%s%s[/text-event]", string.char(1), trimmed)
         end
         parts[#parts + 1] = string.format("{%s, %s}", highlighted, highlightColor)
-        local nextBrace = text:find("{", endPos, true)
-        local afterText = text:sub(endPos, (nextBrace or 0) - 1)
-        if afterText ~= "" then
-            parts[#parts + 1] = string.format("{%s, %s}", afterText, color)
-        end
         lastPos = endPos
+    end
+    if lastPos <= #text then
+        parts[#parts + 1] = string.format("{%s, %s}", text:sub(lastPos), color)
     end
     return table.concat(parts)
 end

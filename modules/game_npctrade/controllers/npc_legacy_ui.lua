@@ -288,7 +288,7 @@ function canTradeItemLegacy(item)
             (ignoreCapacity:isChecked() or (not ignoreCapacity:isChecked() and playerFreeCapacity >= item.weight)) and
                 playerMoney >= getItemPrice(item, true)
     else
-        return getSellQuantity(item.ptr) > 0
+        return getSellQuantityLegacy(item.ptr) > 0
     end
 end
 

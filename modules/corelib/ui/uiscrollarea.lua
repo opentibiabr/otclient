@@ -98,7 +98,7 @@ function UIScrollArea:setInverted(inverted)
 end
 
 function UIScrollArea:setInvertedScroll(inverted)
-    self:setInverted(inverted == true or inverted == 'true' or inverted == '1')
+    self:setInverted(inverted)
     self:updateScrollBars()
 end
 

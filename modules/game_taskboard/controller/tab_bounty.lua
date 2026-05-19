@@ -79,7 +79,7 @@ function TaskBoardController:onBountyServerData(header, monsters, talisman)
     -- Build talismans table for *for loop
     local tals = {}
     for i = 1, 4 do
-        local s = talisman[i]
+        local s = type(talisman) == 'table' and talisman[i] or nil
         if s then
             local currentValue, nextValue = normalizeTalismanValues(i, s.currentValue, s.nextValue)
             local upgradeCost = tonumber(s.upgradeCost) or 0
@@ -115,6 +115,7 @@ function TaskBoardController:onBountyKillUpdate(raceId, currentKills, totalKills
         if task.raceId == raceId then
             self.bountyTasks[i].current = currentKills
             self.bountyTasks[i].total = totalKills
+            self.bountyTasks[i].isCompleted = currentKills >= totalKills
             self.bountyTasks[i].canClaim = (not self.bountyTasks[i].isCompleted) and task.isActive and currentKills >=
                                                totalKills
             -- Trigger reactive update by reassigning the table
