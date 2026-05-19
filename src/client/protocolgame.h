@@ -221,8 +221,6 @@ private:
     void parsePlayerHelpers(const InputMessagePtr& msg) const;
     void parseMessage(const InputMessagePtr& msg);
     void parseBugReport(const InputMessagePtr& msg);
-    void parseMultiOfflineTrainingDialog(const InputMessagePtr& msg);
-    void parseNpcChatWindow(const InputMessagePtr& msg);
     void parsePendingGame(const InputMessagePtr& msg);
     void parseEnterGame(const InputMessagePtr& msg);
     void parseLogin(const InputMessagePtr& msg) const;
@@ -337,12 +335,6 @@ private:
     // 12x
     void parseShowDescription(const InputMessagePtr& msg);
     void parseBestiaryTracker(const InputMessagePtr& msg);
-    void parseTaskBoardData(const InputMessagePtr& msg);
-    void parseTaskBoardBountyData(const InputMessagePtr& msg);
-    void parseTaskBoardWeeklyData(const InputMessagePtr& msg);
-    void parseTaskBoardShopData(const InputMessagePtr& msg);
-    void parseTaskHuntingBasicData(const InputMessagePtr& msg);
-    void parseTaskHuntingData(const InputMessagePtr& msg);
     void parseExperienceTracker(const InputMessagePtr& msg);
     void parseLootContainers(const InputMessagePtr& msg);
     void parseMonkData(const InputMessagePtr& msg);
@@ -396,6 +388,16 @@ private:
     void parseWeaponProficiencyExperience(const InputMessagePtr& msg);
     void parseWeaponProficiencyInfo(const InputMessagePtr& msg);
 
+    // 15.2x
+    void parseTaskBoardData(const InputMessagePtr& msg);
+    void parseTaskBoardBountyData(const InputMessagePtr& msg);
+    void parseTaskBoardWeeklyData(const InputMessagePtr& msg);
+    void parseTaskBoardShopData(const InputMessagePtr& msg);
+    void parseTaskHuntingBasicData(const InputMessagePtr& msg);
+    void parseTaskHuntingData(const InputMessagePtr& msg);
+    void parseMultiOfflineTrainingDialog(const InputMessagePtr& msg);
+    void parseNpcChatWindow(const InputMessagePtr& msg);
+    
     void parseHighscores(const InputMessagePtr& msg);
     void parseAttachedEffect(const InputMessagePtr& msg);
     void parseDetachEffect(const InputMessagePtr& msg);

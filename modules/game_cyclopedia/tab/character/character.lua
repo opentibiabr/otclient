@@ -1434,8 +1434,6 @@ end
         rightPanel:destroyChildren()
         leftPanel:destroyChildren()
 
-        -- pdump(data)
-
         -- Initial Stats List
         local stats = {
             -- Left Panel Items

@@ -94,7 +94,7 @@ namespace Proto
         GameServerImbuementDurations = 93,
         GameServerPassiveCooldown = 94,
         GameServerOpenWheelWindow = 95, // 0x5F
-        GameServerUndiscoveredItemList = 96, /* Unused */
+        GameServerInventoryImbuements = 96,
         GameServerBosstiaryData = 97,
         GameServerBosstiarySlots = 98,
         GameServerSendClientCheck = 99,
@@ -273,13 +273,13 @@ namespace Proto
         ClientChangeMapAwareRange = 51,
 
         // NOTE: add any custom opcodes in this range
-        // 51 - 99
-        ClientTaskBoardAction = 95,
+        // 51 - 94
 
         // original tibia ONLY
+        ClientTaskBoardAction = 95,
         ClientImbuementDurations = 96,
-        ClientOpenWheel = 97, // server received 0x61
-        ClientSaveWheel = 98, // server received 0x62
+        ClientOpenWheel = 97,
+        ClientSaveWheel = 98,
         ClientAutoWalk = 100,
         ClientWalkNorth = 101,
         ClientWalkEast = 102,
@@ -348,6 +348,7 @@ namespace Proto
         ClientBosstiaryRequestSlotInfo = 175,
         ClientBosstiaryRequestSlotAction = 176,
         ClientRequestHighscore = 177,
+        ClientWeaponProficiency = 179,
         ClientSoulSealsAction = 186,
         ClientCancelAttackAndFollow = 190,
         ClientForgeEnter = 191,

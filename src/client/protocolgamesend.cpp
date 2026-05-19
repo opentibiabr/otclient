@@ -1776,6 +1776,7 @@ void ProtocolGame::openContainerQuickLoot(const uint8_t action, const uint8_t ca
     }
     send(msg);
 }
+
 void ProtocolGame::sendOpenWheel(uint32_t playerId) {  
     const auto& msg = std::make_shared<OutputMessage>();  
     msg->addU8(Proto::ClientOpenWheel); // 0x61  

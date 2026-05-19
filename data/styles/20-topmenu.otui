@@ -60,11 +60,23 @@ MainToggleButton < UIButton
     image-clip: 20 0 20 20
 
   UIWidget
-    id: highlight
+    id: brightButton
+    size: 20 20
+    anchors.top: prev.top
+    anchors.left: prev.left
     phantom: true
-    anchors.fill: parent
     visible: false
-    image-source: /images/options/button_highlight
+    image-source: /images/ui/bright-x20
+
+  UIWidget
+    id: highlight
+    size: 22 22
+    visible: false
+    margin-top: -1
+    phantom: true
+    image-source: /images/ui/highlight
+    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.verticalCenter: parent.verticalCenter
 
 TopMenuButtonsPanel < Panel
   layout:

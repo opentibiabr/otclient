@@ -228,6 +228,7 @@ GameLevelPercentU16 = 131
 GameEffectSource = 132
 GameNpcWindowRedesign = 133
 GameTaskboard = 134
+GameProficiency = 135
 
 TextColors = {
     red = '#f55e5e',    -- '#c83200'
