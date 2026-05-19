@@ -286,14 +286,15 @@ function Cyclopedia.setActiveSlot(widget, slot, slotData, data, bossId)
     widget.ActivedBoss.EquipmentLabel:setText(string.format("Equipment loot bonus: %d%%", slotData.lootBonus))
     widget.ActivedBoss.Value:setText(comma_value(slotData.removePrice))
 
-    if g_game.getLocalPlayer():getResourceBalance(1) ~= nil then
-        if slotData.removePrice > g_game.getLocalPlayer():getResourceBalance(1) then
-            widget.ActivedBoss.Value:setColor("#D33C3C")
-            widget.ActivedBoss.RemoveButton:setEnabled(false)
-        else
-            widget.ActivedBoss.Value:setColor("#C0C0C0")
-            widget.ActivedBoss.RemoveButton:setEnabled(true)
-        end
+    local player = g_game.getLocalPlayer()
+    local playerMoney = player and player:getTotalMoney() or 0
+
+    if slotData.removePrice > playerMoney then
+        widget.ActivedBoss.Value:setColor("#D33C3C")
+        widget.ActivedBoss.RemoveButton:setEnabled(false)
+    else
+        widget.ActivedBoss.Value:setColor("#C0C0C0")
+        widget.ActivedBoss.RemoveButton:setEnabled(true)
     end
 
     widget.ActivedBoss.RemoveButton.onClick = function()
@@ -356,12 +357,7 @@ function Cyclopedia.bossSlotSelectBoss(widget)
     button:setEnabled(true)
 end
 
-function Cyclopedia.readjustSelectBoss()
-    local slot = 1
-    if not UI.LeftBase.SelectBoss:isVisible() then
-        slot = 2
-    end
-
+function Cyclopedia.readjustSelectBoss(selectBoss, text)
     local icons = {
         [CATEGORY.BANE] = "/game_cyclopedia/images/boss/icon_bane",
         [CATEGORY.ARCHFOE] = "/game_cyclopedia/images/boss/icon_archfoe",
@@ -376,13 +372,18 @@ function Cyclopedia.readjustSelectBoss()
         end
     end
 
-    local widget = UI[SLOTS[slot]]
-    widget.SelectBoss.ListBase.List:destroyChildren()
+    if not selectBoss then
+        return
+    end
+
+    text = text or ""
+    selectBoss.ListBase.List:destroyChildren()
 
     for _, internalData in ipairs(Cyclopedia.BossSlots.UnlockBosses) do
-        if internalData.visible then
+        if text == "" or string.find(internalData.name:lower(), text:lower()) ~= nil then
             local raceData = g_things.getRaceData(internalData.bossId)
-            local internalWidget = g_ui.createWidget("SelectBossBossSlots", widget.SelectBoss.ListBase.List)
+            local internalWidget = g_ui.createWidget("SelectBossBossSlots", selectBoss.ListBase.List)
+            internalWidget:setId(internalData.bossId)
             internalWidget.Sprite:setOutfit(raceData.outfit)
             internalWidget:setText(format(raceData.name))
             internalWidget.Sprite:getCreature():setStaticWalking(1000)
@@ -399,27 +400,20 @@ function Cyclopedia.readjustSelectBoss()
         end
     end
 
-    widget.SelectBoss.SelectButton:setEnabled(false)
+    selectBoss.SelectButton:setEnabled(false)
 end
 
 function Cyclopedia.SelectBossSearchText(text, clear, widget)
-    if clear then
-        widget:getParent().SearchEdit:setText("")
+    local selectBoss = nil
+
+    if widget then
+        selectBoss = widget:getId() == "SelectBoss" and widget or widget:getParent()
     end
 
-    if text ~= "" then
-        for _, creature in ipairs(Cyclopedia.BossSlots.UnlockBosses) do
-            if string.find(creature.name:lower(), text:lower()) == nil then
-                creature.visible = false
-            else
-                creature.visible = true
-            end
-        end
-    else
-        for _, creature in ipairs(Cyclopedia.BossSlots.UnlockBosses) do
-            creature.visible = true
-        end
+    if clear and selectBoss then
+        selectBoss.SearchEdit:setText("")
+        text = ""
     end
 
-    Cyclopedia.readjustSelectBoss()
+    Cyclopedia.readjustSelectBoss(selectBoss, text)
 end

@@ -424,7 +424,7 @@ SlotBossSlots < UIWidget
       padding-right: 15
       placeholder: Type to search
       placeholder-color: #6E706F
-      @onTextChange: modules.game_cyclopedia.Cyclopedia.SelectBossSearchText(self:getText())
+      @onTextChange: modules.game_cyclopedia.Cyclopedia.SelectBossSearchText(self:getText(), false, self)
     UIWidget
       id: SearchClearButton
       anchors.right: SearchEdit.right
