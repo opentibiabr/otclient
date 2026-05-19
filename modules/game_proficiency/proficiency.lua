@@ -241,38 +241,38 @@ function onGameStart()
         scheduleEvent(function()
             g_modules.getModule("game_proficiency"):unload()
         end, 100)
-        return
-    end
-    WeaponProficiency.allProficiencyRequested = false
-    WeaponProficiency.saveWeaponMissing = false
-    WeaponProficiency.firstItemRequested = nil
-    WeaponProficiency.cacheList = {}
-    WeaponProficiency.currentEquippedExp = 0
-    WeaponProficiency.currentEquippedMaxExp = 0
+    else
+        WeaponProficiency.allProficiencyRequested = false
+        WeaponProficiency.saveWeaponMissing = false
+        WeaponProficiency.firstItemRequested = nil
+        WeaponProficiency.cacheList = {}
+        WeaponProficiency.currentEquippedExp = 0
+        WeaponProficiency.currentEquippedMaxExp = 0
 
-    -- Client version can change after module init; reload before rebuilding the item cache.
-    ProficiencyData:loadProficiencyJson(true)
+        -- Client version can change after module init; reload before rebuilding the item cache.
+        ProficiencyData:loadProficiencyJson(true)
 
-    -- Recreate item cache on each login (may have been cleared by reset())
-    WeaponProficiency:createItemCache()
+        -- Recreate item cache on each login (may have been cleared by reset())
+        WeaponProficiency:createItemCache()
 
-    -- Add button to main panel (only for clients that support proficiency system)
-    -- Use addToggleButton for notification support (20x40 vertical image)
-    WeaponProficiency.button = modules.game_mainpanel.addToggleButton('ProficiencyButton', tr('Open Weapon Proficiency'),
-        '/images/options/button_proficiency', function()
-            toggle()
-        end, false, 21, -- index for ordering
-        true -- vertical image (20x40)
-    )
-    if WeaponProficiency.button then
-        local btn = WeaponProficiency.button:getChildById('button')
-        if btn then
-            btn:setOn(false)
+        -- Add button to main panel (only for clients that support proficiency system)
+        -- Use addToggleButton for notification support (20x40 vertical image)
+        WeaponProficiency.button = modules.game_mainpanel.addToggleButton('ProficiencyButton', tr('Open Weapon Proficiency'),
+            '/images/options/button_proficiency', function()
+                toggle()
+            end, false, 21, -- index for ordering
+            true -- vertical image (20x40)
+        )
+        if WeaponProficiency.button then
+            local btn = WeaponProficiency.button:getChildById('button')
+            if btn then
+                btn:setOn(false)
+            end
         end
-    end
 
-    -- Initialize topbar proficiency widget
-    initTopBarProficiency()
+        -- Initialize topbar proficiency widget
+        initTopBarProficiency()
+    end
 end
 
 -- Initialize the proficiency widget in the top stats bar
