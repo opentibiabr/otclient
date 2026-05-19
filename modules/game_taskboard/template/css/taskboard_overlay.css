@@ -6,6 +6,7 @@
     right: 0;
     bottom: 0;
     display: block;
+    --draggable: true;
     --image-source: /images/ui/ditherpattern64;
     --image-repeated: true;
     opacity: 0.8;

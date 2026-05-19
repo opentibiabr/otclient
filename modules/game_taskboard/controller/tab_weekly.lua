@@ -242,6 +242,7 @@ function TaskBoardController:selectDifficulty(diffId)
     g_game.weeklyTaskAction(WEEKLY_ACTION_SELECT_DIFFICULTY, parsedId)
     self.weeklyDifficultyPending = false
     self.diffModalVisible = false
+	return
 end
 
 function TaskBoardController:deliverItem(itemId, slotIndex)
