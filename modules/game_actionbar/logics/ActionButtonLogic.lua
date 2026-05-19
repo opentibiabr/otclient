@@ -42,7 +42,7 @@ local function buttonIsEmpty(button)
                string_empty(button.item.text:getImageSource())
 end
 --- Gets the name of an action type
-local function getActionName(actionType)
+function getActionName(actionType)
     for k, v in pairs(UseTypes) do
         if v == actionType then
             return k
@@ -57,7 +57,7 @@ local function resolveMultiUseType(useType)
     return getActionName(tonumber(useType) or useType) or "Use"
 end
 
-local function hasMultiActions(multiActions)
+function hasMultiActions(multiActions)
     if type(multiActions) ~= "table" then
         return false
     end
@@ -67,6 +67,23 @@ local function hasMultiActions(multiActions)
         end
     end
     return false
+end
+
+--- Persists a single multi-action slot to ApiJson
+function persistMultiSlot(barId, buttonId, slotIndex, slotData)
+    if not slotData or table.empty(slotData) then
+        ApiJson.removeMultiAction(barId, buttonId, slotIndex)
+        return
+    end
+    if slotData["chatText"] then
+        ApiJson.createOrUpdateMultiText(barId, buttonId, slotIndex,
+            slotData["chatText"], slotData["sendAutomatically"])
+    elseif slotData["useObject"] then
+        local useTypeName = resolveMultiUseType(slotData["useType"])
+        ApiJson.createOrUpdateMultiAction(barId, buttonId, slotIndex,
+            useTypeName, slotData["useObject"],
+            slotData["upgradeTier"] or 0, slotData["useEquipSmartMode"] or false)
+    end
 end
 
 --- Gets item name by ID
@@ -390,7 +407,7 @@ function clearButton(button, removeAction)
     end
 
     if cacheMultiActionButtons then
-        table.removevalue(cacheMultiActionButtons, button)
+        cacheMultiActionButtons[button] = nil
     end
     if clearMultiActionCooldownEvents then
         clearMultiActionCooldownEvents(button:getId())
@@ -820,16 +837,9 @@ function configureButtonMouseRelease(button)
                 assignHotkey(button)
             end)
 
-            local hasMultiActions = false
-            if button.cache.multiActions then
-                for i = 1, 3 do
-                    if not table.empty(button.cache.multiActions[i] or {}) then
-                        hasMultiActions = true
-                        break
-                    end
-                end
-            end
+            local buttonHasMulti = hasMultiActions(button.cache.multiActions)
             local hasMultiIcon = button.multiIcon and button.multiIcon:isVisible()
+            local hasMultiActions = buttonHasMulti
             if assignMultiAction then
                 local panelOpen = multiPanel and not multiPanel:isDestroyed() and multiPanel.button == button
                 if panelOpen then
@@ -965,17 +975,9 @@ function updateButton(button)
     local specialAction = buttonData["actionsetting"]["specialAction"]
     local multiActions = buttonData["actionsetting"]["multiActions"]
 
-    local hasMultiActions = false
-    if type(multiActions) == "table" then
-        for i = 1, 3 do
-            if type(multiActions[i]) == "table" and next(multiActions[i]) ~= nil then
-                hasMultiActions = true
-                break
-            end
-        end
-    end
+    local hasMultiData = type(multiActions) == "table" and hasMultiActions(multiActions) or false
 
-    if hasMultiActions then
+    if hasMultiData then
         button.cache.multiActions = {{}, {}, {}}
         for i = 1, 3 do
             if type(multiActions[i]) == "table" then
@@ -985,8 +987,8 @@ function updateButton(button)
         if button.multiIcon then
             button.multiIcon:setVisible(true)
         end
-        if cacheMultiActionButtons and not table.contains(cacheMultiActionButtons, button) then
-            table.insert(cacheMultiActionButtons, button)
+        if cacheMultiActionButtons then
+            cacheMultiActionButtons[button] = true
         end
 
         if updateMultiButtonState then
@@ -1098,7 +1100,8 @@ function updateButton(button)
             button.cache.isSpell = true
             button.cache.spellID = spellData.id
             button.cache.spellData = spellData
-            button.cache.primaryGroup = spellData.group and Spells.getGroupIds(spellData)[1] or nil
+            local groupIds = Spells.getGroupIds(spellData)
+            button.cache.primaryGroup = groupIds and groupIds[1] or nil
 
             if param then
                 local formatedParam = param:gsub('"', '')
@@ -1386,17 +1389,8 @@ function onDragItemLeave(self, mousePos, button)
                         local slotData = button.cache.multiActions[i] or {}
                         if not table.empty(slotData) then
                             targetButton.cache.multiActions[i] = table.copy(slotData)
-                            if slotData["chatText"] then
-                                ApiJson.createOrUpdateMultiText(tonumber(tBarID), tonumber(tButtonID), i,
-                                    slotData["chatText"], slotData["sendAutomatically"])
-                            elseif slotData["useObject"] then
-                                ApiJson.createOrUpdateMultiAction(tonumber(tBarID), tonumber(tButtonID), i,
-                                    resolveMultiUseType(slotData["useType"]), slotData["useObject"],
-                                    slotData["upgradeTier"] or 0, slotData["useEquipSmartMode"] or false)
-                            end
-                        else
-                            ApiJson.removeMultiAction(tonumber(tBarID), tonumber(tButtonID), i)
                         end
+                        persistMultiSlot(tonumber(tBarID), tonumber(tButtonID), i, slotData)
                     end
                 elseif button.cache.actionType == UseTypes["chatText"] and button.cache.param and button.cache.param ~= "" then
                     ApiJson.createOrUpdateMultiText(tonumber(tBarID), tonumber(tButtonID), targetIndex,
@@ -1427,8 +1421,8 @@ function onDragItemLeave(self, mousePos, button)
                 if targetButton.multiIcon then
                     targetButton.multiIcon:setVisible(true)
                 end
-                if cacheMultiActionButtons and not table.contains(cacheMultiActionButtons, targetButton) then
-                    table.insert(cacheMultiActionButtons, targetButton)
+                if cacheMultiActionButtons then
+                    cacheMultiActionButtons[targetButton] = true
                 end
 
                 ApiJson.removeAction(tonumber(sourceBarID), tonumber(sourceButtonID))
@@ -1467,26 +1461,10 @@ function onDragItemLeave(self, mousePos, button)
     local destBarID, destButtonID = string.match(destButton:getId(), "(.*)%.(.*)")
     local draggedBarID, draggedButtonID = string.match(button:getId(), "(.*)%.(.*)")
 
-    local sourceHasMulti = false
-    if button.cache.multiActions then
-        for i = 1, 3 do
-            if not table.empty(button.cache.multiActions[i] or {}) then
-                sourceHasMulti = true
-                break
-            end
-        end
-    end
+    local sourceHasMulti = hasMultiActions(button.cache.multiActions)
 
     if sourceHasMulti then
-        local destHasMulti = false
-        if destButtonCache and destButtonCache.multiActions then
-            for i = 1, 3 do
-                if not table.empty(destButtonCache.multiActions[i] or {}) then
-                    destHasMulti = true
-                    break
-                end
-            end
-        end
+        local destHasMulti = destButtonCache and hasMultiActions(destButtonCache.multiActions) or false
         if destHasMulti then
             resetDragWidget(self, button)
             return
@@ -1501,25 +1479,12 @@ function onDragItemLeave(self, mousePos, button)
         end
 
         for i = 1, 3 do
-            local slotData = button.cache.multiActions[i]
-            if slotData and not table.empty(slotData) then
-                if slotData["chatText"] then
-                    ApiJson.createOrUpdateMultiText(tonumber(destBarID), tonumber(destButtonID), i,
-                        slotData["chatText"], slotData["sendAutomatically"])
-                elseif slotData["useObject"] then
-                    local useTypeName = resolveMultiUseType(slotData["useType"])
-                    ApiJson.createOrUpdateMultiAction(tonumber(destBarID), tonumber(destButtonID), i,
-                        useTypeName, slotData["useObject"],
-                        slotData["upgradeTier"] or 0, slotData["useEquipSmartMode"] or false)
-                end
-            else
-                ApiJson.removeMultiAction(tonumber(destBarID), tonumber(destButtonID), i)
-            end
+            persistMultiSlot(tonumber(destBarID), tonumber(destButtonID), i, button.cache.multiActions[i])
         end
 
         ApiJson.removeAction(tonumber(draggedBarID), tonumber(draggedButtonID))
         if cacheMultiActionButtons then
-            table.removevalue(cacheMultiActionButtons, button)
+            cacheMultiActionButtons[button] = nil
         end
         if clearMultiActionCooldownEvents then
             clearMultiActionCooldownEvents(button:getId())

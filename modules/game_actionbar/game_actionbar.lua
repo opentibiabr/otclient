@@ -328,6 +328,12 @@ local function cleanupMultiActionState()
         end
     end
     cacheMultiActionButtons = {}
+    if pendingMultiButtonUpdate then
+        removeEvent(pendingMultiButtonUpdate)
+        pendingMultiButtonUpdate = nil
+        pendingMultiButtons = {}
+        pendingMultiButtonsTracker = {}
+    end
 end
 
 --- Initializes the action bar controller
@@ -418,6 +424,33 @@ end
 
 
 --- Handles spell cooldown events
+local pendingMultiButtonUpdate = nil
+local pendingMultiButtons = {}
+local pendingMultiButtonsTracker = {}
+
+local function schedulePendingMultiButtonUpdate()
+    if pendingMultiButtonUpdate then
+        return
+    end
+    pendingMultiButtonUpdate = scheduleEvent(function()
+        for _, button in ipairs(pendingMultiButtons) do
+            if button and not button:isDestroyed() then
+                updateMultiButtonState(button)
+            end
+        end
+        pendingMultiButtons = {}
+        pendingMultiButtonsTracker = {}
+        pendingMultiButtonUpdate = nil
+    end, 50)
+end
+
+local function addPendingMultiButton(button)
+    if not pendingMultiButtonsTracker[button] then
+        pendingMultiButtons[#pendingMultiButtons + 1] = button
+        pendingMultiButtonsTracker[button] = true
+    end
+end
+
 function onSpellCooldown(spellId, delay)
     local showProgress = modules.client_options.getOption("graphicalCooldown")
     local showTime = modules.client_options.getOption("cooldownSecond")
@@ -430,22 +463,6 @@ function onSpellCooldown(spellId, delay)
         exhaustion = delay,
         startTime = cooldownStart
     }
-    local buttonsToUpdate = {}
-    local trackedButtons = {}
-
-    local function addButtonToUpdate(button)
-        if not trackedButtons[button] then
-            table.insert(buttonsToUpdate, button)
-            trackedButtons[button] = true
-        end
-    end
-
-    local function getEffectiveSpellDelay(spellData)
-        if not spellData then
-            return delay
-        end
-        return math.max(delay, spellData.exhaustion or 0)
-    end
 
     for _, actionbar in pairs(activeActionBars) do
         for _, button in pairs(actionbar.tabBar:getChildren()) do
@@ -455,13 +472,9 @@ function onSpellCooldown(spellId, delay)
                     if actionData and actionData["chatText"] then
                         local spellData = Spells.getSpellDataByParamWords(actionData["chatText"]:lower())
                         if spellData and spellData.id == spellId then
-                            local effectiveDelay = getEffectiveSpellDelay(spellData)
-                            spellCooldownCache[spellId] = {
-                                exhaustion = effectiveDelay,
-                                startTime = cooldownStart
-                            }
-                            addButtonToUpdate(button)
+                            addPendingMultiButton(button)
                             if scheduleMultiActionCooldownEvent then
+                                local effectiveDelay = math.max(delay, spellData.exhaustion or 0)
                                 scheduleMultiActionCooldownEvent(button, "spell_" .. spellId, effectiveDelay)
                             end
                             break
@@ -469,13 +482,9 @@ function onSpellCooldown(spellId, delay)
                     elseif actionData and actionData["useObject"] then
                         local runeSpellData = Spells.getRuneSpellByItem(actionData["useObject"])
                         if runeSpellData and runeSpellData.id == spellId then
-                            local effectiveDelay = getEffectiveSpellDelay(runeSpellData)
-                            spellCooldownCache[spellId] = {
-                                exhaustion = effectiveDelay,
-                                startTime = cooldownStart
-                            }
-                            addButtonToUpdate(button)
+                            addPendingMultiButton(button)
                             if scheduleMultiActionCooldownEvent then
+                                local effectiveDelay = math.max(delay, runeSpellData.exhaustion or 0)
                                 scheduleMultiActionCooldownEvent(button, "rune_" .. spellId, effectiveDelay)
                             end
                             break
@@ -510,13 +519,7 @@ function onSpellCooldown(spellId, delay)
         end
     end
 
-    scheduleEvent(function()
-        for _, button in pairs(buttonsToUpdate) do
-            if button and not button:isDestroyed() then
-                updateMultiButtonState(button)
-            end
-        end
-    end, 50)
+    schedulePendingMultiButtonUpdate()
 end
 
 function onSpellGroupCooldown(groupId, delay)
@@ -530,16 +533,6 @@ function onSpellGroupCooldown(groupId, delay)
         startTime = g_clock.millis()
     }
 
-    local buttonsToUpdate = {}
-    local trackedButtons = {}
-
-    local function addButtonToUpdate(button)
-        if not trackedButtons[button] then
-            table.insert(buttonsToUpdate, button)
-            trackedButtons[button] = true
-        end
-    end
-
     for _, actionbar in pairs(activeActionBars) do
         for _, button in pairs(actionbar.tabBar:getChildren()) do
             local cache = getButtonCache(button)
@@ -550,7 +543,7 @@ function onSpellGroupCooldown(groupId, delay)
                         if spellData and
                             (Spells.getCooldownByGroup(spellData, groupId) or
                                 Spells.getCooldownBySecondaryGroup(spellData, groupId)) then
-                            addButtonToUpdate(button)
+                            addPendingMultiButton(button)
                             if scheduleMultiActionCooldownEvent then
                                 scheduleMultiActionCooldownEvent(button, "group_" .. groupId .. "_spell_" .. spellData.id,
                                     delay)
@@ -562,7 +555,7 @@ function onSpellGroupCooldown(groupId, delay)
                         if runeSpellData and
                             (Spells.getCooldownByGroup(runeSpellData, groupId) or
                                 Spells.getCooldownBySecondaryGroup(runeSpellData, groupId)) then
-                            addButtonToUpdate(button)
+                            addPendingMultiButton(button)
                             if scheduleMultiActionCooldownEvent then
                                 scheduleMultiActionCooldownEvent(button, "group_" .. groupId .. "_rune_" .. runeSpellData.id,
                                     delay)
@@ -604,13 +597,7 @@ function onSpellGroupCooldown(groupId, delay)
         end
     end
 
-    scheduleEvent(function()
-        for _, button in pairs(buttonsToUpdate) do
-            if button and not button:isDestroyed() then
-                updateMultiButtonState(button)
-            end
-        end
-    end, 50)
+    schedulePendingMultiButtonUpdate()
 end
 
 --- Handles passive ability data updates

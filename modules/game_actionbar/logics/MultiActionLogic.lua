@@ -20,16 +20,11 @@ local function countFilledMultiSlots(multiActions)
     return count
 end
 
-local function getActionName(actionType)
+local function localGetActionName(actionType)
     if type(actionType) == "string" then
         return actionType
     end
-    for k, v in pairs(UseTypes) do
-        if v == actionType then
-            return k
-        end
-    end
-    return nil
+    return getActionName(actionType)
 end
 
 local function clearSingleActionCache(button, barID, buttonID)
@@ -97,22 +92,23 @@ local function getSpellGroupCooldownRemaining(spellData)
         return 0
     end
 
-    local groupIds = Spells.getGroupIds(spellData)
+    local groupIds = spellData._cachedGroupIds or Spells.getGroupIds(spellData)
     if not groupIds then
         return 0
     end
 
     local maxRemaining = 0
+    local now = g_clock.millis()
     for _, groupId in pairs(groupIds) do
         local groupCooldown = spellGroupCooldownCache[groupId]
         if groupCooldown then
-            local remaining = (groupCooldown.startTime + groupCooldown.exhaustion) - g_clock.millis()
-            if remaining > 0 and remaining > maxRemaining then
+            local remaining = (groupCooldown.startTime + groupCooldown.exhaustion) - now
+            if remaining > maxRemaining then
                 maxRemaining = remaining
             end
         end
     end
-    return maxRemaining
+    return maxRemaining > 0 and maxRemaining or 0
 end
 
 local function applySpellCooldownsToButton(button, spellData)
@@ -220,6 +216,103 @@ local function findNextAvailableAction(multiActions)
     return bestAction or closestCooldownAction or firstValidAction
 end
 
+-- /*=============================================
+-- =    Shared slot rendering helper             =
+-- =============================================*/
+local function renderSlotOnWidget(widget, slotData, isMainButton)
+    if not widget or not slotData or table.empty(slotData) then
+        return
+    end
+
+    if slotData["useObject"] then
+        if isMainButton then
+            widget.cache.isSpell = false
+            widget.cache.isRuneSpell = false
+            widget.cache.spellID = 0
+            widget.cache.spellData = nil
+            widget.cache.primaryGroup = nil
+            widget.item.text:setImageSource("")
+            widget.item.text:setText("")
+        end
+
+        widget.item:setItemId(slotData["useObject"], true)
+        widget.item:setOn(true)
+        widget.cache.itemId = slotData["useObject"]
+        widget.cache.upgradeTier = slotData["upgradeTier"] or 0
+        widget.cache.smartMode = slotData["useEquipSmartMode"] or false
+        local useTypeName = localGetActionName(slotData["useType"]) or "Use"
+        widget.cache.actionType = UseTypes[useTypeName] or UseTypes["Use"]
+
+        local itemCount = player and player:getInventoryCount(widget.cache.itemId, widget.cache.upgradeTier) or 0
+        widget.item:setItemCount(itemCount)
+        if widget.item.text and widget.item.text.gray then
+            widget.item.text.gray:setVisible(itemCount == 0)
+        end
+        if widget.cache.actionType == UseTypes["Equip"] then
+            local equipped = player and player:hasEquippedItemId(widget.cache.itemId, widget.cache.upgradeTier)
+            widget.item:setChecked(itemCount ~= 0 and equipped)
+        end
+
+        local runeSpellData = Spells.getRuneSpellByItem(widget.cache.itemId)
+        if runeSpellData then
+            widget.cache.isRuneSpell = true
+            widget.cache.spellData = runeSpellData
+            local groupIds = Spells.getGroupIds(runeSpellData)
+            widget.cache.primaryGroup = groupIds and groupIds[1] or nil
+            applySpellCooldownsToButton(widget, runeSpellData)
+        end
+    elseif slotData["chatText"] then
+        local spellData, param = Spells.getSpellDataByParamWords(slotData["chatText"]:lower())
+        if spellData then
+            local spellId = spellData.clientId
+            if spellId then
+                local source = SpelllistSettings['Default'].iconFile
+                local clip = Spells.getImageClip(spellId, 'Default')
+                widget.item.text:setText("")
+                widget.item.text:setImageSource(source)
+                widget.item.text:setImageClip(clip)
+            end
+            widget.cache.isSpell = true
+            widget.cache.spellID = spellData.id
+            widget.cache.spellData = spellData
+            local groupIds = Spells.getGroupIds(spellData)
+            widget.cache.primaryGroup = groupIds and groupIds[1] or nil
+
+            if param then
+                local formatedParam = param:gsub('"', '')
+                widget.parameterText:setText(short_text('"' .. formatedParam, 4))
+                widget.cache.castParam = formatedParam
+            elseif isMainButton then
+                widget.parameterText:setText("")
+                widget.cache.castParam = nil
+            end
+
+            if widget.item.text and widget.item.text.gray then
+                widget.item.text.gray:setVisible(not playerCanUseSpellLocal(spellData))
+            end
+
+            widget.cache.isRuneSpell = false
+            applySpellCooldownsToButton(widget, spellData)
+        else
+            if isMainButton then
+                widget.cache.isSpell = false
+                widget.cache.isRuneSpell = false
+                widget.cache.spellID = 0
+                widget.cache.spellData = nil
+                widget.cache.primaryGroup = nil
+                widget.item.text:setImageSource("")
+            end
+            widget.item.text:setText(short_text(slotData["chatText"], 15))
+        end
+        widget.item:setOn(true)
+        widget.cache.param = slotData["chatText"]
+        widget.cache.sendAutomatic = slotData["sendAutomatically"]
+        widget.cache.actionType = UseTypes["chatText"]
+    end
+
+    setupButtonTooltip(widget, false)
+end
+
 function updateMultiButtonState(button)
     if not button or not button.item or not player or not button.cache then
         return
@@ -239,103 +332,29 @@ function updateMultiButtonState(button)
         return
     end
 
+    -- Early return: already displaying this chatText action
     if action["chatText"] and button.cache.param == action["chatText"] and
         button.cache.sendAutomatic == action["sendAutomatically"] and
         button.cache.actionType == UseTypes["chatText"] then
         return
     end
 
-    removeCooldown(button)
-
-    if action["useObject"] then
-        button.cache.isSpell = false
-        button.cache.isRuneSpell = false
-        button.cache.spellID = 0
-        button.cache.spellData = nil
-        button.cache.primaryGroup = nil
-        button.item.text:setImageSource("")
-        button.item.text:setText("")
-
-        button.item:setItemId(action["useObject"], true)
-        button.item:setOn(true)
-        button.cache.itemId = action["useObject"]
-        button.cache.upgradeTier = action["upgradeTier"] or 0
-        button.cache.smartMode = action["useEquipSmartMode"] or false
-        local useTypeName = getActionName(action["useType"]) or "Use"
-        button.cache.actionType = UseTypes[useTypeName] or UseTypes["Use"]
-        setupButtonTooltip(button, false)
-
-        local itemCount = player and player:getInventoryCount(button.cache.itemId, button.cache.upgradeTier) or 0
-        button.item:setItemCount(itemCount)
-        if button.item.text and button.item.text.gray then
-            button.item.text.gray:setVisible(itemCount == 0)
+    -- Early return: already displaying this useObject action
+    if action["useObject"] and button.cache.itemId == action["useObject"] then
+        local useTypeName = localGetActionName(action["useType"]) or "Use"
+        if button.cache.actionType == (UseTypes[useTypeName] or UseTypes["Use"]) then
+            return
         end
-        if button.cache.actionType == UseTypes["Equip"] then
-            local equipped = player and player:hasEquippedItemId(button.cache.itemId, button.cache.upgradeTier)
-            button.item:setChecked(itemCount ~= 0 and equipped)
-        end
-
-        local runeSpellData = Spells.getRuneSpellByItem(button.cache.itemId)
-        if runeSpellData then
-            button.cache.isRuneSpell = true
-            button.cache.spellData = runeSpellData
-            button.cache.primaryGroup = runeSpellData.group and Spells.getGroupIds(runeSpellData) and
-                                            Spells.getGroupIds(runeSpellData)[1] or nil
-            applySpellCooldownsToButton(button, runeSpellData)
-        end
-    elseif action["chatText"] then
-        local spellData, param = Spells.getSpellDataByParamWords(action["chatText"]:lower())
-        if spellData then
-            local spellId = spellData.clientId
-            if spellId then
-                local source = SpelllistSettings['Default'].iconFile
-                local clip = Spells.getImageClip(spellId, 'Default')
-                button.item.text:setText("")
-                button.item.text:setImageSource(source)
-                button.item.text:setImageClip(clip)
-            end
-            button.cache.isSpell = true
-            button.cache.spellID = spellData.id
-            button.cache.spellData = spellData
-            button.cache.primaryGroup = spellData.group and Spells.getGroupIds(spellData) and
-                                            Spells.getGroupIds(spellData)[1] or nil
-
-            if param then
-                local formatedParam = param:gsub('"', '')
-                button.parameterText:setText(short_text('"' .. formatedParam, 4))
-                button.cache.castParam = formatedParam
-            else
-                button.parameterText:setText("")
-                button.cache.castParam = nil
-            end
-
-            if button.item.text and button.item.text.gray then
-                button.item.text.gray:setVisible(not playerCanUseSpellLocal(spellData))
-            end
-
-            button.cache.isRuneSpell = false
-            applySpellCooldownsToButton(button, spellData)
-        else
-            button.cache.isSpell = false
-            button.cache.isRuneSpell = false
-            button.cache.spellID = 0
-            button.cache.spellData = nil
-            button.cache.primaryGroup = nil
-            button.item.text:setImageSource("")
-            button.item.text:setText(short_text(action["chatText"], 15))
-        end
-        button.item:setOn(true)
-        button.cache.param = action["chatText"]
-        button.cache.sendAutomatic = action["sendAutomatically"]
-        button.cache.actionType = UseTypes["chatText"]
-        setupButtonTooltip(button, false)
     end
+
+    removeCooldown(button)
+    renderSlotOnWidget(button, action, true)
 
     if button.multiIcon then
         button.multiIcon:setVisible(countFilledMultiSlots(button.cache.multiActions) >= 2)
     end
-    if cacheMultiActionButtons and not table.contains(cacheMultiActionButtons, button) then
-        table.insert(cacheMultiActionButtons, button)
+    if cacheMultiActionButtons then
+        cacheMultiActionButtons[button] = true
     end
 end
 
@@ -543,20 +562,12 @@ function onMultiActionButtonMouseRelease(actionButton, mousePos, mouseButton, pa
                 ApiJson.removeMultiAction(tonumber(barID), tonumber(buttonID), multiButtonIndex)
                 parentButton.cache.multiActions[multiButtonIndex] = {}
 
-                local allEmpty = true
-                for i = 1, 3 do
-                    if not table.empty(parentButton.cache.multiActions[i] or {}) then
-                        allEmpty = false
-                        break
-                    end
-                end
-
-                if allEmpty then
+                if not hasMultiActions(parentButton.cache.multiActions) then
                     parentButton.cache.multiActions = {{}, {}, {}}
                     if parentButton.multiIcon then
                         parentButton.multiIcon:setVisible(false)
                     end
-                    table.removevalue(cacheMultiActionButtons, parentButton)
+                    cacheMultiActionButtons[parentButton] = nil
                     clearMultiActionCooldownEvents(parentButton:getId())
                     closeCurrentMultiActionPanel()
                     clearButton(parentButton, false)
@@ -707,9 +718,7 @@ function assignMultiAction(button, skipPrefill)
                 prefilled = true
             end
             if prefilled then
-                if not table.contains(cacheMultiActionButtons, button) then
-                    table.insert(cacheMultiActionButtons, button)
-                end
+                cacheMultiActionButtons[button] = true
             end
         end
     end
@@ -773,65 +782,7 @@ function assignMultiAction(button, skipPrefill)
             end
 
             if not table.empty(data) then
-                if data["useObject"] and player then
-                    actionButton.item:setItemId(data["useObject"], true)
-                    actionButton.item:setOn(true)
-
-                    local itemCount = player:getInventoryCount(data["useObject"], data["upgradeTier"] or 0)
-                    actionButton.item:setItemCount(itemCount)
-                    if actionButton.item.text and actionButton.item.text.gray then
-                        actionButton.item.text.gray:setVisible(itemCount == 0)
-                    end
-                    local useTypeName = getActionName(data["useType"]) or "Use"
-                    actionButton.cache.actionType = UseTypes[useTypeName] or UseTypes["Use"]
-                    actionButton.cache.itemId = data["useObject"]
-                    actionButton.cache.upgradeTier = data["upgradeTier"] or 0
-                    actionButton.cache.smartMode = data["useEquipSmartMode"] or false
-                    if actionButton.cache.actionType == UseTypes["Equip"] then
-                        local equipped = player:hasEquippedItemId(data["useObject"], data["upgradeTier"] or 0)
-                        actionButton.item:setChecked(itemCount ~= 0 and equipped)
-                    end
-                    local runeSpellData = Spells.getRuneSpellByItem(data["useObject"])
-                    if runeSpellData then
-                        actionButton.cache.isRuneSpell = true
-                        actionButton.cache.spellData = runeSpellData
-                        actionButton.cache.primaryGroup = runeSpellData.group and Spells.getGroupIds(runeSpellData) and
-                                                             Spells.getGroupIds(runeSpellData)[1] or nil
-                        applySpellCooldownsToButton(actionButton, runeSpellData)
-                    end
-                elseif data["chatText"] then
-                    local spellData, param = Spells.getSpellDataByParamWords(data["chatText"]:lower())
-                    if spellData then
-                        local spellId = spellData.clientId
-                        if spellId then
-                            local source = SpelllistSettings['Default'].iconFile
-                            local clip = Spells.getImageClip(spellId, 'Default')
-                            actionButton.item.text:setImageSource(source)
-                            actionButton.item.text:setImageClip(clip)
-                        end
-                        actionButton.cache.isSpell = true
-                        actionButton.cache.spellID = spellData.id
-                        actionButton.cache.spellData = spellData
-                        actionButton.cache.primaryGroup = spellData.group and Spells.getGroupIds(spellData) and
-                                                              Spells.getGroupIds(spellData)[1] or nil
-                        if param then
-                            local formatedParam = param:gsub('"', '')
-                            actionButton.parameterText:setText(short_text('"' .. formatedParam, 4))
-                            actionButton.cache.castParam = formatedParam
-                        end
-                        if actionButton.item.text.gray then
-                            actionButton.item.text.gray:setVisible(not playerCanUseSpellLocal(spellData))
-                        end
-                        checkRemainSpellCooldown(actionButton, spellData.id)
-                    else
-                        actionButton.item.text:setText(short_text(data["chatText"], 15))
-                    end
-                    actionButton.item:setOn(true)
-                    actionButton.cache.param = data["chatText"]
-                    actionButton.cache.sendAutomatic = data["sendAutomatically"]
-                    actionButton.cache.actionType = UseTypes["chatText"]
-                end
-                setupButtonTooltip(actionButton, false)
+                renderSlotOnWidget(actionButton, data, false)
             end
         end
     end
@@ -884,62 +835,30 @@ function onDragMultiActionItemLeave(self, mousePos, actionButton)
                     parentButton.cache.multiActions[sourceIndex] = targetData or {}
                     parentButton.cache.multiActions[targetIndex] = sourceData or {}
 
-                    ApiJson.removeMultiAction(tonumber(barID), tonumber(buttonID), sourceIndex)
-                    ApiJson.removeMultiAction(tonumber(barID), tonumber(buttonID), targetIndex)
-
-                    if targetData and not table.empty(targetData) then
-                        if targetData["chatText"] then
-                            ApiJson.createOrUpdateMultiText(tonumber(barID), tonumber(buttonID), sourceIndex,
-                                targetData["chatText"], targetData["sendAutomatically"])
-                        elseif targetData["useObject"] then
-                            ApiJson.createOrUpdateMultiAction(tonumber(barID), tonumber(buttonID), sourceIndex,
-                                getActionName(targetData["useType"]) or "Use", targetData["useObject"],
-                                targetData["upgradeTier"] or 0, targetData["useEquipSmartMode"] or false)
-                        end
-                    end
-                    if sourceData and not table.empty(sourceData) then
-                        if sourceData["chatText"] then
-                            ApiJson.createOrUpdateMultiText(tonumber(barID), tonumber(buttonID), targetIndex,
-                                sourceData["chatText"], sourceData["sendAutomatically"])
-                        elseif sourceData["useObject"] then
-                            ApiJson.createOrUpdateMultiAction(tonumber(barID), tonumber(buttonID), targetIndex,
-                                getActionName(sourceData["useType"]) or "Use", sourceData["useObject"],
-                                sourceData["upgradeTier"] or 0, sourceData["useEquipSmartMode"] or false)
-                        end
-                    end
+                    persistMultiSlot(tonumber(barID), tonumber(buttonID), sourceIndex, targetData)
+                    persistMultiSlot(tonumber(barID), tonumber(buttonID), targetIndex, sourceData)
 
                     updateMultiButtonState(parentButton)
                     assignMultiAction(parentButton, true)
                     return true
                 end
 
-                if panel and panel.button then
-                    local targetButton = panel.button
-                    local tBarID, tButtonID = splitButtonId(targetButton)
-                    local sBarID, sButtonID = splitButtonId(parentButton)
-                    local sourceData = parentButton.cache.multiActions[sourceIndex]
+                local targetButton = panel.button
+                local tBarID, tButtonID = splitButtonId(targetButton)
+                local sBarID, sButtonID = splitButtonId(parentButton)
+                local sourceData = parentButton.cache.multiActions[sourceIndex]
 
-                    if sourceData and not table.empty(sourceData) then
-                        if sourceData["chatText"] then
-                            ApiJson.createOrUpdateMultiText(tonumber(tBarID), tonumber(tButtonID), targetIndex,
-                                sourceData["chatText"], sourceData["sendAutomatically"])
-                        elseif sourceData["useObject"] then
-                            ApiJson.createOrUpdateMultiAction(tonumber(tBarID), tonumber(tButtonID), targetIndex,
-                                getActionName(sourceData["useType"]) or "Use", sourceData["useObject"],
-                                sourceData["upgradeTier"] or 0, sourceData["useEquipSmartMode"] or false)
-                        end
-                    end
+                persistMultiSlot(tonumber(tBarID), tonumber(tButtonID), targetIndex, sourceData)
 
-                    ApiJson.removeMultiAction(tonumber(sBarID), tonumber(sButtonID), sourceIndex)
-                    parentButton.cache.multiActions[sourceIndex] = {}
+                ApiJson.removeMultiAction(tonumber(sBarID), tonumber(sButtonID), sourceIndex)
+                parentButton.cache.multiActions[sourceIndex] = {}
 
-                    cancelMultiDrag(self, actionButton)
-                    updateMultiButtonState(targetButton)
-                    updateMultiButtonState(parentButton)
-                    assignMultiAction(targetButton, true)
-                    assignMultiAction(parentButton, true)
-                    return true
-                end
+                cancelMultiDrag(self, actionButton)
+                updateMultiButtonState(targetButton)
+                updateMultiButtonState(parentButton)
+                assignMultiAction(targetButton, true)
+                assignMultiAction(parentButton, true)
+                return true
             end
         end
     end
@@ -967,18 +886,9 @@ function onDragMultiActionItemLeave(self, mousePos, actionButton)
         return
     end
 
-    if destButton.cache and destButton.cache.multiActions then
-        local destHasMulti = false
-        for i = 1, 3 do
-            if not table.empty(destButton.cache.multiActions[i] or {}) then
-                destHasMulti = true
-                break
-            end
-        end
-        if destHasMulti then
-            cancelMultiDrag(self, actionButton)
-            return
-        end
+    if destButton.cache and hasMultiActions(destButton.cache.multiActions) then
+        cancelMultiDrag(self, actionButton)
+        return
     end
 
     local barID, buttonID = splitButtonId(parentButton)
@@ -993,7 +903,7 @@ function onDragMultiActionItemLeave(self, mousePos, actionButton)
     local destHasAction = false
     if destButton.cache.itemId and destButton.cache.itemId > 100 then
         destHasAction = true
-        local actionTypeName = getActionName(destButton.cache.actionType)
+        local actionTypeName = localGetActionName(destButton.cache.actionType)
         if actionTypeName then
             ApiJson.createOrUpdateMultiAction(tonumber(barID), tonumber(buttonID), sourceIndex, actionTypeName,
                 destButton.cache.itemId, destButton.cache.upgradeTier or 0, destButton.cache.smartMode or false)
@@ -1019,7 +929,7 @@ function onDragMultiActionItemLeave(self, mousePos, actionButton)
             ApiJson.createOrUpdateText(tonumber(dBarID), tonumber(dButtonID), sourceData["chatText"],
                 sourceData["sendAutomatically"])
         elseif sourceData["useObject"] then
-            local actionTypeName = getActionName(sourceData["useType"]) or "Use"
+            local actionTypeName = localGetActionName(sourceData["useType"]) or "Use"
             ApiJson.createOrUpdateAction(tonumber(dBarID), tonumber(dButtonID), actionTypeName,
                 sourceData["useObject"], sourceData["upgradeTier"] or 0)
         end
@@ -1029,21 +939,14 @@ function onDragMultiActionItemLeave(self, mousePos, actionButton)
         ApiJson.removeMultiAction(tonumber(barID), tonumber(buttonID), sourceIndex)
         parentButton.cache.multiActions[sourceIndex] = {}
 
-        local allEmpty = true
-        for i = 1, 3 do
-            if not table.empty(parentButton.cache.multiActions[i] or {}) then
-                allEmpty = false
-                break
-            end
-        end
-        if allEmpty then
+        if not hasMultiActions(parentButton.cache.multiActions) then
             parentButton.cache.itemId = 0
             parentButton.cache.param = ""
             parentButton.cache.actionType = 0
             if parentButton.multiIcon then
                 parentButton.multiIcon:setVisible(false)
             end
-            table.removevalue(cacheMultiActionButtons, parentButton)
+            cacheMultiActionButtons[parentButton] = nil
             clearMultiActionCooldownEvents(parentButton:getId())
         end
     end
