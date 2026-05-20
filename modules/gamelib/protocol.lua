@@ -335,7 +335,7 @@ ClientOpcodes = {
     ClientCyclopediaSendBuyCharmRune        = 228, -- 0xE4
     ClientCyclopediaRequestCharacterInfo    = 229, -- 0xE5
     ClientBugReport                         = 230, -- 0xE6
-    ClientRuleViolation                     = 231, -- 0xE7 | ClientWheelGemAction = 231
+    ClientWheelGemAction                    = 231, -- 0xE7 | ClientRuleViolation = 231
     ClientDebugReport                       = 232, -- 0xE8
     ClientPreyAction                        = 235, -- 0xEB
     ClientPreyRequest                       = 237, -- 0xED

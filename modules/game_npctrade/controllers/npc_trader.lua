@@ -178,8 +178,12 @@ function controllerNpcTrader:onTradeListRendered()
                 if infoBlock then
                     local nameLabel = infoBlock:getChildById("nameLabel")
                     local infoLabel = infoBlock:getChildById("infoLabel")
-                    if nameLabel then nameLabel:setColor(color) end
-                    if infoLabel then infoLabel:setColor(color) end
+                    if nameLabel then
+                        nameLabel:setColor(color)
+                    end
+                    if infoLabel then
+                        infoLabel:setColor(color)
+                    end
                 end
 
                 child.onMouseRelease = function(widget, mousePos, mouseButton)
@@ -456,7 +460,10 @@ function controllerNpcTrader:filterTradeList(searchText)
         local found = false
         if self.selectedItem then
             for _, item in ipairs(self.currentList) do
-                if item == self.selectedItem then found = true; break end
+                if item == self.selectedItem then
+                    found = true;
+                    break
+                end
             end
         end
         if not found then
@@ -474,7 +481,7 @@ function controllerNpcTrader:sellAll(delayed, exceptions)
         delayed = false
     end
     exceptions = exceptions or {}
-    
+
     if self.sellAllWithDelayEvent then
         removeEvent(self.sellAllWithDelayEvent)
         self.sellAllWithDelayEvent = nil
@@ -495,16 +502,18 @@ function controllerNpcTrader:sellAll(delayed, exceptions)
 
                 if delayed then
                     g_game.sellItem(entry.ptr, maxAmount, self.ignoreEquipped)
-                    self.sellAllWithDelayEvent = scheduleEvent(function() self:sellAll(true, exceptions) end, 1100)
+                    self.sellAllWithDelayEvent = scheduleEvent(function()
+                        self:sellAll(true, exceptions)
+                    end, 1100)
                     return
                 end
-                
-                table.insert(queue, { entry.ptr, maxAmount, self.ignoreEquipped })
+
+                table.insert(queue, {entry.ptr, maxAmount, self.ignoreEquipped})
                 sellQuantity = sellQuantity - maxAmount
             end
         end
     end
-    
+
     for _, entry in ipairs(queue) do
         g_game.sellItem(entry[1], entry[2], entry[3])
     end

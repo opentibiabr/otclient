@@ -213,10 +213,10 @@ notificationsController.widgets = {}
 
 function notificationsController:onClientEvent(eventCat, ...)
     if not modules.client_options.getOption("showInfoBanner") then
-         g_logger.debug("The server has sent infobaner, but the checkbox in client_options is disabled..")
+        g_logger.debug("The server has sent infobaner, but the checkbox in client_options is disabled..")
         return
     end
-    local args = { ... }
+    local args = {...}
     local popupTemplate = nil
     if eventCat == eventCategory.CLIENT_EVENT_TYPE_SIMPLE then
         local eventType = args[1]
@@ -261,7 +261,10 @@ function notificationsController:onClientEvent(eventCat, ...)
     elseif eventCat == eventCategory.CLIENT_EVENT_TYPE_SKILL then
         local skillId = args[1]
         local level = args[2]
-        local data = skillNames[skillId] or { name = "Skill", icon = "fist" }
+        local data = skillNames[skillId] or {
+            name = "Skill",
+            icon = "fist"
+        }
         title = type(title) == 'string' and title:format(data.name) or title
         description = type(description) == 'string' and description:format(level) or description
         img = type(img) == 'string' and img:format(data.icon) or img
@@ -400,7 +403,7 @@ function notificationsController:resetBanner()
     self:setContentOpacity(0)
     self:setLeftIconsOpacity(0)
     self:setPaperSize(0)
-    
+
     if self.widgets.append then
         self.widgets.append:destroyChildren()
     end
@@ -463,16 +466,23 @@ function notificationsController:processNext()
             ]], data.extraData.creatureId)
             if data.extraData.skinType == skinType.outfit then
                 local outfit = appendW:append(html)
-                outfit:setOutfit({type = data.extraData.creatureId})
+                outfit:setOutfit({
+                    type = data.extraData.creatureId
+                })
             elseif data.extraData.skinType == skinType.addon1 or data.extraData.skinType == skinType.addon2 then
                 local outfit = appendW:append(html)
-                outfit:setOutfit({type = data.extraData.creatureId, addons = data.extraData.skinType})
+                outfit:setOutfit({
+                    type = data.extraData.creatureId,
+                    addons = data.extraData.skinType
+                })
             elseif data.extraData.skinType == skinType.mount then
                 local outfit = appendW:append(html)
-                outfit:setOutfit({type = data.extraData.creatureId})
+                outfit:setOutfit({
+                    type = data.extraData.creatureId
+                })
             end
         end
-    end 
+    end
 
     self.state = "opening"
     debugPrint("Starting Banner ->", data.title)

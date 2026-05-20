@@ -32,7 +32,9 @@ local function safeCall(obj, method, ...)
 end
 
 local function removeHudRetryEvent(event)
-    if not event then return end
+    if not event then
+        return
+    end
     table.removevalue(hudRetryEvents, event)
 end
 
@@ -389,7 +391,8 @@ local function createConditionRow(condition, parent)
 end
 
 function ConditionsHUD.setupHudList()
-    local hudWindow = modules.client_options and modules.client_options.panels and modules.client_options.panels.interfaceHUD
+    local hudWindow = modules.client_options and modules.client_options.panels and
+                          modules.client_options.panels.interfaceHUD
     if not hudWindow then
         return false
     end
@@ -449,10 +452,10 @@ end
 
 local function hasAnyGoshnarState(states)
     return Player.isStateActive(states, PlayerStates.GoshnarTaint1) or
-        Player.isStateActive(states, PlayerStates.GoshnarTaint2) or
-        Player.isStateActive(states, PlayerStates.GoshnarTaint3) or
-        Player.isStateActive(states, PlayerStates.GoshnarTaint4) or
-        Player.isStateActive(states, PlayerStates.GoshnarTaint5)
+               Player.isStateActive(states, PlayerStates.GoshnarTaint2) or
+               Player.isStateActive(states, PlayerStates.GoshnarTaint3) or
+               Player.isStateActive(states, PlayerStates.GoshnarTaint4) or
+               Player.isStateActive(states, PlayerStates.GoshnarTaint5)
 end
 
 function StatusIconBar.isConditionActive(player, condition, states)

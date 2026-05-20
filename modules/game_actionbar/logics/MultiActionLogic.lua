@@ -10,7 +10,9 @@ local function splitButtonId(button)
 end
 
 local function countFilledMultiSlots(multiActions)
-    if not multiActions then return 0 end
+    if not multiActions then
+        return 0
+    end
     local count = 0
     for i = 1, 3 do
         if type(multiActions[i]) == "table" and next(multiActions[i]) ~= nil then
@@ -333,9 +335,8 @@ function updateMultiButtonState(button)
     end
 
     -- Early return: already displaying this chatText action
-    if action["chatText"] and button.cache.param == action["chatText"] and
-        button.cache.sendAutomatic == action["sendAutomatically"] and
-        button.cache.actionType == UseTypes["chatText"] then
+    if action["chatText"] and button.cache.param == action["chatText"] and button.cache.sendAutomatic ==
+        action["sendAutomatically"] and button.cache.actionType == UseTypes["chatText"] then
         return
     end
 
@@ -388,8 +389,7 @@ function scheduleMultiActionCooldownEvent(button, eventKey, delay)
 end
 
 function registerMultiActionCooldownEvents(button)
-    if not button or not button.cache or not button.cache.multiActions or
-        table.empty(button.cache.multiActions) then
+    if not button or not button.cache or not button.cache.multiActions or table.empty(button.cache.multiActions) then
         return
     end
 
@@ -645,13 +645,17 @@ function assignMultiAction(button, skipPrefill)
         multiPanel.prevMouseReleaseHandler = prevHandler
         gameRootPanel.onMouseRelease = function(self, mousePos, mouseButton)
             if mouseButton == MouseRightButton then
-                if prevHandler then return prevHandler(self, mousePos, mouseButton) end
+                if prevHandler then
+                    return prevHandler(self, mousePos, mouseButton)
+                end
                 return false
             end
             if multiPanel and not multiPanel:isDestroyed() and not multiPanel:containsPoint(mousePos) then
                 closeCurrentMultiActionPanel()
             end
-            if prevHandler then return prevHandler(self, mousePos, mouseButton) end
+            if prevHandler then
+                return prevHandler(self, mousePos, mouseButton)
+            end
             return false
         end
 
@@ -714,8 +718,8 @@ function assignMultiAction(button, skipPrefill)
                     upgradeTier = upgradeTier,
                     useEquipSmartMode = smartMode
                 }
-                ApiJson.createOrUpdateMultiAction(tonumber(barID), tonumber(buttonID), 1, useType, itemId,
-                    upgradeTier, smartMode)
+                ApiJson.createOrUpdateMultiAction(tonumber(barID), tonumber(buttonID), 1, useType, itemId, upgradeTier,
+                    smartMode)
                 clearSingleActionCache(button, barID, buttonID)
                 prefilled = true
             end
@@ -932,8 +936,8 @@ function onDragMultiActionItemLeave(self, mousePos, actionButton)
                 sourceData["sendAutomatically"])
         elseif sourceData["useObject"] then
             local actionTypeName = localGetActionName(sourceData["useType"]) or "Use"
-            ApiJson.createOrUpdateAction(tonumber(dBarID), tonumber(dButtonID), actionTypeName,
-                sourceData["useObject"], sourceData["upgradeTier"] or 0)
+            ApiJson.createOrUpdateAction(tonumber(dBarID), tonumber(dButtonID), actionTypeName, sourceData["useObject"],
+                sourceData["upgradeTier"] or 0)
         end
     end
 

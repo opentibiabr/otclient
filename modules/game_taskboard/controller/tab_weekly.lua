@@ -135,8 +135,7 @@ function TaskBoardController:onWeeklyServerData(header, monsters, items)
     for i, it in ipairs(items) do
         it = type(it) == 'table' and it or {}
         local itemId = tonumber(it.itemId) or 0
-        local itemName = itemId > 0 and (getItemServerName(itemId) or tostring(itemId)) or
-                             "Unknown Item"
+        local itemName = itemId > 0 and (getItemServerName(itemId) or tostring(itemId)) or "Unknown Item"
         local current = tonumber(it.current) or 0
         local total = tonumber(it.total) or 0
         local delivered = (tonumber(it.claimed) or 0) == 1
@@ -165,8 +164,8 @@ function TaskBoardController:onWeeklyServerData(header, monsters, items)
             name = d.name,
             minLevel = d.minLevel,
             canSelect = canSelect,
-            tooltip = (not canSelect) and
-                string.format('The minimum level to start this difficulty is %d', d.minLevel) or nil
+            tooltip = (not canSelect) and string.format('The minimum level to start this difficulty is %d', d.minLevel) or
+                nil
         })
     end
     self.weeklyDifficulties = diffList
@@ -242,14 +241,12 @@ function TaskBoardController:selectDifficulty(diffId)
     g_game.weeklyTaskAction(WEEKLY_ACTION_SELECT_DIFFICULTY, parsedId)
     self.weeklyDifficultyPending = false
     self.diffModalVisible = false
-	return
+    return
 end
 
 function TaskBoardController:deliverItem(itemId, slotIndex)
     local parsedItemId = tonumber(itemId) or 0
-    local itemName = parsedItemId > 0 and
-                         (getItemServerName(parsedItemId) or tostring(parsedItemId)) or
-                         "Unknown Item"
+    local itemName = parsedItemId > 0 and (getItemServerName(parsedItemId) or tostring(parsedItemId)) or "Unknown Item"
     local msgBox
     local function yes()
         if msgBox then
@@ -277,7 +274,9 @@ end
 
 function TaskBoardController:onDeliveryItemsRendered()
     local container = self:findWidget("#deliveryTasksBox")
-    if not container then return end
+    if not container then
+        return
+    end
     local ctrl = self
     for i = 1, container:getChildCount() do
         local card = container:getChildByIndex(i)

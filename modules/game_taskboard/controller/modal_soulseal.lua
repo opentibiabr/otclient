@@ -203,24 +203,33 @@ function TaskBoardController:syncSoulsealCategorySelect()
 end
 
 function TaskBoardController:getSoulsealScrollWidget()
-    if not self.soulsealModal or not self.soulsealModal.ui then return nil end
+    if not self.soulsealModal or not self.soulsealModal.ui then
+        return nil
+    end
     return self.soulsealModal.ui:querySelector("#soulsealListScroll")
 end
 
 function TaskBoardController:onSoulsealScrollChange(widget, virtualOffset)
-    if self._soulsealApplyingScrollSnap then return end
+    if self._soulsealApplyingScrollSnap then
+        return
+    end
     self:refreshSoulsealViewport((virtualOffset and virtualOffset.y) or 0)
 end
 
 function TaskBoardController:bindSoulsealScroll()
     local scrollWidget = self:getSoulsealScrollWidget()
-    if not scrollWidget then return end
-    if scrollWidget._soulsealVirtualized then return end
+    if not scrollWidget then
+        return
+    end
+    if scrollWidget._soulsealVirtualized then
+        return
+    end
 
     scrollWidget._soulsealVirtualized = true
     scrollWidget._skipScrollLayoutRecalc = true
     scrollWidget._soulsealOriginalUpdateScrollBars = scrollWidget.updateScrollBars
-    scrollWidget.updateScrollBars = function() end
+    scrollWidget.updateScrollBars = function()
+    end
     scrollWidget:setAutoFocusPolicy(AutoFocusNone)
 
     scrollWidget.onScrollChange = function(widget, virtualOffset)
@@ -296,14 +305,19 @@ function TaskBoardController:resetSoulsealScroll()
         scrollWidget.verticalScrollBar:setValue(0)
         self._soulsealApplyingScrollSnap = false
     elseif scrollWidget then
-        scrollWidget:setVirtualOffset({ x = 0, y = 0 })
+        scrollWidget:setVirtualOffset({
+            x = 0,
+            y = 0
+        })
     end
 
     self:refreshSoulsealViewport(0)
 end
 
 function TaskBoardController:refreshSoulsealViewport(scrollValue)
-    if self._soulsealViewportRefreshing then return end
+    if self._soulsealViewportRefreshing then
+        return
+    end
     self._soulsealViewportRefreshing = true
 
     local list = filteredSoulsealEntries
@@ -348,10 +362,7 @@ function TaskBoardController:refreshSoulsealViewport(scrollValue)
         end
     end
 
-    local firstVisibleIndex = math.min(
-        math.floor(y / rowHeight) + 1,
-        math.max(1, total - visibleRows + 1)
-    )
+    local firstVisibleIndex = math.min(math.floor(y / rowHeight) + 1, math.max(1, total - visibleRows + 1))
     local startIndex = math.max(1, firstVisibleIndex - SOULSEAL_OVERSCAN_ROWS)
     local endIndex = math.min(total, firstVisibleIndex + visibleRows + SOULSEAL_OVERSCAN_ROWS - 1)
 
@@ -369,8 +380,8 @@ function TaskBoardController:refreshSoulsealViewport(scrollValue)
     self.soulsealEntries = visible
     self.soulsealTopSpacerPxA, self.soulsealTopSpacerPxB, self.soulsealTopSpacerPxC =
         splitSoulsealSpacerPx((startIndex - 1) * rowHeight)
-    self.soulsealBottomSpacerPxA, self.soulsealBottomSpacerPxB, self.soulsealBottomSpacerPxC =
-        splitSoulsealSpacerPx((total - endIndex) * rowHeight)
+    self.soulsealBottomSpacerPxA, self.soulsealBottomSpacerPxB, self.soulsealBottomSpacerPxC = splitSoulsealSpacerPx(
+        (total - endIndex) * rowHeight)
     self._soulsealViewportStart = startIndex
     self._soulsealViewportEnd = endIndex
     self._soulsealViewportRefreshing = false
@@ -383,7 +394,9 @@ function TaskBoardController:showSoulseal()
         return
     end
 
-    self.soulsealModal = self:openModal('template/html/modal_soulseal.html', { mode = 'html' })
+    self.soulsealModal = self:openModal('template/html/modal_soulseal.html', {
+        mode = 'html'
+    })
     self:rebuildSoulsealEntries()
     self:syncSoulsealCategorySelect()
 end

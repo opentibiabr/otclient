@@ -62,11 +62,17 @@ end
 
 -- Modal open / close
 function TaskBoardController:showPreferred()
-    if self.preferredModal then return end
+    if self.preferredModal then
+        return
+    end
 
-    self.preferredModal = self:openModal('template/html/modal_preferred.html', { mode = 'html' })
+    self.preferredModal = self:openModal('template/html/modal_preferred.html', {
+        mode = 'html'
+    })
     addEvent(function()
-        if not self.preferredModal or not self.preferredModal.ui then return end
+        if not self.preferredModal or not self.preferredModal.ui then
+            return
+        end
         self:ensurePreferredMonsterScrollBound()
         self:resetPreferredMonsterScroll()
     end)
@@ -202,24 +208,33 @@ end
 
 -- Monster list
 function TaskBoardController:getPreferredMonsterScrollWidget()
-    if not self.preferredModal or not self.preferredModal.ui then return nil end
+    if not self.preferredModal or not self.preferredModal.ui then
+        return nil
+    end
     return self.preferredModal.ui:querySelector("#monsterListScroll")
 end
 
 function TaskBoardController:onPreferredMonsterScrollChange(widget, virtualOffset)
-    if self._preferredApplyingScrollSnap then return end
+    if self._preferredApplyingScrollSnap then
+        return
+    end
     self:refreshMonsterViewport((virtualOffset and virtualOffset.y) or 0)
 end
 
 function TaskBoardController:bindPreferredMonsterScroll()
     local scrollWidget = self:getPreferredMonsterScrollWidget()
-    if not scrollWidget then return end
-    if scrollWidget._preferredVirtualized then return end
+    if not scrollWidget then
+        return
+    end
+    if scrollWidget._preferredVirtualized then
+        return
+    end
 
     scrollWidget._preferredVirtualized = true
     scrollWidget._skipScrollLayoutRecalc = true
     scrollWidget._preferredOriginalUpdateScrollBars = scrollWidget.updateScrollBars
-    scrollWidget.updateScrollBars = function() end
+    scrollWidget.updateScrollBars = function()
+    end
 
     -- Without AutoFocusNone, OTClient calls focusPreviousChild() automatically when a
     -- focused row widget is destroyed during virtual-scroll re-renders (uiwidget.cpp
@@ -289,17 +304,23 @@ end
 
 function TaskBoardController:getPreferredMonsterRowHeight(scrollWidget)
     local measured = clampRowHeightPx(self._preferredRowHeightPx)
-    if self._preferredRowHeightMeasured then return measured end
+    if self._preferredRowHeightMeasured then
+        return measured
+    end
 
     scrollWidget = scrollWidget or self:getPreferredMonsterScrollWidget()
-    if not scrollWidget or not scrollWidget.querySelectorAll then return measured end
+    if not scrollWidget or not scrollWidget.querySelectorAll then
+        return measured
+    end
 
     local rows = scrollWidget:querySelectorAll(".monsterRow")
     local h = 0
     if rows and #rows >= 2 then
         local delta = math.abs((tonumber(rows[#rows]:getY()) or 0) - (tonumber(rows[1]:getY()) or 0))
         local pitch = delta / (#rows - 1)
-        if pitch > 0 then h = pitch end
+        if pitch > 0 then
+            h = pitch
+        end
     elseif rows and #rows == 1 then
         h = tonumber(rows[1]:getHeight()) or 0
         if rows[1].getMarginTop and rows[1].getMarginBottom then
@@ -331,14 +352,19 @@ function TaskBoardController:resetPreferredMonsterScroll()
         scrollWidget.verticalScrollBar:setValue(0)
         self._preferredApplyingScrollSnap = false
     elseif scrollWidget then
-        scrollWidget:setVirtualOffset({ x = 0, y = 0 })
+        scrollWidget:setVirtualOffset({
+            x = 0,
+            y = 0
+        })
     end
 
     self:refreshMonsterViewport(0)
 end
 
 function TaskBoardController:refreshMonsterViewport(scrollValue)
-    if self._preferredViewportRefreshing then return end
+    if self._preferredViewportRefreshing then
+        return
+    end
     self._preferredViewportRefreshing = true
 
     local list = self.allAvailableMonsters or {}
@@ -387,16 +413,12 @@ function TaskBoardController:refreshMonsterViewport(scrollValue)
         end
     end
 
-    local firstVisibleIndex = math.min(
-        math.floor(y / rowHeight) + 1,
-        math.max(1, total - visibleRows + 1)
-    )
+    local firstVisibleIndex = math.min(math.floor(y / rowHeight) + 1, math.max(1, total - visibleRows + 1))
     local startIndex = math.max(1, firstVisibleIndex - MONSTER_OVERSCAN_ROWS)
     local endIndex = math.min(total, firstVisibleIndex + visibleRows + MONSTER_OVERSCAN_ROWS - 1)
 
-    if self._preferredViewportStart == startIndex and
-       self._preferredViewportEnd == endIndex and
-       self._preferredViewportRowHeight == rowHeight then
+    if self._preferredViewportStart == startIndex and self._preferredViewportEnd == endIndex and
+        self._preferredViewportRowHeight == rowHeight then
         self._preferredViewportRefreshing = false
         return
     end
@@ -411,8 +433,9 @@ function TaskBoardController:refreshMonsterViewport(scrollValue)
     self.availableMonsters = visible
     self.monsterTopSpacerPxA, self.monsterTopSpacerPxB, self.monsterTopSpacerPxC =
         splitSpacerPx((startIndex - 1) * rowHeight)
-    self.monsterBottomSpacerPxA, self.monsterBottomSpacerPxB, self.monsterBottomSpacerPxC =
-        splitSpacerPx((total - endIndex) * rowHeight)
+    self.monsterBottomSpacerPxA, self.monsterBottomSpacerPxB, self.monsterBottomSpacerPxC = splitSpacerPx((total -
+                                                                                                              endIndex) *
+                                                                                                              rowHeight)
     self._preferredViewportStart = startIndex
     self._preferredViewportEnd = endIndex
     self._preferredViewportRowHeight = rowHeight
@@ -424,8 +447,12 @@ function TaskBoardController:rebuildAvailableMonsters()
     for _, slotData in ipairs(cachedRawSlots) do
         local prefId = tonumber(slotData.preferred) or 0
         local unwId = tonumber(slotData.unwanted) or 0
-        if prefId > 0 then usedIds[prefId] = true end
-        if unwId > 0 then usedIds[unwId] = true end
+        if prefId > 0 then
+            usedIds[prefId] = true
+        end
+        if unwId > 0 then
+            usedIds[unwId] = true
+        end
     end
 
     local filter = (self.searchText or ""):lower()
@@ -437,12 +464,18 @@ function TaskBoardController:rebuildAvailableMonsters()
             local name = rd and rd.name or 'Unknown'
             name = name:capitalize()
             if filter == '' or name:lower():find(filter, 1, true) then
-                table.insert(sorted, { raceId = raceId, name = name, outfit = rd and rd.outfit or nil })
+                table.insert(sorted, {
+                    raceId = raceId,
+                    name = name,
+                    outfit = rd and rd.outfit or nil
+                })
             end
         end
     end
 
-    table.sort(sorted, function(a, b) return a.name < b.name end)
+    table.sort(sorted, function(a, b)
+        return a.name < b.name
+    end)
 
     self.allAvailableMonsters = sorted
     self._preferredViewportStart = 0
@@ -502,10 +535,16 @@ function TaskBoardController:onPreferredSlotAction(slotNum, action, cost)
 end
 
 function TaskBoardController:assignPreferred(slotNum)
-    if self.selectedRaceId == 0 then return end
+    if self.selectedRaceId == 0 then
+        return
+    end
     local parsedSlot = tonumber(slotNum) or 0
-    if parsedSlot == 0 then return end
-    if self:isRaceAssigned(self.selectedRaceId, parsedSlot, 'preferred') then return end
+    if parsedSlot == 0 then
+        return
+    end
+    if self:isRaceAssigned(self.selectedRaceId, parsedSlot, 'preferred') then
+        return
+    end
 
     g_game.bountyPreferredAction(BOUNTY_PREF_ACTION_SET_PREFERRED, parsedSlot, self.selectedRaceId)
     updateCachedSlot(parsedSlot, 'preferred', self.selectedRaceId)
@@ -515,10 +554,16 @@ function TaskBoardController:assignPreferred(slotNum)
 end
 
 function TaskBoardController:assignUnwanted(slotNum)
-    if self.selectedRaceId == 0 then return end
+    if self.selectedRaceId == 0 then
+        return
+    end
     local parsedSlot = tonumber(slotNum) or 0
-    if parsedSlot == 0 then return end
-    if self:isRaceAssigned(self.selectedRaceId, parsedSlot, 'unwanted') then return end
+    if parsedSlot == 0 then
+        return
+    end
+    if self:isRaceAssigned(self.selectedRaceId, parsedSlot, 'unwanted') then
+        return
+    end
 
     g_game.bountyPreferredAction(BOUNTY_PREF_ACTION_SET_UNWANTED, parsedSlot, self.selectedRaceId)
     updateCachedSlot(parsedSlot, 'unwanted', self.selectedRaceId)
@@ -529,60 +574,99 @@ end
 
 function TaskBoardController:clearPreferred(slotNum, cost)
     local parsedSlot = tonumber(slotNum) or 0
-    if parsedSlot == 0 then return end
+    if parsedSlot == 0 then
+        return
+    end
     local parsedCost = tonumber(cost) or getPreferredActionCost()
 
     local msgBox
     local function yes()
-        if msgBox then msgBox:destroy(); msgBox = nil end
+        if msgBox then
+            msgBox:destroy();
+            msgBox = nil
+        end
         g_game.bountyPreferredAction(BOUNTY_PREF_ACTION_REMOVE_PREFERRED, parsedSlot, 0)
         updateCachedSlot(parsedSlot, 'preferred', 0)
         self:rebuildPreferredSlots()
         self:rebuildAvailableMonsters()
     end
     local function cancel()
-        if msgBox then msgBox:destroy(); msgBox = nil end
+        if msgBox then
+            msgBox:destroy();
+            msgBox = nil
+        end
     end
     msgBox = displayGeneralBox(tr('Clear Preferred'),
-        tr('Remove preferred monster? This costs %d Bounty Task Points.', parsedCost),
-        {{ text = tr('Yes'), callback = yes }, { text = tr('Cancel'), callback = cancel }}, yes, cancel)
+        tr('Remove preferred monster? This costs %d Bounty Task Points.', parsedCost), {{
+            text = tr('Yes'),
+            callback = yes
+        }, {
+            text = tr('Cancel'),
+            callback = cancel
+        }}, yes, cancel)
 end
 
 function TaskBoardController:clearUnwanted(slotNum, cost)
     local parsedSlot = tonumber(slotNum) or 0
-    if parsedSlot == 0 then return end
+    if parsedSlot == 0 then
+        return
+    end
     local parsedCost = tonumber(cost) or getPreferredActionCost()
 
     local msgBox
     local function yes()
-        if msgBox then msgBox:destroy(); msgBox = nil end
+        if msgBox then
+            msgBox:destroy();
+            msgBox = nil
+        end
         g_game.bountyPreferredAction(BOUNTY_PREF_ACTION_REMOVE_UNWANTED, parsedSlot, 0)
         updateCachedSlot(parsedSlot, 'unwanted', 0)
         self:rebuildPreferredSlots()
         self:rebuildAvailableMonsters()
     end
     local function cancel()
-        if msgBox then msgBox:destroy(); msgBox = nil end
+        if msgBox then
+            msgBox:destroy();
+            msgBox = nil
+        end
     end
     msgBox = displayGeneralBox(tr('Clear Unwanted'),
-        tr('Remove unwanted monster? This costs %d Bounty Task Points.', parsedCost),
-        {{ text = tr('Yes'), callback = yes }, { text = tr('Cancel'), callback = cancel }}, yes, cancel)
+        tr('Remove unwanted monster? This costs %d Bounty Task Points.', parsedCost), {{
+            text = tr('Yes'),
+            callback = yes
+        }, {
+            text = tr('Cancel'),
+            callback = cancel
+        }}, yes, cancel)
 end
 
 function TaskBoardController:buyPreferredSlot(slotNum, price)
     local parsedSlot = tonumber(slotNum) or 0
-    if parsedSlot == 0 then return end
+    if parsedSlot == 0 then
+        return
+    end
     local parsedPrice = tonumber(price) or getPreferredUnlockPrice(parsedSlot, 0)
 
     local msgBox
     local function yes()
-        if msgBox then msgBox:destroy(); msgBox = nil end
+        if msgBox then
+            msgBox:destroy();
+            msgBox = nil
+        end
         g_game.bountyPreferredAction(BOUNTY_PREF_ACTION_BUY_SLOT, parsedSlot, 0)
     end
     local function cancel()
-        if msgBox then msgBox:destroy(); msgBox = nil end
+        if msgBox then
+            msgBox:destroy();
+            msgBox = nil
+        end
     end
     msgBox = displayGeneralBox(tr('Unlock Slot'),
-        tr('Unlock this preferred slot for %d Bounty Task Points?', parsedPrice),
-        {{ text = tr('Yes'), callback = yes }, { text = tr('Cancel'), callback = cancel }}, yes, cancel)
+        tr('Unlock this preferred slot for %d Bounty Task Points?', parsedPrice), {{
+            text = tr('Yes'),
+            callback = yes
+        }, {
+            text = tr('Cancel'),
+            callback = cancel
+        }}, yes, cancel)
 end

@@ -3,50 +3,79 @@
 -- Skill enum but the server treats 5 as "magic level" for offline training only.
 skillController.OFFLINE_TRAINING_MAGIC_SKILL = 5
 
-local offlineTrainingDefs = {
-    {
-        valueId = 'magicValue',
-        barId = 'magicBar',
-        getLevel = function(p) return p:getMagicLevel() end,
-        getBaseLevel = function(p) return p:getBaseMagicLevel() end,
-        getPercent = function(p) return p:getMagicLevelPercent() end
-    },
-    {
-        valueId = 'fistValue',
-        barId = 'fistBar',
-        getLevel = function(p) return p:getSkillLevel(Skill.Fist) end,
-        getBaseLevel = function(p) return p:getSkillBaseLevel(Skill.Fist) end,
-        getPercent = function(p) return p:getSkillLevelPercent(Skill.Fist) end
-    },
-    {
-        valueId = 'clubValue',
-        barId = 'clubBar',
-        getLevel = function(p) return p:getSkillLevel(Skill.Club) end,
-        getBaseLevel = function(p) return p:getSkillBaseLevel(Skill.Club) end,
-        getPercent = function(p) return p:getSkillLevelPercent(Skill.Club) end
-    },
-    {
-        valueId = 'swordValue',
-        barId = 'swordBar',
-        getLevel = function(p) return p:getSkillLevel(Skill.Sword) end,
-        getBaseLevel = function(p) return p:getSkillBaseLevel(Skill.Sword) end,
-        getPercent = function(p) return p:getSkillLevelPercent(Skill.Sword) end
-    },
-    {
-        valueId = 'axeValue',
-        barId = 'axeBar',
-        getLevel = function(p) return p:getSkillLevel(Skill.Axe) end,
-        getBaseLevel = function(p) return p:getSkillBaseLevel(Skill.Axe) end,
-        getPercent = function(p) return p:getSkillLevelPercent(Skill.Axe) end
-    },
-    {
-        valueId = 'distanceValue',
-        barId = 'distanceBar',
-        getLevel = function(p) return p:getSkillLevel(Skill.Distance) end,
-        getBaseLevel = function(p) return p:getSkillBaseLevel(Skill.Distance) end,
-        getPercent = function(p) return p:getSkillLevelPercent(Skill.Distance) end
-    }
-}
+local offlineTrainingDefs = {{
+    valueId = 'magicValue',
+    barId = 'magicBar',
+    getLevel = function(p)
+        return p:getMagicLevel()
+    end,
+    getBaseLevel = function(p)
+        return p:getBaseMagicLevel()
+    end,
+    getPercent = function(p)
+        return p:getMagicLevelPercent()
+    end
+}, {
+    valueId = 'fistValue',
+    barId = 'fistBar',
+    getLevel = function(p)
+        return p:getSkillLevel(Skill.Fist)
+    end,
+    getBaseLevel = function(p)
+        return p:getSkillBaseLevel(Skill.Fist)
+    end,
+    getPercent = function(p)
+        return p:getSkillLevelPercent(Skill.Fist)
+    end
+}, {
+    valueId = 'clubValue',
+    barId = 'clubBar',
+    getLevel = function(p)
+        return p:getSkillLevel(Skill.Club)
+    end,
+    getBaseLevel = function(p)
+        return p:getSkillBaseLevel(Skill.Club)
+    end,
+    getPercent = function(p)
+        return p:getSkillLevelPercent(Skill.Club)
+    end
+}, {
+    valueId = 'swordValue',
+    barId = 'swordBar',
+    getLevel = function(p)
+        return p:getSkillLevel(Skill.Sword)
+    end,
+    getBaseLevel = function(p)
+        return p:getSkillBaseLevel(Skill.Sword)
+    end,
+    getPercent = function(p)
+        return p:getSkillLevelPercent(Skill.Sword)
+    end
+}, {
+    valueId = 'axeValue',
+    barId = 'axeBar',
+    getLevel = function(p)
+        return p:getSkillLevel(Skill.Axe)
+    end,
+    getBaseLevel = function(p)
+        return p:getSkillBaseLevel(Skill.Axe)
+    end,
+    getPercent = function(p)
+        return p:getSkillLevelPercent(Skill.Axe)
+    end
+}, {
+    valueId = 'distanceValue',
+    barId = 'distanceBar',
+    getLevel = function(p)
+        return p:getSkillLevel(Skill.Distance)
+    end,
+    getBaseLevel = function(p)
+        return p:getSkillBaseLevel(Skill.Distance)
+    end,
+    getPercent = function(p)
+        return p:getSkillLevelPercent(Skill.Distance)
+    end
+}}
 
 local function refresh()
     skillController:refreshOfflineTrainingDialog()
@@ -153,7 +182,9 @@ function skillController:showOfflineTrainingDialog()
         return
     end
 
-    self.offlineTrainingModal = self:openModal('offlinetraining1524.html', { mode = 'html' })
+    self.offlineTrainingModal = self:openModal('offlinetraining1524.html', {
+        mode = 'html'
+    })
     if self.offlineTrainingModal and self.offlineTrainingModal.ui then
         -- Widget is created from our HTML, so overwriting onDestroy is safe here.
         self.offlineTrainingModal.ui.onDestroy = function()
