@@ -1,0 +1,151 @@
+diff a/CMakePresets.json b/CMakePresets.json	(rejected hunks)
+@@ -1,42 +1,42 @@
+ {
+   "version": 3,
+   "cmakeMinimumRequired": {
+     "major": 3,
+     "minor": 22,
+     "patch": 0
+   },
+   "configurePresets": [
+     {
+       "name": "windows-release",
+       "displayName": "Windows - Release",
+       "description": "Sets Ninja generator, compilers, build and install directory and set build type as release",
+       "generator": "Ninja",
+       "binaryDir": "${sourceDir}/build/${presetName}",
+       "cacheVariables": {
+         "CMAKE_TOOLCHAIN_FILE": {
+-          "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
++          "value": "${sourceDir}/external/vcpkg/scripts/buildsystems/vcpkg.cmake",
+           "type": "FILEPATH"
+         },
+         "BUILD_STATIC_LIBRARY": "ON",
+         "VCPKG_TARGET_TRIPLET": "x64-windows-static",
+         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+         "OPTIONS_ENABLE_SCCACHE": "ON"
+       },
+       "architecture": {
+         "value": "x64",
+         "strategy": "external"
+       },
+       "vendor": {
+         "microsoft.com/VisualStudioSettings/CMake/1.0": {
+           "hostOS": [ "Windows" ]
+         }
+       },
+       "condition": {
+         "type": "equals",
+         "lhs": "${hostSystemName}",
+         "rhs": "Windows"
+       }
+     },
+     {
+       "name": "windows-release-native",
+       "inherits": "windows-release",
+@@ -88,51 +88,51 @@
+       }
+     },
+     {
+       "name": "windows-release-asan",
+       "inherits": "windows-release",
+       "displayName": "Windows - Release + ASAN",
+       "description": "Release Mode with ASAN",
+       "cacheVariables": {
+         "ASAN_ENABLED": "ON",
+         "BUILD_STATIC_LIBRARY": "OFF",
+         "VCPKG_TARGET_TRIPLET": "x64-windows"
+       },
+       "architecture": {
+         "value": "x64",
+         "strategy": "external"
+       }
+     },
+     {
+       "name": "linux-release",
+       "displayName": "Linux - Release",
+       "description": "Sets Ninja generator, compilers, build and install directory and set build type as release",
+       "generator": "Ninja",
+       "binaryDir": "${sourceDir}/build/${presetName}",
+       "cacheVariables": {
+         "CMAKE_TOOLCHAIN_FILE": {
+-          "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
++          "value": "${sourceDir}/external/vcpkg/scripts/buildsystems/vcpkg.cmake",
+           "type": "FILEPATH"
+         },
+         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+         "OPTIONS_ENABLE_CCACHE": "ON"
+       },
+       "condition": {
+         "type": "equals",
+         "lhs": "${hostSystemName}",
+         "rhs": "Linux"
+       }
+     },
+     {
+       "name": "linux-release-native",
+       "inherits": "linux-release",
+       "displayName": "Linux - Release (Native CPU)",
+       "description": "Release optimized for local CPU architecture with -march=native",
+       "cacheVariables": {
+         "OPTIMIZE_FOR_NATIVE": "ON"
+       }
+     },
+     {
+       "name": "linux-release-profile",
+       "inherits": "linux-release",
+       "displayName": "Linux - Release (Profiling)",
+       "description": "Release build with DWARF debug info for perf profiling",
+@@ -148,51 +148,51 @@
+       "cacheVariables": {
+         "CMAKE_BUILD_TYPE": "Debug",
+         "DEBUG_LOG": "ON",
+         "ASAN_ENABLED": "OFF",
+         "TOGGLE_PRE_COMPILED_HEADER": "OFF",
+         "SPEED_UP_BUILD_UNITY": "OFF"
+       }
+     },
+     {
+       "name": "linux-release-asan",
+       "inherits": "linux-release",
+       "displayName": "Linux - Release + ASAN",
+       "description": "Release Mode with AddressSanitizer enabled",
+       "cacheVariables": {
+         "ASAN_ENABLED": "ON"
+       }
+     },
+     {
+       "name": "macos-release",
+       "displayName": "macOS - Release",
+       "description": "Sets Ninja generator, compilers, build and install directory and set build type as release",
+       "generator": "Ninja",
+       "binaryDir": "${sourceDir}/build/${presetName}",
+       "cacheVariables": {
+         "CMAKE_TOOLCHAIN_FILE": {
+-          "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
++          "value": "${sourceDir}/external/vcpkg/scripts/buildsystems/vcpkg.cmake",
+           "type": "FILEPATH"
+         },
+         "BUILD_STATIC_LIBRARY": "ON",
+         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+         "OPTIONS_ENABLE_SCCACHE": "ON"
+       },
+       "condition": {
+         "type": "equals",
+         "lhs": "${hostSystemName}",
+         "rhs": "Darwin"
+       }
+     },
+     {
+       "name": "macos-release-native",
+       "inherits": "macos-release",
+       "displayName": "macOS - Release (Native CPU)",
+       "description": "Release optimized for local CPU architecture",
+       "cacheVariables": {
+         "OPTIMIZE_FOR_NATIVE": "ON"
+       }
+     },
+     {
+       "name": "macos-release-profile",
+       "inherits": "macos-release",
+       "displayName": "macOS - Release (Profiling)",

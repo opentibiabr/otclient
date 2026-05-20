@@ -1,0 +1,26 @@
+name: Verify vcpkg baseline
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+jobs:
+  verify-baseline:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: true
+
+      - name: Verify vcpkg builtin-baseline is a release tag
+        run: bash tools/verify-vcpkg-baseline-is-release.sh
