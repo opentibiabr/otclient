@@ -396,6 +396,9 @@ function show()
     rewardWallController.ui:show()
     rewardWallController.ui:raise()
     rewardWallController.ui:focus()
+    if ButtonRewardWall then
+        ButtonRewardWall:setOn(true)
+    end
     connectOnServerError()
     premiumStatusWindwos(g_game.getLocalPlayer():isPremium())
 end
@@ -405,6 +408,9 @@ function hide(bool)
         return
     end
     rewardWallController.ui:hide()
+    if ButtonRewardWall then
+        ButtonRewardWall:setOn(false)
+    end
     if bool then
         disconnectOnServerError()
     end
@@ -415,11 +421,9 @@ function toggle()
         return
     end
     if rewardWallController.ui:isVisible() then
-        ButtonRewardWall:setOn(false)
         return hide(true)
     end
     show()
-    ButtonRewardWall:setOn(true)
 end
 
 local function fixCssIncompatibility() -- temp

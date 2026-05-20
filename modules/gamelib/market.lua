@@ -60,11 +60,12 @@ MarketCategory = {
     CreatureProducts = 24,
     Quivers = 25,
     SoulCores = 26,
+	FistWeapons = 27,
     MetaWeapons = 255
 }
 
 MarketCategory.First = MarketCategory.Armors
-MarketCategory.Last = MarketCategory.SoulCores
+MarketCategory.Last = MarketCategory.FistWeapons
 
 MarketCategoryWeapons = {
     [MarketCategory.Ammunition] = {
@@ -83,6 +84,9 @@ MarketCategoryWeapons = {
         slots = {255, InventorySlotOther, InventorySlotLeft}
     },
     [MarketCategory.WandsRods] = {
+        slots = {255, InventorySlotOther, InventorySlotLeft}
+    },
+	[MarketCategory.FistWeapons] = {
         slots = {255, InventorySlotOther, InventorySlotLeft}
     }
 }
@@ -115,6 +119,7 @@ MarketCategoryStrings = {
     [24] = 'Creature Products',
     [25] = 'Quivers',
     [26] = 'Soul Cores',
+    [27] = 'Fist Weapons',
     [255] = 'Weapons'
 }
 

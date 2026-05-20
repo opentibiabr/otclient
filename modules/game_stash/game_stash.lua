@@ -106,7 +106,7 @@ local categoryList        = {}
 local searchDebounce      = nil
 local renderState         = { loadedCount = 0, selectedBox = nil }
 local filterState         = { searchText = nil, stashIndex = nil, sellerIndex = nil, sortIndex = nil, filtered = false }
-local stashHandle         = nil  -- handle from openModalOtui, used to destroy window on close
+local stashHandle         = nil  -- handle from openModal, used to destroy window on close
 local itemBoxPool         = nil  -- ObjectPool<StashItemBox>
 local suppressRenderEvents = false
 -- LuaFormatter on
@@ -504,7 +504,7 @@ local function destroyWindow()
         return
     end
     itemBoxPool = nil
-    stashController:closeModalOtui(stashHandle)
+    stashController:closeModal(stashHandle)
     stashHandle = nil
     W.window = nil
     W.poolBin = nil
@@ -522,7 +522,7 @@ local function ensureWindow()
     if W.window then
         return true
     end
-    stashHandle = stashController:openModalOtui('StashWindow')
+    stashHandle = stashController:openModal('StashWindow', { mode = 'otui' })
     if not stashHandle or not stashHandle.ui then
         return false
     end

@@ -220,7 +220,7 @@ void ModuleManager::enableAutoReload() {
             return;
 
         processing.store(true);
-        g_asyncDispatcher.detach_task(action);
+        g_asyncDispatcher->detach_task(action);
     }, 500);
 }
 

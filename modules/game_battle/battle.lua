@@ -1405,6 +1405,11 @@ function init()
                 local widget = g_ui.createWidget('BattleButton')
                 widget:show()
                 widget:setOn(true)
+                widget.onHoverChange = onBattleButtonHoverChange
+                widget.onMouseRelease = onBattleButtonMouseRelease
+                widget.onMousePress = function(self, mousePos, mouseButton)
+                    return mouseButton == MouseRightButton
+                end
                 return widget
             end,
             release = function(obj)
@@ -1421,6 +1426,9 @@ function init()
                 widget:setOn(true)
                 widget.onHoverChange = onBattleButtonHoverChange
                 widget.onMouseRelease = onBattleButtonMouseRelease
+                widget.onMousePress = function(self, mousePos, mouseButton)
+                    return mouseButton == MouseRightButton
+                end
                 return widget
             end,
             function(obj)

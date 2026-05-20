@@ -197,7 +197,7 @@ void FrameBuffer::doScreenshot(std::string file, const uint16_t x, const uint16_
 
         internalRelease();
 
-        g_asyncDispatcher.detach_task([size, pixels, file] {
+        g_asyncDispatcher->detach_task([size, pixels, file] {
             try {
                 Image image(size, 4, pixels->data());
                 image.flipVertically();

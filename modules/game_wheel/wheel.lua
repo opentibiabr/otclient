@@ -17,6 +17,19 @@ if not SkillwheelStringsLibrary then
   SkillwheelStringsLibrary = {}
 end
 
+local function onGameStart()
+  if g_game.getClientVersion() >= 1310 then 
+    local ret = WheelOfDestiny.loadWheelPresets()
+    if not ret then
+      print("[wheel] Error loading wheel presets")
+    end
+  else
+    scheduleEvent(function()
+      g_modules.getModule("game_wheel"):unload()
+    end, 100)
+  end
+end
+
 function init()
   loadConfigJson()
 
@@ -92,68 +105,39 @@ function load()
 
   loadMenu('wheelMenu')
   toggleTabBarButtons('informationButton')
-  wheelWindow:hide()
+  hide()
+  connect(g_game, {
+    onGameEnd = onGameEnd,
+    onGameStart = onGameStart,
+    onDestinyWheel = WheelOfDestiny.onDestinyWheel,
+    --onUnlockGem = GemAtelier.onUnlockGem, --disabled because it's in TODO
+    onResourcesBalanceChange = onResourceBalance,
+  })
+  
+  if modules.game_mainpanel then
+    wheelButton = modules.game_mainpanel.addToggleButton('wheelButton', tr('Wheel of Destiny'),   
+      '/images/options/button_skillwheeldialog', toggle, false, 10)  
+    wheelButton:setOn(false)
+  end
 end
 
 function terminate()
   disconnect(g_game, {
     onGameEnd = onGameEnd,
-    onGameStart = WheelOfDestiny.loadWheelPresets,
+    onGameStart = onGameStart,
     onDestinyWheel = WheelOfDestiny.onDestinyWheel,
     --onUnlockGem = GemAtelier.onUnlockGem, --disabled because it's in TODO
-    onResourceBalance = onResourceBalance
+    onResourcesBalanceChange = onResourceBalance
   })
 
   if wheelWindow then
     wheelWindow:destroy()
     wheelWindow = nil
   end
-
-  if newPresetWindow then
-    newPresetWindow:destroy()
-    newPresetWindow = nil
-  end
-
-  if renamePresetWindow then
-    renamePresetWindow:destroy()
-    renamePresetWindow = nil
-  end
-
-  if exportCodeWindow then
-    exportCodeWindow:destroy()
-    exportCodeWindow = nil
-  end
-
-  if deletePresetWindow then
-    deletePresetWindow:destroy()
-    deletePresetWindow = nil
-  end
-
-  if checkSavePresetWindow then
-    checkSavePresetWindow:destroy()
-    checkSavePresetWindow = nil
-  end
-
-  if selectedNewPresetRadio then
-    selectedNewPresetRadio:destroy()
-    selectedNewPresetRadio = nil
-  end
-
   if wheelButton then
     wheelButton:destroy()
     wheelButton = nil
   end
-
-  wheelOfDestinyWindow = nil
-  gemAtelierWindow = nil
-  fragmentWindow = nil
-  mainPanel = nil
-  wheelPanel = nil
-  centerReferencePoint = nil
-  wheelMenuButton = nil
-  gemMenuButton = nil
-  fragmentMenuButton = nil
-  SkillwheelStringsLibrary = {}
 end
 
 function toggle()
@@ -162,6 +146,9 @@ function toggle()
     wheelWindow:hide()
     wheelWindow:ungrabMouse()
     wheelWindow:ungrabKeyboard()
+    if wheelButton then
+      wheelButton:setOn(false)
+    end
   else
     wheelWindow:focus()
     loadMenu('wheelMenu')
@@ -175,6 +162,9 @@ function toggle()
     g_game.openWheel(g_game.getLocalPlayer():getId())
     wheelWindow:recursiveGetChildById('tabContent'):setVisible(false)
     WheelOfDestiny.onRemoveClick()
+    if wheelButton then
+      wheelButton:setOn(true)
+    end
   end
 end
 
@@ -185,6 +175,9 @@ function hide()
   wheelWindow:ungrabMouse()
   wheelWindow:ungrabKeyboard()
   wheelWindow:hide()
+  if wheelButton then
+    wheelButton:setOn(false)
+  end
 end
 
 function onGameEnd()

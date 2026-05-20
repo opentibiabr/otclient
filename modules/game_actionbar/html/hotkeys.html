@@ -9,7 +9,7 @@
   .hotkeys-display { --text-auto-resize: false;width: 376px; height: 33px; --border-width-top: 1; --border-color-top: black; --border-width-left: 1; --border-color-left: black; --border-width-bottom: 1; --border-color-bottom: #747474; --border-width-right: 1; --border-color-right: #747474; --text-align: center; }
   /* === FOOTER === */
   .hotkeys-footer { display: block; margin-top: 5px; height: 22px; }
-  .hotkeys-footer button { width: 25px; display: block; float: right; margin-right: 5px; font: cipsoftFont; --text-auto-resize: false; }
+  .hotkeys-footer button { height:100%; width: 25px; display: block; float: right; margin-right: 5px; font: cipsoftFont; --text-auto-resize: false; }
 </style>
 
 <html>
@@ -18,19 +18,18 @@
 
   <label id="chatMode" class="hotkeys-mode-label"></label>
 
-  <div id="display" class="hotkeys-display" > none
+  <div id="display" class="hotkeys-display" >
   </div>
 
   <label id="desc" class="hotkeys-desc-label"
     text='Click "Ok" to assign the hotkey. Click "Clear" to remove the hotkey from "Chat On" mode.'></label>
 
   <label id="warning" class="hotkeys-warning-label">
-    This hotkey is already in use and will be overwritten.
   </label>
 
   <hr style="height: 2px;" />
 
-  <div class="hotkeys-footer">
+  <div class="hotkeys-footer" >
     <button id="buttonClose" text="Cancel" onclick="self:unloadHtml()"></button>
     <button id="buttonClear" text="Clear"></button>
     <button id="buttonOk" text="Ok"></button>

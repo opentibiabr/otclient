@@ -1892,7 +1892,7 @@ void UIWidget::updateSize() {
         }
     }
 
-    if (m_children.empty()) {
+    if (m_children.empty() && m_text.empty()) {
         m_width.pendingUpdate = false;
         m_height.pendingUpdate = false;
         return;
@@ -1924,6 +1924,10 @@ void UIWidget::updateSize() {
         }
         if (tableAncestor && tableAncestor->m_displayType == DisplayType::Table)
             tableAncestor->updateTableLayout();
+    }
+
+    if (m_htmlNode && !m_text.empty()) {
+        updateText();
     }
 }
 

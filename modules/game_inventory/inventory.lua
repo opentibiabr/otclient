@@ -1,9 +1,7 @@
 local iconTopMenu = nil
 
 local inventoryShrink = false
-local itemSlotsWithDuration = {}
-local updateSlotsDurationEvent = nil
-local DURATION_UPDATE_INTERVAL = 1000
+
 local pvpModeRadioGroup = nil 
 local monkMirrorItem = nil
 
@@ -205,32 +203,16 @@ local function inventoryEvent(player, slot, item, oldItem)
     toggler:setEnabled(not item)
     slotPanel.item:setWidth(34)
     slotPanel.item:setHeight(34)
-    slotPanel.item.duration:setText("")
-    slotPanel.item.charges:setText("")
-    if g_game.getFeature(GameThingClock) then
-        if item and item:getDurationTime() > 0 then
-            if not itemSlotsWithDuration[slot] or itemSlotsWithDuration[slot].item ~= item then
-                itemSlotsWithDuration[slot] = {
-                    item = item,
-                    timeEnd = g_clock.seconds() + item:getDurationTime()
-                }
-            end
-            if modules.client_options.getOption('showExpiryInInvetory') then
-                if not updateSlotsDurationEvent then
-                    updateSlotsDuration()
-                end
-            end
-        else
-            itemSlotsWithDuration[slot] = nil
-        end
-    end
     
-    if modules.client_options.getOption('showExpiryInInvetory') then
-        ItemsDatabase.setCharges(slotPanel.item, item)
-    end
+    slotPanel.item:setShowDuration(g_game.getFeature(GameThingClock) and modules.client_options.getOption('showExpiryInInvetory'))
+    slotPanel.item:setShowCharges(g_game.getFeature(GameThingCounter) and modules.client_options.getOption('showExpiryInInvetory'))
     ItemsDatabase.setTier(slotPanel.item, item)
 
     if slot == InventorySlotLeft then
+        if item and modules.game_proficiency then
+            g_game.sendWeaponProficiencyAction(WeaponProficiency.WEAPON_PROFICIENCY_ITEM_INFO, item:getId())
+            modules.game_proficiency.updateTopBarProficiency()
+        end
         updateMonkMirrorItem(item)
     end
 end
@@ -429,7 +411,6 @@ function inventoryController:onGameStart()
 end
 
 function inventoryController:onGameEnd()
-    stopEvent()
     monkMirrorItem = nil
 
     local lastCombatControls = g_settings.getNode('LastCombatControls')
@@ -449,6 +430,7 @@ function inventoryController:onGameEnd()
         end
         g_settings.setNode('LastCombatControls', lastCombatControls)
     end
+    toggleAdventurerStyle(false)
 end
 
 function inventoryController:onTerminate()
@@ -568,13 +550,7 @@ function getSlot5()
 end
 
 function reloadInventory()
-    if modules.client_options.getOption('showExpiryInInvetory') then
-        updateSlotsDuration()
-    end
-    local ui = inventoryController.ui.onPanel
-    if not ui then
-        return
-    end
+    
     for slot, getSlotInfo in pairs(getSlotPanelBySlot) do
         local slotPanel, toggler = getSlotInfo(ui)
         if slotPanel then
@@ -635,27 +611,6 @@ function toggleAdventurerStyle(hasBlessing)
     end
 end
 
-function onBlessingsChange(blessings, blessVisualState)
-    toggleAdventurerStyle(blessings == 1)
-    local blessedButton = getInventoryUi().blessings
-    if not blessedButton then
-        return
-    end
---[[     local tooltip = 'You are protected by the following blessings:'
-        tooltip = tooltip .. '\nTwist of Fate'
-        tooltip = tooltip .. '\nWisdom of Solitude'
-        tooltip = tooltip .. '\nSpark of the Phoenix'
-        tooltip = tooltip .. '\nFire of the Suns'
-        tooltip = tooltip .. '\nSpiritual Shielding'
-        tooltip = tooltip .. '\nEmbrace of Tibia'
-        tooltip = tooltip .. '\nHeart of the Mountain'
-        tooltip = tooltip .. '\nBlood of the Mountain'
-        blessedButton:setTooltip(tooltip) ]]
-    if blessVisualState == 1 then
-        blessedButton:setImageSource('/images/inventory/button_blessings_grey')
-    elseif blessVisualState == 2 then
-        blessedButton:setImageSource('/images/inventory/button_blessings_gold')
-    elseif blessVisualState == 3 then
-        blessedButton:setImageSource('/images/inventory/button_blessings_green')
-    end
+function getButtonBlessings()
+    return getInventoryUi().blessings
 end

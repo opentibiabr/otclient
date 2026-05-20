@@ -52,6 +52,10 @@ local function load(version)
         if not g_things.loadStaticData(filePath) then
             errorList[#errorList + 1] = "Couldn't load staticdata"
         end
+        if g_game.getFeature(GameProficiency) and not g_things.resolveProficienciesFile(filePath) then
+            g_logger.warning(string.format(
+                    "[game_things.load()] Couldn't load /things/%d/proficiencies-<hash>.json", version))
+        end
     else
         local datPath, sprPath
         if filename then

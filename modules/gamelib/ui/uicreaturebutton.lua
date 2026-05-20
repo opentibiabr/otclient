@@ -186,7 +186,7 @@ function UICreatureButton:updateIcons(icons)
         -- local count = iconData[3] -- uint16_t count
         local widget = self:getChildById('iconsMonsterSlot' .. index)
         if widget then
-            widget:setImageSource("/images/game/creatureicons/monsterIcons")
+            widget:setImageSource("/images/game/creatureicons/modifications")
             widget:setImageClip(torect((iconId - 1) * 11 .. ' 0 11 11'))
         end
     end

@@ -109,7 +109,7 @@ function UIHTML:onStyleApply(styleName, styleNode)
                 end
             end)
         elseif name == 'inverted-scroll' then
-            self:setInverted(value)
+            self:setInvertedScroll(value)
         elseif name == 'always-scroll-maximum' then
             self:setAlwaysScrollMaximum(value)
         end
@@ -172,7 +172,9 @@ function UIHTML:setVerticalScrollBar(scrollbar)
     connect(self.verticalScrollBar, 'onValueChange', function(scrollbar, value)
         local virtualOffset = self:getVirtualOffset()
         virtualOffset.y = value
+        self._isScrollbarDrivenScroll = true
         self:setVirtualOffset(virtualOffset)
+        self._isScrollbarDrivenScroll = false
         signalcall(self.onScrollChange, self, virtualOffset)
     end)
     self:updateScrollBars()
@@ -183,7 +185,9 @@ function UIHTML:setHorizontalScrollBar(scrollbar)
     connect(self.horizontalScrollBar, 'onValueChange', function(scrollbar, value)
         local virtualOffset = self:getVirtualOffset()
         virtualOffset.x = value
+        self._isScrollbarDrivenScroll = true
         self:setVirtualOffset(virtualOffset)
+        self._isScrollbarDrivenScroll = false
         signalcall(self.onScrollChange, self, virtualOffset)
     end)
     self:updateScrollBars()
@@ -198,6 +202,9 @@ function UIHTML:setAlwaysScrollMaximum(value)
 end
 
 function UIHTML:onLayoutUpdate()
+    if self._isScrollbarDrivenScroll and self._skipScrollLayoutRecalc then
+        return
+    end
     self:updateScrollBars()
 end
 
@@ -287,4 +294,14 @@ function UIHTML:onScrollHeightChange()
     if self.alwaysScrollMaximum and self.verticalScrollBar then
         self.verticalScrollBar:setValue(self.verticalScrollBar:getMaximum())
     end
+end
+
+function UIHTML:setInvertedScroll(inverted)
+    -- 01/23/2026 "inverted-scroll: true" not working in css or html
+    -- [CSS].panelConsole { --inverted-scroll: true }
+    -- or 
+    -- [HTML] style="overflow: scroll; inverted-scroll: true"
+    -- temp fix in [html]add <div inverted-scroll="true"></div>
+    self:setInverted(inverted)
+	self:updateScrollBars()
 end

@@ -158,6 +158,12 @@ public:
 
     uint32_t getSkillWheelGemQualityId() { return m_skillWheelGem.gem_quality_id; }
     uint32_t getSkillWheelGemVocationId() { return m_skillWheelGem.vocation_id; }
+    uint32_t getCyclopediaType() { return m_cyclopediaType; }
+    uint32_t getProficiencyId() { return m_proficiencyId; }
+    uint32_t getWeaponType() const { return m_weaponType; }
+    uint32_t getMinimumLevel() const { return m_minimumLevel; }
+    uint32_t getImbueSlots() const { return m_imbueSlots; }
+    const std::vector<uint32_t>& getRestrictVocation() const { return m_restrictVocation; }
 
     bool isDecoKit() { return (m_flags & ThingFlagAttrDecoKit); }
     bool isLoading() const { return m_loading.load(std::memory_order_acquire); }
@@ -245,6 +251,12 @@ private:
     uint16_t m_groundSpeed{ 0 };
     uint16_t m_maxTextLength{ 0 };
     uint16_t m_upgradeClassification{ 0 };
+    uint32_t m_cyclopediaType{ 0 };
+    uint32_t m_proficiencyId{ 0 };
+    uint32_t m_weaponType{ 0 };
+    uint32_t m_minimumLevel{ 0 };
+    uint32_t m_imbueSlots{ 0 };
+    std::vector<uint32_t> m_restrictVocation;
 
     uint64_t m_flags{ 0 };
 
