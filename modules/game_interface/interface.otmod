@@ -55,6 +55,7 @@ Module
     - game_forge
     - game_inspect
     - game_wheel
+    - game_proficiency
 
   @onLoad: init()
   @onUnload: terminate()

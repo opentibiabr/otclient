@@ -587,6 +587,30 @@ uint32_t Thing::getProficiencyId() const {
     return 0;
 }
 
+uint32_t Thing::getWeaponType() const {
+    if (const auto t = getThingType(); t)
+        return t->getWeaponType();
+    return 0;
+}
+
+uint32_t Thing::getMinimumLevel() const {
+    if (const auto t = getThingType(); t)
+        return t->getMinimumLevel();
+    return 0;
+}
+
+uint32_t Thing::getImbueSlots() const {
+    if (const auto t = getThingType(); t)
+        return t->getImbueSlots();
+    return 0;
+}
+
+std::vector<uint32_t> Thing::getRestrictVocation() const {
+    if (const auto t = getThingType(); t)
+        return t->getRestrictVocation();
+    return {};
+}
+
 bool Thing::canDraw(const Color& color) const {
     if (const auto t = getThingType(); t)
         return m_canDraw && m_clientId > 0 && color.aF() > Fw::MIN_ALPHA && t->getOpacity() > Fw::MIN_ALPHA;

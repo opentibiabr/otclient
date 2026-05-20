@@ -17,10 +17,10 @@ local statsBarsPlacements = {
 --                       hideAll() and destroyALlIcons functions.
 local statsBarsDimensions = {
     Large = {
-        height = 35
+        height = 52
     },
     Default = {
-        height = 35
+        height = 52
     },
     Parallel = {
         height = 55
@@ -509,6 +509,8 @@ function constructStatsBar(dimension, placement)
         StatsBar.reloadCurrentStatsBarQuickInfo()
 
         modules.game_healthcircle.setStatsBarOption()
+
+        StatsBar.initProficiencyTopBar()
     else
         print("No stats bar found for:", dimensionOnPlacement .. " on constructStatsBar()")
     end
@@ -683,6 +685,24 @@ function StatsBar.OnGameStart()
     StatsBar.loadSettings()
     StatsBar.reloadCurrentTab()
     modules.game_healthcircle.setStatsBarOption()
+    
+    -- Initialize proficiency topbar widget
+    StatsBar.initProficiencyTopBar()
+end
+
+-- Initialize proficiency top bar widget
+function StatsBar.initProficiencyTopBar()
+    if not g_game.getFeature(GameProficiency) then
+        return
+    end
+    local statsBar = StatsBar.getCurrentStatsBarWithPosition()
+    if not statsBar then return end
+    
+    local profWidget = statsBar:recursiveGetChildById('proficiencyTopBar')
+    if profWidget then
+        profWidget:setVisible(true)
+        modules.game_proficiency.updateTopBarProficiency()
+    end
 end
 
 function createStatsBarWidgets(statsBar)

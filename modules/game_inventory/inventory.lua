@@ -148,6 +148,10 @@ local function inventoryEvent(player, slot, item, oldItem)
     ItemsDatabase.setTier(slotPanel.item, item)
 
     if slot == InventorySlotLeft then
+        if item and modules.game_proficiency then
+            g_game.sendWeaponProficiencyAction(WeaponProficiency.WEAPON_PROFICIENCY_ITEM_INFO, item:getId())
+            modules.game_proficiency.updateTopBarProficiency()
+        end
         updateMonkMirrorItem(item)
     end
 end

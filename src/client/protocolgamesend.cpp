@@ -1642,6 +1642,7 @@ void ProtocolGame::sendImbuementDurations(const bool isOpen)
     send(msg);
 }
 
+
 void ProtocolGame::sendQuickLoot(const uint8_t variant, const Position& pos, const uint16_t itemId, const uint8_t stackpos)
 {
     const auto msg = std::make_shared<OutputMessage>();
@@ -1685,6 +1686,32 @@ void ProtocolGame::openContainerQuickLoot(const uint8_t action, const uint8_t ca
         msg->addU8(useMainAsFallback);
     } else if (action == 1 || action == 2 || action == 5 || action == 6) {
         msg->addU8(category);
+    }
+    send(msg);
+}
+
+void ProtocolGame::sendWeaponProficiencyAction(const uint8_t actionType, const uint16_t itemId)
+{
+    const auto msg = std::make_shared<OutputMessage>();
+    msg->addU8(Proto::ClientWeaponProficiency);
+    msg->addU8(actionType);
+    if (actionType == Otc::WEAPON_PROFICIENCY_ITEM_INFO || actionType == Otc::WEAPON_PROFICIENCY_RESET_PERKS) {
+        msg->addU16(itemId);
+    }
+    send(msg);
+}
+
+void ProtocolGame::sendWeaponProficiencyApply(const uint16_t itemId, const std::vector<uint8_t>& levels, const std::vector<uint8_t>& perkPositions)
+{
+    const auto msg = std::make_shared<OutputMessage>();
+    msg->addU8(Proto::ClientWeaponProficiency);
+    msg->addU8(Otc::WEAPON_PROFICIENCY_APPLY_PERKS);
+    msg->addU16(itemId);
+    const size_t count = std::min(levels.size(), perkPositions.size());
+    msg->addU8(static_cast<uint8_t>(count));
+    for (size_t i = 0; i < count; ++i) {
+        msg->addU8(levels[i]);
+        msg->addU8(perkPositions[i]);
     }
     send(msg);
 }

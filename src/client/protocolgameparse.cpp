@@ -6519,21 +6519,35 @@ void ProtocolGame::parseHighscores(const InputMessagePtr& msg)
 
 void ProtocolGame::parseWeaponProficiencyExperience(const InputMessagePtr& msg)
 {
-    msg->getU16(); // itemId
-    msg->getU32(); // Experience
-    msg->getU8(); // 1
+    const uint16_t itemId = msg->getU16();
+    const uint32_t experience = msg->getU32();
+    const uint8_t hasUnusedPerk = msg->getU8();
+    g_lua.callGlobalField("g_game", "onWeaponProficiencyExperience", itemId, experience, hasUnusedPerk != 0);
 }
 
 void ProtocolGame::parseWeaponProficiencyInfo(const InputMessagePtr& msg)
 {
-    msg->getU16(); // itemId
-    msg->getU32(); // experience
-
-    const uint8_t size = msg->getU8();
-    for (auto j = 0; j < size; ++j) {
-        msg->getU8(); // proficiencyLevel
-        msg->getU8(); // perkPosition
+    const uint16_t itemId = msg->getU16();
+    const uint32_t experience = msg->getU32();
+    const uint8_t perksCount = msg->getU8();
+    std::vector<std::vector<uint8_t>> perks;
+    for (int i = 0; i < perksCount; ++i) {
+        const uint8_t level = msg->getU8();
+        const uint8_t perkPosition = msg->getU8();
+        perks.push_back({ level, perkPosition });
     }
+    constexpr uint16_t MarketCategoryWeaponsAll = 32;
+    uint16_t marketCategory = MarketCategoryWeaponsAll;
+    if (g_things.isValidDatId(itemId, ThingCategoryItem)) {
+        const auto& itemType = g_things.getThingType(itemId, ThingCategoryItem);
+        if (itemType) {
+            const auto& marketData = itemType->getMarketData();
+            if (!marketData.name.empty()) {
+                marketCategory = marketData.category;
+            }
+        }
+    }
+    g_lua.callGlobalField("g_game", "onWeaponProficiency", itemId, experience, perks, marketCategory);
 }
 
 // 0x5F - parse destiny wheel window
