@@ -1,15 +1,19 @@
 GameServerOpcodes = {
     GameServerSessionCreatureData           = 3  , -- 0x03 | Unused
     GameServerSessionDumpStart              = 4  , -- 0x04 | Unused
-    GameServerInitGame                      = 10 , -- 0x0A
+    GameServerInitGame                      = 10 , -- 0x0A | GameServerLoginOrPendingState = 10
     GameServerGMActions                     = 11 , -- 0x0B
     GameServerEnterGame                     = 15 , -- 0x0F
+    GameServerUpdateNeeded                  = 17 , -- 0x11
     GameServerLoginError                    = 20 , -- 0x14
     GameServerLoginAdvice                   = 21 , -- 0x15
     GameServerLoginWait                     = 22 , -- 0x16
-    GameServerAddCreature                   = 23 , -- 0x17
+    GameServerAddCreature                   = 23 , -- 0x17 | GameServerLoginSuccess = 23
     GameServerSessionEnd                    = 24 , -- 0x18
     GameServerStoreButtonIndicators         = 25 , -- 0x19
+    GameServerBugReport                     = 26 , -- 0x1A
+    GameServerMultiOfflineTrainingDialog    = 27 , -- 0x1B
+    GameServerNpcChatWindow                 = 28 , -- 0x1C
     GameServerPingBack                      = 29 , -- 0x1D
     GameServerPing                          = 30 , -- 0x1E
     GameServerChallenge                     = 31 , -- 0x1F
@@ -28,13 +32,24 @@ GameServerOpcodes = {
 
     -- NOTE: add any custom opcodes in this range
     -- 51 - 99
+    GameServerChangeMapAwareRange           = 51 , -- 0x33
+    GameServerAttchedEffect                 = 52 , -- 0x34
+    GameServerDetachEffect                  = 53 , -- 0x35
+    GameServerCreatureShader                = 54 , -- 0x36
+    GameServerMapShader                     = 55 , -- 0x37
+    GameServerCreatureTyping                = 56 , -- 0x38
+    GameServerAttachedPaperdoll             = 60 , -- 0x3C
+    GameServerDetachPaperdoll               = 61 , -- 0x3D
+    GameServerFeatures                      = 67 , -- 0x43
+    GameServerFloorDescription              = 75 , -- 0x4B
 
     -- original tibia ONLY
+    GameServerTaskBoard                     = 91 , -- 0x5B
     GameServerWeaponProficiencyExperience   = 92 , -- 0x5C
     GameServerImbuementDurations            = 93 , -- 0x5D
     GameServerPassiveCooldown               = 94 , -- 0x5E
     GameServerOpenWheelWindow               = 95 , -- 0x5F
-    GameServerUndiscoveredItemList          = 96 , -- 0x60 | Unused
+    GameServerInventoryImbuements           = 96 , -- 0x60
     GameServerBosstiaryData                 = 97 , -- 0x61
     GameServerBosstiarySlots                = 98 , -- 0x62
     GameServerSendClientCheck               = 99 , -- 0x63
@@ -74,21 +89,29 @@ GameServerOpcodes = {
     GameServerMissleEffect                  = 133, -- 0x85 | Anthem on 13.x
     GameServerMarkCreature                  = 134, -- 0x86 | GameServerItemClasses = 134 (>= 1281)
     GameServerTrappers                      = 135, -- 0x87 | GameServerOpenForge = 135 (>= 1281) | Unused
+    GameServerBrowseForgeHistory            = 136, -- 0x88
+    GameServerCloseForgeWindow              = 137, -- 0x89
+    GameServerForgeResult                   = 138, -- 0x8A
+    GameServerCreatureData                  = 139, -- 0x8B
     GameServerCreatureHealth                = 140, -- 0x8C
     GameServerCreatureLight                 = 141, -- 0x8D
     GameServerCreatureOutfit                = 142, -- 0x8E
     GameServerCreatureSpeed                 = 143, -- 0x8F
-    GameServerCreatureSkull                 = 144, -- 0x90
+    GameServerCreatureSkull                 = 144, -- 0x90 | GameServerExaltationForgeExit = 144
     GameServerCreatureParty                 = 145, -- 0x91
     GameServerCreatureUnpass                = 146, -- 0x92
     GameServerCreatureMarks                 = 147, -- 0x93
-    GameServerPlayerHelpers                 = 148, -- 0x94
+    GameServerPlayerHelpers                 = 148, -- 0x94 | GameServerDepotSearchResults = 148
     GameServerCreatureType                  = 149, -- 0x95
     GameServerEditText                      = 150, -- 0x96
     GameServerEditList                      = 151, -- 0x97
     GameServerSendGameNews                  = 152, -- 0x98
     GameServerDepotSearchDetailList         = 153, -- 0x99 | Unused
     GameServerCloseDepotSearch              = 154, -- 0x9A
+    GameServerSendBlessDialog               = 155, -- 0x9B
+    GameServerBlessings                     = 156, -- 0x9C
+    GameServerPreset                        = 157, -- 0x9D
+    GameServerPremiumTrigger                = 158, -- 0x9E
     GameServerPlayerDataBasic               = 159, -- 0x9F
     GameServerPlayerData                    = 160, -- 0xA0
     GameServerPlayerSkills                  = 161, -- 0xA1
@@ -97,11 +120,14 @@ GameServerOpcodes = {
     GameServerSpellDelay                    = 164, -- 0xA4
     GameServerSpellGroupDelay               = 165, -- 0xA5
     GameServerMultiUseDelay                 = 166, -- 0xA6
+    GameServerPlayerModes                   = 167, -- 0xA7
+    GameServerSetStoreDeepLink              = 168, -- 0xA8
+    GameServerSendRestingAreaState          = 169, -- 0xA9
     GameServerTalk                          = 170, -- 0xAA
     GameServerChannels                      = 171, -- 0xAB
     GameServerOpenChannel                   = 172, -- 0xAC
     GameServerOpenPrivateChannel            = 173, -- 0xAD
-    GameServerRuleViolationChannel          = 174, -- 0xAE
+    GameServerRuleViolationChannel          = 174, -- 0xAE | GameServerEditGuildMessage = 174
     GameServerRuleViolationRemove           = 175, -- 0xAF | GameServerExperienceTracker = 175 (>= 1200) | Unused
     GameServerRuleViolationCancel           = 176, -- 0xB0
     GameServerRuleViolationLock             = 177, -- 0xB1 | GameServerHighscores = 177 (>= 1310) | Unused
@@ -110,12 +136,18 @@ GameServerOpcodes = {
     GameServerTextMessage                   = 180, -- 0xB4
     GameServerCancelWalk                    = 181, -- 0xB5
     GameServerWalkWait                      = 182, -- 0xB6
+    GameServerUnjustifiedStats              = 183, -- 0xB7
+    GameServerPvpSituations                 = 184, -- 0xB8
+    GameServerBestiaryRefreshTracker        = 185, -- 0xB9
+    GameServerTaskHuntingBasicData          = 186, -- 0xBA | SoulSealsWindow 15.20
+    GameServerTaskHuntingData               = 187, -- 0xBB
+    GameServerBosstiaryCooldownTimer        = 189, -- 0xBD
     GameServerFloorChangeUp                 = 190, -- 0xBE
     GameServerFloorChangeDown               = 191, -- 0xBF
     GameServerLootContainers                = 192, -- 0xC0
     GameServerMonkData                      = 193, -- 0xC1
     GameServerCyclopediaHouseAuctionMessage = 195, -- 0xC3
-    GameServerWeaponProficiencyInfo         = 196, -- 0xC4
+    GameServerWeaponProficiencyInfo         = 196, -- 0xC4 | TournamentInformation = 196
     GameServerTournamentLeaderboard         = 197, -- 0xC5 | Unused
     GameServerCyclopediaHousesInfo          = 198, -- 0xC6
     GameServerCyclopediaHouseList           = 199, -- 0xC7
@@ -130,7 +162,7 @@ GameServerOpcodes = {
     GameServerQuestTracker                  = 208, -- 0xD0
     GameServerKillTracker                   = 209, -- 0xD1
     GameServerVipAdd                        = 210, -- 0xD2
-    GameServerVipLogin                      = 211, -- 0xD3
+    GameServerVipLogin                      = 211, -- 0xD3 | GameServerVipState = 211
     GameServerVipLogout                     = 212, -- 0xD4
     GameServerBestiaryRaces                 = 213, -- 0xD5
     GameServerBestiaryOverview              = 214, -- 0xD6
@@ -141,6 +173,7 @@ GameServerOpcodes = {
     GameServerHirelingNameChange            = 219, -- 0xDB | Unused
     GameServerTutorialHint                  = 220, -- 0xDC
     GameServerAutomapFlag                   = 221, -- 0xDD
+    GameServerSendDailyRewardCollectionState = 222, -- 0xDE
     GameServerCoinBalance                   = 223, -- 0xDF
     GameServerStoreError                    = 224, -- 0xE0
     GameServerRequestPurchaseData           = 225, -- 0xE1
@@ -168,7 +201,7 @@ GameServerOpcodes = {
     GameServerMarketLeave                   = 247, -- 0xF7 | Unused
     GameServerMarketDetail                  = 248, -- 0xF8
     GameServerMarketBrowse                  = 249, -- 0xF9
-    GameServerShowModalDialog               = 250, -- 0xFA
+    GameServerModalDialog                   = 250, -- 0xFA
     GameServerStore                         = 251, -- 0xFB
     GameServerStoreOffers                   = 252, -- 0xFC
     GameServerStoreTransactionHistory       = 253, -- 0xFD
@@ -197,6 +230,7 @@ ClientOpcodes = {
     -- 51 - 99
 
     -- original tibia ONLY
+    ClientTaskBoardAction                   = 95 , -- 0x5F
     ClientImbuementDurations                = 96 , -- 0x60
     ClientOpenWheel                         = 97 , -- 0x61
     ClientSaveWheel                         = 98 , -- 0x62
@@ -268,7 +302,9 @@ ClientOpcodes = {
     ClientBosstiaryRequestSlotInfo          = 175, -- 0xAF
     ClientBosstiaryRequestSlotAction        = 176, -- 0xB0
     ClientRequestHighscore                  = 177, -- 0xB1
+    ClientImbuementWindowAction             = 178, -- 0xB2
     ClientWeaponProficiency                 = 179, -- 0xB3
+    ClientSoulSealsAction                   = 186, -- 0xBA
     ClientCancelAttackAndFollow             = 190, -- 0xBE
     ClientForgeEnter                        = 191, -- 0xBF
     ClientForgeBrowseHistory                = 192, -- 0xC0
@@ -277,6 +313,7 @@ ClientOpcodes = {
     ClientBrowseField                       = 203, -- 0xCB
     ClientSeekInContainer                   = 204, -- 0xCC
     ClientInspectionObject                  = 205, -- 0xCD
+    ClientInspectionCharacter               = 206, -- 0xCE
     ClientRequestBless                      = 207, -- 0xCF
     ClientRequestTrackerQuestLog            = 208, -- 0xD0
     ClientRequestOutfit                     = 210, -- 0xD2
@@ -298,8 +335,7 @@ ClientOpcodes = {
     ClientCyclopediaSendBuyCharmRune        = 228, -- 0xE4
     ClientCyclopediaRequestCharacterInfo    = 229, -- 0xE5
     ClientBugReport                         = 230, -- 0xE6
-    ClientRuleViolation                     = 231, -- 0xE7
-    ClientWheelGemAction                    = 231, -- 0xE7
+    ClientWheelGemAction                    = 231, -- 0xE7 | ClientRuleViolation = 231
     ClientDebugReport                       = 232, -- 0xE8
     ClientPreyAction                        = 235, -- 0xEB
     ClientPreyRequest                       = 237, -- 0xED

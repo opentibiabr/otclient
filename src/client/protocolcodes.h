@@ -57,6 +57,8 @@ namespace Proto
         GameServerSessionEnd = 24,
         GameServerStoreButtonIndicators = 25,
         GameServerBugReport = 26,
+        GameServerMultiOfflineTrainingDialog = 27,
+        GameServerNpcChatWindow = 28,
         GameServerPingBack = 29,
         GameServerPing = 30,
         GameServerChallenge = 31,
@@ -85,13 +87,14 @@ namespace Proto
         GameServerDetachPaperdoll = 61,
         GameServerFeatures = 67,
         GameServerFloorDescription = 75,
+        GameServerTaskBoard = 91,
 
         // original tibia ONLY
         GameServerWeaponProficiencyExperience = 92,
         GameServerImbuementDurations = 93,
         GameServerPassiveCooldown = 94,
         GameServerOpenWheelWindow = 95, // 0x5F
-        GameServerUndiscoveredItemList = 96, /* Unused */
+        GameServerInventoryImbuements = 96,
         GameServerBosstiaryData = 97,
         GameServerBosstiarySlots = 98,
         GameServerSendClientCheck = 99,
@@ -181,7 +184,7 @@ namespace Proto
         GameServerUnjustifiedStats = 183,
         GameServerPvpSituations = 184,
         GameServerBestiaryRefreshTracker = 185,
-        GameServerTaskHuntingBasicData = 186,
+        GameServerTaskHuntingBasicData = 186, // SoulSealsWindow 1520
         GameServerTaskHuntingData = 187,
         GameServerBosstiaryCooldownTimer = 189,
         GameServerFloorChangeUp = 190,
@@ -270,12 +273,13 @@ namespace Proto
         ClientChangeMapAwareRange = 51,
 
         // NOTE: add any custom opcodes in this range
-        // 51 - 99
+        // 51 - 94
 
         // original tibia ONLY
+        ClientTaskBoardAction = 95,
         ClientImbuementDurations = 96,
-        ClientOpenWheel = 97, // server received 0x61
-        ClientSaveWheel = 98, // server received 0x62
+        ClientOpenWheel = 97,
+        ClientSaveWheel = 98,
         ClientAutoWalk = 100,
         ClientWalkNorth = 101,
         ClientWalkEast = 102,
@@ -286,11 +290,13 @@ namespace Proto
         ClientWalkSouthEast = 107,
         ClientWalkSouthWest = 108,
         ClientWalkNorthWest = 109,
+        ClientTutorialChangeVocation = 110,
         ClientTurnNorth = 111,
         ClientTurnEast = 112,
         ClientTurnSouth = 113,
         ClientTurnWest = 114,
         ClientGmTeleport = 115,
+        ClientStartOfflineTraining = 116,
         ClientEquipItem = 119,
         ClientMove = 120,
         ClientInspectNpcTrade = 121,
@@ -342,7 +348,9 @@ namespace Proto
         ClientBosstiaryRequestSlotInfo = 175,
         ClientBosstiaryRequestSlotAction = 176,
         ClientRequestHighscore = 177,
+        ClientImbuementWindowAction = 178,
         ClientWeaponProficiency = 179,
+        ClientSoulSealsAction = 186,
         ClientCancelAttackAndFollow = 190,
         ClientForgeEnter = 191,
         ClientForgeBrowseHistory = 192,
