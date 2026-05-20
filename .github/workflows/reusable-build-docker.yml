@@ -23,8 +23,9 @@ jobs:
     name: Image Build
     runs-on: ubuntu-latest
     env:
-      DOCKER_PUBLISH: ${{ inputs.push && secrets.VCPKG_PACKAGES_TOKEN != '' && 'true' || 'false' }}
-      VCPKG_BINARY_CACHE_ACCESS: ${{ inputs.vcpkg_binary_cache_access == 'readwrite' && secrets.VCPKG_PACKAGES_TOKEN != '' && 'readwrite' || 'read' }}
+      DOCKER_PUBLISH_CONTEXT: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'opentibiabr/otclient' && 'true' || 'false' }}
+      DOCKER_PUBLISH: ${{ inputs.push && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'opentibiabr/otclient' && secrets.VCPKG_PACKAGES_TOKEN != '' && 'true' || 'false' }}
+      VCPKG_BINARY_CACHE_ACCESS: ${{ inputs.vcpkg_binary_cache_access == 'readwrite' && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'opentibiabr/otclient' && secrets.VCPKG_PACKAGES_TOKEN != '' && 'readwrite' || 'read' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -41,9 +42,19 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
+      - name: Warn when Docker publishing is disabled
+        if: inputs.push && env.DOCKER_PUBLISH != 'true'
+        shell: bash
+        run: |
+          if [ "${DOCKER_PUBLISH_CONTEXT}" != "true" ]; then
+            echo "::warning::Docker publishing was requested outside the opentibiabr/otclient push-to-main context; building without publishing."
+          else
+            echo "::warning::Docker publishing was requested, but VCPKG_PACKAGES_TOKEN is not configured; building without publishing."
+          fi
+
       - name: Login to GHCR
         if: env.DOCKER_PUBLISH == 'true'
-        uses: docker/login-action@v4
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
