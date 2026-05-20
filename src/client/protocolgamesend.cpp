@@ -1700,36 +1700,6 @@ void ProtocolGame::sendImbuementDurations(const bool isOpen)
     send(msg);
 }
 
-void ProtocolGame::sendOpenWheelOfDestiny(uint32_t playerId)
-{
-    const auto& msg = std::make_shared<OutputMessage>();
-    msg->addU8(Proto::ClientOpenWheel);
-    msg->addU32(playerId);
-    g_logger.info("Sending Wheel of Destiny request for player ID {}", playerId);
-    send(msg);
-}
-
-void ProtocolGame::sendApplyWheelOfDestiny(const std::vector<uint16_t>& wheelPointsVec, const std::vector<uint16_t>& activeGemsVec)
-{
-    const auto& msg = std::make_shared<OutputMessage>();
-    msg->addU8(Proto::ClientSaveWheel);
-    for (const uint16_t points : wheelPointsVec) {
-        msg->addU16(points);
-    }
-
-    for (const uint16_t gem : activeGemsVec) {
-        if (gem > 0) {
-            msg->addU8(1);
-            msg->addU16(gem);
-
-        } else {
-            msg->addU8(0);
-        }
-    }
-
-    send(msg);
-}
-
 void ProtocolGame::sendQuickLoot(const uint8_t variant, const Position& pos, const uint16_t itemId, const uint8_t stackpos)
 {
     const auto msg = std::make_shared<OutputMessage>();

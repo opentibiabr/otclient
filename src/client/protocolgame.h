@@ -156,8 +156,6 @@ public:
     void sendHighscoreInfo(uint8_t action, uint8_t category, uint32_t vocation, std::string_view world, uint8_t worldType, uint8_t battlEye, uint16_t page, uint8_t totalPages);
     void sendTaskBoardAction(const uint8_t option, const uint16_t value = 0, const uint16_t extraValue = 0);
     void sendImbuementDurations(bool isOpen = false);
-    void sendOpenWheelOfDestiny(uint32_t playerId);
-    void sendApplyWheelOfDestiny(const std::vector<uint16_t>& wheelPointsVec, const std::vector<uint16_t>& activeGemsVec);
     void sendStartOfflineTraining(const uint8_t skillType);
     void sendTutorialChangeVocation(uint8_t vocationClientId);
     void sendSoulSealsAction(const uint16_t raceId);
