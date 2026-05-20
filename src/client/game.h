@@ -419,6 +419,8 @@ public:
     void clearImbuement(uint8_t slot);
     void closeImbuingWindow();
     void imbuementDurations(bool isOpen = false);
+    void selectImbuementItem(uint16_t itemId, const Position& pos, uint8_t stackpos);
+    void selectImbuementScroll();
 
     // weapon proficiency related
     void sendWeaponProficiencyAction(uint8_t actionType, uint16_t itemId = 0);
