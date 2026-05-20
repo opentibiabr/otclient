@@ -48,6 +48,7 @@ public:
     bool isSandboxed() { return m_sandboxed; }
     bool hasDependency(std::string_view name, bool recursive = false);
     bool hasSupportedDevice(Device device);
+    bool evaluateRequiredFeature() const;
     int getSandbox(LuaInterface* lua);
 
     std::string getDescription() { return m_description; }
@@ -58,6 +59,7 @@ public:
     bool isAutoLoad() { return m_autoLoad; }
     int getAutoLoadPriority() { return m_autoLoadPriority; }
     int getMinClientVersion() const { return m_minClientVersion; }
+    const std::string& getRequiredFeature() const { return m_requiredFeature; }
 
     // @dontbind
     ModulePtr asModule() { return static_self_cast<Module>(); }
@@ -83,6 +85,7 @@ private:
     std::string m_author;
     std::string m_website;
     std::string m_version;
+    std::string m_requiredFeature;
     std::function<void()> m_loadCallback;
     std::function<void()> m_unloadCallback;
     std::list<std::string> m_dependencies;

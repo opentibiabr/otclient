@@ -3,7 +3,7 @@ Module
   description: View unjustified points
   author: Summ
   sandboxed: true
-  minClientVersion: 1053
+  !requiredFeature: g_game.getFeature(GameUnjustifiedPoints)
   scripts: [ unjustifiedpoints ]
   @onLoad: init()
   @onUnload: terminate()

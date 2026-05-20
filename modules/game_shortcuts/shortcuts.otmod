@@ -4,6 +4,8 @@ Module
   author: SkullZ OTS
   website: https://github.com/mehah/otclient
   sandboxed: true
+  devices:
+    - mobile
   scripts: [ shortcuts ]
   @onLoad: init()
   @onUnload: terminate()

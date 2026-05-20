@@ -87,67 +87,6 @@ local function updateMonkMirrorItem(leftItem)
     end
 end
 
-local function formatDuration(duration)
-    return string.format("%dm%02d", duration / 60, duration % 60)
-end
-
-local function stopEvent()
-    if updateSlotsDurationEvent then
-        removeEvent(updateSlotsDurationEvent)
-        updateSlotsDurationEvent = nil
-    end
-end
-
-local function updateSlotsDuration()
-    -- @ prevent :
-    if not g_game.isOnline() or next(itemSlotsWithDuration) == nil then
-        stopEvent()
-        return
-    end
-    -- @
-    local ui = inventoryController.ui.onPanel
-    if not ui then
-        stopEvent()
-        return
-    end
-    if not modules.client_options.getOption('showExpiryInInvetory') then
-        stopEvent()
-        for slot, itemDurationReg in pairs(itemSlotsWithDuration) do
-            local getSlotInfo = getSlotPanelBySlot[slot]
-            if getSlotInfo then
-                local slotPanel = getSlotInfo(ui)
-                if slotPanel and slotPanel.item then
-                    slotPanel.item.duration:setText("")
-                end
-            end
-        end
-        return
-    end
-
-    local currTime = g_clock.seconds()
-    local hasItemsWithDuration = false
-
-    for slot, itemDurationReg in pairs(itemSlotsWithDuration) do
-        local item = itemDurationReg.item
-        if item and item:getDurationTime() > 0 then
-            hasItemsWithDuration = true
-            local durationTimeLeft = math.max(0, itemDurationReg.timeEnd - currTime)
-            local getSlotInfo = getSlotPanelBySlot[slot]
-            if getSlotInfo then
-                local slotPanel = getSlotInfo(ui)
-                if slotPanel and slotPanel.item then
-                    slotPanel.item.duration:setText(formatDuration(durationTimeLeft))
-                end
-            end
-        end
-    end
-
-    if hasItemsWithDuration then
-        updateSlotsDurationEvent = scheduleEvent(updateSlotsDuration, DURATION_UPDATE_INTERVAL)
-    else
-        stopEvent()
-    end
-end
 
 local function walkEvent()
     if modules.client_options.getOption('autoChaseOverride') then
@@ -552,6 +491,7 @@ end
 function reloadInventory()
     
     for slot, getSlotInfo in pairs(getSlotPanelBySlot) do
+        local ui = getInventoryUi()
         local slotPanel, toggler = getSlotInfo(ui)
         if slotPanel then
             local player = g_game.getLocalPlayer()
@@ -599,11 +539,8 @@ function toggle()
 end
 
 function toggleAdventurerStyle(hasBlessing)
-    local ui = inventoryController.ui.onPanel
-    if not ui then
-        return
-    end
     for slot, getSlotInfo in pairs(getSlotPanelBySlot) do
+        local ui = getInventoryUi()
         local slotPanel, toggler = getSlotInfo(ui)
         if slotPanel then
             slotPanel:setOn(hasBlessing)

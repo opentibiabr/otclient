@@ -18,36 +18,13 @@ if not SkillwheelStringsLibrary then
 end
 
 local function onGameStart()
-  if g_game.getClientVersion() >= 1310 then 
-    local ret = WheelOfDestiny.loadWheelPresets()
-    if not ret then
-      print("[wheel] Error loading wheel presets")
-    end
-  else
-    scheduleEvent(function()
-      g_modules.getModule("game_wheel"):unload()
-    end, 100)
+  local ret = WheelOfDestiny.loadWheelPresets()
+  if not ret then
+    print("[wheel] Error loading wheel presets")
   end
 end
 
 function init()
-  loadConfigJson()
-
-  connect(g_game, {
-    onGameEnd = onGameEnd,
-    onGameStart = WheelOfDestiny.loadWheelPresets,
-    onDestinyWheel = function(...) load() WheelOfDestiny.onDestinyWheel(...) end,
-    --onUnlockGem = GemAtelier.onUnlockGem, --disabled because it's in TODO
-    onResourceBalance = onResourceBalance,
-  })
-  
-end
-
-function load()
-  if wheelWindow then
-    return
-  end
-
   wheelWindow = g_ui.displayUI('wheel')
   mainPanel = wheelWindow:getChildById('mainPanel')
 
@@ -84,6 +61,8 @@ function load()
 
   renamePresetWindow = g_ui.displayUI('styles/renamePreset')
   renamePresetWindow:hide()
+
+  loadConfigJson()
 
   selectedNewPresetRadio = UIRadioGroup.create()
   selectedNewPresetRadio:addWidget(newPresetWindow.contentPanel.useEmpty)
@@ -141,7 +120,6 @@ function terminate()
 end
 
 function toggle()
-  load()
   if wheelWindow:isVisible() then
     wheelWindow:hide()
     wheelWindow:ungrabMouse()
@@ -169,9 +147,6 @@ function toggle()
 end
 
 function hide()
-  if not wheelWindow then
-    return
-  end
   wheelWindow:ungrabMouse()
   wheelWindow:ungrabKeyboard()
   wheelWindow:hide()
@@ -192,9 +167,9 @@ function onGameEnd()
     exportCodeWindow = nil
   end
 
-  if deletePresetWindow then
-    deletePresetWindow:destroy()
-    deletePresetWindow = nil
+  if exportCodeWindow then
+    exportCodeWindow:destroy()
+    exportCodeWindow = nil
   end
 
   if checkSavePresetWindow then

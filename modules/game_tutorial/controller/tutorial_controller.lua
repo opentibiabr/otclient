@@ -209,17 +209,11 @@ end
 -- =============================================*/
 
 function TutorialController:onGameStart()
-    if g_game.getClientVersion() > 1520 then
-        self:registerEvents(g_game, {
-            onTutorialHint = function(...)
-                self:onTutorialHint(...)
-            end
-        })
-    else
-        self:scheduleEvent(function()
-            g_modules.getModule("game_tutorial"):unload()
-        end, 100)
-    end
+    self:registerEvents(g_game, {
+        onTutorialHint = function(...)
+            self:onTutorialHint(...)
+        end
+    })
 end
 
 function TutorialController:onTerminate()
