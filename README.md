@@ -5,8 +5,7 @@
 </h1>
 
 [![Discord Shield](https://discordapp.com/api/guilds/888062548082061433/widget.png?style=shield)](https://discord.gg/tUjTBZzMCy)
-[![Build - Ubuntu](https://github.com/mehah/otclient/actions/workflows/build-ubuntu.yml/badge.svg)](https://github.com/mehah/otclient/actions/workflows/build-ubuntu.yml)
-[![Build - Windows](https://github.com/mehah/otclient/actions/workflows/build-windows.yml/badge.svg)](https://github.com/mehah/otclient/actions/workflows/build-windows.yml)
+[![CI](https://github.com/opentibiabr/otclient/actions/workflows/ci.yml/badge.svg)](https://github.com/opentibiabr/otclient/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ---
@@ -508,9 +507,6 @@ This is a fork of edubart's OTClient. The objective of this fork is to develop a
 - [x] Compile on Android devices
 - [ ] Compile on Apple devices
 - [ ] Adapt the UI reusing the existing LUA code
-
-**Current compiling tutorials**
-- [Compiling for Android](https://github.com/mehah/otclient/wiki/Compiling-on-Android)
 
 ---
 
