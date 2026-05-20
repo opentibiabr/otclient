@@ -67,11 +67,7 @@ function UIProgressBarSDInverted:updateBackground()
     if width == 1 then
       rect.x = rect.x - 1
     end
-    if width == 1 then  
-      self:setImageSource('')  -- Esconde definindo fonte vazia  
-    else  
-      self:setImageRect(rect)
-    end  
+    self:setImageRect(rect)
   end
 end
 
