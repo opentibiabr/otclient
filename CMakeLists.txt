@@ -25,6 +25,9 @@ if(DEFINED VCPKG_PLATFORM_TOOLSET)
 	set(VCPKG_PLATFORM_TOOLSET "${VCPKG_PLATFORM_TOOLSET}" CACHE STRING "vcpkg platform toolset")
 endif()
 
+option(OTCLIENT_BUILD_TESTS "Build unit tests" OFF)
+set(VCPKG_MANIFEST_FEATURES "${VCPKG_MANIFEST_FEATURES}" CACHE STRING "vcpkg manifest features")
+
 if (VCPKG_TARGET_ANDROID)
     include("cmake/vcpkg_android.cmake")
 	set(Android_INCLUDES ${Android_INCLUDES} ${CMAKE_SOURCE_DIR}/android/app/libs/include)
@@ -143,9 +146,10 @@ endif()
 # Src
 add_subdirectory(src)
 
-option(OTCLIENT_BUILD_TESTS "Build unit tests" ON)
-
 if(OTCLIENT_BUILD_TESTS AND NOT ANDROID)
+    if(NOT "tests" IN_LIST VCPKG_MANIFEST_FEATURES)
+        message(FATAL_ERROR "OTCLIENT_BUILD_TESTS requires the vcpkg manifest feature 'tests'. Use a test preset or configure with -DVCPKG_MANIFEST_FEATURES=tests.")
+    endif()
     enable_testing()
     add_subdirectory(tests)
     log_option_enabled("Build tests")
