@@ -701,7 +701,9 @@ function StatsBar.initProficiencyTopBar()
     local profWidget = statsBar:recursiveGetChildById('proficiencyTopBar')
     if profWidget then
         profWidget:setVisible(true)
-        modules.game_proficiency.updateTopBarProficiency()
+        if modules.game_proficiency then
+            modules.game_proficiency.updateTopBarProficiency()
+        end
     end
 end
 

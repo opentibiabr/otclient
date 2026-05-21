@@ -4,6 +4,7 @@ Module
   author: Vincent#1766 on discord
   website: http://otclient.ovh
   sandboxed: true
+  minClientVersion: 1100
   scripts: [ imbuing ]
   @onLoad: init()
   @onUnload: terminate()

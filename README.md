@@ -567,8 +567,7 @@ Found a bug? Please create an issue in our **[bug tracker](https://github.com/me
 | Prey and tasks | ![](https://geps.dev/progress/10) | [#1380](https://github.com/mehah/otclient/pull/1380) |
 | Compendium | ![](https://geps.dev/progress/15) | [#1625](https://github.com/mehah/otclient/pull/1625) |
 | Party List | ![](https://geps.dev/progress/0) | None |
-| Proficiency | ![](https://geps.dev/progress/80) | [#1593](https://github.com/mehah/otclient/pull/1593) |
-| New Imbui 15x/14x | ![](https://geps.dev/progress/80) | [#1616](https://github.com/mehah/otclient/pull/1616) |
+| Search Locker | ![](https://geps.dev/progress/0) | None |
 
 ---
 

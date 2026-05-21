@@ -4,6 +4,8 @@ Module
   author: OTClient team
   website: https://github.com/mehah/otclient
   sandboxed: true
+  devices:
+    - mobile
   scripts: [ joystick ]
   @onLoad: init()
   @onUnload: terminate()

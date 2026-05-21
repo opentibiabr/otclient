@@ -4,6 +4,7 @@ Module
   author: game_highscore
   website: https://github.com/mehah/otclient
   sandboxed: true
+  minClientVersion: 1310
   scripts: [ game_highscore ]
   @onLoad: highscoreController:init()
   @onUnload: highscoreController:terminate()

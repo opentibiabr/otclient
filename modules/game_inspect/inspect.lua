@@ -116,12 +116,6 @@ end
 -- =============================================*/
 
 function InspectController:onGameStart()
-    if g_game.getClientVersion() < 1281 then
-        self:scheduleEvent(function()
-            g_modules.getModule("game_inspect"):unload()
-        end, 100, "unloadInspect")
-        return
-    end
     self:registerEvents(g_game, {
         onParseItemDetail = function(...)
             if not (modules.game_cyclopedia and modules.game_cyclopedia.isVisible()) then

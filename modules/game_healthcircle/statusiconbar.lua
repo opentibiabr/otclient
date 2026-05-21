@@ -364,7 +364,7 @@ local function createConditionRow(condition, parent)
     widget:setId(condition.id)
     widget:setFocusable(true)
     widget.label:setText(condition.name or condition.id)
-    widget:setTooltip(condition.tooltip or '')
+    --widget:setTooltip(condition.tooltip or '')
     applyRowIcon(widget, condition)
 
     widget.showInHudCheckBox:setChecked(ConditionsHUD.isConditionVisible(condition.id, 'hud'))
@@ -732,7 +732,7 @@ function StatusIconBar.refreshIcons()
             container.realHeight = container.realHeight or container:getHeight()
         end
 
-        container:setTooltip(condition.tooltip or '')
+        --container:setTooltip(condition.tooltip or '')
         applyIconWidgetStyle(container, condition)
     end
 

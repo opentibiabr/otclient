@@ -3,7 +3,6 @@ NewMainWindow
   !text: tr('New Preset')
   anchors.horizontalCenter: parent.horizontalCenter
   size: 625 201
-  @onClose:
 
   Panel
     id: contentPanel

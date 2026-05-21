@@ -4,6 +4,7 @@ Module
   author: OTClient team
   website: https://github.com/mehah/otclient
   sandboxed: true
+  minClientVersion: 1098
   scripts: [ game_store ]
   @onLoad: controllerShop:init()
   @onUnload: controllerShop:terminate()

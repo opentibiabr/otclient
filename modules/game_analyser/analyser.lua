@@ -240,7 +240,9 @@ function terminate()
     partyMemberCheckEvent:cancel()
     partyMemberCheckEvent = nil
   end
-
+  if ControllerAnalyser then
+    ControllerAnalyser:stopAllEvent()
+  end
 end
 
 function startNewSession(login)

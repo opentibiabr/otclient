@@ -156,14 +156,6 @@ function TaskBoardController:onInit()
 end
 
 function TaskBoardController:onGameStart()
-    local version = g_game.getClientVersion()
-    if version < 1512 then
-        -- Delete this in the future if the PR #1475 (minClientVersion) is merged
-        TaskBoardController:scheduleEvent(function()
-            g_modules.getModule("game_taskboard"):unload()
-        end, 100, "unloadModule")
-        return
-    end
     -- LuaFormatter off
     self:registerEvents(g_game, {
         onResourcesBalanceChange = function(...) self:onResourceBalance(...) end,

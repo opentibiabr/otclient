@@ -18,15 +18,9 @@ if not SkillwheelStringsLibrary then
 end
 
 local function onGameStart()
-  if g_game.getClientVersion() >= 1310 then 
-    local ret = WheelOfDestiny.loadWheelPresets()
-    if not ret then
-      print("[wheel] Error loading wheel presets")
-    end
-  else
-    scheduleEvent(function()
-      g_modules.getModule("game_wheel"):unload()
-    end, 100)
+  local ret = WheelOfDestiny.loadWheelPresets()
+  if not ret then
+    print("[wheel] Error loading wheel presets")
   end
 end
 
@@ -290,19 +284,19 @@ function toggleTabBarButtons(selectedButtonId)
 
   if selectedButtonId == 'informationButton' then
     informationButton:setSize(tosize("174 34"))
-    informationButton:setImageSource('/images/game/wheel/informationSelection')
+    informationButton:setImageSource('/game_wheel/images/informationSelection')
     informationButton:setImageClip(torect("0 0 174 34"))
     managePresetsButton:setSize(tosize("34 34"))
-    managePresetsButton:setImageSource('/images/game/wheel/small_manage_button')
+    managePresetsButton:setImageSource('/game_wheel/images/small_manage_button')
     managePresetsButton:setImageClip(torect("0 0 34 34"))
     tabContent.manage:setVisible(false)
     tabContent.information:setVisible(true)
   elseif selectedButtonId == 'managePresetsButton' then
     informationButton:setSize(tosize("34 34"))
-    informationButton:setImageSource('/images/game/wheel/small_information_button')
+    informationButton:setImageSource('/game_wheel/images/small_information_button')
     informationButton:setImageClip(torect("0 0 34 34"))
     managePresetsButton:setSize(tosize("174 34"))
-    managePresetsButton:setImageSource('/images/game/wheel/manageSelect')
+    managePresetsButton:setImageSource('/game_wheel/images/manageSelect')
     managePresetsButton:setImageClip(torect("0 0 174 34"))
     tabContent.information:setVisible(false)
     tabContent.manage:setVisible(true)
@@ -310,7 +304,7 @@ function toggleTabBarButtons(selectedButtonId)
 end
 
 function onResourceBalance()
-  if not wheelWindow:isVisible() then
+  if not wheelWindow or not wheelWindow:isVisible() then
     return true
   end
   local player = g_game.getLocalPlayer()

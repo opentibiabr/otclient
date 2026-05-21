@@ -5,7 +5,7 @@ Module
   scripts: [ const, proficiency_data, proficiency ]
   autoload: true
   autoload-priority: 1200
-  minClientVersion: 1511
+  !requiredFeature: g_game.getFeature(GameProficiency)
   dependencies:
     - game_interface
   @onLoad: init()

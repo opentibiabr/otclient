@@ -6,5 +6,6 @@ Module
   scripts: [ analyser, classes/Controller, classes/HuntingAnalyser, classes/LootAnalyser, classes/SupplyAnalyser, classes/ImpactAnalyser, classes/InputAnalyser, classes/XPAanalyser, classes/DropTrackerAnalyser, classes/PartyHuntAnalyser, classes/BossCooldown ]
   autoload: true
   dependencies: [ game_interface, game_cyclopedia ]
+  minClientVersion: 1310
   @onLoad: init()
   @onUnload: terminate()
