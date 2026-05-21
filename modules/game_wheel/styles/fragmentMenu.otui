@@ -14,7 +14,7 @@ FragmentPanel < UIWidget
   UIButton
     id: socketed
     size: 12 12
-    image-source: /images/game/wheel/icon-socketed
+    image-source: /game_wheel/images/icon-socketed
     anchors.top: parent.top
     anchors.left: parent.left
     margin-top: 12
@@ -41,7 +41,7 @@ FragmentPanel < UIWidget
     size: 50 50
     anchors.verticalCenter: parent.verticalCenter
     anchors.horizontalCenter: parent.horizontalCenter
-    image-source: /images/game/wheel/backdrop_modgrades
+    image-source: /game_wheel/images/backdrop_modgrades
     image-clip: 0 0 50 50
     phantom: true
     UIWidget
@@ -51,7 +51,7 @@ FragmentPanel < UIWidget
       anchors.horizontalCenter: parent.horizontalCenter
       margin-left: 3
       margin-bottom: 2
-      image-source: /images/game/wheel/icons-skillwheel-suprememods
+      image-source: /game_wheel/images/icons-skillwheel-suprememods
       image-smooth: true
       image-clip: 35 0 35 35
       tooltip-delayed: true
@@ -60,7 +60,7 @@ FragmentPanel < UIWidget
       size: 30 30
       anchors.verticalCenter: parent.verticalCenter
       anchors.horizontalCenter: parent.horizontalCenter
-      image-source: /images/game/wheel/icons-skillwheel-basicmods
+      image-source: /game_wheel/images/icons-skillwheel-basicmods
       image-smooth: true
       image-clip: 30 0 30 30
       tooltip-delayed: true
@@ -109,7 +109,7 @@ Panel
       margin-bottom: 5
       margin-left: 5
       @onClick: modules.game_wheel.Workshop.onUpgradeModification(self)
-      image-source: /images/game/wheel/enhance-button
+      image-source: /game_wheel/images/enhance-button
       image-clip: 0 0 64 20
       image-border: 1
       padding: 1 1 1 1
@@ -165,7 +165,7 @@ Panel
       UIWidget
         id: fragmentIcon
         size: 12 12
-        image-source: /images/game/wheel/fragmentIcon
+        image-source: /game_wheel/images/fragmentIcon
         image-clip: 0 0 12 12
         anchors.right: parent.right
         anchors.top: parent.top
@@ -212,11 +212,11 @@ Panel
         anchors.top: parent.top
         anchors.left: parent.left
         margin-top: 38
-        image-source: /images/game/wheel/backdrop_grades_circle_top
+        image-source: /game_wheel/images/backdrop_grades_circle_top
         UIWidget
           id: modBgAnim3
           anchors.fill: parent
-          image-source: /images/game/wheel/backdrop_grades_circle_top_anim
+          image-source: /game_wheel/images/backdrop_grades_circle_top_anim
           visible: false
 
         UIWidget
@@ -224,7 +224,7 @@ Panel
           size: 50 50
           anchors.verticalCenter: parent.verticalCenter
           anchors.horizontalCenter: parent.horizontalCenter
-          image-source: /images/game/wheel/backdrop_modgrades
+          image-source: /game_wheel/images/backdrop_modgrades
           image-clip: 150 0 50 50
           phantom: true
           image-shader: image_black_white
@@ -233,7 +233,7 @@ Panel
             size: 30 30
             anchors.verticalCenter: parent.verticalCenter
             anchors.horizontalCenter: parent.horizontalCenter
-            image-source: /images/game/wheel/icons-skillwheel-basicmods
+            image-source: /game_wheel/images/icons-skillwheel-basicmods
             image-smooth: true
             image-clip: 0 0 30 30
             phantom: true
@@ -245,7 +245,7 @@ Panel
             anchors.horizontalCenter: parent.horizontalCenter
             margin-left: 3
             margin-bottom: 2
-            image-source: /images/game/wheel/icons-skillwheel-suprememods
+            image-source: /game_wheel/images/icons-skillwheel-suprememods
             image-smooth: true
             image-clip: 0 0 35 35
             phantom: true
@@ -257,11 +257,11 @@ Panel
         anchors.top: prev.bottom
         anchors.left: parent.left
         margin-left: 24
-        image-source: /images/game/wheel/backdrop_grades_line
+        image-source: /game_wheel/images/backdrop_grades_line
         UIWidget
           id: lineAnim3
           anchors.fill: parent
-          image-source: /images/game/wheel/backdrop_grades_line_anim
+          image-source: /game_wheel/images/backdrop_grades_line_anim
           visible: false
           margin: 0 1 0 1
 
@@ -270,11 +270,11 @@ Panel
         size: 54 54
         anchors.top: prev.bottom
         anchors.left: parent.left
-        image-source: /images/game/wheel/backdrop_grades_circle_mid
+        image-source: /game_wheel/images/backdrop_grades_circle_mid
         UIWidget
           id: modBgAnim2
           anchors.fill: parent
-          image-source: /images/game/wheel/backdrop_grades_circle_mid_anim
+          image-source: /game_wheel/images/backdrop_grades_circle_mid_anim
           visible: false
 
         UIWidget
@@ -282,7 +282,7 @@ Panel
           size: 50 50
           anchors.verticalCenter: parent.verticalCenter
           anchors.horizontalCenter: parent.horizontalCenter
-          image-source: /images/game/wheel/backdrop_modgrades
+          image-source: /game_wheel/images/backdrop_modgrades
           image-clip: 100 0 50 50
           phantom: true
           image-shader: image_black_white
@@ -291,7 +291,7 @@ Panel
             size: 30 30
             anchors.verticalCenter: parent.verticalCenter
             anchors.horizontalCenter: parent.horizontalCenter
-            image-source: /images/game/wheel/icons-skillwheel-basicmods
+            image-source: /game_wheel/images/icons-skillwheel-basicmods
             image-smooth: true
             image-clip: 0 0 30 30
             phantom: true
@@ -303,7 +303,7 @@ Panel
             anchors.horizontalCenter: parent.horizontalCenter
             margin-left: 3
             margin-bottom: 2
-            image-source: /images/game/wheel/icons-skillwheel-suprememods
+            image-source: /game_wheel/images/icons-skillwheel-suprememods
             image-smooth: true
             image-clip: 0 0 35 35
             phantom: true
@@ -315,11 +315,11 @@ Panel
         anchors.top: prev.bottom
         anchors.left: parent.left
         margin-left: 24
-        image-source: /images/game/wheel/backdrop_grades_line
+        image-source: /game_wheel/images/backdrop_grades_line
         UIWidget
           id: lineAnim2
           anchors.fill: parent
-          image-source: /images/game/wheel/backdrop_grades_line_anim
+          image-source: /game_wheel/images/backdrop_grades_line_anim
           visible: false
           margin: 0 1 0 1
 
@@ -328,18 +328,18 @@ Panel
         size: 54 54
         anchors.top: prev.bottom
         anchors.left: parent.left
-        image-source: /images/game/wheel/backdrop_grades_circle_mid
+        image-source: /game_wheel/images/backdrop_grades_circle_mid
         UIWidget
           id: modBgAnim1
           anchors.fill: parent
-          image-source: /images/game/wheel/backdrop_grades_circle_mid_anim
+          image-source: /game_wheel/images/backdrop_grades_circle_mid_anim
           visible: false
         UIWidget
           id: fragmentType1
           size: 50 50
           anchors.verticalCenter: parent.verticalCenter
           anchors.horizontalCenter: parent.horizontalCenter
-          image-source: /images/game/wheel/backdrop_modgrades
+          image-source: /game_wheel/images/backdrop_modgrades
           image-clip: 50 0 50 50
           phantom: true
           image-shader: image_black_white
@@ -348,7 +348,7 @@ Panel
             size: 30 30
             anchors.verticalCenter: parent.verticalCenter
             anchors.horizontalCenter: parent.horizontalCenter
-            image-source: /images/game/wheel/icons-skillwheel-basicmods
+            image-source: /game_wheel/images/icons-skillwheel-basicmods
             image-smooth: true
             image-clip: 0 0 30 30
             phantom: true
@@ -360,7 +360,7 @@ Panel
             anchors.horizontalCenter: parent.horizontalCenter
             margin-left: 3
             margin-bottom: 2
-            image-source: /images/game/wheel/icons-skillwheel-suprememods
+            image-source: /game_wheel/images/icons-skillwheel-suprememods
             image-smooth: true
             image-clip: 0 0 35 35
             phantom: true
@@ -372,11 +372,11 @@ Panel
         anchors.top: prev.bottom
         anchors.left: parent.left
         margin-left: 24
-        image-source: /images/game/wheel/backdrop_grades_line
+        image-source: /game_wheel/images/backdrop_grades_line
         UIWidget
           id: lineAnim1
           anchors.fill: parent
-          image-source: /images/game/wheel/backdrop_grades_line_anim
+          image-source: /game_wheel/images/backdrop_grades_line_anim
           visible: false
           margin: 0 1 0 1
 
@@ -385,17 +385,17 @@ Panel
         size: 54 54
         anchors.top: prev.bottom
         anchors.left: parent.left
-        image-source: /images/game/wheel/backdrop_grades_circle_bottom
+        image-source: /game_wheel/images/backdrop_grades_circle_bottom
         UIWidget
           id: modBgAnim0
           anchors.fill: parent
-          image-source: /images/game/wheel/backdrop_grades_circle_bottom_anim
+          image-source: /game_wheel/images/backdrop_grades_circle_bottom_anim
         UIWidget
           id: fragmentType0
           size: 50 50
           anchors.verticalCenter: parent.verticalCenter
           anchors.horizontalCenter: parent.horizontalCenter
-          image-source: /images/game/wheel/backdrop_modgrades
+          image-source: /game_wheel/images/backdrop_modgrades
           image-clip: 0 0 50 50
           phantom: true
           UIWidget
@@ -403,7 +403,7 @@ Panel
             size: 30 30
             anchors.verticalCenter: parent.verticalCenter
             anchors.horizontalCenter: parent.horizontalCenter
-            image-source: /images/game/wheel/icons-skillwheel-basicmods
+            image-source: /game_wheel/images/icons-skillwheel-basicmods
             image-smooth: true
             image-clip: 0 0 30 30
             phantom: true
@@ -414,7 +414,7 @@ Panel
             anchors.horizontalCenter: parent.horizontalCenter
             margin-left: 3
             margin-bottom: 2
-            image-source: /images/game/wheel/icons-skillwheel-suprememods
+            image-source: /game_wheel/images/icons-skillwheel-suprememods
             image-smooth: true
             image-clip: 0 0 35 35
             phantom: true

@@ -1138,7 +1138,7 @@ function GemAtelier.setupVesselPanel()
                 i, tostring(background ~= nil), tostring(gemContainer ~= nil), tostring(gemItem ~= nil)
             ))
         else
-            background:setImageSource("/images/game/wheel/backdrop_skillwheel_socket_inactive")
+            background:setImageSource("/game_wheel/images/backdrop_skillwheel_socket_inactive")
             gemContainer:setVisible(false)
             gemItem:setImageClip("0 0 32 32")
 
@@ -1152,7 +1152,7 @@ function GemAtelier.setupVesselPanel()
                 local modOffset = 34 * math.max(0, filledCount - 1)
                 gemContainer:setImageClip(containerOffset + modOffset .. " 0 34 34")
                 gemContainer:setVisible(true)
-                background:setImageSource("/images/game/wheel/backdrop_skillwheel_socket_active")
+                background:setImageSource("/game_wheel/images/backdrop_skillwheel_socket_active")
             end
         end
     end
@@ -1170,7 +1170,7 @@ function GemAtelier.setupVesselPanel()
 
             if background and gemContainer and gemItem then
                 if GemAtelier.isVesselAvailable(data.gemDomain, 1) then
-                    background:setImageSource("/images/game/wheel/backdrop_skillwheel_socket_active")
+                    background:setImageSource("/game_wheel/images/backdrop_skillwheel_socket_active")
                     gemContainer:setVisible(true)
                 end
 

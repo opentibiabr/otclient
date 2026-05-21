@@ -4,6 +4,7 @@ Module
   author: Summ, Edubart
   website: https://github.com/edubart/otclient
   sandboxed: true
+  !requiredFeature: g_game.getFeature(GameSpellList)
   scripts: [ spelllist ]
   @onLoad: init()
   @onUnload: terminate()

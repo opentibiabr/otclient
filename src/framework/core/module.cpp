@@ -201,6 +201,23 @@ bool Module::hasSupportedDevice(const Device device)
     return false;
 }
 
+bool Module::evaluateRequiredFeature() const
+{
+    std::string expression = m_requiredFeature;
+    stdext::trim(expression);
+
+    if (expression.empty())
+        return false;
+
+    try {
+        g_lua.evaluateExpression(expression, fmt::format("@module {}: [!requiredFeature]", m_name));
+        return g_lua.popBoolean();
+    } catch (const stdext::exception& e) {
+        g_logger.error("Unable to evaluate required feature for module '{}': {}", m_name, e.what());
+        return false;
+    }
+}
+
 int Module::getSandbox(LuaInterface* lua)
 {
     lua->getRef(m_sandboxEnv);
@@ -210,6 +227,7 @@ int Module::getSandbox(LuaInterface* lua)
 void Module::discover(const OTMLNodePtr& moduleNode)
 {
     const static std::string none = "none";
+    const static std::string empty;
     m_description = moduleNode->valueAt("description", none);
     m_author = moduleNode->valueAt("author", none);
     m_website = moduleNode->valueAt("website", none);
@@ -219,6 +237,10 @@ void Module::discover(const OTMLNodePtr& moduleNode)
     m_reloadable = moduleNode->valueAt<bool>("reloadable", true);
     m_sandboxed = moduleNode->valueAt<bool>("sandboxed", false);
     m_autoLoadPriority = moduleNode->valueAt<int>("autoload-priority", 9999);
+    m_minClientVersion = moduleNode->valueAt<int>("minClientVersion", 0);
+    m_requiredFeature = empty;
+    if (const auto& node = moduleNode->get("!requiredFeature"))
+        m_requiredFeature = node->value();
 
     if (const auto& node = moduleNode->get("devices")) {
         for (const auto& tmp : node->children()) {

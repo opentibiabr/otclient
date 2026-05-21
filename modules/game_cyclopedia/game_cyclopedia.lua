@@ -52,7 +52,6 @@ function controllerCyclopedia:onGameStart()
         controllerCyclopedia:scheduleEvent(function()
             g_modules.getModule("game_cyclopedia"):unload()
         end, 100, "unloadModule")
-        return
     else
         CyclopediaButton = modules.game_mainpanel.addToggleButton('CyclopediaButton', tr('Cyclopedia'),
             '/images/options/cooldowns', function() toggle("items") end, false, 7)

@@ -502,19 +502,19 @@ function WheelOfDestiny.insertPoint(index, points)
         if gem then
           local enabled = WheelOfDestiny.vesselEnabled[bonus.domain - 1]
           if #enabled == 0 and gem.lesserBonus > -1 then
-            widget:setImageSource("/images/game/wheel/icons-skillwheel-basicmods")
+            widget:setImageSource("/game_wheel/images/icons-skillwheel-basicmods")
             widget:setImageClip(30 * gem.lesserBonus .. " 0 30 30")
             modIcon:setVisible(true)
             WheelOfDestiny.equipedGemBonuses[index] = {bonusID = gem.lesserBonus, supreme = false, gemID = gem.gemID}
             table.insert(WheelOfDestiny.vesselEnabled[bonus.domain - 1], index)
           elseif #enabled == 1 and gem.regularBonus > -1 then
-            widget:setImageSource("/images/game/wheel/icons-skillwheel-basicmods")
+            widget:setImageSource("/game_wheel/images/icons-skillwheel-basicmods")
             widget:setImageClip(30 * gem.regularBonus .. " 0 30 30")
             modIcon:setVisible(true)
             WheelOfDestiny.equipedGemBonuses[index] = {bonusID = gem.regularBonus, supreme = false, gemID = gem.gemID}
             table.insert(WheelOfDestiny.vesselEnabled[bonus.domain - 1], index)
           elseif #enabled == 2 and gem.supremeBonus > -1 then
-            widget:setImageSource("/images/game/wheel/icons-skillwheel-suprememods")
+            widget:setImageSource("/game_wheel/images/icons-skillwheel-suprememods")
             widget:setImageClip(35 * gem.supremeBonus .. " 0 35 35")
             widget:setSize(tosize("35 35"))
             modIcon:setVisible(true)
@@ -522,7 +522,7 @@ function WheelOfDestiny.insertPoint(index, points)
             table.insert(WheelOfDestiny.vesselEnabled[bonus.domain - 1], index)
           end
         else
-          widget:setImageSource("/images/game/wheel/icons-skillwheel-mediumperks")
+          widget:setImageSource("/game_wheel/images/icons-skillwheel-mediumperks")
           widget:setImageClip(iconInfo.iconRect)
           modIcon:setVisible(false)
         end
@@ -576,24 +576,24 @@ function WheelOfDestiny.checkFilledVessels(originalIndex)
 			goto continue
 		end
 
-		widget:setImageSource("/images/game/wheel/icons-skillwheel-mediumperks")
+		widget:setImageSource("/game_wheel/images/icons-skillwheel-mediumperks")
 		widget:setImageClip(iconInfo.iconRect)
 		widget:setSize(tosize("30 30"))
 
 		if lastModInserted == 0 and gem.lesserBonus > -1 then
-			widget:setImageSource("/images/game/wheel/icons-skillwheel-basicmods")
+			widget:setImageSource("/game_wheel/images/icons-skillwheel-basicmods")
 			widget:setImageClip(30 * gem.lesserBonus .. " 0 30 30")
 			modIcon:setVisible(true)
 			WheelOfDestiny.equipedGemBonuses[id] = {bonusID = gem.lesserBonus, supreme = false, gemID = gem.gemID}
 			lastModInserted = 1
 		elseif lastModInserted == 1 and gem.regularBonus > -1 then
-			widget:setImageSource("/images/game/wheel/icons-skillwheel-basicmods")
+			widget:setImageSource("/game_wheel/images/icons-skillwheel-basicmods")
 			widget:setImageClip(30 * gem.regularBonus .. " 0 30 30")
 			modIcon:setVisible(true)
 			WheelOfDestiny.equipedGemBonuses[id] = {bonusID = gem.regularBonus, supreme = false, gemID = gem.gemID}
 			lastModInserted = 2
 		elseif lastModInserted == 2 and gem.supremeBonus > -1 then
-			widget:setImageSource("/images/game/wheel/icons-skillwheel-suprememods")
+			widget:setImageSource("/game_wheel/images/icons-skillwheel-suprememods")
 			widget:setImageClip(35 * gem.supremeBonus .. " 0 35 35")
 			widget:setSize(tosize("35 35"))
 			modIcon:setVisible(true)
@@ -633,7 +633,7 @@ function WheelOfDestiny.removePoint(index, points)
         local widget = wheelPanel:recursiveGetChildById("icon"..index)
         local modIcon = widget:recursiveGetChildById("modIcon"..index)
         local iconInfo = WheelIcons[WheelOfDestiny.vocationId][index]
-        widget:setImageSource("/images/game/wheel/icons-skillwheel-mediumperks")
+        widget:setImageSource("/game_wheel/images/icons-skillwheel-mediumperks")
         widget:setImageClip(iconInfo.iconRect)
         widget:setSize(tosize("30 30"))
         modIcon:setVisible(false)
@@ -659,7 +659,7 @@ function WheelOfDestiny.removePoint(index, points)
       local widget = wheelPanel:recursiveGetChildById("icon"..index)
       local modIcon = widget:recursiveGetChildById("modIcon"..index)
       local iconInfo = WheelIcons[WheelOfDestiny.vocationId][index]
-      widget:setImageSource("/images/game/wheel/icons-skillwheel-mediumperks")
+      widget:setImageSource("/game_wheel/images/icons-skillwheel-mediumperks")
       widget:setImageClip(iconInfo.iconRect)
       widget:setSize(tosize("30 30"))
       modIcon:setVisible(false)
@@ -737,31 +737,31 @@ function WheelOfDestiny.onDestinyWheel(playerId, canView, changeState, vocationI
   managePresetsButton:setEnabled(presetEnabled)
 
   if vocationId == 1 then
-    wheelPanel.vocationWheel:setImageSource('/images/game/wheel/wheel-vocations/backdrop_skillwheel_knight')
+    wheelPanel.vocationWheel:setImageSource('/game_wheel/images/wheel-vocations/backdrop_skillwheel_knight')
     wheelPanel:recursiveGetChildById("perkIconTopLeft"):setImageClip("0 0 34 34")
     wheelPanel:recursiveGetChildById("perkIconTopRight"):setImageClip("34 0 34 34")
     wheelPanel:recursiveGetChildById("perkIconBottomLeft"):setImageClip("68 0 34 34")
     wheelPanel:recursiveGetChildById("perkIconBottomRight"):setImageClip("102 0 34 34")
   elseif vocationId == 2 then
-    wheelPanel.vocationWheel:setImageSource('/images/game/wheel/wheel-vocations/backdrop_skillwheel_paladin')
+    wheelPanel.vocationWheel:setImageSource('/game_wheel/images/wheel-vocations/backdrop_skillwheel_paladin')
     wheelPanel:recursiveGetChildById("perkIconTopLeft"):setImageClip("0 0 34 34")
     wheelPanel:recursiveGetChildById("perkIconTopRight"):setImageClip("136 0 34 34")
     wheelPanel:recursiveGetChildById("perkIconBottomLeft"):setImageClip("170 0 34 34")
     wheelPanel:recursiveGetChildById("perkIconBottomRight"):setImageClip("204 0 34 34")
   elseif vocationId == 3 then
-    wheelPanel.vocationWheel:setImageSource('/images/game/wheel/wheel-vocations/backdrop_skillwheel_sorcerer')
+    wheelPanel.vocationWheel:setImageSource('/game_wheel/images/wheel-vocations/backdrop_skillwheel_sorcerer')
     wheelPanel:recursiveGetChildById("perkIconTopLeft"):setImageClip("0 0 34 34")
     wheelPanel:recursiveGetChildById("perkIconTopRight"):setImageClip("238 0 34 34")
     wheelPanel:recursiveGetChildById("perkIconBottomLeft"):setImageClip("272 0 34 34")
     wheelPanel:recursiveGetChildById("perkIconBottomRight"):setImageClip("306 0 34 34")
   elseif vocationId == 4 then
-    wheelPanel.vocationWheel:setImageSource('/images/game/wheel/wheel-vocations/backdrop_skillwheel_druid')
+    wheelPanel.vocationWheel:setImageSource('/game_wheel/images/wheel-vocations/backdrop_skillwheel_druid')
     wheelPanel:recursiveGetChildById("perkIconTopLeft"):setImageClip("0 0 34 34")
     wheelPanel:recursiveGetChildById("perkIconTopRight"):setImageClip("374 0 34 34")
     wheelPanel:recursiveGetChildById("perkIconBottomLeft"):setImageClip("340 0 34 34")
     wheelPanel:recursiveGetChildById("perkIconBottomRight"):setImageClip("408 0 34 34")
   elseif vocationId == 5 then
-    wheelPanel.vocationWheel:setImageSource('/images/game/wheel/wheel-vocations/backdrop_skillwheel_monk')
+    wheelPanel.vocationWheel:setImageSource('/game_wheel/images/wheel-vocations/backdrop_skillwheel_monk')
     wheelPanel:recursiveGetChildById("perkIconTopLeft"):setImageClip("0 0 34 34")
     wheelPanel:recursiveGetChildById("perkIconTopRight"):setImageClip("442 0 34 34")
     wheelPanel:recursiveGetChildById("perkIconBottomLeft"):setImageClip("476 0 34 34")
@@ -802,26 +802,26 @@ function WheelOfDestiny.onCreate(vocationId)
         local gem = GemAtelier.getEquipedGem(bonus.domain - 1)
         if gem and pointInvested >= bonus.maxPoints then
           if bonus.modType == 0 and gem.lesserBonus > -1 then
-            widget:setImageSource("/images/game/wheel/icons-skillwheel-basicmods")
+            widget:setImageSource("/game_wheel/images/icons-skillwheel-basicmods")
             widget:setImageClip(30 * gem.lesserBonus .. " 0 30 30")
             modIcon:setVisible(true)
           elseif bonus.modType == 1 and gem.regularBonus > -1 then
-            widget:setImageSource("/images/game/wheel/icons-skillwheel-basicmods")
+            widget:setImageSource("/game_wheel/images/icons-skillwheel-basicmods")
             widget:setImageClip(30 * gem.regularBonus .. " 0 30 30")
             modIcon:setVisible(true)
           elseif bonus.modType == 2 and gem.supremeBonus > -1 then
-            widget:setImageSource("/images/game/wheel/icons-skillwheel-suprememods")
+            widget:setImageSource("/game_wheel/images/icons-skillwheel-suprememods")
             widget:setImageClip(35 * gem.supremeBonus .. " 0 35 35")
             widget:setSize(tosize("35 35"))
             modIcon:setVisible(true)
           else
-            widget:setImageSource("/images/game/wheel/icons-skillwheel-mediumperks")
+            widget:setImageSource("/game_wheel/images/icons-skillwheel-mediumperks")
             widget:setImageClip(iconInfo.iconRect)
             widget:setSize(tosize("30 30"))
             modIcon:setVisible(false)
           end
         else
-          widget:setImageSource("/images/game/wheel/icons-skillwheel-mediumperks")
+          widget:setImageSource("/game_wheel/images/icons-skillwheel-mediumperks")
           widget:setImageClip(iconInfo.iconRect)
           widget:setSize(tosize("30 30"))
           if modIcon then
@@ -1169,7 +1169,7 @@ function resetWheel(ignoreprotocol)
       local widget = wheelPanel:recursiveGetChildById("icon"..index)
       local modIcon = widget:recursiveGetChildById("modIcon"..index)
       local iconInfo = WheelIcons[WheelOfDestiny.vocationId][index]
-      widget:setImageSource("/images/game/wheel/icons-skillwheel-mediumperks")
+      widget:setImageSource("/game_wheel/images/icons-skillwheel-mediumperks")
       widget:setImageClip(iconInfo.iconRect)
       widget:setSize(tosize("30 30"))
       if modIcon then
@@ -2069,16 +2069,16 @@ function WheelOfDestiny.configurePassives()
     local widget = wheelPanel:recursiveGetChildById("wheelPassive"..domain)
     local widgetPercent = wheelPanel:recursiveGetChildById("revelationPerk"..passivel)
     if points < 250 then
-      widget:setImageSource("/images/game/wheel/backdrop_skillwheel_largebonus_front0_"..passivel)
+      widget:setImageSource("/game_wheel/images/backdrop_skillwheel_largebonus_front0_"..passivel)
       widgetPercent:setPercent(math.floor(((points - 0) / (250 - 0)) * 100))
     elseif points < 500 then
-      widget:setImageSource("/images/game/wheel/backdrop_skillwheel_largebonus_front1_"..passivel)
+      widget:setImageSource("/game_wheel/images/backdrop_skillwheel_largebonus_front1_"..passivel)
       widgetPercent:setPercent(math.floor(((points - 250) / (500 - 250)) * 100))
     elseif points < 1000 then
-      widget:setImageSource("/images/game/wheel/backdrop_skillwheel_largebonus_front2_"..passivel)
+      widget:setImageSource("/game_wheel/images/backdrop_skillwheel_largebonus_front2_"..passivel)
       widgetPercent:setPercent(math.floor(((points - 500) / (1000 - 500)) * 100))
     else
-      widget:setImageSource("/images/game/wheel/backdrop_skillwheel_largebonus_front3_"..passivel)
+      widget:setImageSource("/game_wheel/images/backdrop_skillwheel_largebonus_front3_"..passivel)
       widgetPercent:setPercent(100)
     end
   end
@@ -3185,6 +3185,11 @@ function WheelOfDestiny.checkApplyButton()
 end
 
 function WheelOfDestiny.loadWheelPresets()
+	if g_game.getClientVersion() >= 1310 then
+		wheelButton = modules.game_mainpanel.addToggleButton('wheelButton', tr('Wheel of Destiny'),   
+		'/images/options/button_skillwheeldialog', toggle, false, 10)  
+		wheelButton:setOn(false)
+	end
 	WheelOfDestiny.externalPreset = {}
 	WheelOfDestiny.internalPreset = {}
 
@@ -3307,7 +3312,7 @@ function WheelOfDestiny.configureEquippedGems()
     local filledCount = GemAtelier.getFilledVesselCount(i)
 
     local backGroundImage = (filledCount == 0 and "backdrop_skillwheel_largebonus_socketdisabled_" .. i or "backdrop_skillwheel_largebonus_socketenabled_" .. i)
-    background:setImageSource("/images/game/wheel/" .. backGroundImage)
+    background:setImageSource("/game_wheel/images/" .. backGroundImage)
 
     local showSocket = filledCount > 0
     socket:setVisible(showSocket)
@@ -3331,13 +3336,13 @@ function WheelOfDestiny.configureEquippedGems()
       local vocationOffset = (WheelOfDestiny.vocationId - 1) * 384
       local gemOffset = vocationOffset + domainOffet + typeOffset
       gemIcon:setImageClip(gemOffset .. " 0 32 32")
-      socket:setImageSource("/images/game/wheel/icons-skillwheel-sockets")
+      socket:setImageSource("/game_wheel/images/icons-skillwheel-sockets")
       socket:setVisible(true)
       if not showSocket then
         socket:setImageClip("0 0 34 34")
       end
     else
-      socket:setImageSource("/images/game/wheel/backdrop_skillwheel_socket_inactive.png")
+      socket:setImageSource("/game_wheel/images/backdrop_skillwheel_socket_inactive.png")
       socket:setImageClip("0 0 34 34")
     end
   end
