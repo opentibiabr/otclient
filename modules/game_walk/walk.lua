@@ -272,7 +272,7 @@ function WalkController:onGameStart()
     })
 
     modules.game_interface.getRootPanel().onFocusChange = stopSmartWalk
-    if g_platform.isMobile() then
+    if g_platform.isMobile() and modules.game_joystick then
         modules.game_joystick.addOnJoystickMoveListener(function(dir) g_game.walk(dir) end)
     end
 
