@@ -213,6 +213,9 @@ jobs:
       contents: read
       packages: write
     uses: ./.github/workflows/reusable-build-docker.yml
+    with:
+      push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+      vcpkg_binary_cache_access: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'readwrite' || 'read' }}
     secrets: inherit
 
   build-browser:
