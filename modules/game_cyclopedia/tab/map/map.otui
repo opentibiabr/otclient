@@ -24,7 +24,7 @@ UIWidget
       layout: verticalBox
       UIWidget
         id: DisplayBase
-        height: 170
+        height: 280
         image-source: /images/ui/window
         image-border: 20
         color: #929292
@@ -104,9 +104,6 @@ UIWidget
             icon-clip: 99 0 11 11
             @onCheckChange: modules.game_cyclopedia.Cyclopedia.toggleMapFlag(self, self:isChecked())
           CheckBoxButton
-            id: 12
-            icon: /game_cyclopedia/images/icon-map-passage-idle
-          CheckBoxButton
             id: 10
             icon: /game_cyclopedia/images/markers
             icon-clip: 110 0 11 11
@@ -118,9 +115,7 @@ UIWidget
             @onCheckChange: modules.game_cyclopedia.Cyclopedia.toggleMapFlag(self, self:isChecked())
           CheckBoxButton
             id: 12
-            icon: /game_cyclopedia/images/markers
-            icon-clip: 132 0 11 11
-            @onCheckChange: modules.game_cyclopedia.Cyclopedia.toggleMapFlag(self, self:isChecked())
+            icon: /game_cyclopedia/images/icon-map-passage-idle
           CheckBoxButton
             id: 13
             icon: /game_cyclopedia/images/markers
@@ -176,37 +171,50 @@ UIWidget
           text-auto-resize: true
           color: #BEBEBE
           !text: tr('Filter Marks')
+        Label
+          id: ViewBaseLabel
+          anchors.top: MarkList.bottom
+          anchors.horizontalCenter: parent.horizontalCenter
+          margin-top: 8
+          text-auto-resize: true
+          color: #BEBEBE
+          !text: tr('Views')
         UIWidget
           id: ViewBase1
           anchors.left: parent.left
           anchors.right: parent.right
-          anchors.bottom: parent.bottom
+          anchors.top: ViewBaseLabel.bottom
           margin-left: 10
           margin-right: 10
+          margin-top: 4
           margin-bottom: 10
           height: 85
           image-source: /images/ui/panel_flat
           image-border: 10
-          visible: false
-          CheckBox
+          CheckBoxCircle
             id: SurfaceCheck
             anchors.top: parent.top
             anchors.left: parent.left
             margin-top: 7
             margin-left: 7
-            image-source: /images/ui/outfits/checkbox_round
-            text-offset: 15 0
             !text: tr('Surface View')
             text-auto-resize: true
-          CheckBox
+          CheckBoxCircle
             id: MapCheck
             anchors.top: SurfaceCheck.bottom
             anchors.left: SurfaceCheck.left
             margin-top: 7
-            image-source: /images/ui/outfits/checkbox_round
-            text-offset: 15 0
             !text: tr('Map View')
             text-auto-resize: true
+          Label
+            id: SeparatorLabel
+            anchors.left: MapCheck.left
+            anchors.bottom: SeparatorScroll.top
+            margin-bottom: 4
+            !text: tr('Level separator')
+            color: #dfdfdf
+            $disabled:
+              color: #767676
           HorizontalScrollBar
             id: SeparatorScroll
             anchors.left: MapCheck.left
@@ -214,25 +222,9 @@ UIWidget
             anchors.bottom: parent.bottom
             margin-right: 7
             margin-bottom: 5
-            enabled: false
-          Label
-            id: SeparatorLabel
-            anchors.left: SeparatorScroll.left
-            anchors.bottom: SeparatorScroll.top
-            margin-bottom: 6
-            !text: tr('Level separator')
-            color: #767676
-            $checked:
-              color: #BFBFBF
-        Label
-          id: ViewBaseLabel
-          anchors.bottom: ViewBase1.top
-          anchors.horizontalCenter: ViewBase1.horizontalCenter
-          margin-bottom: 5
-          text-auto-resize: true
-          color: #BEBEBE
-          !text: tr('Filter Marks')
-          visible: false
+            minimum: 0
+            maximum: 100
+            value: 100
       UIWidget
         id: NavigationBase
         height: 108
@@ -420,7 +412,7 @@ UIWidget
           image-source: /images/automap/automap_buttons
           image-clip: 0 20 20 20
           size: 20 20
-          @onClick: modules.game_cyclopedia.Cyclopedia.setZooom(false)
+          @onClick: modules.game_cyclopedia.Cyclopedia.setZoom(false)
           $pressed:
             image-clip: 20 20 20 20
         UIWidget
@@ -431,7 +423,7 @@ UIWidget
           margin-top: 5
           image-source: /images/automap/automap_buttons
           image-clip: 0 40 20 20
-          @onClick: modules.game_cyclopedia.Cyclopedia.setZooom(true)
+          @onClick: modules.game_cyclopedia.Cyclopedia.setZoom(true)
           $pressed:
             image-clip: 20 40 20 20
 
@@ -503,6 +495,9 @@ UIWidget
       focusable: false
       cross: true
       color: black
+      zoom: 1
+      min-zoom: -1
+      max-zoom: 5
 
 
 MapLayerSelector < UIWidget
