@@ -300,9 +300,66 @@ local function completeMarkerPath(version)
   return string.format('/things/%d/.client-assets-complete', version)
 end
 
-local function hasModernClientCatalog(version)
-  return g_resources.fileExists(string.format('/things/%d/catalog-content.json', version)) or
-         g_resources.fileExists(string.format('/data/things/%d/catalog-content.json', version))
+local function modernClientBasePath(version, bundled)
+  if bundled then
+    return string.format('/data/things/%d/', version)
+  end
+  return string.format('/things/%d/', version)
+end
+
+local function hasCatalogEntryFile(basePath, entry)
+  if type(entry) ~= 'table' or type(entry.file) ~= 'string' then
+    return false
+  end
+  return g_resources.fileExists(basePath .. entry.file)
+end
+
+local function hasModernClientFilesAtPath(basePath)
+  if not g_resources.fileExists(basePath .. 'catalog-content.json') or
+     not g_resources.fileExists(basePath .. 'assets.json.sha256') then
+    return false
+  end
+
+  local ok, data = pcall(g_resources.readFileContents, basePath .. 'catalog-content.json')
+  if not ok or type(data) ~= 'string' then
+    return false
+  end
+
+  local decodeOk, catalog = pcall(json.decode, data)
+  if not decodeOk or type(catalog) ~= 'table' then
+    return false
+  end
+
+  local hasAppearances = false
+  local hasStaticData = false
+  for _, entry in ipairs(catalog) do
+    local entryType = entry.type
+    if entryType == 'appearances' or entryType == 'staticdata' or entryType == 'proficiencies' then
+      if not hasCatalogEntryFile(basePath, entry) then
+        return false
+      end
+      if entryType == 'appearances' then
+        hasAppearances = true
+      elseif entryType == 'staticdata' then
+        hasStaticData = true
+      end
+    end
+  end
+
+  return hasAppearances and hasStaticData
+end
+
+local function hasModernClientFiles(version)
+  return hasModernClientFilesAtPath(modernClientBasePath(version, false)) or
+         hasModernClientFilesAtPath(modernClientBasePath(version, true))
+end
+
+local function hasInstalledModernClientFiles(version)
+  return hasModernClientFilesAtPath(modernClientBasePath(version, false))
+end
+
+local function hasBundledModernClientFiles(version)
+  return hasModernClientFilesAtPath(modernClientBasePath(version, true))
 end
 
 local function markClientVersionInstalled(version)
@@ -1216,9 +1273,9 @@ function isClientVersionInstalled(version)
   end
 
   if version >= 1281 then
-    return (g_resources.fileExists(string.format('/things/%d/catalog-content.json', version)) and
+    return (hasInstalledModernClientFiles(version) and
             g_resources.fileExists(completeMarkerPath(version))) or
-           g_resources.fileExists(string.format('/data/things/%d/catalog-content.json', version))
+           hasBundledModernClientFiles(version)
   end
 
   return g_resources.fileExists(string.format('/data/things/%d/Tibia.dat', version)) and
@@ -1288,8 +1345,8 @@ function ensureClientVersion(version, callback)
           return finishDownload(false, installError or 'Unable to install client assets.')
         end
 
-        if not hasModernClientCatalog(version) then
-          return finishDownload(false, 'Assets were downloaded but the client files are still incomplete.')
+        if not hasModernClientFiles(version) then
+          return finishDownload(false, 'Assets were downloaded but the client files are still incomplete. Missing catalog-content.json, assets.json.sha256, or required catalog files.')
         end
 
         if not isClientVersionInstalled(version) then
