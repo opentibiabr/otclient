@@ -314,13 +314,6 @@ local function physicalInstallPath(path)
   return joinPhysicalPath(g_resources.getWorkDir(), path)
 end
 
-local function modernClientBasePath(version, bundled)
-  if bundled then
-    return string.format('/data/things/%d/', version)
-  end
-  return string.format('/things/%d/', version)
-end
-
 local function hasCatalogEntryFile(basePath, entry)
   if type(entry) ~= 'table' or type(entry.file) ~= 'string' then
     return false
@@ -328,13 +321,37 @@ local function hasCatalogEntryFile(basePath, entry)
   return g_resources.fileExists(basePath .. entry.file)
 end
 
-local function hasModernClientFilesAtPath(basePath)
-  if not g_resources.fileExists(basePath .. 'catalog-content.json') or
-     not g_resources.fileExists(basePath .. 'assets.json.sha256') then
+local function installFileExists(path)
+  if g_resources.fileExistsInWorkDir then
+    return g_resources.fileExistsInWorkDir(path)
+  end
+  return g_resources.fileExists('/' .. path)
+end
+
+local function readInstallFile(path)
+  if g_resources.readFileContentsFromWorkDir then
+    return g_resources.readFileContentsFromWorkDir(path)
+  end
+  return g_resources.readFileContents('/' .. path)
+end
+
+local function hasInstallCatalogEntryFile(basePath, entry)
+  if type(entry) ~= 'table' or type(entry.file) ~= 'string' then
+    return false
+  end
+  return installFileExists(basePath .. entry.file)
+end
+
+local function hasModernClientFilesAtPath(basePath, installPath)
+  local fileExists = installPath and installFileExists or g_resources.fileExists
+  local readFile = installPath and readInstallFile or g_resources.readFileContents
+
+  if not fileExists(basePath .. 'catalog-content.json') or
+     not fileExists(basePath .. 'assets.json.sha256') then
     return false
   end
 
-  local ok, data = pcall(g_resources.readFileContents, basePath .. 'catalog-content.json')
+  local ok, data = pcall(readFile, basePath .. 'catalog-content.json')
   if not ok or type(data) ~= 'string' then
     return false
   end
@@ -349,7 +366,9 @@ local function hasModernClientFilesAtPath(basePath)
   for _, entry in ipairs(catalog) do
     local entryType = entry.type
     if entryType == 'appearances' or entryType == 'staticdata' or entryType == 'proficiencies' then
-      if not hasCatalogEntryFile(basePath, entry) then
+      if installPath and not hasInstallCatalogEntryFile(basePath, entry) then
+        return false
+      elseif not installPath and not hasCatalogEntryFile(basePath, entry) then
         return false
       end
       if entryType == 'appearances' then
@@ -364,16 +383,11 @@ local function hasModernClientFilesAtPath(basePath)
 end
 
 local function hasModernClientFiles(version)
-  return hasModernClientFilesAtPath(modernClientBasePath(version, false)) or
-         hasModernClientFilesAtPath(modernClientBasePath(version, true))
+  return hasModernClientFilesAtPath(string.format('things/%d/', version), true)
 end
 
 local function hasInstalledModernClientFiles(version)
-  return hasModernClientFilesAtPath(modernClientBasePath(version, false))
-end
-
-local function hasBundledModernClientFiles(version)
-  return hasModernClientFilesAtPath(modernClientBasePath(version, true))
+  return hasModernClientFilesAtPath(string.format('things/%d/', version), true)
 end
 
 local function markClientVersionInstalled(version)
@@ -699,7 +713,12 @@ local function verifyInstalledSha256(destinationPath, expectedSha256, deleteOnMi
     return true
   end
 
-  local actualSha256 = g_resources.fileSha256('/' .. destinationPath)
+  local actualSha256
+  if g_resources.fileSha256InWorkDir then
+    actualSha256 = g_resources.fileSha256InWorkDir(destinationPath)
+  else
+    actualSha256 = g_resources.fileSha256('/' .. destinationPath)
+  end
   if actualSha256 ~= expectedSha256 then
     if deleteOnMismatch ~= false then
       g_resources.deleteFile('/' .. destinationPath)
@@ -1316,9 +1335,8 @@ function isClientVersionInstalled(version)
   end
 
   if version >= 1281 then
-    return (hasInstalledModernClientFiles(version) and
-            g_resources.fileExists(completeMarkerPath(version))) or
-           hasBundledModernClientFiles(version)
+    return hasInstalledModernClientFiles(version) and
+           installFileExists(string.format('things/%d/.client-assets-complete', version))
   end
 
   return g_resources.fileExists(string.format('/data/things/%d/Tibia.dat', version)) and

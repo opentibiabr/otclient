@@ -253,6 +253,7 @@ void Application::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_resources", "searchAndAddPackages", &ResourceManager::searchAndAddPackages, &g_resources);
     g_lua.bindSingletonFunction("g_resources", "removeSearchPath", &ResourceManager::removeSearchPath, &g_resources);
     g_lua.bindSingletonFunction("g_resources", "fileExists", &ResourceManager::fileExists, &g_resources);
+    g_lua.bindSingletonFunction("g_resources", "fileExistsInWorkDir", &ResourceManager::fileExistsInWorkDir, &g_resources);
     g_lua.bindSingletonFunction("g_resources", "directoryExists", &ResourceManager::directoryExists, &g_resources);
     g_lua.bindSingletonFunction("g_resources", "getRealDir", &ResourceManager::getRealDir, &g_resources);
     g_lua.bindSingletonFunction("g_resources", "getWorkDir", &ResourceManager::getWorkDir, &g_resources);
@@ -263,6 +264,7 @@ void Application::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_resources", "listDirectoryFiles", &ResourceManager::listDirectoryFiles, &g_resources);
     g_lua.bindSingletonFunction("g_resources", "getDirectoryFiles", &ResourceManager::getDirectoryFiles, &g_resources);
     g_lua.bindSingletonFunction("g_resources", "readFileContents", &ResourceManager::readFileContents, &g_resources);
+    g_lua.bindSingletonFunction("g_resources", "readFileContentsFromWorkDir", &ResourceManager::readFileContentsFromWorkDir, &g_resources);
     g_lua.bindSingletonFunction("g_resources", "writeFileContents", &ResourceManager::writeFileContents, &g_resources);
     g_lua.bindSingletonFunction("g_resources", "guessFilePath", &ResourceManager::guessFilePath, &g_resources);
     g_lua.bindSingletonFunction("g_resources", "isFileType", &ResourceManager::isFileType, &g_resources);
@@ -273,6 +275,7 @@ void Application::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_resources", "resolvePath", &ResourceManager::resolvePath, &g_resources);
     g_lua.bindSingletonFunction("g_resources", "fileChecksum", &ResourceManager::fileChecksum, &g_resources);
     g_lua.bindSingletonFunction("g_resources", "fileSha256", &ResourceManager::fileSha256, &g_resources);
+    g_lua.bindSingletonFunction("g_resources", "fileSha256InWorkDir", &ResourceManager::fileSha256InWorkDir, &g_resources);
     g_lua.bindSingletonFunction("g_resources", "writeDownloadedFile", &ResourceManager::writeDownloadedFile, &g_resources);
     g_lua.bindSingletonFunction("g_resources", "writeDownloadedFileToWorkDir", &ResourceManager::writeDownloadedFileToWorkDir, &g_resources);
     g_lua.bindSingletonFunction("g_resources", "extractDownloadedArchive", &ResourceManager::extractDownloadedArchive, &g_resources);

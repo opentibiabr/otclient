@@ -53,6 +53,15 @@ std::string normalizeVirtualPath(std::string path)
     return path;
 }
 
+std::filesystem::path safeRelativePath(std::string path)
+{
+    const auto normalized = std::filesystem::path(normalizeVirtualPath(std::move(path))).lexically_normal();
+    const auto normalizedString = normalized.generic_string();
+    if (normalized.empty() || normalized.is_absolute() || normalizedString == "." || normalizedString == ".." || normalizedString.starts_with("../"))
+        return {};
+    return normalized;
+}
+
 bool ensureWriteDirectory(const std::filesystem::path& directory)
 {
     std::filesystem::path current;
@@ -334,6 +343,17 @@ bool ResourceManager::fileExists(const std::string& fileName)
     return (PHYSFS_exists(resolvePath(fileName).c_str()) && !directoryExists(fileName));
 }
 
+bool ResourceManager::fileExistsInWorkDir(const std::string& fileName)
+{
+    const auto relativePath = safeRelativePath(fileName);
+    if (relativePath.empty())
+        return false;
+
+    std::error_code ec;
+    const auto fullPath = std::filesystem::path(getWorkDir()) / relativePath;
+    return std::filesystem::is_regular_file(fullPath, ec);
+}
+
 bool ResourceManager::directoryExists(const std::string& directoryName)
 {
     if (directoryName == "/downloads")
@@ -387,6 +407,22 @@ std::string ResourceManager::readFileContents(const std::string& fileName)
     }
 #endif
 
+    return buffer;
+}
+
+std::string ResourceManager::readFileContentsFromWorkDir(const std::string& fileName)
+{
+    const auto relativePath = safeRelativePath(fileName);
+    if (relativePath.empty())
+        throw Exception("invalid workdir file path '{}'", fileName);
+
+    const auto fullPath = std::filesystem::path(getWorkDir()) / relativePath;
+    std::ifstream file(fullPath, std::ios::binary);
+    if (!file.is_open())
+        throw Exception("unable to open workdir file '{}'", fullPath.generic_string());
+
+    std::string buffer(std::istreambuf_iterator<char>(file), {});
+    file.close();
     return buffer;
 }
 
@@ -732,6 +768,16 @@ std::string ResourceManager::fileSha256(const std::string& path)
         return g_crypt.sha256(readFileContents(path));
     } catch (const stdext::exception& e) {
         g_logger.debug("Unable to read '{}' for SHA-256: {}", path, e.what());
+        return "";
+    }
+}
+
+std::string ResourceManager::fileSha256InWorkDir(const std::string& path)
+{
+    try {
+        return g_crypt.sha256(readFileContentsFromWorkDir(path));
+    } catch (const stdext::exception& e) {
+        g_logger.debug("Unable to read workdir file '{}' for SHA-256: {}", path, e.what());
         return "";
     }
 }
