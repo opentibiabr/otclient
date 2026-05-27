@@ -723,17 +723,17 @@
     <Message Text="RunProtoCompile value: $(RunProtoCompile)" Importance="high" />
   </Target>
   <PropertyGroup Condition="'$(RunProtoCompile)'=='true'">
-    <ProtocPath>$(VcpkgInstalledDir)\tools\protobuf\protoc.exe</ProtocPath>
+    <ProtocPath>$(VcpkgInstalledDir)\$(VcpkgTriplet)\tools\protobuf\protoc.exe</ProtocPath>
     <ProtoPath>$(SourcePath)protobuf</ProtoPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(RunProtoCompile)'=='false'">
-    <ProtocPath>$(VcpkgInstalledDir)\tools\protobuf\protoc.exe</ProtocPath>
+    <ProtocPath>$(VcpkgInstalledDir)\$(VcpkgTriplet)\tools\protobuf\protoc.exe</ProtocPath>
     <ProtoPath>$(SourcePath)protobuf</ProtoPath>
   </PropertyGroup>
   <ItemGroup>
     <ProtoFiles Include="$(ProtoPath)\*.proto" />
   </ItemGroup>
-  <Target Name="ProtoCompile" BeforeTargets="PrepareForBuild" Condition="'$(RunProtoCompile)'=='true'">
+  <Target Name="ProtoCompile" BeforeTargets="PrepareForBuild" DependsOnTargets="VcpkgInstallManifestDependencies" Condition="'$(RunProtoCompile)'=='true'">
     <Exec Command="&quot;$(ProtocPath)&quot; --proto_path=&quot;$(ProtoPath)&quot; --cpp_out=&quot;generated&quot; &quot;%(ProtoFiles.Identity)&quot;" />
     <ItemGroup>
       <ClCompile Include="generated\%(ProtoFiles.Filename).pb.cc">
