@@ -27,9 +27,9 @@ vcpkg_installed/
 vc17/
 vc18/
 /build-emscripten-web/
-/client-assets/
-/sounds/
-/things/
+/bin/
+/data/sounds/*/
+/data/things/*/
 
 # MSTest test Results
 [Tt]est[Rr]esult*/

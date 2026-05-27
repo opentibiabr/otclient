@@ -13,9 +13,9 @@ local DEFAULT_CONFIG = {
   preferArchive = true,
   installArchiveExtras = true,
   archiveExtraPrefixes = { 'bin' },
-  archiveExtrasDestination = 'client-assets/%d',
+  archiveExtrasDestination = '',
   installPackagedFiles = true,
-  packagedFilesDestination = 'client-assets/%d',
+  packagedFilesDestination = '',
   packagedFilesRequired = false,
   installInWorkDir = true
 }
@@ -298,7 +298,7 @@ local function updateDownloadBar(window, percent)
 end
 
 local function completeMarkerPath(version)
-  return string.format('/things/%d/.client-assets-complete', version)
+  return string.format('/data/things/%d/.client-assets-complete', version)
 end
 
 local function joinPhysicalPath(base, path)
@@ -383,11 +383,11 @@ local function hasModernClientFilesAtPath(basePath, installPath)
 end
 
 local function hasModernClientFiles(version)
-  return hasModernClientFilesAtPath(string.format('things/%d/', version), true)
+  return hasModernClientFilesAtPath(string.format('data/things/%d/', version), true)
 end
 
 local function hasInstalledModernClientFiles(version)
-  return hasModernClientFilesAtPath(string.format('things/%d/', version), true)
+  return hasModernClientFilesAtPath(string.format('data/things/%d/', version), true)
 end
 
 local function markClientVersionInstalled(version)
@@ -395,7 +395,7 @@ local function markClientVersionInstalled(version)
     return g_resources.writeFileContentsToWorkDir(completeMarkerPath(version), string.format('client=%d\n', version))
   end
 
-  g_resources.makeDir(string.format('/things/%d', version))
+  g_resources.makeDir(string.format('/data/things/%d', version))
   return g_resources.writeFileContents(completeMarkerPath(version), string.format('client=%d\n', version))
 end
 
@@ -782,7 +782,7 @@ local function shouldInstallManifestEntry(entry, version, config)
   if startsWith(localfile, 'assets/') then
     local relativePath = localfile:sub(#'assets/' + 1)
     local archive = isArchivePath(localfile) or isArchivePath(entry.url)
-    local basePath = string.format('things/%d', version)
+    local basePath = string.format('data/things/%d', version)
     return {
       sourcePath = localfile,
       relativePath = relativePath,
@@ -796,7 +796,7 @@ local function shouldInstallManifestEntry(entry, version, config)
   if config.installSounds ~= false and startsWith(localfile, 'sounds/') then
     local relativePath = localfile:sub(#'sounds/' + 1)
     local archive = isArchivePath(localfile) or isArchivePath(entry.url)
-    local basePath = string.format('sounds/%d', version)
+    local basePath = string.format('data/sounds/%d', version)
     return {
       sourcePath = localfile,
       relativePath = relativePath,
@@ -809,13 +809,13 @@ local function shouldInstallManifestEntry(entry, version, config)
 
   local archive = isArchivePath(localfile) or isArchivePath(entry.url)
   if config.installPackagedFiles ~= false and archive and matchesAnyPrefix(localfile, config.packagedFilePrefixes) then
-    local destination = string.format(config.packagedFilesDestination or 'client-assets/%d', version)
+    local destination = string.format(config.packagedFilesDestination or '', version)
     local finalPath = isArchivePath(localfile) and stripArchiveExtension(localfile) or localfile
     return {
       sourcePath = localfile,
       relativePath = localfile,
-      destinationPath = destination .. '/' .. parentPath(localfile),
-      extractedFilePath = not isArchivePath(localfile) and (destination .. '/' .. finalPath) or nil,
+      destinationPath = joinUrl(destination, parentPath(localfile)),
+      extractedFilePath = not isArchivePath(localfile) and joinUrl(destination, finalPath) or nil,
       archive = true,
       packaged = true
     }
@@ -907,7 +907,7 @@ local function installManifestEntries(config, descriptor, files, index, installe
   end
 
   local function downloadEntry(downloadInfo, nextFallback, retriesLeft)
-    local fileName = string.format('client-assets/%d/%04d-%s', descriptor.version, index, g_resources.getFileName(downloadInfo.sourcePath))
+    local fileName = string.format('asset-downloads/%d/%04d-%s', descriptor.version, index, g_resources.getFileName(downloadInfo.sourcePath))
     setDownloadProgress(string.format('Downloading assets for client %s', versionLabel(descriptor.version)), overallProgress(index, total, 0))
 
     activeDownload.operationId = httpDownload(config, downloadInfo.url, fileName, function(path, checksum, err)
@@ -1042,7 +1042,7 @@ local function installFromArchive(config, descriptor, callback)
     return callback(false, 'No asset archive URL configured.')
   end
 
-  local archiveName = string.format('client-assets/%d/%s', descriptor.version, g_resources.getFileName(descriptor.archiveUrl))
+  local archiveName = string.format('asset-downloads/%d/%s', descriptor.version, g_resources.getFileName(descriptor.archiveUrl))
   logInfo(string.format('Downloading asset archive for client %s from %s.', versionLabel(descriptor.version), descriptor.archiveUrl))
   setDownloadBusy('Downloading files', string.format('Client %s archive', versionLabel(descriptor.version)))
 
@@ -1065,8 +1065,8 @@ local function installFromArchive(config, descriptor, callback)
     end
 
     local label = versionLabel(descriptor.version)
-    local thingsDestination = string.format('things/%d', descriptor.version)
-    local soundsDestination = string.format('sounds/%d', descriptor.version)
+    local thingsDestination = string.format('data/things/%d', descriptor.version)
+    local soundsDestination = string.format('data/sounds/%d', descriptor.version)
 
     local function finishArchiveInstall()
       setDownloadProgress('Finishing asset install', 100)
@@ -1084,7 +1084,7 @@ local function installFromArchive(config, descriptor, callback)
         prefixes = { prefixes }
       end
 
-      local destination = descriptor.archiveExtrasDestination or 'client-assets/%d'
+      local destination = descriptor.archiveExtrasDestination or ''
       destination = string.format(destination, descriptor.version)
 
       local function extractNextExtra(extraIndex)
@@ -1138,7 +1138,7 @@ local function installFromArchive(config, descriptor, callback)
       end
 
       logInfo(string.format('Finished extracting things assets for client %s.', label))
-      logInfo(string.format('Client assets install path: %s.', physicalInstallPath(thingsDestination)))
+      logInfo(string.format('Things install path: %s.', physicalInstallPath(thingsDestination)))
       extractAssetHashIdentifier()
     end)
   end, function(progress, speed)
@@ -1175,7 +1175,7 @@ local function installPackagedFileList(config, descriptor, files, index, callbac
   end
 
   local url = joinUrl(descriptor.baseUrl, path)
-  local downloadName = string.format('client-assets/%d/packaged-%04d-%s', descriptor.version, index, g_resources.getFileName(path))
+  local downloadName = string.format('asset-downloads/%d/packaged-%04d-%s', descriptor.version, index, g_resources.getFileName(path))
   logInfo(string.format('Downloading packaged file %d/%d for client %s: %s.', index, #files, versionLabel(descriptor.version), path))
   setDownloadBusy('Downloading files', string.format('Client %s packaged files', versionLabel(descriptor.version)))
 
@@ -1190,8 +1190,8 @@ local function installPackagedFileList(config, descriptor, files, index, callbac
       return callback(false, err)
     end
 
-    local destination = string.format(descriptor.packagedFilesDestination or 'client-assets/%d', descriptor.version)
-    local destinationPath = destination .. '/' .. parentPath(path)
+    local destination = string.format(descriptor.packagedFilesDestination or '', descriptor.version)
+    local destinationPath = joinUrl(destination, parentPath(path))
     logInfo(string.format('Extracting packaged file %d/%d for client %s: %s.', index, #files, versionLabel(descriptor.version), path))
     setDownloadBusy('Extracting files', string.format('Client %s packaged files', versionLabel(descriptor.version)))
 
@@ -1336,7 +1336,7 @@ function isClientVersionInstalled(version)
 
   if version >= 1281 then
     return hasInstalledModernClientFiles(version) and
-           installFileExists(string.format('things/%d/.client-assets-complete', version))
+           installFileExists(string.format('data/things/%d/.client-assets-complete', version))
   end
 
   return g_resources.fileExists(string.format('/data/things/%d/Tibia.dat', version)) and
@@ -1345,7 +1345,7 @@ end
 
 function getInstalledClientVersions()
   local installed = {}
-  local paths = { '/things/', '/data/things/' }
+  local paths = { '/data/things/' }
   for _, path in ipairs(paths) do
     for _, dirItem in ipairs(g_resources.listDirectoryFiles(path)) do
       if tonumber(dirItem) then
@@ -1417,12 +1417,12 @@ function ensureClientVersion(version, callback)
           end
         end
 
-        logInfo(string.format('Client %s installed at: %s.', versionLabel(version), physicalInstallPath(string.format('things/%d', version))))
+        logInfo(string.format('Client %s installed at: %s.', versionLabel(version), physicalInstallPath(string.format('data/things/%d', version))))
         if config.installSounds ~= false then
-          logInfo(string.format('Client %s sounds installed at: %s.', versionLabel(version), physicalInstallPath(string.format('sounds/%d', version))))
+          logInfo(string.format('Client %s sounds installed at: %s.', versionLabel(version), physicalInstallPath(string.format('data/sounds/%d', version))))
         end
-        if config.installArchiveExtras ~= false or config.installPackagedFiles ~= false then
-          logInfo(string.format('Client %s extra files installed at: %s.', versionLabel(version), physicalInstallPath(string.format('client-assets/%d', version))))
+        if config.installArchiveExtras ~= false then
+          logInfo(string.format('Client %s extra files installed at: %s.', versionLabel(version), physicalInstallPath('bin')))
         end
 
         finishDownload(true)
