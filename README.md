@@ -22,6 +22,7 @@
 9. 💯 [Support Protocol](#support-protocol)
 10. ©️ [License](#license)
 11. ❤️ [Contributors](#contributors)
+12. 📦 [Client Assets Auto-Install](docs/client-assets-auto-install.md)
 
 ---
 
