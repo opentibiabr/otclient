@@ -733,7 +733,7 @@
   <ItemGroup>
     <ProtoFiles Include="$(ProtoPath)\*.proto" />
   </ItemGroup>
-  <Target Name="ProtoCompile" BeforeTargets="PrepareForBuild" DependsOnTargets="VcpkgInstallManifestDependencies" Condition="'$(RunProtoCompile)'=='true'">
+  <Target Name="ProtoCompile" BeforeTargets="PrepareForBuild" Condition="'$(RunProtoCompile)'=='true'">
     <Exec Command="&quot;$(ProtocPath)&quot; --proto_path=&quot;$(ProtoPath)&quot; --cpp_out=&quot;generated&quot; &quot;%(ProtoFiles.Identity)&quot;" />
     <ItemGroup>
       <ClCompile Include="generated\%(ProtoFiles.Filename).pb.cc">
