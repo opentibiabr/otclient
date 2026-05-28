@@ -350,22 +350,27 @@ private:
      *
      * @param msg Input message containing:
      * - uint32 creatureId: Target creature identifier.
-     * - uint8  squareType: Square behavior type:
-     *   - 0 = SQUARE_REMOVE: remove any square (static and timed)
-     *   - 1 = SQUARE_FLASH: temporary (timed/flashing)
-     *   - 2 = SQUARE_STAY : permanent (static)
-     * - uint8  squareColor: 8-bit color used by the square.
+     * - For clientVersion >= 1076:
+     *   - uint8  squareType: Square behavior type:
+     *     - 0 = SQUARE_REMOVE: remove any square (static and timed)
+     *     - 1 = SQUARE_FLASH: temporary (timed/flashing)
+     *     - 2 = SQUARE_STAY : permanent (static)
+     *   - uint8 squareColor: 8-bit color used by the square.
+     * - For clientVersion < 1076:
+     *   - uint8 markType: Legacy timed square color.
      *
      * @note If the creature cannot be found in the map, the function logs a debug trace
      *       and returns without doing anything.
      *
      * Behavior rules:
-     * - If @c squareType == 0 OR @c squareColor == 0:
+     * - If @c squareType == 0:
      *   Removes any square (static and timed).
      * - If @c squareType == 2:
-     *   Shows a permanent/static square using @c squareColor.
+     *   Shows a permanent/static square using @c squareColor (where 0 maps to the default color).
      * - Otherwise:
      *   Adds a timed square using @c squareColor.
+     * - For clientVersion < 1076, any single byte value is treated as legacy
+     *   timed-square color; @c markType == 0 uses the default color.
      */
     void parseCreaturesMark(const InputMessagePtr& msg);
 

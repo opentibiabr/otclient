@@ -3813,27 +3813,37 @@ void ProtocolGame::parseChangeMapAwareRange(const InputMessagePtr& msg)
 void ProtocolGame::parseCreaturesMark(const InputMessagePtr& msg)
 {
     const uint32_t creatureId = msg->getU32();
-
     const auto& creature = g_map.getCreatureById(creatureId);
+    const bool isLegacyProtocol = g_game.getClientVersion() < 1076;
+    uint8_t squareType;
+    uint8_t squareColor;
+
+    if (isLegacyProtocol) {
+        squareType = 0;
+        squareColor = msg->getU8();
+    } else {
+        squareType = msg->getU8();
+        squareColor = msg->getU8();
+    }
+
     if (!creature) {
         g_logger.traceDebug("ProtocolGame::parseCreaturesMark: could not get creature with id {}", creatureId);
         return;
     }
 
-    if (g_game.getClientVersion() < 1076) {
-        const uint8_t markType = msg->getU8();
-        creature->addTimedSquare(markType);
+    if (isLegacyProtocol) {
+        creature->addTimedSquare(squareColor);
         return;
     }
 
-    const uint8_t squareType  = msg->getU8(); // SQUARE_REMOVE=0, SQUARE_FLASH=1, SQUARE_STAY=2
-    const uint8_t squareColor = msg->getU8();
-
-    if (squareType == 0 || squareColor == 0) {
+    if (squareType == 0) {
         creature->hideStaticSquare();
         creature->removeTimedSquare();
-    } else if (squareType == 2) {
-        creature->showStaticSquare(Color::from8bit(squareColor));
+        return;
+    }
+
+    if (squareType == 2) {
+        creature->showStaticSquare(Color::from8bit(squareColor != 0 ? squareColor : 1));
     } else {
         creature->addTimedSquare(squareColor);
     }
