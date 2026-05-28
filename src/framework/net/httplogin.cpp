@@ -35,6 +35,7 @@
 #include <framework/core/logger.h>
 #include <nlohmann/json.hpp>
 #include <cctype>
+#include <spdlog/spdlog.h>
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten/fetch.h>
@@ -44,6 +45,7 @@ using json = nlohmann::json;
 
 namespace {
     constexpr std::string_view s_redacted = "***";
+    constexpr std::size_t s_maxSanitizedBodySize = 2048;
 
     std::string toLowerCopy(const std::string_view value)
     {
@@ -124,6 +126,13 @@ namespace {
 
     std::string sanitizeHttpBody(const std::string& body, const bool requestBody)
     {
+        const auto truncateBodyForLog = [](const std::string& rawBody) {
+            if (rawBody.size() <= s_maxSanitizedBodySize) {
+                return rawBody;
+            }
+            return rawBody.substr(0, s_maxSanitizedBodySize) + "...";
+        };
+
         if (body.empty()) {
             return {};
         }
@@ -133,7 +142,7 @@ namespace {
             sanitizeJson(parsed, requestBody);
             return parsed.dump();
         } catch (...) {
-            return "[redacted-unparsed-body]";
+            return fmt::format("[unparsed-body] {}", truncateBodyForLog(body));
         }
     }
 }
@@ -151,6 +160,10 @@ void LoginHttp::cancel() {
 }
 
 void LoginHttp::Logger(const auto& req, const auto& res) {
+    if (!spdlog::should_log(spdlog::level::debug)) {
+        return;
+    }
+
     const auto sanitizedRequestBody = sanitizeHttpBody(req.body, true);
     const auto sanitizedResponseBody = sanitizeHttpBody(res.body, false);
 

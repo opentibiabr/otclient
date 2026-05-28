@@ -141,7 +141,7 @@ void Logger::log(Fw::LogLevel level, const std::string_view message)
     if (level < m_level)
         return;
 
-    if (s_ignoreLogs)
+    if (s_ignoreLogs && level < Fw::LogWarning)
         return;
 
     if (g_eventThreadId > -1 && g_eventThreadId != stdext::getThreadId()) {
@@ -151,29 +151,26 @@ void Logger::log(Fw::LogLevel level, const std::string_view message)
         return;
     }
 
-    std::string outmsg{ s_logPrefixes[static_cast<std::size_t>(level)] };
-    outmsg.append(message);
+    auto& spdLogger = getSpdLogger();
+    const bool useLegacyPrefix = !spdLogger;
+    std::string outmsg;
+    if (useLegacyPrefix) {
+        outmsg = std::string{ s_logPrefixes[static_cast<std::size_t>(level)] };
+        outmsg.append(message);
+    } else {
+        outmsg = std::string{ message };
+    }
 
 #ifdef ANDROID
     __android_log_print(ANDROID_LOG_INFO, "OTClientMobile", "%s", outmsg.c_str());
 #endif // ANDROID
-
-    auto& spdLogger = getSpdLogger();
     if (spdLogger) {
         spdLogger->log(toSpdLogLevel(level), "{}", message);
         if (level >= Fw::LogError) {
             spdLogger->flush();
         }
     } else {
-        const auto fallbackLogger = spdlog::default_logger();
-        if (fallbackLogger) {
-            fallbackLogger->log(toSpdLogLevel(level), "{}", message);
-            if (level >= Fw::LogError) {
-                fallbackLogger->flush();
-            }
-        } else {
-            std::cerr << outmsg << std::endl;
-        }
+        std::cerr << outmsg << std::endl;
     }
 
     if (m_outFile.good()) {
@@ -240,6 +237,14 @@ void Logger::fireOldMessages()
 
 void Logger::setLogFile(const std::string_view file)
 {
+    if (g_eventThreadId > -1 && g_eventThreadId != stdext::getThreadId()) {
+        const auto targetFile = std::string{ file };
+        g_dispatcher.addEvent([this, targetFile] {
+            setLogFile(targetFile);
+        });
+        return;
+    }
+
     auto& spdLogger = getSpdLogger();
     if (spdLogger) {
         try {
