@@ -181,8 +181,7 @@ void LoginHttp::startHttpLogin(const std::string& host, const std::string& path,
 
     if (auto res = cli.Post(path, headers, body.dump(1), "application/json")) {
         if (res->status == 200) {
-            const json bodyResponse = json::parse(res->body);
-            g_logger.debug("{}", bodyResponse.dump());
+            g_logger.debug("{}", sanitizeHttpBody(res->body, false));
         }
     } else {
         const auto err = res.error();
@@ -441,7 +440,7 @@ bool LoginHttp::parseJsonResponse(const std::string& body) {
         if (cancelled.load()) return false;
         responseJson = json::parse(body);
     } catch (...) {
-        g_logger.info("Failed to parse json response");
+        g_logger.warning("Failed to parse json response");
         this->errorMessage = "Invalid response received from server (expected JSON).";
         return false;
     }

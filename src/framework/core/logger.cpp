@@ -25,6 +25,8 @@
 #include "eventdispatcher.h"
 #include "framework/platform/platform.h"
 
+#include <iostream>
+
 #include <spdlog/logger.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/sink.h>
@@ -157,10 +159,14 @@ void Logger::log(Fw::LogLevel level, const std::string_view message)
             spdLogger->flush();
         }
     } else {
-        auto fallbackLogger = spdlog::default_logger();
-        fallbackLogger->log(toSpdLogLevel(level), "{}", message);
-        if (level >= Fw::LogError) {
-            fallbackLogger->flush();
+        const auto fallbackLogger = spdlog::default_logger();
+        if (fallbackLogger) {
+            fallbackLogger->log(toSpdLogLevel(level), "{}", message);
+            if (level >= Fw::LogError) {
+                fallbackLogger->flush();
+            }
+        } else {
+            std::cerr << outmsg << std::endl;
         }
     }
 
