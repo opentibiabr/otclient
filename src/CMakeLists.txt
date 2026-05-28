@@ -718,8 +718,8 @@ if(MSVC)
           ${LIBARCHIVE_LIBRARY}
           winmm.lib
           pugixml::pugixml
-          fmt::fmt-header-only
-          spdlog::spdlog_header_only
+          fmt::fmt
+          spdlog::spdlog
           utf8cpp::utf8cpp
           Freetype::Freetype
   )
@@ -777,8 +777,8 @@ elseif(ANDROID)
           log
           Freetype::Freetype
           pugixml::pugixml
-          fmt::fmt-header-only
-          spdlog::spdlog_header_only
+          fmt::fmt
+          spdlog::spdlog
           utf8cpp::utf8cpp
   )
 
@@ -848,7 +848,7 @@ elseif(WASM)
           OpenSSL::Crypto
           httplib::httplib
           fmt::fmt
-          spdlog::spdlog_header_only
+          spdlog::spdlog
           utf8cpp::utf8cpp
           Ogg::ogg
           Vorbis::vorbisfile
@@ -971,8 +971,8 @@ else() # Linux
           OpenSSL::SSL
           OpenSSL::Crypto
           httplib::httplib
-          fmt::fmt-header-only
-          spdlog::spdlog_header_only
+          fmt::fmt
+          spdlog::spdlog
           utf8cpp::utf8cpp
           Ogg::ogg
           Vorbis::vorbisfile

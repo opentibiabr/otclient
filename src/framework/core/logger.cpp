@@ -27,6 +27,12 @@
 
 #include <iostream>
 
+#if defined(ANDROID)
+#if defined(SPDLOG_FWRITE_UNLOCKED)
+#  undef SPDLOG_FWRITE_UNLOCKED
+#endif
+#endif
+
 #include <spdlog/logger.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/sink.h>
