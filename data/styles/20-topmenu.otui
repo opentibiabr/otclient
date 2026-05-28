@@ -59,6 +59,25 @@ MainToggleButton < UIButton
   $on:
     image-clip: 20 0 20 20
 
+  UIWidget
+    id: brightButton
+    size: 20 20
+    anchors.top: prev.top
+    anchors.left: prev.left
+    phantom: true
+    visible: false
+    image-source: /images/ui/bright-x20
+
+  UIWidget
+    id: highlight
+    size: 22 22
+    visible: false
+    margin-top: -1
+    phantom: true
+    image-source: /images/ui/highlight
+    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.verticalCenter: parent.verticalCenter
+
 TopMenuButtonsPanel < Panel
   layout:
     type: horizontalBox

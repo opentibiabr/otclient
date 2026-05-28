@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -64,13 +64,20 @@ Creature::~Creature() {
     g_stats.removeCreature();
 }
 
+bool Creature::isHidden() const {
+    if (m_type == Proto::CreatureTypeHidden)
+        return true;
+    // Old protocol (< 1273): healthPercent=0 means health is hidden, not that the creature is dead
+    return g_game.getClientVersion() < 1273 && m_healthPercent == 0;
+}
+
 void Creature::onCreate() {
     callLuaField("onCreate");
 }
 
 void Creature::draw(const Point& dest, const bool drawThings, LightView* /*lightView*/)
 {
-    if (!canBeSeen() || !canDraw() || isDead())
+    if (!canBeSeen() || !canDraw() || (isDead() && !isHidden()))
         return;
 
     if (drawThings) {
@@ -161,7 +168,7 @@ void Creature::drawInformation(const MapPosInfo& mapRect, const Point& dest, con
         DEFAULT_COLOR(96, 96, 96),
         NPC_COLOR(0x66, 0xcc, 0xff);
 
-    if (isDead() || !canBeSeen() || !(drawFlags & Otc::DrawCreatureInfo) || !mapRect.isInRange(getPosition()))
+    if (isHidden() || isDead() || !canBeSeen() || !(drawFlags & Otc::DrawCreatureInfo) || !mapRect.isInRange(getPosition()))
         return;
 
     if (g_gameConfig.isDrawingInformationByWidget()) {
@@ -1190,6 +1197,7 @@ uint16_t Creature::getCurrentAnimationPhase(const bool mount)
     if (!canAnimate()) return 0;
 
     const auto thingType = mount ? getMountThingType() : getThingType();
+    if (!thingType) return 0;
 
     if (const auto idleAnimator = thingType->getIdleAnimator()) {
         if (m_walkAnimationPhase == 0) return idleAnimator->getPhase();
@@ -1197,8 +1205,17 @@ uint16_t Creature::getCurrentAnimationPhase(const bool mount)
     }
 
     if (thingType->isAnimateAlways()) {
-        const int ticksPerFrame = std::round(1000 / thingType->getAnimationPhases());
-        return (g_clock.millis() % (static_cast<long long>(ticksPerFrame) * thingType->getAnimationPhases())) / ticksPerFrame;
+        const int animationPhases = thingType->getAnimationPhases();
+        if (animationPhases <= 0) return 0;
+
+        const int ticksPerFrame = std::max<int>(1, static_cast<int>(std::round(1000.0 / animationPhases)));
+        const long long animationPeriod = static_cast<long long>(ticksPerFrame) * animationPhases;
+        if (animationPeriod <= 0) return 0;
+
+        // When a static idle frame group exists (no idleAnimator but idle sprites are present),
+        // skip over the idle phase(s) so animateAlways only cycles through the moving frames.
+        const int idlePhases = thingType->getIdleAnimationPhases();
+        return static_cast<uint16_t>(idlePhases + (g_clock.millis() % animationPeriod) / ticksPerFrame);
     }
 
     return isDisabledWalkAnimation() ? 0 : m_walkAnimationPhase;

@@ -23,7 +23,6 @@
 #include "thingtypemanager.h"
 
 #include <nlohmann/json.hpp>
-#include <nlohmann/json_fwd.hpp>
 
 #include "game.h"
 #include "spriteappearances.h"
@@ -31,7 +30,9 @@
 #include "framework/core/filestream.h"
 #include "framework/core/resourcemanager.h"
 #include "framework/otml/otmldocument.h"
+#ifdef FRAMEWORK_PROTOBUF
 #include <staticdata.pb.h>
+#endif
 
 #ifdef FRAMEWORK_EDITOR
 #include "itemtype.h"
@@ -39,9 +40,25 @@
 #include <framework/core/binarytree.h>
 #endif
 
-using json = nlohmann::json;
 
 ThingTypeManager g_things;
+
+const nlohmann::json& ThingTypeManager::getCatalogContent(const std::string& file)
+{
+    const auto path = g_resources.resolvePath(g_resources.guessFilePath(file + "catalog-content", "json"));
+    if (path != m_catalogContentPath) {
+        m_catalogContent = std::make_unique<nlohmann::json>(nlohmann::json::parse(g_resources.readFileContents(path)));
+        m_catalogContentPath = path;
+    }
+
+    return *m_catalogContent;
+}
+
+void ThingTypeManager::clearCatalogContent()
+{
+    m_catalogContentPath.clear();
+    m_catalogContent.reset();
+}
 
 void ThingTypeManager::init()
 {
@@ -60,6 +77,10 @@ void ThingTypeManager::terminate()
         m_thingType.clear();
 
     m_nullThingType = nullptr;
+    m_proficienciesFile.clear();
+    m_proficiencyThingsCache.clear();
+    m_proficiencyThingsCacheDirty = true;
+    clearCatalogContent();
 
 #ifdef FRAMEWORK_EDITOR
     m_itemTypes.clear();
@@ -144,12 +165,20 @@ bool ThingTypeManager::loadOtml(std::string file)
 
 bool ThingTypeManager::loadAppearances(const std::string& file)
 {
+#ifdef FRAMEWORK_PROTOBUF
     try {
+        try {
+            m_assetIdentifier = g_resources.readFileContents(g_resources.resolvePath(g_resources.guessFilePath(file + "assets", "json.sha256")));
+        } catch (const std::exception& e) {
+            m_assetIdentifier = "appearancesHash";
+            g_logger.warning("Cannot load asset hash identifier from assets.json.sha256: {}", e.what());
+        }
+
         if (!g_game.getFeature(Otc::GameLoadSprInsteadProtobuf)) {
             g_spriteAppearances.unload();
             int spritesCount = 0;
             std::string appearancesFile;
-            json document = json::parse(g_resources.readFileContents(g_resources.resolvePath(g_resources.guessFilePath(file + "catalog-content", "json"))));
+            const auto& document = getCatalogContent(file);
             for (const auto& obj : document) {
                 const auto& type = obj["type"];
                 if (type == "appearances") {
@@ -203,6 +232,7 @@ bool ThingTypeManager::loadAppearances(const std::string& file)
                 }
             }
             m_datLoaded = true;
+            m_proficiencyThingsCacheDirty = true;
         } else {
             std::stringstream datFileStream;
             auto appearancesLib = appearances::Appearances();
@@ -222,8 +252,13 @@ bool ThingTypeManager::loadAppearances(const std::string& file)
         g_logger.error("Failed to load '{}' (Appearances): {}", file, e.what());
         return false;
     }
+#else
+    g_logger.error("Protobuf not supported in this build. Enable FRAMEWORK_PROTOBUF");
+    return false;
+#endif
 }
 
+#ifdef FRAMEWORK_PROTOBUF
 namespace {
     using RaceBank = google::protobuf::RepeatedPtrField<staticdata::Creature>;
 
@@ -233,6 +268,8 @@ namespace {
             RaceType otcRaceType = RaceType();
             otcRaceType.raceId = protobufRace.raceid();
             otcRaceType.name = protobufRace.name();
+            otcRaceType.hasCategory = protobufRace.has_category();
+            otcRaceType.category = protobufRace.category();
             otcRaceType.boss = boss;
 
             Outfit otcOutfit;
@@ -251,8 +288,8 @@ namespace {
                 }
             }
 
-            otcRaceType.outfit = otcOutfit;
-            otcRaceList.emplace_back(otcRaceType);
+            otcRaceType.outfit = std::move(otcOutfit);
+            otcRaceList.emplace_back(std::move(otcRaceType));
         }
     }
 }
@@ -262,7 +299,7 @@ bool ThingTypeManager::loadStaticData(const std::string& file)
     try {
         std::string staticDataFile;
 
-        json document = json::parse(g_resources.readFileContents(g_resources.resolvePath(g_resources.guessFilePath(file + "catalog-content", "json"))));
+        const auto& document = getCatalogContent(file);
         for (const auto& obj : document) {
             const auto& type = obj["type"];
             if (type == "staticdata") {
@@ -299,6 +336,49 @@ bool ThingTypeManager::loadStaticData(const std::string& file)
 
     return false;
 }
+#else
+bool ThingTypeManager::loadStaticData(const std::string& file)
+{
+    g_logger.error("Protobuf not supported in this build. Enable FRAMEWORK_PROTOBUF");
+    return false;
+}
+#endif
+
+bool ThingTypeManager::resolveProficienciesFile(const std::string& file)
+{
+    m_proficienciesFile.clear();
+
+    if (!g_game.getFeature(Otc::GameProficiency)) {
+        return false;
+    }
+
+    try {
+        std::string proficienciesFile;
+
+        const auto& document = getCatalogContent(file);
+        for (const auto& obj : document) {
+            const auto& type = obj["type"];
+            if (type == "proficiencies") {
+                proficienciesFile = obj["file"];
+            }
+        }
+
+        if (proficienciesFile.empty()) {
+            return false;
+        }
+
+        const auto proficienciesPath = fmt::format("{}{}", file, proficienciesFile);
+        if (!g_resources.fileExists(proficienciesPath)) {
+            return false;
+        }
+
+        m_proficienciesFile = proficienciesPath;
+        return true;
+    } catch (const std::exception&) {
+        m_proficienciesFile.clear();
+        return false;
+    }
+}
 
 const ThingTypeList& ThingTypeManager::getThingTypes(const ThingCategory category)
 {
@@ -332,6 +412,46 @@ ThingTypeList ThingTypeManager::findThingTypeByAttr(const ThingAttr attr, const 
         if (type->hasAttr(attr))
             ret.emplace_back(type);
     return ret;
+}
+
+void ThingTypeManager::buildProficiencyCache()
+{
+    m_proficiencyThingsCache.clear();
+    for (const auto& type : m_thingTypes[ThingCategoryItem]) {
+        if (type && type->getProficiencyId() > 0) {
+            m_proficiencyThingsCache.emplace_back(type);
+        }
+    }
+    m_proficiencyThingsCacheDirty = false;
+}
+
+const ThingTypeList& ThingTypeManager::getProficiencyThings()
+{
+    if (m_proficiencyThingsCacheDirty) {
+        buildProficiencyCache();
+    }
+    return m_proficiencyThingsCache;
+}
+
+std::string ThingTypeManager::getCyclopediaItemName(uint16_t id)
+{
+    const auto& type = getThingType(id, ThingCategoryItem);
+    if (type->isNull()) return "";
+    if (!type->getMarketData().name.empty()) return type->getMarketData().name;
+    return type->getName();
+}
+
+std::string ThingTypeManager::getProficienciesFile()
+{
+    if (!g_game.getFeature(Otc::GameProficiency)) {
+        return "";
+    }
+
+    if (!m_proficienciesFile.empty() && g_resources.fileExists(m_proficienciesFile)) {
+        return m_proficienciesFile;
+    }
+
+    return "";
 }
 
 const RaceType& ThingTypeManager::getRaceData(uint32_t raceId)

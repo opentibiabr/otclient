@@ -52,6 +52,15 @@ ImagePtr Image::loadPNG(const char* data, const size_t size)
     ImagePtr image;
     if (apng_data apng; load_apng(fin, &apng) == 0) {
         image = std::make_shared<Image>(Size(apng.width, apng.height), apng.bpp, apng.pdata);
+        if (apng.num_frames > 1 && apng.frames_delay) {
+            const size_t frameSize = static_cast<size_t>(apng.width) * apng.height * apng.bpp;
+            const uint32_t frames = std::min(apng.num_frames, apng.last_frame);
+            for (uint32_t i = 0; i < frames; ++i) {
+                // Create a new Image for every frame to avoid circular reference (image -> m_animation -> image)
+                ImagePtr frameImage = std::make_shared<Image>(Size(apng.width, apng.height), apng.bpp, apng.pdata + (static_cast<size_t>(i) * frameSize));
+                image->addAnimationFrame(frameImage, apng.frames_delay[i]);
+            }
+        }
         free_apng(&apng);
     }
 
@@ -181,7 +190,7 @@ bool Image::nextMipmap()
 
     const int iw = m_size.width();
     const int ih = m_size.height();
-    if (iw == 1 && ih == 1 || m_pixels.empty())
+    if ((iw == 1 && ih == 1) || m_pixels.empty())
         return false;
 
     const int ow = iw > 1 ? iw / 2 : 1;

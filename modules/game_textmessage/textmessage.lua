@@ -236,10 +236,13 @@ function displayMessage(mode, text)
         MessageTypes[MessageModes.Guild] = MessageSettings.statusOwn
         MessageTypes[MessageModes.Party] = MessageSettings.statusOwn
     else
+        MessageTypes[MessageModes.PrivateFrom] = MessageSettings.privateNpcToPlayer
         MessageTypes[MessageModes.Loot] = MessageSettings.centerGreen
         MessageTypes[MessageModes.ValuableLoot] = MessageSettings.centerGreen
         MessageTypes[MessageModes.Guild] = MessageSettings.centerGreen
         MessageTypes[MessageModes.Party] = MessageSettings.centerGreen
+        MessageTypes[MessageModes.MonsterSay] = MessageSettings.consoleOrange
+        MessageTypes[MessageModes.MonsterYell] = MessageSettings.consoleOrange
     end
     local msgtype = MessageTypes[mode]
     if not msgtype then
@@ -254,8 +257,9 @@ function displayMessage(mode, text)
         (msgtype.consoleOption == nil or modules.client_options.getOption(msgtype.consoleOption)) then
         if msgtype == MessageSettings.loot or msgtype == MessageSettings.valuableLoot then
             local lootColoredText = ItemsDatabase.setColorLootMessage(text)
-            modules.game_console.addText(lootColoredText, msgtype, tr("Server Log"))
-            modules.game_console.addText(lootColoredText, msgtype, tr(msgtype.consoleTab))
+            local lootTabName = tr(msgtype.consoleTab)
+            local targetTab = modules.game_console.getTab(lootTabName) and lootTabName or tr("Server Log")
+            modules.game_console.addText(lootColoredText, msgtype, targetTab)
         else
             modules.game_console.addText(text, msgtype, tr(msgtype.consoleTab))
         end

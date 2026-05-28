@@ -1,0 +1,83 @@
+<html>
+<style>
+  window {
+    font-family: Arial, sans-serif;
+    margin: 24px;
+    background-color: #ffffff;
+    color: #222222;
+    height: 100%;
+    margin-top: 0;
+    margin-left: 0;
+    margin-right: 0;
+    display: block !important;
+    --image-source: none;
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+  .example {
+    border: 2px solid #2b7a78;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 16px;
+  }
+
+  /* Responsive sidebar using flex and wrap */
+  .page {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .sidebar {
+    width: 200px;
+    background-color: #e0f2f1;
+    padding: 12px;
+    border-radius: 6px;
+  }
+
+  .main {
+    flex: 1;
+    background-color: #ffffff;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+  }
+
+  /* When the container is narrow, sidebar moves above the main area */
+
+
+  .item2 {
+    margin-bottom: 8px;
+    padding: 8px;
+    background-color: #b2dfdb;
+    border-radius: 4px;
+  }
+</style>
+
+<window>
+  <h1>Flex: Responsive Sidebar</h1>
+  <p>Sidebar that stays to the left on wide screens and stacks above the main content on small screens using
+    flex-direction change.</p>
+
+  <div class="example">
+    <div class="page">
+      <div class="sidebar">
+        <div class="item2">Profile</div>
+        <div class="item2">Menu</div>
+        <div class="item2">Filters</div>
+        <div class="item2">Tags</div>
+      </div>
+      <div class="main">
+        <h3>Main content</h3>
+        <p>This area grows while the sidebar keeps its width on large viewports. Resize the window to see the sidebar
+          stack above.</p>
+      </div>
+    </div>
+  </div>
+</window>
+
+</html>

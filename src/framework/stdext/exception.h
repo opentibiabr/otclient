@@ -22,9 +22,14 @@
 
 #pragma once
 
+#ifndef USE_PRECOMPILED_HEADERS
 #include <exception>
+#include <string>
+#include <string_view>
+#include <utility>
 
 #include <fmt/format.h>
+#endif
 
 namespace stdext
 {

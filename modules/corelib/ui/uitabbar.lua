@@ -37,14 +37,18 @@ function UITabBar:addTab(text, panel, icon)
         panel:setId('tabPanel')
     end
 
-    local tab = g_ui.createWidget(self:getStyleName() .. 'Button', self.buttonsPanel)
+    local tabsParent = self.buttonsPanel or self
+    local tab = g_ui.createWidget(self:getStyleName() .. 'Button', tabsParent)
 
     panel.isTab = true
     tab.tabPanel = panel
     tab.tabBar = self
     tab:setId('tab')
     tab:setText(text)
-    tab:setWidth(tab:getTextSize().width + tab:getPaddingLeft() + tab:getPaddingRight())
+    local layout = tabsParent:getLayout()
+    if not (layout and layout:isUIGridLayout()) then
+        tab:setWidth(tab:getTextSize().width + tab:getPaddingLeft() + tab:getPaddingRight())
+    end
     tab.onClick = onTabClick
     tab.onMouseRelease = onTabMouseRelease
     tab.onDestroy = function()

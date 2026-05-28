@@ -23,6 +23,7 @@
 #include "uiwidget.h"
 
 #include "uianchorlayout.h"
+#include "uilayoutflexbox.h"
 #include "uimanager.h"
 #include "uitranslator.h"
 #include "framework/core/eventdispatcher.h"
@@ -34,6 +35,7 @@
 #include "framework/html/htmlmanager.h"
 #include "framework/html/htmlnode.h"
 #include "framework/otml/otmlnode.h"
+#include "framework/graphics/coordsbuffer.h"
 #include <framework/platform/platformwindow.h>
 #include <framework/util/stats.h>
 
@@ -56,6 +58,8 @@ UIWidget::UIWidget()
 
     m_positions.set(Unit::Auto);
     m_clickTimer.stop();
+
+    m_textUnderline = std::make_shared<CoordsBuffer>();
 
     initBaseStyle();
     initText();
@@ -263,8 +267,8 @@ void UIWidget::insertChild(int32_t index, const UIWidgetPtr& child)
 
     { // cache index
         child->m_childIndex = index + 1;
-        for (auto i = child->m_childIndex; i < m_children.size(); ++i)
-            m_children[i]->m_childIndex = i + 1;
+        for (size_t i = static_cast<size_t>(child->m_childIndex); i < m_children.size(); ++i)
+            m_children[i]->m_childIndex = static_cast<int16_t>(i + 1);
     }
 
     child->setParent(static_self_cast<UIWidget>());
@@ -822,8 +826,12 @@ void UIWidget::updateLayout()
     if (m_layout)
         m_layout->update();
 
-    // children can affect the parent layout
+    // Children can affect the parent layout.
+    // If the parent is currently running a flex pass, skip parent relayout
+    // scheduling to avoid conflicting with flex-driven geometry assignment.
     if (const auto& parent = getParent()) {
+        if (parent->m_inFlexLayout)
+            return;
         if (const auto& parentLayout = parent->getLayout())
             parentLayout->updateLater();
     }
@@ -1148,9 +1156,56 @@ bool UIWidget::setRect(const Rect& rect)
 
     Rect oldRect = m_rect;
     m_rect = clampedRect;
+    const bool positionChanged = oldRect.topLeft() != clampedRect.topLeft();
+    const bool sizeChanged = oldRect.size() != clampedRect.size();
 
-    // updates own layout
+    // Always run local layout updates after geometry change.
+    // Parent relayout scheduling is handled inside updateLayout and is
+    // suppressed there while the parent runs flex layout.
     updateLayout();
+
+    // If this is a flex container that moved without resizing, re-position
+    // descendants with a uniform translation (e.g. when the window is dragged).
+    // Size-driven relayout must not take this fast-path because the children
+    // may need a real flex reflow/re-wrap.
+    if (isOnHtml() && !m_inFlexLayout &&
+        (!m_parent || !m_parent->m_inFlexLayout) &&
+        (m_displayType == DisplayType::Flex || m_displayType == DisplayType::InlineFlex) &&
+        positionChanged && !sizeChanged) {
+        // Pure movement: translate descendants by delta instead of doing
+        // a full flex relayout, which is expensive during scroll/drag.
+        const Point delta = clampedRect.topLeft() - oldRect.topLeft();
+        if (!delta.isNull()) {
+            std::vector<UIWidget*> stack;
+            stack.reserve(m_children.size());
+            for (const auto& child : m_children) {
+                if (child && !child->isDestroyed())
+                    stack.push_back(child.get());
+            }
+
+            while (!stack.empty()) {
+                UIWidget* w = stack.back();
+                stack.pop_back();
+
+                // INTENTIONAL BYPASS: We modify m_rect directly instead of
+                // calling setRect() for performance. This is safe because:
+                // 1. All flex descendant positions are absolute (screen coords)
+                //    and only need a uniform delta shift - no relayout needed.
+                // 2. updateLayout()/onGeometryChange events are unnecessary for
+                //    pure translation during scroll/drag.
+                // 3. The parent's deferred geometry-change event (above) will
+                //    fire for the container itself, covering hover updates.
+                w->m_rect.translate(delta);
+                for (auto& rectToWord : w->m_rectToWord)
+                    rectToWord.first.translate(delta);
+
+                for (const auto& grandChild : w->m_children) {
+                    if (grandChild && !grandChild->isDestroyed())
+                        stack.push_back(grandChild.get());
+                }
+            }
+        }
+    }
 
     // avoid massive update events
     if (!hasProp(PropUpdateEventScheduled)) {
@@ -1570,6 +1625,29 @@ UIWidgetPtr UIWidget::getChildByStyleName(const std::string_view styleName) {
             return child;
     }
     return nullptr;
+}
+
+UIWidgetPtr UIWidget::getNearestChild(const Point& pos)
+{
+    if (m_children.empty())
+        return nullptr;
+
+    UIWidgetPtr nearestChild = nullptr;
+    float minDistance = (std::numeric_limits<float>::max)();
+    for (const auto& child : m_children) {
+        if (!child->isExplicitlyVisible())
+            continue;
+
+        const Point childCenter = child->getRect().center();
+        const auto dx = static_cast<float>(pos.x - childCenter.x);
+        const auto dy = static_cast<float>(pos.y - childCenter.y);
+        const float distance = std::sqrt(dx * dx + dy * dy);
+        if (distance < minDistance) {
+            minDistance = distance;
+            nearestChild = child;
+        }
+    }
+    return nearestChild;
 }
 
 UIWidgetList UIWidget::recursiveGetChildrenByState(const Fw::WidgetState state)
@@ -2099,7 +2177,7 @@ bool UIWidget::propagateOnMouseEvent(const Point& mousePos, UIWidgetList& widget
     if (!checkContainsPoint || containsPoint(mousePos)) {
         widgetList.emplace_back(static_self_cast<UIWidget>());
 
-        if (!isPhantom() && !isOnHtml() || isDraggable())
+        if ((!isPhantom() && !isOnHtml()) || isDraggable())
             ret = true;
     }
 
@@ -2256,6 +2334,8 @@ const UIWidgetStyle& UIWidget::style() const
     m_styleCache.minHeight = m_minSize.height();
     m_styleCache.maxWidth = m_maxSize.width();
     m_styleCache.maxHeight = m_maxSize.height();
+    m_styleCache.marginTopAuto = m_marginTopAuto;
+    m_styleCache.marginBottomAuto = m_marginBottomAuto;
     m_styleCache.marginLeftAuto = m_marginLeftAuto;
     m_styleCache.marginRightAuto = m_marginRightAuto;
     return m_styleCache;

@@ -22,6 +22,11 @@
 
 #pragma once
 
-#include <BS_thread_pool.hpp>
+#include <cstddef>
 
-extern BS::thread_pool g_asyncDispatcher;
+#include <BS_thread_pool.hpp>
+#include <memory>
+
+using AsyncDispatcher = decltype(BS::thread_pool{ std::size_t{} });
+
+extern std::unique_ptr<AsyncDispatcher> g_asyncDispatcher;

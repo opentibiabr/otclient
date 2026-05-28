@@ -55,11 +55,42 @@ void UIItem::drawSelf(const DrawPoolType drawPane)
         m_item->draw(Point(exactSize - g_gameConfig.getSpriteSize()) + m_item->getDisplacement());
         g_drawPool.releaseFrameBuffer(getPaddingRect(), m_flipDirection);
 
-        if (m_font && (m_alwaysShowCount && (m_item->isStackable() || m_item->isChargeable())) && m_item->getCountOrSubType() > 1) {
-            static constexpr Color STACK_COLOR(231, 231, 231);
-            const auto& count = m_item->getCountOrSubType();
-            const auto& countText = count < 1000 ? std::to_string(count) : fmt::format("{}k", count / 1000.f);
-            m_font->drawText(countText, Rect(m_rect.topLeft(), m_rect.bottomRight() - Point(3, 0)), STACK_COLOR, Fw::AlignBottomRight);
+        const auto itemCountFont = g_gameConfig.getItemCountFont();
+        const auto& countFont = itemCountFont ? itemCountFont : m_font;
+
+        const int displayCount = m_displayCount > 0 ? m_displayCount
+                               : (m_item->isStackable() ? m_item->getCount() : 0);
+        const bool shouldDrawCount = m_displayCount > 0 ? (displayCount >= 1) : (displayCount > 1);
+        if (countFont && m_alwaysShowCount && shouldDrawCount) {
+            static constexpr Color STACK_COLOR(191, 191, 191);
+            std::string countText;
+            if (displayCount < 1000) {
+                countText = std::to_string(displayCount);
+            } else if (displayCount < 10000) {
+                countText = fmt::format("{},{:03d}", displayCount / 1000, displayCount % 1000);
+            } else {
+                countText = fmt::format("{}K", displayCount / 1000);
+            }
+            countFont->drawText(countText, Rect(m_rect.topLeft(), m_rect.bottomRight()), STACK_COLOR, Fw::AlignBottomRight);
+        }
+
+        if (countFont && m_showDuration) {
+            const auto secs = m_item->getDurationTime();
+            if (secs > 0) {
+                std::string durationText;
+                if (secs >= 3600) {
+                    durationText = fmt::format("{}h{:02}m", secs / 3600, (secs % 3600) / 60);
+                } else if (secs >= 60) {
+                    durationText = fmt::format("{}m{:02}", secs / 60, secs % 60);
+                } else {
+                    durationText = fmt::format("{}s", secs);
+                }
+                countFont->drawText(durationText, Rect(m_rect.topLeft(), m_rect.bottomRight()), Color::white, Fw::AlignBottomLeft);
+            }
+        }
+
+        if (countFont && m_showCharges && m_item->getCharges() > 0) {
+            countFont->drawText(std::to_string(m_item->getCharges()), Rect(m_rect.x() + 2, m_rect.y() + 2, m_rect.width(), m_rect.height()), Color::white, Fw::AlignTopLeft);
         }
 
 #ifdef FRAMEWORK_EDITOR
@@ -76,6 +107,7 @@ void UIItem::drawSelf(const DrawPoolType drawPane)
 void UIItem::setItemId(const int id)
 {
     m_itemId = id;
+    m_displayCount = 0;
 
     if (id == 0)
         m_item = nullptr;
@@ -107,6 +139,7 @@ void UIItem::setItemSubType(const int subType)
 void UIItem::setItem(const ItemPtr& item)
 {
     m_item = item;
+    m_displayCount = 0;
     if (item)
         m_itemId = item->getClientId();
 

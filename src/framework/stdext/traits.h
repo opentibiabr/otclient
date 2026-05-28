@@ -22,6 +22,11 @@
 
 #pragma once
 
+#ifndef USE_PRECOMPILED_HEADERS
+#include <cstdint>
+#include <type_traits>
+#endif
+
 namespace stdext
 {
     template<class T> struct replace_extent

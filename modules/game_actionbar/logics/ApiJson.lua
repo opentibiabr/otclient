@@ -15,7 +15,8 @@ local SAVED_TOP_LEVEL_KEYS = {
     chatOptions = true,
     hotkeyOptions = true,
     options = true,
-    profiles = true
+    profiles = true,
+    actionBarVisibility = true,
 }
 
 local function isSequentialArray(value)
@@ -241,13 +242,14 @@ local function rebuildStateFromArray()
     options.clientOptions = array.options or {}
     array.options = options.clientOptions
 
+    local visJson = array.actionBarVisibility or {}
     local actionBar = {}
     local lockedBottom = g_settings.getBoolean("actionBarBottomLocked") or false
     for i = 1, 3 do
-        local isVisible = g_settings.getBoolean("actionBarShowBottom" .. i)
-        if isVisible == nil then
-            isVisible = (i == 1) -- Default: only first bar visible
-        end
+        local key = "actionBarShowBottom" .. i
+        local isVisible = visJson[key]
+        if isVisible == nil then isVisible = g_settings.getBoolean(key) end
+        if isVisible == nil then isVisible = (i == 1) end
         actionBar[#actionBar + 1] = {
             isVisible = isVisible,
             isLocked = lockedBottom and true or false
@@ -256,10 +258,10 @@ local function rebuildStateFromArray()
 
     local lockedLeft = g_settings.getBoolean("actionBarLeftLocked") or false
     for i = 1, 3 do
-        local isVisible = g_settings.getBoolean("actionBarShowLeft" .. i)
-        if isVisible == nil then
-            isVisible = false
-        end
+        local key = "actionBarShowLeft" .. i
+        local isVisible = visJson[key]
+        if isVisible == nil then isVisible = g_settings.getBoolean(key) end
+        if isVisible == nil then isVisible = false end
         actionBar[#actionBar + 1] = {
             isVisible = isVisible,
             isLocked = lockedLeft and true or false
@@ -268,10 +270,10 @@ local function rebuildStateFromArray()
 
     local lockedRight = g_settings.getBoolean("actionBarRightLocked") or false
     for i = 1, 3 do
-        local isVisible = g_settings.getBoolean("actionBarShowRight" .. i)
-        if isVisible == nil then
-            isVisible = false
-        end
+        local key = "actionBarShowRight" .. i
+        local isVisible = visJson[key]
+        if isVisible == nil then isVisible = g_settings.getBoolean(key) end
+        if isVisible == nil then isVisible = false end
         actionBar[#actionBar + 1] = {
             isVisible = isVisible,
             isLocked = lockedRight and true or false
@@ -636,6 +638,19 @@ function ApiJson.createOrUpdatePassive(barId, buttonId, passiveId)
     }
 end
 
+function ApiJson.createOrUpdateSpecialAction(barId, buttonId, specialAction)
+    barId = tonumber(barId)
+    buttonId = tonumber(buttonId)
+    if not barId or not buttonId or not specialAction then
+        return
+    end
+
+    local entry = getOrCreateMappingEntry(barId, buttonId)
+    entry["actionsetting"] = {
+        ["specialAction"] = specialAction
+    }
+end
+
 function ApiJson.removeAction(barId, buttonId)
     barId = tonumber(barId)
     buttonId = tonumber(buttonId)
@@ -655,6 +670,100 @@ function ApiJson.removeAction(barId, buttonId)
             end
             break
         end
+    end
+end
+
+local function ensureMultiActionsSlot(entry, slotIndex)
+    if not entry["actionsetting"] then
+        entry["actionsetting"] = {}
+    end
+    local actionsetting = entry["actionsetting"]
+    local multiActions = actionsetting["multiActions"]
+    if type(multiActions) ~= "table" then
+        multiActions = {{}, {}, {}}
+        actionsetting["multiActions"] = multiActions
+    end
+    for i = 1, 3 do
+        if type(multiActions[i]) ~= "table" then
+            multiActions[i] = {}
+        end
+    end
+    slotIndex = tonumber(slotIndex)
+    if not slotIndex or slotIndex < 1 or slotIndex > 3 then
+        return nil, multiActions
+    end
+    return slotIndex, multiActions
+end
+
+function ApiJson.createOrUpdateMultiAction(barId, buttonId, slotIndex, useMode, itemId, itemTier, smartMode)
+    barId = tonumber(barId)
+    buttonId = tonumber(buttonId)
+    if not barId or not buttonId then
+        return
+    end
+
+    local entry = getOrCreateMappingEntry(barId, buttonId)
+    local slot, multiActions = ensureMultiActionsSlot(entry, slotIndex)
+    if not slot then
+        return
+    end
+    multiActions[slot] = {
+        ["useObject"] = itemId,
+        ["useType"] = useMode,
+        ["upgradeTier"] = itemTier,
+        ["useEquipSmartMode"] = smartMode and true or false
+    }
+end
+
+function ApiJson.createOrUpdateMultiText(barId, buttonId, slotIndex, text, sendAutomatic)
+    barId = tonumber(barId)
+    buttonId = tonumber(buttonId)
+    if not barId or not buttonId then
+        return
+    end
+
+    local entry = getOrCreateMappingEntry(barId, buttonId)
+    local slot, multiActions = ensureMultiActionsSlot(entry, slotIndex)
+    if not slot then
+        return
+    end
+    multiActions[slot] = {
+        ["chatText"] = text,
+        ["sendAutomatically"] = sendAutomatic and true or false
+    }
+end
+
+function ApiJson.removeMultiAction(barId, buttonId, slotIndex)
+    barId = tonumber(barId)
+    buttonId = tonumber(buttonId)
+    slotIndex = tonumber(slotIndex)
+    if not barId or not buttonId or not slotIndex then
+        return
+    end
+
+    local entry = ApiJson.getMapping(barId, buttonId)
+    if not entry or not entry["actionsetting"] then
+        return
+    end
+    local multiActions = entry["actionsetting"]["multiActions"]
+    if type(multiActions) ~= "table" then
+        return
+    end
+
+    if slotIndex >= 1 and slotIndex <= 3 then
+        multiActions[slotIndex] = {}
+    end
+
+    local allEmpty = true
+    for i = 1, 3 do
+        local slot = multiActions[i]
+        if type(slot) == "table" and next(slot) ~= nil then
+            allEmpty = false
+            break
+        end
+    end
+    if allEmpty then
+        entry["actionsetting"]["multiActions"] = nil
     end
 end
 
@@ -767,6 +876,11 @@ function ApiJson.setBarVisibility(barIndex, optionKey, visible, markCreated)
         end
     end
 
+    if state.array then
+        state.array.actionBarVisibility = state.array.actionBarVisibility or {}
+        state.array.actionBarVisibility[optionKey] = visible
+    end
+
     g_settings.set(optionKey, visible)
 end
 
@@ -776,6 +890,213 @@ end
 
 function ApiJson.setClientOption(optionKey, value)
     g_settings.set(optionKey, value)
+end
+
+function ApiJson.setCurrentHotkeySetName(name)
+    if not name or name == "" then
+        return false
+    end
+
+    ApiJson.bootstrap()
+    local options = ensureState()
+    local array = options.array
+    if not array then
+        return false
+    end
+
+    local hotkeyOptions = array.hotkeyOptions or {}
+    array.hotkeyOptions = hotkeyOptions
+
+    local hotkeySets = hotkeyOptions.hotkeySets or options.hotkeySets or {}
+    hotkeyOptions.hotkeySets = hotkeySets
+
+    if not hotkeySets[name] then
+        return false
+    end
+
+    hotkeyOptions.currentHotkeySetName = name
+    options.currentHotkeySetName = name
+    options.currentHotkeySet = hotkeySets[name]
+
+    options.actionBarOptions = options.currentHotkeySet.actionBarOptions
+    if not options.actionBarOptions then
+        options.actionBarOptions = {}
+        options.currentHotkeySet.actionBarOptions = options.actionBarOptions
+    end
+
+    options.actionBarMappings = options.actionBarOptions.mappings
+    if not options.actionBarMappings then
+        options.actionBarMappings = {}
+        options.actionBarOptions.mappings = options.actionBarMappings
+    end
+
+    options.actionBarMappingsIndex = nil
+    return true
+end
+
+function ApiJson.createHotkeySet(name, sourceName)
+    if not name or name == "" then
+        return false
+    end
+
+    ApiJson.bootstrap()
+    local options = ensureState()
+    local array = options.array
+    if not array then
+        return false
+    end
+
+    local hotkeyOptions = array.hotkeyOptions or {}
+    array.hotkeyOptions = hotkeyOptions
+
+    local hotkeySets = hotkeyOptions.hotkeySets or options.hotkeySets or {}
+    hotkeyOptions.hotkeySets = hotkeySets
+    options.hotkeySets = hotkeySets
+
+    if hotkeySets[name] then
+        return false
+    end
+
+    local source = nil
+    if sourceName then
+        source = hotkeySets[sourceName]
+        if not source then
+            return false
+        end
+    end
+
+    local newSet = source and table.recursivecopy(source) or {
+        actionBarOptions = {
+            mappings = {}
+        },
+        chatOn = {},
+        chatOff = {}
+    }
+
+    hotkeySets[name] = newSet
+
+    local profiles = array.profiles or options.profiles or {}
+    array.profiles = profiles
+    options.profiles = profiles
+    if not table.contains(profiles, name) then
+        table.insert(profiles, name)
+    end
+
+    return true
+end
+
+function ApiJson.renameHotkeySet(oldName, newName)
+    if not oldName or oldName == "" or not newName or newName == "" then
+        return false
+    end
+
+    ApiJson.bootstrap()
+    local options = ensureState()
+    local array = options.array
+    if not array then
+        return false
+    end
+
+    local hotkeyOptions = array.hotkeyOptions or {}
+    array.hotkeyOptions = hotkeyOptions
+
+    local hotkeySets = hotkeyOptions.hotkeySets or options.hotkeySets or {}
+    hotkeyOptions.hotkeySets = hotkeySets
+    options.hotkeySets = hotkeySets
+
+    if not hotkeySets[oldName] or hotkeySets[newName] then
+        return false
+    end
+
+    hotkeySets[newName] = hotkeySets[oldName]
+    hotkeySets[oldName] = nil
+
+    local profiles = array.profiles or options.profiles or {}
+    array.profiles = profiles
+    options.profiles = profiles
+    for i, profileName in ipairs(profiles) do
+        if profileName == oldName then
+            profiles[i] = newName
+            break
+        end
+    end
+
+    local currentName = options.currentHotkeySetName or hotkeyOptions.currentHotkeySetName
+    if currentName == oldName then
+        hotkeyOptions.currentHotkeySetName = newName
+        options.currentHotkeySetName = newName
+        options.currentHotkeySet = hotkeySets[newName]
+        options.actionBarOptions = options.currentHotkeySet.actionBarOptions or {}
+        options.currentHotkeySet.actionBarOptions = options.actionBarOptions
+        options.actionBarMappings = options.actionBarOptions.mappings or {}
+        options.actionBarOptions.mappings = options.actionBarMappings
+        options.actionBarMappingsIndex = nil
+    end
+
+    return true
+end
+
+function ApiJson.removeHotkeySet(name)
+    if not name or name == "" then
+        return false
+    end
+
+    ApiJson.bootstrap()
+    local options = ensureState()
+    local array = options.array
+    if not array then
+        return false
+    end
+
+    local hotkeyOptions = array.hotkeyOptions or {}
+    array.hotkeyOptions = hotkeyOptions
+
+    local hotkeySets = hotkeyOptions.hotkeySets or options.hotkeySets or {}
+    hotkeyOptions.hotkeySets = hotkeySets
+    options.hotkeySets = hotkeySets
+
+    if not hotkeySets[name] then
+        return false
+    end
+
+    hotkeySets[name] = nil
+
+    local profiles = array.profiles or options.profiles or {}
+    array.profiles = profiles
+    options.profiles = profiles
+    table.removevalue(profiles, name)
+
+    local currentName = options.currentHotkeySetName or hotkeyOptions.currentHotkeySetName
+    if currentName == name then
+        local fallback = nil
+        for _, profileName in ipairs(profiles) do
+            if hotkeySets[profileName] then
+                fallback = profileName
+                break
+            end
+        end
+        if not fallback then
+            for profileName, _ in pairs(hotkeySets) do
+                fallback = profileName
+                break
+            end
+        end
+        hotkeyOptions.currentHotkeySetName = fallback
+        options.currentHotkeySetName = fallback
+        options.currentHotkeySet = fallback and hotkeySets[fallback] or nil
+        if options.currentHotkeySet then
+            options.actionBarOptions = options.currentHotkeySet.actionBarOptions or {}
+            options.currentHotkeySet.actionBarOptions = options.actionBarOptions
+            options.actionBarMappings = options.actionBarOptions.mappings or {}
+            options.actionBarOptions.mappings = options.actionBarMappings
+        else
+            options.actionBarOptions = nil
+            options.actionBarMappings = nil
+        end
+        options.actionBarMappingsIndex = nil
+    end
+
+    return true
 end
 
 function ApiJson.toggleLockGroup(optionKey, rangeStart, rangeEnd)

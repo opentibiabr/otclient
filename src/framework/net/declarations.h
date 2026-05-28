@@ -22,6 +22,10 @@
 
 #pragma once
 
+#ifndef USE_PRECOMPILED_HEADERS
+#include <memory>
+#endif
+
 class InputMessage;
 class OutputMessage;
 #ifdef __EMSCRIPTEN__
