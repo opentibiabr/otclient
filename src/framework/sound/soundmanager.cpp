@@ -22,7 +22,9 @@
 
 #include "soundmanager.h"
 #include <nlohmann/json.hpp>
+#ifdef FRAMEWORK_PROTOBUF
 #include <sounds.pb.h>
+#endif
 
 #include "soundbuffer.h"
 #include "soundchannel.h"
@@ -38,7 +40,9 @@
 #include "framework/core/resourcemanager.h"
 #include "framework/util/stats.h"
 
+#ifdef FRAMEWORK_PROTOBUF
 using namespace otclient::protobuf;
+#endif
 
 using json = nlohmann::json;
 
@@ -268,7 +272,7 @@ SoundSourcePtr SoundManager::createSoundSource(const std::string& name)
             streamSource->setRelative(true);
             streamSource->setPosition(Point(-128, 0));
             combinedSource->addSource(streamSource);
-            m_streamFiles[streamSource] = g_asyncDispatcher.submit_task([=]() -> SoundFilePtr {
+            m_streamFiles[streamSource] = g_asyncDispatcher->submit_task([=]() -> SoundFilePtr {
                 stdext::timer a;
                 try {
                     return SoundFile::loadSoundFile(filename);
@@ -283,7 +287,7 @@ SoundSourcePtr SoundManager::createSoundSource(const std::string& name)
             streamSource->setRelative(true);
             streamSource->setPosition(Point(128, 0));
             combinedSource->addSource(streamSource);
-            m_streamFiles[streamSource] = g_asyncDispatcher.submit_task([=]() -> SoundFilePtr {
+            m_streamFiles[streamSource] = g_asyncDispatcher->submit_task([=]() -> SoundFilePtr {
                 try {
                     return SoundFile::loadSoundFile(filename);
                 } catch (std::exception& e) {
@@ -295,7 +299,7 @@ SoundSourcePtr SoundManager::createSoundSource(const std::string& name)
             source = combinedSource;
 #else
             const auto& streamSource = std::make_shared<StreamSoundSource>();
-            m_streamFiles[streamSource] = g_asyncDispatcher.submit_task([=]() -> SoundFilePtr {
+            m_streamFiles[streamSource] = g_asyncDispatcher->submit_task([=]() -> SoundFilePtr {
                 try {
                     return SoundFile::loadSoundFile(filename);
                 } catch (std::exception& e) {
@@ -346,14 +350,17 @@ bool SoundManager::isEaxEnabled()
     return false;
 }
 
+#ifdef FRAMEWORK_PROTOBUF
 using ProtobufSoundFiles = google::protobuf::RepeatedPtrField<sounds::Sound>;
 using ProtobufSoundEffects = google::protobuf::RepeatedPtrField<sounds::NumericSoundEffect>;
 using ProtobufLocationAmbiences = google::protobuf::RepeatedPtrField<sounds::AmbienceStream>;
 using ProtobufItemAmbiences = google::protobuf::RepeatedPtrField<sounds::AmbienceObjectStream>;
 using ProtobufMusicTracks = google::protobuf::RepeatedPtrField<sounds::MusicTemplate>;
+#endif
 
 bool SoundManager::loadFromProtobuf(const std::string& directory, const std::string& fileName)
 {
+#ifdef FRAMEWORK_PROTOBUF
     /*
         * file structure
         <struct> Sounds
@@ -502,6 +509,10 @@ bool SoundManager::loadFromProtobuf(const std::string& directory, const std::str
         g_logger.error("Failed to load soundbank '{}': {}", fileName, e.what());
         return false;
     }
+#else
+    g_logger.error("Protobuf not supported in this build. Enable FRAMEWORK_PROTOBUF");
+    return false;
+#endif
 }
 
 bool SoundManager::loadClientFiles(const std::string& directory)

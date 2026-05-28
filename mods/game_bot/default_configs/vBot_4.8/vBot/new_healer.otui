@@ -176,7 +176,7 @@ Groups < FlatPanel
       text: BotServer Members
 
 Vocations < FlatPanel
-  size: 100 105
+  size: 100 120
   padding: 3
   padding-top: 5
 
@@ -220,6 +220,10 @@ Vocations < FlatPanel
     CategoryCheckBox
       id: sorcerers
       text: Sorcerers
+
+    CategoryCheckBox
+      id: monks
+      text: Monks
 
 Priority < Panel
   size: 190 123

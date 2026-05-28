@@ -31,11 +31,168 @@
 #include "framework/platform/platform.h"
 #include "framework/util/crypt.h"
 
-#if ENABLE_ENCRYPTION == 1
-#include "client/game.h"
+#ifndef USE_PRECOMPILED_HEADERS
+#include <array>
+#include <cstdint>
+#include <filesystem>
+#endif
+
+#include <lzma.h>
+#ifdef FRAMEWORK_HAVE_LIBARCHIVE
+#include <archive.h>
+#include <archive_entry.h>
 #endif
 
 ResourceManager g_resources;
+
+namespace {
+
+std::string normalizeVirtualPath(std::string path)
+{
+    stdext::replace_all(path, "\\", "/");
+    while (!path.empty() && path.front() == '/')
+        path.erase(path.begin());
+    return path;
+}
+
+std::filesystem::path safeRelativePath(std::string path)
+{
+    const auto normalized = std::filesystem::path(normalizeVirtualPath(std::move(path))).lexically_normal();
+    const auto normalizedString = normalized.generic_string();
+    if (normalized.empty() || normalized.is_absolute() || normalizedString == "." || normalizedString == ".." || normalizedString.starts_with("../"))
+        return {};
+    return normalized;
+}
+
+bool ensureWriteDirectory(const std::filesystem::path& directory)
+{
+    std::filesystem::path current;
+    for (const auto& part : directory) {
+        if (part.empty() || part == ".")
+            continue;
+
+        current /= part;
+        const auto currentPath = current.generic_string();
+
+        PHYSFS_Stat stat = {};
+        if (PHYSFS_stat(currentPath.c_str(), &stat)) {
+            if (stat.filetype != PHYSFS_FILETYPE_DIRECTORY) {
+                g_logger.error("Unable to create directory '{}': path is a file", currentPath);
+                return false;
+            }
+            continue;
+        }
+
+        if (!PHYSFS_mkdir(currentPath.c_str())) {
+            g_logger.error(
+                "Unable to create directory '{}': {}",
+                currentPath,
+                PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode())
+            );
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool decompressLzmaData(const std::string& input, std::string& output)
+{
+    constexpr size_t maxDecompressedSize = 256u * 1024u * 1024u;
+    lzma_stream stream = LZMA_STREAM_INIT;
+    lzma_ret ret = lzma_auto_decoder(&stream, UINT64_MAX, 0);
+    if (ret != LZMA_OK) {
+        g_logger.error("Unable to initialize LZMA decoder: {}", static_cast<int>(ret));
+        return false;
+    }
+
+    std::array<uint8_t, 8192> buffer{};
+    stream.next_in = reinterpret_cast<const uint8_t*>(input.data());
+    stream.avail_in = input.size();
+
+    output.clear();
+    do {
+        stream.next_out = buffer.data();
+        stream.avail_out = buffer.size();
+
+        ret = lzma_code(&stream, LZMA_FINISH);
+        if (ret != LZMA_OK && ret != LZMA_STREAM_END) {
+            lzma_end(&stream);
+            g_logger.error("LZMA decompression failed: {}", static_cast<int>(ret));
+            return false;
+        }
+
+        const auto written = buffer.size() - stream.avail_out;
+        if (output.size() + written > maxDecompressedSize) {
+            lzma_end(&stream);
+            g_logger.error(
+                "LZMA decompression output exceeded limit ({} bytes)",
+                maxDecompressedSize
+            );
+            return false;
+        }
+        output.append(reinterpret_cast<const char*>(buffer.data()), written);
+    } while (ret != LZMA_STREAM_END);
+
+    lzma_end(&stream);
+    return true;
+}
+
+std::string selectArchiveEntryPath(std::string entryName, std::string entryPrefix, const bool stripPrefix)
+{
+    stdext::replace_all(entryName, "\\", "/");
+    stdext::replace_all(entryPrefix, "\\", "/");
+
+    while (entryName.starts_with("./"))
+        entryName.erase(0, 2);
+    while (!entryPrefix.empty() && entryPrefix.front() == '/')
+        entryPrefix.erase(entryPrefix.begin());
+
+    const bool prefixLooksLikeFile = std::filesystem::path(entryPrefix).has_extension();
+    if (!entryPrefix.empty() && !prefixLooksLikeFile && !entryPrefix.ends_with('/'))
+        entryPrefix.push_back('/');
+
+    std::string relativePath;
+    if (entryPrefix.empty()) {
+        relativePath = entryName;
+        if (stripPrefix) {
+            if (const auto slash = relativePath.find('/'); slash != std::string::npos)
+                relativePath.erase(0, slash + 1);
+        }
+    } else {
+        auto prefixPos = entryName.find(entryPrefix);
+        while (prefixPos != std::string::npos && prefixPos > 0 && entryName[prefixPos - 1] != '/')
+            prefixPos = entryName.find(entryPrefix, prefixPos + 1);
+
+        if (prefixPos == std::string::npos)
+            return "";
+
+        relativePath = stripPrefix ? entryName.substr(prefixPos + entryPrefix.size()) : entryName.substr(prefixPos);
+    }
+
+    if (relativePath.empty())
+        return "";
+
+    const auto normalized = std::filesystem::path(relativePath).lexically_normal();
+    if (normalized.empty() || normalized.is_absolute())
+        return "";
+
+    const auto normalizedString = normalized.generic_string();
+    if (normalizedString == "." || normalizedString.starts_with("../") || normalizedString == "..")
+        return "";
+
+    return normalizedString;
+}
+
+HttpResult_ptr getDownloadedFile(std::string path)
+{
+    path = normalizeVirtualPath(std::move(path));
+    if (path.starts_with("downloads/"))
+        path.erase(0, std::string("downloads/").size());
+    return g_http.getFile(path);
+}
+
+} // namespace
 
 void ResourceManager::init(const char* argv0)
 {
@@ -65,7 +222,8 @@ bool ResourceManager::discoverWorkDir(const std::string& existentFile)
                                     g_resources.getBaseDir(),
                                     g_resources.getBaseDir() + "/game_data/",
                                     g_resources.getBaseDir() + "../",
-                                    g_resources.getBaseDir() + "../share/" + g_app.getCompactName() + "/" };
+                                    g_resources.getBaseDir() + "../share/" + g_app.getCompactName() + "/",
+                                    };
 
     bool found = false;
     for (const auto& dir : possiblePaths) {
@@ -196,6 +354,17 @@ bool ResourceManager::fileExists(const std::string& fileName)
     return (PHYSFS_exists(resolvePath(fileName).c_str()) && !directoryExists(fileName));
 }
 
+bool ResourceManager::fileExistsInWorkDir(const std::string& fileName)
+{
+    const auto relativePath = safeRelativePath(fileName);
+    if (relativePath.empty())
+        return false;
+
+    std::error_code ec;
+    const auto fullPath = std::filesystem::path(getWorkDir()) / relativePath;
+    return std::filesystem::is_regular_file(fullPath, ec);
+}
+
 bool ResourceManager::directoryExists(const std::string& directoryName)
 {
     if (directoryName == "/downloads")
@@ -241,48 +410,45 @@ std::string ResourceManager::readFileContents(const std::string& fileName)
     PHYSFS_close(file);
 
 #if ENABLE_ENCRYPTION == 1
-    const auto headerSize = std::string(ENCRYPTION_HEADER).size();
-    const bool hasHeader = (buffer.size() >= headerSize &&
-                            buffer.compare(0, headerSize, ENCRYPTION_HEADER) == 0);
-
-    if (hasHeader) {
-        buffer = buffer.substr(headerSize);
+    const std::string encHeader(ENCRYPTION_HEADER);
+    if (buffer.size() >= encHeader.size() &&
+        buffer.compare(0, encHeader.size(), encHeader) == 0) {
+        buffer = buffer.substr(encHeader.size());
         buffer = decrypt(buffer);
-    } else {
-        std::string path = fullPath;
-        std::replace(path.begin(), path.end(), '\\', '/');
-        if (path.compare(0, 5, std::string(AY_OBFUSCATE("/bot/"))) == 0) {
-            if (g_game.getFeature(Otc::GameAllowCustomBotScripts)) {
-                return buffer;
-            }
-            return "";
-        }
-        buffer = "";
     }
 #endif
 
     return buffer;
 }
 
+std::string ResourceManager::readFileContentsFromWorkDir(const std::string& fileName)
+{
+    const auto relativePath = safeRelativePath(fileName);
+    if (relativePath.empty())
+        throw Exception("invalid workdir file path '{}'", fileName);
+
+    const auto fullPath = std::filesystem::path(getWorkDir()) / relativePath;
+    std::ifstream file(fullPath, std::ios::binary);
+    if (!file.is_open())
+        throw Exception("unable to open workdir file '{}'", fullPath.generic_string());
+
+    std::string buffer(std::istreambuf_iterator<char>(file), {});
+    file.close();
+    return buffer;
+}
+
 bool ResourceManager::writeFileBuffer(const std::string& fileName, const uint8_t* data, const uint32_t size, const bool createDirectory)
 {
     if (createDirectory) {
-        const auto& path = std::filesystem::path(fileName);
-        const auto& dirPath = path.parent_path().string();
+        const auto& path = std::filesystem::path(normalizeVirtualPath(fileName));
+        const auto& dirPath = path.parent_path();
 
-        if (!PHYSFS_isDirectory(dirPath.c_str())) {
-            if (!PHYSFS_mkdir(dirPath.c_str())) {
-                g_logger.error(
-                    "Unable to create write directory '{}': {}",
-                    dirPath,
-                    PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode())
-                );
-                return false;
-            }
-        }
+        if (!dirPath.empty() && !ensureWriteDirectory(dirPath))
+            return false;
     }
 
-    PHYSFS_file* file = PHYSFS_openWrite(fileName.c_str());
+    const auto normalizedFileName = normalizeVirtualPath(fileName);
+    PHYSFS_file* file = PHYSFS_openWrite(normalizedFileName.c_str());
     if (!file) {
         g_logger.error(PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
         return false;
@@ -308,13 +474,7 @@ bool ResourceManager::writeFileStream(const std::string& fileName, std::iostream
 
 bool ResourceManager::writeFileContents(const std::string& fileName, const std::string& data)
 {
-#if ENABLE_ENCRYPTION == 1
-    std::string encryptedData = encrypt(data, std::string(ENCRYPTION_PASSWORD));
-    std::string finalData = std::string(ENCRYPTION_HEADER) + encryptedData;
-    return writeFileBuffer(fileName, (const uint8_t*)finalData.c_str(), finalData.size());
-#else
     return writeFileBuffer(fileName, (const uint8_t*)data.c_str(), data.size());
-#endif
 }
 
 FileStreamPtr ResourceManager::openFile(const std::string& fileName)
@@ -613,6 +773,204 @@ std::string ResourceManager::fileChecksum(const std::string& path) {
     return checksum;
 }
 
+std::string ResourceManager::fileSha256(const std::string& path)
+{
+    try {
+        return g_crypt.sha256(readFileContents(path));
+    } catch (const stdext::exception& e) {
+        g_logger.debug("Unable to read '{}' for SHA-256: {}", path, e.what());
+        return "";
+    }
+}
+
+std::string ResourceManager::fileSha256InWorkDir(const std::string& path)
+{
+    try {
+        return g_crypt.sha256(readFileContentsFromWorkDir(path));
+    } catch (const stdext::exception& e) {
+        g_logger.debug("Unable to read workdir file '{}' for SHA-256: {}", path, e.what());
+        return "";
+    }
+}
+
+bool ResourceManager::writeDownloadedFile(const std::string& path, std::string destinationPath, const bool decompressLzma)
+{
+    const auto downloadedFile = getDownloadedFile(path);
+    if (!downloadedFile) {
+        g_logger.error("Cannot find downloaded file '{}'", path);
+        return false;
+    }
+
+    std::string contents = downloadedFile->response;
+    if (decompressLzma) {
+        std::string decompressed;
+        if (!decompressLzmaData(contents, decompressed))
+            return false;
+        contents = std::move(decompressed);
+    }
+
+    destinationPath = normalizeVirtualPath(std::move(destinationPath));
+    return writeFileBuffer(
+        destinationPath,
+        reinterpret_cast<const uint8_t*>(contents.data()),
+        static_cast<uint32_t>(contents.size()),
+        true
+    );
+}
+
+bool ResourceManager::writeDownloadedFileToWorkDir(const std::string& path, std::string destinationPath, const bool decompressLzma)
+{
+    const auto oldWriteDir = getWriteDir();
+    if (!setWriteDir(getWorkDir()))
+        return false;
+
+    const bool ok = writeDownloadedFile(path, std::move(destinationPath), decompressLzma);
+    setWriteDir(oldWriteDir);
+    addSearchPath(getWorkDir(), true);
+    return ok;
+}
+
+bool ResourceManager::extractDownloadedArchive(const std::string& path, std::string destinationPath, const std::string& entryPrefix, const bool stripPrefix)
+{
+#ifndef FRAMEWORK_HAVE_LIBARCHIVE
+    (void)path;
+    (void)destinationPath;
+    (void)entryPrefix;
+    (void)stripPrefix;
+    g_logger.error("Archive extraction is unavailable on this platform.");
+    return false;
+#else
+    const auto downloadedFile = getDownloadedFile(path);
+    if (!downloadedFile) {
+        g_logger.error("Cannot find downloaded archive '{}'", path);
+        return false;
+    }
+
+    const auto& archive = downloadedFile->response;
+    if (archive.empty()) {
+        g_logger.error("Downloaded archive '{}' is empty", path);
+        return false;
+    }
+
+    auto* archiveReader = archive_read_new();
+    if (!archiveReader) {
+        g_logger.error("Unable to initialize archive reader for '{}'", path);
+        return false;
+    }
+
+    archive_read_support_format_zip(archiveReader);
+    archive_read_support_format_rar(archiveReader);
+    archive_read_support_format_rar5(archiveReader);
+    archive_read_support_filter_all(archiveReader);
+
+    if (archive_read_open_memory(archiveReader, archive.data(), archive.size()) != ARCHIVE_OK) {
+        g_logger.error(
+            "Unable to open downloaded archive '{}': {}",
+            path,
+            archive_error_string(archiveReader)
+        );
+        archive_read_free(archiveReader);
+        return false;
+    }
+
+    destinationPath = normalizeVirtualPath(std::move(destinationPath));
+    if (!destinationPath.empty() && !destinationPath.ends_with('/'))
+        destinationPath.push_back('/');
+
+    bool wroteFile = false;
+    constexpr int readSize = 8192;
+    std::array<char, readSize> readBuffer = {};
+
+    archive_entry* entry = nullptr;
+    int archiveResult = ARCHIVE_OK;
+    while ((archiveResult = archive_read_next_header(archiveReader, &entry)) == ARCHIVE_OK) {
+        const char* entryPath = archive_entry_pathname_utf8(entry);
+        if (!entryPath)
+            entryPath = archive_entry_pathname(entry);
+
+        std::string entryName = entryPath ? entryPath : "";
+        const bool isDirectory = entryName.ends_with('/') || entryName.ends_with('\\');
+        const auto relativePath = selectArchiveEntryPath(entryName, entryPrefix, stripPrefix);
+
+        if (!isDirectory && !relativePath.empty()) {
+            std::string contents;
+            la_ssize_t readBytes = 0;
+            do {
+                readBytes = archive_read_data(archiveReader, readBuffer.data(), readBuffer.size());
+                if (readBytes < 0) {
+                    g_logger.error(
+                        "Unable to read archive entry '{}' from '{}': {}",
+                        entryName,
+                        path,
+                        archive_error_string(archiveReader)
+                    );
+                    archive_read_free(archiveReader);
+                    return false;
+                }
+                if (readBytes > 0)
+                    contents.append(readBuffer.data(), static_cast<size_t>(readBytes));
+            } while (readBytes > 0);
+
+            const auto destinationFile = destinationPath + relativePath;
+            if (!writeFileBuffer(
+                    destinationFile,
+                    reinterpret_cast<const uint8_t*>(contents.data()),
+                    static_cast<uint32_t>(contents.size()),
+                    true
+                )) {
+                archive_read_free(archiveReader);
+                return false;
+            }
+            wroteFile = true;
+        } else {
+            archive_read_data_skip(archiveReader);
+        }
+    }
+
+    if (archiveResult != ARCHIVE_EOF) {
+        g_logger.error(
+            "Unable to read archive '{}': {}",
+            path,
+            archive_error_string(archiveReader)
+        );
+        archive_read_free(archiveReader);
+        return false;
+    }
+
+    archive_read_free(archiveReader);
+    return wroteFile;
+#endif
+}
+
+bool ResourceManager::extractDownloadedArchiveToWorkDir(const std::string& path, std::string destinationPath, const std::string& entryPrefix, const bool stripPrefix)
+{
+    const auto oldWriteDir = getWriteDir();
+    if (!setWriteDir(getWorkDir()))
+        return false;
+
+    const bool ok = extractDownloadedArchive(path, std::move(destinationPath), entryPrefix, stripPrefix);
+    setWriteDir(oldWriteDir);
+    addSearchPath(getWorkDir(), true);
+    return ok;
+}
+
+bool ResourceManager::extractDownloadedZip(const std::string& path, std::string destinationPath, const std::string& entryPrefix, const bool stripPrefix)
+{
+    return extractDownloadedArchive(path, std::move(destinationPath), entryPrefix, stripPrefix);
+}
+
+bool ResourceManager::writeFileContentsToWorkDir(const std::string& fileName, const std::string& data)
+{
+    const auto oldWriteDir = getWriteDir();
+    if (!setWriteDir(getWorkDir()))
+        return false;
+
+    const bool ok = writeFileBuffer(fileName, reinterpret_cast<const uint8_t*>(data.c_str()), data.size(), true);
+    setWriteDir(oldWriteDir);
+    addSearchPath(getWorkDir(), true);
+    return ok;
+}
+
 std::unordered_map<std::string, std::string> ResourceManager::filesChecksums()
 {
     std::unordered_map<std::string, std::string> ret;
@@ -716,7 +1074,6 @@ void ResourceManager::updateExecutable(std::string fileName)
     PHYSFS_close(file);
     setWriteDir(oldWriteDir);
 
-    std::filesystem::path newBinaryPath(std::filesystem::u8path(PHYSFS_getWriteDir()));
 #endif
 }
 
@@ -724,21 +1081,33 @@ bool ResourceManager::launchCorrect(const std::vector<std::string>& args) { // c
 #if (defined(ANDROID) || defined(FREE_VERSION))
     return false;
 #else
-    auto fileName2 = m_binaryPath.stem().string();
-    fileName2 = stdext::split(fileName2, "-")[0];
-    stdext::tolower(fileName2);
+    const auto normalizeName = [](std::string name) {
+        const auto dash = name.find('-');
+        if (dash != std::string::npos) {
+            name = name.substr(0, dash);
+        }
+        stdext::tolower(name);
+        return name;
+    };
+
+    auto fileName2 = normalizeName(m_binaryPath.stem().string());
 
     const std::filesystem::path path(m_binaryPath.parent_path());
     std::error_code ec;
+    if (path.empty() || !std::filesystem::exists(path, ec) || ec) {
+        return false;
+    }
+
     auto lastWrite = last_write_time(m_binaryPath, ec);
     std::filesystem::path binary = m_binaryPath;
-    for (auto& entry : std::filesystem::directory_iterator(path)) {
+    for (auto it = std::filesystem::directory_iterator(path, ec);
+         !ec && it != std::filesystem::directory_iterator();
+         ++it) {
+        const auto& entry = *it;
         if (is_directory(entry.path()))
             continue;
 
-        auto fileName1 = entry.path().stem().string();
-        fileName1 = stdext::split(fileName1, "-")[0];
-        stdext::tolower(fileName1);
+        auto fileName1 = normalizeName(entry.path().stem().string());
         if (fileName1 != fileName2)
             continue;
 
@@ -752,13 +1121,18 @@ bool ResourceManager::launchCorrect(const std::vector<std::string>& args) { // c
         }
     }
 
-    for (auto& entry : std::filesystem::directory_iterator(path)) { // remove old
+    if (ec) {
+        return false;
+    }
+
+    for (auto it = std::filesystem::directory_iterator(path, ec);
+         !ec && it != std::filesystem::directory_iterator();
+         ++it) { // remove old
+        const auto& entry = *it;
         if (is_directory(entry.path()))
             continue;
 
-        auto fileName1 = entry.path().stem().string();
-        fileName1 = stdext::split(fileName1, "-")[0];
-        stdext::tolower(fileName1);
+        auto fileName1 = normalizeName(entry.path().stem().string());
         if (fileName1 != fileName2)
             continue;
 
@@ -768,6 +1142,10 @@ bool ResourceManager::launchCorrect(const std::vector<std::string>& args) { // c
             std::error_code _ec;
             std::filesystem::remove(entry.path(), _ec);
         }
+    }
+
+    if (ec) {
+        return false;
     }
 
     if (binary == m_binaryPath)

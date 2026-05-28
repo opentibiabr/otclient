@@ -62,7 +62,7 @@ OTMLNodePtr OTMLNode::get(const std::string_view childTag) const
 
 OTMLNodePtr OTMLNode::getIndex(const int childIndex)
 {
-    return childIndex < size() && childIndex >= 0 ? m_children[childIndex] : nullptr;
+    return childIndex >= 0 && static_cast<size_t>(childIndex) < size() ? m_children[static_cast<size_t>(childIndex)] : nullptr;
 }
 
 OTMLNodePtr OTMLNode::at(const std::string_view childTag)
@@ -78,9 +78,9 @@ OTMLNodePtr OTMLNode::at(const std::string_view childTag)
 
 OTMLNodePtr OTMLNode::atIndex(const int childIndex)
 {
-    if (childIndex >= size() || childIndex < 0)
+    if (childIndex < 0 || static_cast<size_t>(childIndex) >= size())
         throw OTMLException(asOTMLNode(), fmt::format("child node with index '{}' not found", childIndex));
-    return m_children[childIndex];
+    return m_children[static_cast<size_t>(childIndex)];
 }
 
 void OTMLNode::addChild(const OTMLNodePtr& newChild)

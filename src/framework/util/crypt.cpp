@@ -21,7 +21,25 @@
  */
 
 #include "crypt.h"
+
+#ifndef USE_PRECOMPILED_HEADERS
+#include <algorithm>
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <functional>
+#include <iomanip>
+#include <ranges>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <utility>
+#include <zlib.h>
+#endif
+
 #include <cppcodec/base64_rfc4648.hpp>
+#include <openssl/evp.h>
 
 #include "framework/core/graphicalapplication.h"
 #include "framework/core/resourcemanager.h"
@@ -29,6 +47,12 @@
 #include "framework/stdext/math.h"
 
 #ifndef USE_GMP
+#ifndef OPENSSL_API_COMPAT
+#define OPENSSL_API_COMPAT 0x10100000L
+#endif
+#ifndef OPENSSL_SUPPRESS_DEPRECATED
+#define OPENSSL_SUPPRESS_DEPRECATED
+#endif
 #include <openssl/bn.h>
 #include <openssl/rsa.h>
 #endif
@@ -282,4 +306,29 @@ std::string Crypt::crc32(const std::string& decoded_string, const bool upperCase
     else
         std::ranges::transform(result, result.begin(), tolower);
     return result;
+}
+
+std::string Crypt::sha256(const std::string& decoded_string)
+{
+    std::array<unsigned char, EVP_MAX_MD_SIZE> digest{};
+    unsigned int digestLength = 0;
+
+    EVP_MD_CTX* context = EVP_MD_CTX_new();
+    if (!context)
+        return "";
+
+    const bool ok = EVP_DigestInit_ex(context, EVP_sha256(), nullptr) == 1 &&
+                    EVP_DigestUpdate(context, decoded_string.data(), decoded_string.size()) == 1 &&
+                    EVP_DigestFinal_ex(context, digest.data(), &digestLength) == 1;
+    EVP_MD_CTX_free(context);
+
+    if (!ok)
+        return "";
+
+    std::ostringstream ss;
+    ss << std::hex << std::setfill('0');
+    for (unsigned int i = 0; i < digestLength; ++i)
+        ss << std::setw(2) << static_cast<int>(digest[i]);
+
+    return ss.str();
 }

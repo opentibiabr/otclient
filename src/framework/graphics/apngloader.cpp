@@ -25,6 +25,17 @@
 
 #include "apngloader.h"
 
+#ifndef USE_PRECOMPILED_HEADERS
+#include <cmath>
+#include <cstdlib>
+#include <cstring>
+#include <ios>
+#include <istream>
+#include <ostream>
+
+#include <zlib.h>
+#endif
+
 #if defined(_MSC_VER) && _MSC_VER >= 1300
 #define swap16(data) _byteswap_ushort(data)
 #define swap32(data) _byteswap_ulong(data)
@@ -597,7 +608,7 @@ int load_apng(std::stringstream& file, apng_data* apng)
                 } else if (chunk == 0x6663544C) /* fcTL */
                 {
                     if (zsize == 0)
-                        first_frame = 1;
+                        first_frame = 0;
                     else {
                         if (dop == PNG_DISPOSE_OP_PREVIOUS) {
                             if (coltype != 6)
@@ -669,8 +680,10 @@ int load_apng(std::stringstream& file, apng_data* apng)
 
                     rowbytes = ROWBYTES(pixeldepth, w0);
                     cur_frame++;
-                    pImg1 += outimg1;
-                    pImg2 += outimg2;
+                   if (cur_frame > 1) {
+                        pImg1 += outimg1;
+                        pImg2 += outimg2;
+                    }
                 } else if (chunk == 0x49444154) /* IDAT */
                 {
                     file.read((char*)(pData + zsize), len);

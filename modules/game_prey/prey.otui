@@ -785,8 +785,8 @@ PreyTracker < MiniWindow
   id: preyTracker
   !text: tr('Prey')
   height: 110
-  @onOpen: onMiniWindowOpen()
-  @onClose: onMiniWindowClose()
+  @onOpen: modules.game_prey.onMiniWindowOpen()
+  @onClose: modules.game_prey.onMiniWindowClose()
   &save: true
 
   UIWidget

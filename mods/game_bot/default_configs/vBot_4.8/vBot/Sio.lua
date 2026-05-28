@@ -39,7 +39,8 @@ Panel
       healEk = false,
       healRp = false,
       healEd = false,
-      healMs = false
+      healMs = false,
+      healEm = false
     }
   end
 
@@ -114,6 +115,11 @@ Panel
       config.healRp = not config.healRp
       widget:setOn(config.healRp)
     end
+    sioListWindow.vocation.EM:setOn(config.healEm)
+    sioListWindow.vocation.EM.onClick = function(widget)
+      config.healEm = not config.healEm
+      widget:setOn(config.healEm)
+    end
 
     -- functions
     local updateMinManaText = function()
@@ -172,6 +178,7 @@ Panel
     elseif voc == 12 then voc = 2
     elseif voc == 13 then voc = 3
     elseif voc == 14 then voc = 4
+    elseif voc == 15 then voc = 5
     end
 
     local isOk = false
@@ -182,6 +189,8 @@ Panel
     elseif voc == 3 and config.healMs then
       isOk = true
     elseif voc == 4 and config.healEd then
+      isOk = true
+    elseif voc == 5 and config.healEm then
       isOk = true
     end
 

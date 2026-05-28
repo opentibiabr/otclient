@@ -343,6 +343,15 @@ void LocalPlayer::setTotalCapacity(const uint32_t totalCapacity)
     callLuaField("onTotalCapacityChange", totalCapacity, oldTotalCapacity);
 }
 
+void LocalPlayer::setBaseCapacity(const uint32_t baseCapacity)
+{
+    if (m_baseCapacity == baseCapacity)
+        return;
+
+    m_baseCapacity = baseCapacity;
+    callLuaField("onBaseCapacityChange", baseCapacity);
+}
+
 void LocalPlayer::setExperience(const uint64_t experience)
 {
     if (m_experience == experience)
@@ -354,18 +363,23 @@ void LocalPlayer::setExperience(const uint64_t experience)
     callLuaField("onExperienceChange", experience, oldExperience);
 }
 
-void LocalPlayer::setLevel(const uint16_t level, const uint8_t levelPercent)
+void LocalPlayer::setLevel(const uint16_t level, const uint16_t levelPercent)
 {
     if (m_level == level && m_levelPercent == levelPercent)
         return;
 
     const uint16_t oldLevel = m_level;
-    const uint8_t oldLevelPercent = m_levelPercent;
+    const uint16_t oldLevelPercent = m_levelPercent;
 
     m_level = level;
     m_levelPercent = levelPercent;
 
     callLuaField("onLevelChange", level, levelPercent, oldLevel, oldLevelPercent);
+}
+
+uint16_t LocalPlayer::getLevelPercent()
+{
+    return g_game.getFeature(Otc::GameLevelPercentU16) ? m_levelPercent / 100 : m_levelPercent;
 }
 
 void LocalPlayer::setMana(const uint32_t mana, const uint32_t maxMana)
@@ -453,6 +467,11 @@ void LocalPlayer::setInventoryItem(const Otc::InventorySlot inventory, const Ite
 
     const auto& oldItem = m_inventoryItems[inventory];
     m_inventoryItems[inventory] = item;
+
+    if (item && g_game.getFeature(Otc::GameThingClock) && item->getDurationTime() > 0
+            && item->getClothSlot() == static_cast<int>(inventory)){
+        item->setDecaying(true);
+    }
 
     callLuaField("onInventoryChange", inventory, item, oldItem);
 }
@@ -563,20 +582,26 @@ void LocalPlayer::setSpells(const std::vector<uint16_t>& spells)
     callLuaField("onSpellsChange", spells, oldSpells);
 }
 
-void LocalPlayer::setBlessings(const uint16_t blessings)
+void LocalPlayer::setBlessings(const uint16_t blessings, const uint8_t blessVisualState)
 {
-    if (blessings == m_blessings)
+    if (blessings == m_blessings && blessVisualState == m_blessVisualState)
         return;
 
     const uint16_t oldBlessings = m_blessings;
     m_blessings = blessings;
+    m_blessVisualState = blessVisualState;
 
-    callLuaField("onBlessingsChange", blessings, oldBlessings);
+    callLuaField("onBlessingsChange", blessings, oldBlessings, blessVisualState);
 }
 
 void LocalPlayer::takeScreenshot(const uint8_t type)
 {
-    g_lua.callGlobalField("LocalPlayer", "onTakeScreenshot", type);
+    callLuaField("onTakeScreenshot", type);
+}
+
+void LocalPlayer::openMultiOfflineTrainingDialog()
+{
+    callLuaField("onMultiOfflineTrainingDialog");
 }
 
 void LocalPlayer::setResourceBalance(const Otc::ResourceTypes_t type, const uint64_t value)
@@ -599,7 +624,6 @@ void LocalPlayer::setFlatDamageHealing(uint16_t flatBonus)
     if (m_flatDamageHealing == flatBonus)
         return;
 
-    const uint16_t oldFlatBonus = m_flatDamageHealing;
     m_flatDamageHealing = flatBonus;
 
     callLuaField("onFlatDamageHealingChange", flatBonus);
@@ -610,8 +634,6 @@ void LocalPlayer::setAttackInfo(uint16_t attackValue, uint8_t attackElement)
     if (m_attackValue == attackValue && m_attackElement == attackElement)
         return;
 
-    const uint16_t oldAttackValue = m_attackValue;
-    const uint8_t oldAttackElement = m_attackElement;
     m_attackValue = attackValue;
     m_attackElement = attackElement;
 
@@ -623,8 +645,6 @@ void LocalPlayer::setConvertedDamage(double convertedDamage, uint8_t convertedEl
     if (m_convertedDamage == convertedDamage && m_convertedElement == convertedElement)
         return;
 
-    const double oldConvertedDamage = m_convertedDamage;
-    const uint8_t oldConvertedElement = m_convertedElement;
     m_convertedDamage = convertedDamage;
     m_convertedElement = convertedElement;
 
@@ -637,12 +657,6 @@ void LocalPlayer::setImbuements(double lifeLeech, double manaLeech, double critC
         m_critDamage == critDamage && m_onslaught == onslaught)
         return;
 
-    const double oldLifeLeech = m_lifeLeech;
-    const double oldManaLeech = m_manaLeech;
-    const double oldCritChance = m_critChance;
-    const double oldCritDamage = m_critDamage;
-    const double oldOnslaught = m_onslaught;
-
     m_lifeLeech = lifeLeech;
     m_manaLeech = manaLeech;
     m_critChance = critChance;
@@ -652,25 +666,20 @@ void LocalPlayer::setImbuements(double lifeLeech, double manaLeech, double critC
     callLuaField("onImbuementsChange", lifeLeech, manaLeech, critChance, critDamage, onslaught);
 }
 
-void LocalPlayer::setDefenseInfo(uint16_t defense, uint16_t armor, double mitigation, double dodge, uint16_t damageReflection)
+void LocalPlayer::setDefenseInfo(uint16_t defense, uint16_t armor, uint16_t mantra, double mitigation, double dodge, uint16_t damageReflection)
 {
-    if (m_defense == defense && m_armor == armor && m_mitigation == mitigation &&
+    if (m_defense == defense && m_armor == armor && m_mantra == mantra && m_mitigation == mitigation &&
         m_dodge == dodge && m_damageReflection == damageReflection)
         return;
 
-    const uint16_t oldDefense = m_defense;
-    const uint16_t oldArmor = m_armor;
-    const double oldMitigation = m_mitigation;
-    const double oldDodge = m_dodge;
-    const uint16_t oldDamageReflection = m_damageReflection;
-
     m_defense = defense;
     m_armor = armor;
+    m_mantra = mantra;
     m_mitigation = mitigation;
     m_dodge = dodge;
     m_damageReflection = damageReflection;
 
-    callLuaField("onDefenseInfoChange", defense, armor, mitigation, dodge, damageReflection);
+    callLuaField("onDefenseInfoChange", defense, armor,mantra, mitigation, dodge, damageReflection);
 }
 
 void LocalPlayer::setCombatAbsorbValues(const std::map<uint8_t, double>& absorbValues)
@@ -678,7 +687,6 @@ void LocalPlayer::setCombatAbsorbValues(const std::map<uint8_t, double>& absorbV
     if (m_combatAbsorbValues == absorbValues)
         return;
 
-    const auto oldAbsorbValues = m_combatAbsorbValues;
     m_combatAbsorbValues = absorbValues;
 
     callLuaField("onCombatAbsorbValuesChange", absorbValues);
@@ -688,10 +696,6 @@ void LocalPlayer::setForgeBonuses(double momentum, double transcendence, double 
 {
     if (m_momentum == momentum && m_transcendence == transcendence && m_amplification == amplification)
         return;
-
-    const double oldMomentum = m_momentum;
-    const double oldTranscendence = m_transcendence;
-    const double oldAmplification = m_amplification;
 
     m_momentum = momentum;
     m_transcendence = transcendence;
@@ -705,7 +709,6 @@ void LocalPlayer::setExperienceRate(Otc::ExperienceRate_t type, uint16_t value)
     if (m_experienceRates[type] == value)
         return;
 
-    const uint16_t oldValue = m_experienceRates[type];
     m_experienceRates[type] = value;
 
     callLuaField("onExperienceRateChange", type, value);

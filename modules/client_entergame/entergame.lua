@@ -209,19 +209,27 @@ function EnterGame.init()
     enterGame:getChildById('httpLoginBox'):setChecked(httpLogin)
 
     local installedClients = {}
-    local amountInstalledClients = 0
-    for _, dirItem in ipairs(g_resources.listDirectoryFiles('/data/things/')) do
-        if tonumber(dirItem) then
-            installedClients[dirItem] = true
-            amountInstalledClients = amountInstalledClients + 1
+    if modules.client_assets and modules.client_assets.getInstalledClientVersions then
+        installedClients = modules.client_assets.getInstalledClientVersions()
+    else
+        for _, dirItem in ipairs(g_resources.listDirectoryFiles('/data/things/')) do
+            if tonumber(dirItem) then
+                installedClients[dirItem] = true
+            end
         end
     end
+
+    local amountInstalledClients = 0
+    for _ in pairs(installedClients) do
+        amountInstalledClients = amountInstalledClients + 1
+    end
+    local canDownloadAssets = modules.client_assets and modules.client_assets.isEnabled and modules.client_assets.isEnabled()
 
     clientBox = enterGame:getChildById('clientComboBox')
 
     for _, proto in pairs(g_game.getSupportedClients()) do
         local protoStr = tostring(proto)
-        if installedClients[protoStr] or amountInstalledClients == 0 then
+        if installedClients[protoStr] or amountInstalledClients == 0 or (canDownloadAssets and proto >= 1281) then
             installedClients[protoStr] = nil
             clientBox:addOption(proto)
         end
@@ -603,7 +611,6 @@ function EnterGame.toggleStayLoggedBox(clientVersion, init)
     end
 
     if not init then
-        enterGame:breakAnchors()
         enterGame:setY(newY)
         enterGame:bindRectToParent()
     end
@@ -654,6 +661,11 @@ function EnterGame.tryHttpLogin(clientVersion, httpLogin)
             path = "/"
         elseif not path or path == "" then
             path = "/"
+        end
+        local hostPort = host:match(":(%d+)$")
+        if hostPort then
+            host = host:gsub(":%d+$", "")
+            G.port = tonumber(hostPort)
         end
     end
 
@@ -714,7 +726,8 @@ function EnterGame.loginSuccess(requestId, jsonSession, jsonWorlds, jsonCharacte
             name = world.name,
             ip = world.externaladdressprotected,
             port = world.externalportprotected,
-            previewState = world.previewstate == 1
+            previewState = world.previewstate == 1,
+            pvptype = world.pvptype,
         }
     end
 
@@ -737,7 +750,8 @@ function EnterGame.loginSuccess(requestId, jsonSession, jsonWorlds, jsonCharacte
             worldName = world.name,
             worldIp = world.ip,
             worldPort = world.port,
-            previewState = world.previewstate
+            previewState = world.previewstate,
+            pvptype = world.pvptype,
         }
     end
 
@@ -773,7 +787,6 @@ function EnterGame.doLogin()
     local clientVersion = tonumber(clientBox:getText())
     G.clientVersion = clientVersion
     local httpLogin = enterGame:getChildById('httpLoginBox'):isChecked()
-    EnterGame.hide()
 
     if g_game.isOnline() then
         local errorBox = displayErrorBox(tr('Login Error'), tr('Cannot login while already in game.'))
@@ -786,6 +799,24 @@ function EnterGame.doLogin()
     g_settings.set('host', G.host)
     g_settings.set('port', G.port)
     g_settings.set('client-version', clientVersion)
+
+    if clientVersion >= 1281 and modules.client_assets and modules.client_assets.ensureClientVersion and
+        not modules.client_assets.isClientVersionInstalled(clientVersion) then
+        modules.client_assets.ensureClientVersion(clientVersion, function(success, message)
+            if success then
+                EnterGame.doLogin()
+                return
+            end
+
+            local errorBox = displayErrorBox(tr('Login Error'), message or tr('Unable to download client assets.'))
+            connect(errorBox, {
+                onOk = EnterGame.show
+            })
+        end)
+        return
+    end
+
+    EnterGame.hide()
 
     if clientVersion >= 1281 and G.port ~= 7171 then
         EnterGame.tryHttpLogin(clientVersion, httpLogin)
@@ -902,7 +933,7 @@ function EnterGame.setUniqueServer(host, port, protocol, windowWidth, windowHeig
     end
     enterGame:setWidth(windowWidth)
     if not windowHeight then
-        windowHeight = 210
+        windowHeight = 229
     end
 
     enterGame:setHeight(windowHeight)

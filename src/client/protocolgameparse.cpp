@@ -108,6 +108,12 @@ void ProtocolGame::parseMessage(const InputMessagePtr& msg)
                 case Proto::GameServerBugReport:
                     parseBugReport(msg);
                     break;
+                case Proto::GameServerMultiOfflineTrainingDialog:
+                    parseMultiOfflineTrainingDialog(msg);
+                    break;
+                case Proto::GameServerNpcChatWindow:
+                    parseNpcChatWindow(msg);
+                    break;
                 case Proto::GameServerPingBack:
                 case Proto::GameServerPing:
                     if (((opcode == Proto::GameServerPing) && (g_game.getFeature(Otc::GameClientPing))) ||
@@ -164,6 +170,9 @@ void ProtocolGame::parseMessage(const InputMessagePtr& msg)
                     break;
                 case Proto::GameServerFloorDescription:
                     parseFloorDescription(msg);
+                    break;
+                case Proto::GameServerTaskBoard:
+                    parseTaskBoardData(msg);
                     break;
                 case Proto::GameServerWeaponProficiencyExperience:
                     parseWeaponProficiencyExperience(msg);
@@ -232,10 +241,13 @@ void ProtocolGame::parseMessage(const InputMessagePtr& msg)
                     parseBosstiaryInfo(msg);
                     break;
                 case Proto::GameServerTakeScreenshot:
-                    parseTakeScreenshot(msg);
+                    parseClientEvent(msg);
                     break;
                 case Proto::GameServerCyclopediaItemDetail:
                     parseCyclopediaItemDetail(msg);
+                    break;
+                case Proto::GameServerInspectionState:
+                    parseInspectionState(msg);
                     break;
                 case Proto::GameServerSetInventory:
                     parseAddInventoryItem(msg);
@@ -347,6 +359,9 @@ void ProtocolGame::parseMessage(const InputMessagePtr& msg)
                     break;
                 case Proto::GameServerSendGameNews:
                     parseGameNews(msg);
+                    break;
+                case Proto::GameServerCloseDepotSearch:
+                    parseCloseDepotSearch(msg);
                     break;
                 case Proto::GameServerSendBlessDialog:
                     parseBlessDialog(msg);
@@ -484,6 +499,9 @@ void ProtocolGame::parseMessage(const InputMessagePtr& msg)
                     break;
                 case Proto::GameServerChooseOutfit:
                     parseOpenOutfitWindow(msg);
+                    break;
+                case Proto::GameServerExivaRestrictions:
+                    parseExivaRestrictions(msg);
                     break;
                 case Proto::GameServerSendUpdateImpactTracker:
                     parseUpdateImpactTracker(msg);
@@ -651,8 +669,8 @@ void ProtocolGame::parseMessage(const InputMessagePtr& msg)
                     }
 
                     g_logger.warning(
-                        "Unhandled opcode 0x{:02X} ({}) with {} unread bytes; previous opcode: 0x{:02X} ({}); next bytes: {}",
-                        opcode, opcode, unreadSize, prevOpcode, prevOpcode, hexDump.str());
+                        "[{}] Unhandled opcode 0x{:02X} ({}) with {} unread bytes; previous opcode: 0x{:02X} ({}); next bytes: {}",
+                        g_game.getClientVersion(), opcode, opcode, unreadSize, prevOpcode, prevOpcode, hexDump.str());
                     msg->setReadPos(msg->getMessageSize());
                     break;
                 }
@@ -735,7 +753,8 @@ void ProtocolGame::parseLogin(const InputMessagePtr& msg) const
     }
 
     if (g_game.getClientVersion() >= 1281) {
-        msg->getU8(); // exiva button enabled (bool)
+        const bool exivaEnabled = static_cast<bool>(msg->getU8());// exiva button enabled (bool)
+        g_game.setCanExivaOptions(exivaEnabled);
         if (g_game.getFeature(Otc::GameTournamentPackets)) {
             msg->getU8(); // Tournament button (bool)
         }
@@ -752,6 +771,38 @@ void ProtocolGame::parseBugReport(const InputMessagePtr& msg)
 {
     const bool canReportBugs = msg->getU8() > 0;
     g_game.setCanReportBugs(canReportBugs);
+}
+
+void ProtocolGame::parseMultiOfflineTrainingDialog(const InputMessagePtr& /*msg*/)
+{
+    m_localPlayer->openMultiOfflineTrainingDialog();
+}
+
+void ProtocolGame::parseNpcChatWindow(const InputMessagePtr& msg)
+{
+    const uint8_t status = msg->getU8();
+    if (status != 0) {
+        g_lua.callGlobalField("g_game", "onNpcChatWindowClose");
+        return;
+    }
+    NpcChatWindowData data;
+
+    const uint8_t npcCount = msg->getU8();
+    data.npcIds.reserve(npcCount);
+    for (auto i = 0; std::cmp_less(i, npcCount); ++i) {
+        data.npcIds.push_back(msg->getU32());
+    }
+
+    const uint8_t buttonCount = msg->getU8();
+    data.buttons.reserve(buttonCount);
+    for (auto i = 0; std::cmp_less(i, buttonCount); ++i) {
+        NpcButton button;
+        button.id = msg->getU8();
+        button.text = msg->getString();
+        data.buttons.push_back(button);
+    }
+
+    g_lua.callGlobalField("g_game", "onNpcChatWindow", data);
 }
 
 void ProtocolGame::parsePendingGame(const InputMessagePtr&)
@@ -789,8 +840,7 @@ void ProtocolGame::parseBlessings(const InputMessagePtr& msg) const
     if (g_game.getClientVersion() >= 1200) {
         blessVisualState = msg->getU8(); // 1 = Disabled | 2 = normal | 3 = green
     }
-    m_localPlayer->setBlessings(blessings);
-    g_lua.callGlobalField("g_game", "onBlessingsChange", blessings, blessVisualState);
+    m_localPlayer->setBlessings(blessings, blessVisualState);
 }
 
 void ProtocolGame::parsePreset(const InputMessagePtr& msg)
@@ -809,11 +859,14 @@ void ProtocolGame::parseResourceBalance(const InputMessagePtr& msg) const
     const auto type = static_cast<Otc::ResourceTypes_t>(msg->getU8());
     uint64_t value;
     switch (type) {
+        // 14.10+
         case Otc::RESOURCE_CHARM:
         case Otc::RESOURCE_MINOR_CHARM:
         case Otc::RESOURCE_MAX_CHARM:
         case Otc::RESOURCE_MAX_MINOR_CHARM:
-            // 14.10
+        // 15.13+
+        case Otc::RESOURCE_BOUNTY_POINTS:
+        case Otc::RESOURCE_SOULSEALS:
             value = msg->getU32();
             break;
         default:
@@ -1270,6 +1323,10 @@ void ProtocolGame::parsePlayerHelpers(const InputMessagePtr& msg) const
 
 void ProtocolGame::parseGMActions(const InputMessagePtr& msg)
 {
+    if (g_game.getClientVersion() >= 1200) { // 0x0B is used as secondary connection identifier
+        msg->getString();
+        return;
+    }
     uint8_t numViolationReasons;
     if (g_game.getClientVersion() >= 850) {
         numViolationReasons = 20;
@@ -1297,6 +1354,9 @@ void ProtocolGame::parseUpdateNeeded(const InputMessagePtr& msg)
 void ProtocolGame::parseLoginError(const InputMessagePtr& msg)
 {
     const auto& error = msg->getString();
+    if (g_game.getClientVersion() >= 1523 && msg->getUnreadSize() > 0) {
+        msg->getU8(); // reason
+    }
     g_game.processLoginError(error);
 }
 
@@ -1628,29 +1688,92 @@ void ProtocolGame::parseBosstiaryInfo(const InputMessagePtr& msg)
     g_game.processBosstiaryInfo(bossData);
 }
 
-void ProtocolGame::parseCyclopediaItemDetail(const InputMessagePtr& msg)
+static void readInspectionDescriptions(const InputMessagePtr& msg, std::vector<std::pair<std::string, std::string>>& descriptions, const uint8_t count)
 {
-    msg->getU8(); // 0x00
-    msg->getU8(); // bool is cyclopedia
-    msg->getU32(); // creature ID (version 13.00)
-    msg->getU8(); // 0x01
+    descriptions.reserve(count);
+    for (auto i = 0; std::cmp_less(i, count); ++i) {
+        auto key = msg->getString();
+        auto value = msg->getString();
+        descriptions.emplace_back(std::move(key), std::move(value));
+    }
+}
 
-    msg->getString(); // item name
-    const auto& item = getItem(msg);
+static CyclopediaCharacterInspection readCyclopediaCharacterInspectionData(ProtocolGame& protocol, const InputMessagePtr& msg, const uint8_t inventoryCount, const uint32_t creatureId)
+{
+    CyclopediaCharacterInspection data;
+    data.inspectionType = Otc::INSPECT_CYCLOPEDIA;
+    data.creatureId = creatureId;
+    data.inventoryItems.reserve(inventoryCount);
 
-    msg->getU8(); // 0x00
+    for (auto i = 0; std::cmp_less(i, inventoryCount); ++i) {
+        InspectionInventoryItem entry;
+        entry.slot = msg->getU8();
+        entry.name = msg->getString();
+        entry.item = protocol.getItem(msg);
 
-    const uint8_t descriptionsSize = msg->getU8();
-    std::vector<std::tuple<std::string, std::string>> descriptions;
-    descriptions.reserve(descriptionsSize);
+        const uint8_t imbuementCount = msg->getU8();
+        entry.imbuements.reserve(imbuementCount);
+        for (auto j = 0; std::cmp_less(j, imbuementCount); ++j) {
+            entry.imbuements.push_back(msg->getU16());
+        }
 
-    for (auto i = 0; i < descriptionsSize; ++i) {
-        const auto& firstDescription = msg->getString();
-        const auto& secondDescription = msg->getString();
-        descriptions.emplace_back(firstDescription, secondDescription);
+        const uint8_t descCount = msg->getU8();
+        readInspectionDescriptions(msg, entry.descriptions, descCount);
+        data.inventoryItems.emplace_back(std::move(entry));
     }
 
-    g_game.processItemDetail(item->getId(), descriptions);
+    data.playerName = msg->getString();
+    data.outfit = protocol.getOutfit(msg, false);
+
+    if (g_game.getFeature(Otc::GameWingsAurasEffectsShader)) {
+        data.outfit.setWing(msg->getU16());
+        data.outfit.setAura(msg->getU16());
+        data.outfit.setEffect(msg->getU16());
+        data.outfit.setShader(msg->getString());
+    }
+
+    const uint8_t playerDescCount = msg->getU8();
+    readInspectionDescriptions(msg, data.playerDescriptions, playerDescCount);
+
+    return data;
+}
+
+void ProtocolGame::parseCyclopediaItemDetail(const InputMessagePtr& msg)
+{
+    const uint8_t windowsType = msg->getU8(); // 1 = character, 0 = item
+    const uint8_t inspectionType = msg->getU8();  // InspectObjectTypes
+    const uint32_t creatureId = msg->getU32();
+
+    if (std::cmp_equal(windowsType, 1)) {
+        const uint8_t inventoryCount = msg->getU8();
+        auto data = readCyclopediaCharacterInspectionData(*this, msg, inventoryCount, creatureId);
+        g_lua.callGlobalField("g_game", "onParseCharacterInspection", data);
+        return;
+    }
+
+    ItemInspectionData data;
+    data.inspectionType = inspectionType;
+    data.creatureId = creatureId;
+    msg->getU8(); // 0x01 constant
+    data.name = msg->getString();
+    data.item = getItem(msg);
+
+    const uint8_t imbuementCount = msg->getU8();
+    data.imbuements.reserve(imbuementCount);
+    for (auto i = 0; std::cmp_less(i, imbuementCount); ++i) {
+        data.imbuements.push_back(msg->getU16());
+    }
+
+    const uint8_t descCount = msg->getU8();
+    readInspectionDescriptions(msg, data.descriptions, descCount);
+    g_game.processItemDetail(data);
+}
+
+void ProtocolGame::parseInspectionState(const InputMessagePtr& msg)
+{
+    const auto creatureId = msg->getU32();
+    const auto state = msg->getU8();
+    g_game.processInspectionState(creatureId, state);
 }
 
 void ProtocolGame::parseAddInventoryItem(const InputMessagePtr& msg)
@@ -1681,6 +1804,10 @@ void ProtocolGame::parseOpenNpcTrade(const InputMessagePtr& msg)
     const uint16_t listCount = g_game.getClientVersion() >= 900 ? msg->getU16() : msg->getU8();
     std::vector<std::tuple<ItemPtr, std::string, uint32_t, uint32_t, uint32_t>> items;
 
+    const auto normalizeNpcTradePrice = [](const uint32_t price) {
+        return price == UINT32_MAX ? 0 : price;
+    };
+
     for (auto i = 0; i < listCount; ++i) {
         const uint16_t itemId = msg->getU16();
         const uint8_t itemCount = msg->getU8();
@@ -1690,8 +1817,8 @@ void ProtocolGame::parseOpenNpcTrade(const InputMessagePtr& msg)
 
         const auto& itemName = msg->getString();
         const uint32_t itemWeight = msg->getU32();
-        const uint32_t itemBuyPrice = msg->getU32();
-        const uint32_t itemSellPrice = msg->getU32();
+        const uint32_t itemBuyPrice = normalizeNpcTradePrice(msg->getU32());
+        const uint32_t itemSellPrice = normalizeNpcTradePrice(msg->getU32());
 
         items.emplace_back(item, itemName, itemWeight, itemBuyPrice, itemSellPrice);
     }
@@ -1791,6 +1918,7 @@ void ProtocolGame::parseMagicEffect(const InputMessagePtr& msg)
                     const uint16_t shotId = g_game.getFeature(Otc::GameEffectU16) ? msg->getU16() : msg->getU8();
                     const auto offsetX = static_cast<int8_t>(msg->getU8());
                     const auto offsetY = static_cast<int8_t>(msg->getU8());
+                    const uint16_t effectSource = g_game.getFeature(Otc::GameEffectSource) ? msg->getU8() : 0;
                     if (!g_things.isValidDatId(shotId, ThingCategoryMissile)) {
                         g_logger.traceError("invalid missile id {}", shotId);
                         return;
@@ -1798,6 +1926,7 @@ void ProtocolGame::parseMagicEffect(const InputMessagePtr& msg)
 
                     const auto& missile = std::make_shared<Missile>();
                     missile->setId(shotId);
+                    missile->setSource(static_cast<Otc::MagicEffectSources>(effectSource));
 
                     if (effectType == Otc::MAGIC_EFFECTS_CREATE_DISTANCEEFFECT) {
                         missile->setPath(pos, Position(pos.x + offsetX, pos.y + offsetY, pos.z));
@@ -1811,6 +1940,7 @@ void ProtocolGame::parseMagicEffect(const InputMessagePtr& msg)
 
                 case Otc::MAGIC_EFFECTS_CREATE_EFFECT: {
                     const uint16_t effectId = g_game.getFeature(Otc::GameEffectU16) ? msg->getU16() : msg->getU8();
+                    const uint16_t effectSource = g_game.getFeature(Otc::GameEffectSource) ? msg->getU8() : 0;
                     if (!g_things.isValidDatId(effectId, ThingCategoryEffect)) {
                         g_logger.traceError("invalid effect id {}", effectId);
                         continue;
@@ -1818,6 +1948,7 @@ void ProtocolGame::parseMagicEffect(const InputMessagePtr& msg)
 
                     const auto& effect = std::make_shared<Effect>();
                     effect->setId(effectId);
+                    effect->setSource(static_cast<Otc::MagicEffectSources>(effectSource));
                     g_map.addThing(effect, pos);
                     break;
                 }
@@ -2166,23 +2297,18 @@ void ProtocolGame::parseOpenForge(const InputMessagePtr& msg)
 
 void ProtocolGame::setCreatureVocation(const InputMessagePtr& msg, const uint32_t creatureId) const
 {
+    const uint8_t vocationId = msg->getU8();
+
     const auto& creature = g_map.getCreatureById(creatureId);
     if (!creature) {
         return;
     }
 
-    const uint8_t vocationId = msg->getU8();
     creature->setVocation(vocationId);
 }
 
 void ProtocolGame::addCreatureIcon(const InputMessagePtr& msg, const uint32_t creatureId) const
 {
-    const auto& creature = g_map.getCreatureById(creatureId);
-    if (!creature) {
-        g_logger.traceDebug("ProtocolGame::addCreatureIcon: could not get creature with id {}", creatureId);
-        return;
-    }
-
     const uint8_t sizeIcons = msg->getU8();
     std::vector<std::tuple<uint8_t, uint8_t, uint16_t>> icons; // icon, category, count
     for (auto i = 0; i < sizeIcons; ++i) {
@@ -2191,6 +2317,13 @@ void ProtocolGame::addCreatureIcon(const InputMessagePtr& msg, const uint32_t cr
         const uint16_t count = msg->getU16(); // icon.count
         icons.emplace_back(icon, category, count);
     }
+
+    const auto& creature = g_map.getCreatureById(creatureId);
+    if (!creature) {
+        g_logger.traceDebug("ProtocolGame::addCreatureIcon: could not get creature with id {}", creatureId);
+        return;
+    }
+
     creature->setIcons(icons);
 }
 
@@ -2452,7 +2585,7 @@ void ProtocolGame::parsePlayerStats(const InputMessagePtr& msg) const
 
     const uint64_t experience = g_game.getFeature(Otc::GameDoubleExperience) ? msg->getU64() : msg->getU32();
     const uint16_t level = g_game.getFeature(Otc::GameLevelU16) ? msg->getU16() : msg->getU8();
-    const uint8_t levelPercent = msg->getU8();
+    const uint16_t levelPercent = g_game.getFeature(Otc::GameLevelPercentU16) ? msg->getU16() : static_cast<uint16_t>(msg->getU8());
 
     if (g_game.getFeature(Otc::GameExperienceBonus)) {
         if (g_game.getClientVersion() <= 1096) {
@@ -2600,8 +2733,9 @@ void ProtocolGame::parsePlayerSkills(const InputMessagePtr& msg) const
 
     if (g_game.getFeature(Otc::GameCharacterSkillStats)) {
         //msg->getU8(); //  GameConcotions ??
-        const uint32_t capacity = msg->getU32(); // base + bonus capacity
-        msg->getU32(); // base capacity
+        const uint32_t capacity = msg->getU32() / 100; // base + bonus capacity
+        const uint32_t baseCapacity = msg->getU32() / 100; // base capacity
+        m_localPlayer->setBaseCapacity(baseCapacity);
         m_localPlayer->setTotalCapacity(capacity);
         // Flat Damage and Healing Total
         const uint16_t flatBonus = msg->getU16();
@@ -2628,13 +2762,14 @@ void ProtocolGame::parsePlayerSkills(const InputMessagePtr& msg) const
         // Defense info
         const uint16_t defense = msg->getU16();
         const uint16_t armor = msg->getU16();
-        if (g_game.getClientVersion() >= 1500) {
-            msg->getU16(); // getMantraTotal
+        uint16_t mantra = 0;
+        if (g_game.getFeature(Otc::GameVocationMonk)) {
+            mantra = msg->getU16(); // monk voc
         }
         const double mitigation = msg->getDouble();
         const double dodge = msg->getDouble();
         const uint16_t damageReflection = msg->getU16();
-        m_localPlayer->setDefenseInfo(defense, armor, mitigation, dodge, damageReflection);
+        m_localPlayer->setDefenseInfo(defense, armor, mantra, mitigation, dodge, damageReflection);
 
         // Combat absorb values
         const uint8_t combatsCount = msg->getU8();
@@ -2811,6 +2946,17 @@ void ProtocolGame::parseOpenOwnPrivateChannel(const InputMessagePtr& msg)
 {
     const uint16_t channelId = msg->getU16();
     const auto& channelName = msg->getString();
+    if (g_game.getFeature(Otc::GameChannelPlayerList)) {
+        const uint16_t joinedPlayers = msg->getU16();
+        for (auto i = 0; i < joinedPlayers; ++i) {
+            g_game.formatCreatureName(msg->getString()); // player name
+        }
+
+        const uint16_t invitedPlayers = msg->getU16();
+        for (auto i = 0; i < invitedPlayers; ++i) {
+            g_game.formatCreatureName(msg->getString()); // player name
+        }
+    }
 
     g_game.processOpenOwnPrivateChannel(channelId, channelName);
 }
@@ -3113,6 +3259,49 @@ void ProtocolGame::parseOpenOutfitWindow(const InputMessagePtr& msg) const
     g_game.processOpenOutfitWindow(currentOutfit, outfitList, mountList, familiarList, wingList, auraList, effectList, shaderList);
 }
 
+void ProtocolGame::parseExivaRestrictions(const InputMessagePtr& msg)
+{
+    const bool allowAll = static_cast<bool>(msg->getU8());
+    const bool allowOwnGuild = static_cast<bool>(msg->getU8());
+    const bool allowOwnParty = static_cast<bool>(msg->getU8());
+    const bool allowVipList = static_cast<bool>(msg->getU8());
+    const bool allowPlayerWhitelist = static_cast<bool>(msg->getU8());
+    const bool allowGuildWhitelist = static_cast<bool>(msg->getU8());
+
+    std::vector<std::string> characterWhiteList;
+    const uint16_t addedPlayersSize = msg->getU16();
+    characterWhiteList.reserve(addedPlayersSize);
+    for (auto i = 0; std::cmp_less(i, addedPlayersSize); ++i) {
+        characterWhiteList.emplace_back(msg->getString());
+    }
+
+    std::vector<std::string> removeCharacter;
+    const uint16_t removedPlayersSize = msg->getU16();
+    removeCharacter.reserve(removedPlayersSize);
+    for (auto i = 0; std::cmp_less(i, removedPlayersSize); ++i) {
+        removeCharacter.emplace_back(msg->getString());
+    }
+
+    std::vector<std::string> guildWhiteList;
+    const uint16_t addedGuildsSize = msg->getU16();
+    guildWhiteList.reserve(addedGuildsSize);
+    for (auto i = 0; std::cmp_less(i, addedGuildsSize); ++i) {
+        guildWhiteList.emplace_back(msg->getString());
+    }
+
+    std::vector<std::string> removeGuild;
+    const uint16_t removedGuildsSize = msg->getU16();
+    removeGuild.reserve(removedGuildsSize);
+    for (auto i = 0; std::cmp_less(i, removedGuildsSize); ++i) {
+        removeGuild.emplace_back(msg->getString());
+    }
+
+    g_lua.callGlobalField("g_game", "onReceiveExivaOptions",
+        allowAll, allowOwnGuild, allowOwnParty, allowVipList,
+        allowPlayerWhitelist, allowGuildWhitelist,
+        characterWhiteList, removeCharacter, guildWhiteList, removeGuild);
+}
+
 void ProtocolGame::parseQuestTracker(const InputMessagePtr& msg)
 {
     const uint8_t messageType = msg->getU8();
@@ -3122,11 +3311,11 @@ void ProtocolGame::parseQuestTracker(const InputMessagePtr& msg)
             const uint8_t missionCount = msg->getU8();
             std::vector<std::tuple<uint16_t, uint16_t, std::string, std::string, std::string>> missions;
             for (uint8_t i = 0; i < missionCount; ++i) {
-                uint8_t questId = 0;
+                const uint16_t missionId = msg->getU16();
+                uint16_t questId = 0;
                 if (g_game.getClientVersion() >= 1410) {
                     questId = msg->getU16();
                 }
-                const uint16_t missionId = msg->getU16();
                 const std::string& questName = msg->getString();
                 const std::string& missionName = msg->getString();
                 const std::string& missionDesc = msg->getString();
@@ -3135,7 +3324,7 @@ void ProtocolGame::parseQuestTracker(const InputMessagePtr& msg)
             return g_lua.callGlobalField("g_game", "onQuestTracker", remainingQuests, missions);
         }
         case 0: {
-            uint8_t questId = 0;
+            uint16_t questId = 0;
             if (g_game.getClientVersion() >= 1410) {
                 questId = msg->getU16();
             }
@@ -3331,8 +3520,10 @@ void ProtocolGame::parseBestiaryMonsterData(const InputMessagePtr& msg)
             data.combat[elementId] = elementValue;
         }
 
-        msg->getU16();
-        data.location = msg->getString();
+        const uint16_t locationCount = msg->getU16();
+        if (locationCount > 0) {
+            data.location = msg->getString();
+        }
     }
     if (g_game.getClientVersion() < 1410) {
         if (data.currentLevel > 3) {
@@ -3622,23 +3813,39 @@ void ProtocolGame::parseChangeMapAwareRange(const InputMessagePtr& msg)
 void ProtocolGame::parseCreaturesMark(const InputMessagePtr& msg)
 {
     const uint32_t creatureId = msg->getU32();
-    const bool isPermanent = g_game.getClientVersion() >= 1076 ? msg->getU8() == 0 : false;
-    const uint8_t markType = msg->getU8();
-
     const auto& creature = g_map.getCreatureById(creatureId);
+    const bool isLegacyProtocol = g_game.getClientVersion() < 1076;
+    uint8_t squareType;
+    uint8_t squareColor;
+
+    if (isLegacyProtocol) {
+        squareType = 0;
+        squareColor = msg->getU8();
+    } else {
+        squareType = msg->getU8();
+        squareColor = msg->getU8();
+    }
+
     if (!creature) {
-        g_logger.traceDebug("ProtocolGame::parseTrappers: could not get creature with id {}", creatureId);
+        g_logger.traceDebug("ProtocolGame::parseCreaturesMark: could not get creature with id {}", creatureId);
         return;
     }
 
-    if (isPermanent) {
-        if (markType == 0xff) {
-            creature->hideStaticSquare();
-        } else {
-            creature->showStaticSquare(Color::from8bit(markType != 0 ? markType : 1));
-        }
+    if (isLegacyProtocol) {
+        creature->addTimedSquare(squareColor);
+        return;
+    }
+
+    if (squareType == 0) {
+        creature->hideStaticSquare();
+        creature->removeTimedSquare();
+        return;
+    }
+
+    if (squareType == 2) {
+        creature->showStaticSquare(Color::from8bit(squareColor != 0 ? squareColor : 1));
     } else {
-        creature->addTimedSquare(markType);
+        creature->addTimedSquare(squareColor);
     }
 }
 
@@ -4136,7 +4343,16 @@ ItemPtr ProtocolGame::getItem(const InputMessagePtr& msg, int id)
                     msg->getU32(); // obtain flags
                     break;
                 case 4: // Loot Highlight
+                {
+                    const auto& attachedEffect = AttachedEffect::create(252, ThingCategoryEffect);
+                    if (attachedEffect) {
+                        attachedEffect->setPermanent(true);
+                        attachedEffect->setOnTop(true);
+                        attachedEffect->setDrawOrder(DrawOrder::FIFTH);
+                        item->attachEffect(attachedEffect);
+                    }
                     break;
+                }
                 case 8: // Obtain
                     msg->getU32(); // obtain flags
                     break;
@@ -4207,10 +4423,8 @@ ItemPtr ProtocolGame::getItem(const InputMessagePtr& msg, int id)
 
     if (g_game.getFeature(Otc::GameThingClock)) {
         if (item->hasClockExpire() || item->hasExpire() || item->hasExpireStop()) {
-            if (item->getId() != 23398) {
-                item->setDurationTime(msg->getU32());
-                msg->getU8(); // Is brand-new
-            }
+            item->setDurationTime(msg->getU32());
+            msg->getU8(); // Is brand-new
         }
     }
 
@@ -4222,7 +4436,7 @@ ItemPtr ProtocolGame::getItem(const InputMessagePtr& msg, int id)
     }
 
     if (g_game.getFeature(Otc::GameWrapKit)) {
-        if (item->isDecoKit() || item->getId() == 23398) {
+        if (item->isDecoKit()) {
             msg->getU16();
         }
     }
@@ -4277,22 +4491,540 @@ void ProtocolGame::parseBestiaryTracker(const InputMessagePtr& msg)
     g_lua.callGlobalField("g_game", "onParseCyclopediaTracker", trackerType, trackerData);
 }
 
-void ProtocolGame::parseTaskHuntingBasicData(const InputMessagePtr& msg)
+namespace
 {
-    const uint16_t preys = msg->getU16();
-    for (auto i = 0; i < preys; ++i) {
-        msg->getU16(); // RaceID
-        msg->getU8(); // Difficult
+    constexpr uint8_t TASK_BOARD_TALISMAN_PATHS = 4;
+    constexpr uint8_t TASK_BOARD_WEEKLY_BASE_SLOTS = 6;
+    constexpr uint8_t TASK_BOARD_WEEKLY_EXPANDED_SLOTS = 9;
+    constexpr uint32_t TASK_BOARD_SECONDS_PER_DAY = 24 * 60 * 60;
+
+    using TaskBoardRaceIdSet = std::unordered_set<uint16_t>;
+
+    uint8_t getTaskBoardTalismanMaxLevel(const uint8_t pathIndex)
+    {
+        switch (pathIndex) {
+            case 0:
+            case 1:
+            case 2:
+                return 166;
+            case 3:
+                return 180;
+            default:
+                return 166;
+        }
     }
 
-    const uint8_t options = msg->getU8();
-    for (auto i = 0; i < options; ++i) {
-        msg->getU8(); // Difficult
-        msg->getU8(); // Stars
-        msg->getU16(); // First kill
-        msg->getU16(); // First reward
-        msg->getU16(); // Second kill
-        msg->getU16(); // Second reward
+    uint16_t getTaskBoardTalismanBonusHundredths(const uint8_t level, const uint8_t pathIndex)
+    {
+        if (level == 0) {
+            return 0;
+        }
+
+        switch (pathIndex) {
+            case 0:
+            case 1:
+            case 2: {
+                if (level <= 26) {
+                    return static_cast<uint16_t>(250 + (static_cast<uint32_t>(level) - 1U) * 50U);
+                }
+                return static_cast<uint16_t>(std::min<uint32_t>(1500U + (static_cast<uint32_t>(level) - 26U) * 25U, 5000U));
+            }
+            case 3: {
+                if (level <= 20) {
+                    return static_cast<uint16_t>(static_cast<uint32_t>(level) * 100U);
+                }
+                return static_cast<uint16_t>(std::min<uint32_t>(2000U + (static_cast<uint32_t>(level) - 20U) * 50U, 10000U));
+            }
+            default:
+                return 0;
+        }
+    }
+
+    uint8_t getRemainingDaysUntil(const uint32_t unixTimestamp)
+    {
+        if (unixTimestamp == 0) {
+            return 0;
+        }
+
+        const auto now = static_cast<uint32_t>(std::time(nullptr));
+        if (unixTimestamp <= now) {
+            return 0;
+        }
+
+        const auto remainingSeconds = unixTimestamp - now;
+        const auto rawDays = (remainingSeconds + TASK_BOARD_SECONDS_PER_DAY - 1) / TASK_BOARD_SECONDS_PER_DAY;
+        return static_cast<uint8_t>(std::min<uint32_t>(rawDays, 255));
+    }
+
+    std::vector<uint16_t> getAllMonsterRaceIds()
+    {
+        const auto& races = g_things.getAllRaces();
+        std::vector<uint16_t> raceIds;
+        raceIds.reserve(races.size());
+
+        for (const auto& race : races) {
+            // race.raceId is uint32_t; bound to uint16_t for the preferred-slot packet.
+            if (race.boss || race.raceId == 0 || race.raceId > std::numeric_limits<uint16_t>::max()) {
+                continue;
+            }
+            raceIds.emplace_back(static_cast<uint16_t>(race.raceId));
+        }
+
+        std::sort(raceIds.begin(), raceIds.end());
+        raceIds.erase(std::unique(raceIds.begin(), raceIds.end()), raceIds.end());
+        return raceIds;
+    }
+
+    constexpr uint16_t getSoulsealPointsForCategory(const uint32_t category) noexcept
+    {
+        // (category + 1) * 10 — max category that fits uint16_t is 6552; beyond that, clamp.
+        const uint32_t points = (category + 1U) * 10U;
+        return static_cast<uint16_t>(std::min<uint32_t>(points, std::numeric_limits<uint16_t>::max()));
+    }
+
+    constexpr uint8_t toSoulsealCategoryIndex(const RaceType& raceData) noexcept
+    {
+        return raceData.hasCategory
+            ? static_cast<uint8_t>(std::min<uint32_t>(raceData.category, std::numeric_limits<uint8_t>::max()))
+            : 0;
+    }
+
+    constexpr bool isTaskBoardSoulsealRace(const RaceType& raceData) noexcept
+    {
+        return raceData.hasCategory && !raceData.boss
+            && raceData.raceId != 0
+            && raceData.raceId <= std::numeric_limits<uint16_t>::max();
+    }
+
+    TaskBoardSoulsealEntryData makeTaskBoardSoulsealEntry(const uint16_t raceId, const RaceType& raceData, const bool done)
+    {
+        TaskBoardSoulsealEntryData entry;
+        entry.raceId = raceId;
+        entry.category = toSoulsealCategoryIndex(raceData);
+        entry.soulsealPoints = raceData.hasCategory ? getSoulsealPointsForCategory(raceData.category) : 0;
+        entry.done = done ? 1 : 0;
+        entry.outfit = raceData.outfit;
+        if (raceData.name.empty()) {
+            entry.name = std::to_string(raceId);
+        } else {
+            entry.name = raceData.name;
+        }
+        return entry;
+    }
+
+    TaskBoardRaceIdSet readTaskBoardMasteredRaceIds(const InputMessagePtr& msg)
+    {
+        const uint16_t masteredCount = msg->getU16();
+        TaskBoardRaceIdSet masteredRaceIds;
+        masteredRaceIds.reserve(masteredCount);
+
+        for (auto i = 0; std::cmp_less(i, masteredCount); ++i) {
+            const uint16_t raceId = msg->getU16();
+            if (raceId != 0) {
+                masteredRaceIds.insert(raceId);
+            }
+        }
+
+        return masteredRaceIds;
+    }
+
+    std::vector<TaskBoardSoulsealEntryData> buildTaskBoardSoulsealEntries(TaskBoardRaceIdSet&& masteredRaceIds)
+    {
+        const auto& races = g_things.getAllRaces();
+        std::vector<TaskBoardSoulsealEntryData> entries;
+        entries.reserve(races.size());
+
+        for (const auto& raceData : races) {
+            if (!isTaskBoardSoulsealRace(raceData)) {
+                continue;
+            }
+
+            const auto raceId = static_cast<uint16_t>(raceData.raceId);
+            const bool done = masteredRaceIds.erase(raceId) > 0;
+            entries.emplace_back(makeTaskBoardSoulsealEntry(raceId, raceData, done));
+        }
+
+        for (const auto raceId : masteredRaceIds) {
+            entries.emplace_back(makeTaskBoardSoulsealEntry(raceId, g_things.getRaceData(raceId), true));
+        }
+
+        return entries;
+    }
+
+    std::map<std::string, uint32_t> toBountyHeaderMap(const TaskBoardBountyHeaderData& header)
+    {
+        return {
+            { "rerollPoints", header.rerollPoints },
+            { "claimDaily", header.claimDaily },
+            { "difficulty", header.difficulty }
+        };
+    }
+
+    std::map<std::string, uint32_t> toBountyMonsterMap(const TaskBoardBountyMonsterData& monster)
+    {
+        return {
+            { "taskIndex", monster.taskIndex },
+            { "raceId", monster.raceId },
+            { "currentKills", monster.currentKills },
+            { "totalKills", monster.totalKills },
+            { "rewardXp", monster.rewardXp },
+            { "rewardPoints", monster.rewardPoints },
+            { "rewardReroll", monster.rewardReroll },
+            { "rarity", monster.rarity },
+            { "isActive", monster.isActive },
+            { "isCompleted", monster.isCompleted }
+        };
+    }
+
+    std::map<std::string, uint32_t> toTalismanMap(const TaskBoardTalismanData& talisman)
+    {
+        return {
+            { "currentValue", talisman.currentValue },
+            { "nextValue", talisman.nextValue },
+            { "upgradeCost", talisman.upgradeCost },
+            { "isActiveUpgrade", talisman.isActiveUpgrade }
+        };
+    }
+
+    std::map<std::string, uint32_t> toPreferredSlotMap(const TaskBoardPreferredSlotData& slot)
+    {
+        return {
+            { "slot", slot.slot },
+            { "locked", slot.locked },
+            { "preferred", slot.preferred },
+            { "unwanted", slot.unwanted },
+            { "price", slot.price }
+        };
+    }
+
+    std::map<std::string, uint32_t> toWeeklyHeaderMap(const TaskBoardWeeklyHeaderData& header)
+    {
+        return {
+            { "difficulty", header.difficulty },
+            { "currentPlayerLevel", header.currentPlayerLevel },
+            { "remainingDays", header.remainingDays },
+            { "totalTaskSlots", header.totalTaskSlots },
+            { "maxExperience", header.maxExperience },
+            { "maxDeliveryExperience", header.maxDeliveryExperience },
+            { "completedKillTasks", header.completedKillTasks },
+            { "completedDeliveryTasks", header.completedDeliveryTasks },
+            { "pointsEarned", header.pointsEarned },
+            { "soulsealsEarned", header.soulsealsEarned },
+            { "extraSlot", header.extraSlot }
+        };
+    }
+
+    std::map<std::string, uint32_t> toWeeklyMonsterMap(const TaskBoardWeeklyMonsterData& monster)
+    {
+        return {
+            { "raceId", monster.raceId },
+            { "current", monster.current },
+            { "total", monster.total },
+            { "state", monster.state }
+        };
+    }
+
+    std::map<std::string, uint32_t> toWeeklyItemMap(const TaskBoardWeeklyItemData& item)
+    {
+        return {
+            { "slotIndex", item.slotIndex },
+            { "itemId", item.itemId },
+            { "current", item.current },
+            { "total", item.total },
+            { "claimed", item.claimed },
+            { "state", item.state }
+        };
+    }
+
+    std::map<std::string, std::string> toShopItemMap(const TaskBoardShopItemData& item)
+    {
+        return {
+            { "id", std::to_string(item.id) },
+            { "offerType", std::to_string(item.offerType) },
+            { "title", item.title },
+            { "description", item.description },
+            { "price", std::to_string(item.price) },
+            { "bought", std::to_string(item.bought) },
+            { "lookType", std::to_string(item.lookType) },
+            { "lookAddons", std::to_string(item.lookAddons) },
+            { "itemId", std::to_string(item.itemId) },
+            { "maxPurchases", std::to_string(item.maxPurchases) },
+            { "currentPurchases", std::to_string(item.currentPurchases) },
+            { "nextCost", std::to_string(item.nextCost) }
+        };
+    }
+
+}
+
+void ProtocolGame::parseTaskBoardData(const InputMessagePtr& msg)
+{
+    const auto subtype = static_cast<Otc::TaskBoardType_t>(msg->getU8());
+    switch (subtype) {
+        case Otc::TASK_BOARD_BOUNTY:
+            parseTaskBoardBountyData(msg);
+            break;
+        case Otc::TASK_BOARD_WEEKLY:
+            parseTaskBoardWeeklyData(msg);
+            break;
+        case Otc::TASK_BOARD_HUNT_SHOP:
+            parseTaskBoardShopData(msg);
+            break;
+        default:
+            throw stdext::exception("[ProtocolGame::parseTaskBoardData] Unknown subtype {}", static_cast<uint8_t>(subtype));
+    }
+}
+
+void ProtocolGame::parseTaskBoardBountyData(const InputMessagePtr& msg)
+{
+    TaskBoardBountyHeaderData headerData;
+    std::vector<TaskBoardBountyMonsterData> monsters;
+    std::vector<TaskBoardTalismanData> talismans;
+    std::vector<TaskBoardPreferredSlotData> preferredSlots;
+
+    const uint8_t offerCount = msg->getU8();
+    monsters.reserve(offerCount);
+
+    for (auto i = 0; std::cmp_less(i, offerCount); ++i) {
+        TaskBoardBountyMonsterData monster;
+        monster.taskIndex = msg->getU8();
+        monster.raceId = msg->getU16();
+        monster.totalKills = msg->getU16();
+        monster.rewardXp = msg->getU32();
+        monster.rewardPoints = msg->getU8();
+        monster.currentKills = msg->getU16();
+        const auto bountyState = msg->getU8(); // retail button state: 0 available, 1 active, 2 claimable, 3 claimed/completed
+        monster.rarity = std::min<uint8_t>(msg->getU8(), 2);
+        // Server does not expose per-monster reroll reward; assume 1 for UI display.
+        monster.rewardReroll = 1;
+        monster.isActive = (bountyState == 1 || bountyState == 2) ? 1 : 0;
+        monster.isCompleted = bountyState == 3 ? 1 : 0;
+        monsters.emplace_back(monster);
+    }
+
+    headerData.rerollPoints = msg->getU8();
+    const auto rerollMode = static_cast<Otc::TaskBoardBountyRerollMode_t>(msg->getU8());
+    headerData.claimDaily = rerollMode == Otc::TASK_BOARD_BOUNTY_REROLL_DAILY_CLAIMABLE ? 1 : 0;
+    headerData.difficulty = std::clamp<uint8_t>(msg->getU8() + 1, 1, 4);
+
+    talismans.reserve(TASK_BOARD_TALISMAN_PATHS);
+    for (uint8_t i = 0; std::cmp_less(i, TASK_BOARD_TALISMAN_PATHS); ++i) {
+        TaskBoardTalismanData talisman;
+        const uint8_t currentLevel = msg->getU8();
+        msg->getU8(); // multiplier2 is unused on server
+        talisman.isActiveUpgrade = msg->getU8();
+        talisman.upgradeCost = msg->getU16();
+        talisman.currentValue = getTaskBoardTalismanBonusHundredths(currentLevel, i);
+
+        const uint8_t maxLevel = getTaskBoardTalismanMaxLevel(i);
+        if (currentLevel >= maxLevel || talisman.upgradeCost == 0) {
+            talisman.nextValue = 0;
+        } else {
+            talisman.nextValue = getTaskBoardTalismanBonusHundredths(static_cast<uint8_t>(currentLevel + 1), i);
+        }
+        talismans.emplace_back(talisman);
+    }
+
+    const uint8_t preferredSlotCount = msg->getU8();
+    preferredSlots.reserve(preferredSlotCount);
+    for (auto i = 0; std::cmp_less(i, preferredSlotCount); ++i) {
+        TaskBoardPreferredSlotData slot;
+        slot.slot = i + 1;
+        slot.locked = msg->getU8() == 0 ? 1 : 0;
+        slot.preferred = msg->getU16();
+        slot.unwanted = msg->getU16();
+        slot.price = 0;
+        preferredSlots.emplace_back(slot);
+    }
+
+    std::vector<std::map<std::string, uint32_t>> monsterData;
+    monsterData.reserve(monsters.size());
+    for (const auto& monster : monsters) {
+        monsterData.emplace_back(toBountyMonsterMap(monster));
+    }
+
+    std::vector<std::map<std::string, uint32_t>> talismanData;
+    talismanData.reserve(talismans.size());
+    for (const auto& talisman : talismans) {
+        talismanData.emplace_back(toTalismanMap(talisman));
+    }
+
+    g_lua.callGlobalField("g_game", "onBountyTaskData", toBountyHeaderMap(headerData), monsterData, talismanData);
+
+    std::vector<std::map<std::string, uint32_t>> preferredSlotData;
+    preferredSlotData.reserve(preferredSlots.size());
+    for (const auto& slot : preferredSlots) {
+        preferredSlotData.emplace_back(toPreferredSlotMap(slot));
+    }
+
+    g_lua.callGlobalField("g_game", "onBountyPreferredData", preferredSlotData, 0, getAllMonsterRaceIds());
+}
+
+void ProtocolGame::parseTaskBoardWeeklyData(const InputMessagePtr& msg)
+{
+    TaskBoardWeeklyHeaderData headerData;
+    std::vector<TaskBoardWeeklyMonsterData> monsters;
+    std::vector<TaskBoardWeeklyItemData> items;
+
+    const uint16_t anyCreatureTotalKills = msg->getU16();
+    const uint16_t anyCreatureCurrentKills = msg->getU16();
+
+    const uint8_t killTasksCount = msg->getU8();
+    monsters.reserve(killTasksCount + ((anyCreatureTotalKills > 0 || anyCreatureCurrentKills > 0) ? 1 : 0));
+
+    if (anyCreatureTotalKills > 0 || anyCreatureCurrentKills > 0) {
+        TaskBoardWeeklyMonsterData anyCreatureTask;
+        anyCreatureTask.raceId = 0;
+        anyCreatureTask.total = anyCreatureTotalKills;
+        anyCreatureTask.current = anyCreatureCurrentKills;
+        anyCreatureTask.state = (anyCreatureTotalKills > 0 && anyCreatureCurrentKills >= anyCreatureTotalKills) ? 1 : 0;
+        monsters.emplace_back(anyCreatureTask);
+    }
+
+    for (auto i = 0; std::cmp_less(i, killTasksCount); ++i) {
+        TaskBoardWeeklyMonsterData task;
+        task.raceId = msg->getU16();
+        task.total = msg->getU16();
+        task.current = msg->getU16();
+        task.state = (task.total > 0 && task.current >= task.total) ? 1 : 0;
+        monsters.emplace_back(task);
+    }
+
+    const uint8_t deliveryTasksCount = msg->getU8();
+    items.reserve(deliveryTasksCount);
+    for (auto i = 0; std::cmp_less(i, deliveryTasksCount); ++i) {
+        TaskBoardWeeklyItemData task;
+        task.slotIndex = msg->getU8();
+        task.itemId = msg->getU16();
+        msg->getU8(); // unknown1
+        msg->getU8(); // unknown2
+        task.total = msg->getU32();
+        task.current = msg->getU32();
+        task.claimed = msg->getU8();
+        task.state = (task.claimed != 0 || (task.total > 0 && task.current >= task.total)) ? 1 : 0;
+        items.emplace_back(task);
+    }
+
+    const uint8_t difficultyMultiplier = msg->getU8();
+    headerData.maxExperience = msg->getU32();
+    headerData.maxDeliveryExperience = msg->getU32();
+    headerData.completedKillTasks = msg->getU8();
+    headerData.completedDeliveryTasks = msg->getU8();
+    const uint8_t weeklyProgressFinished = msg->getU8();
+    const uint8_t unlockedDifficulty = msg->getU8();
+    const uint32_t resetTimestamp = msg->getU32();
+    const uint8_t weeklyTaskExpansion = msg->getU8();
+    headerData.pointsEarned = msg->getU32();
+    headerData.soulsealsEarned = msg->getU32();
+
+    const bool hasGeneratedTasks = anyCreatureTotalKills > 0 || anyCreatureCurrentKills > 0 || killTasksCount > 0 || deliveryTasksCount > 0 || weeklyProgressFinished != 0;
+    headerData.difficulty = hasGeneratedTasks ? std::clamp<uint8_t>(difficultyMultiplier + 1, 1, 4) : 0;
+    headerData.currentPlayerLevel = m_localPlayer ? m_localPlayer->getLevel() : 0;
+    headerData.remainingDays = getRemainingDaysUntil(resetTimestamp);
+    headerData.totalTaskSlots = weeklyTaskExpansion != 0 ? TASK_BOARD_WEEKLY_EXPANDED_SLOTS : TASK_BOARD_WEEKLY_BASE_SLOTS;
+    headerData.extraSlot = weeklyTaskExpansion != 0 ? 1 : 0;
+
+    auto headerMap = toWeeklyHeaderMap(headerData);
+    headerMap["unlockedDifficulty"] = std::clamp<uint8_t>(unlockedDifficulty + 1, 1, 4);
+    headerMap["weeklyProgressFinished"] = weeklyProgressFinished;
+
+    std::vector<std::map<std::string, uint32_t>> monsterData;
+    monsterData.reserve(monsters.size());
+    for (const auto& monster : monsters) {
+        monsterData.emplace_back(toWeeklyMonsterMap(monster));
+    }
+
+    std::vector<std::map<std::string, uint32_t>> itemData;
+    itemData.reserve(items.size());
+    for (const auto& item : items) {
+        itemData.emplace_back(toWeeklyItemMap(item));
+    }
+
+    g_lua.callGlobalField("g_game", "onWeeklyTaskData", headerMap, monsterData, itemData);
+}
+
+void ProtocolGame::parseTaskBoardShopData(const InputMessagePtr& msg)
+{
+    std::vector<TaskBoardShopItemData> shopItems;
+    const uint8_t offersCount = msg->getU8();
+    shopItems.reserve(offersCount);
+
+    for (auto i = 0; std::cmp_less(i, offersCount); ++i) {
+        TaskBoardShopItemData item;
+        item.id = i;
+
+        const auto offerType = static_cast<Otc::TaskBoardShopOfferType_t>(msg->getU8());
+        item.offerType = static_cast<uint8_t>(offerType);
+
+        if (offerType == Otc::TASK_BOARD_SHOP_OFFER_BONUS_PROMOTION) {
+            const uint16_t purchasedDisplayValue = msg->getU16();
+            item.nextCost = msg->getU32();
+            const uint8_t status = msg->getU8();
+
+            item.price = item.nextCost;
+            item.currentPurchases = purchasedDisplayValue > 0 ? purchasedDisplayValue - 1 : 0;
+            item.bought = (status == Otc::TASK_BOARD_SHOP_STATUS_BOUGHT || item.nextCost == 0) ? 1 : 0;
+        } else {
+            item.title = msg->getString();
+            item.description = msg->getString();
+            const uint32_t looktypeOrItemId = msg->getU32();
+
+            uint8_t addons = 0;
+            if (offerType == Otc::TASK_BOARD_SHOP_OFFER_OUTFIT) {
+                addons = msg->getU8();
+            }
+
+            if (offerType == Otc::TASK_BOARD_SHOP_OFFER_ITEM_DOUBLE) {
+                // TODO(winter-2025 follow-up): second item id (double bundle) is not yet used by UI.
+                msg->getU32();
+            }
+
+            item.price = msg->getU32();
+            const uint8_t status = msg->getU8();
+
+            if (offerType == Otc::TASK_BOARD_SHOP_OFFER_OUTFIT) {
+                item.lookType = looktypeOrItemId;
+                item.lookAddons = addons;
+            } else if (offerType == Otc::TASK_BOARD_SHOP_OFFER_MOUNT) {
+                item.lookType = looktypeOrItemId;
+            } else {
+                item.itemId = looktypeOrItemId;
+            }
+
+            item.bought = status == Otc::TASK_BOARD_SHOP_STATUS_BOUGHT ? 1 : 0;
+        }
+
+        shopItems.emplace_back(item);
+    }
+
+    std::vector<std::map<std::string, std::string>> shopData;
+    shopData.reserve(shopItems.size());
+    for (const auto& item : shopItems) {
+        shopData.emplace_back(toShopItemMap(item));
+    }
+
+    g_lua.callGlobalField("g_game", "onTaskHuntingShopData", shopData);
+}
+
+void ProtocolGame::parseTaskHuntingBasicData(const InputMessagePtr& msg)
+{
+    if (g_game.getFeature(Otc::GameTaskboard)) {
+        auto soulsealEntries = buildTaskBoardSoulsealEntries(readTaskBoardMasteredRaceIds(msg));
+        g_lua.callGlobalField("g_game", "onSoulsealsData", soulsealEntries);
+    } else {
+        const uint16_t preys = msg->getU16();
+        for (auto i = 0; std::cmp_less(i, preys); ++i) {
+            msg->getU16(); // RaceID
+            msg->getU8(); // Difficult
+        }
+        const uint8_t options = msg->getU8();
+        for (auto i = 0; std::cmp_less(i, options); ++i) {
+            msg->getU8(); // Difficult
+            msg->getU8(); // Stars
+            msg->getU16(); // First kill
+            msg->getU16(); // First reward
+            msg->getU16(); // Second kill
+            msg->getU16(); // Second reward
+        }
     }
 }
 
@@ -4342,6 +5074,9 @@ void ProtocolGame::parseTaskHuntingData(const InputMessagePtr& msg)
             msg->getU8(); // Upgraded
             msg->getU16(); // Required kills
             msg->getU16(); // Current kills
+            if (g_game.getClientVersion() >= 1285) {
+                msg->getU8(); // rarity
+            }
             break;
         }
     }
@@ -4654,6 +5389,11 @@ void ProtocolGame::parseGameNews(const InputMessagePtr& msg)
     // TODO: implement game news usage
 }
 
+void ProtocolGame::parseCloseDepotSearch(const InputMessagePtr& /*msg*/)
+{
+    // TODO:
+}
+
 void ProtocolGame::parseBlessDialog(const InputMessagePtr& msg)
 {
     BlessDialogData data;
@@ -4796,7 +5536,7 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
             CyclopediaCharacterGeneralStats stats;
             stats.experience = msg->getU64();
             stats.level = msg->getU16();
-            stats.levelPercent = msg->getU8();
+            stats.levelPercent = g_game.getFeature(Otc::GameLevelPercentU16) ? msg->getU16() / 100 : msg->getU8();
             stats.baseExpGain = msg->getU16();
             if (g_game.getFeature(Otc::GameTournamentPackets)) {
                 msg->getU32(); // tournament exp(deprecated)
@@ -5138,6 +5878,10 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
 
             const uint8_t preySlotsUnlocked = msg->getU8();
             const uint8_t preyWildcards = msg->getU8();
+            bool hasPermanentWeeklyTaskExpansion = false;
+            if (g_game.getFeature(Otc::GameTaskboard)) {
+                hasPermanentWeeklyTaskExpansion = static_cast<bool>(msg->getU8());
+            }
             const uint8_t instantRewards = msg->getU8();
             const bool hasCharmExpansion = static_cast<bool>(msg->getU8());
             const uint8_t hirelingsObtained = msg->getU8();
@@ -5150,7 +5894,10 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
                 hirelingSkills.emplace_back(static_cast<uint16_t>(skill + 1000));
             }
 
-            msg->getU8();
+            const uint8_t hirelingOutfitsCount = msg->getU8();
+            for (auto i = 0; std::cmp_less(i, hirelingOutfitsCount); ++i) {
+                msg->getU8(); // outfit ID
+            }
 
             std::vector<std::tuple<uint16_t, std::string, uint8_t>> houseItems;
             const uint16_t houseItemsCount = msg->getU16();
@@ -5161,11 +5908,15 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
                 const uint8_t count = msg->getU8();
                 houseItems.emplace_back(itemId, itemName, count);
             }
-            g_lua.callGlobalField("g_game", "onParseCyclopediaStoreSummary", xpBoostTime, dailyRewardXpBoostTime, blessings, preySlotsUnlocked, preyWildcards, instantRewards, hasCharmExpansion, hirelingsObtained, hirelingSkills, houseItems);
+
+            g_lua.callGlobalField("g_game", "onParseCyclopediaStoreSummary", xpBoostTime, dailyRewardXpBoostTime, blessings, preySlotsUnlocked, preyWildcards, hasPermanentWeeklyTaskExpansion, instantRewards,hasCharmExpansion, hirelingsObtained, hirelingSkills, houseItems);
             break;
         }
         case Otc::CYCLOPEDIA_CHARACTERINFO_INSPECTION:
         {
+            const uint8_t inventoryCount = msg->getU8();
+            auto data = readCyclopediaCharacterInspectionData(*this, msg, inventoryCount, 0);
+            g_game.processCyclopediaCharacterInspection(data);
             break;
         }
         case Otc::CYCLOPEDIA_CHARACTERINFO_BADGES:
@@ -5199,26 +5950,29 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
             }
             break;
         }
+        case Otc::CYCLOPEDIA_CHARACTERINFO_WHEEL:
+        {
+            break;
+        }
         case Otc::CYCLOPEDIA_CHARACTERINFO_OFFENCESTATS:
         {
             CyclopediaCharacterOffenceStats data;
 
-            // Critical hit chance
             data.critChanceTotal = msg->getDouble();
+            data.critChanceEquipament = msg->getDouble();
             if (g_game.getClientVersion() >= 1510) {
                 data.critChanceFlat = msg->getDouble();
             }
-            data.critChanceEquipament = msg->getDouble();
             data.critChanceImbuement = msg->getDouble();
             data.critChanceWheel = msg->getDouble();
             data.critChanceConcoction = msg->getDouble();
 
             // Critical hit damage
             data.critDamageTotal = msg->getDouble();
+            data.critDamageEquipament = msg->getDouble();
             if (g_game.getClientVersion() >= 1510) {
                 data.critDamageFlat = msg->getDouble();
             }
-            data.critDamageEquipament = msg->getDouble();
             data.critDamageImbuement = msg->getDouble();
             data.critDamageWheel = msg->getDouble();
             data.critDamageConcoction = msg->getDouble();
@@ -5241,7 +5995,7 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
             data.onslaught = msg->getDouble();
             data.onslaughtBase = msg->getDouble();
             data.onslaughtBonus = msg->getDouble();
-            msg->getDouble(); // unused
+            data.onslaughtEventBonus = msg->getDouble();
 
             data.cleavePercent = msg->getDouble();
 
@@ -5253,7 +6007,7 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
 
             data.flatDamage = msg->getU16();
             data.flatDamageBase = msg->getU16();
-            msg->getU16(); // unused
+            data.flatDamageWheel = msg->getU16();
 
             data.weaponAttack = msg->getU16();
             data.weaponFlatModifier = msg->getU16();
@@ -5262,31 +6016,87 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
             data.weaponSkillLevel = msg->getU16();
             data.weaponSkillModifier = msg->getU16();
             data.weaponElement = msg->getU8();
-            data.weaponElementDamage = msg->getDouble();
-            data.weaponElementType = msg->getU8();
+            // damage conversion
+            data.weaponElementDamage = msg->getDouble(); // % amount
+            data.weaponElementType = msg->getU8(); // new element
 
-            const uint8_t accuracyCount = msg->getU8();
-            for (int i = 0; i < accuracyCount; i++) {
-                msg->getU8(); // range
-                data.weaponAccuracy.push_back(msg->getDouble());
+            const uint8_t accuracyCount = msg->getU8(); // distance fighting accuracy
+            for (auto i = 0; std::cmp_less(i, accuracyCount); ++i) {
+                CyclopediaCharacterOffenceStats::AccuracyData acc;
+                acc.range = msg->getU8(); // range
+                acc.chance = msg->getDouble(); // change to hit (placeholder)
+                data.weaponAccuracy.push_back(acc);
             }
 
             if (g_game.getClientVersion() >= 1510) {
-                msg->getDouble(); // unused
-                msg->getU16(); // unused
-                msg->getU8(); // unused
-                msg->getDouble(); // unused
-                msg->getDouble(); // unused
-                msg->getU8(); // unused
-                msg->getDouble(); // unused
-                msg->getDouble(); // unused
-                msg->getU16(); // unused
-                msg->getU16(); // unused
-                msg->getU16(); // unused
-                msg->getU16(); // unused
-                msg->getU8(); // unused
-                msg->getU8(); // unused
-                msg->getU8(); // unused
+                data.damagePowerfulFoes = msg->getDouble(); // damage against powerful foes
+                const uint16_t targetCount = msg->getU16(); // damage against specific targets FOR
+                for (auto i = 0; std::cmp_less(i, targetCount); ++i) {
+                    CyclopediaCharacterOffenceStats::TargetBonus bonus;
+                    bonus.name = msg->getString(); // placeholder
+                    bonus.value = msg->getDouble(); // 1.25
+                    data.damageSpecificTargets.push_back(bonus);
+                }
+                const uint8_t elementCount = msg->getU8(); // critical chance by type
+                for (auto i = 0; std::cmp_less(i, elementCount); ++i) {
+                    CyclopediaCharacterOffenceStats::ElementModifier mod;
+                    mod.element = msg->getU8(); // element id
+                    mod.value = msg->getDouble(); // modifier
+                    data.damageElements.push_back(mod);
+                }
+                data.offensiveRuneDamage = msg->getDouble(); // +x% for offensive runes
+                data.autoAttackDamage = msg->getDouble(); // +x% for auto-attack
+                const uint8_t critDmgElemCount = msg->getU8(); // critical damage by type
+                for (auto i = 0; std::cmp_less(i, critDmgElemCount); ++i) {
+                    CyclopediaCharacterOffenceStats::ElementModifier mod;
+                    mod.element = msg->getU8(); // element id
+                    mod.value = msg->getDouble(); // modifier
+                    data.critDamageElements.push_back(mod);
+                }
+                data.critDamageOffensiveRunes = msg->getDouble(); // crit dmg: +x% for offensive runes
+                data.critDamageAutoAttack = msg->getDouble(); // crit dmg: +x% for auto-attack
+
+                data.lifeGainHit = msg->getU16(); // life gain on hit
+                data.manaGainHit = msg->getU16(); // mana gain on hit
+                data.lifeGainKill = msg->getU16(); // life gain on kill
+                data.manaGainKill = msg->getU16(); // mana gain on kill
+
+                const uint8_t adExtraDmgCount = msg->getU8();
+                for (auto i = 0; std::cmp_less(i, adExtraDmgCount); ++i) {
+                    CyclopediaCharacterOffenceStats::SkillBonus bonus;
+                    bonus.skillId = msg->getU8(); // skill id, uses same enums as in HardcodedSkillIds
+                    bonus.valueA = msg->getDouble(); // value a
+                    bonus.valueB = msg->getDouble(); // value b
+                    data.extraDamageSkills.push_back(bonus);
+                }
+                const uint8_t spellExtraCount = msg->getU8();
+                for (auto i = 0; std::cmp_less(i, spellExtraCount); ++i) {
+                    CyclopediaCharacterOffenceStats::SkillBonus bonus;
+                    bonus.skillId = msg->getU8(); // skill id, uses same enums as in HardcodedSkillIds
+                    bonus.valueA = msg->getDouble(); // value a
+                    bonus.valueB = msg->getDouble(); // value b
+                    data.extraDamageSpells.push_back(bonus);
+                }
+                const uint8_t spellExtraHealingCount = msg->getU8();
+                for (auto i = 0; std::cmp_less(i, spellExtraHealingCount); ++i) {
+                    CyclopediaCharacterOffenceStats::SkillBonus bonus;
+                    bonus.skillId = msg->getU8(); // skill id, uses same enums as in HardcodedSkillIds
+                    bonus.valueA = msg->getDouble(); // value a
+                    bonus.valueB = msg->getDouble(); // value b
+                    data.extraHealingSpells.push_back(bonus);
+                }
+            }
+            if (g_game.getClientVersion() >= 1521) {
+                data.damageHighHp = msg->getDouble(); // damage to targets above 95% hp
+                data.damageLowHp = msg->getDouble(); // damage to targets below 30% hp
+                data.armorPenetration = msg->getDouble(); // armor penetration multiplier
+                const uint8_t elemPierceBonuses = msg->getU8(); // elemental pierce
+                for (auto i = 0; std::cmp_less(i, elemPierceBonuses); ++i) {
+                    CyclopediaCharacterOffenceStats::ElementModifier mod;
+                    mod.element = msg->getU8(); // element id
+                    mod.value = msg->getDouble(); // modifier
+                    data.elementalPierce.push_back(mod);
+                }
             }
 
             g_game.processCyclopediaCharacterOffenceStats(data);
@@ -5308,7 +6118,7 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
 
             data.reflectPhysical = msg->getU16();
             data.armor = msg->getU16();
-            if (g_game.getClientVersion() >= 1500) {
+            if (g_game.getFeature(Otc::GameVocationMonk)) {
                 msg->getU16(); // MANTRA
             }
 
@@ -5371,13 +6181,42 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
                 data.concoctions.push_back(concoction);
             }
 
-            msg->getU8(); // unused
-            if (g_game.getClientVersion() >= 1510) {
+            const uint8_t activeFoodsCount = msg->getU8();
+            for (auto j = 0; std::cmp_less(j, activeFoodsCount); ++j) {
+                CyclopediaCharacterMiscStats::Food food;
+                food.id = msg->getU16();
                 msg->getU8(); // unused
                 msg->getU8(); // unused
-                msg->getU8(); // unused
+                food.duration = msg->getU32();
+                data.activeFoods.push_back(food);
             }
 
+            const uint8_t weaponProficiencyAugmentsCount = msg->getU8();
+            for (auto j = 0; std::cmp_less(j, weaponProficiencyAugmentsCount); ++j) {
+                CyclopediaCharacterMiscStats::Augment augment;
+                augment.spellId = msg->getU16();
+                augment.type = msg->getU8();
+                augment.value = msg->getDouble();
+                data.weaponProficiencyAugments.push_back(augment);
+            }
+
+            const uint8_t wheelAugmentsCount = msg->getU8();
+            for (auto j = 0; std::cmp_less(j, wheelAugmentsCount); ++j) {
+                CyclopediaCharacterMiscStats::Augment augment;
+                augment.spellId = msg->getU16();
+                augment.type = msg->getU8();
+                augment.value = msg->getDouble();
+                data.wheelAugments.push_back(augment);
+            }
+
+            const uint8_t equippedAugmentsCount = msg->getU8();
+            for (auto j = 0; std::cmp_less(j, equippedAugmentsCount); ++j) {
+                CyclopediaCharacterMiscStats::Augment augment;
+                augment.spellId = msg->getU16();
+                augment.type = msg->getU8();
+                augment.value = msg->getDouble();
+                data.equippedAugments.push_back(augment);
+            }
             g_game.processCyclopediaCharacterMiscStats(data);
             break;
         }
@@ -5692,10 +6531,12 @@ void ProtocolGame::parsePreyRerollPrice(const InputMessagePtr& msg)
     if (g_game.getProtocolVersion() >= 1230) {
         wildcard = msg->getU8();
         directly = msg->getU8();
-        msg->getU32(); // task hunting reroll price
-        msg->getU32(); // task hunting reroll price
-        msg->getU8(); // task hunting selection list price
-        msg->getU8(); // task hunting bonus reroll price
+        if (!g_game.getFeature(Otc::GameTaskboard)) {
+            msg->getU32(); // task hunting reroll price
+            msg->getU32(); // task hunting reroll price
+            msg->getU8(); // task hunting selection list price
+            msg->getU8(); // task hunting bonus reroll price
+        }
     }
 
     g_lua.callGlobalField("g_game", "onPreyRerollPrice", price, wildcard, directly);
@@ -5756,53 +6597,70 @@ Imbuement ProtocolGame::getImbuementInfo(const InputMessagePtr& msg)
 
 void ProtocolGame::parseImbuementWindow(const InputMessagePtr& msg)
 {
+    const bool isModernImbuementWindow = g_game.getClientVersion() >= 1510;
     uint8_t windowType = Otc::IMBUEMENT_WINDOW_SELECT_ITEM;
-    if (g_game.getClientVersion() >= 1510) {
+    if (isModernImbuementWindow) {
         windowType = static_cast<Otc::Imbuement_Window_t>(msg->getU8()); // window type
-        msg->getU8(); // unknown byte
+        if (std::cmp_greater(windowType, static_cast<uint8_t>(Otc::IMBUEMENT_WINDOW_SCROLL))) {
+            g_logger.warning(fmt::format("ProtocolGame::parseImbuementWindow: unexpected windowType {}", windowType));
+            return;
+        }
     }
     switch (windowType) {
         case Otc::IMBUEMENT_WINDOW_CHOICE: {
+            if (isModernImbuementWindow) {
+                msg->getU8(); // unknown
+            }
             const uint16_t itemId = msg->getU16(); // item client ID
             const uint32_t unknown = msg->getU32(); // unknown
-
             g_lua.callGlobalField("g_game", "onOpenImbuementWindow", itemId, unknown);
             break;
         }
         case Otc::IMBUEMENT_WINDOW_SCROLL: {
             msg->getU8(); // unknown byte
             msg->getU8(); // unknown byte
+            if (isModernImbuementWindow) {
+                msg->getU8(); // unknown byte
+            }
             const uint16_t imbuementsSize = msg->getU16();
             std::vector<Imbuement> imbuements;
-            for (auto i = 0; i < imbuementsSize; ++i) {
+            imbuements.reserve(imbuementsSize);
+            for (uint16_t i = 0; std::cmp_less(i, imbuementsSize); ++i) {
                 imbuements.push_back(getImbuementInfo(msg));
             }
             const uint32_t neededItemsListCount = msg->getU32();
             std::vector<ItemPtr> neededItemsList;
             neededItemsList.reserve(neededItemsListCount);
-            for (uint32_t i = 0; i < neededItemsListCount; ++i) {
+            for (uint32_t i = 0; std::cmp_less(i, neededItemsListCount); ++i) {
                 const uint16_t needItemId = msg->getU16();
                 const uint16_t count = msg->getU16();
                 const auto& needItem = Item::create(needItemId);
                 needItem->setCount(count);
                 neededItemsList.push_back(needItem);
             }
-
             g_lua.callGlobalField("g_game", "onImbuementScroll", imbuements, neededItemsList);
             break;
         }
         case Otc::IMBUEMENT_WINDOW_SELECT_ITEM: {
-            const uint16_t itemId = msg->getU16(); // item client ID
+            uint16_t itemId = 0;
+            uint8_t tier = 0;
+            if (isModernImbuementWindow) {
+                msg->getU8(); // unknown
+            }
+            itemId = msg->getU16(); // item client ID
             const auto& thing = g_things.getThingType(itemId, ThingCategoryItem);
+            if (isModernImbuementWindow && !thing) {
+                throw Exception("ProtocolGame::parseImbuementWindow: unable to resolve thing type for item id {}", itemId);
+            }
             if (thing) {
                 const uint16_t classification = thing->getClassification();
-                if (classification > 0) {
-                    msg->getU8(); // upgradeClass
+                if (std::cmp_greater(classification, 0)) {
+                    tier = msg->getU8();
                 }
             }
-            const uint8_t slot = msg->getU8();
+            const uint8_t slots = msg->getU8();
             std::unordered_map<int, std::tuple<Imbuement, uint32_t, uint32_t>> activeSlots;
-            for (auto i = 0; i < slot; i++) {
+            for (uint8_t i = 0; std::cmp_less(i, slots); ++i) {
                 const uint8_t firstByte = msg->getU8();
                 if (firstByte == 0x01) {
                     Imbuement imbuement = getImbuementInfo(msg);
@@ -5813,20 +6671,21 @@ void ProtocolGame::parseImbuementWindow(const InputMessagePtr& msg)
             }
             const uint16_t imbuementsSize = msg->getU16();
             std::vector<Imbuement> imbuements;
-            for (auto i = 0; i < imbuementsSize; ++i) {
+            imbuements.reserve(imbuementsSize);
+            for (uint16_t i = 0; std::cmp_less(i, imbuementsSize); ++i) {
                 imbuements.push_back(getImbuementInfo(msg));
             }
             const uint32_t neededItemsListCount = msg->getU32();
             std::vector<ItemPtr> neededItemsList;
             neededItemsList.reserve(neededItemsListCount);
-            for (uint32_t i = 0; i < neededItemsListCount; ++i) {
+            for (uint32_t i = 0; std::cmp_less(i, neededItemsListCount); ++i) {
                 const uint16_t needItemId = msg->getU16();
                 const uint16_t count = msg->getU16();
                 const auto& needItem = Item::create(needItemId);
                 needItem->setCount(count);
                 neededItemsList.push_back(needItem);
             }
-            g_lua.callGlobalField("g_game", "onImbuementWindow", itemId, slot, activeSlots, imbuements, neededItemsList);
+            g_lua.callGlobalField("g_game", "onImbuementItem", itemId, tier, slots, activeSlots, imbuements, neededItemsList);
             break;
         }
     }
@@ -6047,7 +6906,6 @@ MarketOffer ProtocolGame::readMarketOffer(const InputMessagePtr& msg, const uint
 void ProtocolGame::parseMarketBrowse(const InputMessagePtr& msg)
 {
     uint16_t var = 0;
-    uint8_t itemTier = 0;
     if (g_game.getClientVersion() >= 1281) {
         var = msg->getU8();
         if (var == 3) {
@@ -6056,7 +6914,7 @@ void ProtocolGame::parseMarketBrowse(const InputMessagePtr& msg)
             if (thing) {
                 const uint16_t classification = thing->getClassification();
                 if (classification > 0) {
-                    itemTier = msg->getU8();
+                    msg->getU8(); // item tier
                 }
             }
         }
@@ -6190,10 +7048,72 @@ void ProtocolGame::parseBosstiaryEntryChanged(const InputMessagePtr& msg)
     msg->getU32(); // bossId
 }
 
-void ProtocolGame::parseTakeScreenshot(const InputMessagePtr& msg)
+void ProtocolGame::parseClientEvent(const InputMessagePtr& msg)
 {
-    const uint8_t screenshotType = msg->getU8();
-    m_localPlayer->takeScreenshot(screenshotType);
+    // Pre-15.21: opcode 0x75 was a simple screenshot trigger (single U8 screenshotType).
+    // In 15.21+, it was repurposed as a full Client Events system with variable-length data.
+    if (g_game.getClientVersion() < 1521) {
+        m_localPlayer->takeScreenshot(msg->getU8());
+        return;
+    }
+
+    const auto type = static_cast<Otc::ClientEventType_t>(msg->getU8());
+    switch (type) {
+        case Otc::CLIENT_EVENT_TYPE_SIMPLE: {
+            const auto eventType = static_cast<Otc::ClientEvent_t>(msg->getU8());
+            if (eventType < Otc::CLIENT_EVENT_ATTACKSTOPPED) {
+                m_localPlayer->takeScreenshot(eventType);
+            } else {
+                g_lua.callGlobalField("g_game", "onClientEvent", type, eventType);
+            }
+            break;
+        }
+        case Otc::CLIENT_EVENT_TYPE_ACHIEVEMENT:
+        case Otc::CLIENT_EVENT_TYPE_TITLE: {
+            const auto name = msg->getString();
+            g_lua.callGlobalField("g_game", "onClientEvent", type, name);
+            break;
+        }
+        case Otc::CLIENT_EVENT_TYPE_LEVEL: {
+            const auto level = msg->getU16();
+            g_lua.callGlobalField("g_game", "onClientEvent", type, level);
+            break;
+        }
+        case Otc::CLIENT_EVENT_TYPE_SKILL: {
+            const auto skillId = msg->getU8();
+            const auto level = msg->getU16();
+            g_lua.callGlobalField("g_game", "onClientEvent", type, skillId, level);
+            break;
+        }
+        case Otc::CLIENT_EVENT_TYPE_BESTIARY:
+        case Otc::CLIENT_EVENT_TYPE_BOSSTIARY: {
+            const auto raceId = msg->getU16();
+            const auto progressLevel = msg->getU8();
+            g_lua.callGlobalField("g_game", "onClientEvent", type, raceId, progressLevel);
+            break;
+        }
+        case Otc::CLIENT_EVENT_TYPE_QUEST: {
+            const auto questName = msg->getString();
+            const auto isCompleted = msg->getU8();
+            g_lua.callGlobalField("g_game", "onClientEvent", type, questName, isCompleted);
+            break;
+        }
+        case Otc::CLIENT_EVENT_TYPE_COSMETIC: {
+            const auto lookType = msg->getU16();
+            const auto skinName = msg->getString();
+            const auto skinType = msg->getU8();
+            g_lua.callGlobalField("g_game", "onClientEvent", type, lookType, skinName, skinType);
+            break;
+        }
+        case Otc::CLIENT_EVENT_TYPE_PROFICIENCY: {
+            const auto itemId = msg->getU16();
+            const auto message = msg->getString();
+            g_lua.callGlobalField("g_game", "onClientEvent", type, itemId, message);
+            break;
+        }
+        default:
+            throw stdext::exception("[ProtocolGame::parseClientEvent] Unknown event type {}", static_cast<uint8_t>(type));
+    }
 }
 
 void ProtocolGame::parseAttachedEffect(const InputMessagePtr& msg)
@@ -6346,21 +7266,35 @@ void ProtocolGame::parseHighscores(const InputMessagePtr& msg)
 
 void ProtocolGame::parseWeaponProficiencyExperience(const InputMessagePtr& msg)
 {
-    msg->getU16(); // itemId
-    msg->getU32(); // Experience
-    msg->getU8(); // 1
+    const uint16_t itemId = msg->getU16();
+    const uint32_t experience = msg->getU32();
+    const uint8_t hasUnusedPerk = msg->getU8();
+    g_lua.callGlobalField("g_game", "onWeaponProficiencyExperience", itemId, experience, hasUnusedPerk != 0);
 }
 
 void ProtocolGame::parseWeaponProficiencyInfo(const InputMessagePtr& msg)
 {
-    msg->getU16(); // itemId
-    msg->getU32(); // experience
-
-    const uint8_t size = msg->getU8();
-    for (auto j = 0; j < size; ++j) {
-        msg->getU8(); // proficiencyLevel
-        msg->getU8(); // perkPosition
+    const uint16_t itemId = msg->getU16();
+    const uint32_t experience = msg->getU32();
+    const uint8_t perksCount = msg->getU8();
+    std::vector<std::vector<uint8_t>> perks;
+    for (int i = 0; i < perksCount; ++i) {
+        const uint8_t level = msg->getU8();
+        const uint8_t perkPosition = msg->getU8();
+        perks.push_back({ level, perkPosition });
     }
+    constexpr uint16_t MarketCategoryWeaponsAll = 32;
+    uint16_t marketCategory = MarketCategoryWeaponsAll;
+    if (g_things.isValidDatId(itemId, ThingCategoryItem)) {
+        const auto& itemType = g_things.getThingType(itemId, ThingCategoryItem);
+        if (itemType) {
+            const auto& marketData = itemType->getMarketData();
+            if (!marketData.name.empty()) {
+                marketCategory = marketData.category;
+            }
+        }
+    }
+    g_lua.callGlobalField("g_game", "onWeaponProficiency", itemId, experience, perks, marketCategory);
 }
 
 // 0x5F - parse destiny wheel window
@@ -6436,11 +7370,13 @@ void ProtocolGame::parseOpenWheelWindow(const InputMessagePtr& msg)
     }
 
     uint8_t hasMonkQuest = 0;
-    if (g_game.getProtocolVersion() >= 1500 && msg->getUnreadSize() > 0) {
+    if (g_game.getFeature(Otc::GameVocationMonk) && msg->getUnreadSize() > 0) {
         hasMonkQuest = msg->getU8();
         g_logger.debug(fmt::format("[Wheel C++ Parse] hasMonkQuest lido (valor={})", static_cast<int>(hasMonkQuest)));
     }
-
+    if (g_game.getFeature(Otc::GameTaskboard)) {
+        msg->getU16(); // getExtraPointsFromHuntingTaskShop
+    }
     // Gems ativas (equipadas)
     std::vector<uint16_t> equipedGems;
     uint8_t activeGemCount = msg->getU8();

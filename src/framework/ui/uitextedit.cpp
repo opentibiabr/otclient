@@ -567,7 +567,7 @@ void UITextEdit::update(const bool focusCursor, bool disableAreaUpdate)
 
     Size totalSize = textBoxSize;
     if (totalSize.width() < m_textVirtualSize.width())
-        totalSize.setWidth(m_textVirtualSize.height());
+        totalSize.setWidth(m_textVirtualSize.width());
     if (totalSize.height() < m_textVirtualSize.height())
         totalSize.setHeight(m_textVirtualSize.height());
     if (m_textTotalSize != totalSize) {
@@ -1259,10 +1259,22 @@ void UITextEdit::updateText()
 void UITextEdit::onHoverChange(const bool hovered)
 {
     if (getProp(PropChangeCursorImage)) {
-        if (hovered && !g_mouse.isCursorChanged())
-            g_mouse.pushCursor("text");
-        else
-            g_mouse.popCursor("text");
+        const bool nativeCursor = g_mouse.isUsingNativeCursor();
+        
+        // Check isCursorChanged only when NOT using native cursor
+        if (hovered && (nativeCursor || !g_mouse.isCursorChanged())) {
+            if (nativeCursor) {
+                g_window.setSystemCursor("text");
+            } else {
+                g_mouse.pushCursor("text");
+            }
+        } else {
+            if (nativeCursor) {
+                g_window.restoreMouseCursor();
+            } else {
+                g_mouse.popCursor("text");
+            }
+        }
     }
 }
 
@@ -1317,6 +1329,17 @@ void UITextEdit::onStyleApply(const std::string_view styleName, const OTMLNodePt
         else if (node->tag() == "placeholder-font")
             setPlaceholderFont(node->value());
     }
+
+    if (getProp(PropMultiline)) {
+        if ((m_textAlign & Fw::AlignVerticalCenter) || (m_textAlign & Fw::AlignBottom)) {
+            m_textAlign = static_cast<Fw::AlignmentFlag>((m_textAlign & ~Fw::AlignVerticalCenter & ~Fw::AlignBottom) | Fw::AlignTop);
+            const int selStart = m_selectionStart;
+            const int selEnd = m_selectionEnd;
+            updateText();
+            m_selectionStart = selStart;
+            m_selectionEnd = selEnd;
+        }
+    }
 }
 
 void UITextEdit::onGeometryChange(const Rect& oldRect, const Rect& newRect)
@@ -1334,9 +1357,13 @@ void UITextEdit::onFocusChange(const bool focused, const Fw::FocusReason reason)
             blinkCursor();
         update(true);
 #ifdef ANDROID
-        if (getProp(PropEditable)) {
+        // Only show keyboard on user interaction (mouse/touch), not programmatic focus
+        if (getProp(PropEditable) && reason == Fw::MouseFocusReason) {
             g_androidManager.showKeyboardSoft();
-            g_androidManager.showInputPreview(getText());
+            // TODO: widget rect is passed for future smart toolbar positioning
+            // (toolbar tries above/below/left/right of the input before falling back to above-keyboard)
+            const auto& rect = getRect();
+            g_androidManager.showInputPreview(getText(), rect.x(), rect.y(), rect.width(), rect.height());
         }
 #endif
     } else if (getProp(PropSelectable))
@@ -1352,6 +1379,8 @@ bool UITextEdit::onKeyPress(const uint8_t keyCode, const int keyboardModifiers, 
 {
     if (UIWidget::onKeyPress(keyCode, keyboardModifiers, autoRepeatTicks))
         return true;
+
+    const bool primaryOnly = Fw::isPrimaryModifierOnly(keyboardModifiers);
 
     if (keyboardModifiers == Fw::KeyboardNoModifier) {
         if (keyCode == Fw::KeyDelete && getProp(PropEditable)) {
@@ -1436,7 +1465,7 @@ bool UITextEdit::onKeyPress(const uint8_t keyCode, const int keyboardModifiers, 
             moveCursorVertically(false);
             return true;
         }
-    } else if (keyboardModifiers == Fw::KeyboardCtrlModifier) {
+    } else if (primaryOnly) {
         if (keyCode == Fw::KeyV && getProp(PropEditable)) {
             paste(g_window.getClipboardText());
             return true;
@@ -1599,7 +1628,8 @@ bool UITextEdit::onMousePress(const Point& mousePos, const Fw::MouseButton butto
 #ifdef ANDROID
         if (getProp(PropEditable)) {
             g_androidManager.showKeyboardSoft();
-            g_androidManager.showInputPreview(getText());
+            const auto& rect = getRect();
+            g_androidManager.showInputPreview(getText(), rect.x(), rect.y(), rect.width(), rect.height());
         }
 #endif
         const int pos = getTextPos(mousePos);
@@ -1634,6 +1664,7 @@ bool UITextEdit::onMousePress(const Point& mousePos, const Fw::MouseButton butto
 #endif
         return true;
     }
+
     return false;
 }
 

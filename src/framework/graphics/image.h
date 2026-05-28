@@ -79,4 +79,19 @@ private:
 
     int m_bpp;
     bool m_transparentPixel{ false };
+
+public:
+    struct AnimationFrame {
+        std::shared_ptr<Image> image;
+        int delay;
+    };
+
+private:
+    std::vector<AnimationFrame> m_animation;
+
+public:
+    bool isAnimated() const { return !m_animation.empty(); }
+    const std::vector<AnimationFrame>& getAnimation() const { return m_animation; }
+    void addAnimationFrame(const std::shared_ptr<Image>& image, int delay) { m_animation.push_back({ image, delay }); }
 };
+

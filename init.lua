@@ -8,6 +8,17 @@ Services = {
     --websites = "http://localhost/?subtopic=accountmanagement", --./client_entergame "Forgot password and/or email"
     --createAccount = "http://localhost/clientcreateaccount.php", --./client_entergame -- createAccount.lua
     --getCoinsUrl = "http://localhost/?subtopic=shop&step=terms", --./game_market
+    clientAssets = {
+        enabled = true,
+        repository = "dudantas/tibia-client",
+        installSounds = true,
+        strictManifestSha256 = true,
+        allowRawFallbackHashMismatch = false,
+        preferArchive = true,
+        installArchiveExtras = true,
+        archiveExtraPrefixes = { "bin" },
+        installPackagedFiles = true
+    }, -- ./client_assets
 }
 
 --- Enables or disables the entire server configuration block.
@@ -62,7 +73,7 @@ if ENABLE_SERVERS then
         --
         ["http://127.0.0.1/login.php"] = {
             port = 80,
-            protocol = 1412,
+            protocol = 1511,
             httpLogin = true,
             useAuthenticator = false
         },

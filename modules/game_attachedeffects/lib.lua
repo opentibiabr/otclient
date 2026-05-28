@@ -186,7 +186,11 @@ AttachedEffectManager = {
                 end
             end
         end
-        return __EFFECTS[id].config
+        local effectConfig = __EFFECTS[id] and __EFFECTS[id].config or nil
+        if not effectConfig then
+            g_logger.debug(string.format("[AttachedEffect]getConfig: No config registered for effect ID %d", id))
+        end
+        return effectConfig
     end,
     executeThingConfig = function(effect, category, thingId)
         executeConfig(effect, AttachedEffectManager.getConfig(effect:getId(), category, thingId))
