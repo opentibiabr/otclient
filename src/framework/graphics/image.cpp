@@ -41,7 +41,7 @@ ImagePtr Image::load(const std::string& file)
     try {
         return loadPNG(path);
     } catch (const stdext::exception& e) {
-        g_logger.error("unable to load image '{}': {}", path, e.what());
+        g_logger.error("Unable to load image '{}': {}", path, e.what());
     }
     return nullptr;
 }

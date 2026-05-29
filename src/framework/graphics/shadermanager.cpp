@@ -79,12 +79,12 @@ void ShaderManager::createFragmentShader(const std::string_view name, const std:
 
         shader->addShaderFromSourceCode(ShaderType::VERTEX, joinManagerShaderSources(glslMainWithTexCoordsVertexShader, glslPositionOnlyVertexShader));
         if (!shader->addShaderFromSourceFile(ShaderType::FRAGMENT, path)) {
-            g_logger.error("unable to load fragment shader '{}' from source file '{}'", name, path);
+            g_logger.error("Unable to load fragment shader '{}' from source file '{}'", name, path);
             return;
         }
 
         if (!shader->link()) {
-            g_logger.error("unable to link shader '{}' from file '{}'", name, path);
+            g_logger.error("Unable to link shader '{}' from file '{}'", name, path);
             return;
         }
 
@@ -102,12 +102,12 @@ void ShaderManager::createFragmentShaderFromCode(const std::string_view name, co
 
         shader->addShaderFromSourceCode(ShaderType::VERTEX, joinManagerShaderSources(glslMainWithTexCoordsVertexShader, glslPositionOnlyVertexShader));
         if (!shader->addShaderFromSourceCode(ShaderType::FRAGMENT, code)) {
-            g_logger.error("unable to load fragment shader '{}'", name);
+            g_logger.error("Unable to load fragment shader '{}'", name);
             return;
         }
 
         if (!shader->link()) {
-            g_logger.error("unable to link shader '{}'", name);
+            g_logger.error("Unable to link shader '{}'", name);
             return;
         }
 

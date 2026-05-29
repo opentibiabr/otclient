@@ -225,10 +225,10 @@ SoundEffect::SoundEffect(ALCdevice* device) : m_device(device) {
     init(device);
     /* Query for Effect Extension */
     if (alcIsExtensionPresent(m_device, "ALC_EXT_EFX") == AL_FALSE) {
-        g_logger.error("unable to locate OpenAl EFX extension");
+        g_logger.error("Unable to locate OpenAl EFX extension");
     } else {
         if (!alGenEffects) {
-            g_logger.error("unable to load OpenAl EFX extension");
+            g_logger.error("Unable to load OpenAl EFX extension");
             return;
         }
         const auto effects = std::make_unique<ALuint[]>(1);
@@ -253,14 +253,14 @@ SoundEffect::~SoundEffect()
         //alDeleteAuxiliaryEffectSlots(1, &m_effectSlot);
         const auto err = alGetError();
         if (err != AL_NO_ERROR) {
-            g_logger.error("error while deleting sound effect: {}", alGetString(err));
+            g_logger.error("Error while deleting sound effect: {}", alGetString(err));
         }
     }
     if (m_effectSlot != 0) {
         alDeleteAuxiliaryEffectSlots(1, &m_effectSlot);
         const auto err = alGetError();
         if (err != AL_NO_ERROR) {
-            g_logger.error("error while deleting sound aux effect slot: {}", alGetString(err));
+            g_logger.error("Error while deleting sound aux effect slot: {}", alGetString(err));
         }
     }
 }

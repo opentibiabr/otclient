@@ -5126,7 +5126,7 @@ void ProtocolGame::parseMonkData(const InputMessagePtr& msg) {
         }
         case Otc::TYPES_MONK_VIRTUE: {
             const uint8_t virtueValue = msg->getU8();
-            g_logger.debug("unused {} TO-DO L4381", virtueValue);
+            g_logger.debug("Unused {} TO-DO L4381", virtueValue);
             break;
         }
         default:

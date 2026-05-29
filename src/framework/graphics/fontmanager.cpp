@@ -137,6 +137,6 @@ BitmapFontPtr FontManager::getFont(const std::string_view fontName)
     }
 
     // when not found, fallback to default font
-    g_logger.error("font '{}' not found", fontName);
+    g_logger.error("Font '{}' not found", fontName);
     return m_defaultFont;
 }

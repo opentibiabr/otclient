@@ -1085,7 +1085,7 @@ void WIN32Window::setIcon(const std::string& file)
         }
 
         if (image->getBpp() != 4) {
-            g_logger.error("the app icon must have 4 channels");
+            g_logger.error("The app icon must have 4 channels");
             return;
         }
 

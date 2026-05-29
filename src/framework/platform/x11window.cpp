@@ -981,7 +981,7 @@ void X11Window::poll()
                     break;
                 std::string text = buf;
 
-                //g_logger.debug("char: ", buf[0], " code: ", (int)((uint8_t)buf[0]));
+                //g_logger.debug("Char: ", buf[0], " code: ", (int)((uint8_t)buf[0]));
 
                 if (m_onInputEvent && text.length() > 0) {
                     m_inputEvent.reset(Fw::KeyTextInputEvent);
@@ -1366,7 +1366,7 @@ void X11Window::setIcon(const std::string& file)
         }
 
         if (image->getBpp() != 4) {
-            g_logger.error("the app icon must have 4 channels");
+            g_logger.error("The app icon must have 4 channels");
             return;
         }
 

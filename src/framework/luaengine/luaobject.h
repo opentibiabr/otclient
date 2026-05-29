@@ -169,7 +169,7 @@ template<typename... T>
 int LuaObject::luaCallLuaField(const std::string_view field, const T&... args)
 {
     if (g_luaThreadId > -1 && g_luaThreadId != stdext::getThreadId()) {
-        g_logger.warning("luaCallLuaField(" + std::string{ field } + ") is being called outside the context of the lua call.");
+        g_logger.warning("LuaCallLuaField(" + std::string{ field } + ") is being called outside the context of the lua call.");
         return 0;
     }
 

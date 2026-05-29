@@ -1064,7 +1064,7 @@ void ResourceManager::updateExecutable(std::string fileName)
     PHYSFS_file* file = PHYSFS_openWrite(newBinary.c_str());
     if (!file) {
         return g_logger.fatal(
-            "can't open {} for writing: {}",
+            "Can't open {} for writing: {}",
             newBinary,
             PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode())
         );

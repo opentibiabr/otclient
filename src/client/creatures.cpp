@@ -121,7 +121,7 @@ void Spawn::addCreature(const Position& placePos, const CreatureTypePtr& cType)
     const Position& centerPos = getCenterPos();
     const int m_radius = getRadius();
     if (!isInZone(placePos, centerPos, m_radius)) {
-        g_logger.warning("cannot place creature at {} (spawn's center position: {}, spawn radius: {}) (increment radius)", placePos, centerPos,
+        g_logger.warning("Cannot place creature at {} (spawn's center position: {}, spawn radius: {}) (increment radius)", placePos, centerPos,
                          m_radius);
         return;
     }
@@ -220,12 +220,12 @@ void CreatureManager::loadNpcs(const std::string& folder)
 void CreatureManager::loadSpawns(const std::string& fileName)
 {
     if (!isLoaded()) {
-        g_logger.warning("creatures aren't loaded yet to load spawns.");
+        g_logger.warning("Creatures aren't loaded yet to load spawns.");
         return;
     }
 
     if (m_spawnLoaded) {
-        g_logger.warning("attempt to reload spawns.");
+        g_logger.warning("Attempt to reload spawns.");
         return;
     }
 
@@ -343,7 +343,7 @@ const CreatureTypePtr& CreatureManager::getCreatureByName(std::string name)
                                  [=](const CreatureTypePtr& m) -> bool { return m->getName() == name; });
     if (it != m_creatures.end())
         return *it;
-    g_logger.warning("could not find creature with name: {}", name);
+    g_logger.warning("Could not find creature with name: {}", name);
     return m_nullCreature;
 }
 
@@ -356,7 +356,7 @@ const CreatureTypePtr& CreatureManager::getCreatureByLook(int look)
     const auto it = std::find_if(m_creatures.begin(), m_creatures.end(), findFun);
     if (it != m_creatures.end())
         return *it;
-    g_logger.warning("could not find creature with looktype: {}", look);
+    g_logger.warning("Could not find creature with looktype: {}", look);
     return m_nullCreature;
 }
 
@@ -365,7 +365,7 @@ SpawnPtr CreatureManager::getSpawn(const Position& centerPos)
     const auto it = m_spawns.find(centerPos);
     if (it != m_spawns.end())
         return it->second;
-    g_logger.debug("failed to find spawn at center {}", centerPos);
+    g_logger.debug("Failed to find spawn at center {}", centerPos);
     return nullptr;
 }
 

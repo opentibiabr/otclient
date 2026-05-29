@@ -54,7 +54,7 @@ int PlatformWindow::loadMouseCursor(const std::string& file, const Point& hotSpo
     }
 
     if (image->getBpp() != 4) {
-        g_logger.error("the cursor image must have 4 channels");
+        g_logger.error("The cursor image must have 4 channels");
         return -1;
     }
 

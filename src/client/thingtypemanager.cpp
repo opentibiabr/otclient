@@ -391,7 +391,7 @@ const ThingTypeList& ThingTypeManager::getThingTypes(const ThingCategory categor
 const ThingTypePtr& ThingTypeManager::getThingType(const uint16_t id, const ThingCategory category)
 {
     if (category >= ThingLastCategory || id >= m_thingTypes[category].size()) {
-        g_logger.error("invalid thing type client id {} in category {}", id, static_cast<uint8_t>(category));
+        g_logger.error("Invalid thing type client id {} in category {}", id, static_cast<uint8_t>(category));
         return m_nullThingType;
     }
     return m_thingTypes[category][id];
@@ -399,7 +399,7 @@ const ThingTypePtr& ThingTypeManager::getThingType(const uint16_t id, const Thin
 
 ThingType* ThingTypeManager::getRawThingType(uint16_t id, ThingCategory category) {
     if (category >= ThingLastCategory || id >= m_thingTypes[category].size()) {
-        g_logger.error("invalid thing type client id {} in category {}", id, static_cast<uint8_t>(category));
+        g_logger.error("Invalid thing type client id {} in category {}", id, static_cast<uint8_t>(category));
         return nullptr;
     }
     return m_thingTypes[category][id].get();
@@ -579,7 +579,7 @@ ItemTypeList ThingTypeManager::findItemTypesByString(const std::string& name)
 const ItemTypePtr& ThingTypeManager::getItemType(uint16_t id)
 {
     if (id >= m_itemTypes.size() || m_itemTypes[id] == m_nullItemType) {
-        g_logger.error("invalid thing type, server id: {}", id);
+        g_logger.error("Invalid thing type, server id: {}", id);
         return m_nullItemType;
     }
     return m_itemTypes[id];
@@ -721,7 +721,7 @@ void ThingTypeManager::loadXml(const std::string& file)
         }
 
         m_xmlLoaded = true;
-        g_logger.debug("items.xml read successfully.");
+        g_logger.debug("Items.xml read successfully.");
     } catch (const std::exception& e) {
         g_logger.error("Failed to load '{}' (XML file): {}", file, e.what());
     }

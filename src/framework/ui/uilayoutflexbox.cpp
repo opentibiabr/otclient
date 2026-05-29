@@ -422,7 +422,7 @@ void layoutFlex(UIWidget& container)
 
     // Global depth limit: prevent infinite recursion through nested flex containers
     if (s_flexDepth >= MAX_FLEX_DEPTH) {
-        g_logger.warning("layoutFlex: maximum nesting depth ({}) exceeded, skipping layout", MAX_FLEX_DEPTH);
+        g_logger.warning("LayoutFlex: maximum nesting depth ({}) exceeded, skipping layout", MAX_FLEX_DEPTH);
         return;
     }
 

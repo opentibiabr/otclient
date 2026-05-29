@@ -263,7 +263,7 @@ void Game::processPingBack()
         if (oldPing != m_ping)
             g_lua.callGlobalField("g_game", "onPingBack", m_ping);
     } else
-        g_logger.error("got an invalid ping from server");
+        g_logger.error("Got an invalid ping from server");
 
     m_pingEvent = g_dispatcher.scheduleEvent([] { g_game.ping(); }, m_pingDelay);
 }
@@ -1831,7 +1831,7 @@ namespace
     uint8_t toServerDifficulty(const uint16_t uiDifficulty)
     {
         if (std::cmp_equal(uiDifficulty, 0)) {
-            g_logger.warning("toServerDifficulty received invalid UI difficulty 0");
+            g_logger.warning("ToServerDifficulty received invalid UI difficulty 0");
             return 1;
         }
         if (std::cmp_greater_equal(uiDifficulty, 4)) {
@@ -1914,7 +1914,7 @@ void Game::bountyTalismanUpgrade(const uint8_t pathIndex)
         return;
 
     if (std::cmp_greater(pathIndex, 3)) {
-        g_logger.warning("bountyTalismanUpgrade: invalid pathIndex {}", static_cast<int>(pathIndex));
+        g_logger.warning("BountyTalismanUpgrade: invalid pathIndex {}", static_cast<int>(pathIndex));
         return;
     }
 

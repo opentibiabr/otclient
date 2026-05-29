@@ -57,7 +57,7 @@ void SoundManager::init()
 
     m_device = alcOpenDevice(nullptr);
     if (!m_device) {
-        g_logger.error("unable to open audio device");
+        g_logger.error("Unable to open audio device");
         return;
     }
 
@@ -210,7 +210,7 @@ SoundSourcePtr SoundManager::play(const std::string& fn, const float fadetime, f
     const std::string& filename = resolveSoundFile(fn);
     const auto& soundSource = createSoundSource(filename);
     if (!soundSource) {
-        g_logger.error("unable to play '{}'", filename);
+        g_logger.error("Unable to play '{}'", filename);
         return nullptr;
     }
 
@@ -311,7 +311,7 @@ SoundSourcePtr SoundManager::createSoundSource(const std::string& name)
 #endif
         }
     } catch (std::exception& e) {
-        g_logger.error("failed to load sound source: '{}'", e.what());
+        g_logger.error("Failed to load sound source: '{}'", e.what());
         return nullptr;
     }
 
