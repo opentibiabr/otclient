@@ -173,6 +173,22 @@ else()
 endif()
 find_package(Freetype REQUIRED)
 
+if (TARGET spdlog::spdlog)
+  set(OTCLIENT_SPDLOG_TARGET spdlog::spdlog)
+elseif (TARGET spdlog::spdlog_header_only)
+  set(OTCLIENT_SPDLOG_TARGET spdlog::spdlog_header_only)
+else()
+  message(FATAL_ERROR "spdlog target not found; expected spdlog::spdlog or spdlog::spdlog_header_only")
+endif()
+
+if (TARGET fmt::fmt)
+  set(OTCLIENT_FMT_TARGET fmt::fmt)
+elseif (TARGET fmt::fmt-header-only)
+  set(OTCLIENT_FMT_TARGET fmt::fmt-header-only)
+else()
+  message(FATAL_ERROR "fmt target not found; expected fmt::fmt or fmt::fmt-header-only")
+endif()
+
 if(NOT ANDROID)
   add_definitions(-DFRAMEWORK_HAVE_LIBARCHIVE)
   if(TARGET LibArchive::LibArchive)
@@ -718,8 +734,8 @@ if(MSVC)
           ${LIBARCHIVE_LIBRARY}
           winmm.lib
           pugixml::pugixml
-          fmt::fmt
-          spdlog::spdlog
+          ${OTCLIENT_FMT_TARGET}
+          ${OTCLIENT_SPDLOG_TARGET}
           utf8cpp::utf8cpp
           Freetype::Freetype
   )
@@ -777,8 +793,8 @@ elseif(ANDROID)
           log
           Freetype::Freetype
           pugixml::pugixml
-          fmt::fmt
-          spdlog::spdlog
+          ${OTCLIENT_FMT_TARGET}
+          ${OTCLIENT_SPDLOG_TARGET}
           utf8cpp::utf8cpp
   )
 
@@ -847,8 +863,8 @@ elseif(WASM)
           OpenSSL::SSL
           OpenSSL::Crypto
           httplib::httplib
-          fmt::fmt
-          spdlog::spdlog
+          ${OTCLIENT_FMT_TARGET}
+          ${OTCLIENT_SPDLOG_TARGET}
           utf8cpp::utf8cpp
           Ogg::ogg
           Vorbis::vorbisfile
@@ -971,8 +987,8 @@ else() # Linux
           OpenSSL::SSL
           OpenSSL::Crypto
           httplib::httplib
-          fmt::fmt
-          spdlog::spdlog
+          ${OTCLIENT_FMT_TARGET}
+          ${OTCLIENT_SPDLOG_TARGET}
           utf8cpp::utf8cpp
           Ogg::ogg
           Vorbis::vorbisfile
