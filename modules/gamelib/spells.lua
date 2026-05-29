@@ -8,7 +8,7 @@ SpelllistSettings = {
         },
         iconSizeCooldown = {
             width = 20,
-            height = 22
+            height = 20
         },
         spellListWidth = 210,
         spellWindowWidth = 550,

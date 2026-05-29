@@ -1,24 +1,26 @@
 SpellGroupIcon < UIWidget
-  size: 22 22
-  image-size: 22 22
+  size: 20 20
+  image-size: 20 20
   image-source: /images/game/spells/spellgroup-icons-20x20
   focusable: false
-  margin-top: 3
-  opacity: 0.5
+  opacity: 0.3
   $on:
-    opacity: 1
-
+    opacity: 1.0
 
 SpellIcon < UIWidget
   size: 20 20
   image-size: 20 20
   focusable: false
-  $!first:
-    margin-left: 5
 
 SpellProgressRect < UIProgressRect
-  background: #585858AA
   percent: 100
+  show-progress: false
+  focusable: false
+
+SpellIconContainer < UIWidget
+  size: 22 24
+  image-source: /images/game/cooldowns/cooldown-background
+  image-size: 22 24
   focusable: false
 
 GroupCooldownParticles < UIParticles
@@ -27,154 +29,475 @@ GroupCooldownParticles < UIParticles
 Panel
   id: cooldownWindow
   !text: tr('')
-  size: 220 28
+  size: 220 32
   anchors.top: parent.top
   anchors.left: parent.left
   anchors.right: parent.right
   focusable: false
   phantom: true
   Panel
-    id:contentsPanel2
+    id: contentsPanel2
     anchors.fill: parent
     margin-left: 5
-    SpellGroupIcon
-      id: groupIconAttack
-      image-clip: 0 0 20 20
+
+    UIWidget
+      id: containerAttack
+      size: 22 24
+      image-source: /images/game/cooldowns/cooldown-background
+      image-size: 22 24
+      focusable: false
       anchors.top: parent.top
       anchors.left: parent.left
       margin-left: 2
+      margin-top: 1
 
-    SpellProgressRect
-      id: progressRectAttack
-      anchors.fill: groupIconAttack
-      !tooltip: tr('Attack')
+      SpellGroupIcon
+        id: icon
+        image-clip: 0 0 20 20
+        anchors.top: parent.top
+        anchors.left: parent.left
+        margin-top: 1
+        margin-left: 1
 
-    SpellGroupIcon
-      id: groupIconHealing
-      image-clip: 20 0 20 20
+      UIWidget
+        id: cooldownBarBg
+        size: 20 2
+        background-color: #000000
+        anchors.top: icon.bottom
+        anchors.left: parent.left
+        margin-top: 1
+        margin-left: 1
+        focusable: false
+
+      UIWidget
+        id: cooldownBarFg
+        size: 0 2
+        background-color: #FFFFFF
+        anchors.top: icon.bottom
+        anchors.left: parent.left
+        margin-top: 1
+        margin-left: 1
+        focusable: false
+
+      SpellProgressRect
+        id: progressRect
+        anchors.fill: parent
+        !tooltip: tr('Attack')
+
+    UIWidget
+      id: containerHealing
+      size: 22 24
+      image-source: /images/game/cooldowns/cooldown-background
+      image-size: 22 24
+      focusable: false
       anchors.top: parent.top
-      anchors.left: groupIconAttack.right
+      anchors.left: containerAttack.right
       margin-left: 3
+      margin-top: 1
 
-    SpellProgressRect
-      id: progressRectHealing
-      anchors.fill: groupIconHealing
-      !tooltip: tr('Healing')
+      SpellGroupIcon
+        id: icon
+        image-clip: 20 0 20 20
+        anchors.top: parent.top
+        anchors.left: parent.left
+        margin-top: 1
+        margin-left: 1
 
-    SpellGroupIcon
-      id: groupIconSupport
-      image-clip: 40 0 20 20
+      UIWidget
+        id: cooldownBarBg
+        size: 20 2
+        background-color: #000000
+        anchors.top: icon.bottom
+        anchors.left: parent.left
+        margin-top: 1
+        margin-left: 1
+        focusable: false
+
+      UIWidget
+        id: cooldownBarFg
+        size: 0 2
+        background-color: #FFFFFF
+        anchors.top: icon.bottom
+        anchors.left: parent.left
+        margin-top: 1
+        margin-left: 1
+        focusable: false
+
+      SpellProgressRect
+        id: progressRect
+        anchors.fill: parent
+        !tooltip: tr('Healing')
+
+    UIWidget
+      id: containerSupport
+      size: 22 24
+      image-source: /images/game/cooldowns/cooldown-background
+      image-size: 22 24
+      focusable: false
       anchors.top: parent.top
-      anchors.left: groupIconHealing.right
+      anchors.left: containerHealing.right
       margin-left: 3
+      margin-top: 1
 
-    SpellProgressRect
-      id: progressRectSupport
-      anchors.fill: groupIconSupport
-      !tooltip: tr('Support')
+      SpellGroupIcon
+        id: icon
+        image-clip: 40 0 20 20
+        anchors.top: parent.top
+        anchors.left: parent.left
+        margin-top: 1
+        margin-left: 1
 
-    SpellGroupIcon
-      id: groupIconSpecial
-      image-clip: 60 0 20 20
+      UIWidget
+        id: cooldownBarBg
+        size: 20 2
+        background-color: #000000
+        anchors.top: icon.bottom
+        anchors.left: parent.left
+        margin-top: 1
+        margin-left: 1
+        focusable: false
+
+      UIWidget
+        id: cooldownBarFg
+        size: 0 2
+        background-color: #FFFFFF
+        anchors.top: icon.bottom
+        anchors.left: parent.left
+        margin-top: 1
+        margin-left: 1
+        focusable: false
+
+      SpellProgressRect
+        id: progressRect
+        anchors.fill: parent
+        !tooltip: tr('Support')
+
+    UIWidget
+      id: containerSpecial
+      size: 22 24
+      image-source: /images/game/cooldowns/cooldown-background
+      image-size: 22 24
+      focusable: false
       anchors.top: parent.top
-      anchors.left: groupIconSupport.right
+      anchors.left: containerSupport.right
       margin-left: 3
+      margin-top: 1
 
-    SpellProgressRect
-      id: progressRectSpecial
-      anchors.fill: groupIconSpecial
-      !tooltip: tr('Special')
+      SpellGroupIcon
+        id: icon
+        image-clip: 60 0 20 20
+        anchors.top: parent.top
+        anchors.left: parent.left
+        margin-top: 1
+        margin-left: 1
 
-    SpellGroupIcon
-      id: groupIconCrippling
-      image-clip: 100 0 20 20
+      UIWidget
+        id: cooldownBarBg
+        size: 20 2
+        background-color: #000000
+        anchors.top: icon.bottom
+        anchors.left: parent.left
+        margin-top: 1
+        margin-left: 1
+        focusable: false
+
+      UIWidget
+        id: cooldownBarFg
+        size: 0 2
+        background-color: #FFFFFF
+        anchors.top: icon.bottom
+        anchors.left: parent.left
+        margin-top: 1
+        margin-left: 1
+        focusable: false
+
+      SpellProgressRect
+        id: progressRect
+        anchors.fill: parent
+        !tooltip: tr('Special')
+
+    UIWidget
+      id: containerCrippling
+      size: 22 24
+      image-source: /images/game/cooldowns/cooldown-background
+      image-size: 22 24
+      focusable: false
       anchors.top: parent.top
-      anchors.left: groupIconSpecial.right
+      anchors.left: containerSpecial.right
       margin-left: 3
+      margin-top: 1
 
-    SpellProgressRect
-      id: progressRectCrippling
-      anchors.fill: groupIconCrippling
-      !tooltip: tr('Crippling')
+      SpellGroupIcon
+        id: icon
+        image-clip: 100 0 20 20
+        anchors.top: parent.top
+        anchors.left: parent.left
+        margin-top: 1
+        margin-left: 1
 
-    SpellGroupIcon
-      id: groupIconFocus
-      image-clip: 120 0 20 20
+      UIWidget
+        id: cooldownBarBg
+        size: 20 2
+        background-color: #000000
+        anchors.top: icon.bottom
+        anchors.left: parent.left
+        margin-top: 1
+        margin-left: 1
+        focusable: false
+
+      UIWidget
+        id: cooldownBarFg
+        size: 0 2
+        background-color: #FFFFFF
+        anchors.top: icon.bottom
+        anchors.left: parent.left
+        margin-top: 1
+        margin-left: 1
+        focusable: false
+
+      SpellProgressRect
+        id: progressRect
+        anchors.fill: parent
+        !tooltip: tr('Crippling')
+
+    UIWidget
+      id: containerFocus
+      size: 22 24
+      image-source: /images/game/cooldowns/cooldown-background
+      image-size: 22 24
+      focusable: false
       anchors.top: parent.top
-      anchors.left: groupIconCrippling.right
+      anchors.left: containerCrippling.right
       margin-left: 3
+      margin-top: 1
 
-    SpellProgressRect
-      id: progressRectFocus
-      anchors.fill: groupIconFocus
-      !tooltip: tr('Focus')
+      SpellGroupIcon
+        id: icon
+        image-clip: 120 0 20 20
+        anchors.top: parent.top
+        anchors.left: parent.left
+        margin-top: 1
+        margin-left: 1
 
-    SpellGroupIcon
-      id: groupIconUltimateStrikes
-      image-clip: 140 0 20 20
+      UIWidget
+        id: cooldownBarBg
+        size: 20 2
+        background-color: #000000
+        anchors.top: icon.bottom
+        anchors.left: parent.left
+        margin-top: 1
+        margin-left: 1
+        focusable: false
+
+      UIWidget
+        id: cooldownBarFg
+        size: 0 2
+        background-color: #FFFFFF
+        anchors.top: icon.bottom
+        anchors.left: parent.left
+        margin-top: 1
+        margin-left: 1
+        focusable: false
+
+      SpellProgressRect
+        id: progressRect
+        anchors.fill: parent
+        !tooltip: tr('Focus')
+
+    UIWidget
+      id: containerUltimateStrikes
+      size: 22 24
+      image-source: /images/game/cooldowns/cooldown-background
+      image-size: 22 24
+      focusable: false
       anchors.top: parent.top
-      anchors.left: groupIconFocus.right
+      anchors.left: containerFocus.right
       margin-left: 3
+      margin-top: 1
 
-    SpellProgressRect
-      id: progressRectUltimateStrikes
-      anchors.fill: groupIconUltimateStrikes
-      !tooltip: tr('Ultimate Strike')
+      SpellGroupIcon
+        id: icon
+        image-clip: 140 0 20 20
+        anchors.top: parent.top
+        anchors.left: parent.left
+        margin-top: 1
+        margin-left: 1
 
-    SpellGroupIcon
-      id: groupIconGreatBeams
-      image-clip: 160 0 20 20
+      UIWidget
+        id: cooldownBarBg
+        size: 20 2
+        background-color: #000000
+        anchors.top: icon.bottom
+        anchors.left: parent.left
+        margin-top: 1
+        margin-left: 1
+        focusable: false
+
+      UIWidget
+        id: cooldownBarFg
+        size: 0 2
+        background-color: #FFFFFF
+        anchors.top: icon.bottom
+        anchors.left: parent.left
+        margin-top: 1
+        margin-left: 1
+        focusable: false
+
+      SpellProgressRect
+        id: progressRect
+        anchors.fill: parent
+        !tooltip: tr('Ultimate Strike')
+
+    UIWidget
+      id: containerGreatBeams
+      size: 22 24
+      image-source: /images/game/cooldowns/cooldown-background
+      image-size: 22 24
+      focusable: false
       anchors.top: parent.top
-      anchors.left: groupIconUltimateStrikes.right
+      anchors.left: containerUltimateStrikes.right
       margin-left: 3
+      margin-top: 1
 
-    SpellProgressRect
-      id: progressRectGreatBeams
-      anchors.fill: groupIconGreatBeams
-      !tooltip: tr('Great Beams')
+      SpellGroupIcon
+        id: icon
+        image-clip: 160 0 20 20
+        anchors.top: parent.top
+        anchors.left: parent.left
+        margin-top: 1
+        margin-left: 1
 
-    SpellGroupIcon
-      id: groupIconBurstsOfNature
-      image-clip: 180 0 20 20
+      UIWidget
+        id: cooldownBarBg
+        size: 20 2
+        background-color: #000000
+        anchors.top: icon.bottom
+        anchors.left: parent.left
+        margin-top: 1
+        margin-left: 1
+        focusable: false
+
+      UIWidget
+        id: cooldownBarFg
+        size: 0 2
+        background-color: #FFFFFF
+        anchors.top: icon.bottom
+        anchors.left: parent.left
+        margin-top: 1
+        margin-left: 1
+        focusable: false
+
+      SpellProgressRect
+        id: progressRect
+        anchors.fill: parent
+        !tooltip: tr('Great Beams')
+
+    UIWidget
+      id: containerBurstsOfNature
+      size: 22 24
+      image-source: /images/game/cooldowns/cooldown-background
+      image-size: 22 24
+      focusable: false
       anchors.top: parent.top
-      anchors.left: groupIconGreatBeams.right
+      anchors.left: containerGreatBeams.right
       margin-left: 3
+      margin-top: 1
 
-    SpellProgressRect
-      id: progressRectBurstsOfNature
-      anchors.fill: groupIconBurstsOfNature
-      !tooltip: tr('Bursts of Nature')
+      SpellGroupIcon
+        id: icon
+        image-clip: 180 0 20 20
+        anchors.top: parent.top
+        anchors.left: parent.left
+        margin-top: 1
+        margin-left: 1
 
-    SpellGroupIcon
-      id: groupIconVirtue
-      image-clip: 200 0 20 20
+      UIWidget
+        id: cooldownBarBg
+        size: 20 2
+        background-color: #000000
+        anchors.top: icon.bottom
+        anchors.left: parent.left
+        margin-top: 1
+        margin-left: 1
+        focusable: false
+
+      UIWidget
+        id: cooldownBarFg
+        size: 0 2
+        background-color: #FFFFFF
+        anchors.top: icon.bottom
+        anchors.left: parent.left
+        margin-top: 1
+        margin-left: 1
+        focusable: false
+
+      SpellProgressRect
+        id: progressRect
+        anchors.fill: parent
+        !tooltip: tr('Bursts of Nature')
+
+    UIWidget
+      id: containerVirtue
+      size: 22 24
+      image-source: /images/game/cooldowns/cooldown-background
+      image-size: 22 24
+      focusable: false
       anchors.top: parent.top
-      anchors.left: groupIconBurstsOfNature.right
+      anchors.left: containerBurstsOfNature.right
       margin-left: 3
+      margin-top: 1
 
-    SpellProgressRect
-      id: progressRectVirtue
-      anchors.fill: groupIconVirtue
-      !tooltip: tr('Virtue')
+      SpellGroupIcon
+        id: icon
+        image-clip: 200 0 20 20
+        anchors.top: parent.top
+        anchors.left: parent.left
+        margin-top: 1
+        margin-left: 1
+
+      UIWidget
+        id: cooldownBarBg
+        size: 20 2
+        background-color: #000000
+        anchors.top: icon.bottom
+        anchors.left: parent.left
+        margin-top: 1
+        margin-left: 1
+        focusable: false
+
+      UIWidget
+        id: cooldownBarFg
+        size: 0 2
+        background-color: #FFFFFF
+        anchors.top: icon.bottom
+        anchors.left: parent.left
+        margin-top: 1
+        margin-left: 1
+        focusable: false
+
+      SpellProgressRect
+        id: progressRect
+        anchors.fill: parent
+        !tooltip: tr('Virtue')
 
     VerticalSeparator
       id: separator
       anchors.top: parent.top
       anchors.left: prev.right
-      margin-left: 5
-      margin-top: 2
-      height: 22
+      margin-left: 3
+      margin-top: 1
+      height: 24
 
     Panel
-      height: 22
+      height: 24
       id: cooldownPanel
-      margin-top: 4
-      margin-bottom: 5
+      margin-top: 1
+      margin-bottom: 3
       anchors.top: parent.top
       anchors.bottom: parent.bottom
       anchors.left: prev.right
       anchors.right: parent.right
+      margin-left: 3
       layout:
         type: horizontalBox
-
-
+        spacing: 3
