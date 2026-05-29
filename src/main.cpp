@@ -100,7 +100,7 @@ std::string buildStartupTimestamp()
 int main(const int argc, const char* argv[])
 {
     std::vector<std::string> args(argv, argv + argc);
-    g_logger.info("application started at {}", buildStartupTimestamp());
+    g_logger.info("Application started at {}", buildStartupTimestamp());
 
     // process args encoding
     g_platform.init(args);
