@@ -1336,8 +1336,17 @@ function isClientVersionInstalled(version)
   end
 
   if version >= 1281 then
-    return hasInstalledModernClientFiles(version) and
-           installFileExists(string.format('data/things/%d/.client-assets-complete', version))
+    if not hasInstalledModernClientFiles(version) then
+      return false
+    end
+
+    -- Accept manually installed modern assets even when marker file is missing.
+    -- Marker remains useful for diagnostics, so we create it lazily when possible.
+    if not installFileExists(string.format('data/things/%d/.client-assets-complete', version)) then
+      markClientVersionInstalled(version)
+    end
+
+    return true
   end
 
   return g_resources.fileExists(string.format('/data/things/%d/Tibia.dat', version)) and
