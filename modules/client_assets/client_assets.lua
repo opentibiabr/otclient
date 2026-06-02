@@ -1336,17 +1336,7 @@ function isClientVersionInstalled(version)
   end
 
   if version >= 1281 then
-    if not hasInstalledModernClientFiles(version) then
-      return false
-    end
-
-    -- Accept manually installed modern assets even when marker file is missing.
-    -- Marker remains useful for diagnostics, so we create it lazily when possible.
-    if not installFileExists(string.format('data/things/%d/.client-assets-complete', version)) then
-      markClientVersionInstalled(version)
-    end
-
-    return true
+    return hasInstalledModernClientFiles(version)
   end
 
   return g_resources.fileExists(string.format('/data/things/%d/Tibia.dat', version)) and
@@ -1420,10 +1410,11 @@ function ensureClientVersion(version, callback)
           return finishDownload(false, 'Assets were downloaded but the client files are still incomplete. Missing catalog-content.json, assets.json.sha256, or required catalog files.')
         end
 
-        if not isClientVersionInstalled(version) then
+        local markerPath = string.format('data/things/%d/.client-assets-complete', version)
+        if not installFileExists(markerPath) then
           markClientVersionInstalled(version)
-          if not isClientVersionInstalled(version) then
-            return finishDownload(false, 'Assets were downloaded but the install marker could not be written.')
+          if not installFileExists(markerPath) then
+            logWarning('Assets were downloaded but the install marker could not be written.')
           end
         end
 
