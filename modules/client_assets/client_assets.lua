@@ -322,15 +322,19 @@ local function hasCatalogEntryFile(basePath, entry)
 end
 
 local function installFileExists(path)
-  if g_resources.fileExistsInWorkDir then
-    return g_resources.fileExistsInWorkDir(path)
+  if g_resources.fileExistsInWorkDir and g_resources.fileExistsInWorkDir(path) then
+    return true
   end
   return g_resources.fileExists('/' .. path)
 end
 
 local function readInstallFile(path)
-  if g_resources.readFileContentsFromWorkDir then
-    return g_resources.readFileContentsFromWorkDir(path)
+  if g_resources.readFileContentsFromWorkDir and
+     (not g_resources.fileExistsInWorkDir or g_resources.fileExistsInWorkDir(path)) then
+    local ok, contents = pcall(function() return g_resources.readFileContentsFromWorkDir(path) end)
+    if ok and type(contents) == 'string' then
+      return contents
+    end
   end
   return g_resources.readFileContents('/' .. path)
 end
