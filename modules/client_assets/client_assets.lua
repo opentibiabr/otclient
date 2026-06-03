@@ -298,7 +298,7 @@ local function updateDownloadBar(window, percent)
 end
 
 local function completeMarkerPath(version)
-  return string.format('/data/things/%d/.client-assets-complete', version)
+  return string.format('data/things/%d/.client-assets-complete', version)
 end
 
 local function joinPhysicalPath(base, path)
@@ -312,6 +312,10 @@ end
 
 local function physicalInstallPath(path)
   return joinPhysicalPath(g_resources.getWorkDir(), path)
+end
+
+local function shouldInstallInWorkDir(config)
+  return config and config.installInWorkDir ~= false
 end
 
 local function hasCatalogEntryFile(basePath, entry)
@@ -394,13 +398,15 @@ local function hasInstalledModernClientFiles(version)
   return hasModernClientFilesAtPath(string.format('data/things/%d/', version), true)
 end
 
-local function markClientVersionInstalled(version)
-  if g_resources.writeFileContentsToWorkDir then
-    return g_resources.writeFileContentsToWorkDir(completeMarkerPath(version), string.format('client=%d\n', version))
+local function markClientVersionInstalled(config, version)
+  local markerPath = completeMarkerPath(version)
+  local contents = string.format('client=%d\n', version)
+  if shouldInstallInWorkDir(config) and g_resources.writeFileContentsToWorkDir then
+    return g_resources.writeFileContentsToWorkDir(markerPath, contents)
   end
 
   g_resources.makeDir(string.format('/data/things/%d', version))
-  return g_resources.writeFileContents(completeMarkerPath(version), string.format('client=%d\n', version))
+  return g_resources.writeFileContents('/' .. markerPath, contents)
 end
 
 local function normalizeVersionKey(version)
@@ -731,10 +737,6 @@ local function verifyInstalledSha256(destinationPath, expectedSha256, deleteOnMi
   end
 
   return true
-end
-
-local function shouldInstallInWorkDir(config)
-  return config and config.installInWorkDir ~= false
 end
 
 local function writeDownloadedFile(config, downloadPath, destinationPath, decompressLzma)
@@ -1414,9 +1416,9 @@ function ensureClientVersion(version, callback)
           return finishDownload(false, 'Assets were downloaded but the client files are still incomplete. Missing catalog-content.json, assets.json.sha256, or required catalog files.')
         end
 
-        local markerPath = string.format('data/things/%d/.client-assets-complete', version)
+        local markerPath = completeMarkerPath(version)
         if not installFileExists(markerPath) then
-          markClientVersionInstalled(version)
+          markClientVersionInstalled(config, version)
           if not installFileExists(markerPath) then
             logWarning('Assets were downloaded but the install marker could not be written.')
           end
