@@ -394,9 +394,7 @@ local function hasModernClientFiles(version)
   return hasModernClientFilesAtPath(string.format('data/things/%d/', version), true)
 end
 
-local function hasInstalledModernClientFiles(version)
-  return hasModernClientFilesAtPath(string.format('data/things/%d/', version), true)
-end
+local hasInstalledModernClientFiles = hasModernClientFiles
 
 local function markClientVersionInstalled(config, version)
   local markerPath = completeMarkerPath(version)
