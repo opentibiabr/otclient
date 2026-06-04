@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,11 @@
 
 #include <framework/core/eventdispatcher.h>
 
+#include <psapi.h>
+#include <windows.h>
 #include <shellapi.h>
+
+#pragma comment(lib, "psapi.lib")
 
 void Platform::init(std::vector<std::string>& args)
 {
@@ -196,6 +200,13 @@ double Platform::getTotalSystemMemory()
     status.dwLength = sizeof(status);
     GlobalMemoryStatusEx(&status);
     return status.ullTotalPhys;
+}
+
+double Platform::getMemoryUsage()
+{
+    PROCESS_MEMORY_COUNTERS pmc;
+    GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc));
+    return static_cast<double>(pmc.WorkingSetSize);
 }
 
 #ifndef PRODUCT_PROFESSIONAL

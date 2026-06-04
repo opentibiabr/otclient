@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,11 @@ using DelayedSoundEffect = std::pair<uint32_t, uint32_t>;
 using DelayedSoundEffects = std::vector<DelayedSoundEffect>;
 using ItemCountSoundEffect = std::pair<uint32_t, uint32_t>;
 using ItemCountSoundEffects = std::vector<ItemCountSoundEffect>;
+
+class StreamSoundSource;
+class CombinedSoundSource;
+class SoundFile;
+class SoundBuffer;
 
 enum ClientSoundType
 {

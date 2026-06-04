@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,7 @@
 #include "fontmanager.h"
 #include "painter.h"
 #include "texturemanager.h"
+#include <framework/core/logger.h>
 
 Graphics g_graphics;
 
@@ -84,6 +85,9 @@ void Graphics::init()
     g_painter = std::make_unique<Painter>();
 
     g_textures.init();
+
+    g_fonts.init();   
+
 }
 
 void Graphics::terminate()

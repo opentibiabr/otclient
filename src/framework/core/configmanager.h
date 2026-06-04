@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,29 @@
 
 #include "config.h"
 
- // @bindsingleton g_configs
+struct GraphicsConfig
+{
+    uint16_t maxAtlasSize = 8192;
+    int16_t  mapAtlasSize = 0;
+    int16_t foregroundAtlasSize = 2048;
+};
+
+struct FontConfig
+{
+    std::string widget;
+    std::string staticText;
+    std::string animatedText;
+    std::string creatureText;
+    std::string itemCount;
+};
+
+struct PublicConfig
+{
+    GraphicsConfig graphics;
+    FontConfig font;
+};
+
+// @bindsingleton g_configs
 class ConfigManager
 {
 public:
@@ -41,11 +63,17 @@ public:
     bool unload(const std::string& file);
     void remove(const ConfigPtr& config);
 
+    void saveSettings();
+
+    const PublicConfig& getPublicConfig() const { return m_publicConfig; }
+    void loadPublicConfig(const std::string& file);
+
 protected:
     ConfigPtr m_settings;
 
 private:
     std::list<ConfigPtr> m_configs;
+    PublicConfig m_publicConfig;
 };
 
 extern ConfigManager g_configs;

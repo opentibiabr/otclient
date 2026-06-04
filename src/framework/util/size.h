@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,6 +24,12 @@
 
 #include "../const.h"
 #include "point.h"
+
+#ifndef USE_PRECOMPILED_HEADERS
+#include <algorithm>
+#include <istream>
+#include <ostream>
+#endif
 
 template<class T>
 class TSize
@@ -128,5 +134,10 @@ private:
     T wd, ht;
 };
 
-using Size = TSize<int>;
-using SizeF = TSize<float>;
+namespace Fw {
+    using Size = TSize<int>;
+    using SizeF = TSize<float>;
+}
+
+using Fw::Size;
+using Fw::SizeF;

@@ -14,6 +14,41 @@ UIWidget
   SmallReversedQtPanel
     anchors.left: parent.left
     anchors.right: parent.right
+    anchors.top: parent.top
+    anchors.top: prev.bottom
+    margin-top: 7
+    height: 22
+
+    OptionCheckBox
+      id: nativeCursor
+      !text: tr('Use Native Mouse Cursor')	 
+
+  SmallReversedQtPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: parent.top
+    anchors.top: prev.bottom
+    margin-top: 7
+    height: 22
+
+    OptionCheckBoxMarked
+      id: showAnimatedCursor
+      !text: tr('Show Animated Mouse Cursor')	  	  
+
+  SmallReversedQtPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    margin-top: 7
+    height: 22
+
+    OptionCheckBox
+      id: showDragIcon
+      !text: tr('Show item icon while dragging')
+
+  SmallReversedQtPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
     anchors.top: prev.bottom
     margin-top: 7
     height: 22
@@ -52,6 +87,19 @@ UIWidget
       id: showSpellGroupCooldowns
       !text: tr('Show spell group cooldowns')
       !tooltip: tr('Can be enabled only in version 8.7x or higher')
+
+  SmallReversedQtPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    height: 22
+    margin-top: 5
+
+    OptionCheckBoxMarked
+      id: showInfoBanner
+      !text: tr('Show Info Banner')
+      !tooltip: tr('Tick this box to display an info banner for certain in-game events.')
+
 
   SmallReversedQtPanel
     anchors.left: parent.left

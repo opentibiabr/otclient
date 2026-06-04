@@ -1,3 +1,52 @@
+
+InfoLabel < Panel
+  height: 20
+  Label
+    id: text
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    text-auto-resize: true
+    color: #C0C0C0
+  Label
+    id: value
+    anchors.right: parent.right
+    anchors.verticalCenter: parent.verticalCenter
+    text-auto-resize: true
+    color: #C1C1C1
+
+InfoLeftLabel < Panel
+  height: 15
+  Label
+    id: value
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    text-auto-resize: true
+    color: #929292
+    margin-left: 20
+
+BlessingLabel < Panel
+  height: 20
+  Label
+    id: text
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    text-auto-resize: true
+    color: #C0C0C0
+  Label
+    id: value
+    anchors.right: parent.right
+    anchors.verticalCenter: parent.verticalCenter
+    text-auto-resize: true
+    color: #C1C1C1
+
+MiscItems < UIWidget
+  size: 34 34
+  Item
+    id: item
+    anchors.fill: parent
+    phantom: true
+    virtual: true
+
 UIWidget
   id: Cat6
   anchors.fill: parent
@@ -124,12 +173,13 @@ UIWidget
       &state: 1
       @onClick: modules.game_cyclopedia.Cyclopedia.characterButton(self)
     Button
-      id: WheelButton
-      anchors.left: CharacterButton.right
-      anchors.top: CharacterButton.top
-      margin-left: 5
-      size: 34 34
-      icon-source: /game_cyclopedia/images/button_wheel
+      id: WheelButton  
+      anchors.left: CharacterButton.right  
+      anchors.top: CharacterButton.top  
+      margin-left: 5  
+      size: 34 34  
+      icon-source: /game_cyclopedia/images/button_wheel  
+      @onClick: modules.game_wheel.toggle()
     BorderBox
       id: DetailsBase
       anchors.top: inventoryPanel.bottom
@@ -1099,7 +1149,7 @@ UIWidget
       anchors.left: achievements.right
       margin-bottom: 6
       margin-left: 10
-      RoundCheckBox
+      CheckBoxCircle
         id: all
         width: 85
         text: All
@@ -1110,7 +1160,7 @@ UIWidget
         margin-left: 5
         margin-top: 10
         @onClick: modules.game_cyclopedia.Cyclopedia.achievementFilter(self)
-      RoundCheckBox
+      CheckBoxCircle
         id: locked
         width: 85
         text: Locked
@@ -1120,7 +1170,7 @@ UIWidget
         anchors.left: all.left
         margin-top: 5
         @onClick: modules.game_cyclopedia.Cyclopedia.achievementFilter(self)
-      RoundCheckBox
+      CheckBoxCircle
         id: accomplished
         width: 100
         text: Accomplished
@@ -1321,7 +1371,7 @@ UIWidget
       anchors.right: parent.right
       image-source: /images/ui/2pixel_up_frame_borderimage
       image-border: 5
-      CheckBox
+      CheckBoxCircle
         id: inventory
         width: 85
         text: Inventory
@@ -1332,7 +1382,7 @@ UIWidget
         margin-left: 8
         margin-top: 8
         @onCheckChange: modules.game_cyclopedia.Cyclopedia.characterItemsFilter(self)
-      CheckBox
+      CheckBoxCircle
         id: depot
         width: 85
         text: Depot
@@ -1342,7 +1392,7 @@ UIWidget
         anchors.left: inventory.right
         margin-left: 10
         @onCheckChange: modules.game_cyclopedia.Cyclopedia.characterItemsFilter(self)
-      CheckBox
+      CheckBoxCircle
         id: stash
         width: 100
         text: Supply Stash
@@ -1352,7 +1402,7 @@ UIWidget
         anchors.left: depot.left
         margin-top: 8
         @onCheckChange: modules.game_cyclopedia.Cyclopedia.characterItemsFilter(self)
-      CheckBox
+      CheckBoxCircle
         id: inbox
         width: 100
         text: Inbox
@@ -1362,7 +1412,7 @@ UIWidget
         anchors.left: depot.right
         margin-left: 30
         @onCheckChange: modules.game_cyclopedia.Cyclopedia.characterItemsFilter(self)
-      CheckBox
+      CheckBoxCircle
         id: store
         width: 100
         text: Store Inbox
@@ -1393,7 +1443,7 @@ UIWidget
       image-source: /images/ui/2pixel_up_frame_borderimage
       image-border: 5
       margin-top: 5
-      RoundCheckBox
+      CheckBoxCircle
         id: list
         width: 85
         text: show as list
@@ -1402,7 +1452,7 @@ UIWidget
         anchors.centerIn: parent
         margin-right: 70
         @onClick: modules.game_cyclopedia.Cyclopedia.characterItemListFilter(self)
-      RoundCheckBox
+      CheckBoxCircle
         id: grid
         width: 100
         text: show as grid
@@ -1411,7 +1461,6 @@ UIWidget
         anchors.verticalCenter: parent.verticalCenter
         anchors.left: list.right
         margin-left: 20
-        margin-bottom: 3
         @onClick: modules.game_cyclopedia.Cyclopedia.characterItemListFilter(self)
   UIWidget
     id: CharacterAppearances
@@ -1429,7 +1478,7 @@ UIWidget
       anchors.right: parent.right
       image-source: /images/ui/2pixel_up_frame_borderimage
       image-border: 5
-      RoundCheckBox
+      CheckBoxCircle
         id: outfits
         width: 85
         text: Outfits
@@ -1439,24 +1488,22 @@ UIWidget
         anchors.left: parent.left
         margin-left: 10
         @onClick: modules.game_cyclopedia.Cyclopedia.characterAppearancesFilter(self)
-      RoundCheckBox
+      CheckBoxCircle
         id: mounts
         width: 85
         text: Mounts
         color: #C0C0C0
         text-offset: 15 0
-        margin-bottom: 3
         anchors.verticalCenter: parent.verticalCenter
         anchors.left: outfits.right
         @onClick: modules.game_cyclopedia.Cyclopedia.characterAppearancesFilter(self)
-      RoundCheckBox
+      CheckBoxCircle
         id: familiars
         width: 85
         text: Familiars
         color: #C0C0C0
         text-offset: 15 0
         anchors.verticalCenter: parent.verticalCenter
-        margin-bottom: 3
         anchors.left: mounts.right
         @onClick: modules.game_cyclopedia.Cyclopedia.characterAppearancesFilter(self)
       ComboBox
@@ -1644,6 +1691,32 @@ UIWidget
             text: 20x
 
         MiniPanel
+          id: taskBoard
+          image-source: /images/ui/outfits/minipanel
+          image-border: 5
+          color: #C0C0C0
+          height: 66
+          padding-bottom: 5
+          margin: 5
+          margin-bottom: 1
+          text: Task Board
+
+          Label
+            id: permanentWeeklyTaskExpansion
+            text-auto-resize: true
+            anchors.top: parent.top
+            anchors.left: parent.left
+            margin-top: 2
+            text: Permanent Weekly Task Expansion:
+
+          Label
+            id: permanentWeeklyTaskExpansionValue
+            anchors.top: parent.top
+            anchors.left: parent.right
+            margin-left: -30
+            text: No
+
+        MiniPanel
           id: dailyReward
           image-source: /images/ui/outfits/minipanel
           image-border: 5
@@ -1802,37 +1875,61 @@ UIWidget
     margin-left: 10
     visible: false
 
-    VerticalSeparator
-      id: separator
-      anchors.horizontalCenter: parent.horizontalCenter
-      anchors.top: parent.top
-      anchors.bottom: parent.bottom
-      margin-top: 5
-      margin-bottom: 5
-
-
-    Panel
-      id: leftPanel
+    
+    UIScrollArea
+      id: content
       anchors.top: parent.top
       anchors.left: parent.left
-      anchors.right: separator.right
-      margin-top: 5
-      margin-left: 5
-      height: 350
-      layout:
-        type: verticalBox
-        spacing: 2
+      anchors.right: scrollbar.left
+      anchors.bottom: parent.bottom
+      vertical-scrollbar: scrollbar
 
-    Panel
-      id: rightPanel
-      anchors.top: prev.top
-      anchors.left: separator.left
+
+      UIWidget
+        id: statsContainer
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: 350
+        layout:
+          type: anchor
+
+        VerticalSeparator
+          id: separator
+          anchors.horizontalCenter: parent.horizontalCenter
+          anchors.top: parent.top
+          anchors.bottom: parent.bottom
+          margin-top: 5
+          margin-bottom: 5
+
+        Panel
+          id: leftPanel
+          anchors.top: parent.top
+          anchors.left: parent.left
+          anchors.right: separator.right
+          margin-top: 5
+          margin-left: 5
+          layout:
+            type: verticalBox
+            fit-children: true
+            
+        Panel
+          id: rightPanel
+          anchors.top: leftPanel.top
+          anchors.left: separator.left
+          anchors.right: parent.right
+          margin-top: 1
+          layout:
+            type: verticalBox
+            fit-children: true
+
+    VerticalScrollBar
+      id: scrollbar
+      anchors.top: parent.top
+      anchors.bottom: parent.bottom
       anchors.right: parent.right
-      margin-top: 1
-      height: 350
-      layout:
-        type: verticalBox
-        spacing: 2
+      step: 48
+      pixel-scroll: true
 
 
   BorderBox
@@ -1843,6 +1940,7 @@ UIWidget
     anchors.right: parent.right
     margin-left: 10
     visible: false
+
     VerticalSeparator
       id: separator
       anchors.horizontalCenter: parent.horizontalCenter
@@ -1883,34 +1981,94 @@ UIWidget
     anchors.right: parent.right
     margin-left: 10
     visible: false
-    VerticalSeparator
-      id: separator
-      anchors.horizontalCenter: parent.horizontalCenter
-      anchors.top: parent.top
-      anchors.bottom: parent.bottom
-      margin-top: 5
-      margin-bottom: 5
 
-
-    Panel
-      id: leftPanel
+    UIScrollArea
+      id: miscStatsContent
       anchors.top: parent.top
       anchors.left: parent.left
-      anchors.right: separator.right
-      margin-top: 5
-      margin-left: 5
-      height: 350
-      layout:
-        type: verticalBox
-        spacing: 2
-
-    Panel
-      id: rightPanel
-      anchors.top: prev.top
-      anchors.left: separator.left
       anchors.right: parent.right
-      margin-top: 1
-      height: 350
-      layout:
-        type: verticalBox
-        spacing: 2
+      anchors.bottom: parent.bottom
+      vertical-scrollbar: miscStatsScrollbar
+      margin-right: 0
+
+      UIWidget
+        id: miscStatsContainer
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        layout:
+          type: anchor
+        
+        VerticalSeparator
+          id: miscStatsSeparator
+          width: 2
+          anchors.horizontalCenter: parent.horizontalCenter
+          anchors.top: parent.top
+          anchors.bottom: parent.bottom
+          margin-top: 5
+          margin-bottom: 5
+
+        Panel
+          id: leftPanel
+          anchors.top: parent.top
+          anchors.left: parent.left
+          anchors.right: miscStatsSeparator.right
+          margin-top: 5
+          margin-left: 5
+          layout:
+            type: verticalBox
+            fit-children: true
+
+        Panel
+          id: rightPanel
+          anchors.top: parent.top
+          anchors.left: miscStatsSeparator.right
+          anchors.right: parent.right
+          margin-top: 5
+          margin-left: 10
+          layout:
+            type: verticalBox
+            fit-children: true
+
+          Label
+            id: activeConcoctions
+            !text: tr("Active Concoctions:")
+            color: #C0C0C0
+            text-auto-resize: true 
+          Panel
+            id: concoctions
+            margin-top: 3
+            layout:
+              type: grid
+              cell-size: 34 34
+              cell-spacing: 5
+              num-columns: 5
+              fit-children: true
+
+          Label
+            id: consumables
+            !text: tr("Active Foods:")
+            margin-top: 10
+            color: #C0C0C0
+            text-auto-resize: true 
+          Panel
+            id: cooldowns
+            margin-top: 3
+            layout:
+              type: grid
+              cell-size: 34 34
+              cell-spacing: 5
+              num-columns: 5
+              fit-children: true
+
+    VerticalScrollBar
+      id: miscStatsScrollbar
+      anchors.top: parent.top
+      anchors.bottom: parent.bottom
+      anchors.right: parent.right
+      step: 48
+      pixel-scroll: true
+      @onMaximumChange: |
+        local visible = self:getMaximum() > 0
+        self:setVisible(visible)
+        self:getParent():getChildById('miscStatsContent'):setMarginRight(visible and self:getWidth() or 0)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,12 +22,23 @@
 
 #pragma once
 
-#include <stduuid/uuid.h>
+#ifndef USE_PRECOMPILED_HEADERS
+#include <cstdint>
 #include <string>
+#include <string_view>
+#endif
+
+#include <stduuid/uuid.h>
 
 #ifdef USE_GMP
 #include <gmp.h>
 #else
+#ifndef OPENSSL_API_COMPAT
+#define OPENSSL_API_COMPAT 0x10100000L
+#endif
+#ifndef OPENSSL_SUPPRESS_DEPRECATED
+#define OPENSSL_SUPPRESS_DEPRECATED
+#endif
 #include <openssl/rsa.h>
 #endif
 
@@ -58,7 +69,7 @@ public:
     int rsaGetSize();
 
     std::string crc32(const std::string& decoded_string, bool upperCase);
-    std::string sha1Encrypt(const std::string& input);
+    std::string sha256(const std::string& decoded_string);
 
 private:
     std::string _encrypt(const std::string& decrypted_string, bool useMachineUUID);

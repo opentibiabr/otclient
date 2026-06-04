@@ -1,0 +1,219 @@
+<html>
+<style>
+    window {
+    font-family: Arial, sans-serif;
+    margin: 24px;
+    background-color: #ffffff;
+    color: #222222;
+    height: 100%;
+    margin-top: 0;
+    margin-left: 0;
+    margin-right: 0;
+    display: block !important;
+    --image-source: none;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 100% !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  h1 {
+    margin-bottom: 4px;
+  }
+
+  p {
+    margin-top: 0;
+    color: #555;
+  }
+
+  .example {
+    border: 2px solid #1b5e20;
+    border-radius: 10px;
+    background-color: #fff;
+    padding: 12px;
+    margin-bottom: 18px;
+
+  }
+
+  .example.purple {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  h3 {
+    margin: 0 0 8px;
+    color: #333;
+  }
+
+  /* Outer row, inner columns */
+  .outer {
+    display: flex;
+    gap: 12px;
+    border: 2px dashed #9aa5b1;
+    background-color: #0099ff;
+    width: 100% !important;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 8px;
+  }
+
+  .card {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    border: 2px solid #388e3c;
+    background-color: #c8e6c9;
+    border-radius: 8px;
+    padding: 10px;
+    gap: 6px;
+  }
+
+  .card-title {
+    color: #333;
+  }
+
+  .card-body {
+    flex: 1;
+    background-color: #fff;
+    border-radius: 4px;
+    padding: 6px;
+  }
+
+  .card-btn {
+    border: 1px solid #388e3c;
+    background-color: #388e3c;
+    color: #fff;
+    border-radius: 4px;
+    padding: 4px 8px;
+    text-align: center;
+  }
+
+  /* Row with icon + text */
+  .row-item1 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 2px solid #2e7d32;
+    background-color: #ffffff;
+    border-radius: 6px;
+    padding: 8px;
+  }
+
+  .icon {
+    width: 36px;
+    height: 36px;
+    background-color: #388e3c;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    flex-shrink: 0;
+  }
+
+  .info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .info-title {}
+
+  .info-sub {
+    color: #555;
+  }
+
+  .list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border: 2px dashed #9aa5b1;
+    padding: 8px;
+    background-color: #eceff1;
+  }
+
+  /* Visual variants per example */
+  .purple .item1 {
+    background-color: #9c27b0;
+  }
+
+  .blue .item1 {
+    background-color: #2196f3;
+  }
+
+  .green .item1 {
+    background-color: #4caf50;
+  }
+
+  .orange .item1 {
+    background-color: #ff9800;
+  }
+
+  .red .item1 {
+    background-color: #f44336;
+  }
+
+  .steel .item1 {
+    background-color: #607d8b;
+  }
+</style>
+<window anchors.fill="parent">
+  <h1>Flexbox: nested flex containers</h1>
+  <p>Flex inside flex. Viewy common in card and list layouts.</p>
+
+  <div class="example purple">
+    <h3>Card row (each card is a flex column)</h3>
+    <div class="outer">
+      <div class="card">
+        <div class="card-title">Card A</div>
+        <div class="card-body">Card A content with more text.</div>
+        <div class="card-btn">See more</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Card B</div>
+        <div class="card-body">Short text.</div>
+        <div class="card-btn">See more</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Card C</div>
+        <div class="card-body">Longer description with plenty of content here.</div>
+        <div class="card-btn">See more</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="example blue">
+    <h3>Item list (nested row flex with icon + info)</h3>
+    <div class="list">
+      <div class="row-item1">
+        <div class="icon">A</div>
+        <div class="info">
+          <div class="info-title">User Alpha</div>
+          <div class="info-sub">Administrator - Online</div>
+        </div>
+      </div>
+      <div class="row-item1">
+        <div class="icon">B</div>
+        <div class="info">
+          <div class="info-title">User Beta</div>
+          <div class="info-sub">Editor - Offline</div>
+        </div>
+      </div>
+      <div class="row-item1">
+        <div class="icon">C</div>
+        <div class="info">
+          <div class="info-title">User Gamma</div>
+          <div class="info-sub">Reader - Online</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</window>
+
+</html>

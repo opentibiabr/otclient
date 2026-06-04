@@ -1,82 +1,116 @@
 <link href="htmlsample.css" />
-<script type="text">
-  self.title = "HTML/CSS";
-  self.msg = "Welcome to HTML/CSS";
-</script>
 <html>
-  <window class="content" placement="center" *title="self.title">
-    <img class="shield" src="/data/images/ui/character/offhand" />
+  <window class="content" placement="center" *title="self.title" *height="self.height" *width="self.width">
+    <div class="tabs">
+      <button onclick="self:selectTab('main')">Current Demo</button>
+      <button onclick="self:selectTab('examples')">Flex Examples</button>
+      <button onclick="self:selectTab('responsive')">Responsive</button>
+    </div>
 
-    <div style="padding: 15px; text-align: center">{{self.msg}}</div>
-    <div class="form">
-      <div style="width: 70%; display: inline-block">
-        <div>
-          <label style="padding: 3">Name:</label>
-          <input type="text" *value="self.playerName" style="margin-left: 26" />
+    <div *visible="self.isMainTab">
+      <img class="shield" src="/data/images/ui/character/offhand" />
+
+      <div style="padding: 15px; text-align: center">{{self.msg}}</div>
+      <div class="form">
+        <div style="width: 70%; display: inline-block">
+          <div>
+            <label style="padding: 3">Name:</label>
+            <input type="text" *value="self.playerName" style="margin-left: 26" />
+          </div>
+          <div>
+            <label style="padding: 5">Look type:</label>
+            <input type="text" *value="self.lookType" />
+          </div>
+        </div>
+        <div style="display: inline-block">
+          <uicreature
+            *if="self:isThingsLoaded() and self.lookType ~= nil and tonumber(self.lookType) ~= nil and tonumber(self.lookType) > 0"
+            *outfit="{type = self.lookType}"
+          />
         </div>
         <div>
-          <label style="padding: 3">Look type:</label>
-          <input type="text" *value="self.lookType" />
+          <button onclick="self:addPlayer(self.playerName)">Add</button>
         </div>
       </div>
-      <div style="display: inline-block">
-        <uicreature *outfit="{type = self.lookType}" />
+      <div id="players" class="form" style="height: 120px;">
+        <table style="width: 100%;">
+          <thead>
+            <tr>
+              <th></th>
+              <th>Outfit</th>
+              <th>Name</th>
+              <th>Remove</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *for="local player in self.players"
+              onclick="print('Player: '.. player.name)"
+            >
+              <td style="text-align: center; vertical-align: center">
+                {{index}}
+              </td>
+              <td>
+                <uicreature
+                  *if="self:isThingsLoaded() and player.lookType ~= nil and tonumber(player.lookType) ~= nil and tonumber(player.lookType) > 0"
+                  *outfit="{type = player.lookType}"
+                ></uicreature>
+              </td>
+              <td class="playerName">{{player.name}}</td>
+              <td>
+                <button
+                  class="buttonRemovePlayer"
+                  onclick="self:removePlayer(index)"
+                >
+                  X
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-      <div>
-        <button onclick="self:addPlayer(self.playerName)">Add</button>
+      <div style="margin-top: 5">
+        <input
+          id="showEqualizerEffect"
+          type="checkbox"
+          *checked="self.showEqualizerEffect"
+        />
+        <label for="showEqualizerEffect">Show equalizer effect</label>
+      </div>
+      <div class="equalizerEffect" *visible="self.showEqualizerEffect">
+        <div class="line"></div>
+        <div class="line"></div>
+        <div class="line"></div>
+        <div class="line"></div>
+        <div class="line"></div>
       </div>
     </div>
-    <div id="players" class="form">
-      <table style="width: 100%">
-        <thead>
-          <tr>
-            <th></th>
-            <th>Outfit</th>
-            <th>Name</th>
-            <th>Remove</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            *for="local player in self.players"
-            onclick="print('Player: '.. player.name)"
-          >
-            <td style="text-align: center; vertical-align: center">
-              {{index}}
-            </td>
-            <td>
-              <uicreature *outfit="{type = player.lookType}"></uicreature>
-            </td>
-            <td class="playerName">{{player.name}}</td>
-            <td>
-              <button
-                class="buttonRemovePlayer"
-                onclick="self:removePlayer(index)"
-              >
-                X
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+
+    <div id="examplesTab" *visible="self.isExamplesTab">
+      <div class="exampleControls">
+        <label for="exampleComboBox">Example:</label>
+        <select id="exampleComboBox" onchange="self:onExampleComboBoxChange(event)"></select>
+      </div>
+      <div id="examplePreview" class="examplePreview"></div>
     </div>
-    <div style="margin-top: 5">
-      <input
-        id="showEqualizerEffect"
-        type="checkbox"
-        *checked="self.showEqualizerEffect"
-      />
-      <label for="showEqualizerEffect">Show equalizer effect</label>
+
+    <div id="responsiveTab" *visible="self.isResponsiveTab">
+      <div class="responsiveHeader">
+        <div class="responsiveTitle">Responsive flex-wrap demo</div>
+        <div id="responsiveWidthLabel" class="responsiveMeta">Width: 480px</div>
+      </div>
+      <div class="responsiveHint">
+        The viewport below changes width automatically to show flex-wrap in the content area.
+      </div>
+      <div class="responsiveStage">
+        <div class="responsiveViewportFrame">
+          <div id="responsiveViewport" class="responsiveViewport"></div>
+        </div>
+      </div>
     </div>
-    <div class="equalizerEffect" *visible="self.showEqualizerEffect">
-      <div class="line"></div>
-      <div class="line"></div>
-      <div class="line"></div>
-      <div class="line"></div>
-      <div class="line"></div>
-    </div>
-    <div class="footer">
-      <button onclick="alert('HTML/CSS V.3b')">About</button>
+
+    <div class="appFooter">
+      <button onclick="alert('HTML/CSS V.4b')">About</button>
       <button style="float: right" onclick="self:unloadHtml()">Close</button>
     </div>
   </window>

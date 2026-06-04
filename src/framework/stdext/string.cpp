@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,19 +20,41 @@
  * THE SOFTWARE.
  */
 
+#include "string.h"
+#include "exception.h"
+#include "types.h"
+
+#ifndef USE_PRECOMPILED_HEADERS
+#include <algorithm>
+#include <charconv>
+#include <cctype>
+#include <cstdint>
+#include <ctime>
+#include <iterator>
+#include <ranges>
+#endif
+
+#include <utf8cpp/utf8.h>
+
 #ifdef _MSC_VER
 #pragma warning(disable:4267) // '?' : conversion from 'A' to 'B', possible loss of data
 #endif
 
 namespace stdext
 {
+    class string_error : public exception
+    {
+    public:
+        using exception::exception;
+    };
+
     [[nodiscard]] std::string resolve_path(std::string_view filePath, std::string_view sourcePath) {
         if (filePath.starts_with("/"))
             return std::string(filePath);
 
         auto slashPos = sourcePath.find_last_of('/');
         if (slashPos == std::string::npos)
-            throw std::runtime_error("Invalid source path '" + std::string(sourcePath) + "' for file '" + std::string(filePath) + "'");
+            throw string_error("Invalid source path '" + std::string(sourcePath) + "' for file '" + std::string(filePath) + "'");
 
         return std::string(sourcePath.substr(0, slashPos + 1)) + std::string(filePath);
     }
@@ -48,11 +70,13 @@ namespace stdext
         localtime_r(&tnow, &ts);
 #endif
 
-        char date[20];
-        if (std::strftime(date, sizeof(date), format, &ts) == 0)
-            throw std::runtime_error("Failed to format date-time string");
+        std::string date(128, '\0');
+        const auto length = std::strftime(date.data(), date.size(), format, &ts);
+        if (length == 0)
+            throw string_error("Failed to format date-time string");
 
-        return std::string(date);
+        date.resize(length);
+        return date;
     }
 
     [[nodiscard]] std::string dec_to_hex(uint64_t num) {
@@ -66,80 +90,76 @@ namespace stdext
         uint64_t num = 0;
         auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), num, 16);
         if (ec != std::errc())
-            throw std::runtime_error("Invalid hexadecimal input");
+            throw string_error("Invalid hexadecimal input");
         return num;
     }
 
     [[nodiscard]] bool is_valid_utf8(std::string_view src) {
-        for (size_t i = 0; i < src.size();) {
-            unsigned char c = src[i];
-            size_t bytes = (c < 0x80) ? 1 : (c < 0xE0) ? 2 : (c < 0xF0) ? 3 : (c < 0xF5) ? 4 : 0;
-            if (!bytes || i + bytes > src.size() || (bytes > 1 && (src[i + 1] & 0xC0) != 0x80))
-                return false;
-            i += bytes;
-        }
-        return true;
+        return utf8::is_valid(src.begin(), src.end());
     }
 
     [[nodiscard]] std::string utf8_to_latin1(std::string_view src) {
         std::string out;
         out.reserve(src.size());
-        for (size_t i = 0; i < src.size(); ++i) {
-            uint8_t c = static_cast<uint8_t>(src[i]);
-            if ((c >= 32 && c < 128) || c == 0x0d || c == 0x0a || c == 0x09) {
-                out += c;
-            } else if (c == 0xc2 || c == 0xc3) {
-                if (i + 1 < src.size()) {
-                    uint8_t c2 = static_cast<uint8_t>(src[++i]);
-                    out += (c == 0xc2) ? c2 : (c2 + 64);
-                }
-            } else {
-                while (i + 1 < src.size() && (src[i + 1] & 0xC0) == 0x80) {
-                    ++i;
+
+        try {
+            auto it = src.begin();
+            const auto end = src.end();
+
+            while (it != end) {
+                const uint32_t codepoint = utf8::next(it, end);
+
+                if (codepoint <= 0xFF) {
+                    if ((codepoint >= 32 && codepoint < 128) || codepoint == 0x0d || codepoint == 0x0a || codepoint == 0x09 || codepoint >= 0xA0)
+                        out += static_cast<char>(codepoint);
                 }
             }
+        } catch (const utf8::exception&) {
+            return "";
         }
+
         return out;
     }
 
     [[nodiscard]] std::string latin1_to_utf8(std::string_view src) {
         std::string out;
         out.reserve(src.size() * 2);
-        for (uint8_t c : src) {
-            if ((c >= 32 && c < 128) || c == 0x0d || c == 0x0a || c == 0x09) {
-                out += c;
-            } else {
-                out.push_back(0xc2 + (c > 0xbf));
-                out.push_back(0x80 + (c & 0x3f));
-            }
+
+        try {
+            for (const unsigned char c : src)
+                utf8::append(static_cast<uint32_t>(c), std::back_inserter(out));
+        } catch (const utf8::exception&) {
+            return "";
         }
+
         return out;
     }
 
 #ifdef WIN32
-#include <windows.h>
-#include <winsock2.h>
-
     std::wstring utf8_to_utf16(const std::string_view src)
     {
-        constexpr size_t BUFFER_SIZE = 65536;
+        std::wstring out;
 
-        std::wstring res;
-        wchar_t out[BUFFER_SIZE];
-        if (MultiByteToWideChar(CP_UTF8, 0, src.data(), -1, out, BUFFER_SIZE))
-            res = out;
-        return res;
+        try {
+            utf8::utf8to16(src.begin(), src.end(), std::back_inserter(out));
+        } catch (const utf8::exception&) {
+            return L"";
+        }
+
+        return out;
     }
 
     std::string utf16_to_utf8(const std::wstring_view src)
     {
-        constexpr size_t BUFFER_SIZE = 65536;
+        std::string out;
 
-        std::string res;
-        char out[BUFFER_SIZE];
-        if (WideCharToMultiByte(CP_UTF8, 0, src.data(), -1, out, BUFFER_SIZE, nullptr, nullptr))
-            res = out;
-        return res;
+        try {
+            utf8::utf16to8(src.begin(), src.end(), std::back_inserter(out));
+        } catch (const utf8::exception&) {
+            return "";
+        }
+
+        return out;
     }
 
     std::wstring latin1_to_utf16(const std::string_view src) { return utf8_to_utf16(latin1_to_utf8(src)); }
@@ -226,14 +246,18 @@ namespace stdext
 
         while (p < end) {
             const char* token_start = p;
-            while (p < end && separators.find(*p) == std::string_view::npos)
-                ++p;
 
-            if (p > token_start)
+            while (p < end && separators.find(*p) == std::string_view::npos) {
+                ++p;
+            }
+
+            if (p > token_start) {
                 result.emplace_back(token_start, p - token_start);
+            }
 
-            while (p < end && separators.find(*p) != std::string_view::npos)
+            while (p < end && separators.find(*p) != std::string_view::npos) {
                 ++p;
+            }
         }
 
         return result;

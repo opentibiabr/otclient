@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -98,15 +98,15 @@ void LightView::draw(const Rect& dest, const Rect& src)
 
         SpinLock::Guard guard(m_pool->getThreadLock());
         m_pixels[0].swap(m_pixels[1]);
-        updatePixel.store(true, std::memory_order_release);
+        updatePixel.store(true, std::memory_order_relaxed);
     }
     m_pool->getHashController().reset();
 
     g_drawPool.addAction([=, this] {
-        if (updatePixel.load(std::memory_order_acquire)) {
+        if (updatePixel.load(std::memory_order_relaxed)) {
             SpinLock::Guard guard(m_pool->getThreadLock());
             m_texture->updatePixels(m_pixels[1].data());
-            updatePixel = false;
+            updatePixel.store(false, std::memory_order_relaxed);
         }
 
         updateCoords(dest, src);

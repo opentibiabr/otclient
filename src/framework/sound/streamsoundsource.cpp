@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -46,7 +46,7 @@ void StreamSoundSource::setFile(std::string filename)
     const SoundFilePtr soundFile = SoundFile::loadSoundFile(filename);
 
     if (!soundFile) {
-        g_logger.error("unable to load sound file '{}'", filename);
+        g_logger.error("Unable to load sound file '{}'", filename);
         return;
     }
 
@@ -184,12 +184,12 @@ bool StreamSoundSource::fillBufferAndQueue(const uint32_t buffer)
         alBufferData(buffer, format, bufferData.data(), bytesRead, m_soundFile->getRate());
         ALenum err = alGetError();
         if (err != AL_NO_ERROR)
-            g_logger.error("unable to refill audio buffer for '{}': {}", m_soundFile->getName(), alGetString(err));
+            g_logger.error("Unable to refill audio buffer for '{}': {}", m_soundFile->getName(), alGetString(err));
 
         alSourceQueueBuffers(m_sourceId, 1, &buffer);
         err = alGetError();
         if (err != AL_NO_ERROR)
-            g_logger.error("unable to queue audio buffer for '{}': {}", m_soundFile->getName(), alGetString(err));
+            g_logger.error("Unable to queue audio buffer for '{}': {}", m_soundFile->getName(), alGetString(err));
     }
 
     // return false if there aren't more buffers to fill

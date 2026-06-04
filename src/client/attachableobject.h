@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -80,7 +80,7 @@ protected:
         std::vector<UIWidgetPtr> attachedWidgets;
     };
 
-    void drawAttachedEffect(const Point& dest, LightView* lightView, bool isOnTop);
+    void drawAttachedEffect(const Point& originalDest, const Point& dest, LightView* lightView, bool isOnTop);
     void drawAttachedLightEffect(const Point& dest, LightView* lightView);
 
     void onDetachEffect(const AttachedEffectPtr& effect, bool callEvent = true);

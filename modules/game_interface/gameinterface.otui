@@ -54,8 +54,10 @@ UIWidget
     anchors.left: gameLeftActionPanel.right
     anchors.right: gameRightActionPanel.left
     anchors.top: gameTopPanel.bottom
-    anchors.bottom: bottomSplitter.bottom
+    anchors.bottom: bottomSplitter.top
     focusable: false
+    margin-top: 1
+    margin-bottom: 1
 
     Button
       id: showTopMenuButton
@@ -335,53 +337,52 @@ UIWidget
     size: 9 27
     @onClick: onIncreaseLeftPanels()
 
-    $pressed !disabled:
-      image-clip: 36 0 9 27
-
+    $hover:
+      image-clip: 27 0 9 27
     $disabled:
-      image-clip: 45 0 9 27
+      image-clip: 36 0 9 27
 
   Button
     id: leftDecreaseSidePanels
     anchors.left: leftIncreaseSidePanels.left
     anchors.top: leftIncreaseSidePanels.bottom
     image-source: /images/ui/topstats_button_panel
-    image-clip: 0 0 9 27
+    image-clip: 36 26 9 27
     size: 9 27
     @onClick: onDecreaseLeftPanels()
 
-    $pressed !disabled:
-      image-clip: 9 0 9 27
+    $hover:
+      image-clip: 36 26 9 27
 
     $disabled:
-      image-clip: 18 0 9 27
+      image-clip: 27 27 9 27
 
   Button
     id: rightIncreaseSidePanels
     anchors.right: gameRightExtraPanel.left
     anchors.top: parent.top
     image-source: /images/ui/topstats_button_panel
-    image-clip: 27 27 9 27
+    image-clip: 0 0 9 27
     size: 9 27
     @onClick: onIncreaseRightPanels()
 
-    $pressed !disabled:
-      image-clip: 36 27 9 27
+    $hover:
+      image-clip: 0 0 9 27
 
     $disabled:
-      image-clip: 45 27 9 27
+      image-clip: 9 0 9 27
 
   Button
     id: rightDecreaseSidePanels
     anchors.right: rightIncreaseSidePanels.right
     anchors.top: rightIncreaseSidePanels.bottom
     image-source: /images/ui/topstats_button_panel
-    image-clip: 0 27 9 27
+    image-clip: 9 27 9 27
     size: 9 27
     @onClick: onDecreaseRightPanels()
 
-    $pressed !disabled:
+    $hover:
       image-clip: 9 27 9 27
 
     $disabled:
-      image-clip: 18 27 9 27
+      image-clip: 0 27 9 27

@@ -88,17 +88,19 @@ local extraWidgets = {
 }
 
 local function toggleDisplays()
-    if options['displayNames'].value and options['displayHealth'].value and options['displayMana'].value then
+    if options['displayNames'].value and options['displayHealth'].value and options['displayMana'].value and options['displayHarmony'].value then
         setOption('displayNames', false)
     elseif options['displayHealth'].value then
         setOption('displayHealth', false)
         setOption('displayMana', false)
+        setOption('displayHarmony', false)
     else
         if not options['displayNames'].value and not options['displayHealth'].value then
             setOption('displayNames', true)
         else
             setOption('displayHealth', true)
             setOption('displayMana', true)
+            setOption('displayHarmony', true)
         end
     end
 end
@@ -117,7 +119,7 @@ local function setupComboBox()
     local mouseControlModeCombobox = panels.generalPanel:recursiveGetChildById('mouseControlMode')
     local lootControlModeCombobox = panels.generalPanel:recursiveGetChildById('lootControlMode')
 
-    for k, v in pairs({ { 'Disabled', 'disabled' }, { 'Default', 'default' }, { 'Full', 'full' } }) do
+    for k, v in pairs({ { 'Disabled', 'disabled' }, { 'Default', 'default' }, { 'Full', 'full' }, { 'Animation', 'animation' } }) do
         crosshairCombo:addOption(v[1], v[2])
     end
 
@@ -262,9 +264,14 @@ local function setup()
             end
         end
     end, 100)
-    
-    -- Ensure settings are saved
-    g_settings.save()
+
+    local talkOnRightClick = panels.generalPanel:recursiveGetChildById('talkOnRightClick')
+    if talkOnRightClick then
+        local parent = talkOnRightClick:getParent()
+        parent:setVisible(false)
+        parent:setHeight(0)
+        parent:setMarginTop(0)
+    end
 end
 
 
@@ -395,7 +402,23 @@ function controller:onGameStart()
         if Keybind.selectPreset(name) then
             panels.keybindsPanel.presets.list:setCurrentOption(name, true)
             updateKeybinds()
+            if modules.game_actionbar and modules.game_actionbar.selectHotkeySet then
+                if not modules.game_actionbar.selectHotkeySet(name) then
+                    g_logger.warning(string.format("[client_options] Failed to sync action bar hotkey set '%s' on startup.", name))
+                end
+            end
         end
+    end
+    if not g_game.getFeature(GameEffectSource) then
+        panels.graphicsEffectsPanel.clientEffectOpacity:show()
+        panels.graphicsEffectsPanel.clientMissileOpacity:show()
+        panels.graphicsEffectsPanel.GameEffectSource:hide()
+    else
+        g_client.setEffectAlpha(1)
+        g_client.setMissileAlpha(1)
+        panels.graphicsEffectsPanel.clientEffectOpacity:hide()
+        panels.graphicsEffectsPanel.clientMissileOpacity:hide()
+        panels.graphicsEffectsPanel.GameEffectSource:show()
     end
 end
 
@@ -460,12 +483,18 @@ function show()
     controller.ui:show()
     controller.ui:raise()
     controller.ui:focus()
+    if extraWidgets.optionsButton then
+        extraWidgets.optionsButton:setOn(true)
+    end
 end
 
 function hide()
     -- Save all settings when closing the options window
     g_settings.save()
     controller.ui:hide()
+    if extraWidgets.optionsButton then
+        extraWidgets.optionsButton:setOn(false)
+    end
 end
 
 function saveOptions()

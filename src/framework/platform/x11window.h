@@ -29,6 +29,12 @@
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 
+inline constexpr auto X11None = None;
+
+#ifdef None
+#undef None
+#endif
+
 #ifdef OPENGL_ES
 #include <EGL/egl.h>
 #else
@@ -46,9 +52,11 @@ class X11Window : public PlatformWindow
     void internalCreateGLContext();
     void internalDestroyGLContext();
     void internalConnectGLContext();
+    void restoreMouseCursorNow();
+    void updateCursor();
 
-    void *getExtensionProcAddress(const char *ext);
-    bool isExtensionSupported(const char *ext);
+    void* getExtensionProcAddress(const char* ext);
+    bool isExtensionSupported(const char* ext);
 
 public:
     X11Window();
@@ -67,6 +75,7 @@ public:
     void hideMouse();
 
     void setMouseCursor(int cursorId);
+    void setSystemCursor(const std::string& cursorName) override;
     void restoreMouseCursor();
 
     void setTitle(const std::string_view title);
@@ -84,12 +93,18 @@ protected:
     int internalLoadMouseCursor(const ImagePtr& image, const Point& hotSpot);
 
 private:
-    Display *m_display;
-    XVisualInfo *m_visual;
+    Display* m_display;
+    XVisualInfo* m_visual;
     Window m_window;
     Window m_rootWindow;
     Colormap m_colormap;
-    std::vector<Cursor> m_cursors;
+    struct CursorState
+    {
+        std::vector<Cursor> cursors;
+        std::vector<int> delays;
+    };
+    std::vector<CursorState> m_cursors;
+    stdext::map<unsigned int, Cursor> m_systemCursors;
     Cursor m_cursor;
     Cursor m_hiddenCursor;
     XIM m_xim;
@@ -97,10 +112,13 @@ private:
     int m_screen;
     Atom m_wmDelete;
     std::string m_clipboardText;
+    int m_currentCursorId = -1;
+    int m_cursorFrame = 0;
+    Timer m_cursorTimer;
 
 #ifndef OPENGL_ES
     GLXContext m_glxContext;
-    GLXFBConfig *m_fbConfig;
+    GLXFBConfig* m_fbConfig;
 #else
     EGLConfig m_eglConfig;
     EGLContext m_eglContext;
@@ -110,4 +128,3 @@ private:
 };
 
 #endif
-

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -54,7 +54,7 @@ void SpriteManager::reload() {
 }
 
 void SpriteManager::load() {
-    m_spritesFiles.resize(g_asyncDispatcher.get_thread_count());
+    m_spritesFiles.resize(g_asyncDispatcher->get_thread_count());
     if (g_app.isLoadingAsyncTexture()) {
         for (auto& file : m_spritesFiles)
             file = std::make_unique<FileStream_m>(g_resources.openFile(m_lastFileName));

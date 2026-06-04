@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -44,8 +44,9 @@ namespace Otc
         DrawBars = 1 << 2,
         DrawNames = 1 << 3,
         DrawManaBar = 1 << 4,
+        DrawHarmony = 1 << 5,
         DrawThingsAndLights = DrawThings | DrawLights,
-        DrawCreatureInfo = DrawBars | DrawNames | DrawManaBar,
+        DrawCreatureInfo = DrawBars | DrawNames | DrawManaBar | DrawHarmony,
     };
 
     enum DatOpts : uint8_t
@@ -384,6 +385,87 @@ namespace Otc
         PREY_TASK_STATE_COMPLETED = 5
     };
 
+    enum TaskBoardType_t : uint8_t
+    {
+        TASK_BOARD_BOUNTY = 0,
+        TASK_BOARD_WEEKLY = 1,
+        TASK_BOARD_HUNT_SHOP = 2
+    };
+
+    enum TaskBoardBountyRerollMode_t : uint8_t
+    {
+        TASK_BOARD_BOUNTY_REROLL_DAILY_CLAIMABLE = 0,
+        TASK_BOARD_BOUNTY_REROLL_TIMER_RUNNING = 1,
+        TASK_BOARD_BOUNTY_REROLL_LIMIT_REACHED = 2
+    };
+
+    enum TaskBoardShopOfferType_t : uint8_t
+    {
+        TASK_BOARD_SHOP_OFFER_ITEM = 0,
+        TASK_BOARD_SHOP_OFFER_MOUNT = 1,
+        TASK_BOARD_SHOP_OFFER_OUTFIT = 2,
+        TASK_BOARD_SHOP_OFFER_ITEM_DOUBLE = 3,
+        TASK_BOARD_SHOP_OFFER_BONUS_PROMOTION = 4,
+        TASK_BOARD_SHOP_OFFER_WEEKLY_EXPANSION = 5
+    };
+
+    enum TaskBoardShopStatus_t : uint8_t
+    {
+        TASK_BOARD_SHOP_STATUS_AVAILABLE = 0,
+        TASK_BOARD_SHOP_STATUS_NOT_AVAILABLE = 1,
+        TASK_BOARD_SHOP_STATUS_NOT_ENOUGH_POINTS = 2,
+        TASK_BOARD_SHOP_STATUS_REQUIRES_OUTFIT = 3,
+        TASK_BOARD_SHOP_STATUS_BOUGHT = 4
+    };
+
+    enum TaskBoardOption_t : uint8_t
+    {
+        TASK_BOARD_OPTION_OPEN_BOUNTY = 0,
+        TASK_BOARD_OPTION_OPEN_WEEKLY = 1,
+        TASK_BOARD_OPTION_BOUNTY_CHANGE_DIFFICULTY = 2,
+        TASK_BOARD_OPTION_BOUNTY_REROLL = 3,
+        TASK_BOARD_OPTION_BOUNTY_CLAIM_DAILY = 4,
+        TASK_BOARD_OPTION_BOUNTY_SELECT_TASK = 5,
+        TASK_BOARD_OPTION_BOUNTY_CLAIM_REWARD = 6,
+        TASK_BOARD_OPTION_BOUNTY_TALISMAN_UPGRADE = 7,
+        TASK_BOARD_OPTION_WEEKLY_DELIVER = 8,
+        TASK_BOARD_OPTION_WEEKLY_SELECT_DIFFICULTY = 9,
+        TASK_BOARD_OPTION_OPEN_HUNTING_SHOP = 10,
+        TASK_BOARD_OPTION_HUNTING_SHOP_BUY_OFFER = 11,
+        TASK_BOARD_OPTION_PREFERRED_UNLOCK = 12,
+        TASK_BOARD_OPTION_PREFERRED_CLEAR = 13,
+        TASK_BOARD_OPTION_UNWANTED_CLEAR = 14,
+        TASK_BOARD_OPTION_PREFERRED_ASSIGN = 15,
+        TASK_BOARD_OPTION_UNWANTED_ASSIGN = 16
+    };
+
+    enum TaskBoardBountyAction_t : uint8_t
+    {
+        BOUNTY_ACTION_REROLL = 0,
+        BOUNTY_ACTION_SELECT = 1,
+        BOUNTY_ACTION_CLAIM_REWARD = 2,
+        BOUNTY_ACTION_CHANGE_DIFFICULTY = 3,
+        BOUNTY_ACTION_REQUEST = 4,
+        BOUNTY_ACTION_CLAIM_DAILY = 5
+    };
+
+    enum TaskBoardWeeklyAction_t : uint8_t
+    {
+        WEEKLY_ACTION_SELECT_DIFFICULTY = 0,
+        WEEKLY_ACTION_DELIVER_ITEM = 1,
+        WEEKLY_ACTION_REFRESH_DATA = 2
+    };
+
+    enum TaskBoardPreferredAction_t : uint8_t
+    {
+        PREFERRED_ACTION_REQUEST = 0,
+        PREFERRED_ACTION_BUY_SLOT = 1,
+        PREFERRED_ACTION_SET_PREFERRED = 2,
+        PREFERRED_ACTION_SET_UNWANTED = 3,
+        PREFERRED_ACTION_REMOVE_PREFERRED = 4,
+        PREFERRED_ACTION_REMOVE_UNWANTED = 5
+    };
+
     enum PreyMessageDialog_t : uint8_t
     {
         //PREY_MESSAGEDIALOG_IMBUEMENT_SUCCESS = 0,
@@ -437,6 +519,14 @@ namespace Otc
         PREY_UNLOCK_STORE_AND_PREMIUM = 0,
         PREY_UNLOCK_STORE = 1,
         PREY_UNLOCK_NONE = 2,
+    };
+    enum class ForgeAction_t : uint8_t
+    {
+        FUSION = 0,
+        TRANSFER = 1,
+        DUST2SLIVER = 2,
+        SLIVER2CORE = 3,
+        INCREASELIMIT = 4,
     };
 
     enum GameFeature : uint8_t
@@ -536,6 +626,7 @@ namespace Otc
         GameAnthem = 95,
         GameVipGroups = 96,
         GameBosstiary = 97,
+        GameDoublePlayerGoodsMoney = 98,
 
         //  others
         GameLoadSprInsteadProtobuf = 100,
@@ -562,10 +653,18 @@ namespace Otc
         GameColorizedLootValue = 121,
         GameAllowPreWalk = 122,
         GamePlayerFamiliars = 123,
-        // = 124,
+        GameTileAddThingWithStackpos = 124,
         GameMapCache = 125,
         GameForgeSkillStats = 126,
         GameCharacterSkillStats = 127,
+        GameCreaturePaperdoll = 128,
+        GameMultiSpr = 129,
+        GameVocationMonk = 130,
+        GameLevelPercentU16 = 131,
+        GameEffectSource = 132,
+        GameNpcWindowRedesign = 133,
+        GameTaskboard = 134,
+        GameProficiency = 135,
         LastGameFeature
     };
 
@@ -633,12 +732,22 @@ namespace Otc
     enum Blessings : uint32_t
     {
         BlessingNone = 0,
-        BlessingAdventurer = 1,
-        BlessingSpiritualShielding = 1 << 1,
-        BlessingEmbraceOfTibia = 1 << 2,
-        BlessingFireOfSuns = 1 << 3,
-        BlessingWisdomOfSolitude = 1 << 4,
-        BlessingSparkOfPhoenix = 1 << 5
+        BlessingAdventurer = 1,              // bit 1
+        BlessingTwistOfFate = 1 << 1,        // bit 2
+        BlessingWisdomOfSolitude = 1 << 2,   // bit 3
+        BlessingSparkOfPhoenix = 1 << 3,     // bit 4
+        BlessingFireOfSuns = 1 << 4,         // bit 5
+        BlessingSpiritualShielding = 1 << 5, // bit 6
+        BlessingEmbraceOfTibia = 1 << 6,     // bit 7
+        BlessingHeartOfMountain = 1 << 7,    // bit 8
+        BlessingBloodOfMountain = 1 << 8,    // bit 9
+
+        // Legacy / Compatibility
+        LegacySpiritualShielding = 1 << 1,
+        LegacyEmbraceOfTibia = 1 << 2,
+        LegacyFireOfSuns = 1 << 3,
+        LegacyWisdomOfSolitude = 1 << 4,
+        LegacySparkOfPhoenix = 1 << 5
     };
 
     enum DeathType : uint8_t
@@ -673,28 +782,33 @@ namespace Otc
 
     enum ResourceTypes_t : uint8_t
     {
-        RESOURCE_BANK_BALANCE = 0,
-        RESOURCE_GOLD_EQUIPPED = 1,
-        RESOURCE_CURRENCY_CUSTOM_EQUIPPED = 2,
-        RESOURCE_PREY_WILDCARDS = 10,
-        RESOURCE_DAILYREWARD_STREAK = 20,
-        RESOURCE_DAILYREWARD_JOKERS = 21,
-        RESOURCE_CHARM = 30,
-        RESOURCE_MINOR_CHARM = 31,
-        RESOURCE_MAX_CHARM = 32,
-        RESOURCE_MAX_MINOR_CHARM = 33,
-        RESOURCE_TASK_HUNTING = 50,
-        RESOURCE_FORGE_DUST = 70,
-        RESOURCE_FORGE_SLIVER = 71,
-        RESOURCE_FORGE_CORES = 72,
-        RESOURCE_LESSER_GEMS = 81,
-        RESOURCE_REGULAR_GEMS = 82,
-        RESOURCE_GREATER_GEMS = 83,
-        RESOURCE_WHEEL_OF_DESTINY = 86,
-        RESOURE_COIN_NORMAL = 90,
-        RESOURE_COIN_TRANSFERRABLE = 91,
-        RESOURE_COIN_AUCTION = 92,
-        RESOURE_COIN_TOURNAMENT = 93,
+        RESOURCE_BANK_BALANCE = 0, // 0x00
+        RESOURCE_GOLD_EQUIPPED = 1, // 0x01
+        RESOURCE_NPC_TRADE = 2, // 0x02
+        RESOURCE_PREY_WILDCARDS = 10, // 0x0A
+        RESOURCE_DAILYREWARD_STREAK = 20, // 0x14
+        RESOURCE_DAILYREWARD_JOKERS = 21, // 0x15
+        RESOURCE_CHARM = 30, // 0x1E
+        RESOURCE_MINOR_CHARM = 31, // 0x1F
+        RESOURCE_MAX_CHARM = 32, // 0x20
+        RESOURCE_MAX_MINOR_CHARM = 33, // 0x21
+        RESOURCE_TASK_HUNTING = 50, // 0x32
+        RESOURCE_NPC_STORAGE_TRADE = 60, // 0x3C
+        RESOURCE_FORGE_DUST = 70, // 0x46
+        RESOURCE_FORGE_SLIVER = 71, // 0x47
+        RESOURCE_FORGE_CORES = 72, // 0x48
+        RESOURCE_WHEEL_POINTS = 80, // 0x50
+        RESOURCE_LESSER_GEMS = 81, // 0x51
+        RESOURCE_REGULAR_GEMS = 82, // 0x52
+        RESOURCE_GREATER_GEMS = 83, // 0x53
+        RESOURCE_LESSER_FRAGMENT = 84, // 0x54
+        RESOURCE_GREATER_FRAGMENT = 85, // 0x55
+        RESOURCE_BOUNTY_POINTS = 86, // 0x56
+        RESOURCE_SOULSEALS = 87, // 0x57
+        RESOURE_COIN_NORMAL = 90, // 0x5A
+        RESOURE_COIN_TRANSFERRABLE = 91, // 0x5B
+        RESOURE_COIN_AUCTION = 92, // 0x5C
+        RESOURE_COIN_TOURNAMENT = 93, // 0x5D
     };
 
     enum ExperienceRate_t : uint8_t
@@ -731,9 +845,12 @@ namespace Otc
         ITEM_DESC_PERFECT = 21,
         ITEM_DESC_UPGRADECLASS = 22,
         ITEM_DESC_CURRENTTIER = 23,
+        ITEM_DESC_ELEMENTALBOND = 24,
+        ITEM_DESC_MANTRA = 25,
+        ITEM_DESC_IMBUEMENTEFFECT = 26,
 
         ITEM_DESC_FIRST = ITEM_DESC_ARMOR,
-        ITEM_DESC_LAST = ITEM_DESC_CURRENTTIER,
+        ITEM_DESC_LAST = ITEM_DESC_IMBUEMENTEFFECT,
     };
 
     enum MarketAction : uint8_t
@@ -814,7 +931,8 @@ namespace Otc
         INSPECT_NORMALOBJECT = 0,
         INSPECT_NPCTRADE = 1,
         INSPECT_PLAYERTRADE = 2,
-        INSPECT_CYCLOPEDIA = 3
+        INSPECT_CYCLOPEDIA = 3,
+        INSPECT_PROFICIENCY = 4
     };
 
     enum GameStoreInfoType_t : uint8_t
@@ -852,6 +970,58 @@ namespace Otc
         OPEN_SEARCH = 5,
     };
 
+    enum WeaponProficiency_t : uint8_t
+    {
+        WEAPON_PROFICIENCY_ITEM_INFO = 0,
+        WEAPON_PROFICIENCY_LIST_INFO = 1,
+        WEAPON_PROFICIENCY_RESET_PERKS = 2,
+        WEAPON_PROFICIENCY_APPLY_PERKS = 3
+    };
+
+    enum Imbuement_Window_t : uint8_t
+    {
+        IMBUEMENT_WINDOW_CHOICE = 0,
+        IMBUEMENT_WINDOW_SELECT_ITEM = 1,
+        IMBUEMENT_WINDOW_SCROLL = 2
+    };
+
+    enum ClientEventType_t : uint8_t
+    {
+        CLIENT_EVENT_TYPE_SIMPLE = 1,
+        CLIENT_EVENT_TYPE_ACHIEVEMENT = 2,
+        CLIENT_EVENT_TYPE_TITLE = 3,
+        CLIENT_EVENT_TYPE_LEVEL = 4,
+        CLIENT_EVENT_TYPE_SKILL = 5,
+        CLIENT_EVENT_TYPE_BESTIARY = 6,
+        CLIENT_EVENT_TYPE_BOSSTIARY = 7,
+        CLIENT_EVENT_TYPE_QUEST = 8,
+        CLIENT_EVENT_TYPE_COSMETIC = 9,
+        CLIENT_EVENT_TYPE_PROFICIENCY = 10,
+        CLIENT_EVENT_TYPE_LAST
+    };
+
+    enum ClientEvent_t : uint8_t
+    {
+        // screenshot
+        CLIENT_EVENT_NONE = 0,
+        CLIENT_EVENT_BOSSDEFEATED = 1,
+        CLIENT_EVENT_DEATHPVE = 2,
+        CLIENT_EVENT_DEATHPVP = 3,
+        CLIENT_EVENT_PLAYERKILLASSIST = 4,
+        CLIENT_EVENT_PLAYERKILL = 5,
+        CLIENT_EVENT_PLAYERATTACKING = 6,
+        CLIENT_EVENT_TREASUREFOUND = 7,
+        CLIENT_EVENT_GIFTOFLIFE = 8,
+        // pop up
+        CLIENT_EVENT_ATTACKSTOPPED = 9,
+        CLIENT_EVENT_CAPACITYLIMIT = 10,
+        CLIENT_EVENT_OUTOFAMMO = 11,
+        CLIENT_EVENT_TARGETTOOCLOSE = 12,
+        CLIENT_EVENT_OUTOFSOULPOINTS = 13,
+        CLIENT_EVENT_TUTORIALCOMPLETE = 14,
+        CLIENT_EVENT_LAST
+    };
+
     enum Vocations_t : uint8_t
     {
         NONE = 0,
@@ -859,12 +1029,14 @@ namespace Otc
         PALADIN = 2,
         SORCERER = 3,
         DRUID = 4,
+        MONK = 5,
         ELITE_KNIGHT = 11,
         ROYAL_PALADIN = 12,
         MASTER_SORCERER = 13,
         ELDER_DRUID = 14,
+        EXALTED_MONK = 15,
         FIRST = KNIGHT,
-        LAST = DRUID,
+        LAST = MONK,
     };
 
     enum PartyAnalyzerAction_t : uint8_t
@@ -872,6 +1044,14 @@ namespace Otc
         PARTYANALYZERACTION_RESET = 0,
         PARTYANALYZERACTION_PRICETYPE = 1,
         PARTYANALYZERACTION_PRICEVALUE = 2,
+    };
+
+    enum VocationMonkTypes_t : uint8_t
+    {
+        TYPES_MONK_HARMONY = 0,
+        TYPES_MONK_SERENE = 1,
+        TYPES_MONK_VIRTUE = 2,
+        TYPES_MONK_LAST
     };
 
     enum FloorViewMode
@@ -888,6 +1068,79 @@ namespace Otc
         ANTIALIASING_DISABLED,
         ANTIALIASING_ENABLED,
         ANTIALIASING_SMOOTH_RETRO
+    };
+
+    enum MagicEffectSources : uint8_t
+    {
+        // always 100% opacity, not configurable
+        ME_SOURCE_DEFAULT = 0,
+        // configurable with sliders in the client
+        ME_SOURCE_OWN = 1,
+        ME_SOURCE_OTHER_PLAYER = 2,
+        ME_SOURCE_MONSTER = 3,
+        ME_SOURCE_BOSS = 4,
+        ME_SOURCE_LAST = ME_SOURCE_BOSS
+    }; 
+
+    enum class WheelSlots_t : uint8_t
+    {
+        SLOT_GREEN_200 = 1,
+        SLOT_GREEN_TOP_150 = 2,
+        SLOT_GREEN_TOP_100 = 3,
+
+        SLOT_RED_TOP_100 = 4,
+        SLOT_RED_TOP_150 = 5,
+        SLOT_RED_200 = 6,
+
+        SLOT_GREEN_BOTTOM_150 = 7,
+        SLOT_GREEN_MIDDLE_100 = 8,
+        SLOT_GREEN_TOP_75 = 9,
+
+        SLOT_RED_TOP_75 = 10,
+        SLOT_RED_MIDDLE_100 = 11,
+        SLOT_RED_BOTTOM_150 = 12,
+
+        SLOT_GREEN_BOTTOM_100 = 13,
+        SLOT_GREEN_BOTTOM_75 = 14,
+        SLOT_GREEN_50 = 15,
+
+        SLOT_RED_50 = 16,
+        SLOT_RED_BOTTOM_75 = 17,
+        SLOT_RED_BOTTOM_100 = 18,
+
+        SLOT_BLUE_TOP_100 = 19,
+        SLOT_BLUE_TOP_75 = 20,
+        SLOT_BLUE_50 = 21,
+
+        SLOT_PURPLE_50 = 22,
+        SLOT_PURPLE_TOP_75 = 23,
+        SLOT_PURPLE_TOP_100 = 24,
+
+        SLOT_BLUE_TOP_150 = 25,
+        SLOT_BLUE_MIDDLE_100 = 26,
+        SLOT_BLUE_BOTTOM_75 = 27,
+
+        SLOT_PURPLE_BOTTOM_75 = 28,
+        SLOT_PURPLE_MIDDLE_100 = 29,
+        SLOT_PURPLE_TOP_150 = 30,
+
+        SLOT_BLUE_200 = 31,
+        SLOT_BLUE_BOTTOM_150 = 32,
+        SLOT_BLUE_BOTTOM_100 = 33,
+
+        SLOT_PURPLE_BOTTOM_100 = 34,
+        SLOT_PURPLE_BOTTOM_150 = 35,
+        SLOT_PURPLE_200 = 36,
+
+        SLOT_FIRST = SLOT_GREEN_200,
+        SLOT_LAST = SLOT_PURPLE_200
+    };
+    // Qualidade das gemas
+    enum WheelGemQuality_t : uint8_t {
+        WheelGemQuality_Lesser   = 0,
+        WheelGemQuality_Regular  = 1,
+        WheelGemQuality_Greater  = 2,
+        WheelGemQuality_Supreme  = 3
     };
 }
 
@@ -1030,6 +1283,11 @@ enum ThingFlagAttr :uint64_t
     ThingFlagAttrDecoKit = static_cast<uint64_t>(1) << 45,
     ThingFlagAttrNPC = static_cast<uint64_t>(1) << 46,
     ThingFlagAttrAmmo = static_cast<uint64_t>(1) << 47,
+    ThingFlagAttrFloorChange = static_cast<uint64_t>(1) << 48,
+    ThingFlagAttrDualWield = static_cast<uint64_t>(1) << 49,
+    ThingFlagAttrSkillWheelGem = static_cast<uint64_t>(1) << 50,
+    ThingFlagAttrProficiency = static_cast<uint64_t>(1) << 51,
+    ThingFlagAttrImbueable = static_cast<uint64_t>(1) << 52,
 };
 
 enum STACK_PRIORITY : uint8_t
@@ -1078,11 +1336,8 @@ enum ITEM_CATEGORY : uint8_t
     ITEM_CATEGORY_TIBIA_COINS = 23,
     ITEM_CATEGORY_CREATURE_PRODUCTS = 24,
     ITEM_CATEGORY_QUIVER = 25,
-    ITEM_CATEGORY_TWOHANDWEAPON = 26,
-    ITEM_CATEGORY_HELMETS = 27,
-    ITEM_CATEGORY_BACKPACK = 28,
-    ITEM_CATEGORY_ONEHANDWEAPON = 29,
-    ITEM_CATEGORY_ARROW = 30
+    ITEM_CATEGORY_SOUL_CORES = 26,
+    ITEM_CATEGORY_FIST_WEAPONS = 27,
 };
 
 enum SpriteMask :uint8_t

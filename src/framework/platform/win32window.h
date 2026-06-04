@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +23,7 @@
 #pragma once
 
 #include "platformwindow.h"
+#include "framework/core/timer.h"
 
 #ifdef OPENGL_ES
 #include <EGL/egl.h>
@@ -64,6 +65,7 @@ public:
 
     void setMouseCursor(int cursorId) override;
     void restoreMouseCursor() override;
+    void setSystemCursor(const std::string& cursorName) override;
 
     void setTitle(std::string_view title) override;
     void setMinimumSize(const Size& minimumSize) override;
@@ -84,14 +86,24 @@ private:
     Rect getClientRect() const;
     Rect getWindowRect();
     Rect adjustWindowRect(const Rect& rect) const;
+    void updateCursor();
 
-    std::vector<HCURSOR> m_cursors;
+    struct CursorState {
+         std::vector<HCURSOR> cursors;
+         std::vector<int> delays;
+    };
+    std::vector<CursorState> m_cursors;
+
     HWND m_window;
     HINSTANCE m_instance;
     HDC m_deviceContext;
     HCURSOR m_cursor;
     HCURSOR m_defaultCursor;
     bool m_hidden;
+
+    int m_currentCursorId = -1;
+    int m_cursorFrame = 0;
+    Timer m_cursorTimer;
 
 #ifdef OPENGL_ES
     EGLConfig m_eglConfig;

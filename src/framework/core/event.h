@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +28,7 @@
 class Event : public LuaObject
 {
 public:
-    Event(std::function<void()> callback);
+    Event(std::function<void()> callback, std::string function = "Event");
     ~Event() override;
 
     virtual void execute();
@@ -37,8 +37,10 @@ public:
     bool isCanceled() { return m_canceled; }
     bool isExecuted() { return m_executed; }
     bool isPending() { return !m_canceled && !m_executed; }
+    const std::string& getFunction() { return m_function; }
 
 protected:
+    std::string m_function;
     std::function<void()> m_callback;
     bool m_canceled{ false };
     bool m_executed{ false };

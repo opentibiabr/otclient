@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,9 @@
 #pragma once
 
 #include "declarations.h"
+#ifdef FRAMEWORK_PROTOBUF
 #include <appearances.pb.h>
+#endif
 
 #include "staticdata.h"
 #include "const.h"
@@ -32,15 +34,27 @@
 #include "framework/graphics/declarations.h"
 #include "framework/luaengine/luaobject.h"
 
+#ifdef FRAMEWORK_PROTOBUF
 using namespace otclient::protobuf;
+#endif
 
 class ThingType final : public LuaObject
 {
 public:
+    struct SkillWheelGem
+    {
+        uint32_t gem_quality_id = 0;
+        uint32_t vocation_id = 0;
+
+        uint32_t getGemQualityId() { return gem_quality_id; }
+        uint32_t getVocationId() { return vocation_id; }
+    };
+#ifdef FRAMEWORK_PROTOBUF
+    void applyAppearanceFlags(const appearances::AppearanceFlags& flags);
     void unserializeAppearance(uint16_t clientId, ThingCategory category, const appearances::Appearance& appearance);
+#endif
     void unserialize(uint16_t clientId, ThingCategory category, const FileStreamPtr& fin);
     void unserializeOtml(const OTMLNodePtr& node);
-    void applyAppearanceFlags(const appearances::AppearanceFlags& flags);
 
 #ifdef FRAMEWORK_EDITOR
     void serialize(const FileStreamPtr& fin);
@@ -53,7 +67,7 @@ public:
 
     uint16_t getId() { return m_id; }
     ThingCategory getCategory() { return m_category; }
-    bool isNull() { return m_null; }
+    bool isNull() const { return m_null; }
     bool hasAttr(const ThingAttr attr) { return (m_flags & thingAttrToThingFlagAttr(attr)); }
 
     int getWidth() { return m_size.width(); }
@@ -64,7 +78,8 @@ public:
     int getNumPatternX() { return m_numPatternX; }
     int getNumPatternY() { return m_numPatternY; }
     int getNumPatternZ() { return m_numPatternZ; }
-    int getAnimationPhases();
+    int getAnimationPhases() const;
+    int getIdleAnimationPhases() const;
     Animator* getAnimator() const { return m_animator; }
     Animator* getIdleAnimator() const { return m_idleAnimator; }
 
@@ -97,7 +112,7 @@ public:
     bool isGroundBorder() { return (m_flags & ThingFlagAttrGroundBorder); }
     bool isOnBottom() { return (m_flags & ThingFlagAttrOnBottom); }
     bool isOnTop() { return (m_flags & ThingFlagAttrOnTop); }
-    bool isContainer() { return (m_flags & ThingFlagAttrContainer); }
+    bool isContainer() const { return (m_flags & ThingFlagAttrContainer); }
     bool isStackable() { return (m_flags & ThingFlagAttrStackable); }
     bool isForceUse() { return (m_flags & ThingFlagAttrForceUse); }
     bool isMultiUse() { return (m_flags & ThingFlagAttrMultiUse); }
@@ -120,6 +135,7 @@ public:
     bool isTranslucent() { return (m_flags & ThingFlagAttrTranslucent); }
     bool hasDisplacement() { return (m_flags & ThingFlagAttrDisplacement); }
     bool hasElevation() { return (m_flags & ThingFlagAttrElevation); }
+    bool hasFloorChange() const { return (m_flags & ThingFlagAttrFloorChange); }
     bool isLyingCorpse() { return (m_flags & ThingFlagAttrLyingCorpse); }
     bool isAnimateAlways() { return (m_flags & ThingFlagAttrAnimateAlways); }
     bool hasMiniMapColor() { return (m_flags & ThingFlagAttrMinimapColor); }
@@ -139,9 +155,22 @@ public:
     bool isTopEffect() { return (m_flags & ThingFlagAttrTopEffect); }
     bool hasAction() { return (m_flags & ThingFlagAttrDefaultAction); }
     bool isOpaque() { return m_opaque == 1; }
+
+    uint32_t getSkillWheelGemQualityId() { return m_skillWheelGem.gem_quality_id; }
+    uint32_t getSkillWheelGemVocationId() { return m_skillWheelGem.vocation_id; }
+    uint32_t getCyclopediaType() { return m_cyclopediaType; }
+    uint32_t getProficiencyId() { return m_proficiencyId; }
+    uint32_t getWeaponType() const { return m_weaponType; }
+    uint32_t getMinimumLevel() const { return m_minimumLevel; }
+    uint32_t getImbueSlots() const { return m_imbueSlots; }
+    const std::vector<uint32_t>& getRestrictVocation() const { return m_restrictVocation; }
+
     bool isDecoKit() { return (m_flags & ThingFlagAttrDecoKit); }
     bool isLoading() const { return m_loading.load(std::memory_order_acquire); }
     bool isAmmo() { return (m_flags & ThingFlagAttrAmmo); }
+    bool isDualWield() { return (m_flags & ThingFlagAttrDualWield); }
+    bool hasSkillWheelGem() { return (m_flags & ThingFlagAttrSkillWheelGem); }
+    SkillWheelGem getSkillWheelGem() { return m_skillWheelGem; }
 
     bool isItem() const { return m_category == ThingCategoryItem; }
     bool isEffect() const { return m_category == ThingCategoryEffect; }
@@ -222,6 +251,12 @@ private:
     uint16_t m_groundSpeed{ 0 };
     uint16_t m_maxTextLength{ 0 };
     uint16_t m_upgradeClassification{ 0 };
+    uint32_t m_cyclopediaType{ 0 };
+    uint32_t m_proficiencyId{ 0 };
+    uint32_t m_weaponType{ 0 };
+    uint32_t m_minimumLevel{ 0 };
+    uint32_t m_imbueSlots{ 0 };
+    std::vector<uint32_t> m_restrictVocation;
 
     uint64_t m_flags{ 0 };
 
@@ -237,10 +272,11 @@ private:
     std::vector<uint32_t> m_spritesIndex;
     std::vector<TextureData> m_textureData;
 
-    std::atomic_bool m_loading;
+    std::atomic_bool m_loading{ false };
 
     Timer m_lastTimeUsage;
 
     std::string m_name;
     std::string m_description;
+    SkillWheelGem m_skillWheelGem;
 };

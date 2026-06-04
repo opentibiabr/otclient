@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -134,7 +134,8 @@ struct Selector
                         val = tok.substr(vs, i - vs); while (!val.empty() && isSpace((unsigned char)val.back())) val.pop_back();
                     }
                 }
-                while (i < tok.size() && tok[i] != ']') ++i; if (i < tok.size()) ++i;
+                while (i < tok.size() && tok[i] != ']') ++i;
+                if (i < tok.size()) ++i;
                 s.attrs.push_back({ key,val,op });
             } else if (c == ':') {
                 ++i; size_t ps = i; while (i < tok.size() && tok[i] != ':') ++i; s.pseudos.push_back(tok.substr(ps, i - ps));

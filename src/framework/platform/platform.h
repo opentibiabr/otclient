@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -51,6 +51,7 @@ public:
     bool openDir(std::string path, bool now = false);
     std::string getCPUName();
     double getTotalSystemMemory();
+    double getMemoryUsage();
     std::string getOSName();
     Device getDevice() { return m_device; }
     void setDevice(const Device device) { m_device = device; }
@@ -60,7 +61,7 @@ public:
         return m_device.type == Mobile;
 #else
         return MAIN_THREAD_EM_ASM_INT({
-            return (/ iphone | ipod | ipad | android / i).test(navigator.userAgent);
+            return (/iphone|ipod|ipad|android/i).test(navigator.userAgent);
         }) == 1;
 #endif
     }

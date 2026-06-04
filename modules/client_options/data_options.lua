@@ -27,42 +27,29 @@ return {
         value = g_platform.isMobile() and true or false,
         action = function(value, options, controller, panels, extraWidgets)
             -- Update the mouseControlMode based on this option
+            -- 0 = Regular Controls, 1 = Classic Controls, 2 = Left Smart-Click
             local mouseControlMode = 0
             if value == true then
-                mouseControlMode = 1
-                -- Update settings directly to ensure persistence
-                g_settings.set('mouseControlMode', mouseControlMode)
-                options.mouseControlMode.value = mouseControlMode
-                
-                -- Update loot control visibility
-                local lootControlModeCombobox = panels.generalPanel:recursiveGetChildById('lootControlMode')
-                if lootControlModeCombobox then
-                    lootControlModeCombobox:setVisible(true)
-                end
+                mouseControlMode = 1 -- Classic Controls
             elseif options.smartLeftClick.value == true then
-                mouseControlMode = 2
-                -- Update settings directly to ensure persistence
-                g_settings.set('mouseControlMode', mouseControlMode)
-                options.mouseControlMode.value = mouseControlMode
-                
-                -- Update loot control visibility
-                local lootControlModeCombobox = panels.generalPanel:recursiveGetChildById('lootControlMode')
-                if lootControlModeCombobox then
-                    lootControlModeCombobox:setVisible(false)
-                end
+                mouseControlMode = 2 -- Left Smart-Click
             else
-                mouseControlMode = 0
-                -- Update settings directly to ensure persistence
-                g_settings.set('mouseControlMode', mouseControlMode)
-                options.mouseControlMode.value = mouseControlMode
-                
-                -- Update loot control visibility
-                local lootControlModeCombobox = panels.generalPanel:recursiveGetChildById('lootControlMode')
-                if lootControlModeCombobox then
-                    lootControlModeCombobox:setVisible(false)
-                end
+                mouseControlMode = 0 -- Regular Controls
             end
             
+            -- Update the value in options table first
+            options.mouseControlMode.value = mouseControlMode
+            
+            -- Then update settings
+            g_settings.set('mouseControlMode', mouseControlMode)
+            
+            -- Update loot control visibility (only visible for Classic Controls)
+            local lootControlModeCombobox = panels.generalPanel:recursiveGetChildById('lootControlMode')
+            if lootControlModeCombobox then
+                lootControlModeCombobox:setVisible(mouseControlMode == 1)
+            end
+            
+            -- Update the combobox UI
             local mouseControlModeCombobox = panels.generalPanel:recursiveGetChildById('mouseControlMode')
             if mouseControlModeCombobox then
                 mouseControlModeCombobox:setCurrentOption(mouseControlMode, true)
@@ -73,42 +60,29 @@ return {
         value = false,
         action = function(value, options, controller, panels, extraWidgets)
             -- Update the mouseControlMode based on this option
+            -- 0 = Regular Controls, 1 = Classic Controls, 2 = Left Smart-Click
             local mouseControlMode = 0
             if options.classicControl.value == true then
-                mouseControlMode = 1
-                -- Update settings directly to ensure persistence
-                g_settings.set('mouseControlMode', mouseControlMode)
-                options.mouseControlMode.value = mouseControlMode
-                
-                -- Update loot control visibility
-                local lootControlModeCombobox = panels.generalPanel:recursiveGetChildById('lootControlMode')
-                if lootControlModeCombobox then
-                    lootControlModeCombobox:setVisible(true)
-                end
+                mouseControlMode = 1 -- Classic Controls
             elseif value == true then
-                mouseControlMode = 2
-                -- Update settings directly to ensure persistence
-                g_settings.set('mouseControlMode', mouseControlMode)
-                options.mouseControlMode.value = mouseControlMode
-                
-                -- Update loot control visibility
-                local lootControlModeCombobox = panels.generalPanel:recursiveGetChildById('lootControlMode')
-                if lootControlModeCombobox then
-                    lootControlModeCombobox:setVisible(false)
-                end
+                mouseControlMode = 2 -- Left Smart-Click
             else
-                mouseControlMode = 0
-                -- Update settings directly to ensure persistence
-                g_settings.set('mouseControlMode', mouseControlMode)
-                options.mouseControlMode.value = mouseControlMode
-                
-                -- Update loot control visibility
-                local lootControlModeCombobox = panels.generalPanel:recursiveGetChildById('lootControlMode')
-                if lootControlModeCombobox then
-                    lootControlModeCombobox:setVisible(false)
-                end
+                mouseControlMode = 0 -- Regular Controls
             end
             
+            -- Update the value in options table first
+            options.mouseControlMode.value = mouseControlMode
+            
+            -- Then update settings
+            g_settings.set('mouseControlMode', mouseControlMode)
+            
+            -- Update loot control visibility (only visible for Classic Controls)
+            local lootControlModeCombobox = panels.generalPanel:recursiveGetChildById('lootControlMode')
+            if lootControlModeCombobox then
+                lootControlModeCombobox:setVisible(mouseControlMode == 1)
+            end
+            
+            -- Update the combobox UI
             local mouseControlModeCombobox = panels.generalPanel:recursiveGetChildById('mouseControlMode')
             if mouseControlModeCombobox then
                 mouseControlModeCombobox:setCurrentOption(mouseControlMode, true)
@@ -118,32 +92,8 @@ return {
     mouseControlMode                  = {
         value = 0, -- Default to "Regular Controls"
         action = function(value, options, controller, panels, extraWidgets)
-            -- We need a small delay to ensure the UI updates correctly
-            scheduleEvent(function()
-                -- Update the mouseControlMode combobox - get it fresh each time
-                local mouseControlModeCombobox = panels.generalPanel:recursiveGetChildById('mouseControlMode')
-                if mouseControlModeCombobox then
-                    -- Force the combobox to select the right option
-                    for i = 0, 2 do
-                        if i == value then
-                            mouseControlModeCombobox:setCurrentOptionByData(i)
-                            break
-                        end
-                    end
-                end
-                
-                -- Update loot control mode visibility based on selection
-                local lootControlModeCombobox = panels.generalPanel:recursiveGetChildById('lootControlMode')
-                if lootControlModeCombobox then
-                    if value == 1 then
-                        lootControlModeCombobox:setVisible(true)
-                    else
-                        lootControlModeCombobox:setVisible(false)
-                    end
-                end
-            end, 50)
-            
-            -- Also update the underlying options
+            -- Update the underlying options values first
+            -- 0 = Regular Controls, 1 = Classic Controls, 2 = Left Smart-Click
             if value == 0 then
                 options.classicControl.value = false
                 options.smartLeftClick.value = false
@@ -161,8 +111,26 @@ return {
                 g_settings.set('smartLeftClick', true)
             end
             
-            -- Force save
-            g_settings.save()
+            -- Schedule UI updates to ensure they happen after value updates
+            scheduleEvent(function()
+                -- Update the mouseControlMode combobox
+                local mouseControlModeCombobox = panels.generalPanel:recursiveGetChildById('mouseControlMode')
+                if mouseControlModeCombobox then
+                    -- Force the combobox to select the right option
+                    for i = 0, 2 do
+                        if i == value then
+                            mouseControlModeCombobox:setCurrentOptionByData(i)
+                            break
+                        end
+                    end
+                end
+                
+                -- Update loot control mode visibility (only visible for Classic Controls)
+                local lootControlModeCombobox = panels.generalPanel:recursiveGetChildById('lootControlMode')
+                if lootControlModeCombobox then
+                    lootControlModeCombobox:setVisible(value == 1)
+                end
+            end, 50)
         end
     },
     lootControlMode                   = {
@@ -182,13 +150,12 @@ return {
                     end
                 end
             end, 50)
-            
-            -- Force save
-            g_settings.save()
         end
     },
+    returnDisablesChat                = false,
     smartWalk                         = false,
     autoChaseOverride                 = true,
+    talkOnRightClick                  = false,
     moveStack                         = false,
     showStatusMessagesInConsole       = true,
     showEventMessagesInConsole        = true,
@@ -199,6 +166,17 @@ return {
     showOthersStatusMessagesInConsole = false,
     showPrivateMessagesOnScreen       = true,
     showLootMessagesOnScreen          = true,
+    showHighlightedUnderline          = {
+        value = false,
+        action = function(value, options, controller, panels, extraWidgets)
+            local settings = g_settings.getNode('game_console') or {}
+            settings.showHighlightedUnderline = value
+            g_settings.setNode('game_console', settings)
+            if modules and modules.game_console and modules.game_console.setShowHighlightedUnderline then
+                modules.game_console.setShowHighlightedUnderline(value)
+            end
+        end
+    },
     showOutfitsOnList                 = {
         value = true,
         action = function(value, options, controller, panels, extraWidgets)
@@ -308,6 +286,12 @@ return {
             end
         end
     },
+    displayHarmony                     = {
+        value = true,
+        action = function(value, options, controller, panels, extraWidgets)
+            panels.gameMapPanel:setDrawHarmony(value)
+        end
+    },
     displayText                       = {
         value = true,
         action = function(value, options, controller, panels, extraWidgets)
@@ -357,11 +341,60 @@ return {
             panels.interface:recursiveGetChildById('crosshair'):setCurrentOptionByData(newValue, true)
         end
     },
+    nativeCursor = {
+        value = false,
+        action = function(value, options, controller, panels, extraWidgets)
+            if value then
+                -- Disable animated cursor when native cursor is enabled
+                if options.showAnimatedCursor.value then
+                    options.showAnimatedCursor.value = false
+                    g_settings.set('showAnimatedCursor', false)
+                    panels.gameMapPanel:setCursorAnimations(false)
+                    -- Update the UI checkbox
+                    local widget = panels.interface:recursiveGetChildById('showAnimatedCursor')
+                    if widget then
+                        widget:setChecked(false)
+                    end
+                end
+                -- Set native cursor mode flag
+                g_mouse.setUseNativeCursor(true)
+                -- Push cursor to mark as changed (prevents game from overriding)
+                g_mouse.pushCursor('window')
+                -- Then restore to native Windows cursor
+                g_window.restoreMouseCursor()
+            else
+                g_mouse.setUseNativeCursor(false)
+                g_mouse.popCursor('window')
+            end
+        end
+    },
     enableHighlightMouseTarget        = {
         value = true,
         action = function(value, options, controller, panels, extraWidgets)
             panels.gameMapPanel:setDrawHighlightTarget(value)
         end
+    },
+    showAnimatedCursor = {
+        value = true,
+        action = function(value, options, controller, panels, extraWidgets)
+            if value then
+                -- Disable native cursor when animated cursor is enabled
+                if options.nativeCursor.value then
+                    options.nativeCursor.value = false
+                    g_settings.set('nativeCursor', false)
+                    g_mouse.popCursor('window')
+                    -- Update the UI checkbox
+                    local widget = panels.interface:recursiveGetChildById('nativeCursor')
+                    if widget then
+                        widget:setChecked(false)
+                    end
+                end
+            end
+            panels.gameMapPanel:setCursorAnimations(value)
+        end
+    },
+    showDragIcon        = {
+        value = true,
     },
     antialiasingMode                  = {
         value = 1,
@@ -793,5 +826,38 @@ return {
     },
     actionBarBottomLocked = false,
     actionBarLeftLocked = false,
-    actionBarRightLocked = false    
+    actionBarRightLocked = false,
+    setOwnSpellEffectAlphaScroll = {
+        value = 100,
+        action = function(value, options, controller, panels, extraWidgets)
+            panels.graphicsEffectsPanel:recursiveGetChildById('setOwnSpellEffectAlphaScroll'):setText(string.format('Own Spells Effect: %s %%',
+                value))
+            g_client.setOwnSpellEffectAlpha(value / 100)
+        end
+    },
+    setOtherPlayerSpellEffectAlphaScroll = {
+        value = 100,
+        action = function(value, options, controller, panels, extraWidgets)
+            panels.graphicsEffectsPanel:recursiveGetChildById('setOtherPlayerSpellEffectAlphaScroll'):setText(string.format('Other Player Spells Effect: %s %%',
+                value))
+           g_client.setOtherPlayerSpellEffectAlpha(value / 100)
+        end
+    },
+    setCreatureSpellEffectAlphaScroll = {
+        value = 100,
+        action = function(value, options, controller, panels, extraWidgets)
+            panels.graphicsEffectsPanel:recursiveGetChildById('setCreatureSpellEffectAlphaScroll'):setText(string.format('Creature Spells Effect: %s %%',
+                value))
+            g_client.setCreatureSpellEffectAlpha(value / 100)
+        end
+    },
+    setBossAreaCreatureEffectAlphaScroll = {
+        value = 100,
+        action = function(value, options, controller, panels, extraWidgets)
+            panels.graphicsEffectsPanel:recursiveGetChildById('setBossAreaCreatureEffectAlphaScroll'):setText(string.format('Boss Area Creature Effect: %s %%',
+                value))
+           g_client.setBossAreaCreatureEffectAlpha(value / 100)
+        end
+    },
+    showInfoBanner = true,
 }

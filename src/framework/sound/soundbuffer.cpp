@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -39,14 +39,14 @@ bool SoundBuffer::fillBuffer(const SoundFilePtr& soundFile)
 {
     const ALenum format = soundFile->getSampleFormat();
     if (format == AL_UNDETERMINED) {
-        g_logger.error("unable to determine sample format for '{}'", soundFile->getName());
+        g_logger.error("Unable to determine sample format for '{}'", soundFile->getName());
         return false;
     }
 
     std::vector<char> samples(soundFile->getSize());
     const int read = soundFile->read(samples.data(), soundFile->getSize());
     if (read == 0) {
-        g_logger.error("unable to fill audio buffer data for '{}'", soundFile->getName());
+        g_logger.error("Unable to fill audio buffer data for '{}'", soundFile->getName());
         return false;
     }
 
@@ -58,7 +58,7 @@ bool SoundBuffer::fillBuffer(const ALenum sampleFormat, const std::vector<char>&
     alBufferData(m_bufferId, sampleFormat, data.data(), size, rate);
     const ALenum err = alGetError();
     if (err != AL_NO_ERROR) {
-        g_logger.error("unable to fill audio buffer data: {}", alGetString(err));
+        g_logger.error("Unable to fill audio buffer data: {}", alGetString(err));
         return false;
     }
     return true;

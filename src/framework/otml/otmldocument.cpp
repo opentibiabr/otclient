@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -55,4 +55,14 @@ std::string OTMLDocument::emit() { return OTMLEmitter::emitNode(asOTMLNode()) + 
 bool OTMLDocument::save(const std::string_view fileName)
 {
     return g_resources.writeFileContents((m_source = fileName).data(), emit());
+}
+
+void OTMLDocument::addGlobalAlias(const std::string& name, const std::string& value)
+{
+    m_globalAliases[name] = value;
+}
+
+const std::unordered_map<std::string, std::string>& OTMLDocument::globalAliases() const
+{
+    return m_globalAliases;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -298,7 +298,7 @@ bool Minimap::loadImage(const std::string& fileName, const Position& topLeft, fl
         }
         return true;
     } catch (const stdext::exception& e) {
-        g_logger.error("failed to load OTMM minimap: {}", e.what());
+        g_logger.error("Failed to load OTMM minimap: {}", e.what());
         return false;
     }
 }
@@ -369,7 +369,7 @@ bool Minimap::loadOtmm(const std::string& fileName)
         fin->close();
         return true;
     } catch (const stdext::exception& e) {
-        g_logger.error("failed to load OTMM minimap: {}", e.what());
+        g_logger.error("Failed to load OTMM minimap: {}", e.what());
         return false;
     }
 }
@@ -429,6 +429,6 @@ void Minimap::saveOtmm(const std::string& fileName)
 
         fin->close();
     } catch (const stdext::exception& e) {
-        g_logger.error("failed to save OTMM minimap: {}", e.what());
+        g_logger.error("Failed to save OTMM minimap: {}", e.what());
     }
 }

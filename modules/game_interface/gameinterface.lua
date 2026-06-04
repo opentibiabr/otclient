@@ -42,9 +42,31 @@ local mobileConfig = {
     mobileHeightJoystick = 0,
     mobileHeightShortcuts = 0
 }
+local isExtendedViewActive = false
+
+local function updateSidePanelButtons()
+    leftIncreaseSidePanels:setEnabled(not modules.client_options.getOption('showLeftExtraPanel'))
+    if g_platform.isMobile() then
+        leftDecreaseSidePanels:setEnabled(false)
+    else
+        leftDecreaseSidePanels:setEnabled(
+            modules.client_options.getOption('showLeftPanel') or
+            modules.client_options.getOption('showLeftExtraPanel'))
+    end
+    rightIncreaseSidePanels:setEnabled(not modules.client_options.getOption('showRightExtraPanel'))
+    rightDecreaseSidePanels:setEnabled(modules.client_options.getOption('showRightExtraPanel'))
+end
+
+local function applyMobileMargins()
+    if g_platform.isMobile() then
+        gameRightPanel:setMarginBottom(mobileConfig.mobileHeightShortcuts)
+        gameLeftPanel:setMarginBottom(mobileConfig.mobileHeightJoystick)
+    end
+end
 
 function init()
     g_ui.importStyle('styles/countwindow')
+    g_ui.importStyle('styles/countStashWindow')
 
     connect(g_game, {
         onGameStart = onGameStart,
@@ -100,20 +122,9 @@ function init()
     gameBottomLockPanel = gameRootPanel:recursiveGetChildById('bottomLock')
     gameRightLockPanel = gameRootPanel:recursiveGetChildById('rightLock')
     gameLeftLockPanel = gameRootPanel:recursiveGetChildById('leftLock')
-  
-    leftIncreaseSidePanels:setEnabled(not modules.client_options.getOption('showLeftExtraPanel'))
-    if g_platform.isMobile() then
-        leftDecreaseSidePanels:setEnabled(false)
-    else
-        leftDecreaseSidePanels:setEnabled(true)
-    end
-    rightIncreaseSidePanels:setEnabled(not modules.client_options.getOption('showRightExtraPanel'))
-    rightDecreaseSidePanels:setEnabled(modules.client_options.getOption('showRightExtraPanel'))
 
-    if g_platform.isMobile() then
-        gameRightPanel:setMarginBottom(mobileConfig.mobileHeightShortcuts)
-        gameLeftPanel:setMarginBottom(mobileConfig.mobileHeightJoystick)
-    end
+    updateSidePanelButtons()
+    applyMobileMargins()
 
     panelsList = { {
         panel = gameRightPanel,
@@ -246,20 +257,8 @@ end
 
 function onGameStart()
     show()
-
-    leftIncreaseSidePanels:setEnabled(not modules.client_options.getOption('showLeftExtraPanel'))
-    if g_platform.isMobile() then
-        leftDecreaseSidePanels:setEnabled(false)
-    else
-        leftDecreaseSidePanels:setEnabled(true)
-    end
-    rightIncreaseSidePanels:setEnabled(not modules.client_options.getOption('showRightExtraPanel'))
-    rightDecreaseSidePanels:setEnabled(modules.client_options.getOption('showRightExtraPanel'))
-
-    if g_platform.isMobile() then
-        gameRightPanel:setMarginBottom(mobileConfig.mobileHeightShortcuts)
-        gameLeftPanel:setMarginBottom(mobileConfig.mobileHeightJoystick)
-    end
+    updateSidePanelButtons()
+    applyMobileMargins()
 end
 
 function onGameEnd()
@@ -278,12 +277,15 @@ function show()
     updateStretchShrink()
     logoutButton:setTooltip(tr('Logout'))
 
-    setupViewMode(0)
     if g_platform.isMobile() then
         mobileConfig.mobileWidthJoystick = modules.game_joystick.getPanel():getWidth()
         mobileConfig.mobileWidthShortcuts = modules.game_shortcuts.getPanel():getWidth()
         mobileConfig.mobileHeightJoystick = modules.game_joystick.getPanel():getHeight()
         mobileConfig.mobileHeightShortcuts = modules.game_shortcuts.getPanel():getHeight()
+    end
+
+    setupViewMode(0)
+    if g_platform.isMobile() or g_gameConfig.isExtendedViewUI() then
         setupViewMode(1)
         setupViewMode(2)
     end
@@ -457,7 +459,7 @@ function updateStretchShrink()
         -- Set gameMapPanel size to height = 11 * 32 + 2
         bottomSplitter:setMarginBottom(bottomSplitter:getMarginBottom() + (gameMapPanel:getHeight() - 32 * 11) - 10)
     end
-     -- Update action bar layout when window geometry changes
+    -- Update action bar layout when window geometry changes
     if modules.game_actionbar and modules.game_actionbar.updateVisibleWidgetsExternal then
         addEvent(function()
             modules.game_actionbar.updateVisibleWidgetsExternal()
@@ -481,7 +483,12 @@ function onMouseGrabberRelease(self, mousePosition, mouseButton)
     end
 
     selectedThing = nil
-    g_mouse.popCursor('target')
+    -- Restore cursor
+    if modules.client_options and modules.client_options.getOption('nativeCursor') then
+        g_window.restoreMouseCursor()
+    else
+        g_mouse.popCursor('target')
+    end
     self:ungrabMouse()
     return true
 end
@@ -534,7 +541,12 @@ function startUseWith(thing)
     selectedType = 'use'
     selectedThing = thing
     mouseGrabberWidget:grabMouse()
-    g_mouse.pushCursor('target')
+    -- Use native cursor when enabled, otherwise use custom cursor
+    if modules.client_options and modules.client_options.getOption('nativeCursor') then
+        g_window.setSystemCursor('cross')
+    else
+        g_mouse.pushCursor('target')
+    end
 end
 
 function startTradeWith(thing)
@@ -551,7 +563,12 @@ function startTradeWith(thing)
     selectedType = 'trade'
     selectedThing = thing
     mouseGrabberWidget:grabMouse()
-    g_mouse.pushCursor('target')
+    -- Use native cursor when enabled, otherwise use custom cursor
+    if modules.client_options and modules.client_options.getOption('nativeCursor') then
+        g_window.setSystemCursor('cross')
+    else
+        g_mouse.pushCursor('target')
+    end
 end
 
 function isMenuHookCategoryEmpty(category)
@@ -606,6 +623,32 @@ function createThingMenu(menuPosition, lookThing, useThing, creatureThing)
         menu:addOption(tr('Look'), function()
             g_game.look(lookThing)
         end, shortcut)
+        local clientVersion = g_game.getClientVersion()
+        local canInspect = lookThing:isItem() and not lookThing:isNotMoveable() and lookThing:isPickupable()
+        if clientVersion >= 1281 and modules.game_inspect and (lookThing:isCreature() or canInspect) then
+            menu:addOption(tr('Inspect'), function()
+                if lookThing:isCreature() then
+                    g_game.inspectCharacter(lookThing:getId(), InspectCreaturesTypes.INSPECT_CREATURE)
+                elseif canInspect then
+                    local pos = lookThing:getPosition()
+                    if pos and pos:isValid() then
+                        g_game.inspectionNormalObject(pos)
+                    else
+                        g_game.inspectionObject(InspectObjectTypes.INSPECT_CYCLOPEDIA, lookThing:getId())
+                    end
+                end
+            end, shortcut)
+        end
+        if clientVersion >= 1310 and canInspect and modules.game_cyclopedia and lookThing:getCyclopediaType() > 0 then
+            menu:addOption(tr('Cyclopedia'), function()
+                modules.game_cyclopedia.Cyclopedia.openItem(lookThing:getId())
+            end, shortcut)
+        end
+        if clientVersion >= 1511 and modules.game_proficiency and lookThing:getProficiencyId() > 0 then
+            menu:addOption(tr("Weapon Proficiency"), function()
+                modules.game_proficiency.requestOpenWindow(lookThing)
+            end, shortcut)
+        end
     end
 
     if not classic and not mobile then
@@ -655,7 +698,7 @@ function createThingMenu(menuPosition, lookThing, useThing, creatureThing)
             menu:addOption(tr('Unwrap'), onWrapItem)
         end
 
-        if g_game.getFeature(GameBrowseField) and useThing:getPosition().x ~= 0xffff then
+        if g_game.getFeature(GameBrowseField) and useThing and useThing:getPosition() and useThing:getPosition().x ~= 0xffff then
             menu:addOption(tr('Browse Field'), function()
                 g_game.browseField(useThing:getPosition())
             end)
@@ -734,6 +777,12 @@ function createThingMenu(menuPosition, lookThing, useThing, creatureThing)
                 shortcut = nil
             end
             if creatureThing:getPosition().z == localPosition.z then
+                if creatureThing:isNpc() then
+                    menu:addOption(tr('Talk'), function()
+                        g_game.talk("hi")
+                    end)
+                end
+
                 if g_game.getAttackingCreature() ~= creatureThing then
                     menu:addOption(tr('Attack'), function()
                         g_game.attack(creatureThing)
@@ -876,11 +925,62 @@ function createThingMenu(menuPosition, lookThing, useThing, creatureThing)
         end)
     end
 
+    if g_game.getClientVersion() >= 1410 then
+        if lookThing and not lookThing:isCreature() and not lookThing:isNotMoveable() and lookThing:isPickupable() then
+            local player = g_game.getLocalPlayer()
+            if player and player:isSupplyStashAvailable() then
+                local itemTier = lookThing:getTier() or 0
+                if itemTier <= 0 then
+                    menu:addSeparator()
+                    menu:addOption(tr("Stow"), function()
+                        stashItem(lookThing)
+                    end)
+                    menu:addOption(tr("Stow all items of this type"), function()
+                        g_game.stashStowItem(lookThing:getPosition(), lookThing:getId(), 0,
+                            lookThing:getStackPos(), 2)
+                    end)
+
+                    local isContainer = lookThing:isContainer()
+                    if isContainer then
+                        menu:addOption(tr('Stow container\'s content'), function()
+                            g_game.stashStowItem(lookThing:getPosition(), lookThing:getId(), 0,
+                                lookThing:getStackPos(), 1)
+                        end)
+                    end
+                end
+            end
+        end
+    end
+
     menu:display(menuPosition)
 end
 
 function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, useThing, creatureThing, attackCreature)
     local keyboardModifiers = g_keyboard.getModifiers()
+
+    local smartLeftClick = modules.client_options.getOption('smartLeftClick')
+    local classicControls = modules.client_options.getOption('classicControl')
+
+    -- Classic controls: right-click on NPC says "hi"
+    if creatureThing and creatureThing:isNpc() and mouseButton == MouseRightButton and 
+    keyboardModifiers == KeyboardNoModifier then
+        -- In classic controls, always allow NPC interaction
+        -- In non-classic controls, check the talkOnRightClick option
+        if classicControls or modules.client_options.getOption('talkOnRightClick') then
+            local player = g_game.getLocalPlayer()
+            if player then
+                local playerPos = player:getPosition()
+                local npcPos = creatureThing:getPosition()
+                if playerPos.z == npcPos.z then
+                    local dist = math.max(math.abs(playerPos.x - npcPos.x), math.abs(playerPos.y - npcPos.y))
+                    if dist <= 3 then
+                        g_game.talk("hi")
+                        return true
+                    end
+                end
+            end
+        end
+    end
 
     if g_platform.isMobile() then
         if mouseButton == MouseRightButton then
@@ -942,15 +1042,28 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
         end
     elseif not modules.client_options.getOption('classicControl') then
         local smartLeftClick = modules.client_options.getOption('smartLeftClick')
-        
+
         if smartLeftClick and mouseButton == MouseLeftButton and keyboardModifiers == KeyboardNoModifier then
             local player = g_game.getLocalPlayer()
-            
-            -- Handle creature attacks first
-            if attackCreature and attackCreature ~= player then
+
+            -- Handle NPCs first - they should not be attacked
+            if creatureThing and creatureThing:isNpc() then
+                local playerPos = player:getPosition()
+                local npcPos = creatureThing:getPosition()
+                if playerPos.z == npcPos.z then
+                    local dist = math.max(math.abs(playerPos.x - npcPos.x), math.abs(playerPos.y - npcPos.y))
+                    if dist <= 3 then
+                        g_game.talk("hi")
+                        return true
+                    end
+                end
+            end
+
+            -- Handle creature attacks (but not NPCs)
+            if attackCreature and attackCreature ~= player and not attackCreature:isNpc() then
                 g_game.attack(attackCreature)
                 return true
-            elseif creatureThing and creatureThing ~= player and autoWalkPos and creatureThing:getPosition().z == autoWalkPos.z then
+            elseif creatureThing and creatureThing ~= player and not creatureThing:isNpc() and autoWalkPos and creatureThing:getPosition().z == autoWalkPos.z then
                 g_game.attack(creatureThing)
                 return true
             elseif useThing then
@@ -972,7 +1085,7 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
                         return true
                     end
                 end
-                
+
                 -- Standard handling for other usable items
                 -- For containers (including corpses), only execute quicklooting with Smart Left-Click
                 -- Exception: If container has a parent container, open it instead of quicklooting
@@ -996,19 +1109,19 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
                     return true
                 else
                     local useResult = g_game.use(useThing)
-                    
+
                     if useResult ~= nil then
                         return true
                     end
                 end
-                
+
                 -- If we couldn't use the item through any of the above methods,
                 -- but it's pickupable, try to pick it up (like in Classic Control mode)
                 if useThing:isPickupable() then
                     g_game.move(useThing, useThing:getPosition(), 1)
                     return true
                 end
-                
+
                 -- If we couldn't use or pick up the item, try to walk to its position if possible
                 local position = useThing:getPosition()
                 if position and position.x ~= 0 and autoWalkPos then
@@ -1016,19 +1129,19 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
                     player:autoWalk(autoWalkPos)
                     return true
                 end
-                
+
                 return true
             end
-            
+
             -- Only look at things if no usable item was found
             if lookThing and lookThing ~= useThing then
                 local lookPosition = lookThing:getPosition()
                 local lookTile = nil
-                
+
                 if lookPosition and lookPosition.x ~= 0 then
                     lookTile = g_map.getTile(lookPosition)
                 end
-                
+
                 -- For walkable tiles, we want to walk
                 if lookTile and lookTile:isWalkable() and autoWalkPos then
                     local player = g_game.getLocalPlayer()
@@ -1040,14 +1153,14 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
                     return true
                 end
             end
-            
+
             if autoWalkPos then
                 local player = g_game.getLocalPlayer()
                 player:autoWalk(autoWalkPos)
                 return true
             end
         end
-        
+
         if keyboardModifiers == KeyboardNoModifier and mouseButton == MouseRightButton then
             createThingMenu(menuPosition, lookThing, useThing, creatureThing)
             return true
@@ -1055,10 +1168,10 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
             (mouseButton == MouseLeftButton or mouseButton == MouseRightButton) then
             g_game.look(lookThing)
             return true
-        elseif useThing and keyboardModifiers == KeyboardCtrlModifier and
+        elseif useThing and g_keyboard.isPrimaryModifierOnly(keyboardModifiers) and
             (mouseButton == MouseLeftButton or mouseButton == MouseRightButton) then
             local smartLeftClick = modules.client_options.getOption('smartLeftClick')
-            
+
             if smartLeftClick then
                 local player = g_game.getLocalPlayer()
                 -- For containers in the world, Ctrl+Left Click opens them even if there's a creature
@@ -1086,15 +1199,15 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
                 end
             end
             return true
-        elseif useThing and useThing:isContainer() and keyboardModifiers == KeyboardCtrlShiftModifier and
+        elseif useThing and useThing:isContainer() and g_keyboard.isPrimaryShiftModifierOnly(keyboardModifiers) and
             (mouseButton == MouseLeftButton or mouseButton == MouseRightButton) then
             g_game.open(useThing)
             return true
-        elseif attackCreature and g_keyboard.isAltPressed() and
+        elseif attackCreature and not attackCreature:isNpc() and g_keyboard.isAltPressed() and
             (mouseButton == MouseLeftButton or mouseButton == MouseRightButton) then
             g_game.attack(attackCreature)
             return true
-        elseif creatureThing and autoWalkPos and creatureThing:getPosition().z == autoWalkPos.z and g_keyboard.isAltPressed() and
+        elseif creatureThing and not creatureThing:isNpc() and autoWalkPos and creatureThing:getPosition().z == autoWalkPos.z and g_keyboard.isAltPressed() and
             (mouseButton == MouseLeftButton or mouseButton == MouseRightButton) then
             g_game.attack(creatureThing)
             return true
@@ -1104,14 +1217,27 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
     else
         local lootControlMode = modules.client_options.getOption('lootControlMode')
         local player = g_game.getLocalPlayer()
-        
+
         -- ###############################
         -- ### MODE 0: LOOT RIGHT CLICK ##
         -- ###############################
         if lootControlMode == 0 then
             -- Right click with no modifiers: main loot functionality
             if mouseButton == MouseRightButton and keyboardModifiers == KeyboardNoModifier then
-                -- Handle creature attacks first (match Smart Left-Click behavior)
+                -- Handle NPCs first - they should not be attacked
+                if creatureThing and creatureThing:isNpc() then
+                    local playerPos = player:getPosition()
+                    local npcPos = creatureThing:getPosition()
+                    if playerPos.z == npcPos.z then
+                        local dist = math.max(math.abs(playerPos.x - npcPos.x), math.abs(playerPos.y - npcPos.y))
+                        if dist <= 3 then
+                            g_game.talk("hi")
+                            return true
+                        end
+                    end
+                end
+                
+                -- Handle creature attacks (match Smart Left-Click behavior)
                 if attackCreature and attackCreature ~= player then
                     g_game.attack(attackCreature)
                     return true
@@ -1129,7 +1255,7 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
                             -- For pickupable containers like quivers, backpacks, etc., open them instead of quicklooting
                             g_game.open(useThing)
                             return true
-						elseif table.find({3497, 3498, 3499, 3500, 3502, 12902}, useThing:getId()) then
+                        elseif table.find({ 3497, 3498, 3499, 3500, 3502, 12902 }, useThing:getId()) then
                             -- For depot chests, lockers, depot boxes, inbox, etc., always open them
                             g_game.open(useThing)
                             return true
@@ -1149,14 +1275,14 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
                         return true
                     end
                 end
-                
+
                 -- Handle pickupable items if no container/corpse was handled
                 if lookThing and not lookThing:isCreature() and lookThing:isPickupable() then
                     g_game.move(lookThing, lookThing:getPosition(), 1)
                     return true
                 end
             end
-            
+
             -- SHIFT+Right click: opens containers without quicklooting
             if mouseButton == MouseRightButton and keyboardModifiers == KeyboardShiftModifier then
                 if useThing then
@@ -1176,14 +1302,27 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
                     end
                 end
             end
-        
-        -- #################################
-        -- ### MODE 1: LOOT SHIFT+RIGHT  ###
-        -- #################################
+
+            -- #################################
+            -- ### MODE 1: LOOT SHIFT+RIGHT  ###
+            -- #################################
         elseif lootControlMode == 1 then
             -- Right click with no modifiers: use or open containers
             if mouseButton == MouseRightButton and keyboardModifiers == KeyboardNoModifier then
-                -- Handle creature attacks first
+                -- Handle NPCs first - they should not be attacked
+                if creatureThing and creatureThing:isNpc() then
+                    local playerPos = player:getPosition()
+                    local npcPos = creatureThing:getPosition()
+                    if playerPos.z == npcPos.z then
+                        local dist = math.max(math.abs(playerPos.x - npcPos.x), math.abs(playerPos.y - npcPos.y))
+                        if dist <= 3 then
+                            g_game.talk("hi")
+                            return true
+                        end
+                    end
+                end
+                
+                -- Handle creature attacks
                 if attackCreature and attackCreature ~= player then
                     g_game.attack(attackCreature)
                     return true
@@ -1208,7 +1347,7 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
                     end
                 end
             end
-            
+
             -- SHIFT+Right click: quickloot on containers
             if mouseButton == MouseRightButton and keyboardModifiers == KeyboardShiftModifier then
                 if useThing and (useThing:isContainer() or useThing:isLyingCorpse()) then
@@ -1217,17 +1356,17 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
                         return true
                     end
                 end
-                
+
                 -- Handle pickupable items
                 if lookThing and not lookThing:isCreature() and lookThing:isPickupable() then
                     g_game.move(lookThing, lookThing:getPosition(), 1)
                     return true
                 end
             end
-            
-        -- #############################
-        -- ### MODE 2: LOOT LEFT     ###
-        -- #############################
+
+            -- #############################
+            -- ### MODE 2: LOOT LEFT     ###
+            -- #############################
         elseif lootControlMode == 2 then
             -- Left click with no modifiers: ONLY for loot functionality
             if mouseButton == MouseLeftButton and keyboardModifiers == KeyboardNoModifier then
@@ -1236,7 +1375,7 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
                     -- ONLY quickloot containers/corpses in the game world
                     if (useThing:isContainer() or useThing:isLyingCorpse()) and not useThing:getParentContainer() then
                         -- Only handle containers that are in the game world (not in inventory)
-                        if table.find({3497, 3498, 3499, 3500, 3502, 12902}, useThing:getId()) then
+                        if table.find({ 3497, 3498, 3499, 3500, 3502, 12902 }, useThing:getId()) then
                             -- For depot chests, lockers, depot boxes, inbox, etc., always open them
                             g_game.open(useThing)
                             return true
@@ -1249,24 +1388,37 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
                         end
                     end
                 end
-                
+
                 -- Handle pickupable items in the game world
                 if lookThing and not lookThing:isCreature() and lookThing:isPickupable() then
                     g_game.move(lookThing, lookThing:getPosition(), 1)
                     return true
                 end
             end
-            
+
             -- Right click for Loot: Left mode - use items instead of showing context menu
             if mouseButton == MouseRightButton and keyboardModifiers == KeyboardNoModifier then
-                -- Handle creature attacks first
+                -- Handle NPCs first - they should not be attacked
+                if creatureThing and creatureThing:isNpc() then
+                    local playerPos = player:getPosition()
+                    local npcPos = creatureThing:getPosition()
+                    if playerPos.z == npcPos.z then
+                        local dist = math.max(math.abs(playerPos.x - npcPos.x), math.abs(playerPos.y - npcPos.y))
+                        if dist <= 3 then
+                            g_game.talk("hi")
+                            return true
+                        end
+                    end
+                end
+                
+                -- Handle creature attacks
                 if attackCreature and attackCreature ~= player then
                     g_game.attack(attackCreature)
                     return true
                 elseif creatureThing and creatureThing ~= player and autoWalkPos and creatureThing:getPosition().z == autoWalkPos.z then
                     g_game.attack(creatureThing)
                     return true
-                -- Use the item if it's a container in inventory or use other items
+                    -- Use the item if it's a container in inventory or use other items
                 elseif useThing then
                     if useThing:isContainer() or useThing:isLyingCorpse() then
                         if useThing:getParentContainer() then
@@ -1284,7 +1436,7 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
                         return true
                     end
                 end
-                
+
                 -- Only show context menu when no usable item is present
                 if not useThing then
                     createThingMenu(menuPosition, lookThing, useThing, creatureThing)
@@ -1292,9 +1444,9 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
                 end
             end
         end
-        
+
         -- Common key combinations for all Classic Control modes
-        if useThing and useThing:isContainer() and keyboardModifiers == KeyboardCtrlShiftModifier and
+        if useThing and useThing:isContainer() and g_keyboard.isPrimaryShiftModifierOnly(keyboardModifiers) and
             (mouseButton == MouseLeftButton or mouseButton == MouseRightButton) then
             g_game.open(useThing)
             return true
@@ -1306,15 +1458,15 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
                 (g_mouse.isPressed(MouseRightButton) and mouseButton == MouseLeftButton)) then
             g_game.look(lookThing)
             return true
-        elseif useThing and keyboardModifiers == KeyboardCtrlModifier and
+        elseif useThing and g_keyboard.isPrimaryModifierOnly(keyboardModifiers) and
             (mouseButton == MouseLeftButton or mouseButton == MouseRightButton) then
             createThingMenu(menuPosition, lookThing, useThing, creatureThing)
             return true
-        elseif attackCreature and g_keyboard.isAltPressed() and
+        elseif attackCreature and not attackCreature:isNpc() and g_keyboard.isAltPressed() and
             (mouseButton == MouseLeftButton or mouseButton == MouseRightButton) then
             g_game.attack(attackCreature)
             return true
-        elseif creatureThing and autoWalkPos and creatureThing:getPosition().z == autoWalkPos.z and g_keyboard.isAltPressed() and
+        elseif creatureThing and not creatureThing:isNpc() and autoWalkPos and creatureThing:getPosition().z == autoWalkPos.z and g_keyboard.isAltPressed() and
             (mouseButton == MouseLeftButton or mouseButton == MouseRightButton) then
             g_game.attack(creatureThing)
             return true
@@ -1328,14 +1480,14 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
         -- In Classic Control with Loot: Left option, we want to avoid walking when trying to loot
         local classicControl = modules.client_options.getOption('classicControl')
         local lootControlMode = modules.client_options.getOption('lootControlMode')
-        
+
         if classicControl and lootControlMode == 2 then
             -- Check if there's a corpse or item we should be looting instead of walking
             -- If not, proceed with autowalk
             local isCorpseOrContainer = useThing and (useThing:isContainer() or useThing:isLyingCorpse())
-            
-            if not isCorpseOrContainer and 
-               not (lookThing and not lookThing:isCreature() and lookThing:isPickupable()) then
+
+            if not isCorpseOrContainer and
+                not (lookThing and not lookThing:isCreature() and lookThing:isPickupable()) then
                 player:autoWalk(autoWalkPos)
                 if g_game.isAttacking() and g_game.getChaseMode() == ChaseOpponent then
                     g_game.setChaseMode(DontChase)
@@ -1353,30 +1505,18 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
     return false
 end
 
-function moveStackableItem(item, toPos)
-    if countWindow then
-        return
-    end
-    if g_keyboard.isShiftPressed() then
-        g_game.move(item, toPos, 1)
-        return
-    elseif g_keyboard.isCtrlPressed() ~= modules.client_options.getOption('moveStack') then
-        g_game.move(item, toPos, item:getCount())
-        return
-    end
+local function handleItemInteraction(item, widget, callback)
     local count = item:getCount()
-
-    countWindow = g_ui.createWidget('CountWindow', rootWidget)
-    countWindow.hotkeyBlock = modules.game_hotkeys.createHotkeyBlock("stackable_item_dialog")
-    local itembox = countWindow:getChildById('item')
-    local scrollbar = countWindow:getChildById('countScrollBar')
+    widget.hotkeyBlock = modules.game_hotkeys.createHotkeyBlock("stackable_item_dialog")
+    local itembox = widget:getChildById('item')
+    local scrollbar = widget:getChildById('countScrollBar')
     itembox:setItemId(item:getId())
     itembox:setItemCount(count)
     scrollbar:setMaximum(count)
     scrollbar:setMinimum(1)
     scrollbar:setValue(count)
 
-    local spinbox = countWindow:getChildById('spinBox')
+    local spinbox = widget:getChildById('spinBox')
     spinbox:setMaximum(count)
     spinbox:setMinimum(0)
     spinbox:setValue(0)
@@ -1428,23 +1568,70 @@ function moveStackableItem(item, toPos)
         spinbox.onValueChange = spinBoxValueChange
     end
 
-    local okButton = countWindow:getChildById('buttonOk')
+    local okButton = widget:getChildById('buttonOk')
     local moveFunc = function()
-        g_game.move(item, toPos, itembox:getItemCount())
+        callback(itembox:getItemCount())
         okButton:getParent():destroy()
-        countWindow = nil
+        widget = nil
     end
-    local cancelButton = countWindow:getChildById('buttonCancel')
+    local cancelButton = widget:getChildById('buttonCancel')
     local cancelFunc = function()
         cancelButton:getParent():destroy()
         countWindow = nil
+        widget = nil
     end
 
-    countWindow.onEnter = moveFunc
-    countWindow.onEscape = cancelFunc
+    widget.onEnter = moveFunc
+    widget.onEscape = cancelFunc
 
     okButton.onClick = moveFunc
     cancelButton.onClick = cancelFunc
+end
+
+function stashItem(item)
+    local count = item:getCount()
+    if count == 1 then
+        g_game.stashStowItem(item:getPosition(), item:getId(), count,
+            item:getStackPos(), 0)
+        return
+    end
+    if countWindow then
+        if countWindow:isDestroyed() then
+            countWindow = nil
+        else
+            return
+        end
+    end
+    countWindow = g_ui.createWidget('CountStashWindow', rootWidget)
+
+    handleItemInteraction(item, countWindow, function(amount)
+        g_game.stashStowItem(item:getPosition(), item:getId(), amount,
+            item:getStackPos(), 0)
+        countWindow = nil
+    end)
+end
+
+function moveStackableItem(item, toPos)
+    if countWindow then
+        if countWindow:isDestroyed() then
+            countWindow = nil
+        else
+            return
+        end
+    end
+    if g_keyboard.isShiftPressed() then
+        g_game.move(item, toPos, 1)
+        return
+    elseif g_keyboard.isCtrlPressed() ~= modules.client_options.getOption('moveStack') then
+        g_game.move(item, toPos, item:getCount())
+        return
+    end
+
+    countWindow = g_ui.createWidget('CountWindow', rootWidget)
+    handleItemInteraction(item, countWindow, function(count)
+        g_game.move(item, toPos, count)
+        countWindow = nil
+    end)
 end
 
 function onSelectPanel(self, checked)
@@ -1512,32 +1699,32 @@ end
 
 function getBottomActionPanel()
     return gameBottomActionPanel
-  end
-  
-  function getLeftActionPanel()
-    return gameLeftActionPanel
-  end
-  
-  function getRightActionPanel()
-    return gameRightActionPanel
-  end
-  
-  function getBottomLockPanel()
-    return gameBottomLockPanel
-  end
-  
-  function getRightLockPanel()
-    return gameRightLockPanel
-  end
-  
-  function getLeftLockPanel()
-    return gameLeftLockPanel
-  end
+end
 
-  function getBottomSplitter()
+function getLeftActionPanel()
+    return gameLeftActionPanel
+end
+
+function getRightActionPanel()
+    return gameRightActionPanel
+end
+
+function getBottomLockPanel()
+    return gameBottomLockPanel
+end
+
+function getRightLockPanel()
+    return gameRightLockPanel
+end
+
+function getLeftLockPanel()
+    return gameLeftLockPanel
+end
+
+function getBottomSplitter()
     return bottomSplitter
-  end
-  
+end
+
 function findContentPanelAvailable(child, minContentHeight)
     if gameSelectedPanel and gameSelectedPanel:isVisible() and gameSelectedPanel:fits(child, minContentHeight, 0) >= 0 then
         return gameSelectedPanel
@@ -1561,25 +1748,13 @@ function setupViewMode(mode)
         return
     end
 
-    leftIncreaseSidePanels:setEnabled(not modules.client_options.getOption('showLeftExtraPanel'))
-    if g_platform.isMobile() then
-        leftDecreaseSidePanels:setEnabled(false)
-    else
-        leftDecreaseSidePanels:setEnabled(true)
-    end
-    rightIncreaseSidePanels:setEnabled(not modules.client_options.getOption('showRightExtraPanel'))
-    rightDecreaseSidePanels:setEnabled(modules.client_options.getOption('showRightExtraPanel'))
-
-    if g_platform.isMobile() then
-        gameRightPanel:setMarginBottom(mobileConfig.mobileHeightShortcuts)
-        gameLeftPanel:setMarginBottom(mobileConfig.mobileHeightJoystick)
-    end
+    updateSidePanelButtons()
 
     if currentViewMode == 2 then
         gameMapPanel:addAnchor(AnchorLeft, 'gameLeftPanel', AnchorRight)
         gameMapPanel:addAnchor(AnchorRight, 'gameRightPanel', AnchorLeft)
-        gameMapPanel:addAnchor(AnchorRight, 'gameRightExtraPanel', AnchorLeft)
-        gameMapPanel:addAnchor(AnchorBottom, 'gameBottomPanel', AnchorTop)
+        gameMapPanel:addAnchor(AnchorBottom, 'bottomSplitter', AnchorTop)
+        gameMapPanel:addAnchor(AnchorTop, 'gameTopPanel', AnchorBottom)
         gameRootPanel:addAnchor(AnchorTop, 'parent', AnchorTop)
         gameLeftPanel:setOn(modules.client_options.getOption('showLeftPanel'))
         gameRightExtraPanel:setOn(modules.client_options.getOption('showRightExtraPanel'))
@@ -1593,10 +1768,6 @@ function setupViewMode(mode)
         gameRightExtraPanel:setMarginTop(0)
         gameLeftExtraPanel:setMarginTop(0)
         gameBottomPanel:setImageColor('white')
-        if g_platform.isMobile() then
-            gameRightPanel:setMarginBottom(mobileConfig.mobileHeightShortcuts)
-            gameLeftPanel:setMarginBottom(mobileConfig.mobileHeightJoystick)
-        end
     end
 
     if mode == 0 then
@@ -1607,10 +1778,6 @@ function setupViewMode(mode)
             width = 15,
             height = 11
         })
-        if g_platform.isMobile() then
-            gameRightPanel:setMarginBottom(mobileConfig.mobileHeightShortcuts)
-            gameLeftPanel:setMarginBottom(mobileConfig.mobileHeightJoystick)
-        end
     elseif mode == 1 then
         gameMapPanel:setKeepAspectRatio(false)
         gameMapPanel:setLimitVisibleRange(true)
@@ -1619,10 +1786,6 @@ function setupViewMode(mode)
             width = 15,
             height = 11
         })
-        if g_platform.isMobile() then
-            gameRightPanel:setMarginBottom(mobileConfig.mobileHeightShortcuts)
-            gameLeftPanel:setMarginBottom(mobileConfig.mobileHeightJoystick)
-        end
     elseif mode == 2 then
         local limit = limitedZoom and not g_game.isGM()
         gameMapPanel:setLimitVisibleRange(limit)
@@ -1646,14 +1809,11 @@ function setupViewMode(mode)
         gameLeftExtraPanel:setVisible(false)
         gameMapPanel:setOn(true)
         gameBottomPanel:setImageColor('#ffffff88')
-        if g_platform.isMobile() then
-            gameRightPanel:setMarginBottom(mobileConfig.mobileHeightShortcuts)
-            gameLeftPanel:setMarginBottom(mobileConfig.mobileHeightJoystick)
-        end
     end
 
+    applyMobileMargins()
     currentViewMode = mode
-    testExtendedView(mode)
+    applyExtendedViewLayout(mode == 2)
 end
 
 function limitZoom()
@@ -1785,13 +1945,16 @@ function checkAndOpenLeftPanel()
     end
 end
 
-function testExtendedView(mode)
-    local extendedView = mode == 2
+function applyExtendedViewLayout(extendedView)
+    if extendedView == isExtendedViewActive then return end
+    isExtendedViewActive = extendedView
+
+    local buttons = { leftIncreaseSidePanels, rightIncreaseSidePanels,
+        rightDecreaseSidePanels, leftDecreaseSidePanels }
+
     if extendedView then
-        local buttons = {leftIncreaseSidePanels, rightIncreaseSidePanels, rightDecreaseSidePanels,
-                         leftDecreaseSidePanels}
-        for _, button in ipairs(buttons) do
-            button:hide()
+        for _, btn in ipairs(buttons) do
+            btn:hide()
         end
 
         if not g_platform.isMobile() then
@@ -1799,7 +1962,8 @@ function testExtendedView(mode)
             gameBottomPanel:bindRectToParent()
             gameBottomPanel:setDraggable(true)
         else
-            gameBottomPanel:setWidth(g_window.getWidth() - mobileConfig.mobileWidthJoystick - mobileConfig.mobileWidthShortcuts)
+            gameBottomPanel:setWidth(g_window.getWidth() - mobileConfig.mobileWidthJoystick -
+                mobileConfig.mobileWidthShortcuts)
             gameBottomPanel:setPosition({
                 x = mobileConfig.mobileWidthJoystick,
                 y = gameBottomPanel:getY()
@@ -1812,18 +1976,22 @@ function testExtendedView(mode)
         gameMainRightPanel:setImageColor('alpha')
         gameBottomPanel:addAnchor(AnchorTop, 'gameBottomActionPanel', AnchorBottom)
         gameBottomPanel:addAnchor(AnchorBottom, 'parent', AnchorBottom)
+        gameLeftActionPanel:setImageSource(nil)
+        gameRightActionPanel:setImageSource(nil)
+        gameLeftActionPanel:setBorderWidthRight(0)
+        gameRightActionPanel:setBorderWidthLeft(0)
     else
         -- Reset to normal view
         gameMainRightPanel:setHeight(200)
         gameMainRightPanel:setMarginTop(0)
         gameMainRightPanel:setImageColor('white')
-
-        local buttons = {leftIncreaseSidePanels, rightIncreaseSidePanels, rightDecreaseSidePanels,
-                         leftDecreaseSidePanels}
-
-        for _, button in ipairs(buttons) do
-            button:setMarginTop(0)
-            button:show()
+        gameLeftActionPanel:setImageSource('/images/ui/actionbar/actionbar_background-light')
+        gameRightActionPanel:setImageSource('/images/ui/actionbar/actionbar_background-light')
+        gameLeftActionPanel:setBorderWidthRight(1)
+        gameRightActionPanel:setBorderWidthLeft(1)
+        for _, btn in ipairs(buttons) do
+            btn:setMarginTop(0)
+            btn:show()
         end
 
         -- Reset bottom panel
@@ -1848,6 +2016,7 @@ function testExtendedView(mode)
             end
         end
     end
+
     addEvent(function()
         modules.game_console.setExtendedView(extendedView)
         modules.game_minimap.extendedView(extendedView)

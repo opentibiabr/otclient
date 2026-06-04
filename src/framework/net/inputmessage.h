@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -85,6 +85,39 @@ public:
     }
 
     bool eof() { return (m_readPos - m_headerPos) >= m_messageSize; }
+
+    std::vector<uint8_t> peekBytes(int bytes) const
+    {
+        const int available = m_messageSize - (m_readPos - m_headerPos);
+        if (available <= 0)
+            return {};
+
+        bytes = std::min<uint8_t>(bytes, available);
+        std::vector<uint8_t> data(bytes);
+        std::memcpy(data.data(), m_buffer + m_readPos, bytes);
+        return data;
+    }
+
+    void addCompressionFooter()
+    {
+        // Optional: check if already equal to footer (avoid duplicating)
+        if (m_messageSize >= 4) {
+            // Pointer to last 4 bytes of current buffer
+            const uint8_t* src = m_buffer + m_messageSize - 4;
+            if (src[0] == 0x00 && src[1] == 0x00 && src[2] == 0xFF && src[3] == 0xFF)
+                return;
+        }
+
+        checkWrite(4);
+
+        static const uint8_t footer[] = { 0x00, 0x00, 0xFF, 0xFF };
+        uint8_t* dest = m_buffer + m_messageSize;
+
+        // Copy last 4 bytes
+        std::memcpy(dest, footer, 4);
+
+        m_messageSize += 4;
+    }
 
 protected:
     void reset();

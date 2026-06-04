@@ -1,10 +1,9 @@
 local iconTopMenu = nil
 
 local inventoryShrink = false
-local itemSlotsWithDuration = {}
-local updateSlotsDurationEvent = nil
-local DURATION_UPDATE_INTERVAL = 1000
+
 local pvpModeRadioGroup = nil 
+local monkMirrorItem = nil
 
 local function getInventoryUi()
     if inventoryShrink then
@@ -27,65 +26,67 @@ local getSlotPanelBySlot = {
     [InventorySlotAmmo] = function(ui) return ui.tools, ui.tools.tools end
 }
 
-local function formatDuration(duration)
-    return string.format("%dm%02d", duration / 60, duration % 60)
-end
-
-local function stopEvent()
-    if updateSlotsDurationEvent then
-        removeEvent(updateSlotsDurationEvent)
-        updateSlotsDurationEvent = nil
+local function isPlayerMonk()
+    local player = g_game.getLocalPlayer()
+    if not player then
+        return false
     end
+    return player:isMonk()
 end
 
-local function updateSlotsDuration()
-    -- @ prevent :
-    if not g_game.isOnline() or next(itemSlotsWithDuration) == nil then
-        stopEvent()
+local function updateMonkMirrorItem(leftItem)
+    if not g_game.getFeature(GameVocationMonk) then
         return
     end
-    -- @
-
-    if not modules.client_options.getOption('showExpiryInInvetory') then
-        stopEvent()
-        local ui = getInventoryUi()
-        for slot, itemDurationReg in pairs(itemSlotsWithDuration) do
-            local getSlotInfo = getSlotPanelBySlot[slot]
-            if getSlotInfo then
-                local slotPanel = getSlotInfo(ui)
-                if slotPanel and slotPanel.item then
-                    slotPanel.item.duration:setText("")
-                end
-            end
-        end
+    if inventoryShrink then
         return
     end
 
-    local currTime = g_clock.seconds()
     local ui = getInventoryUi()
-    local hasItemsWithDuration = false
+    if not ui or not ui.shield or not ui.shield.item then
+        return
+    end
 
-    for slot, itemDurationReg in pairs(itemSlotsWithDuration) do
-        local item = itemDurationReg.item
-        if item and item:getDurationTime() > 0 then
-            hasItemsWithDuration = true
-            local durationTimeLeft = math.max(0, itemDurationReg.timeEnd - currTime)
-            local getSlotInfo = getSlotPanelBySlot[slot]
-            if getSlotInfo then
-                local slotPanel = getSlotInfo(ui)
-                if slotPanel and slotPanel.item then
-                    slotPanel.item.duration:setText(formatDuration(durationTimeLeft))
-                end
-            end
+    local shieldSlot = ui.shield
+    local shieldItemWidget = shieldSlot.item
+
+    if not isPlayerMonk() then
+        if monkMirrorItem then
+            monkMirrorItem = nil
+        end
+        return
+    end
+
+    local player = g_game.getLocalPlayer()
+    local realShieldItem = player and player:getInventoryItem(InventorySlotRight)
+
+    if realShieldItem then
+        monkMirrorItem = nil
+        return
+    end
+
+    if leftItem then
+        monkMirrorItem = leftItem
+        shieldItemWidget:setItem(leftItem)
+        shieldItemWidget:setOpacity(0.5)
+        shieldItemWidget:setDraggable(false)
+        shieldItemWidget:setEnabled(false)
+        shieldItemWidget:setFlipDirection(FlipDirection.Horizontal)
+        shieldSlot.shield:setEnabled(false)
+    else
+        monkMirrorItem = nil
+        shieldItemWidget:setItem(nil)
+        shieldItemWidget:setOpacity(1.0)
+        shieldItemWidget:setDraggable(true)
+        shieldItemWidget:setEnabled(true)
+        shieldItemWidget:setFlipDirection(FlipDirection.None)
+        shieldSlot.shield:setEnabled(true)
+        if shieldItemWidget.tier then
+            shieldItemWidget.tier:setVisible(false)
         end
     end
-
-    if hasItemsWithDuration then
-        updateSlotsDurationEvent = scheduleEvent(updateSlotsDuration, DURATION_UPDATE_INTERVAL)
-    else
-        stopEvent()
-    end
 end
+
 
 local function walkEvent()
     if modules.client_options.getOption('autoChaseOverride') then
@@ -122,36 +123,37 @@ local function inventoryEvent(player, slot, item, oldItem)
         return
     end
 
+    if slot == InventorySlotRight and isPlayerMonk() and not item and monkMirrorItem then
+        return
+    end
+
+    if slot == InventorySlotRight and item then
+        local slotPanel, toggler = getSlotInfo(ui)
+        slotPanel.item:setOpacity(1.0)
+        slotPanel.item:setDraggable(true)
+        slotPanel.item:setEnabled(true)
+        slotPanel.item:setFlipDirection(FlipDirection.None)
+        monkMirrorItem = nil
+    end
+
     local slotPanel, toggler = getSlotInfo(ui)
 
     slotPanel.item:setItem(item)
     toggler:setEnabled(not item)
     slotPanel.item:setWidth(34)
     slotPanel.item:setHeight(34)
-    slotPanel.item.duration:setText("")
-    slotPanel.item.charges:setText("")
-    if g_game.getFeature(GameThingClock) then
-        if item and item:getDurationTime() > 0 then
-            if not itemSlotsWithDuration[slot] or itemSlotsWithDuration[slot].item ~= item then
-                itemSlotsWithDuration[slot] = {
-                    item = item,
-                    timeEnd = g_clock.seconds() + item:getDurationTime()
-                }
-            end
-            if modules.client_options.getOption('showExpiryInInvetory') then
-                if not updateSlotsDurationEvent then
-                    updateSlotsDuration()
-                end
-            end
-        else
-            itemSlotsWithDuration[slot] = nil
-        end
-    end
     
-    if modules.client_options.getOption('showExpiryInInvetory') then
-        ItemsDatabase.setCharges(slotPanel.item, item)
-    end
+    slotPanel.item:setShowDuration(g_game.getFeature(GameThingClock) and modules.client_options.getOption('showExpiryInInvetory'))
+    slotPanel.item:setShowCharges(g_game.getFeature(GameThingCounter) and modules.client_options.getOption('showExpiryInInvetory'))
     ItemsDatabase.setTier(slotPanel.item, item)
+
+    if slot == InventorySlotLeft then
+        if item and modules.game_proficiency then
+            g_game.sendWeaponProficiencyAction(WeaponProficiency.WEAPON_PROFICIENCY_ITEM_INFO, item:getId())
+            modules.game_proficiency.updateTopBarProficiency()
+        end
+        updateMonkMirrorItem(item)
+    end
 end
 
 local function onSoulChange(localPlayer, soul)
@@ -338,10 +340,17 @@ function inventoryController:onGameStart()
         end
     end
     inventoryController.ui.onPanel.purseButton:setVisible(g_game.getFeature(GamePurseSlot))
+
+    if isPlayerMonk() and player then
+        local leftItem = player:getInventoryItem(InventorySlotLeft)
+        if leftItem then
+            updateMonkMirrorItem(leftItem)
+        end
+    end
 end
 
 function inventoryController:onGameEnd()
-    stopEvent()
+    monkMirrorItem = nil
 
     local lastCombatControls = g_settings.getNode('LastCombatControls')
     if not lastCombatControls then
@@ -360,6 +369,7 @@ function inventoryController:onGameEnd()
         end
         g_settings.setNode('LastCombatControls', lastCombatControls)
     end
+    toggleAdventurerStyle(false)
 end
 
 function inventoryController:onTerminate()
@@ -479,9 +489,6 @@ function getSlot5()
 end
 
 function reloadInventory()
-    if modules.client_options.getOption('showExpiryInInvetory') then
-        updateSlotsDuration()
-    end
     
     for slot, getSlotInfo in pairs(getSlotPanelBySlot) do
         local ui = getInventoryUi()
@@ -541,24 +548,6 @@ function toggleAdventurerStyle(hasBlessing)
     end
 end
 
-function onBlessingsChange(blessings, blessVisualState)
-    toggleAdventurerStyle(blessings == 1)
-    local blessedButton = getInventoryUi().blessings
---[[     local tooltip = 'You are protected by the following blessings:'
-        tooltip = tooltip .. '\nTwist of Fate'
-        tooltip = tooltip .. '\nWisdom of Solitude'
-        tooltip = tooltip .. '\nSpark of the Phoenix'
-        tooltip = tooltip .. '\nFire of the Suns'
-        tooltip = tooltip .. '\nSpiritual Shielding'
-        tooltip = tooltip .. '\nEmbrace of Tibia'
-        tooltip = tooltip .. '\nHeart of the Mountain'
-        tooltip = tooltip .. '\nBlood of the Mountain'
-        blessedButton:setTooltip(tooltip) ]]
-    if blessVisualState == 1 then
-        blessedButton:setImageSource('/images/inventory/button_blessings_grey')
-    elseif blessVisualState == 2 then
-        blessedButton:setImageSource('/images/inventory/button_blessings_gold')
-    elseif blessVisualState == 3 then
-        blessedButton:setImageSource('/images/inventory/button_blessings_green')
-    end
+function getButtonBlessings()
+    return getInventoryUi().blessings
 end

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +23,7 @@
 #include "uiwidget.h"
 
 #include "uianchorlayout.h"
+#include "uilayoutflexbox.h"
 #include "uimanager.h"
 #include "uitranslator.h"
 #include "framework/core/eventdispatcher.h"
@@ -30,10 +31,13 @@
 #include "framework/graphics/drawpool.h"
 #include "framework/graphics/drawpoolmanager.h"
 #include "framework/graphics/shadermanager.h"
+#include <framework/graphics/bitmapfont.h>
 #include "framework/html/htmlmanager.h"
 #include "framework/html/htmlnode.h"
 #include "framework/otml/otmlnode.h"
+#include "framework/graphics/coordsbuffer.h"
 #include <framework/platform/platformwindow.h>
+#include <framework/util/stats.h>
 
 UIWidget::UIWidget()
 {
@@ -55,9 +59,13 @@ UIWidget::UIWidget()
     m_positions.set(Unit::Auto);
     m_clickTimer.stop();
 
+    m_textUnderline = std::make_shared<CoordsBuffer>();
+
     initBaseStyle();
     initText();
     initImage();
+
+    g_stats.addWidget(this);
 }
 
 UIWidget::~UIWidget()
@@ -65,8 +73,10 @@ UIWidget::~UIWidget()
 #ifndef NDEBUG
     assert(!g_app.isTerminated());
     if (!isDestroyed())
-        g_logger.warning("widget '{}' was not explicitly destroyed", m_id);
+        g_logger.warning("Widget '{}' was not explicitly destroyed", m_id);
 #endif
+
+    g_stats.removeWidget(this);
 }
 
 void UIWidget::draw(const Rect& visibleRect, const DrawPoolType drawPane)
@@ -257,8 +267,8 @@ void UIWidget::insertChild(int32_t index, const UIWidgetPtr& child)
 
     { // cache index
         child->m_childIndex = index + 1;
-        for (auto i = child->m_childIndex; i < m_children.size(); ++i)
-            m_children[i]->m_childIndex = i + 1;
+        for (size_t i = static_cast<size_t>(child->m_childIndex); i < m_children.size(); ++i)
+            m_children[i]->m_childIndex = static_cast<int16_t>(i + 1);
     }
 
     child->setParent(static_self_cast<UIWidget>());
@@ -353,7 +363,7 @@ void UIWidget::focusChild(const UIWidgetPtr& child, const Fw::FocusReason reason
         return;
 
     if (child && !hasChild(child)) {
-        g_logger.error("attempt to focus an unknown child in a UIWidget");
+        g_logger.error("Attempt to focus an unknown child in a UIWidget");
         return;
     }
 
@@ -816,8 +826,12 @@ void UIWidget::updateLayout()
     if (m_layout)
         m_layout->update();
 
-    // children can affect the parent layout
+    // Children can affect the parent layout.
+    // If the parent is currently running a flex pass, skip parent relayout
+    // scheduling to avoid conflicting with flex-driven geometry assignment.
     if (const auto& parent = getParent()) {
+        if (parent->m_inFlexLayout)
+            return;
         if (const auto& parentLayout = parent->getLayout())
             parentLayout->updateLater();
     }
@@ -966,7 +980,7 @@ void UIWidget::internalDestroy()
 void UIWidget::destroy()
 {
     if (isDestroyed())
-        g_logger.warning("attempt to destroy widget '{}' ({}) two times", m_id, m_source);
+        g_logger.warning("Attempt to destroy widget '{}' ({}) two times", m_id, m_source);
 
     // hold itself reference
     const UIWidgetPtr self = static_self_cast<UIWidget>();
@@ -1131,7 +1145,7 @@ bool UIWidget::setRect(const Rect& rect)
     }
     /*
     if(rect.width() > 8192 || rect.height() > 8192) {
-        g_logger.error("attempt to set huge rect size ({}) for {}", stdext::to_string(rect), m_id);
+        g_logger.error("Attempt to set huge rect size ({}) for {}", stdext::to_string(rect), m_id);
         return false;
     }
     */
@@ -1142,9 +1156,56 @@ bool UIWidget::setRect(const Rect& rect)
 
     Rect oldRect = m_rect;
     m_rect = clampedRect;
+    const bool positionChanged = oldRect.topLeft() != clampedRect.topLeft();
+    const bool sizeChanged = oldRect.size() != clampedRect.size();
 
-    // updates own layout
+    // Always run local layout updates after geometry change.
+    // Parent relayout scheduling is handled inside updateLayout and is
+    // suppressed there while the parent runs flex layout.
     updateLayout();
+
+    // If this is a flex container that moved without resizing, re-position
+    // descendants with a uniform translation (e.g. when the window is dragged).
+    // Size-driven relayout must not take this fast-path because the children
+    // may need a real flex reflow/re-wrap.
+    if (isOnHtml() && !m_inFlexLayout &&
+        (!m_parent || !m_parent->m_inFlexLayout) &&
+        (m_displayType == DisplayType::Flex || m_displayType == DisplayType::InlineFlex) &&
+        positionChanged && !sizeChanged) {
+        // Pure movement: translate descendants by delta instead of doing
+        // a full flex relayout, which is expensive during scroll/drag.
+        const Point delta = clampedRect.topLeft() - oldRect.topLeft();
+        if (!delta.isNull()) {
+            std::vector<UIWidget*> stack;
+            stack.reserve(m_children.size());
+            for (const auto& child : m_children) {
+                if (child && !child->isDestroyed())
+                    stack.push_back(child.get());
+            }
+
+            while (!stack.empty()) {
+                UIWidget* w = stack.back();
+                stack.pop_back();
+
+                // INTENTIONAL BYPASS: We modify m_rect directly instead of
+                // calling setRect() for performance. This is safe because:
+                // 1. All flex descendant positions are absolute (screen coords)
+                //    and only need a uniform delta shift - no relayout needed.
+                // 2. updateLayout()/onGeometryChange events are unnecessary for
+                //    pure translation during scroll/drag.
+                // 3. The parent's deferred geometry-change event (above) will
+                //    fire for the container itself, covering hover updates.
+                w->m_rect.translate(delta);
+                for (auto& rectToWord : w->m_rectToWord)
+                    rectToWord.first.translate(delta);
+
+                for (const auto& grandChild : w->m_children) {
+                    if (grandChild && !grandChild->isDestroyed())
+                        stack.push_back(grandChild.get());
+                }
+            }
+        }
+    }
 
     // avoid massive update events
     if (!hasProp(PropUpdateEventScheduled)) {
@@ -1566,6 +1627,29 @@ UIWidgetPtr UIWidget::getChildByStyleName(const std::string_view styleName) {
     return nullptr;
 }
 
+UIWidgetPtr UIWidget::getNearestChild(const Point& pos)
+{
+    if (m_children.empty())
+        return nullptr;
+
+    UIWidgetPtr nearestChild = nullptr;
+    float minDistance = (std::numeric_limits<float>::max)();
+    for (const auto& child : m_children) {
+        if (!child->isExplicitlyVisible())
+            continue;
+
+        const Point childCenter = child->getRect().center();
+        const auto dx = static_cast<float>(pos.x - childCenter.x);
+        const auto dy = static_cast<float>(pos.y - childCenter.y);
+        const float distance = std::sqrt(dx * dx + dy * dy);
+        if (distance < minDistance) {
+            minDistance = distance;
+            nearestChild = child;
+        }
+    }
+    return nearestChild;
+}
+
 UIWidgetList UIWidget::recursiveGetChildrenByState(const Fw::WidgetState state)
 {
     UIWidgetList children;
@@ -1878,6 +1962,11 @@ void UIWidget::onHoverChange(const bool hovered)
     callLuaField("onHoverChange", hovered);
 }
 
+void UIWidget::onTextHoverChange(const std::string& text, bool hovered)
+{
+    callLuaField("onTextHoverChange", text, hovered);
+}
+
 void UIWidget::onVisibilityChange(const bool visible)
 {
     if (!isAnchored())
@@ -1957,6 +2046,12 @@ bool UIWidget::onMouseWheel(const Point& mousePos, const Fw::MouseWheelDirection
 
 bool UIWidget::onClick(const Point& mousePos)
 {
+    if (hasEventListener(EVENT_TEXT_CLICK)) {
+        std::string clickedText = getTextByPos(mousePos);
+        if (!clickedText.empty()) {
+            callLuaField("onTextClick", clickedText, mousePos);
+        }
+    }
     return callLuaField<bool>("onClick", mousePos);
 }
 
@@ -2082,7 +2177,7 @@ bool UIWidget::propagateOnMouseEvent(const Point& mousePos, UIWidgetList& widget
     if (!checkContainsPoint || containsPoint(mousePos)) {
         widgetList.emplace_back(static_self_cast<UIWidget>());
 
-        if (!isPhantom() && !isOnHtml() || isDraggable())
+        if ((!isPhantom() && !isOnHtml()) || isDraggable())
             ret = true;
     }
 
@@ -2239,6 +2334,8 @@ const UIWidgetStyle& UIWidget::style() const
     m_styleCache.minHeight = m_minSize.height();
     m_styleCache.maxWidth = m_maxSize.width();
     m_styleCache.maxHeight = m_maxSize.height();
+    m_styleCache.marginTopAuto = m_marginTopAuto;
+    m_styleCache.marginBottomAuto = m_marginBottomAuto;
     m_styleCache.marginLeftAuto = m_marginLeftAuto;
     m_styleCache.marginRightAuto = m_marginRightAuto;
     return m_styleCache;
@@ -2364,4 +2461,153 @@ void UIWidget::setAlignSelf(AlignSelf align)
 void UIWidget::setPlacement(const std::string& placement) {
     m_placement = Fw::translatePlacement(placement);
     scheduleHtmlTask(PropApplyAnchorAlignment);
+}
+
+std::string UIWidget::getTextByPos(const Point& mousePos)
+{
+    for (const auto& pair : m_rectToWord) {
+        if (pair.first.contains(mousePos))
+            return pair.second;
+    }
+
+    return "";
+}
+
+void UIWidget::setEventListener(WidgetEvents event)
+{
+    if (hasEventListener(event))
+        return;
+
+    m_events |= event;
+
+    if ((event == EVENT_TEXT_CLICK || event == EVENT_TEXT_HOVER) && m_rectToWord.empty())
+        cacheRectToWord();
+}
+
+void UIWidget::removeEventListener(WidgetEvents event)
+{
+    if (!hasEventListener(event))
+        return;
+
+    m_events &= ~event;
+
+    if (event == EVENT_TEXT_CLICK || event == EVENT_TEXT_HOVER) {
+        m_rectToWord.clear();
+        m_rectToWord.shrink_to_fit();
+        m_textUnderline = std::make_shared<CoordsBuffer>();
+    }
+}
+
+void UIWidget::cacheRectToWord()
+{
+    if (m_rect.isEmpty())
+        return;
+
+    const auto& text = m_drawText;
+    const int textLength = text.length();
+
+    // map glyphs positions
+    Size textBoxSize;
+    m_font->calculateGlyphsPositions(text, m_textAlign, m_glyphsPositionsCache, &textBoxSize);
+    if (m_glyphsCoordsCache.size() != static_cast<size_t>(textLength))
+        m_glyphsCoordsCache.resize(textLength);
+
+    auto& glyphsCoords = m_glyphsCoordsCache;
+    const auto& glyphsPositions = m_glyphsPositionsCache;
+    const Rect* glyphsTextureCoords = m_font->getGlyphsTextureCoords();
+    const Size* glyphsSize = m_font->getGlyphsSize();
+    int glyph;
+
+    // update rect size
+    if (!m_rect.isValid() || hasProp(PropTextHorizontalAutoResize) || hasProp(PropTextVerticalAutoResize)) {
+        textBoxSize += Size(m_padding.left + m_padding.right, m_padding.top + m_padding.bottom) + m_textOffset.toSize();
+        Size size = getSize();
+        if (size.width() <= 0 || (hasProp(PropTextHorizontalAutoResize) && !hasProp(PropTextWrap)))
+            size.setWidth(textBoxSize.width());
+        if (size.height() <= 0 || hasProp(PropTextVerticalAutoResize))
+            size.setHeight(textBoxSize.height());
+        setSize(size);
+    }
+
+    Rect textScreenCoords = m_rect;
+    textScreenCoords.expandLeft(-m_padding.left);
+    textScreenCoords.expandRight(-m_padding.right);
+    textScreenCoords.expandBottom(-m_padding.bottom);
+    textScreenCoords.expandTop(-m_padding.top);
+
+    for (int i = 0; i < textLength; ++i) {
+        glyph = (uchar)text[i];
+        glyphsCoords[i].clear();
+
+        // skip invalid glyphs
+        if (glyph < 32)
+            continue;
+
+        // calculate initial glyph rect and texture coords
+        Rect glyphScreenCoords(glyphsPositions[i], glyphsSize[glyph]);
+        Rect glyphTextureCoords = glyphsTextureCoords[glyph];
+
+        // first translate to align position
+        if (m_textAlign & Fw::AlignBottom) {
+            glyphScreenCoords.translate(0, textScreenCoords.height() - textBoxSize.height());
+        } else if (m_textAlign & Fw::AlignVerticalCenter) {
+            glyphScreenCoords.translate(0, (textScreenCoords.height() - textBoxSize.height()) / 2);
+        } else { // AlignTop
+            // nothing to do
+        }
+
+        if (m_textAlign & Fw::AlignRight) {
+            glyphScreenCoords.translate(textScreenCoords.width() - textBoxSize.width(), 0);
+        } else if (m_textAlign & Fw::AlignHorizontalCenter) {
+            glyphScreenCoords.translate((textScreenCoords.width() - textBoxSize.width()) / 2, 0);
+        } else { // AlignLeft
+            // nothing to do
+        }
+
+        // translate rect to screen coords
+        glyphScreenCoords.translate(textScreenCoords.topLeft());
+
+        // only render if glyph rect is visible on screenCoords
+        if (!textScreenCoords.intersects(glyphScreenCoords))
+            continue;
+
+        // bound glyph bottomRight to screenCoords bottomRight
+        if (glyphScreenCoords.bottom() > textScreenCoords.bottom()) {
+            glyphTextureCoords.setBottom(glyphTextureCoords.bottom() + (textScreenCoords.bottom() - glyphScreenCoords.bottom()));
+            glyphScreenCoords.setBottom(textScreenCoords.bottom());
+        }
+        if (glyphScreenCoords.right() > textScreenCoords.right()) {
+            glyphTextureCoords.setRight(glyphTextureCoords.right() + (textScreenCoords.right() - glyphScreenCoords.right()));
+            glyphScreenCoords.setRight(textScreenCoords.right());
+        }
+
+        // render glyph
+        glyphsCoords[i] = glyphScreenCoords;
+    }
+
+    updateRectToWord(glyphsCoords);
+}
+
+void UIWidget::setColor(const Color& color)
+{
+    if (m_color == color)
+        return;
+
+    if (!m_textColors.empty()) {
+        for (auto& pair : m_textColors) {
+            if (pair.second == m_baseTextColor)
+                pair.second = color;
+        }
+        for (auto& pair : m_drawTextColors) {
+            if (pair.second == m_baseTextColor)
+                pair.second = color;
+        }
+        m_baseTextColor = color;
+        m_colorCoordsBuffer.clear();
+        m_coordsBuffer->clear();
+        m_textCachedScreenCoords = {};
+    }
+
+    m_color = color;
+    repaint();
 }

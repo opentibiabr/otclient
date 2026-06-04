@@ -4,9 +4,9 @@ SpellGroupIcon < UIWidget
   image-source: /images/game/spells/spellgroup-icons-20x20
   focusable: false
   margin-top: 3
-  opacity: 1
+  opacity: 0.5
   $on:
-    opacity: 0.5
+    opacity: 1
 
 
 SpellIcon < UIWidget
@@ -87,7 +87,7 @@ Panel
 
     SpellGroupIcon
       id: groupIconCrippling
-      image-clip: 80 0 20 20
+      image-clip: 100 0 20 20
       anchors.top: parent.top
       anchors.left: groupIconSpecial.right
       margin-left: 3
@@ -99,7 +99,7 @@ Panel
 
     SpellGroupIcon
       id: groupIconFocus
-      image-clip: 100 0 20 20
+      image-clip: 120 0 20 20
       anchors.top: parent.top
       anchors.left: groupIconCrippling.right
       margin-left: 3
@@ -111,7 +111,7 @@ Panel
 
     SpellGroupIcon
       id: groupIconUltimateStrikes
-      image-clip: 120 0 20 20
+      image-clip: 140 0 20 20
       anchors.top: parent.top
       anchors.left: groupIconFocus.right
       margin-left: 3
@@ -123,7 +123,7 @@ Panel
 
     SpellGroupIcon
       id: groupIconGreatBeams
-      image-clip: 140 0 20 20
+      image-clip: 160 0 20 20
       anchors.top: parent.top
       anchors.left: groupIconUltimateStrikes.right
       margin-left: 3
@@ -135,7 +135,7 @@ Panel
 
     SpellGroupIcon
       id: groupIconBurstsOfNature
-      image-clip: 160 0 20 20
+      image-clip: 180 0 20 20
       anchors.top: parent.top
       anchors.left: groupIconGreatBeams.right
       margin-left: 3
@@ -143,7 +143,19 @@ Panel
     SpellProgressRect
       id: progressRectBurstsOfNature
       anchors.fill: groupIconBurstsOfNature
-      !tooltip: tr('Burst of Nature')
+      !tooltip: tr('Bursts of Nature')
+
+    SpellGroupIcon
+      id: groupIconVirtue
+      image-clip: 200 0 20 20
+      anchors.top: parent.top
+      anchors.left: groupIconBurstsOfNature.right
+      margin-left: 3
+
+    SpellProgressRect
+      id: progressRectVirtue
+      anchors.fill: groupIconVirtue
+      !tooltip: tr('Virtue')
 
     VerticalSeparator
       id: separator

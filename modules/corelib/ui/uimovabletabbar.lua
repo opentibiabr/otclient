@@ -313,8 +313,10 @@ function UIMoveableTabBar:addTab(text, panel, menuCallback)
     tab:setId('tab')
     tab:setDraggable(self.tabsMoveable)
     tab:setText(text)
-    if not tab.ignoreTextResize then
-        tab:setWidth(tab:getTextSize().width + tab:getPaddingLeft() + tab:getPaddingRight())
+    if text:len() > 13 then
+        tab:setWidth(tab:getTextSize().width + 10)
+    else
+        tab:setWidth(tab.tabWidth)
     end
     tab.menuCallback = menuCallback or nil
     tab.onClick = onTabClick
@@ -323,7 +325,9 @@ function UIMoveableTabBar:addTab(text, panel, menuCallback)
     tab.onDragLeave = onTabDragLeave
     tab.onDragMove = onTabDragMove
     tab.onDestroy = function()
-        tab.tabPanel:destroy()
+        if not tab.tabPanel:isDestroyed() then
+            tab.tabPanel:destroy()
+        end
     end
 
     if #self.tabs == 0 then

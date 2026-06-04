@@ -8,17 +8,18 @@ local itemsById = {}
 local containersById = {}
 local dontSave = false
 
+local function updateLootingModeLabel()
+  if not ui or not ui.labelToLoot then return end
+  ui.labelToLoot:setText(ui.everyItem:isOn() and "Items to ignore" or "Items to loot")
+end
+
 TargetBot.Looting.setup = function()
   ui = UI.createWidget("TargetBotLootingPanel")
   UI.Container(TargetBot.Looting.onItemsUpdate, true, nil, ui.items)
   UI.Container(TargetBot.Looting.onContainersUpdate, true, nil, ui.containers)
   ui.everyItem.onClick = function()
     ui.everyItem:setOn(not ui.everyItem:isOn())
-    if ui.everyItem:isOn() then
-      ui.labelToLoot:setText("Items to ignore")
-    else
-      ui.labelToLoot:setText("Items to loot")
-    end
+    updateLootingModeLabel()
     TargetBot.save()
   end
   ui.maxDangerPanel.value.onTextChange = function()
@@ -56,7 +57,8 @@ TargetBot.Looting.update = function(data)
   TargetBot.Looting.list = {}
   ui.items:setItems(data['items'] or {})
   ui.containers:setItems(data['containers'] or {})
-  ui.everyItem:setOn(data['everyItem'])
+  ui.everyItem:setOn(not not data['everyItem'])
+  updateLootingModeLabel()
   ui.maxDangerPanel.value:setText(data['maxDanger'] or 10)
   ui.minCapacityPanel.value:setText(data['minCapacity'] or 100)
   TargetBot.Looting.updateItemsAndContainers()
@@ -153,9 +155,18 @@ TargetBot.Looting.process = function(targets, dangerLevel)
   end
 
   local tile = g_map.getTile(loot.pos)
-  if dist >= 3 or not tile then
+  local minDist = 2
+  local walkPrecision = 2
+  if g_game.getClientVersion() <= 760 then
+    -- In Tibia 7.6 and earlier, corpses must be looted from adjacent tiles (distance 1)
+    -- Later versions allow looting from larger distance. We use 760 as cutoff, but the exact
+    -- version when CipSoft changed this is unknown
+    minDist = 1
+    walkPrecision = 1
+  end
+  if dist > minDist or not tile then
     loot.tries = loot.tries + 1
-    TargetBot.walkTo(loot.pos, 20, { ignoreNonPathable = true, precision = 2 })
+    TargetBot.walkTo(loot.pos, 20, { ignoreNonPathable = true, precision = walkPrecision })
     return true
   end
 

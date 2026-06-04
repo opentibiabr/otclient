@@ -39,7 +39,7 @@ CaveBot.Extensions.ClearTile.setup = function()
     local tPos = tile:getPosition()
 
     -- no items on tile and walkability means we are done
-    if tile:isWalkable() and tile:getTopUseThing():isNotMoveable() and not tile:hasCreature() and not doors then
+    if tile:isWalkable() and tile:getTopUseThing():isNotMoveable() and not tile:hasCreatures() and not doors then
       if stand then
         if not CaveBot.MatchPosition(tPos, 0) then
           CaveBot.GoTo(tPos, 0)
@@ -60,7 +60,7 @@ CaveBot.Extensions.ClearTile.setup = function()
     end
 
     -- monster
-    if tile:hasCreature() then
+    if tile:hasCreatures() then
       local c = tile:getCreatures()[1]
       if c:isMonster() then
         attack(c)
@@ -81,7 +81,7 @@ CaveBot.Extensions.ClearTile.setup = function()
     -- player
 
       -- push creature
-      if tile:hasCreature() then
+      if tile:hasCreatures() then
         local c = tile:getCreatures()[1]
         if c and c:isPlayer() then
 

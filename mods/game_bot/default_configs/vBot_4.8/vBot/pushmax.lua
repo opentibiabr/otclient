@@ -205,7 +205,7 @@ macro(50, function()
       return
     end
 
-    if not cleanTile:hasCreature() then return end
+    if not cleanTile:hasCreatures() then return end
     local tiles = getNearTiles(tilePos)
     local destTile
     local forbidden = {}
@@ -220,7 +220,7 @@ macro(50, function()
     for i, tile in pairs(tiles) do
       local minimapColor = g_map.getMinimapColor(tile:getPosition())
       local stairs = (minimapColor >= 210 and minimapColor <= 213)
-      if tile:isWalkable() and not isNotOk(fieldTable, tile) and not tile:hasCreature() and not stairs then
+      if tile:isWalkable() and not isNotOk(fieldTable, tile) and not tile:hasCreatures() and not stairs then
         local tooClose = false
         if #forbidden ~= 0 then
           for i=1,#forbidden do

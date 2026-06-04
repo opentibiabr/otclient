@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,7 +21,25 @@
  */
 
 #include "crypt.h"
+
+#ifndef USE_PRECOMPILED_HEADERS
+#include <algorithm>
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <functional>
+#include <iomanip>
+#include <ranges>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <utility>
+#include <zlib.h>
+#endif
+
 #include <cppcodec/base64_rfc4648.hpp>
+#include <openssl/evp.h>
 
 #include "framework/core/graphicalapplication.h"
 #include "framework/core/resourcemanager.h"
@@ -29,6 +47,12 @@
 #include "framework/stdext/math.h"
 
 #ifndef USE_GMP
+#ifndef OPENSSL_API_COMPAT
+#define OPENSSL_API_COMPAT 0x10100000L
+#endif
+#ifndef OPENSSL_SUPPRESS_DEPRECATED
+#define OPENSSL_SUPPRESS_DEPRECATED
+#endif
 #include <openssl/bn.h>
 #include <openssl/rsa.h>
 #endif
@@ -164,12 +188,12 @@ std::string Crypt::_decrypt(const std::string& encrypted_string, const bool useM
 void Crypt::rsaSetPublicKey(const std::string& n, const std::string& e)
 {
 #ifdef USE_GMP
-    mpz_set_str(m_n, n.c_str(), 10);
-    mpz_set_str(m_e, e.c_str(), 10);
+    mpz_set_str(m_n, n.data(), 10);
+    mpz_set_str(m_e, e.data(), 10);
 #else
     BIGNUM* bn = nullptr, * be = nullptr;
-    BN_dec2bn(&bn, n.c_str());
-    BN_dec2bn(&be, e.c_str());
+    BN_dec2bn(&bn, n.data());
+    BN_dec2bn(&be, e.data());
     RSA_set0_key(m_rsa, bn, be, nullptr);
 #endif
 }
@@ -177,17 +201,17 @@ void Crypt::rsaSetPublicKey(const std::string& n, const std::string& e)
 void Crypt::rsaSetPrivateKey(const std::string& p, const std::string& q, const std::string& d)
 {
 #ifdef USE_GMP
-    mpz_set_str(m_p, p, 10);
-    mpz_set_str(m_q, q, 10);
-    mpz_set_str(m_d, d, 10);
+    mpz_set_str(m_p, p.data(), 10);
+    mpz_set_str(m_q, q.data(), 10);
+    mpz_set_str(m_d, d.data(), 10);
 
     // n = p * q
     mpz_mul(m_n, m_p, m_q);
 #else
 #if OPENSSL_VERSION_NUMBER < 0x10100005L
-    BN_dec2bn(&m_rsa->p, p);
-    BN_dec2bn(&m_rsa->q, q);
-    BN_dec2bn(&m_rsa->d, d);
+    BN_dec2bn(&m_rsa->p, p.data());
+    BN_dec2bn(&m_rsa->q, q.data());
+    BN_dec2bn(&m_rsa->d, d.data());
     // clear rsa cache
     if (m_rsa->_method_mod_p) {
         BN_MONT_CTX_free(m_rsa->_method_mod_p);
@@ -199,9 +223,9 @@ void Crypt::rsaSetPrivateKey(const std::string& p, const std::string& q, const s
     }
 #else
     BIGNUM* bp = nullptr, * bq = nullptr, * bd = nullptr;
-    BN_dec2bn(&bp, p.c_str());
-    BN_dec2bn(&bq, q.c_str());
-    BN_dec2bn(&bd, d.c_str());
+    BN_dec2bn(&bp, p.data());
+    BN_dec2bn(&bq, q.data());
+    BN_dec2bn(&bd, d.data());
     RSA_set0_key(m_rsa, nullptr, nullptr, bd);
     RSA_set0_factors(m_rsa, bp, bq);
 #endif
@@ -275,7 +299,7 @@ int Crypt::rsaGetSize()
 std::string Crypt::crc32(const std::string& decoded_string, const bool upperCase)
 {
     uint32_t crc = ::crc32(0, nullptr, 0);
-    crc = ::crc32(crc, (const Bytef*)decoded_string.c_str(), decoded_string.size());
+    crc = ::crc32(crc, reinterpret_cast<const Bytef*>(decoded_string.data()), decoded_string.size());
     std::string result = stdext::dec_to_hex(crc);
     if (upperCase)
         std::ranges::transform(result, result.begin(), toupper);
@@ -284,14 +308,27 @@ std::string Crypt::crc32(const std::string& decoded_string, const bool upperCase
     return result;
 }
 
-// NOSONAR - Intentional use of SHA-1 as there is no security impact in this context
-std::string Crypt::sha1Encrypt(const std::string& input) {
-    unsigned char hash[SHA_DIGEST_LENGTH];
-    SHA1(reinterpret_cast<const unsigned char*>(input.data()), input.size(), hash);
+std::string Crypt::sha256(const std::string& decoded_string)
+{
+    std::array<unsigned char, EVP_MAX_MD_SIZE> digest{};
+    unsigned int digestLength = 0;
 
-    std::ostringstream oss;
-    for (unsigned char byte : hash)
-        oss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(byte);
+    EVP_MD_CTX* context = EVP_MD_CTX_new();
+    if (!context)
+        return "";
 
-    return oss.str();
+    const bool ok = EVP_DigestInit_ex(context, EVP_sha256(), nullptr) == 1 &&
+                    EVP_DigestUpdate(context, decoded_string.data(), decoded_string.size()) == 1 &&
+                    EVP_DigestFinal_ex(context, digest.data(), &digestLength) == 1;
+    EVP_MD_CTX_free(context);
+
+    if (!ok)
+        return "";
+
+    std::ostringstream ss;
+    ss << std::hex << std::setfill('0');
+    for (unsigned int i = 0; i < digestLength; ++i)
+        ss << std::setw(2) << static_cast<int>(digest[i]);
+
+    return ss.str();
 }

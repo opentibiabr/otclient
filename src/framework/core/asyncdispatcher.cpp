@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -38,4 +38,4 @@ uint8_t getThreadCount() {
     return std::clamp<int_fast8_t>(std::thread::hardware_concurrency() - 1, MIN_THREADS, MAX_THREADS);
 }
 
-BS::thread_pool g_asyncDispatcher{ getThreadCount() };
+std::unique_ptr<AsyncDispatcher> g_asyncDispatcher = std::make_unique<AsyncDispatcher>(getThreadCount());

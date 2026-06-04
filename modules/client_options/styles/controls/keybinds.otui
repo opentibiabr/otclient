@@ -1,6 +1,3 @@
-RadioBox < CheckBox
-  image-source: /images/ui/outfits/checkbox_round
-
 OptionContainer < FlatPanel
   height: 22
   padding: 3
@@ -151,13 +148,13 @@ UIWidget
         type: horizontalBox
         spacing: 127
       
-      RadioBox
+      CheckBoxCircle
         id: on
         text-horizontal-auto-resize: true
         !text: tr("Chat Mode On")
         margin-bottom: -5
         text-offset: 20 -3
-      RadioBox
+      CheckBoxCircle
         id: off
         text-horizontal-auto-resize: true
         !text: tr("Chat Mode Off")

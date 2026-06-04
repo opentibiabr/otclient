@@ -1,0 +1,79 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros">
+    <PREPROCESSOR_DEFS>
+        WIN32;
+        _CRT_SECURE_NO_WARNINGS;
+        WINVER=0x0A00;
+        _WIN32_WINNT=0x0A00;
+        NTDDI_VERSION=0x0A000000;
+        CRASH_HANDLER;
+        FRAMEWORK_GRAPHICS;
+        FRAMEWORK_NET;
+        FRAMEWORK_SOUND;
+        FRAMEWORK_PROTOBUF;
+        USE_PRECOMPILED_HEADERS;
+        OPENSSL_API_COMPAT=0x10100000L;
+        OPENSSL_SUPPRESS_DEPRECATED;
+        BUILD_TYPE="RelWithDebInfo";
+        NOMINMAX;
+    </PREPROCESSOR_DEFS>
+
+    <OTCLIENT_LIBDEPS>
+        advapi32.lib;
+        avrt.lib;
+        crypt32.lib;
+        dbghelp.lib;
+        gdi32.lib;
+        kernel32.lib;
+        ole32.lib;
+        opengl32.lib;
+        shell32.lib;
+        user32.lib;
+        winmm.lib;
+    </OTCLIENT_LIBDEPS>
+
+    <OTCLIENT_LIBDEPS_D>
+        $(OTCLIENT_LIBDEPS);
+    </OTCLIENT_LIBDEPS_D>
+  </PropertyGroup>
+  <PropertyGroup>
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>framework\pch.h</PrecompiledHeaderFile>
+      <ForcedIncludeFiles>framework\pch.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>$(OTCLIENT_LIBDEPS)</AdditionalDependencies>
+      <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
+      <LargeAddressAware>true</LargeAddressAware>
+      <SubSystem>Windows</SubSystem>
+      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
+    </Link>
+    <!-- <ResourceCompile>
+      <PreprocessorDefinitions>$(PREPROCESSOR_DEFS)</PreprocessorDefinitions>
+    </ResourceCompile> -->
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <BuildMacro Include="PREPROCESSOR_DEFS">
+      <Value>$(PREPROCESSOR_DEFS)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="OTCLIENT_LIBDEPS">
+      <Value>$(OTCLIENT_LIBDEPS)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="OTCLIENT_LIBDEPS_D">
+      <Value>$(OTCLIENT_LIBDEPS_D)</Value>
+    </BuildMacro>
+  </ItemGroup>
+</Project>

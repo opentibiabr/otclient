@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,8 +22,11 @@
 
 #pragma once
 
- // ===== C Standard Library =====
+// ===== C Standard Library =====
 #include <cassert>
+#include <cctype>
+#include <chrono>
+#include <climits>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -35,28 +38,40 @@
 #include <algorithm>
 #include <array>
 #include <bitset>
+#include <charconv>
 #include <deque>
+#include <exception>
 #include <filesystem>
 #include <functional>
 #include <iomanip>
+#include <initializer_list>
+#include <ios>
 #include <iostream>
+#include <istream>
+#include <iterator>
 #include <limits>
 #include <list>
 #include <map>
 #include <memory>
+#include <mutex>
+#include <optional>
+#include <ostream>
 #include <queue>
 #include <ranges>
 #include <regex>
 #include <set>
 #include <span>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <thread>
 #include <tuple>
+#include <type_traits>
 #include <typeinfo>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 #include <numbers>
 #include <future>

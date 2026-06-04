@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -82,10 +82,10 @@ std::string OTMLEmitter::emitNode(const OTMLNodePtr& node, const int currentDept
     }
 
     // emit children
-    for (int i = 0; i < node->size(); ++i) {
+    for (size_t i = 0; i < node->size(); ++i) {
         if (currentDepth >= 0 || i != 0)
             ss << "\n";
-        ss << emitNode(node->atIndex(i), currentDepth + 1);
+        ss << emitNode(node->atIndex(static_cast<int>(i)), currentDepth + 1);
     }
 
     return ss.str();

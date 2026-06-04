@@ -5,6 +5,8 @@ NpcIconChat = 1
 NpcIconTrade = 2
 NpcIconQuest = 3
 NpcIconTradeQuest = 4
+NpcIconTraveler = 5
+NpcIconHireling = 7
 
 CreatureTypePlayer = 0
 CreatureTypeMonster = 1
@@ -22,7 +24,9 @@ VocationsServer = {
     MasterSorcerer = 5,
     ElderDruid = 6,
     RoyalPaladin = 7,
-    EliteKnight = 8
+    EliteKnight = 8,
+    Monk = 9,
+    ExaltedMonk = 10,
 }
 
 VocationsClient = {
@@ -130,15 +134,19 @@ function getIconImagePath(iconId)
         path = '/images/game/npcicons/icon_quest'
     elseif iconId == NpcIconTradeQuest then
         path = '/images/game/npcicons/icon_tradequest'
-    end
+    elseif iconId == NpcIconTraveler then
+        path = '/images/game/npcicons/icon_traveler'
+    elseif iconId == NpcIconHireling then
+        path = '/images/game/npcicons/npc_hireling'
+	end
     return path
 end
 
 function getIconsImagePath(category)
     if category == 1 then
-        return '/images/game/creatureicons/monsterIcons'
+        return '/images/game/creatureicons/modifications'
     end
-    return '/images/game/creatureicons/CreatureIcons'
+    return '/images/game/creatureicons/quests'
 end
 
 function Creature:onIconsChange(icon, category, count)
@@ -146,6 +154,16 @@ function Creature:onIconsChange(icon, category, count)
     if imagePath then
         local clipX = (icon - 1) * 11
         self:setIconsTexture(imagePath, torect(clipX .. ' 0 11 11'), count)
+    end
+    -- Apply fiendish text shader only to monsters and only when the icon matches
+    if type(self.isMonster) ~= 'function' or not self:isMonster() then
+        return
+    end
+    if category == 1 and icon == 5 then
+        self:setNameShader('Text - Gold Outline')
+    elseif self.getNameShader and self:getNameShader() == 'Text - Gold Outline' then
+        -- Reset only if we previously applied the fiendish shader
+        self:setNameShader('Text - Default')
     end
 end
 

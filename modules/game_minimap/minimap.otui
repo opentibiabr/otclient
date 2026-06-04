@@ -11,7 +11,7 @@ PhantomMiniWindow
     anchors.left: parent.left
     margin-top: 5
     margin-left: 8
-    size: 108 111
+    size: 115 111
     image-source: /images/ui/1pixel_down_frame
 
     Minimap
@@ -75,7 +75,7 @@ PhantomMiniWindow
     anchors.bottom: minimapBorder.bottom
     margin-right: 4
     size: 20 20
-    @onClick: fullscreen()
+    @onClick: openCyclopediaMap()
 
     $hover !disabled:
       image-clip: 0 0 20 20

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -36,12 +36,17 @@ public:
     void popCursor(const std::string& name);
     bool isCursorChanged();
     bool isPressed(Fw::MouseButton mouseButton);
+    int getCursorId(const std::string& name);
+    
+    void setUseNativeCursor(bool useNative) { m_useNativeCursor = useNative; }
+    bool isUsingNativeCursor() const { return m_useNativeCursor; }
 
 private:
     void checkStackSize();
 
     stdext::map<std::string, int> m_cursors;
     std::deque<int> m_cursorStack;
+    bool m_useNativeCursor{ false };
 };
 
 extern Mouse g_mouse;

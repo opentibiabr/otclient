@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -38,8 +38,14 @@
 #ifdef FRAMEWORK_EDITOR
 #include "creatures.h"
 #endif
+#include "paperdollmanager.h"
 
 Client g_client;
+
+Client::Client()
+{
+    m_effectAlphas.fill(1.0f);
+}
 
 void Client::init(std::vector<std::string>& /*args*/)
 {
@@ -70,6 +76,7 @@ void Client::terminate()
     g_sprites.terminate();
     g_spriteAppearances.terminate();
     g_shaders.terminate();
+    g_paperdolls.clear();
     g_gameConfig.terminate();
 }
 

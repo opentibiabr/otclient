@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +23,20 @@
 #include "color.h"
 
 #include "framework/stdext/string.h"
+
+#ifndef USE_PRECOMPILED_HEADERS
+#include <algorithm>
+#include <cmath>
+#include <cstdlib>
+#include <iomanip>
+#include <ios>
+#include <iterator>
+#include <sstream>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
+#endif
 
  // NOTE: AABBGGRR order
 const Color Color::alpha = 0x00000000U;
@@ -131,14 +145,16 @@ namespace {
         {"yellow",rgb_to_abgr(0xFFFF00)}, {"yellowgreen",rgb_to_abgr(0x9ACD32)},
     };
 
-    inline std::string to_lower(std::string_view s) {
-        std::string out; out.reserve(s.size());
-        for (unsigned char c : s) out.push_back(std::tolower(c));
+    inline std::string to_lower_ascii(std::string_view s) {
+        std::string out(s);
+        for (char& c : out)
+            c += (c >= 'A' && c <= 'Z') ? 0x20 : 0;
         return out;
     }
 
+
     inline bool css_lookup(std::string_view name, uint32_t& abgrOut) {
-        const auto key = to_lower(name);
+        const auto key = to_lower_ascii(name);
 
         if (key == "transparent") { abgrOut = 0x00000000u; return true; }
 
@@ -163,7 +179,7 @@ namespace {
 
     static inline int parse_byte_or_percent(const std::string& s) {
         if (!s.empty() && s.back() == '%') {
-            const double p = std::strtod(s.c_str(), nullptr);
+            const double p = std::strtod(s.data(), nullptr);
             return clamp255(static_cast<int>(std::lround(p * 255.0 / 100.0)));
         }
         return clamp255(std::stoi(s));
@@ -171,12 +187,15 @@ namespace {
 
     static inline int parse_alpha_any(const std::string& s) {
         if (!s.empty() && s.back() == '%') {
-            const double p = std::strtod(s.c_str(), nullptr);
+            const double p = std::strtod(s.data(), nullptr);
             return clamp255(static_cast<int>(std::lround(p * 255.0 / 100.0)));
         }
         if (s.find_first_of(".eE") != std::string::npos) {
-            double f = std::strtod(s.c_str(), nullptr);
-            if (f < 0) f = 0; if (f > 1) f = 1;
+            double f = std::strtod(s.data(), nullptr);
+            if (f < 0)
+                f = 0;
+            if (f > 1)
+                f = 1;
             return clamp255(static_cast<int>(std::lround(f * 255.0)));
         }
         return clamp255(std::stoi(s));
@@ -195,18 +214,25 @@ namespace {
     }
 
     static inline void hsl_to_rgb(double h, double s, double l, int& r, int& g, int& b) {
-        h = std::fmod(h, 360.0); if (h < 0) h += 360.0;
+        h = std::fmod(h, 360.0);
+        if (h < 0)
+            h += 360.0;
         s = std::clamp(s, 0.0, 1.0);
         l = std::clamp(l, 0.0, 1.0);
         auto hue2rgb = [](double p, double q, double t) {
-            if (t < 0) t += 1; if (t > 1) t -= 1;
+            if (t < 0)
+                t += 1;
+            if (t > 1)
+                t -= 1;
             if (t < 1.0 / 6) return p + (q - p) * 6 * t;
             if (t < 1.0 / 2) return q;
             if (t < 2.0 / 3) return p + (q - p) * (2.0 / 3 - t) * 6;
             return p;
         };
         double rF, gF, bF;
-        if (s == 0) { rF = gF = bF = l; } else {
+        if (s == 0) {
+            rF = gF = bF = l;
+        } else {
             const double q = l < 0.5 ? l * (1 + s) : l + s - l * s;
             const double p = 2 * l - q;
             const double hk = h / 360.0;
@@ -222,7 +248,7 @@ namespace {
 
 Color::Color(const std::string_view coltext)
 {
-    std::stringstream ss(coltext.data());
+    std::stringstream ss((std::string(coltext)));
     ss >> *this;
     update();
 }
@@ -263,7 +289,7 @@ std::istream& operator>>(std::istream& in, Color& color)
 
     auto parse_byte_or_percent = [&](const std::string& s) {
         if (!s.empty() && s.back() == '%') {
-            const double p = std::strtod(s.c_str(), nullptr);
+            const double p = std::strtod(s.data(), nullptr);
             return clamp255(static_cast<int>(std::lround(p * 255.0 / 100.0)));
         }
         return clamp255(std::stoi(s));
@@ -271,30 +297,40 @@ std::istream& operator>>(std::istream& in, Color& color)
 
     auto parse_alpha_any = [&](const std::string& s) {
         if (!s.empty() && s.back() == '%') {
-            const double p = std::strtod(s.c_str(), nullptr);
+            const double p = std::strtod(s.data(), nullptr);
             return clamp255(static_cast<int>(std::lround(p * 255.0 / 100.0)));
         }
         if (s.find_first_of(".eE") != std::string::npos) {
-            double f = std::strtod(s.c_str(), nullptr);
-            if (f < 0) f = 0; if (f > 1) f = 1;
+            double f = std::strtod(s.data(), nullptr);
+            if (f < 0)
+                f = 0;
+            if (f > 1)
+                f = 1;
             return clamp255(static_cast<int>(std::lround(f * 255.0)));
         }
         return clamp255(std::stoi(s));
     };
 
     auto hsl_to_rgb = [&](double h, double s, double l, int& r, int& g, int& b) {
-        h = std::fmod(h, 360.0); if (h < 0) h += 360.0;
+        h = std::fmod(h, 360.0);
+        if (h < 0)
+            h += 360.0;
         s = std::clamp(s, 0.0, 1.0);
         l = std::clamp(l, 0.0, 1.0);
         auto hue2rgb = [](double p, double q, double t) {
-            if (t < 0) t += 1; if (t > 1) t -= 1;
+            if (t < 0)
+                t += 1;
+            if (t > 1)
+                t -= 1;
             if (t < 1.0 / 6) return p + (q - p) * 6 * t;
             if (t < 1.0 / 2) return q;
             if (t < 2.0 / 3) return p + (q - p) * (2.0 / 3 - t) * 6;
             return p;
         };
         double rF, gF, bF;
-        if (s == 0) { rF = gF = bF = l; } else {
+        if (s == 0) {
+            rF = gF = bF = l;
+        } else {
             const double q = l < 0.5 ? l * (1 + s) : l + s - l * s;
             const double p = 2 * l - q;
             const double hk = h / 360.0;
@@ -311,6 +347,16 @@ std::istream& operator>>(std::istream& in, Color& color)
 
     if (in.peek() == '#') {
         in.ignore() >> tmp;
+        if (tmp.length() == 3 || tmp.length() == 4) {
+            std::string expanded;
+            expanded.reserve(tmp.length() * 2);
+            for (const char c : tmp) {
+                expanded.push_back(c);
+                expanded.push_back(c);
+            }
+            tmp = std::move(expanded);
+        }
+
         if (tmp.length() == 6 || tmp.length() == 8) {
             color.setRed(static_cast<uint8_t>(stdext::hex_to_dec(tmp.substr(0, 2))));
             color.setGreen(static_cast<uint8_t>(stdext::hex_to_dec(tmp.substr(2, 2))));
@@ -372,9 +418,9 @@ std::istream& operator>>(std::istream& in, Color& color)
             if (o != std::string::npos && c != std::string::npos && c > o + 1) {
                 auto parts = split_commas(t.substr(o + 1, c - o - 1));
                 if ((!hasA && parts.size() == 3) || (hasA && parts.size() == 4)) {
-                    const double h = std::strtod(parts[0].c_str(), nullptr);
+                    const double h = std::strtod(parts[0].data(), nullptr);
                     auto pct = [](const std::string& s) {
-                        const double v = std::strtod(s.c_str(), nullptr);
+                        const double v = std::strtod(s.data(), nullptr);
                         return (!s.empty() && s.back() == '%') ? std::clamp(v / 100.0, 0.0, 1.0)
                             : std::clamp(v, 0.0, 1.0);
                     };

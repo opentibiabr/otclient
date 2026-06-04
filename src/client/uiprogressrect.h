@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -50,7 +50,7 @@ protected:
 private:
     void scheduleNextUpdate();
     void updateProgress();
-    void updateText(uint32_t remainingTimeMs);
+    void updateProgressText(uint32_t remainingTimeMs);
 
     float m_percent{ 0 };
     ScheduledEventPtr m_updateEvent{ nullptr };

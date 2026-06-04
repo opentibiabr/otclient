@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
- *
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
+ 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -21,6 +21,11 @@
  */
 
 #include "gameconfig.h"
+
+#include "framework/core/configmanager.h"
+#include <sstream>
+#include <string>
+#include <vector>
 
 #include "framework/core/resourcemanager.h"
 #include "framework/graphics/fontmanager.h"
@@ -49,6 +54,14 @@ void GameConfig::init()
     } catch (const std::exception& e) {
         g_logger.error("Failed to read config otml '{}': {}'", fileName, e.what());
     }
+
+    // Override from config.ini
+    const auto& publicFont = g_configs.getPublicConfig().font;
+    if (!publicFont.widget.empty()) m_widgetTextFontName = publicFont.widget;
+    if (!publicFont.staticText.empty()) m_staticTextFontName = publicFont.staticText;
+    if (!publicFont.animatedText.empty()) m_animatedTextFontName = publicFont.animatedText;
+    if (!publicFont.creatureText.empty()) m_creatureNameFontName = publicFont.creatureText;
+    if (!publicFont.itemCount.empty()) m_itemCountFontName = publicFont.itemCount;
 }
 
 void GameConfig::terminate() {
@@ -56,13 +69,64 @@ void GameConfig::terminate() {
     m_animatedTextFont = nullptr;
     m_staticTextFont = nullptr;
     m_widgetTextFont = nullptr;
+    m_itemCountFont = nullptr;
 }
 
 void GameConfig::loadFonts() {
+    auto resolveFont = [](std::string& fontName) {
+        if (fontName.find('|') == std::string::npos) return;
+
+        std::vector<std::string> parts;
+        std::string token;
+        std::istringstream tokenStream(fontName);
+        while (std::getline(tokenStream, token, '|')) {
+            parts.push_back(token);
+        }
+
+        if (parts.size() >= 2) {
+            std::string file = parts[0];
+            int size = 0;
+            try {
+                size = std::stoi(parts[1]);
+            } catch (...) {
+                g_logger.debug("Invalid TTF size in font descriptor: {}", fontName);
+                return;
+            }
+            if (size <= 0) {
+                g_logger.debug("TTF size must be > 0 in font descriptor: {}", fontName);
+                return;
+            }
+            int strokeWidth = 0;
+            Color strokeColor = Color::black;
+            if (parts.size() > 2) {
+                try { strokeWidth = std::stoi(parts[2]); } catch (...) { strokeWidth = 0; }
+                if (strokeWidth < 0) strokeWidth = 0;
+            }
+            if (parts.size() > 3) {
+                try {
+                    strokeColor = Color(parts[3]);
+                } catch (...) {
+                    g_logger.debug("Invalid stroke color in font descriptor: {}", fontName);
+                }
+            }
+            std::string actualName = g_fonts.importTTF(file, size, strokeWidth, strokeColor);
+            if (!actualName.empty()) {
+                fontName = actualName;
+            }
+        }
+    };
+
+    resolveFont(m_creatureNameFontName);
+    resolveFont(m_animatedTextFontName);
+    resolveFont(m_staticTextFontName);
+    resolveFont(m_widgetTextFontName);
+    resolveFont(m_itemCountFontName);
+
     m_creatureNameFont = g_fonts.getFont(m_creatureNameFontName);
     m_animatedTextFont = g_fonts.getFont(m_animatedTextFontName);
     m_staticTextFont = g_fonts.getFont(m_staticTextFontName);
     m_widgetTextFont = g_fonts.getFont(m_widgetTextFontName);
+    m_itemCountFont = g_fonts.getFont(m_itemCountFontName);
 
     if (m_widgetTextFont)
         g_fonts.setDefaultWidgetFont(m_widgetTextFont);
@@ -72,8 +136,6 @@ void GameConfig::loadGameNode(const OTMLNodePtr& mainNode) {
     for (const auto& node : mainNode->children()) {
         if (node->tag() == "sprite-size")
             m_spriteSize = node->value<int>();
-        else if (node->tag() == "last-supported-version")
-            m_lastSupportedVersion = node->value<int>();
         else if (node->tag() == "map")
             loadMapNode(node);
         else if (node->tag() == "tile")
@@ -101,6 +163,8 @@ void GameConfig::loadFontNode(const OTMLNodePtr& mainNode) {
             m_animatedTextFontName = node->value();
         else if (node->tag() == "creature-text")
             m_creatureNameFontName = node->value();
+        else if (node->tag() == "item-count")
+            m_itemCountFontName = node->value();
     }
 }
 
@@ -116,6 +180,8 @@ void GameConfig::loadMapNode(const OTMLNodePtr& mainNode) {
             m_mapUndergroundFloorRange = node->value<int>();
         else if (node->tag() == "aware-underground-floor-range")
             m_mapAwareUndergroundFloorRange = node->value<int>();
+        else if (node->tag() == "extended-view-ui")
+            m_extendedViewUI = node->value<bool>();
     }
 }
 

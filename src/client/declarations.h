@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +23,10 @@
 #pragma once
 
 #include "global.h"
+
+#ifndef USE_PRECOMPILED_HEADERS
+#include <memory>
+#endif
 
 enum FrameGroupType : uint8_t;
 enum ThingCategory : uint8_t;
@@ -58,6 +62,7 @@ class ItemType;
 class TileBlock;
 class AttachedEffect;
 class AttachableObject;
+class Paperdoll;
 
 #ifdef FRAMEWORK_EDITOR
 class House;
@@ -85,6 +90,7 @@ using ThingTypePtr = std::shared_ptr<ThingType>;
 using ItemTypePtr = std::shared_ptr<ItemType>;
 using AttachedEffectPtr = std::shared_ptr<AttachedEffect>;
 using AttachableObjectPtr = std::shared_ptr<AttachableObject>;
+using PaperdollPtr = std::shared_ptr<Paperdoll>;
 
 #ifdef FRAMEWORK_EDITOR
 using HousePtr = std::shared_ptr<House>;

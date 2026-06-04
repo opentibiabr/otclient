@@ -1,0 +1,240 @@
+NewMainWindow
+  id: wheelWindow
+  !text: tr('Wheel Of Destiny')
+  anchors.horizontalCenter: parent.horizontalCenter
+  size: 1000 645
+  @onEscape: hide()
+  @onEnter: onWheelOfDestinyApply(true)
+
+  Panel
+    id: optionsTabBar
+    size: 968 36
+    image-source: /images/game/wheel/menuBg
+    image-border: 1
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 12
+    margin-left: 12
+    margin-right: 12
+
+    Button
+      id: wheelMenu
+      anchors.top: parent.top
+      anchors.left: parent.left
+      size: 322 34
+      margin-left: 1
+      margin-top: 1
+      image-source: /images/game/wheel/wheelMenu
+      image-clip: 0 0 322 34
+      $hover !checked:
+        image-clip: 0 0 322 34
+      $pressed:
+        image-clip: 0 34 322 34
+      $checked:
+        image-clip: 0 34 322 34
+      @onClick: loadMenu('wheelMenu')
+
+    Button
+      id: gemMenu
+      anchors.top: parent.top
+      anchors.left: prev.right
+      size: 322 34
+      margin-left: 1
+      margin-top: 1
+      image-source: /images/game/wheel/gemMenu
+      image-clip: 0 0 322 34
+      $hover !checked:
+        image-clip: 0 0 322 34
+      $pressed:
+        image-clip: 0 34 322 34
+      $checked:
+        image-clip: 0 34 322 34
+      @onClick: loadMenu('gemMenu')
+
+    Button
+      id: fragmentMenu
+      anchors.top: parent.top
+      anchors.right: parent.right
+      size: 322 34
+      margin-right: 1
+      margin-top: 1
+      image-source: /images/game/wheel/fragmentMenu
+      image-clip: 0 0 322 34
+      $hover !checked:
+        image-clip: 0 0 322 34
+      $pressed:
+        image-clip: 0 34 322 34
+      $checked:
+        image-clip: 0 34 322 34
+      @onClick: loadMenu('fragmentMenu')
+
+  Panel
+    id: mainPanel
+    size: 968 522
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 7
+    margin-left: 12
+    margin-right: 12
+    margin-bottom: 5
+
+  HorizontalSeparator
+    id: separator
+    anchors.top: mainPanel.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 5
+    margin-left: 12
+    margin-right: 12
+
+  Panel
+    id: moneyPanel
+    size: 130 20
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    margin-left: 12
+    margin-bottom: 12
+    image-source: /images/ui/progress
+    image-border: 7
+    Panel
+      image-source: /images/game/cyclopedia/icons/icon-goldcoin
+      anchors.right: parent.right
+      anchors.top: parent.top
+      margin-top: 5
+      margin-right: 3
+    Label
+      id: gold
+      !text: tr('0')
+      anchors.top: parent.top
+      anchors.right: prev.left
+      margin-right: 5
+      margin-top: 3
+      text-auto-resize: true
+      font: verdana-11px-antialised
+      color: #dfdfdf
+
+  Panel
+    id: lesserFragmentPanel
+    size: 130 20
+    anchors.bottom: parent.bottom
+    anchors.left: prev.right
+    margin-left: 6
+    margin-bottom: 12
+    image-source: /images/ui/progress
+    image-border: 7
+    UIWidget
+      size: 12 12
+      image-source: /images/game/wheel/fragmentIcon
+      image-clip: 0 0 12 12
+      anchors.right: parent.right
+      anchors.top: parent.top
+      margin-top: 5
+      margin-right: 3
+      tooltip: Lesser Fragments
+    Label
+      id: gold
+      !text: tr('0')
+      anchors.top: parent.top
+      anchors.right: prev.left
+      margin-right: 5
+      margin-top: 3
+      text-auto-resize: true
+      font: verdana-11px-antialised
+      color: #dfdfdf
+
+  Panel
+    id: greaterFragmentPanel
+    size: 130 20
+    anchors.bottom: parent.bottom
+    anchors.left: prev.right
+    margin-left: 6
+    margin-bottom: 12
+    image-source: /images/ui/progress
+    image-border: 7
+    UIWidget
+      size: 12 12
+      image-source: /images/game/wheel/fragmentIcon
+      image-clip: 0 12 12 12
+      anchors.right: parent.right
+      anchors.top: parent.top
+      margin-top: 5
+      margin-right: 3
+      tooltip: Greater Fragments
+    Label
+      id: gold
+      !text: tr('0')
+      anchors.top: parent.top
+      anchors.right: prev.left
+      margin-right: 5
+      margin-top: 3
+      text-auto-resize: true
+      font: verdana-11px-antialised
+      color: #dfdfdf
+
+  Button
+    id: hotCopy
+    size: 20 20
+    anchors.bottom: parent.bottom
+    anchors.left: prev.right
+    image-source: /images/game/wheel/change_preset_icon
+    image-clip: 0 0 20 20
+    margin-bottom: 12
+    margin-left: 5
+    $pressed:
+      image-clip: 0 20 20 20
+    $!pressed:
+      image-clip: 0 0 20 20
+    @onClick: print("toDo Preset")
+
+  Label
+    id: presetLabel
+    anchors.bottom: parent.bottom
+    anchors.left: prev.right
+    margin-bottom: 14
+    margin-left: 6
+    !text: tr('Current Preset: Default-Preset')
+    text-auto-resize: true
+    font: verdana-11px-antialised
+    color: #dfdfdf
+
+  Button
+    id: close
+    anchors.bottom: parent.bottom
+    anchors.right: parent.right
+    !text: tr('Close')
+    size: 43 20
+    margin-bottom: 12
+    margin-right: 12
+    @onClick: hide()
+
+  Button
+    id: reset
+    anchors.bottom: parent.bottom
+    anchors.right: prev.left
+    !text: tr('Reset')
+    size: 43 20
+    margin-bottom: 12
+    margin-right: 5
+    @onClick: resetWheel()
+
+  Button
+    id: apply
+    anchors.bottom: parent.bottom
+    anchors.right: prev.left
+    !text: tr('Apply')
+    size: 43 20
+    margin-bottom: 12
+    margin-right: 5
+    @onClick: onWheelOfDestinyApply(false)
+
+  Button
+    id: ok
+    anchors.bottom: parent.bottom
+    anchors.right: prev.left
+    !text: tr('Ok')
+    size: 43 20
+    margin-bottom: 12
+    margin-right: 5
+    @onClick: onWheelOfDestinyApply(true)

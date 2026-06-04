@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -190,7 +190,7 @@ bool UIAnchorLayout::updateWidget(const UIWidgetPtr& widget, const UIAnchorGroup
         return false;
 
     if (first == widget) {
-        g_logger.error("child '{}' of parent widget '{}' is recursively anchored to itself, please fix this", widget->getId(), parentWidget->getId());
+        g_logger.error("Child '{}' of parent widget '{}' is recursively anchored to itself, please fix this", widget->getId(), parentWidget->getId());
         return false;
     }
 

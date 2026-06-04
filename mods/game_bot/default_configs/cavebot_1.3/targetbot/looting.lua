@@ -138,9 +138,18 @@ TargetBot.Looting.process = function(targets, dangerLevel)
   end
 
   local tile = g_map.getTile(loot.pos)
-  if dist >= 3 or not tile then
+  local minDist = 2
+  local walkPrecision = 2
+  if g_game.getClientVersion() <= 760 then
+    -- In Tibia 7.6 and earlier, corpses must be looted from adjacent tiles (distance 1)
+    -- Later versions allow looting from larger distance. We use 760 as cutoff, but the exact
+    -- version when CipSoft changed this is unknown
+    minDist = 1
+    walkPrecision = 1
+  end
+  if dist > minDist or not tile then
     loot.tries = loot.tries + 1
-    TargetBot.walkTo(loot.pos, 20, { ignoreNonPathable = true, precision = 2 })
+    TargetBot.walkTo(loot.pos, 20, { ignoreNonPathable = true, precision = walkPrecision })
     return true
   end
 

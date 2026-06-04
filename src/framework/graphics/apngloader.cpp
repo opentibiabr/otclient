@@ -1,19 +1,6 @@
 #include "apngloader.h"
 
-#include <algorithm>
-#include <cstdlib>
-#include <cstring>
-#include <limits>
-#include <new>
-#include <stdexcept>
-#include <utility>
-#include <vector>
-
 #include "apng_png.hpp"
-
-#ifndef PNG_APNG_SUPPORTED
-#error "libpng must be built with APNG support"
-#endif
 
 int load_apng(std::stringstream &file, apng_data *apng) {
   return png_load_apng(file, apng);

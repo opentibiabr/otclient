@@ -211,6 +211,11 @@ double Platform::getTotalSystemMemory()
     return 0;
 }
 
+double Platform::getMemoryUsage()
+{
+    return 0;
+}
+
 std::string Platform::getOSName()
 {
     std::string line;

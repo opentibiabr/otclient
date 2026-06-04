@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,6 +29,17 @@
 #include "framework/core/clock.h"
 #include "framework/graphics/paintershaderprogram.h"
 #include "framework/graphics/shadermanager.h"
+#include <framework/util/stats.h>
+
+Thing::Thing()
+{
+    g_stats.addThing();
+}
+
+Thing::~Thing()
+{
+    g_stats.removeThing();
+}
 
 void Thing::setPosition(const Position& position, uint8_t /*stackPos*/)
 {
@@ -114,107 +125,496 @@ void Thing::setAttachedEffectDirection(const Otc::Direction dir) const
     }
 }
 
-Animator* Thing::getAnimator() const { return getThingType()->getAnimator(); }
-Animator* Thing::getIdleAnimator() const { return getThingType()->getIdleAnimator(); }
-
-Point Thing::getDisplacement() const { return getThingType()->getDisplacement(); }
-int Thing::getDisplacementX() const { return getThingType()->getDisplacementX(); }
-int Thing::getDisplacementY() const { return getThingType()->getDisplacementY(); }
-int Thing::getExactSize(const int layer, const int xPattern, const int yPattern, const int zPattern, const int animationPhase) {
-    return getThingType()->getExactSize(layer, xPattern, yPattern, zPattern, animationPhase);
+Animator* Thing::getAnimator() const {
+    if (const auto t = getThingType(); t)
+        return t->getAnimator();
+    return nullptr;
+}
+Animator* Thing::getIdleAnimator() const {
+    if (const auto t = getThingType(); t)
+        return t->getIdleAnimator();
+    return nullptr;
 }
 
-const Light& Thing::getLight() const { return getThingType()->getLight(); }
-bool Thing::hasLight() const { return getThingType()->hasLight(); }
+Point Thing::getDisplacement() const {
+    if (const auto t = getThingType(); t)
+        return t->getDisplacement();
+    return Point();
+}
+int Thing::getDisplacementX() const {
+    if (const auto t = getThingType(); t)
+        return t->getDisplacementX();
+    return 0;
+}
+int Thing::getDisplacementY() const {
+    if (const auto t = getThingType(); t)
+        return t->getDisplacementY();
+    return 0;
+}
+int Thing::getExactSize(const int layer, const int xPattern, const int yPattern, const int zPattern, const int animationPhase) {
+    if (const auto t = getThingType(); t)
+        return t->getExactSize(layer, xPattern, yPattern, zPattern, animationPhase);
+    return 0;
+}
 
-const MarketData& Thing::getMarketData() { return getThingType()->getMarketData(); }
-const std::vector<NPCData>& Thing::getNpcSaleData() { return getThingType()->getNpcSaleData(); }
-int Thing::getMeanPrice() { return getThingType()->getMeanPrice(); }
-const Size& Thing::getSize() const { return getThingType()->getSize(); }
+const Light& Thing::getLight() const {
+    if (const auto t = getThingType(); t)
+        return t->getLight();
+    static const Light kEmptyLight;
+    return kEmptyLight;
+}
+bool Thing::hasLight() const {
+    if (const auto t = getThingType(); t)
+        return t->hasLight();
+    return false;
+}
 
-int Thing::getWidth() const { return getThingType()->getWidth(); }
-int Thing::getHeight() const { return getThingType()->getHeight(); }
-int Thing::getRealSize() const { return getThingType()->getRealSize(); }
-int Thing::getLayers() const { return getThingType()->getLayers(); }
-int Thing::getNumPatternX() const { return getThingType()->getNumPatternX(); }
-int Thing::getNumPatternY() const { return getThingType()->getNumPatternY(); }
-int Thing::getNumPatternZ() const { return getThingType()->getNumPatternZ(); }
-int Thing::getAnimationPhases() const { return getThingType()->getAnimationPhases(); }
-int Thing::getGroundSpeed() const { return getThingType()->getGroundSpeed(); }
-int Thing::getMaxTextLength() const { return getThingType()->getMaxTextLength(); }
-int Thing::getMinimapColor() const { return getThingType()->getMinimapColor(); }
-int Thing::getLensHelp() const { return getThingType()->getLensHelp(); }
-int Thing::getElevation() const { return getThingType()->getElevation(); }
+const MarketData& Thing::getMarketData() {
+    if (const auto t = getThingType(); t)
+        return t->getMarketData();
+    static const MarketData kEmptyMarketData{};
+    return kEmptyMarketData;
+}
+const std::vector<NPCData>& Thing::getNpcSaleData() {
+    if (const auto t = getThingType(); t)
+        return t->getNpcSaleData();
+    static const std::vector<NPCData> kEmptyNpcData;
+    return kEmptyNpcData;
+}
+int Thing::getMeanPrice() {
+    if (const auto t = getThingType(); t)
+        return t->getMeanPrice();
+    return 0;
+}
+const Size& Thing::getSize() const {
+    if (const auto t = getThingType(); t)
+        return t->getSize();
+    static const Size kEmptySize;
+    return kEmptySize;
+}
 
-int Thing::getClothSlot() { return getThingType()->getClothSlot(); }
+int Thing::getWidth() const {
+    if (const auto t = getThingType(); t)
+        return t->getWidth();
+    return 0;
+}
+int Thing::getHeight() const {
+    if (const auto t = getThingType(); t)
+        return t->getHeight();
+    return 0;
+}
+int Thing::getRealSize() const {
+    if (const auto t = getThingType(); t)
+        return t->getRealSize();
+    return 0;
+}
+int Thing::getLayers() const {
+    if (const auto t = getThingType(); t)
+        return t->getLayers();
+    return 0;
+}
+int Thing::getNumPatternX() const {
+    if (const auto t = getThingType(); t)
+        return t->getNumPatternX();
+    return 0;
+}
+int Thing::getNumPatternY() const {
+    if (const auto t = getThingType(); t)
+        return t->getNumPatternY();
+    return 0;
+}
+int Thing::getNumPatternZ() const {
+    if (const auto t = getThingType(); t)
+        return t->getNumPatternZ();
+    return 0;
+}
+int Thing::getAnimationPhases() const {
+    if (const auto t = getThingType(); t)
+        return t->getAnimationPhases();
+    return 0;
+}
+int Thing::getGroundSpeed() const {
+    if (const auto t = getThingType(); t)
+        return t->getGroundSpeed();
+    return 0;
+}
+int Thing::getMaxTextLength() const {
+    if (const auto t = getThingType(); t)
+        return t->getMaxTextLength();
+    return 0;
+}
+int Thing::getMinimapColor() const {
+    if (const auto t = getThingType(); t)
+        return t->getMinimapColor();
+    return 0;
+}
+int Thing::getLensHelp() const {
+    if (const auto t = getThingType(); t)
+        return t->getLensHelp();
+    return 0;
+}
+int Thing::getElevation() const {
+    if (const auto t = getThingType(); t)
+        return t->getElevation();
+    return 0;
+}
 
-bool Thing::blockProjectile() const { return getThingType()->blockProjectile(); }
+int Thing::getClothSlot() {
+    if (const auto t = getThingType(); t)
+        return t->getClothSlot();
+    return 0;
+}
 
-bool Thing::isContainer() { return getThingType()->isContainer(); }
+bool Thing::blockProjectile() const {
+    if (const auto t = getThingType(); t)
+        return t->blockProjectile();
+    return false;
+}
 
-bool Thing::isTopGround() { return !isCreature() && getThingType()->isTopGround(); }
-bool Thing::isTopGroundBorder() { return !isCreature() && getThingType()->isTopGroundBorder(); }
-bool Thing::isSingleGround() { return !isCreature() && getThingType()->isSingleGround(); }
-bool Thing::isSingleGroundBorder() { return !isCreature() && getThingType()->isSingleGroundBorder(); }
-bool Thing::isGround() { return !isCreature() && getThingType()->isGround(); }
-bool Thing::isGroundBorder() { return !isCreature() && getThingType()->isGroundBorder(); }
-bool Thing::isOnBottom() { return !isCreature() && getThingType()->isOnBottom(); }
-bool Thing::isOnTop() { return !isCreature() && getThingType()->isOnTop(); }
+bool Thing::isContainer() const {
+    if (const auto t = getThingType(); t)
+        return t->isContainer();
+    return false;
+}
 
-bool Thing::isMarketable() { return getThingType()->isMarketable(); }
-bool Thing::isStackable() { return getThingType()->isStackable(); }
-bool Thing::isFluidContainer() { return getThingType()->isFluidContainer(); }
-bool Thing::isForceUse() { return getThingType()->isForceUse(); }
-bool Thing::isMultiUse() { return getThingType()->isMultiUse(); }
-bool Thing::isWritable() { return getThingType()->isWritable(); }
-bool Thing::isChargeable() { return getThingType()->isChargeable(); }
-bool Thing::isWritableOnce() { return getThingType()->isWritableOnce(); }
-bool Thing::isSplash() { return getThingType()->isSplash(); }
-bool Thing::isNotWalkable() { return getThingType()->isNotWalkable(); }
-bool Thing::isNotMoveable() { return getThingType()->isNotMoveable(); }
-bool Thing::isMoveable() { return !getThingType()->isNotMoveable(); }
-bool Thing::isNotPathable() { return getThingType()->isNotPathable(); }
-bool Thing::isPickupable() { return getThingType()->isPickupable(); }
-bool Thing::isHangable() { return getThingType()->isHangable(); }
-bool Thing::isHookSouth() { return getThingType()->isHookSouth(); }
-bool Thing::isHookEast() { return getThingType()->isHookEast(); }
-bool Thing::isRotateable() { return getThingType()->isRotateable(); }
-bool Thing::isDontHide() { return getThingType()->isDontHide(); }
-bool Thing::isTranslucent() { return getThingType()->isTranslucent(); }
-bool Thing::isLyingCorpse() { return getThingType()->isLyingCorpse(); }
-bool Thing::isAnimateAlways() { return getThingType()->isAnimateAlways(); }
-bool Thing::isFullGround() { return getThingType()->isFullGround(); }
-bool Thing::isIgnoreLook() { return getThingType()->isIgnoreLook(); }
-bool Thing::isCloth() { return getThingType()->isCloth(); }
-bool Thing::isUsable() { return getThingType()->isUsable(); }
-bool Thing::isWrapable() { return getThingType()->isWrapable(); }
-bool Thing::isUnwrapable() { return getThingType()->isUnwrapable(); }
-bool Thing::isTopEffect() { return getThingType()->isTopEffect(); }
-bool Thing::isPodium() const { return getThingType()->isPodium(); }
-bool Thing::isOpaque() const { return getThingType()->isOpaque(); }
-bool Thing::isLoading() const { return getThingType()->isLoading(); }
-bool Thing::isSingleDimension() const { return getThingType()->isSingleDimension(); }
-bool Thing::isTall(const bool useRealSize) const { return getThingType()->isTall(useRealSize); }
+bool Thing::isTopGround() {
+    if (const auto t = getThingType(); !isCreature() && t)
+        return t->isTopGround();
+    return false;
+}
+bool Thing::isTopGroundBorder() {
+    if (const auto t = getThingType(); !isCreature() && t)
+        return t->isTopGroundBorder();
+    return false;
+}
+bool Thing::isSingleGround() {
+    if (const auto t = getThingType(); !isCreature() && t)
+        return t->isSingleGround();
+    return false;
+}
+bool Thing::isSingleGroundBorder() {
+    if (const auto t = getThingType(); !isCreature() && t)
+        return t->isSingleGroundBorder();
+    return false;
+}
+bool Thing::isGround() {
+    if (const auto t = getThingType(); !isCreature() && t)
+        return t->isGround();
+    return false;
+}
+bool Thing::isGroundBorder() {
+    if (const auto t = getThingType(); !isCreature() && t)
+        return t->isGroundBorder();
+    return false;
+}
+bool Thing::isOnBottom() {
+    if (const auto t = getThingType(); !isCreature() && t)
+        return t->isOnBottom();
+    return false;
+}
+bool Thing::isOnTop() {
+    if (const auto t = getThingType(); !isCreature() && t)
+        return t->isOnTop();
+    return false;
+}
 
-bool Thing::hasMiniMapColor() const { return getThingType()->hasMiniMapColor(); }
-bool Thing::hasLensHelp() const { return getThingType()->hasLensHelp(); }
-bool Thing::hasDisplacement() const { return getThingType()->hasDisplacement(); }
-bool Thing::hasElevation() const { return getThingType()->hasElevation(); }
-bool Thing::hasAction() const { return getThingType()->hasAction(); }
-bool Thing::hasWearOut() const { return getThingType()->hasWearOut(); }
-bool Thing::hasClockExpire() const { return getThingType()->hasClockExpire(); }
-bool Thing::hasExpire() const { return getThingType()->hasExpire(); }
-bool Thing::hasExpireStop() const { return getThingType()->hasExpireStop(); }
-bool Thing::hasAnimationPhases() const { return getThingType()->getAnimationPhases() > 1; }
-bool Thing::isDecoKit() const { return getThingType()->isDecoKit(); }
-bool Thing::isAmmo() { return getThingType()->isAmmo(); }
+bool Thing::isMarketable() {
+    if (const auto t = getThingType(); t)
+        return t->isMarketable();
+    return false;
+}
+bool Thing::isStackable() {
+    if (const auto t = getThingType(); t)
+        return t->isStackable();
+    return false;
+}
+bool Thing::isFluidContainer() {
+    if (const auto t = getThingType(); t)
+        return t->isFluidContainer();
+    return false;
+}
+bool Thing::isForceUse() {
+    if (const auto t = getThingType(); t)
+        return t->isForceUse();
+    return false;
+}
+bool Thing::isMultiUse() {
+    if (const auto t = getThingType(); t)
+        return t->isMultiUse();
+    return false;
+}
+bool Thing::isWritable() {
+    if (const auto t = getThingType(); t)
+        return t->isWritable();
+    return false;
+}
+bool Thing::isChargeable() {
+    if (const auto t = getThingType(); t)
+        return t->isChargeable();
+    return false;
+}
+bool Thing::isWritableOnce() {
+    if (const auto t = getThingType(); t)
+        return t->isWritableOnce();
+    return false;
+}
+bool Thing::isSplash() {
+    if (const auto t = getThingType(); t)
+        return t->isSplash();
+    return false;
+}
+bool Thing::isNotWalkable() {
+    if (const auto t = getThingType(); t)
+        return t->isNotWalkable();
+    return false;
+}
+bool Thing::isNotMoveable() {
+    if (const auto t = getThingType(); t)
+        return t->isNotMoveable();
+    return false;
+}
+bool Thing::isMoveable() {
+    if (const auto t = getThingType(); t)
+        return !t->isNotMoveable();
+    return false;
+}
+bool Thing::isNotPathable() {
+    if (const auto t = getThingType(); t)
+        return t->isNotPathable();
+    return false;
+}
+bool Thing::isPickupable() {
+    if (const auto t = getThingType(); t)
+        return t->isPickupable();
+    return false;
+}
+bool Thing::isHangable() {
+    if (const auto t = getThingType(); t)
+        return t->isHangable();
+    return false;
+}
+bool Thing::isHookSouth() {
+    if (const auto t = getThingType(); t)
+        return t->isHookSouth();
+    return false;
+}
+bool Thing::isHookEast() {
+    if (const auto t = getThingType(); t)
+        return t->isHookEast();
+    return false;
+}
+bool Thing::isRotateable() {
+    if (const auto t = getThingType(); t)
+        return t->isRotateable();
+    return false;
+}
+bool Thing::isDontHide() {
+    if (const auto t = getThingType(); t)
+        return t->isDontHide();
+    return false;
+}
+bool Thing::isTranslucent() {
+    if (const auto t = getThingType(); t)
+        return t->isTranslucent();
+    return false;
+}
+bool Thing::isLyingCorpse() {
+    if (const auto t = getThingType(); t)
+        return t->isLyingCorpse();
+    return false;
+}
+bool Thing::isAnimateAlways() {
+    if (const auto t = getThingType(); t)
+        return t->isAnimateAlways();
+    return false;
+}
+bool Thing::isFullGround() {
+    if (const auto t = getThingType(); t)
+        return t->isFullGround();
+    return false;
+}
+bool Thing::isIgnoreLook() {
+    if (const auto t = getThingType(); t)
+        return t->isIgnoreLook();
+    return false;
+}
+bool Thing::isCloth() {
+    if (const auto t = getThingType(); t)
+        return t->isCloth();
+    return false;
+}
+bool Thing::isUsable() {
+    if (const auto t = getThingType(); t)
+        return t->isUsable();
+    return false;
+}
+bool Thing::isWrapable() {
+    if (const auto t = getThingType(); t)
+        return t->isWrapable();
+    return false;
+}
+bool Thing::isUnwrapable() {
+    if (const auto t = getThingType(); t)
+        return t->isUnwrapable();
+    return false;
+}
+bool Thing::isTopEffect() {
+    if (const auto t = getThingType(); t)
+        return t->isTopEffect();
+    return false;
+}
+bool Thing::isPodium() const {
+    if (const auto t = getThingType(); t)
+        return t->isPodium();
+    return false;
+}
+bool Thing::isOpaque() const {
+    if (const auto t = getThingType(); t)
+        return t->isOpaque();
+    return false;
+}
+bool Thing::isLoading() const {
+    if (const auto t = getThingType(); t)
+        return t->isLoading();
+    return false;
+}
+bool Thing::isSingleDimension() const {
+    if (const auto t = getThingType(); t)
+        return t->isSingleDimension();
+    return false;
+}
+bool Thing::isTall(const bool useRealSize) const {
+    if (const auto t = getThingType(); t)
+        return t->isTall(useRealSize);
+    return false;
+}
 
-PLAYER_ACTION Thing::getDefaultAction() { return getThingType()->getDefaultAction(); }
+bool Thing::hasMiniMapColor() const {
+    if (const auto t = getThingType(); t)
+        return t->hasMiniMapColor();
+    return false;
+}
+bool Thing::hasLensHelp() const {
+    if (const auto t = getThingType(); t)
+        return t->hasLensHelp();
+    return false;
+}
+bool Thing::hasDisplacement() const {
+    if (const auto t = getThingType(); t)
+        return t->hasDisplacement();
+    return false;
+}
+bool Thing::hasElevation() const {
+    if (const auto t = getThingType(); t)
+        return t->hasElevation();
+    return false;
+}
+bool Thing::hasFloorChange() const
+{
+    if (const auto t = getThingType(); t)
+        return t->hasFloorChange();
+    return false;
+}
 
-uint16_t Thing::getClassification() { return getThingType()->getClassification(); }
+bool Thing::hasAction() const {
+    if (const auto t = getThingType(); t)
+        return t->hasAction();
+    return false;
+}
+bool Thing::hasWearOut() const {
+    if (const auto t = getThingType(); t)
+        return t->hasWearOut();
+    return false;
+}
+bool Thing::hasClockExpire() const {
+    if (const auto t = getThingType(); t)
+        return t->hasClockExpire();
+    return false;
+}
+bool Thing::hasExpire() const {
+    if (const auto t = getThingType(); t)
+        return t->hasExpire();
+    return false;
+}
+bool Thing::hasExpireStop() const {
+    if (const auto t = getThingType(); t)
+        return t->hasExpireStop();
+    return false;
+}
+bool Thing::hasAnimationPhases() const {
+    if (const auto t = getThingType(); t)
+        return t->getAnimationPhases() > 1;
+    return false;
+}
+bool Thing::isDecoKit() const {
+    if (const auto t = getThingType(); t)
+        return t->isDecoKit();
+    return false;
+}
+bool Thing::isAmmo() {
+    if (const auto t = getThingType(); t)
+        return t->isAmmo();
+    return false;
+}
+
+bool Thing::isDualWield() {
+    if (const auto t = getThingType(); t)
+        return t->isDualWield();
+    return false;
+}
+
+PLAYER_ACTION Thing::getDefaultAction() {
+    if (const auto t = getThingType(); t)
+        return t->getDefaultAction();
+    return static_cast<PLAYER_ACTION>(0);
+}
+
+uint16_t Thing::getClassification() {
+    if (const auto t = getThingType(); t)
+        return t->getClassification();
+    return 0;
+}
+
+uint32_t Thing::getCyclopediaType() const {
+    if (const auto t = getThingType(); t)
+        return t->getCyclopediaType();
+    return 0;
+}
+
+uint32_t Thing::getProficiencyId() const {
+    if (const auto t = getThingType(); t)
+        return t->getProficiencyId();
+    return 0;
+}
+
+uint32_t Thing::getWeaponType() const {
+    if (const auto t = getThingType(); t)
+        return t->getWeaponType();
+    return 0;
+}
+
+uint32_t Thing::getMinimumLevel() const {
+    if (const auto t = getThingType(); t)
+        return t->getMinimumLevel();
+    return 0;
+}
+
+uint32_t Thing::getImbueSlots() const {
+    if (const auto t = getThingType(); t)
+        return t->getImbueSlots();
+    return 0;
+}
+
+std::vector<uint32_t> Thing::getRestrictVocation() const {
+    if (const auto t = getThingType(); t)
+        return t->getRestrictVocation();
+    return {};
+}
 
 bool Thing::canDraw(const Color& color) const {
-    return m_canDraw && m_clientId > 0 && color.aF() > Fw::MIN_ALPHA && getThingType() && getThingType()->getOpacity() > Fw::MIN_ALPHA;
+    if (const auto t = getThingType(); t)
+        return m_canDraw && m_clientId > 0 && color.aF() > Fw::MIN_ALPHA && t->getOpacity() > Fw::MIN_ALPHA;
+    return false;
 }
 
 const Color& Thing::getMarkedColor() {

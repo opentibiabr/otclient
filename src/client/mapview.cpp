@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,11 +26,14 @@
 
 #include "animatedtext.h"
 #include "creature.h"
+#include "game.h"
 #include "gameconfig.h"
 #include "lightview.h"
 #include "map.h"
 #include "missile.h"
 #include "tile.h"
+#include "item.h"
+#include <framework/input/mouse.h>
 #include "framework/core/asyncdispatcher.h"
 #include "framework/core/eventdispatcher.h"
 #include <framework/core/graphicalapplication.h>
@@ -43,7 +46,7 @@
 MapView::MapView() : m_lightView(std::make_unique<LightView>(Size())), m_pool(g_drawPool.get(DrawPoolType::MAP))
 {
     m_floors.resize(g_gameConfig.getMapMaxZ() + 1);
-    m_floorThreads.resize(g_asyncDispatcher.get_thread_count());
+    m_floorThreads.resize(g_asyncDispatcher->get_thread_count());
     for (auto& thread : m_floorThreads)
         thread.resize(m_floors.size());
 
@@ -216,6 +219,7 @@ void MapView::drawCreatureInformation() {
     if (m_drawNames) { flags |= Otc::DrawNames; }
     if (m_drawHealthBars) { flags |= Otc::DrawBars; }
     if (m_drawManaBar) { flags |= Otc::DrawManaBar; }
+    if (m_drawHarmony) { flags |= Otc::DrawHarmony; }
 
     Position _camera = m_posInfo.camera;
     const bool alwaysTransparent = m_floorViewMode == Otc::ALWAYS_WITH_TRANSPARENCY && _camera.coveredUp(m_posInfo.camera.z - m_floorMin);
@@ -387,7 +391,7 @@ void MapView::updateVisibleTiles()
     };
 
     if (m_multithreading) {
-        static const int numThreads = g_asyncDispatcher.get_thread_count();
+        static const int numThreads = g_asyncDispatcher->get_thread_count();
         static BS::multi_future<void> tasks(numThreads);
         tasks.clear();
 
@@ -400,7 +404,7 @@ void MapView::updateVisibleTiles()
             for (auto& floor : m_floorThreads[i])
                 floor.cachedVisibleTiles.clear();
 
-            tasks.emplace_back(g_asyncDispatcher.submit_task([=, this] {
+            tasks.emplace_back(g_asyncDispatcher->submit_task([=, this] {
                 processDiagonalRange(m_floorThreads[i], start, end);
             }));
         }
@@ -442,7 +446,12 @@ void MapView::updateRect(const Rect& rect) {
         m_posInfo.horizontalStretchFactor = rect.width() / static_cast<float>(m_posInfo.srcRect.width());
         m_posInfo.verticalStretchFactor = rect.height() / static_cast<float>(m_posInfo.srcRect.height());
 
-        const auto& mousePos = getPosition(g_window.getMousePosition() * g_window.getDisplayDensity());
+        auto mousePoint = g_window.getMousePosition();
+        if (g_app.getHUDScale() != DEFAULT_DISPLAY_DENSITY) {
+            mousePoint.scale(g_app.getHUDScale());
+        }
+
+        const auto& mousePos = getPosition(mousePoint * g_window.getDisplayDensity());
         if (mousePos != m_mousePosition)
             onMouseMove(m_mousePosition = mousePos, true);
     }
@@ -560,6 +569,75 @@ void MapView::onMouseMove(const Position& mousePos, const bool /*isVirtualMove*/
     { // Highlight Target System
         destroyHighlightTile();
         updateHighlightTile(mousePos);
+    }
+
+    if (!g_mouse.isCursorChanged()) {
+        bool cursorSet = false;
+        if (m_cursorAnimations) {
+            if (const auto& tile = getTopTile(mousePos)) {
+                if (const auto& creature = tile->getTopCreature()) {
+                    if (creature->isMonster()) {
+                        int id = g_mouse.getCursorId("attack");
+                        if (id != -1) {
+                            g_window.setMouseCursor(id);
+                            cursorSet = true;
+                        }
+                    } else if (creature->isNpc()) {
+                        int id = g_mouse.getCursorId("talk");
+                        if (id != -1) {
+                            g_window.setMouseCursor(id);
+                            cursorSet = true;
+                        }
+                    }
+                }
+                
+                if (!cursorSet) {
+                    if (const auto& thing = tile->getTopUseThing()) {
+                        // Check for both containers and corpses (corpses might not always be containers)
+                        if (thing->isContainer() || thing->isLyingCorpse()) {
+                            // Use quicklootcursor for dead creatures when quickloot is active
+                            const bool isDeadCreature = thing->isLyingCorpse();
+                            const bool quickLootActive = g_game.getFeature(Otc::GameThingQuickLoot);
+                            const char* cursorName = (isDeadCreature && quickLootActive) ? "quicklootcursor" : "containercursor";
+                            
+                            int id = g_mouse.getCursorId(cursorName);
+                            if (id != -1) {
+                                g_window.setMouseCursor(id);
+                                cursorSet = true;
+                            }
+                        }
+                    }
+                }
+
+                if (!cursorSet) {
+                    if (const auto& thing = tile->getTopUseThing()) {
+                        if (thing->isUsable()) {
+                            int id = g_mouse.getCursorId("pointinghand");
+                            if (id != -1) {
+                                g_window.setMouseCursor(id);
+                                cursorSet = true;
+                            }
+                        }
+                    }
+                }
+
+                if (!cursorSet && tile->isWalkable()) {
+                    int id = g_mouse.getCursorId("walk");
+                    if (id != -1) {
+                        g_window.setMouseCursor(id);
+                        cursorSet = true;
+                    }
+                }
+            }
+        }
+
+        if (!cursorSet) {
+            int id = g_mouse.getCursorId("default");
+            if (id != -1)
+                g_window.setMouseCursor(id);
+            else
+                g_window.restoreMouseCursor();
+        }
     }
 }
 

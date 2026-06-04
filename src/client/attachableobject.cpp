@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -149,11 +149,11 @@ AttachedEffectPtr AttachableObject::getAttachedEffectById(uint16_t id)
     return *it;
 }
 
-void AttachableObject::drawAttachedEffect(const Point& dest, LightView* lightView, const bool isOnTop)
+void AttachableObject::drawAttachedEffect(const Point& originalDest, const Point& dest, LightView* lightView, const bool isOnTop)
 {
     if (!hasAttachedEffects()) return;
     for (const auto& effect : m_data->attachedEffects) {
-        effect->draw(dest, isOnTop, lightView);
+        effect->draw(effect->isFollowingOwner() ? dest : originalDest, isOnTop, lightView);
         if (effect->getLoop() == 0) {
             g_dispatcher.addEvent([self = std::static_pointer_cast<AttachableObject>(shared_from_this()), effect] {
                 self->detachEffect(effect);

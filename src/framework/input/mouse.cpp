@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -42,14 +42,23 @@ void Mouse::loadCursors(const std::string& filename)
         const auto& doc = OTMLDocument::parse(path);
         const auto& cursorsNode = doc->at("Cursors");
 
-        for (const auto& cursorNode : cursorsNode->children())
+        for (const auto& cursorNode : cursorsNode->children()) {
             addCursor(cursorNode->tag(),
                       stdext::resolve_path(cursorNode->valueAt("image"), cursorNode->source()),
                       cursorNode->valueAt<Point>("hot-spot"));
+        }
+        
+        // Automatically set 'default' cursor as the main cursor (without pushing to stack)
+        if (m_cursors.contains("default")) {
+            const int defaultCursorId = m_cursors["default"];
+            g_window.setMouseCursor(defaultCursorId);
+        }
+
     } catch (stdext::exception& e) {
-        g_logger.error("unable to load cursors file: {}", e.what());
+        g_logger.error("Unable to load cursors file: {}", e.what());
     }
 }
+
 
 void Mouse::addCursor(const std::string& name, const std::string& file, const Point& hotSpot)
 {
@@ -57,7 +66,7 @@ void Mouse::addCursor(const std::string& name, const std::string& file, const Po
     if (cursorId >= 0) {
         m_cursors[name] = cursorId;
     } else
-        g_logger.error("unable to load cursor {}", name);
+        g_logger.error("Unable to load cursor {}", name);
 }
 
 bool Mouse::pushCursor(const std::string& name)
@@ -92,10 +101,17 @@ void Mouse::popCursor(const std::string& name)
             return;
     }
 
-    if (!m_cursorStack.empty())
+    if (!m_cursorStack.empty()) {
         g_window.setMouseCursor(m_cursorStack.back());
-    else
-        g_window.restoreMouseCursor();
+    } else {
+
+        if (m_cursors.contains("default")) {
+            const int defaultCursorId = m_cursors["default"];
+            g_window.setMouseCursor(defaultCursorId);
+        } else {
+            g_window.restoreMouseCursor();
+        }
+    }
 }
 
 bool Mouse::isCursorChanged()
@@ -108,10 +124,17 @@ bool Mouse::isPressed(const Fw::MouseButton mouseButton)
     return g_window.isMouseButtonPressed(mouseButton);
 }
 
+int Mouse::getCursorId(const std::string& name)
+{
+    if (m_cursors.contains(name))
+        return m_cursors[name];
+    return -1;
+}
+
 void Mouse::checkStackSize()
 {
     if (m_cursorStack.size() > 5) {
-        g_logger.error("mouse cursor stack is too long");
+        g_logger.error("Mouse cursor stack is too long");
         m_cursorStack.pop_front();
     }
 }

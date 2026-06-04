@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,7 @@
 #include "framework/graphics/drawpoolmanager.h"
 #include "framework/otml/otmlnode.h"
 #include <framework/platform/platformwindow.h>
+#include <framework/input/mouse.h>
 
 UIMap::UIMap()
 {
@@ -61,7 +62,7 @@ void UIMap::draw(const DrawPoolType drawPane) {
             m_mapView->m_lightView->clear();
             m_mapView->drawLights();
             m_mapView->m_lightView->draw(m_mapView->m_posInfo.rect, m_mapView->m_posInfo.srcRect);
-        }, true);
+        });
     } else if (drawPane == DrawPoolType::CREATURE_INFORMATION) {
         g_drawPool.preDraw(drawPane, [this] {
             m_mapView->drawCreatureInformation();
@@ -113,6 +114,8 @@ void UIMap::setLimitVisibleDimension(const bool enable) { m_mapView->setLimitVis
 
 void UIMap::setDrawManaBar(const bool enable) { m_mapView->setDrawManaBar(enable); }
 
+void UIMap::setDrawHarmony(const bool enable) { m_mapView->setDrawHarmony(enable); }
+
 void UIMap::setShader(std::string_view name, float fadein, float fadeout) { m_mapView->setShader(name, fadein, fadeout); }
 
 void UIMap::setMinimumAmbientLight(const float intensity) { m_mapView->setMinimumAmbientLight(intensity); }
@@ -160,6 +163,8 @@ float UIMap::getMinimumAmbientLight() { return m_mapView->getMinimumAmbientLight
 void UIMap::setCrosshairTexture(const std::string& texturePath) { m_mapView->setCrosshairTexture(texturePath); }
 
 void UIMap::setDrawHighlightTarget(const bool enable) { m_mapView->setDrawHighlightTarget(enable); }
+
+void UIMap::setCursorAnimations(const bool enable) { m_mapView->setCursorAnimations(enable); }
 
 void UIMap::setAntiAliasingMode(const Otc::AntialiasingMode mode) { m_mapView->setAntiAliasingMode(mode); }
 
@@ -249,13 +254,34 @@ void UIMap::onGeometryChange(const Rect& oldRect, const Rect& newRect)
     updateMapSize();
 }
 
+void UIMap::resetCursorToDefault()
+{
+    if (m_mapView->hasCursorAnimations() && !g_mouse.isCursorChanged()) {
+        const int defaultId = g_mouse.getCursorId("default");
+        if (defaultId != -1)
+            g_window.setMouseCursor(defaultId);
+        else
+            g_window.restoreMouseCursor();
+    }
+}
+
+void UIMap::onHoverChange(bool hovered)
+{
+    UIWidget::onHoverChange(hovered);
+    if (!hovered)
+        resetCursorToDefault();
+}
+
 bool UIMap::onMouseMove(const Point& mousePos, const Point& mouseMoved)
 {
     const auto& pos = getPosition(mousePos);
-    if (!pos.isValid())
+    if (!pos.isValid()) {
+        if (isHovered())
+            resetCursorToDefault();
         return false;
+    }
 
-    if (m_mapView->getLastMousePosition() != pos) {
+    if (isHovered() && m_mapView->getLastMousePosition() != pos) {
         m_mapView->onMouseMove(pos);
         m_mapView->setLastMousePosition(pos);
     }

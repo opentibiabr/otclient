@@ -140,3 +140,33 @@ function displayNumberInputBox(title, label, okCallback, cancelCallback, min, ma
     inputBox:addSpinBox(label, min, max, value, step)
     inputBox:display()
 end
+
+function displayInputBox(title, message, okCallback, cancelCallback, defaultText, maxLength)
+    local function handleOk(...)
+        if okCallback then
+            okCallback(...)
+        end
+    end
+
+    local function handleCancel()
+        if cancelCallback then
+            cancelCallback()
+        end
+    end
+
+    local inputBox = UIInputBox.create(title, handleOk, handleCancel)
+
+    if message and message ~= '' then
+        inputBox:addLabel(message)
+    end
+
+    local lineEdit = inputBox:addLineEdit(nil, defaultText, maxLength)
+
+    inputBox:display()
+
+    if lineEdit and lineEdit.focus then
+        lineEdit:focus()
+    end
+
+    return inputBox
+end

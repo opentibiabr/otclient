@@ -2,6 +2,10 @@
 
 #include <png.h>
 
+#ifndef PNG_APNG_SUPPORTED
+#error "libpng must be built with APNG support"
+#endif
+
 #include <algorithm>
 #include <cstdint>
 #include <cstdlib>
@@ -35,7 +39,8 @@ struct MemoryReader {
 void readData(png_structp pngPtr, png_bytep output, png_size_t length) {
   const auto *reader =
       static_cast<const MemoryReader *>(png_get_io_ptr(pngPtr));
-  if (!reader || reader->offset + length > reader->size)
+  if (!reader || reader->offset > reader->size ||
+      length > reader->size - reader->offset)
     png_error(pngPtr, "png reader overflow");
 
   std::memcpy(output, reader->data + reader->offset, length);
@@ -146,7 +151,7 @@ void clearRegion(std::vector<uint8_t> &canvas, const png_uint_32 canvasWidth,
     auto *dest = canvas.data() +
                  (static_cast<size_t>(yOffset + y) * canvasStride) +
                  static_cast<size_t>(xOffset) * 4;
-    std::fill(dest, dest + frameWidth * 4, 0);
+    std::fill(dest, dest + static_cast<size_t>(frameWidth) * 4, 0);
   }
 }
 
@@ -161,7 +166,8 @@ uint16_t delayToMilliseconds(const png_uint_16 numerator,
   const uint32_t milliseconds =
       (static_cast<uint32_t>(numerator) * 1000u) / denominator;
   return static_cast<uint16_t>(
-      std::min<uint32_t>(milliseconds, std::numeric_limits<uint16_t>::max()));
+      std::min<uint32_t>(milliseconds,
+                         (std::numeric_limits<uint16_t>::max)()));
 }
 
 int png_load_apng(std::stringstream &file, apng_data *apng) {
@@ -225,9 +231,14 @@ int png_load_apng(std::stringstream &file, apng_data *apng) {
     if (width == 0 || height == 0)
       throw PngError("invalid image dimensions");
 
-    const size_t pixelCount =
-        static_cast<size_t>(width) * static_cast<size_t>(height);
-    if (pixelCount / width != height)
+    const size_t imageWidth = static_cast<size_t>(width);
+    const size_t imageHeight = static_cast<size_t>(height);
+    if (imageWidth > (std::numeric_limits<size_t>::max)() / imageHeight)
+      throw PngError("image too large");
+
+    const size_t pixelCount = imageWidth * imageHeight;
+    if (pixelCount > (std::numeric_limits<size_t>::max)() /
+                         static_cast<size_t>(channels))
       throw PngError("image too large");
 
     const size_t frameStride = pixelCount * static_cast<size_t>(channels);
@@ -260,7 +271,7 @@ int png_load_apng(std::stringstream &file, apng_data *apng) {
     }
 
     if (frameStride != 0 &&
-        totalFrames > std::numeric_limits<size_t>::max() / frameStride)
+        totalFrames > (std::numeric_limits<size_t>::max)() / frameStride)
       throw PngError("image too large");
 
     std::vector<uint8_t> canvas(frameStride, 0);
@@ -292,11 +303,30 @@ int png_load_apng(std::stringstream &file, apng_data *apng) {
           yOffset + frameHeight > height)
         throw PngError("invalid frame dimensions");
 
-      std::vector<uint8_t> framePixels(frameWidth * frameHeight * channels);
+      const bool visibleFrame =
+          !(hasAnimation && hiddenFirst && frameIndex == 0);
+      if (hasAnimation && visibleFrame && delayIndex == 0) {
+        blendOp = PNG_BLEND_OP_SOURCE;
+        if (disposeOp == PNG_DISPOSE_OP_PREVIOUS)
+          disposeOp = PNG_DISPOSE_OP_BACKGROUND;
+      }
+
+      const size_t framePixelCount =
+          static_cast<size_t>(frameWidth) * static_cast<size_t>(frameHeight);
+      if (framePixelCount / frameWidth != frameHeight ||
+          framePixelCount > (std::numeric_limits<size_t>::max)() /
+                                static_cast<size_t>(channels))
+        throw PngError("frame too large");
+      const size_t framePixelBytes =
+          framePixelCount * static_cast<size_t>(channels);
+
+      std::vector<uint8_t> framePixels(framePixelBytes);
       std::vector<png_bytep> rowPointers(frameHeight);
       for (png_uint_32 y = 0; y < frameHeight; ++y)
         rowPointers[y] =
-            framePixels.data() + static_cast<size_t>(y) * frameWidth * channels;
+            framePixels.data() + static_cast<size_t>(y) *
+                                     static_cast<size_t>(frameWidth) *
+                                     static_cast<size_t>(channels);
 
       for (png_uint_32 pass = 0; pass < passes; ++pass) {
         for (png_uint_32 y = 0; y < frameHeight; ++y)
@@ -311,8 +341,7 @@ int png_load_apng(std::stringstream &file, apng_data *apng) {
                   composed.data(), frameStride);
 
       if (hasAnimation) {
-        const bool visible = !(hiddenFirst && frameIndex == 0);
-        if (visible && delayIndex < delays.size())
+        if (visibleFrame && delayIndex < delays.size())
           delays[delayIndex++] = delayToMilliseconds(delayNum, delayDen);
       }
 
@@ -363,8 +392,7 @@ int png_load_apng(std::stringstream &file, apng_data *apng) {
     apng->width = static_cast<uint32_t>(width);
     apng->height = static_cast<uint32_t>(height);
     apng->first_frame = static_cast<uint32_t>(hiddenFirst);
-    apng->last_frame =
-        totalFrames > 0 ? static_cast<uint32_t>(totalFrames - 1) : 0;
+    apng->last_frame = static_cast<uint32_t>(totalFrames);
     apng->bpp = static_cast<uint8_t>(channels);
     apng->coltype = PNG_COLOR_TYPE_RGBA;
     apng->num_frames = hasAnimation ? static_cast<uint32_t>(declaredFrames) : 1;
@@ -440,4 +468,3 @@ void png_free_apng(const apng_data *apng) {
 }
 
 } // namespace
-

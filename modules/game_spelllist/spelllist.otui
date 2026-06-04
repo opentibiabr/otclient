@@ -247,6 +247,14 @@ MainWindow
     !text: tr('Knight')
     width: 75
 
+  CheckBox
+    id: vocationBoxMonk
+    anchors.left: prev.left
+    anchors.top: prev.bottom
+    margin-top: 3
+    !text: tr('Monk')
+    width: 75
+
   Label
     id: labelGroupFilter
     anchors.top: labelPremium.bottom

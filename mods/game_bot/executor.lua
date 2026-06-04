@@ -151,6 +151,7 @@ function executeBot(config, storage, tabs, msgCallback, saveConfigCallback, relo
   context.HTTP = HTTP
   context.OutputMessage = OutputMessage
   context.modules = modules
+  context.Directions = Directions
 
   -- log functions
   context.info = function(text) return msgCallback("info", tostring(text)) end

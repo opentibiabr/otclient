@@ -1,0 +1,325 @@
+<html>
+<style>
+  window {
+    font-family: Arial, sans-serif;
+    background-color: #ffffff;
+    color: #222222;
+    margin-top: 0;
+    margin-left: 0;
+    margin-right: 0;
+    --image-source: none;
+    display: block !important;
+    width: 99% !important;
+    margin: 0 !important;
+    overflow: visible !important;
+
+  }
+
+  .app {
+    display: flex;
+    flex-direction: column;
+    height: 560px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    overflow: hidden;
+    background-color: #ffffff;
+  }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background-color: #0f172a;
+    color: #e2e8f0;
+    flex-shrink: 0;
+  }
+
+  .topbar .title {
+    font-weight: bold;
+  }
+
+  .topbar .search {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+  }
+
+  .pill {
+    background-color: #1e293b;
+    color: #cbd5e1;
+    border-radius: 999px;
+    padding: 3px 9px;
+    flex-shrink: 0;
+  }
+
+  .body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+  }
+
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 0 0 200px;
+    background-color: #f1f5f9;
+    --border-width-right: 1px;
+    --border-color-right: #e2e8f0;
+    padding: 12px;
+  }
+
+  .menu-item {
+    border-radius: 6px;
+    padding: 7px 9px;
+    color: #334155;
+    background-color: #e2e8f0;
+    flex-shrink: 0;
+  }
+
+  .menu-item.active {
+    background-color: #cbd5e1;
+    font-weight: bold;
+  }
+
+  .main {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .stats {
+    display: flex;
+    flex-flow: row wrap;
+    gap: 8px;
+    align-content: flex-start;
+    min-width: 0;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+
+  .stat-card {
+    flex: 0 0 160px;
+    width: 160px;
+    min-width: 160px;
+    max-width: 160px;
+    background-color: #eef2ff;
+    border: 1px solid #c7d2fe;
+    border-radius: 8px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .content-row {
+    display: flex;
+    flex: 1;
+    gap: 12px;
+    min-height: 0;
+    min-width: 0;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    align-content: flex-start;
+    overflow: hidden;
+  }
+
+  .activity {
+    flex: 1 1 auto;
+    min-width: 320px;
+    min-height: 200px;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+    overflow: auto;
+    min-height: 0;
+  }
+
+  .event {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+  }
+
+  .event .dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 999px;
+    background-color: #3b82f6;
+    margin-top: 4px;
+    flex-shrink: 0;
+  }
+
+  .insights {
+    flex: 0 0 280px;
+    width: 280px;
+    min-width: 280px;
+    max-width: 280px;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .insight-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 9px;
+    background-color: #ffffff;
+    flex: 0 0 auto;
+  }
+
+  .insight-card.primary {
+    order: -1;
+    border-color: #93c5fd;
+    background-color: #eff6ff;
+  }
+
+  .actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: auto;
+    flex-wrap: nowrap;
+  }
+
+  .btn {
+    border-radius: 6px;
+    padding: 4px 10px;
+    background-color: #0f172a;
+    color: #ffffff;
+    flex-shrink: 0;
+  }
+
+  .btn.secondary {
+    background-color: #334155;
+  }
+
+  .actions .spacer {
+    margin-left: auto;
+    color: #64748b;
+    flex-shrink: 0;
+  }
+</style>
+
+<window>
+  <div class="app">
+    <div class="topbar">
+      <div class="title">Dashboard Shell (Advanced Flex)</div>
+      <div class="pill">LIVE</div>
+      <div class="search">
+        <div class="pill">filter: week</div>
+        <div class="pill">user: admin</div>
+      </div>
+    </div>
+
+    <div class="body">
+      <div class="sidebar">
+        <div class="menu-item active">Overview</div>
+        <div class="menu-item">Sales</div>
+        <div class="menu-item">Customers</div>
+        <div class="menu-item">Cohorts</div>
+        <div class="menu-item">Alerts</div>
+        <div class="menu-item">Settings</div>
+      </div>
+
+      <div class="main">
+        <div class="stats">
+          <div class="stat-card">
+            <b>Revenue</b>
+            <span>$128,430</span>
+            <span>+8.2%</span>
+          </div>
+          <div class="stat-card">
+            <b>Conversion</b>
+            <span>4.3%</span>
+            <span>+0.7pp</span>
+          </div>
+          <div class="stat-card">
+            <b>Tickets</b>
+            <span>1,274</span>
+            <span>-2.1%</span>
+          </div>
+          <div class="stat-card">
+            <b>P95 Latency</b>
+            <span>138ms</span>
+            <span>-12ms</span>
+          </div>
+        </div>
+
+        <div class="content-row">
+          <div class="activity">
+            <b>Recent activity</b>
+            <div class="activity-list">
+              <div class="event">
+                <div class="dot"></div>
+                <div>Deploy #482 to production completed.</div>
+              </div>
+              <div class="event">
+                <div class="dot"></div>
+                <div>Alert rule updated for CPU spikes.</div>
+              </div>
+              <div class="event">
+                <div class="dot"></div>
+                <div>Event table reindexed to improve queries.</div>
+              </div>
+              <div class="event">
+                <div class="dot"></div>
+                <div>Historical metrics backfill finished.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="insights">
+            <div class="insight-card primary">
+              <b>Main insight</b>
+              <span>63% of sessions come from mobile.</span>
+              <div class="actions">
+                <div class="btn">Open</div>
+                <div class="btn secondary">Share</div>
+                <div class="spacer">5 min ago</div>
+              </div>
+            </div>
+            <div class="insight-card">
+              <b>Risk</b>
+              <span>Increase in 5xx errors in /api/search.</span>
+              <div class="actions">
+                <div class="btn">View logs</div>
+                <div class="spacer">2 min ago</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</window>
+
+</html>

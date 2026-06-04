@@ -23,10 +23,10 @@ local keys = {
 }
 
 local turnKeys = {
-    { "Ctrl+Up",    North },
-    { "Ctrl+Right", East },
-    { "Ctrl+Down",  South },
-    { "Ctrl+Left",  West },
+    { "Control+Up",    North },
+    { "Control+Right", East },
+    { "Control+Down",  South },
+    { "Control+Left",  West },
 }
 
 WalkController = Controller:new()
@@ -48,24 +48,28 @@ end
 
 --- Generalized floor change check.
 local function canChangeFloor(pos, deltaZ)
+    if deltaZ == 0 then
+        return false
+    end
     local player = g_game.getLocalPlayer()
     if not player then
         return false
     end
 
-    local fromTile = g_map.getTile(player:getPosition())
     local toPos = {x = pos.x, y = pos.y, z = pos.z + deltaZ}
     local toTile = g_map.getTile(toPos)
-
-    if deltaZ > 0 then
-        -- Going DOWN: just check if destination is walkable (can step down onto it)
-        return toTile and toTile:isWalkable() and toTile:hasElevation(3)
-    elseif deltaZ < 0 then
-        -- Going UP: check if current tile has elevation (stairs to climb) AND destination is walkable
-        return fromTile and fromTile:hasElevation(3) and toTile and toTile:isWalkable()
+    if not toTile then
+        return false
     end
 
-    return false
+    if deltaZ > 0 then
+        -- Going DOWN
+        return toTile:isWalkable() and (toTile:hasElevation(3) or toTile:hasFloorChange())
+    end
+    -- deltaZ < 0
+    -- Going UP: check if current tile has elevation (stairs to climb) AND destination is walkable
+    local fromTile = g_map.getTile(player:getPosition())
+    return fromTile and fromTile:hasElevation(3) and toTile:isWalkable()
 end
 
 --- Makes the player walk in the given direction.

@@ -179,9 +179,19 @@ function g_tooltip.terminate()
 end
 
 function g_tooltip.display(text)
-    if text == nil or text:len() == 0 then
+    if not text then
         return
     end
+    
+    -- Convert to string if not already
+    if type(text) ~= "string" then
+        text = tostring(text)
+    end
+    
+    if text:len() == 0 then
+        return
+    end
+    
     if not toolTipLabel then
         return
     end

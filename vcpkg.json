@@ -8,6 +8,7 @@
     "cppcodec",
     "discord-rpc",
     "liblzma",
+    "libarchive",
     "libobfuscate",
     "libogg",
     {
@@ -28,6 +29,16 @@
     "zlib",
     "bshoshany-thread-pool",
     "fmt",
+    "spdlog",
+    "utfcpp",
+    "gtest",
+    "freetype",
+    {
+      "name": "inih",
+      "features": [
+        "cpp"
+      ]
+    },
     {
       "name": "luajit",
       "platform": "!android & !wasm32"
@@ -38,12 +49,12 @@
     },
     {
       "name": "glew",
-      "platform": "windows | osx"
+      "platform": "windows | linux | osx"
     },
     {
       "name": "angle",
       "platform": "windows"
     }
   ],
-  "builtin-baseline":"b322364f06308bdd24823f9d8f03fe0cc86fd46f"
+  "builtin-baseline": "d015e31e90838a4c9dfa3eed45979bc70d9357fc"
 }

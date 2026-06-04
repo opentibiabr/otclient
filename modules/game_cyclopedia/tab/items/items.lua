@@ -1,10 +1,22 @@
 Cyclopedia.Items = {}
+Cyclopedia.Items.currentItemId = nil
 
 -- Additional variables for new features
 local itemsData = {}
 local lastSelectedItem = nil
+local lastSelectedItemId = nil
 local oldBuyChild = nil
 local oldSaleChild = nil
+
+local function getItemWidgetId(widget)
+    if not widget then
+        return nil
+    end
+    if widget.getId then
+        return tonumber(widget:getId())
+    end
+    return tonumber(widget.id)
+end
 
 Cyclopedia.CategoryItems = {
     { id = 1, name = "Armors" },
@@ -856,7 +868,8 @@ function Cyclopedia.internalCreateItem(data)
             oldSelected:setBackgroundColor("#00000000")
         end
 
-        g_game.inspectionObject(3, itemId)
+        Cyclopedia.Items.currentItemId = itemId
+        g_game.inspectionObject(InspectObjectTypes.INSPECT_CYCLOPEDIA, itemId)
 
         if not lootValue:isVisible() then
             lootValue:setVisible(true)
@@ -869,6 +882,7 @@ function Cyclopedia.internalCreateItem(data)
 
         -- Store reference to selected item
         lastSelectedItem = widget
+        lastSelectedItemId = itemId
 
         -- Update item price display
         if data then
@@ -1004,6 +1018,15 @@ function Cyclopedia.ItemSearch(text, clearTextEdit)
         for _, data in ipairs(searchedItems) do
             local item = Cyclopedia.internalCreateItem(data)
         end
+
+        local firstChild = UI.ItemListBase.List:getFirstChild()
+        if firstChild and firstChild.onClick then
+            local firstChildItemId = getItemWidgetId(firstChild)
+            if firstChildItemId and firstChildItemId ~= lastSelectedItemId then
+                lastSelectedItemId = firstChildItemId
+                firstChild:onClick()
+            end
+        end
     else
         UI.SelectedItem.Sprite:setItemId(0)
         UI.SelectedItem.Rarity:setImageSource("")
@@ -1108,17 +1131,20 @@ function Cyclopedia.FillItemList()
     end
 end
 
-function Cyclopedia.loadItemDetail(itemId, descriptions)
+function Cyclopedia.loadItemDetail(data)
+    if not (UI and UI.InfoBase and UI.InfoBase.DetailsBase) then
+        return
+    end
+    
     UI.InfoBase.DetailsBase.List:destroyChildren()
 
+    local itemId = data.item:getId()
     local internalData = g_things.getThingType(itemId, ThingCategoryItem)
     local classification = internalData:getClassification()
 
-    for _, description in ipairs(descriptions) do
+    for _, description in ipairs(data.descriptions) do
         local widget = g_ui.createWidget("UIWidget", UI.InfoBase.DetailsBase.List)
-        local key = description[1]
-        local value = description[2]
-        widget:setText(key .. ": " .. value)
+        widget:setText(description.key .. ": " .. description.value)
         widget:setColor("#C0C0C0")
         widget:setTextWrap(true)
     end
@@ -1131,11 +1157,33 @@ function Cyclopedia.loadItemDetail(itemId, descriptions)
 end
 
 -- Inspection handler for item details
-function Cyclopedia.Items.onInspection(inspectType, itemName, item, descriptions)
-    if inspectType ~= 1 then return end
+function Cyclopedia.Items.onInspection(data)
+    if data.inspectionType ~= InspectObjectTypes.INSPECT_CYCLOPEDIA then return end
+    if not data.item or data.item:getId() ~= Cyclopedia.Items.currentItemId then return end
     if UI and UI.InfoBase and UI.InfoBase.DetailsBase then
-        Cyclopedia.loadItemDetail(item:getId(), descriptions)
+        Cyclopedia.loadItemDetail(data)
     end
+end
+
+function Cyclopedia.openItem(arg)
+    local itemName
+    if type(arg) == 'number' then
+        local thingType = g_things.getThingType(arg, ThingCategoryItem)
+        itemName = thingType and thingType:getName() or ''
+    else
+        itemName = tostring(arg or '')
+    end
+    if itemName == '' then return end
+    if controllerCyclopedia and controllerCyclopedia.ui and controllerCyclopedia.ui:isVisible() then
+        SelectWindow('items', false)
+    else
+        show('items')
+    end
+    scheduleEvent(function()
+        if Cyclopedia.ItemSearch then
+            Cyclopedia.ItemSearch(itemName, false)
+        end
+    end, 100)
 end
 
 -- Utility function for comma-separated values

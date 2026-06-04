@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -426,7 +426,7 @@ bool Map::loadOtcm(const std::string& fileName)
                 fin->getString(); // world name
 
                 if (datSignature != g_things.getDatSignature())
-                    g_logger.warning("otcm map loaded was created with a different dat signature");
+                    g_logger.warning("Otcm map loaded was created with a different dat signature");
 
                 break;
             }
@@ -473,7 +473,7 @@ bool Map::loadOtcm(const std::string& fileName)
 
         return true;
     } catch (const stdext::exception& e) {
-        g_logger.error("failed to load OTCM map: {}", e.what());
+        g_logger.error("Failed to load OTCM map: {}", e.what());
         return false;
     }
 }
@@ -543,7 +543,7 @@ void Map::saveOtcm(const std::string& fileName)
 
         fin->close();
     } catch (const stdext::exception& e) {
-        g_logger.error("failed to save OTCM map: {}", e.what());
+        g_logger.error("Failed to save OTCM map: {}", e.what());
     }
 }
 

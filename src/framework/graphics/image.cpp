@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -41,7 +41,7 @@ ImagePtr Image::load(const std::string& file)
     try {
         return loadPNG(path);
     } catch (const stdext::exception& e) {
-        g_logger.error("unable to load image '{}': {}", path, e.what());
+        g_logger.error("Unable to load image '{}': {}", path, e.what());
     }
     return nullptr;
 }
@@ -51,7 +51,23 @@ ImagePtr Image::loadPNG(const char* data, const size_t size)
     std::stringstream fin(std::string{ data, size });
     ImagePtr image;
     if (apng_data apng; load_apng(fin, &apng) == 0) {
-        image = std::make_shared<Image>(Size(apng.width, apng.height), apng.bpp, apng.pdata);
+        const size_t frameSize = static_cast<size_t>(apng.width) * apng.height * apng.bpp;
+        const uint32_t availableFrames = apng.last_frame > apng.first_frame
+                                             ? apng.last_frame - apng.first_frame
+                                             : 0;
+        const uint32_t frameCount = std::min(apng.num_frames, availableFrames);
+        const uint32_t firstFrame = availableFrames > 0 ? apng.first_frame : 0;
+        const auto* firstFrameData = apng.pdata + (static_cast<size_t>(firstFrame) * frameSize);
+        image = std::make_shared<Image>(Size(apng.width, apng.height), apng.bpp, firstFrameData);
+        if (frameCount > 1 && apng.frames_delay) {
+            for (uint32_t i = 0; i < frameCount; ++i) {
+                // Create a new Image for every frame to avoid circular reference (image -> m_animation -> image)
+                const size_t frameOffset = static_cast<size_t>(apng.first_frame + i) * frameSize;
+                ImagePtr frameImage = std::make_shared<Image>(Size(apng.width, apng.height), apng.bpp,
+                                                              apng.pdata + frameOffset);
+                image->addAnimationFrame(frameImage, apng.frames_delay[i]);
+            }
+        }
         free_apng(&apng);
     }
 
@@ -181,7 +197,7 @@ bool Image::nextMipmap()
 
     const int iw = m_size.width();
     const int ih = m_size.height();
-    if (iw == 1 && ih == 1 || m_pixels.empty())
+    if ((iw == 1 && ih == 1) || m_pixels.empty())
         return false;
 
     const int ow = iw > 1 ? iw / 2 : 1;
