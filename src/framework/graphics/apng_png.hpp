@@ -1,5 +1,10 @@
 #pragma once
 
+#include <cstdint>
+#include <sstream>
+
+#include "apngloader.h"
+
 #include <png.h>
 
 #ifndef PNG_APNG_SUPPORTED
@@ -7,12 +12,10 @@
 #endif
 
 #include <algorithm>
-#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <limits>
 #include <new>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -30,21 +33,23 @@ struct PngError : std::runtime_error {
 
 void pngWarningHandler(png_structp, png_const_charp) {}
 
-struct MemoryReader {
-  const uint8_t *data{nullptr};
-  size_t size{0};
-  size_t offset{0};
+struct StreamReader {
+  std::stringstream *stream{nullptr};
 };
 
 void readData(png_structp pngPtr, png_bytep output, png_size_t length) {
-  const auto *reader =
-      static_cast<const MemoryReader *>(png_get_io_ptr(pngPtr));
-  if (!reader || reader->offset > reader->size ||
-      length > reader->size - reader->offset)
+  auto *reader = static_cast<StreamReader *>(png_get_io_ptr(pngPtr));
+  if (!reader || !reader->stream)
+    png_error(pngPtr, "png reader failure");
+
+  if (length >
+      static_cast<png_size_t>((std::numeric_limits<std::streamsize>::max)()))
     png_error(pngPtr, "png reader overflow");
 
-  std::memcpy(output, reader->data + reader->offset, length);
-  const_cast<MemoryReader *>(reader)->offset += length;
+  const auto requested = static_cast<std::streamsize>(length);
+  reader->stream->read(reinterpret_cast<char *>(output), requested);
+  if (reader->stream->gcount() != requested)
+    png_error(pngPtr, "png reader failure");
 }
 
 struct StreamWriter {
@@ -138,7 +143,7 @@ void blendFrame(std::vector<uint8_t> &canvas,
       d[1] = static_cast<uint8_t>((s[1] * srcAlpha + d[1] * invAlpha) / 255);
       d[2] = static_cast<uint8_t>((s[2] * srcAlpha + d[2] * invAlpha) / 255);
       d[3] = static_cast<uint8_t>(
-          std::min<uint32_t>(255, srcAlpha + (d[3] * invAlpha) / 255));
+          (std::min<uint32_t>)(255, srcAlpha + (d[3] * invAlpha) / 255));
     }
   }
 }
@@ -166,8 +171,8 @@ uint16_t delayToMilliseconds(const png_uint_16 numerator,
   const uint32_t milliseconds =
       (static_cast<uint32_t>(numerator) * 1000u) / denominator;
   return static_cast<uint16_t>(
-      std::min<uint32_t>(milliseconds,
-                         (std::numeric_limits<uint16_t>::max)()));
+      (std::min<uint32_t>)(milliseconds,
+                           (std::numeric_limits<uint16_t>::max)()));
 }
 
 int png_load_apng(std::stringstream &file, apng_data *apng) {
@@ -176,14 +181,18 @@ int png_load_apng(std::stringstream &file, apng_data *apng) {
 
   std::memset(apng, 0, sizeof(*apng));
 
-  const std::string buffer = file.str();
-  if (buffer.empty())
+  file.clear();
+  file.seekg(0, std::ios::end);
+  const auto inputSize = file.tellg();
+  if (inputSize <= std::streampos(0))
+    return -1;
+
+  file.seekg(0, std::ios::beg);
+  if (!file)
     return -1;
 
   try {
-    MemoryReader reader;
-    reader.data = reinterpret_cast<const uint8_t *>(buffer.data());
-    reader.size = buffer.size();
+    StreamReader reader{&file};
 
     PngReadGuard pngGuard;
     pngGuard.pngPtr = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr,
@@ -213,9 +222,13 @@ int png_load_apng(std::stringstream &file, apng_data *apng) {
       png_set_palette_to_rgb(pngGuard.pngPtr);
     if (colorType == PNG_COLOR_TYPE_GRAY && bitDepth < 8)
       png_set_expand_gray_1_2_4_to_8(pngGuard.pngPtr);
-    if (png_get_valid(pngGuard.pngPtr, pngGuard.infoPtr, PNG_INFO_tRNS))
+    const bool hasAlpha = (colorType & PNG_COLOR_MASK_ALPHA) != 0;
+    const bool hasTransparency =
+        png_get_valid(pngGuard.pngPtr, pngGuard.infoPtr, PNG_INFO_tRNS) != 0;
+
+    if (hasTransparency)
       png_set_tRNS_to_alpha(pngGuard.pngPtr);
-    if (!(colorType & PNG_COLOR_MASK_ALPHA))
+    if (!hasAlpha && !hasTransparency)
       png_set_add_alpha(pngGuard.pngPtr, 0xFF, PNG_FILLER_AFTER);
     if (colorType == PNG_COLOR_TYPE_GRAY ||
         colorType == PNG_COLOR_TYPE_GRAY_ALPHA)
