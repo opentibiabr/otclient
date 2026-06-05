@@ -164,7 +164,9 @@ find_package(STDUUID CONFIG REQUIRED)
 find_package(pugixml CONFIG REQUIRED)
 find_package(httplib CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
-find_package(ixwebsocket CONFIG REQUIRED)
+if(NOT WASM)
+  find_package(ixwebsocket CONFIG REQUIRED)
+endif()
 find_package(spdlog CONFIG REQUIRED)
 find_package(utf8cpp REQUIRED)
 if(DEFINED VCPKG_TARGET_TRIPLET)
@@ -866,7 +868,6 @@ elseif(WASM)
           LibLZMA::LibLZMA
           ${LIBARCHIVE_LIBRARY}
           pugixml::pugixml
-          ixwebsocket::ixwebsocket
           ZLIB::ZLIB
           OpenSSL::SSL
           OpenSSL::Crypto

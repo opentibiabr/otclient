@@ -26,17 +26,588 @@
 #include "framework/util/crypt.h"
 
 #include <algorithm>
+#ifdef __EMSCRIPTEN__
+#include <cstring>
+#include <limits>
+#else
 #include <fmt/format.h>
 #include <ixwebsocket/IXNetSystem.h>
+#endif
 #include <utility>
 #include <vector>
 
 Http g_http;
+
+#ifdef __EMSCRIPTEN__
+namespace {
+    enum class FetchKind
+    {
+        Get,
+        Post,
+        Download,
+    };
+
+    constexpr int httpOkMin = 200;
+    constexpr int httpOkMax = 299;
+
+    std::string normalizeDownloadPath(const std::string& path)
+    {
+        if (!path.empty() && path[0] == '/')
+            return path.substr(1);
+        return path;
+    }
+
+    std::string describeFetchError(const emscripten_fetch_t* fetch, const bool canceled)
+    {
+        if (canceled)
+            return "canceled";
+        if (!fetch)
+            return "http_error::no_response";
+        if (fetch->status < httpOkMin || fetch->status > httpOkMax)
+            return "http_status::" + std::to_string(fetch->status);
+        return {};
+    }
+}
+
+struct Http::FetchContext
+{
+    Http* http = nullptr;
+    HttpResult_ptr result;
+    FetchKind kind = FetchKind::Get;
+    std::string path;
+    std::string body;
+    ticks_t lastProgress = 0;
+    ticks_t lastSpeedSample = stdext::millis();
+    int lastBytes = 0;
+    std::vector<std::string> headerStorage;
+    std::vector<const char*> headerPointers;
+};
+
+struct Http::WebSocketContext
+{
+    Http* http = nullptr;
+    HttpResult_ptr result;
+    EMSCRIPTEN_WEBSOCKET_T socket = 0;
+    bool errorSent = false;
+};
+
+void Http::init()
+{
+    if (m_working.load())
+        return;
+    m_working.store(true);
+}
+
+void Http::terminate()
+{
+    if (!m_working.load())
+        return;
+    m_working.store(false);
+
+    std::vector<EMSCRIPTEN_WEBSOCKET_T> websockets;
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        for (auto& entry : m_operations) {
+            if (entry.second)
+                entry.second->canceled = true;
+        }
+        for (auto& entry : m_websockets) {
+            if (entry.second && entry.second->socket > 0)
+                websockets.push_back(entry.second->socket);
+        }
+        m_operations.clear();
+        m_downloads.clear();
+    }
+
+    for (const auto socket : websockets) {
+        emscripten_websocket_close(socket, 1000, "terminate");
+    }
+}
+
+HttpResult_ptr Http::registerOperation(const std::string& url, int& operationId)
+{
+    operationId = m_operationId++;
+    auto result = std::make_shared<HttpResult>();
+    result->url = url;
+    result->operationId = operationId;
+
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_operations[operationId] = result;
+    return result;
+}
+
+void Http::unregisterOperation(int operationId)
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_operations.erase(operationId);
+}
+
+int Http::computeProgress(const int current, const int total)
+{
+    if (total <= 0)
+        return 0;
+    const double value = (static_cast<double>(current) / static_cast<double>(total)) * 100.0;
+    return std::clamp(static_cast<int>(value), 0, 100);
+}
+
+bool Http::shouldEmitProgress(ticks_t& lastEmit, int progress)
+{
+    const ticks_t now = stdext::millis();
+    if (progress >= 100 || lastEmit == 0 || now - lastEmit >= 100) {
+        lastEmit = now;
+        return true;
+    }
+    return false;
+}
+
+void Http::onFetchProgress(emscripten_fetch_t* fetch)
+{
+    if (!fetch || !fetch->userData)
+        return;
+
+    auto* context = static_cast<FetchContext*>(fetch->userData);
+    const auto& result = context->result;
+    if (!result || result->finished.load() || result->canceled.load())
+        return;
+
+    const auto current = static_cast<int>(std::min<unsigned long long>(fetch->dataOffset + fetch->numBytes, std::numeric_limits<int>::max()));
+    const auto total = static_cast<int>(std::min<unsigned long long>(fetch->totalBytes, std::numeric_limits<int>::max()));
+    const int progress = context->http->computeProgress(current, total);
+    result->progress = progress;
+
+    if (!context->http->shouldEmitProgress(context->lastProgress, progress))
+        return;
+
+    int speed = 0;
+    if (context->kind == FetchKind::Download) {
+        const ticks_t now = stdext::millis();
+        const ticks_t elapsed = now - context->lastSpeedSample;
+        if (elapsed > 0) {
+            speed = ((current - context->lastBytes) * 1000) / elapsed;
+            context->lastSpeedSample = now;
+            context->lastBytes = current;
+            result->speed = speed;
+        } else {
+            speed = result->speed.load();
+        }
+    }
+
+    const int operationId = result->operationId;
+    const std::string url = result->url;
+    const FetchKind kind = context->kind;
+    g_dispatcher.addEvent([operationId, url, progress, speed, kind] {
+        if (kind == FetchKind::Get) {
+            g_lua.callGlobalField("g_http", "onGetProgress", operationId, url, progress);
+        } else if (kind == FetchKind::Post) {
+            g_lua.callGlobalField("g_http", "onPostProgress", operationId, url, progress);
+        } else {
+            g_lua.callGlobalField("g_http", "onDownloadProgress", operationId, url, progress, speed);
+        }
+    });
+}
+
+void Http::completeFetch(FetchContext* rawContext, emscripten_fetch_t* fetch, std::string error)
+{
+    std::unique_ptr<FetchContext> context(rawContext);
+    if (!context || !context->result) {
+        if (fetch)
+            emscripten_fetch_close(fetch);
+        return;
+    }
+
+    auto result = context->result;
+    std::string body;
+    if (fetch) {
+        result->status = fetch->status;
+        result->size = static_cast<int>(std::min<unsigned long long>(fetch->numBytes, std::numeric_limits<int>::max()));
+        if (fetch->data && fetch->numBytes > 0) {
+            body.assign(fetch->data, fetch->data + fetch->numBytes);
+        }
+    }
+
+    if (error.empty())
+        error = describeFetchError(fetch, result->canceled.load());
+
+    result->finished = true;
+    result->progress = 100;
+    result->response = body;
+    result->error = error;
+
+    const int operationId = result->operationId;
+    const std::string url = result->url;
+    unregisterOperation(operationId);
+
+    if (context->kind == FetchKind::Download) {
+        const std::string path = context->path;
+        const std::string normalizedPath = normalizeDownloadPath(path);
+        const auto checksum = g_crypt.crc32(body, false);
+        g_dispatcher.addEvent([this, result, operationId, url, error, path, normalizedPath, checksum] {
+            if (error.empty())
+                m_downloads[normalizedPath] = result;
+            g_lua.callGlobalField("g_http", "onDownload", operationId, url, error, path, checksum);
+        });
+    } else if (context->kind == FetchKind::Post) {
+        g_dispatcher.addEvent([operationId, url, error, body] {
+            g_lua.callGlobalField("g_http", "onPost", operationId, url, error, body);
+        });
+    } else {
+        g_dispatcher.addEvent([operationId, url, error, body] {
+            g_lua.callGlobalField("g_http", "onGet", operationId, url, error, body);
+        });
+    }
+
+    if (fetch)
+        emscripten_fetch_close(fetch);
+}
+
+void Http::onFetchSuccess(emscripten_fetch_t* fetch)
+{
+    auto* context = fetch ? static_cast<FetchContext*>(fetch->userData) : nullptr;
+    if (context)
+        context->http->completeFetch(context, fetch, {});
+}
+
+void Http::onFetchError(emscripten_fetch_t* fetch)
+{
+    auto* context = fetch ? static_cast<FetchContext*>(fetch->userData) : nullptr;
+    if (context)
+        context->http->completeFetch(context, fetch, {});
+}
+
+int Http::get(const std::string& url, int timeout)
+{
+    if (!timeout)
+        timeout = 2;
+
+    if (!m_working.load()) {
+        g_logger.error("Http::get called while the client is not running ({})", url);
+        return -1;
+    }
+
+    int operationId = 0;
+    auto result = registerOperation(url, operationId);
+    auto context = std::make_unique<FetchContext>();
+    context->http = this;
+    context->result = result;
+    context->kind = FetchKind::Get;
+    context->headerStorage.reserve((m_custom_header.size() * 2) + 2);
+    context->headerStorage.emplace_back("Accept");
+    context->headerStorage.emplace_back("*/*");
+    for (const auto& header : m_custom_header) {
+        context->headerStorage.emplace_back(header.first);
+        context->headerStorage.emplace_back(header.second);
+    }
+    context->headerPointers.reserve(context->headerStorage.size() + 1);
+    for (const auto& header : context->headerStorage)
+        context->headerPointers.push_back(header.c_str());
+    context->headerPointers.push_back(nullptr);
+
+    emscripten_fetch_attr_t attr;
+    emscripten_fetch_attr_init(&attr);
+    std::strcpy(attr.requestMethod, "GET");
+    attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
+    attr.timeoutMSecs = timeout * 1000;
+    attr.requestHeaders = context->headerPointers.data();
+    attr.userData = context.get();
+    attr.onsuccess = &Http::onFetchSuccess;
+    attr.onerror = &Http::onFetchError;
+    attr.onprogress = &Http::onFetchProgress;
+
+    if (!emscripten_fetch(&attr, url.c_str())) {
+        completeFetch(context.release(), nullptr, "http_error::queue");
+    } else {
+        context.release();
+    }
+
+    return operationId;
+}
+
+int Http::post(const std::string& url, const std::string& data, int timeout, bool isJson, bool /*checkContentLength*/)
+{
+    if (!timeout)
+        timeout = 2;
+    if (data.empty()) {
+        g_logger.error("Invalid post request for {}, empty data, use get instead", url);
+        return -1;
+    }
+
+    if (!m_working.load()) {
+        g_logger.error("Http::post called while the client is not running ({})", url);
+        return -1;
+    }
+
+    int operationId = 0;
+    auto result = registerOperation(url, operationId);
+    result->postData = data;
+
+    auto context = std::make_unique<FetchContext>();
+    context->http = this;
+    context->result = result;
+    context->kind = FetchKind::Post;
+    context->body = data;
+    context->headerStorage.reserve((m_custom_header.size() * 2) + 4);
+    context->headerStorage.emplace_back("Accept");
+    context->headerStorage.emplace_back("*/*");
+    context->headerStorage.emplace_back("Content-Type");
+    context->headerStorage.emplace_back(isJson ? "application/json" : "application/x-www-form-urlencoded");
+    for (const auto& header : m_custom_header) {
+        context->headerStorage.emplace_back(header.first);
+        context->headerStorage.emplace_back(header.second);
+    }
+    context->headerPointers.reserve(context->headerStorage.size() + 1);
+    for (const auto& header : context->headerStorage)
+        context->headerPointers.push_back(header.c_str());
+    context->headerPointers.push_back(nullptr);
+
+    emscripten_fetch_attr_t attr;
+    emscripten_fetch_attr_init(&attr);
+    std::strcpy(attr.requestMethod, "POST");
+    attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
+    attr.timeoutMSecs = timeout * 1000;
+    attr.requestHeaders = context->headerPointers.data();
+    attr.requestData = context->body.data();
+    attr.requestDataSize = context->body.size();
+    attr.userData = context.get();
+    attr.onsuccess = &Http::onFetchSuccess;
+    attr.onerror = &Http::onFetchError;
+    attr.onprogress = &Http::onFetchProgress;
+
+    if (!emscripten_fetch(&attr, url.c_str())) {
+        completeFetch(context.release(), nullptr, "http_error::queue");
+    } else {
+        context.release();
+    }
+
+    return operationId;
+}
+
+int Http::download(const std::string& url, const std::string& path, int timeout)
+{
+    if (!timeout)
+        timeout = 2;
+
+    if (!m_working.load()) {
+        g_logger.error("Http::download called while the client is not running ({})", url);
+        return -1;
+    }
+
+    int operationId = 0;
+    auto result = registerOperation(url, operationId);
+    auto context = std::make_unique<FetchContext>();
+    context->http = this;
+    context->result = result;
+    context->kind = FetchKind::Download;
+    context->path = path;
+    context->headerStorage.reserve((m_custom_header.size() * 2) + 2);
+    context->headerStorage.emplace_back("Accept");
+    context->headerStorage.emplace_back("*/*");
+    for (const auto& header : m_custom_header) {
+        context->headerStorage.emplace_back(header.first);
+        context->headerStorage.emplace_back(header.second);
+    }
+    context->headerPointers.reserve(context->headerStorage.size() + 1);
+    for (const auto& header : context->headerStorage)
+        context->headerPointers.push_back(header.c_str());
+    context->headerPointers.push_back(nullptr);
+
+    emscripten_fetch_attr_t attr;
+    emscripten_fetch_attr_init(&attr);
+    std::strcpy(attr.requestMethod, "GET");
+    attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
+    attr.timeoutMSecs = timeout * 1000;
+    attr.requestHeaders = context->headerPointers.data();
+    attr.userData = context.get();
+    attr.onsuccess = &Http::onFetchSuccess;
+    attr.onerror = &Http::onFetchError;
+    attr.onprogress = &Http::onFetchProgress;
+
+    if (!emscripten_fetch(&attr, url.c_str())) {
+        completeFetch(context.release(), nullptr, "http_error::queue");
+    } else {
+        context.release();
+    }
+
+    return operationId;
+}
+
+EM_BOOL Http::onWebSocketOpen(int, const EmscriptenWebSocketOpenEvent*, void* userData)
+{
+    auto* context = static_cast<WebSocketContext*>(userData);
+    if (!context || !context->result)
+        return EM_TRUE;
+
+    auto result = context->result;
+    result->connected = true;
+    const int operationId = result->operationId;
+    g_dispatcher.addEvent([operationId] {
+        g_lua.callGlobalField("g_http", "onWsOpen", operationId, "code::websocket_open");
+    });
+    return EM_TRUE;
+}
+
+EM_BOOL Http::onWebSocketMessage(int, const EmscriptenWebSocketMessageEvent* event, void* userData)
+{
+    auto* context = static_cast<WebSocketContext*>(userData);
+    if (!context || !context->result || !event || !event->data || event->numBytes == 0)
+        return EM_TRUE;
+
+    const int operationId = context->result->operationId;
+    const std::string payload(reinterpret_cast<const char*>(event->data), event->numBytes);
+    g_dispatcher.addEvent([operationId, payload] {
+        g_lua.callGlobalField("g_http", "onWsMessage", operationId, payload);
+    });
+    return EM_TRUE;
+}
+
+EM_BOOL Http::onWebSocketError(int, const EmscriptenWebSocketErrorEvent*, void* userData)
+{
+    auto* context = static_cast<WebSocketContext*>(userData);
+    if (!context || !context->result)
+        return EM_TRUE;
+
+    if (!context->errorSent) {
+        context->errorSent = true;
+        const int operationId = context->result->operationId;
+        const std::string errorReason = "close_code::error websocket";
+        context->result->error = errorReason;
+        g_dispatcher.addEvent([operationId, errorReason] {
+            g_lua.callGlobalField("g_http", "onWsError", operationId, errorReason);
+        });
+    }
+
+    if (context->socket > 0)
+        emscripten_websocket_close(context->socket, 1000, "error");
+    return EM_TRUE;
+}
+
+void Http::cleanupWebSocket(WebSocketContext* context, const std::string& closeMessage, bool dispatchClose)
+{
+    if (!context || !context->result)
+        return;
+
+    const int operationId = context->result->operationId;
+    std::shared_ptr<WebSocketContext> owner;
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        const auto it = m_websockets.find(operationId);
+        if (it != m_websockets.end() && it->second.get() == context) {
+            owner = it->second;
+            m_websockets.erase(it);
+        }
+        m_operations.erase(operationId);
+    }
+
+    if (dispatchClose && m_working.load()) {
+        g_dispatcher.addEvent([operationId, closeMessage] {
+            g_lua.callGlobalField("g_http", "onWsClose", operationId, closeMessage);
+        });
+    }
+}
+
+EM_BOOL Http::onWebSocketClose(int, const EmscriptenWebSocketCloseEvent*, void* userData)
+{
+    auto* context = static_cast<WebSocketContext*>(userData);
+    if (!context || !context->http)
+        return EM_TRUE;
+
+    context->http->cleanupWebSocket(context, "close_code::normal", !context->errorSent);
+    return EM_TRUE;
+}
+
+int Http::ws(const std::string& url, int timeout)
+{
+    if (!timeout)
+        timeout = 2;
+
+    if (!m_working.load()) {
+        g_logger.error("Http::ws called while the client is not running ({})", url);
+        return -1;
+    }
+
+    int operationId = 0;
+    auto result = registerOperation(url, operationId);
+    auto context = std::make_shared<WebSocketContext>();
+    context->http = this;
+    context->result = result;
+
+    EmscriptenWebSocketCreateAttributes attributes = {
+        url.c_str(),
+        nullptr,
+        EM_FALSE,
+    };
+
+    const EMSCRIPTEN_WEBSOCKET_T socket = emscripten_websocket_new(&attributes);
+    if (socket <= 0) {
+        const std::string errorReason = "close_code::error websocket_create";
+        unregisterOperation(operationId);
+        g_dispatcher.addEvent([operationId, errorReason] {
+            g_lua.callGlobalField("g_http", "onWsError", operationId, errorReason);
+        });
+        return operationId;
+    }
+
+    context->socket = socket;
+    auto* rawContext = context.get();
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_websockets[operationId] = context;
+    }
+
+    emscripten_websocket_set_onopen_callback(socket, rawContext, &Http::onWebSocketOpen);
+    emscripten_websocket_set_onmessage_callback(socket, rawContext, &Http::onWebSocketMessage);
+    emscripten_websocket_set_onerror_callback(socket, rawContext, &Http::onWebSocketError);
+    emscripten_websocket_set_onclose_callback(socket, rawContext, &Http::onWebSocketClose);
+
+    return operationId;
+}
+
+bool Http::wsSend(int operationId, const std::string& message)
+{
+    EMSCRIPTEN_WEBSOCKET_T socket = 0;
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        const auto it = m_websockets.find(operationId);
+        if (it != m_websockets.end() && it->second)
+            socket = it->second->socket;
+    }
+
+    if (socket <= 0)
+        return false;
+
+    return emscripten_websocket_send_utf8_text(socket, message.c_str()) == EMSCRIPTEN_RESULT_SUCCESS;
+}
+
+bool Http::wsClose(int operationId)
+{
+    cancel(operationId);
+    return true;
+}
+
+bool Http::cancel(int id)
+{
+    EMSCRIPTEN_WEBSOCKET_T socket = 0;
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        const auto it = m_operations.find(id);
+        if (it != m_operations.end() && it->second)
+            it->second->canceled = true;
+        const auto wit = m_websockets.find(id);
+        if (wit != m_websockets.end() && wit->second)
+            socket = wit->second->socket;
+    }
+
+    if (socket > 0)
+        emscripten_websocket_close(socket, 1000, "cancel");
+
+    return true;
+}
+
+#else
 std::shared_ptr<ix::HttpClient> g_ixHttpClient;
 
 void Http::init()
 {
-    if (m_working)
+    if (m_working.load())
         return;
 
     ix::initNetSystem();
@@ -48,14 +619,14 @@ void Http::init()
     if (!g_ixHttpClient) {
         g_ixHttpClient = std::make_shared<ix::HttpClient>(true);
     }
-    m_working = true;
+    m_working.store(true);
 }
 
 void Http::terminate()
 {
-    if (!m_working)
+    if (!m_working.load())
         return;
-    m_working = false;
+    m_working.store(false);
 
     std::vector<std::shared_ptr<ix::WebSocket>> websockets;
     std::vector<std::shared_ptr<ix::HttpRequestArgs>> requests;
@@ -100,7 +671,7 @@ int Http::get(const std::string& url, int timeout)
     if (!timeout)
         timeout = 2;
 
-    if (!m_working || !g_ixHttpClient) {
+    if (!m_working.load() || !g_ixHttpClient) {
         g_logger.error("Http::get called while the client is not running ({})", url);
         return -1;
     }
@@ -115,22 +686,16 @@ int Http::get(const std::string& url, int timeout)
     request->onProgressCallback = [this, result, lastProgress](int current, int total) {
         const int progress = computeProgress(current, total);
 
-        {
-            std::lock_guard<std::mutex> lock(m_mutex);
-            if (result->finished || result->canceled)
-                return false;
-            result->progress = progress;
-        }
+        if (result->finished.load() || result->canceled.load())
+            return false;
+        result->progress = progress;
 
         if (!shouldEmitProgress(*lastProgress, progress))
             return true;
 
-        g_dispatcher.addEvent([this, result, progress] {
-            {
-                std::lock_guard<std::mutex> lock(m_mutex);
-                if (result->finished || result->canceled)
-                    return;
-            }
+        g_dispatcher.addEvent([result, progress] {
+            if (result->finished.load() || result->canceled.load())
+                return;
             g_lua.callGlobalField("g_http", "onGetProgress", result->operationId, result->url, progress);
         });
         return true;
@@ -139,19 +704,16 @@ int Http::get(const std::string& url, int timeout)
     const auto callback = [this, operationId, result](const ix::HttpResponsePtr& response) {
         std::string error;
         std::string body;
-        {
-            std::lock_guard<std::mutex> lock(m_mutex);
-            result->finished = true;
-            if (response) {
-                result->status = response->statusCode;
-                result->response = response->body;
-                result->size = static_cast<int>(response->body.size());
-                result->progress = 100;
-            }
-            error = describeHttpError(response, result->canceled);
-            result->error = error;
-            body = result->response;
+        result->finished = true;
+        if (response) {
+            result->status = response->statusCode;
+            result->response = response->body;
+            result->size = static_cast<int>(response->body.size());
+            result->progress = 100;
         }
+        error = describeHttpError(response, result->canceled.load());
+        result->error = error;
+        body = result->response;
         unregisterOperation(operationId);
 
         g_dispatcher.addEvent([result, error, body] {
@@ -162,12 +724,9 @@ int Http::get(const std::string& url, int timeout)
     if (!g_ixHttpClient->performRequest(request, callback)) {
         const std::string error = "http_error::queue";
         std::string body;
-        {
-            std::lock_guard<std::mutex> lock(m_mutex);
-            result->finished = true;
-            result->error = error;
-            body = result->response;
-        }
+        result->finished = true;
+        result->error = error;
+        body = result->response;
         unregisterOperation(operationId);
         g_dispatcher.addEvent([result, error, body] {
             g_lua.callGlobalField("g_http", "onGet", result->operationId, result->url, error, body);
@@ -186,7 +745,7 @@ int Http::post(const std::string& url, const std::string& data, int timeout, boo
         return -1;
     }
 
-    if (!m_working || !g_ixHttpClient) {
+    if (!m_working.load() || !g_ixHttpClient) {
         g_logger.error("Http::post called while the client is not running ({})", url);
         return -1;
     }
@@ -209,22 +768,16 @@ int Http::post(const std::string& url, const std::string& data, int timeout, boo
     request->onProgressCallback = [this, result, lastProgress](int current, int total) {
         const int progress = computeProgress(current, total);
 
-        {
-            std::lock_guard<std::mutex> lock(m_mutex);
-            if (result->finished || result->canceled)
-                return false;
-            result->progress = progress;
-        }
+        if (result->finished.load() || result->canceled.load())
+            return false;
+        result->progress = progress;
 
         if (!shouldEmitProgress(*lastProgress, progress))
             return true;
 
-        g_dispatcher.addEvent([this, result, progress] {
-            {
-                std::lock_guard<std::mutex> lock(m_mutex);
-                if (result->finished || result->canceled)
-                    return;
-            }
+        g_dispatcher.addEvent([result, progress] {
+            if (result->finished.load() || result->canceled.load())
+                return;
             g_lua.callGlobalField("g_http", "onPostProgress", result->operationId, result->url, progress);
         });
         return true;
@@ -233,19 +786,16 @@ int Http::post(const std::string& url, const std::string& data, int timeout, boo
     const auto callback = [this, operationId, result](const ix::HttpResponsePtr& response) {
         std::string error;
         std::string body;
-        {
-            std::lock_guard<std::mutex> lock(m_mutex);
-            result->finished = true;
-            if (response) {
-                result->status = response->statusCode;
-                result->response = response->body;
-                result->size = static_cast<int>(response->body.size());
-                result->progress = 100;
-            }
-            error = describeHttpError(response, result->canceled);
-            result->error = error;
-            body = result->response;
+        result->finished = true;
+        if (response) {
+            result->status = response->statusCode;
+            result->response = response->body;
+            result->size = static_cast<int>(response->body.size());
+            result->progress = 100;
         }
+        error = describeHttpError(response, result->canceled.load());
+        result->error = error;
+        body = result->response;
         unregisterOperation(operationId);
 
         g_dispatcher.addEvent([result, error, body] {
@@ -256,12 +806,9 @@ int Http::post(const std::string& url, const std::string& data, int timeout, boo
     if (!g_ixHttpClient->performRequest(request, callback)) {
         const std::string error = "http_error::queue";
         std::string body;
-        {
-            std::lock_guard<std::mutex> lock(m_mutex);
-            result->finished = true;
-            result->error = error;
-            body = result->response;
-        }
+        result->finished = true;
+        result->error = error;
+        body = result->response;
         unregisterOperation(operationId);
         g_dispatcher.addEvent([result, error, body] {
             g_lua.callGlobalField("g_http", "onPost", result->operationId, result->url, error, body);
@@ -276,7 +823,7 @@ int Http::download(const std::string& url, const std::string& path, int timeout)
     if (!timeout)
         timeout = 2;
 
-    if (!m_working || !g_ixHttpClient) {
+    if (!m_working.load() || !g_ixHttpClient) {
         g_logger.error("Http::download called while the client is not running ({})", url);
         return -1;
     }
@@ -296,31 +843,25 @@ int Http::download(const std::string& url, const std::string& path, int timeout)
         const int progress = computeProgress(current, total);
         int speed = 0;
 
-        {
-            std::lock_guard<std::mutex> lock(m_mutex);
-            if (result->finished || result->canceled)
-                return false;
+        if (result->finished.load() || result->canceled.load())
+            return false;
 
-            if (elapsed > 0) {
-                speed = ((current - *lastBytes) * 1000) / elapsed;
-                result->speed = speed;
-                *lastSpeedSample = now;
-                *lastBytes = current;
-            } else {
-                speed = result->speed;
-            }
-            result->progress = progress;
+        if (elapsed > 0) {
+            speed = ((current - *lastBytes) * 1000) / elapsed;
+            result->speed = speed;
+            *lastSpeedSample = now;
+            *lastBytes = current;
+        } else {
+            speed = result->speed.load();
         }
+        result->progress = progress;
 
         if (!shouldEmitProgress(*lastProgress, progress))
             return true;
 
-        g_dispatcher.addEvent([this, result, progress, speed] {
-            {
-                std::lock_guard<std::mutex> lock(m_mutex);
-                if (result->finished || result->canceled)
-                    return;
-            }
+        g_dispatcher.addEvent([result, progress, speed] {
+            if (result->finished.load() || result->canceled.load())
+                return;
             g_lua.callGlobalField("g_http", "onDownloadProgress", result->operationId, result->url, progress, speed);
         });
         return true;
@@ -329,19 +870,16 @@ int Http::download(const std::string& url, const std::string& path, int timeout)
     const auto callback = [this, operationId, result, path](const ix::HttpResponsePtr& response) {
         std::string error;
         std::string body;
-        {
-            std::lock_guard<std::mutex> lock(m_mutex);
-            result->finished = true;
-            if (response) {
-                result->status = response->statusCode;
-                result->response = response->body;
-                result->size = static_cast<int>(response->body.size());
-                result->progress = 100;
-            }
-            error = describeHttpError(response, result->canceled);
-            result->error = error;
-            body = result->response;
+        result->finished = true;
+        if (response) {
+            result->status = response->statusCode;
+            result->response = response->body;
+            result->size = static_cast<int>(response->body.size());
+            result->progress = 100;
         }
+        error = describeHttpError(response, result->canceled.load());
+        result->error = error;
+        body = result->response;
 
         const auto checksum = g_crypt.crc32(body, false);
         unregisterOperation(operationId);
@@ -361,12 +899,9 @@ int Http::download(const std::string& url, const std::string& path, int timeout)
     if (!g_ixHttpClient->performRequest(request, callback)) {
         const std::string error = "http_error::queue";
         std::string body;
-        {
-            std::lock_guard<std::mutex> lock(m_mutex);
-            result->finished = true;
-            result->error = error;
-            body = result->response;
-        }
+        result->finished = true;
+        result->error = error;
+        body = result->response;
         const auto checksum = g_crypt.crc32(body, false);
         unregisterOperation(operationId);
         g_dispatcher.addEvent([result, path, error, checksum] {
@@ -382,7 +917,7 @@ int Http::ws(const std::string& url, int timeout)
     if (!timeout)
         timeout = 2;
 
-    if (!m_working) {
+    if (!m_working.load()) {
         g_logger.error("Http::ws called while the client is not running ({})", url);
         return -1;
     }
@@ -535,7 +1070,7 @@ bool Http::cancel(int id)
             result = it->second;
         }
 
-        if (result && !result->canceled) {
+        if (result && !result->canceled.load()) {
             result->canceled = true;
             request = result->request;
         }
@@ -642,3 +1177,5 @@ bool Http::shouldEmitProgress(ticks_t& lastEmit, int progress)
     }
     return false;
 }
+
+#endif

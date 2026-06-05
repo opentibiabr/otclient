@@ -29,7 +29,10 @@
     "zlib",
     "bshoshany-thread-pool",
     "fmt",
-    "ixwebsocket",
+    {
+      "name": "ixwebsocket",
+      "platform": "!wasm32"
+    },
     "spdlog",
     "utfcpp",
     "gtest",

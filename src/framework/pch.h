@@ -89,11 +89,13 @@
 // pugixml
 #include <pugixml.hpp>
 
+#ifndef __EMSCRIPTEN__
 // ixwebsocket
 #include <ixwebsocket/IXHttp.h>
 #include <ixwebsocket/IXHttpClient.h>
 #include <ixwebsocket/IXWebSocket.h>
 #include <ixwebsocket/IXWebSocketMessage.h>
+#endif
 
 // fmt
 #include <fmt/args.h>
