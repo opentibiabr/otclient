@@ -27,6 +27,7 @@
 
 #include <algorithm>
 #include <fmt/format.h>
+#include <ixwebsocket/IXNetSystem.h>
 #include <utility>
 #include <vector>
 
@@ -35,6 +36,11 @@ std::shared_ptr<ix::HttpClient> g_ixHttpClient;
 
 void Http::init()
 {
+    if (m_working)
+        return;
+
+    ix::initNetSystem();
+
     // Construct the client eagerly so every subsequent get/post/download/ws
     // call can rely on it being available. Lazy initialization from each
     // public method was not thread-safe and could construct a second client
@@ -86,6 +92,7 @@ void Http::terminate()
     }
 
     g_ixHttpClient.reset();
+    ix::uninitNetSystem();
 }
 
 int Http::get(const std::string& url, int timeout)
@@ -106,43 +113,64 @@ int Http::get(const std::string& url, int timeout)
     const auto lastProgress = std::make_shared<ticks_t>(0);
 
     request->onProgressCallback = [this, result, lastProgress](int current, int total) {
-        if (result->finished || result->canceled)
-            return false;
+        const int progress = computeProgress(current, total);
 
-        result->progress = computeProgress(current, total);
-        if (!shouldEmitProgress(*lastProgress, result->progress))
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            if (result->finished || result->canceled)
+                return false;
+            result->progress = progress;
+        }
+
+        if (!shouldEmitProgress(*lastProgress, progress))
             return true;
 
-        g_dispatcher.addEvent([result] {
-            if (!result->finished) {
-                g_lua.callGlobalField("g_http", "onGetProgress", result->operationId, result->url, result->progress);
+        g_dispatcher.addEvent([this, result, progress] {
+            {
+                std::lock_guard<std::mutex> lock(m_mutex);
+                if (result->finished || result->canceled)
+                    return;
             }
+            g_lua.callGlobalField("g_http", "onGetProgress", result->operationId, result->url, progress);
         });
         return true;
     };
 
     const auto callback = [this, operationId, result](const ix::HttpResponsePtr& response) {
-        result->finished = true;
-        if (response) {
-            result->status = response->statusCode;
-            result->response = response->body;
-            result->size = static_cast<int>(response->body.size());
-            result->progress = 100;
+        std::string error;
+        std::string body;
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            result->finished = true;
+            if (response) {
+                result->status = response->statusCode;
+                result->response = response->body;
+                result->size = static_cast<int>(response->body.size());
+                result->progress = 100;
+            }
+            error = describeHttpError(response, result->canceled);
+            result->error = error;
+            body = result->response;
         }
-        result->error = describeHttpError(response, result);
         unregisterOperation(operationId);
 
-        g_dispatcher.addEvent([result] {
-            g_lua.callGlobalField("g_http", "onGet", result->operationId, result->url, result->error, result->response);
+        g_dispatcher.addEvent([result, error, body] {
+            g_lua.callGlobalField("g_http", "onGet", result->operationId, result->url, error, body);
         });
     };
 
     if (!g_ixHttpClient->performRequest(request, callback)) {
-        result->finished = true;
-        result->error = "http_error::queue";
+        const std::string error = "http_error::queue";
+        std::string body;
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            result->finished = true;
+            result->error = error;
+            body = result->response;
+        }
         unregisterOperation(operationId);
-        g_dispatcher.addEvent([result] {
-            g_lua.callGlobalField("g_http", "onGet", result->operationId, result->url, result->error, result->response);
+        g_dispatcher.addEvent([result, error, body] {
+            g_lua.callGlobalField("g_http", "onGet", result->operationId, result->url, error, body);
         });
     }
 
@@ -179,43 +207,64 @@ int Http::post(const std::string& url, const std::string& data, int timeout, boo
     const auto lastProgress = std::make_shared<ticks_t>(0);
 
     request->onProgressCallback = [this, result, lastProgress](int current, int total) {
-        if (result->finished || result->canceled)
-            return false;
+        const int progress = computeProgress(current, total);
 
-        result->progress = computeProgress(current, total);
-        if (!shouldEmitProgress(*lastProgress, result->progress))
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            if (result->finished || result->canceled)
+                return false;
+            result->progress = progress;
+        }
+
+        if (!shouldEmitProgress(*lastProgress, progress))
             return true;
 
-        g_dispatcher.addEvent([result] {
-            if (!result->finished) {
-                g_lua.callGlobalField("g_http", "onPostProgress", result->operationId, result->url, result->progress);
+        g_dispatcher.addEvent([this, result, progress] {
+            {
+                std::lock_guard<std::mutex> lock(m_mutex);
+                if (result->finished || result->canceled)
+                    return;
             }
+            g_lua.callGlobalField("g_http", "onPostProgress", result->operationId, result->url, progress);
         });
         return true;
     };
 
     const auto callback = [this, operationId, result](const ix::HttpResponsePtr& response) {
-        result->finished = true;
-        if (response) {
-            result->status = response->statusCode;
-            result->response = response->body;
-            result->size = static_cast<int>(response->body.size());
-            result->progress = 100;
+        std::string error;
+        std::string body;
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            result->finished = true;
+            if (response) {
+                result->status = response->statusCode;
+                result->response = response->body;
+                result->size = static_cast<int>(response->body.size());
+                result->progress = 100;
+            }
+            error = describeHttpError(response, result->canceled);
+            result->error = error;
+            body = result->response;
         }
-        result->error = describeHttpError(response, result);
         unregisterOperation(operationId);
 
-        g_dispatcher.addEvent([result] {
-            g_lua.callGlobalField("g_http", "onPost", result->operationId, result->url, result->error, result->response);
+        g_dispatcher.addEvent([result, error, body] {
+            g_lua.callGlobalField("g_http", "onPost", result->operationId, result->url, error, body);
         });
     };
 
     if (!g_ixHttpClient->performRequest(request, callback)) {
-        result->finished = true;
-        result->error = "http_error::queue";
+        const std::string error = "http_error::queue";
+        std::string body;
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            result->finished = true;
+            result->error = error;
+            body = result->response;
+        }
         unregisterOperation(operationId);
-        g_dispatcher.addEvent([result] {
-            g_lua.callGlobalField("g_http", "onPost", result->operationId, result->url, result->error, result->response);
+        g_dispatcher.addEvent([result, error, body] {
+            g_lua.callGlobalField("g_http", "onPost", result->operationId, result->url, error, body);
         });
     }
 
@@ -242,59 +291,86 @@ int Http::download(const std::string& url, const std::string& path, int timeout)
     const auto lastProgress = std::make_shared<ticks_t>(0);
 
     request->onProgressCallback = [this, result, lastSpeedSample, lastBytes, lastProgress](int current, int total) {
-        if (result->finished || result->canceled)
-            return false;
-
         const ticks_t now = stdext::millis();
         const ticks_t elapsed = now - *lastSpeedSample;
-        if (elapsed > 0) {
-            result->speed = ((current - *lastBytes) * 1000) / elapsed;
-            *lastSpeedSample = now;
-            *lastBytes = current;
+        const int progress = computeProgress(current, total);
+        int speed = 0;
+
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            if (result->finished || result->canceled)
+                return false;
+
+            if (elapsed > 0) {
+                speed = ((current - *lastBytes) * 1000) / elapsed;
+                result->speed = speed;
+                *lastSpeedSample = now;
+                *lastBytes = current;
+            } else {
+                speed = result->speed;
+            }
+            result->progress = progress;
         }
-        result->progress = computeProgress(current, total);
-        if (!shouldEmitProgress(*lastProgress, result->progress))
+
+        if (!shouldEmitProgress(*lastProgress, progress))
             return true;
 
-        g_dispatcher.addEvent([result] {
-            if (!result->finished) {
-                g_lua.callGlobalField("g_http", "onDownloadProgress", result->operationId, result->url, result->progress, result->speed);
+        g_dispatcher.addEvent([this, result, progress, speed] {
+            {
+                std::lock_guard<std::mutex> lock(m_mutex);
+                if (result->finished || result->canceled)
+                    return;
             }
+            g_lua.callGlobalField("g_http", "onDownloadProgress", result->operationId, result->url, progress, speed);
         });
         return true;
     };
 
     const auto callback = [this, operationId, result, path](const ix::HttpResponsePtr& response) {
-        result->finished = true;
-        if (response) {
-            result->status = response->statusCode;
-            result->response = response->body;
-            result->size = static_cast<int>(response->body.size());
-            result->progress = 100;
+        std::string error;
+        std::string body;
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            result->finished = true;
+            if (response) {
+                result->status = response->statusCode;
+                result->response = response->body;
+                result->size = static_cast<int>(response->body.size());
+                result->progress = 100;
+            }
+            error = describeHttpError(response, result->canceled);
+            result->error = error;
+            body = result->response;
         }
-        result->error = describeHttpError(response, result);
 
-        const auto checksum = g_crypt.crc32(result->response, false);
+        const auto checksum = g_crypt.crc32(body, false);
         unregisterOperation(operationId);
 
-        g_dispatcher.addEvent([this, result, path, checksum] {
-            if (result->error.empty()) {
+        g_dispatcher.addEvent([this, result, path, error, checksum] {
+            if (error.empty()) {
                 std::string normalizedPath = path;
                 if (!normalizedPath.empty() && normalizedPath[0] == '/')
                     normalizedPath = normalizedPath.substr(1);
+                std::lock_guard<std::mutex> lock(m_mutex);
                 m_downloads[normalizedPath] = result;
             }
-            g_lua.callGlobalField("g_http", "onDownload", result->operationId, result->url, result->error, path, checksum);
+            g_lua.callGlobalField("g_http", "onDownload", result->operationId, result->url, error, path, checksum);
         });
     };
 
     if (!g_ixHttpClient->performRequest(request, callback)) {
-        result->finished = true;
-        result->error = "http_error::queue";
-        const auto checksum = g_crypt.crc32(result->response, false);
+        const std::string error = "http_error::queue";
+        std::string body;
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            result->finished = true;
+            result->error = error;
+            body = result->response;
+        }
+        const auto checksum = g_crypt.crc32(body, false);
         unregisterOperation(operationId);
-        g_dispatcher.addEvent([this, result, path, checksum] {
-            g_lua.callGlobalField("g_http", "onDownload", result->operationId, result->url, result->error, path, checksum);
+        g_dispatcher.addEvent([result, path, error, checksum] {
+            g_lua.callGlobalField("g_http", "onDownload", result->operationId, result->url, error, path, checksum);
         });
     }
 
@@ -445,6 +521,7 @@ bool Http::wsClose(int operationId)
 bool Http::cancel(int id)
 {
     std::shared_ptr<ix::WebSocket> websocket;
+    std::shared_ptr<ix::HttpRequestArgs> request;
     HttpResult_ptr result;
 
     {
@@ -457,29 +534,31 @@ bool Http::cancel(int id)
         if (it != m_operations.end()) {
             result = it->second;
         }
+
+        if (result && !result->canceled) {
+            result->canceled = true;
+            request = result->request;
+        }
     }
 
     if (websocket) {
         websocket->close();
     }
 
-    if (result && !result->canceled) {
-        result->canceled = true;
-        if (result->request) {
-            result->request->cancel = true;
-        }
+    if (request) {
+        request->cancel = true;
     }
 
     return true;
 }
 
-std::string Http::describeHttpError(const ix::HttpResponsePtr& response, const HttpResult_ptr& result)
+std::string Http::describeHttpError(const ix::HttpResponsePtr& response, bool canceled)
 {
     if (!response) {
         return "http_error::no_response";
     }
 
-    if (response->errorCode == ix::HttpErrorCode::Cancelled || (result && result->canceled)) {
+    if (response->errorCode == ix::HttpErrorCode::Cancelled || canceled) {
         return "canceled";
     }
 

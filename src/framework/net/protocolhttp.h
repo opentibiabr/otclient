@@ -92,7 +92,7 @@ public:
     void setEnableTimeOutOnReadWrite(const bool enable_time_out_on_read_write) { m_enable_time_out_on_read_write = enable_time_out_on_read_write; }
 
 private:
-    std::string describeHttpError(const ix::HttpResponsePtr& response, const HttpResult_ptr& result);
+    std::string describeHttpError(const ix::HttpResponsePtr& response, bool canceled);
     int computeProgress(const int current, const int total);
     void copyHeaders(const std::unordered_map<std::string, std::string>& source, ix::WebSocketHttpHeaders& target);
 
