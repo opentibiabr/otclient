@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+* Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -22,11 +22,12 @@
 
 #pragma once
 
-#include <deque>
-#include <framework/core/eventdispatcher.h>
 #include <framework/net/outputmessage.h>
 
-class PacketPlayer : public LuaObject {
+#include "framework/core/declarations.h"
+
+class PacketPlayer : public LuaObject
+{
 public:
     PacketPlayer(const std::string_view& file);
     virtual ~PacketPlayer();

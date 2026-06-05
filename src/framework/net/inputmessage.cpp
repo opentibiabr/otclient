@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,9 +21,9 @@
  */
 
 #include "inputmessage.h"
-#include <framework/util/crypt.h>
 
 #include "client/game.h"
+#include "framework/util/crypt.h"
 
 InputMessage::InputMessage() {
     m_maxHeaderSize = g_game.getClientVersion() >= 1405 ? 7 : 8;
@@ -129,7 +129,8 @@ void InputMessage::setHeaderSize(const uint16_t size)
 bool InputMessage::readChecksum()
 {
     const uint32_t receivedCheck = getU32();
-    const uint32_t checksum = stdext::adler32(m_buffer + m_readPos, getUnreadSize());
+    const auto unread = static_cast<uint32_t>(getUnreadSize());
+    const uint32_t checksum = stdext::computeChecksum({ m_buffer + m_readPos, unread });
     return receivedCheck == checksum;
 }
 

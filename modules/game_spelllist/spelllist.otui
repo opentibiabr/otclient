@@ -7,7 +7,7 @@ SpellListLabel < Label
   image-clip: 0 0 32 32
   image-size: 32 32
   image-offset: 2 2
-  image-source: /images/game/spells/defaultspells
+  image-source: /images/game/spells/spell-icons-32x32
 
   $focus:
     background-color: #ffffff22
@@ -245,6 +245,14 @@ MainWindow
     anchors.top: prev.bottom
     margin-top: 3
     !text: tr('Knight')
+    width: 75
+
+  CheckBox
+    id: vocationBoxMonk
+    anchors.left: prev.left
+    anchors.top: prev.bottom
+    margin-top: 3
+    !text: tr('Monk')
     width: 75
 
   Label

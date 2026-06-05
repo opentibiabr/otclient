@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,12 +20,13 @@
  * THE SOFTWARE.
  */
 
-#include "uiminimap.h"
-#include "game.h"
 #include "luavaluecasts_client.h"
+#include "uiminimap.h"
 
 #include "minimap.h"
 #include "uimapanchorlayout.h"
+#include "framework/otml/otmlnode.h"
+#include "framework/ui/uilayout.h"
 
 void UIMinimap::drawSelf(const DrawPoolType drawPane)
 {

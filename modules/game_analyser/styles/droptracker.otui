@@ -1,0 +1,182 @@
+ItemPanel < Panel
+  size: 147 34
+  @updateItemPanelSize: |
+    function(self)
+      local height = 34
+      for _, child in pairs(self.dropMonster:getChildren()) do
+        height = height + child:getHeight()
+      end
+
+      self:setHeight(height)
+    end
+
+  UIItem
+    id: itemSlot
+    size: 34 34
+    anchors.left: parent.left
+    anchors.top: parent.top
+    image-source:
+    margin-top: 3
+    margin-left: 5
+    phantom: true
+    virtual: true
+
+  Label
+    id: itemName
+    !text: tr('Item Name')
+    anchors.top: parent.top
+    anchors.left: prev.right
+    margin-top: 5
+    margin-left: 5
+    text-auto-resize: true
+    color: #c0c0c0
+    font: Verdana Bold-11px
+
+  Label
+    id: dropLabel
+    !text: tr('Loot Drops:')
+    anchors.top: prev.bottom
+    anchors.left: itemSlot.right
+    margin-left: 5
+    text-auto-resize: true
+    color: #c0c0c0
+    font: Verdana Bold-11px
+
+  Label
+    id: drops
+    !text: tr('0')
+    anchors.top: prev.top
+    anchors.left: prev.right
+    margin-left: 5
+    text-auto-resize: true
+    color: #c0c0c0
+    font: Verdana Bold-11px
+
+  Panel
+    id: dropMonster
+    width: 147
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    visible: true
+    layout:
+      type: verticalBox
+      fit-children: true
+
+MonsterPanel < Panel
+  size: 147 16
+  UIWidget
+    id: hierarchy
+    size: 7 7
+    anchors.top: parent.top
+    anchors.left: parent.left
+    margin-top: 5
+    margin-left: 13
+    image-source: /images/ui/hierarchy-branch
+  UICreature
+    id: monster
+    size: 16 16
+    anchors.left: prev.right
+    anchors.top: parent.top
+    margin-top: 1
+    margin-left: 2
+    phantom: true
+  Label
+    id: name
+    !text: tr('Name')
+    anchors.top: prev.top
+    anchors.left: monster.right
+    margin-left: 5
+    text-auto-resize: true
+    color: #c0c0c0
+    font: Verdana Bold-11px
+  Label
+    id: drops
+    !text: tr('(0)')
+    anchors.top: prev.top
+    anchors.left: prev.right
+    margin-left: 5
+    text-auto-resize: true
+    color: #c0c0c0
+    font: Verdana Bold-11px
+
+MiniWindow
+  id: dropTrackerMiniWindow
+  &type: 'lootTracker'
+  !text: tr('Drop Tracker')
+  height: 61
+  @onExtra: modules.game_analyser.onDropTrackerExtra(g_window.getMousePosition())
+  &save: true
+  &autoOpen: true
+
+  UIWidget
+    id: miniwindowIcon
+    anchors.top: miniwindowHeader.top
+    anchors.left: miniwindowHeader.left
+    margin-top: 2
+    margin-left: 4
+    size: 12 12
+    image-source: /images/icons/icon-loottracker-widget
+    image-smooth: false
+
+  Label
+    id: miniwindowTitle
+    anchors.top: miniwindowHeader.top
+    anchors.left: miniwindowHeader.left
+    anchors.right: miniwindowHeader.right
+    margin-top: 2
+    margin-left: 20
+    margin-right: 50
+    font: verdana-11px-monochrome
+    height: 13
+    color: #9d9d9dff
+    !text: tr('Drop Tracker')
+
+  ScrollablePanel
+    id: contentsPanel
+    anchors.fill: parent
+    margin: 16 18 5 5
+    vertical-scrollbar: miniwindowScrollBar
+
+    Panel
+      id: dropItems
+      width: 150
+      anchors.top: parent.top
+      anchors.left: parent.left
+      visible: true
+      layout:
+        type: verticalBox
+        fit-children: true
+
+    Button
+      id: trackedDropButton
+      size: 108 20
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 12
+      margin-left: 24
+      image-source: /images/game/analyzer/trackedDrop
+      image-clip: 0 0 108 20
+      $hover !pressed:
+        image-clip: 0 0 108 20
+      $pressed:
+        image-clip: 0 20 108 20
+      @onClick: modules.game_cyclopedia.show("items")
+
+  UIWidget
+    id: miniborder
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    image-source: /images/ui/miniborder
+    size: 14 14
+    margin-left: 2
+    margin-bottom: 2
+
+  ResizeBorder
+    id: bottomResizeBorder
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    height: 3
+    minimum: 64
+    margin-left: 3
+    margin-right: 3

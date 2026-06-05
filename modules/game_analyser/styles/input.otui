@@ -1,0 +1,239 @@
+DamageSourcePanel < UIWidget
+  id: damagePanel
+  size: 151 11
+  cursor: pointer
+  Label
+    id: name
+    anchors.top: parent.top
+    anchors.left: parent.left
+    text-auto-resize: true
+    color: #c0c0c0
+    font: Verdana Bold-11px
+  Label
+    id: desc
+    anchors.top: parent.top
+    anchors.right: parent.right
+    text-auto-resize: true
+    color: #c0c0c0
+    font: Verdana Bold-11px
+
+MiniWindow
+  id: inputAnalyserMiniWindow
+  !text: tr('Input Analyser')
+  &type: 'damageInputAnalyser'
+  height: 225
+  &save: true
+  &autoOpen: false
+  @onExtra: modules.game_analyser.onInputExtra(g_window.getMousePosition())
+
+  UIWidget
+    id: miniwindowIcon
+    anchors.top: miniwindowHeader.top
+    anchors.left: miniwindowHeader.left
+    margin-top: 2
+    margin-left: 4
+    size: 12 12
+    image-source: /images/icons/icon-defensiveanalyser-widget
+    image-smooth: false
+
+  Label
+    id: miniwindowTitle
+    anchors.top: miniwindowHeader.top
+    anchors.left: miniwindowHeader.left
+    anchors.right: miniwindowHeader.right
+    margin-top: 2
+    margin-left: 20
+    margin-right: 50
+    font: verdana-11px-monochrome
+    height: 13
+    color: #9d9d9dff
+    !text: tr('Input Analyser')
+
+  ScrollablePanel
+    id: contentsPanel
+    anchors.fill: parent
+    margin: 16 18 5 5
+    vertical-scrollbar: miniwindowScrollBar
+    Label
+      id: dmgTakenLabel
+      !text: tr('Received Damage')
+      anchors.top: parent.top
+      anchors.left: parent.left
+      margin-top: 5
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+    Label
+      id: rcvDmgLabel
+      !text: tr('Total:')
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 5
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Label
+      id: rcvDmg
+      !text: tr('0')
+      anchors.top: prev.top
+      anchors.right: parent.right
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Label
+      id: maxDpsLabel
+      !text: tr('Max-DPS:')
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 5
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Label
+      id: maxDps
+      !text: tr('0')
+      anchors.top: prev.top
+      anchors.right: parent.right
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    HorizontalSeparator
+      id: separatorMaxDps
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 10
+
+    UIWidget
+      id: dpsGraphBG
+      size: 133 82
+      image-auto-resize: true
+      image-source: /images/game/analyzer/dpsGraphBG
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-left: 15
+      margin-top: 5
+
+    UIGraph
+      id: graphPanel
+      capacity: 400
+      background-color: #383636
+      color: red
+      size: 129 83
+      show-labels: false
+      anchors.top: prev.top
+      anchors.left: prev.left
+      image-source: /images/game/analyzer/dpsGraphBG
+
+
+    UIWidget
+      id: horizontalGraph
+      size: 141 9
+      image-auto-resize: true
+      image-source: /images/game/analyzer/graphDpsHorizontal
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-left: 8
+      margin-top: 5
+
+    HorizontalSeparator
+      id: separatorGraph
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 7
+
+    Label
+      id: damageTypeLabel
+      !text: tr('Damage Types')
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 5
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Panel
+      id: dmgTypes
+      size: 157 20
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 5
+      layout:
+        type: verticalBox
+
+    HorizontalSeparator
+      id: separatorDmgType
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 7
+
+    Label
+      id: damageSource
+      !text: tr('Damage Sources')
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 5
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Panel
+      id: dmgSrc
+      size: 155 20
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 5
+      layout:
+        type: verticalBox
+
+    HorizontalSeparator
+      id: separatorDmgSrc
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 7
+      visible: true
+    Label
+      id: damageSourceName
+      !text: tr('Damage Types')
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 5
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+      visible: true
+
+    ScrollablePanel
+      id: dmgSourceTypes
+      size: 151 11
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 5
+      visible: true
+      layout:
+        type: verticalBox
+  UIWidget
+    id: miniborder
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    image-source: /images/ui/miniborder
+    size: 14 14
+    margin-left: 2
+    margin-bottom: 2
+
+  ResizeBorder
+    id: bottomResizeBorder
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    height: 3
+    minimum: 73
+    margin-left: 3
+    margin-right: 3

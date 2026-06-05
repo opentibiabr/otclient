@@ -6,5 +6,5 @@ Module
   sandboxed: true
   dependencies: [ game_interface ]
   scripts: [ modaldialog ]
-  @onLoad: init()
-  @onUnload: terminate()
+  @onLoad: controllerModal:init()
+  @onUnload: controllerModal:terminate()

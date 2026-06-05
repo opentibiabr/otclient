@@ -1,6 +1,42 @@
+
+SpecialConditionLabelSettings < UIWidget
+  height: 20
+
+  UIWidget
+    id: icon
+    size: 10 10
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 5
+
+  Label
+    id: label
+    anchors.left: icon.right
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 10
+    color: #dfdfdf
+
+  CheckBox
+    id: showInHudCheckBox
+    size: 12 12
+    anchors.right: showInBarCheckBox.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-right: 80
+    image-source: /images/ui/checkbox
+    image-clip: 0 0 12 12
+
+  CheckBox
+    id: showInBarCheckBox
+    size: 12 12
+    anchors.right: parent.right
+    anchors.verticalCenter: parent.verticalCenter
+    margin-right: 50
+    image-source: /images/ui/checkbox
+    image-clip: 0 0 12 12
+
 OptionsCategory < UIWidget
   size: 115 22
-  image-source: /images/game/actionbar/1pixel-down-frame
+  image-source: /images/ui/1pixel_down_frame
   image-border: 5
   UIWidget
     id: Button
@@ -87,6 +123,22 @@ OptionScaleScroll < Label
     @onValueChange: |
       modules.client_options.setOption(self:getParent():getId(), self:getValue())
 
+OptionLabelMarked < Label
+  anchors.left: parent.left
+  anchors.right: parent.right
+  anchors.top: parent.top
+  text-align: left
+  text-offset: 18 0
+  color: #c0c0c0ff
+
+  UIWidget
+    id: toolTipWidget
+    image-source: /images/icons/show_gui_help_grey
+    size: 12 12
+    anchors.right: parent.right
+    anchors.verticalCenter: parent.verticalCenter
+    margin-right: 3
+
 OptionScaleScrollMarked < Label
   anchors.left: parent.left
   anchors.right: parent.right
@@ -140,8 +192,7 @@ MainWindow
     anchors.left: parent.left
     anchors.right: parent.right
     anchors.bottom: parent.bottom
-    image-source: /images/ui/horizontal_line_bright
-    height: 1
+    height: 2
     margin-bottom: 15
 
   Label
@@ -162,9 +213,10 @@ MainWindow
     anchors.bottom: separator.bottom
     margin-left: 1
     margin-top: -10
+    margin-bottom: 10
     image-border: 3
     image-source: /images/ui/2pixel_up_frame_borderimage_dark
-    size: 128 453
+    size: 128 423
 
   QtPanel
     id: optionsTabContent
@@ -173,14 +225,14 @@ MainWindow
     anchors.right: parent.right
     anchors.bottom: separator.bottom
     margin-left: 10
-
-
+    margin-bottom: 10
 
   QtButton
     !text: tr('Ok')
     size: 64 20
     anchors.right: parent.right
-    anchors.top: prev.bottom
-    margin-top: 5
-    margin-right: 10
-    @onClick: modules.client_options.hide()
+    anchors.bottom: parent.bottom
+    margin-bottom: -8
+    @onClick: |
+      modules.client_options.saveOptions()
+      modules.client_options.hide()

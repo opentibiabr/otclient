@@ -1,0 +1,56 @@
+NewMainWindow
+  id: setXpTarget
+  anchors.horizontalCenter: parent.horizontalCenter
+  !text: tr('Set XP Per Hour Target')
+  font: Verdana Bold-11px
+  color: #909090
+  size: 360 147
+  @onClose:
+  @onEscape: self:hide()
+
+  Panel
+    id: contentPanel
+    anchors.fill: parent
+    margin: 14 12 12 12
+
+    UIWidget
+      id: text
+      size: 321 37
+      anchors.top: parent.top
+      anchors.left: parent.left
+      margin-left: 1
+      image-source: /images/game/analyzer/labels/xp
+
+    TextEdit
+      id: xpTarget
+      size: 328 16
+      focusable: true
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 6
+      !placeholder: tr('0')
+      only-number: true
+      @onTextChange: modules.game_analyser.checkNumber(self, self:getText())
+
+    HorizontalSeparator
+      id: separator
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 11
+
+    Button
+      id: cancel
+      anchors.bottom: parent.bottom
+      anchors.right: parent.right
+      !text: tr('Cancel')
+      size: 43 20
+
+    Button
+      id: ok
+      anchors.bottom: parent.bottom
+      anchors.right: prev.left
+      margin-right: 10
+      !text: tr('Ok')
+      size: 43 20

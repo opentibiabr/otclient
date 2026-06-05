@@ -11,7 +11,7 @@ function getWalkableTilesCount(position)
   local count = 0
 
   for i, tile in pairs(getNearTiles(position)) do
-      if tile:isWalkable() or tile:hasCreature() then
+      if tile:isWalkable() or tile:hasCreatures() then
           count = count + 1
       end
   end
@@ -29,7 +29,7 @@ function rePosition(minTiles)
 
   if playerTilesCount > minTiles then return end
   for i, tile in ipairs(tiles) do
-      tilesTable[tile] = not tile:hasCreature() and tile:isWalkable() and getWalkableTilesCount(tile:getPosition()) or nil
+      tilesTable[tile] = not tile:hasCreatures() and tile:isWalkable() and getWalkableTilesCount(tile:getPosition()) or nil
   end
 
   local best = 0

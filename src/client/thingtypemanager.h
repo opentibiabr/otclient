@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,13 +22,9 @@
 
 #pragma once
 
-#include "thingtype.h"
-#include "staticdata.h"
-#include <framework/global.h>
+#include <nlohmann/json_fwd.hpp>
 
-#ifdef FRAMEWORK_EDITOR
-#include "itemtype.h"
-#endif
+#include "staticdata.h"
 
 using RaceList = std::vector<RaceType>;
 static const RaceType emptyRaceType{};
@@ -43,6 +39,7 @@ public:
     bool loadOtml(std::string file);
     bool loadAppearances(const std::string& file);
     bool loadStaticData(const std::string& file);
+    bool resolveProficienciesFile(const std::string& file);
 
 #ifdef FRAMEWORK_EDITOR
     void parseItemType(uint16_t id, pugi::xml_node node);
@@ -67,8 +64,12 @@ public:
 #endif
 
     ThingTypeList findThingTypeByAttr(ThingAttr attr, ThingCategory category);
+    const ThingTypeList& getProficiencyThings();
+    std::string getCyclopediaItemName(uint16_t id);
+    std::string getProficienciesFile();
 
     const RaceType& getRaceData(uint32_t raceId);
+    const RaceList& getAllRaces() const { return m_monsterRaces; }
     RaceList getRacesByName(const std::string& searchString);
 
     const ThingTypePtr& getNullThingType() { return m_nullThingType; }
@@ -80,11 +81,16 @@ public:
 
     uint32_t getDatSignature() { return m_datSignature; }
     uint16_t getContentRevision() { return m_contentRevision; }
+    const std::string& getAssetIdentifier() { return m_assetIdentifier; }
 
     bool isDatLoaded() { return m_datLoaded; }
-    bool isValidDatId(const uint16_t id, const ThingCategory category) const { return id >= 1 && id < m_thingTypes[category].size(); }
+    bool isValidDatId(const uint16_t id, const ThingCategory category) const { return category < ThingLastCategory && id >= 1 && id < m_thingTypes[category].size(); }
 
 private:
+    const nlohmann::json& getCatalogContent(const std::string& file);
+    void clearCatalogContent();
+    void buildProficiencyCache();
+
     ThingTypeList m_thingTypes[ThingLastCategory];
     RaceList m_monsterRaces;
 
@@ -94,6 +100,12 @@ private:
 
     uint32_t m_datSignature{ 0 };
     uint16_t m_contentRevision{ 0 };
+    std::string m_assetIdentifier;
+    std::string m_proficienciesFile;
+    std::string m_catalogContentPath;
+    std::unique_ptr<nlohmann::json> m_catalogContent;
+    ThingTypeList m_proficiencyThingsCache;
+    bool m_proficiencyThingsCacheDirty{ true };
 
 #ifdef FRAMEWORK_EDITOR
     ItemTypePtr m_nullItemType;

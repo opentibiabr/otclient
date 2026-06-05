@@ -1,7 +1,8 @@
-<link href="game_questlog/game_questlog.css" />
-<window id="main" anchor="parent" class="questLog-window" text="Quest Log" onescape="self:close()">
+<link href="game_questlog.css" />
+<html>
+<window id="main" placement="center" class="questLog-window" title="Quest Log" onescape="self:close()">
 
-  <minipanel id="panelQuestLog" text="Quest Log" focusable="false" class="content-left" anchor="parent"
+  <div id="panelQuestLog" title="Quest Log" class="content-left minipanel" placement="top-left"
     layout="type: verticalBox;spacing:5">
     <TextListQuestLog id="areaPanelQuestList" class="quest-list"></TextListQuestLog>
     <select id="comboBoxFilter" onchange="self:onFilterQuestLog(event)">
@@ -10,27 +11,48 @@
       <option>Completed on Top</option>
       <option>Completed on Bottom</option>
     </select>
-    <TextEditQuestLog id="textEditSearchQuest" type="text" class="search-box" placeholder="Type to search"></TextEditQuestLog>
+    <TextEditQuestLog id="textEditSearchQuest" type="text" class="search-box" placeholder="Type to search">
+    </TextEditQuestLog>
 
-    <div id="filterPanel"
-      layout="type: grid;cell-size: 158 22;num-lines:2;num-columns: 3;cell-spacing: 0;flow: false;fit-children: false"
-      class="filter">
-      <input id="checkboxShowComplete" type="checkbox" class="checkbox-group" text="Quest Log" onchange="self:filterQuestListShowComplete(event)" checked>Show Completed</input>
-      <label class="text-right text-offset-normal">Quests completed:</label>
-      <label id="lblCompleteNumber" class="text-left" textOffset="5 -1">0</label>
-      <input id="checkboxShowShidden" type="checkbox" class="checkbox-group" text="Quest Log" onchange="self:filterQuestListShowHidden(event)">Show hidden</input>
-      <label class="text-right text-offset-normal">Quests hidden:</label>
-      <label id="lblHiddenNumber" class="text-left" textOffset="5 -2">0</label>
-    </div>
-  </minipanel>
+    <table class="filter-table">
+      <tr>
+        <td class="col1">
+          <label>
+            <input type="checkbox" id="checkboxShowComplete" checked onchange="self:filterQuestListShowComplete(event)">
+            Show completed
+          </label>
+        </td>
+        <td class="col2">Quests completed:</td>
+        <td class="col3" id="lblCompleteNumber">0</td>
+      </tr>
+      <tr>
+        <td class="col1">
+          <label>
+            <input type="checkbox" id="checkboxShowHidden" onchange="self:filterQuestListShowHidden(event)">
+            Show hidden
+          </label>
+        </td>
+        <td class="col2">Quests hidden:</td>
+        <td class="col3" id="lblHiddenNumber">0</td>
+      </tr>
+    </table>
+  </div>
 
-  <minipanel id="panelQuestLineSelected" class="content-right" anchor="parent" text="No quest line Selected" layout="type: verticalBox;">
-    <TextListQuestLog id="ScrollAreaQuestList" style="height: 200"></TextListQuestLog>
+  <div id="panelQuestLineSelected" focusable="false" class="content-right minipanel" placement="top-left" title="No quest line Selected"
+    layout="type: verticalBox;">
+    <TextListQuestLog id="ScrollAreaQuestList" ></TextListQuestLog>
     <MultiLineQuestLog id="panelQuestInfo" class="quest-info"></MultiLineQuestLog>
-    <input id="checkboxShowInQuestTracker" type="checkbox"  style="text-offset: 18 0;" onchange="self:onCheckChangeQuestTracker(event)" >Show in quest tracker</input>
-  </minipanel>
+    <input id="checkboxShowInQuestTracker" type="checkbox" 
+      onchange="self:onCheckChangeQuestTracker(event)" text="Show in quest tracker" />
+  </div>
 
-  <HorizontalSeparator class="separator"></HorizontalSeparator>
-  <Qtbutton id="trackerButton"class="questLogButton" style="margin-top:12;" onclick="self:toggleMiniWindowsTracker()">Quest Tracker</Qtbutton>
-  <Qtbutton class="questLogButton" style="float: right;" onclick="self:close()">Close</Qtbutton>
+  <hr class="separator"/>
+
+  <div id="buttonsPanel" class="buttons" focusable="false">
+    <button id="trackerButton" onclick="self:toggleMiniWindowsTracker()" >Quest Tracker</button>
+    <button id="closeButton" onclick="self:close()" >Close</button>
+  </div>
+
 </window>
+
+</html>

@@ -1,0 +1,375 @@
+LeaderInfo < UIWidget
+  size: 151 63
+  margin-top: 5
+  UIWidget
+    id: leaderPt
+    size: 11 11
+    image-source: /images/game/shields/shields
+    image-clip: 0 0 11 11
+    anchors.top: parent.top
+    anchors.left: parent.left
+  Label
+    id: name
+    !text: tr('Name')
+    anchors.top: prev.top
+    anchors.left: prev.right
+    text-auto-resize: true
+    color: #ffda34
+    font: Verdana Bold-11px
+    margin-left: 3
+    margin-top: -3
+  UIWidget
+    id: balanceIcon
+    size: 11 11
+    image-auto-resize: true
+    image-source: /images/icons/icon-balance
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    margin-top: 5
+    margin-left: 7
+    !tooltip: tr('Balance')
+  UIWidget
+    id: damageIcon
+    size: 11 11
+    image-auto-resize: true
+    image-source: /images/icons/icon-damage
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    margin-top: 8
+    margin-left: 7
+    !tooltip: tr('Damage')
+  UIWidget
+    id: healingIcon
+    size: 11 11
+    image-auto-resize: true
+    image-source: /images/icons/icon-healing
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    margin-top: 8
+    margin-left: 7
+    !tooltip: tr('Healing')
+  UIWidget
+    id: gold
+    size: 9 9
+    image-auto-resize: true
+    image-source: /game_cyclopedia/images/icon_gold
+    anchors.top: balanceIcon.top
+    anchors.right: parent.right
+    margin-top: 2
+    margin-right: 3
+  UIWidget
+    id: balance
+    !text: tr('0')
+    anchors.top: balanceIcon.top
+    anchors.right: prev.left
+    margin-top: -2
+    margin-right: 4
+    text-auto-resize: true
+    color: #44ad25
+    font: Verdana Bold-11px
+    tooltip-font: Verdana Bold-11px-wheel
+    tooltip-delayed: true
+  Label
+    id: damage
+    !text: tr('0')
+    anchors.top: damageIcon.top
+    anchors.right: parent.right
+    margin-top: -2
+    margin-right: 2
+    text-auto-resize: true
+    color: #c0c0c0
+    font: Verdana Bold-11px
+  Label
+    id: healing
+    !text: tr('0')
+    anchors.top: healingIcon.top
+    anchors.right: parent.right
+    margin-top: -2
+    margin-right: 2
+    text-auto-resize: true
+    color: #c0c0c0
+    font: Verdana Bold-11px
+
+Info < UIWidget
+  size: 151 63
+  margin-top: 2
+  Label
+    id: name
+    !text: tr('Name')
+    anchors.top: parent.top
+    anchors.left: parent.left
+    text-auto-resize: true
+    color: #c0c0c0
+    font: Verdana Bold-11px
+  UIWidget
+    id: balanceIcon
+    size: 11 11
+    image-auto-resize: true
+    image-source: /images/icons/icon-balance
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    margin-top: 5
+    margin-left: 7
+    !tooltip: tr('Balance')
+  UIWidget
+    id: damageIcon
+    size: 11 11
+    image-auto-resize: true
+    image-source: /images/icons/icon-damage
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    margin-top: 8
+    margin-left: 7
+    !tooltip: tr('Damage')
+  UIWidget
+    id: healingIcon
+    size: 11 11
+    image-auto-resize: true
+    image-source: /images/icons/icon-healing
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    margin-top: 8
+    margin-left: 7
+    !tooltip: tr('Healing')
+  UIWidget
+    id: gold
+    size: 9 9
+    image-auto-resize: true
+    image-source: /game_cyclopedia/images/icon_gold
+    anchors.top: balanceIcon.top
+    anchors.right: parent.right
+    margin-top: 2
+    margin-right: 3
+  UIWidget
+    id: balance
+    !text: tr('0')
+    anchors.top: balanceIcon.top
+    anchors.right: prev.left
+    margin-top: -2
+    margin-right: 4
+    text-auto-resize: true
+    color: #44ad25
+    font: Verdana Bold-11px
+    tooltip-font: Verdana Bold-11px-wheel
+    tooltip-delayed: true
+  Label
+    id: damage
+    !text: tr('0')
+    anchors.top: damageIcon.top
+    anchors.right: parent.right
+    margin-top: -2
+    margin-right: 2
+    text-auto-resize: true
+    color: #c0c0c0
+    font: Verdana Bold-11px
+  Label
+    id: healing
+    !text: tr('0')
+    anchors.top: healingIcon.top
+    anchors.right: parent.right
+    margin-top: -2
+    margin-right: 2
+    text-auto-resize: true
+    color: #c0c0c0
+    font: Verdana Bold-11px
+
+MiniWindow
+  id: phAnalyserMiniWindow
+  &type: 'partyHuntAnalyser'
+  !text: tr('Party Hunt')
+  height: 225
+  &save: true
+  &autoOpen: true
+  @onExtra: modules.game_analyser.onPartyHuntExtra(g_window.getMousePosition())
+
+  UIWidget
+    id: miniwindowIcon
+    anchors.top: miniwindowHeader.top
+    anchors.left: miniwindowHeader.left
+    margin-top: 2
+    margin-left: 4
+    size: 12 12
+    image-source: /images/icons/icon-partyhunt-widget
+    image-smooth: false
+
+  Label
+    id: miniwindowTitle
+    anchors.top: miniwindowHeader.top
+    anchors.left: miniwindowHeader.left
+    anchors.right: miniwindowHeader.right
+    margin-top: 2
+    margin-left: 20
+    margin-right: 50
+    font: verdana-11px-monochrome
+    height: 13
+    color: #9d9d9dff
+    !text: tr('Party Hunt')
+
+  ScrollablePanel
+    id: contentsPanel
+    anchors.fill: parent
+    margin: 16 18 5 5
+    vertical-scrollbar: miniwindowScrollBar
+
+    Label
+      id: sessionLabel
+      !text: tr('Session:')
+      anchors.top: parent.top
+      anchors.left: parent.left
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Label
+      id: session
+      !text: tr('00:00h')
+      anchors.top: parent.top
+      anchors.right: parent.right
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Label
+      id: lootTypeLabel
+      !text: tr('Loot Type:')
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 5
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+      visible: true
+
+    Label
+      id: lootType
+      !text: tr('Leader')
+      anchors.top: session.bottom
+      anchors.right: parent.right
+      margin-top: 5
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+      visible: true
+
+    Label
+      id: lootLabel
+      !text: tr('Loot:')
+      anchors.top: lootType.bottom
+      anchors.left: parent.left
+      margin-top: 5
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    UIWidget
+      size: 9 9
+      image-auto-resize: true
+      image-source: /game_cyclopedia/images/icon_gold
+      anchors.top: lootType.bottom
+      anchors.right: parent.right
+      margin-top: 8
+
+    Label
+      id: loot
+      !text: tr('0')
+      anchors.top: lootType.bottom
+      anchors.right: prev.left
+      margin-top: 5
+      margin-right: 4
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Label
+      id: suppliesLabel
+      !text: tr('Supplies:')
+      anchors.top: lootLabel.bottom
+      anchors.left: parent.left
+      margin-top: 5
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    UIWidget
+      size: 9 9
+      image-auto-resize: true
+      image-source: /game_cyclopedia/images/icon_gold
+      anchors.top: lootLabel.bottom
+      anchors.right: parent.right
+      margin-top: 8
+
+    Label
+      id: supplies
+      !text: tr('0')
+      anchors.top: lootLabel.bottom
+      anchors.right: prev.left
+      margin-top: 5
+      margin-right: 4
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Label
+      id: balanceLabel
+      !text: tr('Balance:')
+      anchors.top: suppliesLabel.bottom
+      anchors.left: parent.left
+      margin-top: 5
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    UIWidget
+      size: 9 9
+      image-auto-resize: true
+      image-source: /game_cyclopedia/images/icon_gold
+      anchors.top: suppliesLabel.bottom
+      anchors.right: parent.right
+      margin-top: 8
+
+    Label
+      id: balance
+      !text: tr('0')
+      anchors.top: suppliesLabel.bottom
+      anchors.right: prev.left
+      margin-top: 5
+      margin-right: 4
+      text-auto-resize: true
+      color: #44ad25
+      font: Verdana Bold-11px
+
+    HorizontalSeparator
+      id: separator
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 5
+
+    Panel
+      id: party
+      size: 147 31
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 5
+      layout:
+        type: verticalBox
+
+  UIWidget
+    id: miniborder
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    image-source: /images/ui/miniborder
+    size: 14 14
+    margin-left: 2
+    margin-bottom: 2
+
+  ResizeBorder
+    id: bottomResizeBorder
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    height: 3
+    minimum: 60
+    margin-left: 3
+    margin-right: 3

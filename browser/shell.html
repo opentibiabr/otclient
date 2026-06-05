@@ -74,6 +74,31 @@
     ></canvas>
     <script type="text/javascript">
       var canvas = document.getElementById("canvas");
+      function reportRuntimeError(prefix, error) {
+        const payload = [prefix, error]
+          .flat()
+          .filter(Boolean)
+          .map((entry) => {
+            if (!entry) return "";
+            if (typeof entry === "string") {
+              return entry;
+            }
+            if (entry.stack) {
+              return entry.stack;
+            }
+            try {
+              return JSON.stringify(entry);
+            } catch (_) {
+              return String(entry);
+            }
+          })
+          .join(": ");
+        console.error(payload);
+        const title = document.getElementById("title-text");
+        if (title) {
+          title.innerHTML = "Runtime error – check console";
+        }
+      }
       function startGame() {
         document.getElementById("start").style.display = "none";
         callMain();
@@ -142,14 +167,16 @@
             console.log(text);
           };
         })(),
-        printErr: function (text) {
-          text = Array.prototype.slice.call(arguments).join(" ");
-          console.error(text);
+        printErr: function () {
+          reportRuntimeError("stderr", Array.prototype.slice.call(arguments).join(" "));
         },
         canvas: (function () {
           var canvas = document.getElementById("canvas");
           return canvas;
         })(),
+        onAbort: function (reason) {
+          reportRuntimeError("abort", reason || "unknown reason");
+        },
         setStatus: function (text) {
           console.log("status: " + text);
           let display = "";
@@ -167,9 +194,12 @@
           document.getElementById("title-text").innerHTML = "Initializing...";
         },
       };
-      window.onerror = function () {
-        console.log("onerror: " + event.message);
+      window.onerror = function (message, source, lineno, colno, error) {
+        reportRuntimeError("window.onerror", error || message);
       };
+      window.addEventListener("unhandledrejection", function (event) {
+        reportRuntimeError("unhandledrejection", event.reason || "Promise rejected");
+      });
     </script>
     {{{ SCRIPT }}}
   </body>

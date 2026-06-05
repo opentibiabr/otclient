@@ -1,0 +1,7 @@
+Font
+  name: verdana-7px-rounded
+  texture: verdana-7px-rounded
+  height: 12
+  glyph-size: 12 12
+  space-width: 3
+  spacing: -2 -3

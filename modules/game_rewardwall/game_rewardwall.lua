@@ -396,6 +396,9 @@ function show()
     rewardWallController.ui:show()
     rewardWallController.ui:raise()
     rewardWallController.ui:focus()
+    if ButtonRewardWall then
+        ButtonRewardWall:setOn(true)
+    end
     connectOnServerError()
     premiumStatusWindwos(g_game.getLocalPlayer():isPremium())
 end
@@ -405,6 +408,9 @@ function hide(bool)
         return
     end
     rewardWallController.ui:hide()
+    if ButtonRewardWall then
+        ButtonRewardWall:setOn(false)
+    end
     if bool then
         disconnectOnServerError()
     end
@@ -415,15 +421,12 @@ function toggle()
         return
     end
     if rewardWallController.ui:isVisible() then
-        ButtonRewardWall:setOn(false)
         return hide(true)
     end
     show()
-    ButtonRewardWall:setOn(true)
 end
 
 local function fixCssIncompatibility() -- temp
-    rewardWallController.ui:centerIn('parent') -- mainWindows to the center of the screen
     rewardWallController.ui.historyPanel.historyList:fill('parent')
 
     -- note: I don't know how to edit children in css
@@ -490,9 +493,11 @@ end
 -- =============================================*/
 function rewardWallController:onClickshowHistory()
     visibleHistory(not rewardWallController.ui.historyPanel:isVisible())
-    g_game.requestOpenRewardHistory()
+    if rewardWallController.ui.historyPanel:isVisible() then
+        g_game.requestOpenRewardHistory()
+    end
     rewardWallController.ui.footerPanel.historyButton:setText(
-        rewardWallController.ui.historyPanel:isVisible() and "back" or "history")
+    rewardWallController.ui.historyPanel:isVisible() and "back" or "history")
 end
 
 function rewardWallController:onClickToggle()

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,7 @@
 #include <ixwebsocket/IXHttp.h>
 #include <ixwebsocket/IXWebSocket.h>
 
+#include <atomic>
 #include <mutex>
 #include <queue>
 
@@ -60,6 +61,9 @@ public:
     void terminate();
 
     int get(const std::string& url, int timeout = 5);
+    // The trailing checkContentLength parameter is preserved for Lua binding
+    // compatibility. ixwebsocket does not expose the old Content-Length hook,
+    // so new call-sites should omit it.
     int post(const std::string& url, const std::string& data, int timeout = 5, bool isJson = false, bool checkContentLength = true);
     int download(const std::string& url, const std::string& path, int timeout = 5);
     int ws(const std::string& url, int timeout = 5);
@@ -92,13 +96,18 @@ private:
     int computeProgress(const int current, const int total);
     void copyHeaders(const std::unordered_map<std::string, std::string>& source, ix::WebSocketHttpHeaders& target);
 
+    HttpResult_ptr registerOperation(const std::string& url, int& operationId);
+    std::shared_ptr<ix::HttpRequestArgs> buildRequest(const std::string& url, const std::string& verb, int timeout);
+    void unregisterOperation(int operationId);
+    bool shouldEmitProgress(ticks_t& lastEmit, int progress);
+
     bool m_working = false;
     bool m_enable_time_out_on_read_write = false;
-    int m_operationId = 1;
+    std::atomic<int> m_operationId{ 1 };
     std::unordered_map<int, HttpResult_ptr> m_operations;
     std::unordered_map<int, std::shared_ptr<ix::WebSocket>> m_websockets;
     std::unordered_map<std::string, HttpResult_ptr> m_downloads;
-    std::string m_userAgent = "Mozilla/5.0";
+    std::string m_userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
     std::unordered_map<std::string, std::string> m_custom_header;
     std::mutex m_mutex;
 };

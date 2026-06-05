@@ -203,12 +203,12 @@ ActivePreyPanel < Panel
       margin-top: 2
       anchors.verticalCenter: parent.verticalCenter
       anchors.left: parent.left
-      image-source: /images/ui/panel_flat
-      image-border: 1
+      anchors.right: parent.right
       size: 155 15
       font: verdana-11px-rounded
       text: Automatic Bonus Rer...
       margin-left: 5
+      text-offset: 20 1
 
   CardLabel
     id: autoRerollPrice
@@ -230,12 +230,12 @@ ActivePreyPanel < Panel
       margin-top: 2
       anchors.verticalCenter: parent.verticalCenter
       anchors.left: parent.left
-      image-source: /images/ui/panel_flat
-      image-border: 1
+      anchors.right: parent.right
       size: 155 15
       font: verdana-11px-rounded
       text: Lock Prey
       margin-left: 5
+      text-offset: 20 1
 
   CardLabel
     id: lockPreyPrice
@@ -350,6 +350,33 @@ InactivePreyPanel < Panel
     margin-right: 2
 
   FlatPanel
+    id: preview
+    anchors.left: parent.left
+    anchors.right: choose.left
+    anchors.bottom: parent.bottom
+    margin-right: 6
+    height: 92
+    padding: 4
+    image-source: /images/ui/panel_flat
+    image-border: 1
+    visible: false
+
+    Label
+      id: placeholder
+      anchors.centerIn: parent
+      font: verdana-11px-rounded
+      text-align: center
+      !text: tr('No creature selected')
+      color: #cfcfcf
+
+    UICreature
+      id: creature
+      anchors.centerIn: parent
+      size: 64 64
+      phantom: true
+      visible: false
+
+  FlatPanel
     id: list
     anchors.top: parent.top
     anchors.horizontalCenter: parent.horizontalCenter
@@ -362,6 +389,70 @@ InactivePreyPanel < Panel
       cell-size: 60 60
       cell-spacing: 3
       num-columns: 3
+
+  FlatPanel
+    id: fullList
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: parent.top
+    anchors.bottom: preview.top
+    margin-top: 20
+    margin-bottom: 8
+    padding: 6
+    visible: false
+    image-source: /images/ui/panel_flat
+    image-border: 1
+
+    TextEdit
+      id: searchEdit
+      anchors.top: parent.top
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 20
+      height: 20
+      padding-left: 4
+      padding-right: 18
+      placeholder: Type to search
+      placeholder-color: #6e706f
+      @onTextChange: modules.game_prey.onRaceSearchTextChanged(self)
+
+    UIWidget
+      id: searchClearButton
+      anchors.top: searchEdit.top
+      anchors.right: searchEdit.right
+      margin-top: 2
+      margin-right: 2
+      size: 16 16
+      image-source: /images/ui/button-clear-18x18-up
+      visible: false
+      @onClick: modules.game_prey.onRaceSearchClearClicked(self)
+
+      $pressed:
+        image-source: /images/ui/button-clear-18x18-down
+
+    UIScrollArea
+      id: entries
+      anchors.top: searchEdit.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
+      margin-top: 4
+      margin-bottom: 6
+      padding-left: 2
+      padding-right: 14
+      padding-bottom: 2
+      vertical-scrollbar: entriesScroll
+      layout:
+        type: verticalBox
+
+    VerticalScrollBar
+      id: entriesScroll
+      anchors.top: entries.top
+      anchors.bottom: entries.bottom
+      anchors.right: parent.right
+      margin-right: 2
+      step: 20
+      pixel-scroll: true
 
 ChoosePrey < FlatPanel
   size: 55 92
@@ -501,6 +592,30 @@ PreyCreatureBox < UICheckBox
   $!on:
     image-color: #ffffff88
     color: #aaaaaa88
+
+PreyCreatureListItem < UICheckBox
+  height: 22
+  margin-bottom: 2
+  padding: 3
+  focusable: false
+  text-align: left
+  font: verdana-11px-rounded
+  color: #c0c0c0
+  border-width: 1
+  border-color: alpha
+  background-color: alpha
+  text-offset: 4 0
+  size-policy-horizontal: expanding
+  @onClick: modules.game_prey.onPreyRaceListItemClicked(self)
+  @onHoverChange: modules.game_prey.onPreyRaceListItemHoverChange(self)
+
+  $checked on:
+    background-color: #1c4d75ff
+    border-color: #6fb1e9ff
+    color: #ffffff
+
+  $!checked:
+    border-color: alpha
 
 SlotPanel < Panel
   size: 210 320
@@ -670,8 +785,8 @@ PreyTracker < MiniWindow
   id: preyTracker
   !text: tr('Prey')
   height: 110
-  @onOpen: onMiniWindowOpen()
-  @onClose: onMiniWindowClose()
+  @onOpen: modules.game_prey.onMiniWindowOpen()
+  @onClose: modules.game_prey.onMiniWindowClose()
   &save: true
 
   UIWidget

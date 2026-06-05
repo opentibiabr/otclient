@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,9 +22,11 @@
 
 #pragma once
 
-#define CPPHTTPLIB_OPENSSL_SUPPORT
+#include <atomic>
+#include <cstdint>
+#include <string>
+
 #include <framework/luaengine/luaobject.h>
-#include <httplib.h>
 
 class LoginHttp final : public LuaObject
 {
@@ -47,23 +49,34 @@ public:
 
     void httpLogin(const std::string& host, const std::string& path,
                    uint16_t port, const std::string& email,
-                   const std::string& password, int request_id, bool httpLogin);
-
-    httplib::Result loginHttpsJson(const std::string& host,
-                                   const std::string& path, uint16_t port,
-                                   const std::string& email,
-                                   const std::string& password);
-
-    httplib::Result loginHttpJson(const std::string& host,
-                                  const std::string& path, uint16_t port,
-                                  const std::string& email,
-                                  const std::string& password);
+                    const std::string& password, int request_id, bool httpLogin, const std::string& token);
 
     void cancel();
 
     enum Result : int { Success = 200, Error = -1 };
 
 private:
+    struct HttpResponse {
+        bool connected{ false };
+        int status{ Error };
+        std::string reason;
+        std::string body;
+
+        explicit operator bool() const { return connected; }
+    };
+
+    HttpResponse loginHttpsJson(const std::string& host,
+                                const std::string& path, uint16_t port,
+                                const std::string& email,
+                                const std::string& password,
+                                const std::string& token);
+
+    HttpResponse loginHttpJson(const std::string& host,
+                               const std::string& path, uint16_t port,
+                               const std::string& email,
+                               const std::string& password,
+                               const std::string& token);
+
     std::string characters;
     std::string worlds;
     std::string session;

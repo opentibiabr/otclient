@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,6 @@
 #pragma once
 
 #include "declarations.h"
-#include "missile.h"
 #include <framework/ui/uiwidget.h>
 
 class UIMissile final : public UIWidget
@@ -36,11 +35,11 @@ public:
     void setMissileVisible(const bool visible) { m_missileVisible = visible; }
     void setMissile(const MissilePtr& missile);
     void setVirtual(const bool virt) { m_virtual = virt; }
-    void setDirection(const Otc::Direction dir) { if (m_missile) m_missile->setDirection(dir); }
+    void setDirection(const Otc::Direction dir);
     void clearMissile() { setMissileId(0); }
 
-    int getMissileId() { return m_missile ? m_missile->getId() : 0; }
-    auto getDirection() { return m_missile ? m_missile->getDirection() : Otc::Direction::InvalidDirection; }
+    int getMissileId();
+    Otc::Direction getDirection();
     auto getMissile() { return m_missile; }
     bool isVirtual() { return m_virtual; }
     bool isMissileVisible() { return m_missileVisible; }

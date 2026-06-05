@@ -1,0 +1,6 @@
+Font
+  name: verdana-11px-antialised-italic
+  texture: verdana-11px-antialised_cp1252-italic
+  height: 14
+  glyph-size: 16 16
+  space-width: 4

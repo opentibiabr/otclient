@@ -2,7 +2,7 @@
     register(id, name, thingId, thingType, config)
     config = {
         speed, disableWalkAnimation, shader, drawOnUI, opacity
-        duration, loop, transform, hideOwner, size{width, height}
+        duration, loop, transform, hideOwner, followOwner, size{width, height}
         offset{x, y, onTop}, dirOffset[dir]{x, y, onTop},
         light { color, intensity}, drawOrder(only for tiles),
         bounce{minHeight, height, speed},
@@ -23,10 +23,12 @@ AttachedEffectManager.register(1, 'Spoke Lighting', 12, ThingCategoryEffect, {
     end
 })
 
+-- Use the paperdoll system instead of attachedEffect for this kind of attachment, it’s more consistent.
 AttachedEffectManager.register(2, 'Bat Wings', 307, ThingCategoryCreature, {
     speed = 5,
     disableWalkAnimation = true,
     shader = 'Outfit - Rainbow',
+    followOwner = true,
     dirOffset = {
         [North] = { 0, -10, true },
         [East] = { 5, -5 },
@@ -34,8 +36,7 @@ AttachedEffectManager.register(2, 'Bat Wings', 307, ThingCategoryCreature, {
         [West] = { -10, -5, true }
     },
     onAttach = function(effect, owner)
-        owner:setBounce(0, 10, 1000)
-        effect:setBounce(0, 10, 1000)
+        owner:setBounce(0, 10, 5000)
     end,
     onDetach = function(effect, oldOwner)
         oldOwner:setBounce(0, 0)

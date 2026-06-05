@@ -16,11 +16,20 @@ MainWindow
     text-wrap: true
     multiline: true
     anchors.top: prev.bottom
-    anchors.bottom: next.top
+    anchors.bottom: buttonOk.top
     anchors.left: parent.left
     anchors.right: parent.right
     margin: 8 0
-    max-length: 255
+    vertical-scrollbar: textScroll
+
+  VerticalScrollBar
+    id: textScroll
+    anchors.top: prev.top
+    anchors.bottom: prev.bottom
+    anchors.right: prev.right
+    pixels-scroll: true
+    step: 10
+
 
   Button
     id: buttonOk

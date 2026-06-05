@@ -32,3 +32,224 @@ StaticWindow < Window
 
 StaticMainWindow < StaticWindow
   anchors.centerIn: parent
+
+UpdaterMainWindow < StaticWindow
+  size: 138 90
+  image-source: /images/ui/3pixel-frame-borderimage
+  padding-top: 3
+  padding-left: 3
+  padding-right: 3
+  padding-bottom: 3
+
+NewWindow < UIWindow
+  font: Verdana Bold-11px
+  size: 200 200
+  color: #909090
+  text-offset: -2 1
+  image-source: /images/ui/popupwindow
+  image-border: 4
+  image-border-top: 17
+  padding-top: 17
+  padding-left: 4
+  padding-right: 4
+  padding-bottom: 4
+  display-sound: 2785
+
+NewHeadlessWindow < UIWindow
+  image-source: /images/ui/3pixel-frame-borderimage
+  image-border: 5
+  anchors.centerIn: parent
+
+NewMainWindow < NewWindow
+  anchors.centerIn: parent
+
+NewStaticWindow < NewWindow
+  &static: true
+
+NewStaticMainWindow < NewStaticWindow
+  anchors.centerIn: parent
+
+WindowCyclopedia < UIWindow
+  font: Verdana Bold-11px
+  size: 200 200
+  color: #909090
+  text-offset: -2 1
+  image-source: /images/ui/popupwindow
+  image-border: 4
+  image-border-top: 17
+  padding-top: 17
+  padding-left: 4
+  padding-right: 4
+  padding-bottom: 4
+
+WindowPodium < UIWindow
+  font: Verdana Bold-11px
+  size: 200 200
+  color: #909090
+  text-offset: -2 1
+  image-source: /images/ui/popupwindow
+  image-border: 4
+  image-border-top: 17
+
+ActionAssignWindow < MainWindow
+  id: assignWindow
+  size: 400 215
+  font: Verdana Bold-11px
+  color: #909090
+
+  Label
+    id: chatMode
+    anchors.top: parent.top
+    anchors.left: parent.left
+    margin-left: 130
+    margin-top: -7
+    text-auto-resize: true
+    text: Mode: "Chat On"
+    font: Verdana Bold-11px
+    color: #c0c0c0
+
+  FlatLabel
+    id: display
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    height: 33
+    margin-top: 10
+    text-align: center
+    font: Verdana Bold-11px
+    color: #c0c0c0
+
+  Label
+    id: desc
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 10
+    margin-left: -1
+    text-auto-resize: true 
+    text-wrap: true
+    text: Click "Ok" to assign the hotkey. Click "Clear" to remove the hotkey from "
+    font: Verdana Bold-11px
+    color: #c0c0c0
+
+  Label
+    id: warning
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 8
+    margin-left: 5
+    text-auto-resize: true
+    text: This hotkey is already in use and will be overwritten.
+    color: #f75f5f
+    font: Verdana Bold-11px
+    visible: false
+
+  HorizontalSeparator
+    anchors.top: prev.bottom
+    margin-top: 10
+    anchors.left: parent.left
+    anchors.right: parent.right
+
+  Button
+    id: buttonClose
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    size: 45 21
+    font: cipsoftFont
+    text: Close
+    @onClick: self:getParent():destroy()
+
+  Button
+    id: buttonClear
+    anchors.right: prev.left
+    margin-right: 5
+    anchors.bottom: parent.bottom
+    size: 45 21
+    font: cipsoftFont
+    text: Clear
+
+  Button
+    id: buttonOk
+    anchors.right: prev.left
+    margin-right: 5
+    anchors.bottom: parent.bottom
+    size: 45 21
+    font: cipsoftFont
+    text: Ok
+
+WindowPanel < Panel
+  image-source: /images/ui/window
+  padding-top: 3
+  padding-left: 7
+  padding-bottom: 7
+  padding-right: 7  
+  image-border: 4
+  image-border-top: 17
+
+TransparentWindow < UIWindow
+  font: verdana-11px-antialised
+  size: 200 200
+  color: #8f8f8f
+  text-offset: 0 2
+  text-align: top
+
+RulesWindow < NewHeadlessWindow
+  anchors.centerIn: parent
+  size: 450 345
+  UIWidget
+    size: 145 56
+    anchors.top: parent.top
+    anchors.horizontalCenter: parent.horizontalCenter
+    margin-top: -33
+    image-source: /images/game/tutorial/backdrop_crest
+    phantom: true
+  Panel
+    id: contentPanel
+    anchors.fill: parent
+    margin: 15 13 17 13
+    TextList
+      id: rules
+      anchors.top: parent.top
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: separator.top
+      margin-top: 10
+      margin-bottom: 10
+      text-align: center
+      padding: 1
+      focusable: false
+      background-color: #484848
+    
+    HorizontalSeparator
+      id: separator
+      anchors.bottom: next.top
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-bottom: 10
+    Button
+      id: next
+      anchors.bottom: parent.bottom
+      anchors.right: parent.right
+      !text: tr('Next')
+      size: 43 20
+      enabled: false
+    Button
+      id: close
+      anchors.bottom: parent.bottom
+      anchors.right: prev.left
+      margin-right: 5
+      !text: tr('Close')
+      size: 43 20
+    CheckBox
+      id: termCondition
+      width: 100
+      anchors.bottom: parent.bottom
+      anchors.left: parent.left
+      text-offset: 16 -2
+      !text: tr('I agree with the Terms and Conditions.')
+      !tooltip: tr('I have read and I agree to the Extended Terms and Conditions.')
+      margin-bottom: 5
+      font: Verdana Bold-11px
+      color: #c0c0c0
+      text-auto-resize: true

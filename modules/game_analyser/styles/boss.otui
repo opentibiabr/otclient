@@ -1,0 +1,152 @@
+BossInfo < UIWidget
+  id: bossInfoPanel
+  size: 147 31
+  margin: 3 0 0 4
+
+  UICreature
+    id: creature
+    size: 32 32
+    anchors.top: parent.top
+    anchors.left: parent.left
+    image-auto-resize: true
+    phantom: true
+    animate: true
+
+  Label
+    id: bossName
+    anchors.left: prev.right
+    anchors.top: prev.top
+    text-auto-resize: true
+    margin-top: 1
+    margin-left: 5
+    !text: tr('Test Boss Name')
+    font: Verdana Bold-11px
+    color: #f4f4f4
+    text-auto-resize: true
+    phantom: true
+
+  Label
+    id: bossNCooldown
+    anchors.top: prev.bottom
+    anchors.left: creature.right
+    text-auto-resize: true
+    margin-top: 1
+    margin-left: 5
+    !text: tr('No Cooldown')
+    font: Verdana Bold-11px
+    color: #c0c0c0
+    text-auto-resize: true
+    phantom: true
+
+ClickableBossPanel < UIButton
+  id: clickablePanel
+  anchors.top: parent.top
+  anchors.left: parent.left
+  margin-left: 4
+  margin-top: 2
+  opacity: 0.6
+  size: 147 20
+  phantom: false
+
+MiniWindow
+  id: bossCdAnalyserMiniWindow
+  &type: 'bossCooldowns'
+  !text: tr('Boss Cooldowns')
+  height: 225
+  &save: true
+  &autoOpen: true
+  @onExtra: modules.game_analyser.onBossExtra(g_window.getMousePosition())
+  focusable: true
+
+  UIWidget
+    id: miniwindowIcon
+    anchors.top: miniwindowHeader.top
+    anchors.left: miniwindowHeader.left
+    margin-top: 2
+    margin-left: 4
+    size: 12 12
+    image-source: /images/icons/icon-bosstracker-widget
+    image-smooth: false
+
+  Label
+    id: miniwindowTitle
+    anchors.top: miniwindowHeader.top
+    anchors.left: miniwindowHeader.left
+    anchors.right: miniwindowHeader.right
+    margin-top: 2
+    margin-left: 20
+    margin-right: 50
+    font: verdana-11px-monochrome
+    height: 13
+    color: #9d9d9dff
+    !text: tr('Boss Cooldowns')
+
+  ScrollablePanel
+    id: contentsPanel
+    anchors.fill: parent
+    margin: 16 18 5 5
+    step: 20
+    vertical-scrollbar: miniwindowScrollBar
+
+    TextEdit
+      id: searchText
+      size: 147 20
+      focusable: true
+      anchors.top: parent.top
+      anchors.left: parent.left
+      padding-top: 2
+      margin-left: 4
+      margin-top: 2
+      box-text-padding: 27
+      @onTextChange: modules.game_analyser.checkBossSearch(self:getText())
+      @onFocusChange: modules.game_analyser.onBossSearchFocusChange(self, focused)
+      !placeholder: tr('Type to search')
+
+      Button
+        id: clearSearchButton
+        anchors.top: parent.top
+        anchors.right: parent.right
+        margin-top: -1
+        margin-right: 1
+        size: 18 18
+        image-source: /images/store/button-erase-small-up
+        image-clip: 0 0 18 18
+        $hover !pressed:
+          image-source: /images/store/button-erase-small-up
+          image-clip: 0 0 18 18
+        $pressed:
+          image-source: /images/store/button-erase-small-down
+          image-clip: 0 0 18 18
+        @onClick: modules.game_analyser.clearSearch()
+
+    ClickableBossPanel
+      @onClick: modules.game_analyser.toggleBossCDFocus(true)
+
+    Panel
+      id: bosses
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 5
+      @onFocusChange: modules.game_analyser.updateBossFocus()
+      layout:
+        type: verticalBox
+
+  UIWidget
+    id: miniborder
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    image-source: /images/ui/miniborder
+    size: 14 14
+    margin-left: 2
+    margin-bottom: 2
+
+  ResizeBorder
+    id: bottomResizeBorder
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    height: 3
+    minimum: 64
+    margin-left: 3
+    margin-right: 3

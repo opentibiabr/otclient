@@ -1,0 +1,376 @@
+MiniWindow
+  id: huntingAnalyserMiniWindow
+  &type: 'huntingSessionAnalyser'
+  !text: tr('Hunting Analyser')
+  height: 225
+  @onExtra: modules.game_analyser.onHuntingExtra(g_window.getMousePosition())
+  &save: true
+  &autoOpen: false
+
+  UIWidget
+    id: miniwindowIcon
+    anchors.top: miniwindowHeader.top
+    anchors.left: miniwindowHeader.left
+    margin-top: 2
+    margin-left: 4
+    size: 12 12
+    image-source: /images/icons/icon-huntingsessionanalyser-widget
+    image-smooth: false
+
+  Label
+    id: miniwindowTitle
+    anchors.top: miniwindowHeader.top
+    anchors.left: miniwindowHeader.left
+    anchors.right: miniwindowHeader.right
+    margin-top: 2
+    margin-left: 20
+    margin-right: 50
+    font: verdana-11px-monochrome
+    height: 13
+    color: #9d9d9dff
+    !text: tr('Hunting Analyser')
+
+  ScrollablePanel
+    id: contentsPanel
+    anchors.fill: parent
+    margin: 16 18 5 5
+    vertical-scrollbar: miniwindowScrollBar
+    Label
+      id: sessionLabel
+      !text: tr('Session:')
+      anchors.top: parent.top
+      anchors.left: parent.left
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Label
+      id: session
+      !text: tr('00:00h')
+      anchors.top: parent.top
+      anchors.right: parent.right
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Label
+      id: rawXpLabel
+      !text: tr('Raw XP Gain:')
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 5
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+      visible: false
+
+    Label
+      id: rawXpGain
+      !text: tr('0')
+      anchors.top: prev.top
+      anchors.right: parent.right
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+      visible: false
+
+    Label
+      id: xpLabel
+      !text: tr('XP Gain:')
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 5
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Label
+      id: xpGain
+      !text: tr('0')
+      anchors.top: rawXpGain.bottom
+      anchors.right: parent.right
+      margin-top: 5
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Label
+      id: rawXpHourLabel
+      !text: tr('Raw XP/h:')
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 5
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+      visible: false
+
+    Label
+      id: rawXpHour
+      !text: tr('0')
+      anchors.top: prev.top
+      anchors.right: parent.right
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+      visible: false
+
+    Label
+      id: xpHourLabel
+      !text: tr('XP /h:')
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 5
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Label
+      id: xpHour
+      !text: tr('0')
+      margin-top: 5
+      anchors.top: prev.top
+      anchors.right: parent.right
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Label
+      id: lootLabel
+      !text: tr('Loot:')
+      anchors.top: xpHourLabel.bottom
+      anchors.left: parent.left
+      margin-top: 5
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    UIWidget
+      size: 9 9
+      image-auto-resize: true
+      image-source: /game_cyclopedia/images/icon_gold
+      anchors.top: xpHourLabel.bottom
+      anchors.right: parent.right
+      margin-top: 8
+
+    Label
+      id: loot
+      !text: tr('0')
+      anchors.top: xpHourLabel.bottom
+      anchors.right: prev.left
+      margin-top: 5
+      margin-right: 4
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Label
+      id: suppliesLabel
+      !text: tr('Supplies:')
+      anchors.top: lootLabel.bottom
+      anchors.left: parent.left
+      margin-top: 5
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    UIWidget
+      size: 9 9
+      image-auto-resize: true
+      image-source: /game_cyclopedia/images/icon_gold
+      anchors.top: lootLabel.bottom
+      anchors.right: parent.right
+      margin-top: 8
+
+    Label
+      id: supplies
+      !text: tr('0')
+      anchors.top: lootLabel.bottom
+      anchors.right: prev.left
+      margin-top: 5
+      margin-right: 4
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Label
+      id: balanceLabel
+      !text: tr('Balance:')
+      anchors.top: suppliesLabel.bottom
+      anchors.left: parent.left
+      margin-top: 5
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    UIWidget
+      size: 9 9
+      image-auto-resize: true
+      image-source: /game_cyclopedia/images/icon_gold
+      anchors.top: suppliesLabel.bottom
+      anchors.right: parent.right
+      margin-top: 8
+
+    Label
+      id: balance
+      !text: tr('0')
+      anchors.top: suppliesLabel.bottom
+      anchors.right: prev.left
+      margin-top: 5
+      margin-right: 4
+      text-auto-resize: true
+      color: #44ad25
+      font: Verdana Bold-11px
+
+    Label
+      id: damageLabel
+      !text: tr('Damage:')
+      anchors.top: balanceLabel.bottom
+      anchors.left: parent.left
+      margin-top: 5
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Label
+      id: damage
+      !text: tr('0')
+      anchors.top: balanceLabel.bottom
+      anchors.right: parent.right
+      margin-top: 5
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Label
+      id: damageHourLabel
+      !text: tr('Damage/h:')
+      anchors.top: damageLabel.bottom
+      anchors.left: parent.left
+      margin-top: 5
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Label
+      id: damageHour
+      !text: tr('0')
+      anchors.top: damageLabel.bottom
+      anchors.right: parent.right
+      margin-top: 5
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Label
+      id: healLabel
+      !text: tr('Healing:')
+      anchors.top: damageHourLabel.bottom
+      anchors.left: parent.left
+      margin-top: 5
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Label
+      id: healing
+      !text: tr('0')
+      anchors.top: damageHourLabel.bottom
+      anchors.right: parent.right
+      margin-top: 5
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Label
+      id: healHourLabel
+      !text: tr('Healing/h:')
+      anchors.top: healLabel.bottom
+      anchors.left: parent.left
+      margin-top: 5
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Label
+      id: healHour
+      !text: tr('0')
+      anchors.top: healLabel.bottom
+      anchors.right: parent.right
+      margin-top: 5
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Label
+      id: killedMonstersLabel
+      !text: tr('Killed Monsters:')
+      anchors.top: healHourLabel.bottom
+      anchors.left: parent.left
+      margin-top: 5
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Panel
+      size: 145 15
+      id: killedMonsters
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 5
+      margin-left: 7
+
+      Label
+        id: monster
+        !text: tr('None')
+        anchors.top: parent.top
+        anchors.left: parent.left
+        text-auto-resize: true
+        color: #c0c0c0
+        font: Verdana Bold-11px
+
+    Label
+      id: lootedItemsLabel
+      !text: tr('Looted Items:')
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 5
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Panel
+      size: 145 15
+      id: lootedItems
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 5
+      margin-left: 7
+
+      Label
+        id: loot
+        !text: tr('None')
+        anchors.top: parent.top
+        anchors.left: parent.left
+        text-auto-resize: true
+        color: #c0c0c0
+        font: Verdana Bold-11px
+
+  UIWidget
+    id: miniborder
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    image-source: /images/ui/miniborder
+    size: 14 14
+    margin-left: 2
+    margin-bottom: 2
+
+  ResizeBorder
+    id: bottomResizeBorder
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    height: 3
+    minimum: 60
+    margin-left: 3
+    margin-right: 3

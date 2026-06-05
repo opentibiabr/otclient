@@ -1,0 +1,40 @@
+<style>
+  /* === WINDOW === */
+  .hotkeys-window { width: 370px; height: 184px; position: relative; background-color: red; }
+  /* === LABELS === */
+  .hotkeys-mode-label { white-space: pre-line; width: 376px; --text-auto-resize: false; height: 30px; color: #c0c0c0; --text-align: center; }
+  .hotkeys-desc-label { white-space: pre-line; width: 376px; --text-auto-resize: false; height: 30px; margin-top: 5px; display: block; }
+  .hotkeys-warning-label { color: #f75f5f; --text-auto-resize: false; --text-align: center; width: 376px; height: 30px; }
+  /* === DISPLAY === */
+  .hotkeys-display { --text-auto-resize: false;width: 376px; height: 33px; --border-width-top: 1; --border-color-top: black; --border-width-left: 1; --border-color-left: black; --border-width-bottom: 1; --border-color-bottom: #747474; --border-width-right: 1; --border-color-right: #747474; --text-align: center; }
+  /* === FOOTER === */
+  .hotkeys-footer { display: block; margin-top: 5px; height: 22px; }
+  .hotkeys-footer button { height:100%; width: 25px; display: block; float: right; margin-right: 5px; font: cipsoftFont; --text-auto-resize: false; }
+</style>
+
+<html>
+<Window id="assignTextWindow" class="hotkeys-window" onescape="self:unloadHtml()"
+  title='Edit Hotkey for "Bottom Action Bar: Action Button {{id}}"'>
+
+  <label id="chatMode" class="hotkeys-mode-label"></label>
+
+  <div id="display" class="hotkeys-display" >
+  </div>
+
+  <label id="desc" class="hotkeys-desc-label"
+    text='Click "Ok" to assign the hotkey. Click "Clear" to remove the hotkey from "Chat On" mode.'></label>
+
+  <label id="warning" class="hotkeys-warning-label">
+  </label>
+
+  <hr style="height: 2px;" />
+
+  <div class="hotkeys-footer" >
+    <button id="buttonClose" text="Cancel" onclick="self:unloadHtml()"></button>
+    <button id="buttonClear" text="Clear"></button>
+    <button id="buttonOk" text="Ok"></button>
+  </div>
+
+</Window>
+
+</html>

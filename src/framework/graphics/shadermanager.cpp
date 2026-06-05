@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,13 +22,24 @@
 
 #include "shadermanager.h"
 
-#include <framework/core/eventdispatcher.h>
-#include <framework/core/resourcemanager.h>
-#include <framework/graphics/graphics.h>
-#include <framework/graphics/paintershaderprogram.h>
-#include <framework/graphics/shader/shadersources.h>
+#include "paintershaderprogram.h"
+#include "framework/core/eventdispatcher.h"
+#include "framework/core/resourcemanager.h"
+#include "shader/shadersources.h"
 
 ShaderManager g_shaders;
+
+namespace
+{
+[[nodiscard]] std::string joinManagerShaderSources(const std::string_view first, const std::string_view second)
+{
+    std::string source;
+    source.reserve(first.size() + second.size());
+    source.append(first.data(), first.size());
+    source.append(second.data(), second.size());
+    return source;
+}
+}
 
 void ShaderManager::init() { PainterShaderProgram::release(); }
 void ShaderManager::terminate() { clear(); }
@@ -66,14 +77,14 @@ void ShaderManager::createFragmentShader(const std::string_view name, const std:
 
         const auto& path = g_resources.guessFilePath(filePath, "frag");
 
-        shader->addShaderFromSourceCode(ShaderType::VERTEX, std::string{ glslMainWithTexCoordsVertexShader } + glslPositionOnlyVertexShader.data());
+        shader->addShaderFromSourceCode(ShaderType::VERTEX, joinManagerShaderSources(glslMainWithTexCoordsVertexShader, glslPositionOnlyVertexShader));
         if (!shader->addShaderFromSourceFile(ShaderType::FRAGMENT, path)) {
-            g_logger.error("unable to load fragment shader '{}' from source file '{}'", name, path);
+            g_logger.error("Unable to load fragment shader '{}' from source file '{}'", name, path);
             return;
         }
 
         if (!shader->link()) {
-            g_logger.error("unable to link shader '{}' from file '{}'", name, path);
+            g_logger.error("Unable to link shader '{}' from file '{}'", name, path);
             return;
         }
 
@@ -89,14 +100,14 @@ void ShaderManager::createFragmentShaderFromCode(const std::string_view name, co
         if (!shader)
             return;
 
-        shader->addShaderFromSourceCode(ShaderType::VERTEX, std::string{ glslMainWithTexCoordsVertexShader } + glslPositionOnlyVertexShader.data());
+        shader->addShaderFromSourceCode(ShaderType::VERTEX, joinManagerShaderSources(glslMainWithTexCoordsVertexShader, glslPositionOnlyVertexShader));
         if (!shader->addShaderFromSourceCode(ShaderType::FRAGMENT, code)) {
-            g_logger.error("unable to load fragment shader '{}'", name);
+            g_logger.error("Unable to load fragment shader '{}'", name);
             return;
         }
 
         if (!shader->link()) {
-            g_logger.error("unable to link shader '{}'", name);
+            g_logger.error("Unable to link shader '{}'", name);
             return;
         }
 
@@ -140,6 +151,16 @@ void ShaderManager::setupMapShader(const std::string_view name)
         shader->bindUniformLocation(MAP_GLOBAL_COORD, "u_MapGlobalCoord");
         shader->bindUniformLocation(MAP_WALKOFFSET, "u_WalkOffset");
         shader->bindUniformLocation(MAP_ZOOM, "u_MapZoom");
+    });
+}
+
+void ShaderManager::setupTextShader(const std::string_view name)
+{
+    g_mainDispatcher.addEvent([&, name = name.data()] {
+        const auto& shader = getShader(name);
+        if (!shader) return;
+        shader->bindUniformLocation(TEXT_OFFSET_UNIFORM, "u_Offset");
+        shader->bindUniformLocation(TEXT_CENTER_UNIFORM, "u_Center");
     });
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,9 +26,13 @@
 
 #include "declarations.h"
 #include <framework/otml/declarations.h>
-#include <framework/platform/platform.h>
 
-#include <set>
+#include "framework/platform/staticdata.h"
+
+#include <algorithm>
+#include <cmath>
+#include <limits>
+#include <type_traits>
 
 template<typename T>
 int push_internal_luavalue(T v);
@@ -44,6 +48,32 @@ bool luavalue_cast(int index, int& i);
 // double
 int push_luavalue(double d);
 bool luavalue_cast(int index, double& d);
+
+namespace detail {
+    constexpr double maxExactIntegerAsDouble = 9007199254740992.0; // 2^53
+
+    template<typename T>
+    inline bool luavalue_cast_integer_from_double(const int index, T& v)
+    {
+        static_assert(std::is_integral_v<T>);
+
+        double d;
+        if (!luavalue_cast(index, d))
+            return false;
+        if (!std::isfinite(d) || std::trunc(d) != d)
+            return false;
+
+        const double typeMin = static_cast<double>(std::numeric_limits<T>::lowest());
+        const double typeMax = static_cast<double>(std::numeric_limits<T>::max());
+        const double exactMin = std::numeric_limits<T>::is_signed ? -maxExactIntegerAsDouble : 0.0;
+        const double exactMax = maxExactIntegerAsDouble;
+        if (d < std::max(typeMin, exactMin) || d > std::min(typeMax, exactMax))
+            return false;
+
+        v = static_cast<T>(d);
+        return true;
+    }
+}
 
 // float
 inline int push_luavalue(const float f) { push_luavalue(static_cast<double>(f)); return 1; }
@@ -92,26 +122,56 @@ inline bool luavalue_cast(const int index, uint32_t& v)
 inline int push_luavalue(const int64_t v) { push_luavalue(static_cast<double>(v)); return 1; }
 inline bool luavalue_cast(const int index, int64_t& v)
 {
-    double d;
-    const bool r = luavalue_cast(index, d); v = d; return r;
+    return detail::luavalue_cast_integer_from_double(index, v);
 }
-
-#ifdef __APPLE__
-// ulong
-inline int push_luavalue(ulong v) { push_luavalue(static_cast<double>(v)); return 1; }
-inline bool luavalue_cast(int index, ulong& v)
-{
-    double d;
-    const bool r = luavalue_cast(index, d); v = d; return r;
-}
-#endif
 
 // uint64
 inline int push_luavalue(const uint64_t v) { push_luavalue(static_cast<double>(v)); return 1; }
 inline bool luavalue_cast(const int index, uint64_t& v)
 {
-    double d;
-    const bool r = luavalue_cast(index, d); v = d; return r;
+    return detail::luavalue_cast_integer_from_double(index, v);
+}
+
+using lua_u64 = std::conditional_t<sizeof(unsigned long) == 8, unsigned long, std::uint64_t>;
+using lua_unsigned_long = lua_u64;
+
+static_assert(sizeof(lua_u64) == 8, "lua_u64 must be 64-bit");
+
+template<typename T = unsigned long> requires (!std::is_same_v<T, unsigned long long>)
+inline int push_luavalue(const unsigned long v)
+{
+    if constexpr (sizeof(unsigned long) <= sizeof(uint32_t)) {
+        push_luavalue(static_cast<uint32_t>(v));
+    } else {
+        push_luavalue(static_cast<double>(v));
+    }
+    return 1;
+}
+
+template<typename T = unsigned long> requires (!std::is_same_v<T, unsigned long long>)
+inline bool luavalue_cast(const int index, unsigned long& v)
+{
+    if constexpr (sizeof(unsigned long) <= sizeof(uint32_t)) {
+        uint32_t temp;
+        const bool r = luavalue_cast(index, temp);
+        v = static_cast<unsigned long>(temp);
+        return r;
+    }
+
+    return detail::luavalue_cast_integer_from_double(index, v);
+}
+
+template<typename T = lua_u64> requires (!std::is_same_v<T, unsigned long>)
+inline int push_luavalue(lua_u64 v)
+{
+    push_luavalue(static_cast<double>(v));
+    return 1;
+}
+
+template<typename T = lua_u64> requires (!std::is_same_v<T, unsigned long> && !std::is_same_v<T, unsigned long long>)
+inline bool luavalue_cast(const int idx, lua_u64& v)
+{
+    return detail::luavalue_cast_integer_from_double(idx, v);
 }
 
 // string
@@ -139,8 +199,8 @@ int push_luavalue(const Size& size);
 bool luavalue_cast(int index, Size& size);
 
 // device
-int push_luavalue(const Platform::Device& device);
-bool luavalue_cast(int index, Platform::Device& device);
+int push_luavalue(const Device& device);
+bool luavalue_cast(int index, Device& device);
 
 // otml nodes
 int push_luavalue(const OTMLNodePtr& node);
@@ -307,7 +367,7 @@ bool luavalue_cast(const int index, std::function<void(Args...)>& func)
                                        "did you forget to hold a reference for that function?", 0);
                 }
             } catch (const LuaException& e) {
-                g_logger.error("lua function callback failed: {}", e.what());
+                g_logger.error("Lua function callback failed: {}", e.what());
             }
         };
         return true;
@@ -341,7 +401,7 @@ luavalue_cast(const int index, std::function<Ret(Args...)>& func)
                 throw LuaException("attempt to call an expired lua function from C++,"
                                    "did you forget to hold a reference for that function?", 0);
             } catch (const LuaException& e) {
-                g_logger.error("lua function callback failed: {}", e.what());
+                g_logger.error("Lua function callback failed: {}", e.what());
             }
             return Ret();
         };

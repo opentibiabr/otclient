@@ -7,7 +7,7 @@ TextWindow < MainWindow
     virtual: true
     anchors.top: parent.top
     anchors.left: parent.left
-    background-color: transparent
+    background-color: #00000000
 
   Label
     id: description

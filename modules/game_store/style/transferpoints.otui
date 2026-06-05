@@ -99,9 +99,9 @@ StoreWindow
     anchors.left: parent.left
     anchors.right: parent.right
     margin-top: 10
-    step: 80
-    &scrollSize: 80
-    focusable: false
+    height: 16
+    step: 25
+    pixels-scroll: true
     margin-left: 10
     margin-right: 10
 

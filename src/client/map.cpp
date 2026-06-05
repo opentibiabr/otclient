@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,26 +21,46 @@
  */
 
 #include "map.h"
+
+#include "animatedtext.h"
+#include "creatures.h"
 #include "game.h"
+#include "gameconfig.h"
 #include "item.h"
 #include "localplayer.h"
 #include "mapview.h"
 #include "minimap.h"
 #include "missile.h"
-#include "statictext.h"
+#include "thing.h"
 #include "tile.h"
 
-#include <algorithm>
 #include <framework/core/asyncdispatcher.h>
 #include <framework/core/eventdispatcher.h>
-#include <framework/core/graphicalapplication.h>
+#include "framework/graphics/drawpoolmanager.h"
+#include "framework/graphics/painter.h"
 #include <framework/ui/uiwidget.h>
-#include <queue>
+
+namespace
+{
+    void cleanNewSpectators(std::vector<CreaturePtr>& creatures, std::unordered_set<uint32_t>& seenIds, const std::size_t startIndex)
+    {
+        auto it = creatures.begin() + startIndex;
+        while (it != creatures.end()) {
+            if (const auto& creature = *it; !creature || !seenIds.insert(creature->getId()).second) {
+                it = creatures.erase(it);
+                continue;
+            }
+            ++it;
+        }
+    }
+}
 
 #ifdef FRAMEWORK_EDITOR
 #include "houses.h"
 #include "towns.h"
 #endif
+#include <framework/platform/platformwindow.h>
+#include <framework/core/graphicalapplication.h>
 
 const static TilePtr m_nulltile;
 
@@ -612,7 +632,7 @@ void Map::setCentralPosition(const Position& centralPosition)
                 localPlayer->onDisappear();
             localPlayer->setPosition(pos);
             localPlayer->onAppear();
-            g_logger.debug("forced player position update");
+            g_logger.debug("Forced player position update");
         }
     });
 
@@ -630,6 +650,10 @@ void Map::setLight(const Light& light)
 std::vector<CreaturePtr> Map::getSpectatorsInRangeEx(const Position& centerPos, const bool multiFloor, const int32_t minXRange, const int32_t maxXRange, const int32_t minYRange, const int32_t maxYRange)
 {
     std::vector<CreaturePtr> creatures;
+    creatures.reserve(m_knownCreatures.size());
+    std::unordered_set<uint32_t> seenIds;
+    seenIds.reserve(m_knownCreatures.size());
+
     uint8_t minZRange = 0;
     uint8_t maxZRange = 0;
 
@@ -638,19 +662,31 @@ std::vector<CreaturePtr> Map::getSpectatorsInRangeEx(const Position& centerPos, 
         maxZRange = getLastAwareFloor() - centerPos.z;
     }
 
-    //TODO: optimize
-    //TODO: delivery creatures in distance order
-    for (int iz = -minZRange; iz <= maxZRange; ++iz) {
-        for (int iy = -minYRange; iy <= maxYRange; ++iy) {
-            for (int ix = -minXRange; ix <= maxXRange; ++ix) {
-                if (const auto& tile = getTile(centerPos.translated(ix, iy, iz))) {
-                    const auto& tileCreatures = tile->getCreatures();
-                    creatures.insert(creatures.end(), tileCreatures.rbegin(), tileCreatures.rend());
+    const int startZ = centerPos.z - minZRange;
+    const int endZ = centerPos.z + maxZRange;
+    const int startY = centerPos.y - minYRange;
+    const int endY = centerPos.y + maxYRange;
+    const int startX = centerPos.x - minXRange;
+    const int endX = centerPos.x + maxXRange;
+
+    const auto appendSpectatorsFromLayer = [&](const int z) {
+        for (int y = startY; y <= endY; ++y) {
+            for (int x = startX; x <= endX; ++x) {
+                const auto tile = getTile(Position(x, y, z));
+                if (!tile || !tile->hasCreatures()) {
+                    continue;
                 }
+
+                const auto sizeBeforeAppend = creatures.size();
+                tile->appendSpectators(creatures);
+                cleanNewSpectators(creatures, seenIds, sizeBeforeAppend);
             }
         }
-    }
+    };
 
+    for (int z = startZ; z <= endZ; ++z) {
+        appendSpectatorsFromLayer(z);
+    }
     return creatures;
 }
 
@@ -1122,7 +1158,7 @@ void Map::findPathAsync(const Position& start, const Position& goal, const std::
         }
     }
 
-    g_asyncDispatcher.detach_task([=] {
+    g_asyncDispatcher->detach_task([=] {
         const auto ret = g_map.newFindPath(start, goal, visibleNodes);
         g_dispatcher.addEvent(std::bind(callback, ret));
     });
@@ -1255,6 +1291,11 @@ void Map::updateAttachedWidgets(const MapViewPtr& mapView)
         p.x -= widget->getMarginRight();
         p.y += widget->getMarginTop();
         p.y -= widget->getMarginBottom();
+
+        const bool isScaled = g_app.getHUDScale() != DEFAULT_DISPLAY_DENSITY;
+        if (isScaled) {
+            p.scale(g_app.getHUDScale());
+        }
 
         const auto& widgetRect = widget->getRect();
         const auto& newWidgetRect = Rect(p, widgetRect.width(), widgetRect.height());
@@ -1467,16 +1508,39 @@ std::vector<CreaturePtr> Map::getSpectatorsByPattern(const Position& centerPos, 
     }
 
     p = 0;
+    std::unordered_set<uint32_t> seenIds;
+    seenIds.reserve(m_knownCreatures.size());
     for (int y = centerPos.y - height / 2, endy = centerPos.y + height / 2; y <= endy; ++y) {
         for (int x = centerPos.x - width / 2, endx = centerPos.x + width / 2; x <= endx; ++x) {
-            if (!finalPattern[p++])
+            const auto enabled = finalPattern[p];
+            ++p;
+            if (!enabled) {
                 continue;
-            TilePtr tile = getTile(Position(x, y, centerPos.z));
-            if (!tile)
+            }
+
+            const auto tile = getTile(Position(x, y, centerPos.z));
+            if (!tile || !tile->hasCreatures()) {
                 continue;
-            auto tileCreatures = tile->getCreatures();
-            creatures.insert(creatures.end(), tileCreatures.rbegin(), tileCreatures.rend());
+            }
+
+            const auto sizeBeforeAppend = creatures.size();
+            tile->appendSpectators(creatures);
+            cleanNewSpectators(creatures, seenIds, sizeBeforeAppend);
         }
     }
     return creatures;
+}
+
+const TilePtr& TileBlock::create(const Position& pos)
+{
+    auto& tile = m_tiles[getTileIndex(pos)];
+    tile = std::make_shared<Tile>(pos);
+    return tile;
+}
+const TilePtr& TileBlock::getOrCreate(const Position& pos)
+{
+    auto& tile = m_tiles[getTileIndex(pos)];
+    if (!tile)
+        tile = std::make_shared<Tile>(pos);
+    return tile;
 }

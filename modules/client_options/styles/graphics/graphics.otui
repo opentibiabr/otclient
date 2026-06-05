@@ -53,7 +53,7 @@ UIWidget
       !text: tr('Game framerate limit: %s', 'max')
       anchors.top: prev.bottom
       margin-top: 5
-      &minimumScrollValue: 10
+      &minimumScrollValue: 1
       &maximumScrollValue: 501
       &scrollSize: 21
       @onSetup: |

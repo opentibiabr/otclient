@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,8 +22,14 @@
 
 #pragma once
 
+#ifndef USE_PRECOMPILED_HEADERS
 #include <cmath>
+#include <cstddef>
+#include <istream>
 #include <ostream>
+
+#include <fmt/format.h>
+#endif
 
 template<class T>
 class TSize;
@@ -97,5 +103,22 @@ public:
     }
 };
 
-using Point = TPoint<int>;
-using PointF = TPoint<float>;
+template <class T>
+struct fmt::formatter<TPoint<T>, char> {
+    constexpr auto parse(format_parse_context& ctx) const
+        -> decltype(ctx.begin()) { return ctx.begin(); }
+
+    template <typename FormatContext>
+    auto format(const TPoint<T>& p, FormatContext& ctx) const
+        -> decltype(ctx.out()) {
+        return fmt::format_to(ctx.out(), "{} {}", p.x, p.y);
+    }
+};
+
+namespace Fw {
+    using Point = TPoint<int>;
+    using PointF = TPoint<float>;
+}
+
+using Fw::Point;
+using Fw::PointF;

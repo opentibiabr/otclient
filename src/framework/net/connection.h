@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,10 +22,8 @@
 
 #pragma once
 #ifndef __EMSCRIPTEN__
-
-#include <asio/streambuf.hpp>
-
 #include "declarations.h"
+
 #include <framework/luaengine/luaobject.h>
 
 class Connection final : public LuaObject

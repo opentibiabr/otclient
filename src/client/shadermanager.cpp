@@ -55,12 +55,12 @@ void ShaderManager::createFragmentShader(const std::string_view name, const std:
 
         shader->addShaderFromSourceCode(ShaderType::VERTEX, std::string{ glslMainWithTexCoordsVertexShader } + glslPositionOnlyVertexShader.data());
         if (!shader->addShaderFromSourceFile(ShaderType::FRAGMENT, path)) {
-            g_logger.error("unable to load fragment shader '{}' from source file '{}'", name, path);
+            g_logger.error("Unable to load fragment shader '{}' from source file '{}'", name, path);
             return;
         }
 
         if (!shader->link()) {
-            g_logger.error("unable to link shader '{}' from file '{}'", name, path);
+            g_logger.error("Unable to link shader '{}' from file '{}'", name, path);
             return;
         }
 
@@ -78,12 +78,12 @@ void ShaderManager::createFragmentShaderFromCode(const std::string_view name, co
 
         shader->addShaderFromSourceCode(ShaderType::VERTEX, std::string{ glslMainWithTexCoordsVertexShader } + glslPositionOnlyVertexShader.data());
         if (!shader->addShaderFromSourceCode(ShaderType::FRAGMENT, code)) {
-            g_logger.error("unable to load fragment shader '{}'", name);
+            g_logger.error("Unable to load fragment shader '{}'", name);
             return;
         }
 
         if (!shader->link()) {
-            g_logger.error("unable to link shader '{}'", name);
+            g_logger.error("Unable to link shader '{}'", name);
             return;
         }
 
@@ -127,6 +127,16 @@ void ShaderManager::setupMapShader(const std::string_view name)
         shader->bindUniformLocation(MAP_GLOBAL_COORD, "u_MapGlobalCoord");
         shader->bindUniformLocation(MAP_WALKOFFSET, "u_WalkOffset");
         shader->bindUniformLocation(MAP_ZOOM, "u_MapZoom");
+    });
+}
+
+void ShaderManager::setupTextShader(const std::string_view name)
+{
+    g_mainDispatcher.addEvent([&, name = name.data()] {
+        const auto& shader = getShader(name);
+        if (!shader) return;
+        shader->bindUniformLocation(TEXT_OFFSET_UNIFORM, "u_Offset");
+        shader->bindUniformLocation(TEXT_CENTER_UNIFORM, "u_Center");
     });
 }
 

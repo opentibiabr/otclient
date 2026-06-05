@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,7 +21,12 @@
  */
 
 #include "uimissile.h"
+
+#include "gameconfig.h"
+#include "missile.h"
 #include "lightview.h"
+#include "framework/graphics/drawpoolmanager.h"
+#include "framework/otml/otmlnode.h"
 
 UIMissile::UIMissile() { setProp(PropDraggable, true, false); }
 
@@ -66,6 +71,10 @@ void UIMissile::setMissileId(const int id)
             m_missile->setShader(m_shaderName);
     }
 }
+
+int UIMissile::getMissileId() { return m_missile ? m_missile->getId() : 0; }
+Otc::Direction UIMissile::getDirection() { return m_missile ? m_missile->getDirection() : Otc::Direction::InvalidDirection; }
+void UIMissile::setDirection(const Otc::Direction dir) { if (m_missile) m_missile->setDirection(dir); }
 
 void UIMissile::setMissile(const MissilePtr& e)
 {

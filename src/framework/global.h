@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,8 +26,10 @@
 
 #include "stdext/compiler.h"
 
- // common C/C++ headers
+// common C/C++ headers
 #include "pch.h"
+
+using namespace std::literals;
 
 // global constants
 #include "const.h"

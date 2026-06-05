@@ -1,0 +1,27 @@
+<style>
+    .modal-message { width: 1px; height:1px; text-align: justify; color: #cccccc; 
+        --text-auto-resize: true; --text-wrap: true; margin-left: -1; 
+        margin-top: -7; overflow: auto; white-space: pre-wrap;  }
+    .choice-list { background-color: #404040;margin-top: 5px; margin-bottom: 5px; overflow: scroll;
+        --padding: 1 1 1 1; --border-width-top: 1; --border-color-top: black; 
+        --border-width-left: 1; --border-color-left: black; --border-width-bottom: 1; 
+        --border-color-bottom: #747474; --border-width-right: 1; 
+        --border-color-right: #747474 }
+    .choice-item { padding: 2px; cursor: pointer;  width: 215px;  }
+    .choice-item:nth-child(even) { background-color:#484848 ; color: #c0c0c0; }
+    .choice-item:nth-child(odd) { background-color: #414141;color: #c0c0c0;  }
+    .choice-item:hover { background-color: #ff000055; }
+    .choice-item:focus { background-color: #585858; color: #ffffff;  }
+    .buttons-panel { margin-top: 8px;  height: 20px; }
+    .modal-button { margin-right: 5px; margin-top: 3px; margin-bottom: 1px; float:right; --font: cipsoftFont  }
+</style>
+
+<html>
+<window id="modalDialog" placement="center" class="modal-window">
+    <div id="messageLabel" class="modal-message" layout="type: verticalBox; fit-children: true"></div>
+    <div id="choiceList" class="choice-list"></div>
+    <hr style="height: 2px;margin-bottom: 25px;" placement="bottom-left" />
+    <div class="buttons-panel" id="buttonsPanel" placement="bottom-right"></div>
+</window>
+</html>
+

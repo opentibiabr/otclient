@@ -12,16 +12,20 @@ function UIMessageBox.create(title, okCallback, cancelCallback)
 end
 
 function UIMessageBox.display(title, message, buttons, onEnterCallback, onEscapeCallback)
+    local rootWidth = rootWidget and rootWidget:getWidth() or 956
+    local rootHeight = rootWidget and rootWidget:getHeight() or 656
     local staticSizes = {
         width = {
-            max = 916,
-            min = 116
+            max = math.min(916, math.max(260, rootWidth - 40)),
+            min = 246
         },
         height = {
             min = 56,
-            max = 616
+            max = math.min(616, math.max(120, rootHeight - 40))
         }
     }
+    local horizontalPadding = 32
+    local maxContentWidth = staticSizes.width.max - horizontalPadding
     local currentSizes = {
         width = 0,
         height = 0
@@ -32,10 +36,11 @@ function UIMessageBox.display(title, message, buttons, onEnterCallback, onEscape
     messageBox.title:setText(title)
 
     messageBox.content = messageBox:getChildById('content')
+    messageBox.content:setTextWrap(true)
+    messageBox.content:setWidth(maxContentWidth)
     messageBox.content:setText(message)
     messageBox.content:resizeToText()
-    messageBox.content:resize(messageBox.content:getWidth(), messageBox.content:getHeight())
-    currentSizes.width = currentSizes.width + messageBox.content:getWidth() + 32
+    currentSizes.width = currentSizes.width + math.min(maxContentWidth, math.max(messageBox.content:getWidth(), messageBox.content:getTextSize().width)) + horizontalPadding
     currentSizes.height = currentSizes.height + messageBox.content:getHeight() + 20
 
     messageBox.holder = messageBox:getChildById('holder')
@@ -53,7 +58,15 @@ function UIMessageBox.display(title, message, buttons, onEnterCallback, onEscape
         end
     end
 
-    messageBox:setWidth(math.min(staticSizes.width.max, math.max(staticSizes.width.min, currentSizes.width)))
+    local finalWidth = math.min(staticSizes.width.max, math.max(staticSizes.width.min, currentSizes.width))
+    messageBox:setWidth(finalWidth)
+    messageBox.content:setWidth(finalWidth - horizontalPadding)
+    messageBox.content:resizeToText()
+
+    currentSizes.height = messageBox.content:getHeight() + 20 + 22
+    if #buttons > 0 then
+        currentSizes.height = currentSizes.height + 42
+    end
     messageBox:setHeight(math.min(staticSizes.height.max, math.max(staticSizes.height.min, currentSizes.height)))
 
     if onEnterCallback then
@@ -70,15 +83,19 @@ function UIMessageBox.display(title, message, buttons, onEnterCallback, onEscape
     return messageBox
 end
 
+function alert(msg)
+    displayInfoBox("Alert", msg)
+end
+
 function displayInfoBox(title, message)
     local messageBox
     local defaultCallback = function()
         messageBox:ok()
     end
-    messageBox = UIMessageBox.display(title, message, {{
+    messageBox = UIMessageBox.display(title, message, { {
         text = 'Ok',
         callback = defaultCallback
-    }}, defaultCallback, defaultCallback)
+    } }, defaultCallback, defaultCallback)
     return messageBox
 end
 
@@ -87,10 +104,10 @@ function displayErrorBox(title, message)
     local defaultCallback = function()
         messageBox:ok()
     end
-    messageBox = UIMessageBox.display(title, message, {{
+    messageBox = UIMessageBox.display(title, message, { {
         text = 'Ok',
         callback = defaultCallback
-    }}, defaultCallback, defaultCallback)
+    } }, defaultCallback, defaultCallback)
     return messageBox
 end
 
@@ -99,10 +116,10 @@ function displayCancelBox(title, message)
     local defaultCallback = function()
         messageBox:cancel()
     end
-    messageBox = UIMessageBox.display(title, message, {{
+    messageBox = UIMessageBox.display(title, message, { {
         text = 'Cancel',
         callback = defaultCallback
-    }}, defaultCallback, defaultCallback)
+    } }, defaultCallback, defaultCallback)
     return messageBox
 end
 
@@ -110,8 +127,8 @@ function displayGeneralBox(title, message, buttons, onEnterCallback, onEscapeCal
     return UIMessageBox.display(title, message, buttons, onEnterCallback, onEscapeCallback)
 end
 
-function displayGeneralSHOPBox(title, message,description, buttons, onEnterCallback, onEscapeCallback)
-    return UIMessageBox.displaySHOP(title, message,description, buttons, onEnterCallback, onEscapeCallback)
+function displayGeneralSHOPBox(title, message, description, buttons, onEnterCallback, onEscapeCallback)
+    return UIMessageBox.displaySHOP(title, message, description, buttons, onEnterCallback, onEscapeCallback)
 end
 
 function UIMessageBox:addButton(text, callback)
@@ -169,8 +186,10 @@ function UIMessageBox.displaySHOP(title, message, description, buttons, onEnterC
     messageBox.additionalLabel:setTextWrap(true)
     messageBox.additionalLabel:setTextAlign(AlignCenter)
 
-    local contentWidth = messageBox.content:getTextSize().width + messageBox.content:getPaddingLeft() + messageBox.content:getPaddingRight()
-    local contentHeight = messageBox.content:getHeight() + messageBox.content:getPaddingTop() + messageBox.content:getPaddingBottom()
+    local contentWidth = messageBox.content:getTextSize().width + messageBox.content:getPaddingLeft() +
+    messageBox.content:getPaddingRight()
+    local contentHeight = messageBox.content:getHeight() + messageBox.content:getPaddingTop() +
+    messageBox.content:getPaddingBottom()
 
     currentSizes.width = contentWidth + 32
     currentSizes.height = contentHeight + 20

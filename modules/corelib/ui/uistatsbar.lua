@@ -36,7 +36,7 @@ function UIStatsBar:reloadBorder()
 
     -- Borders
     for _, child in ipairs(self.grade:getChildren()) do
-        if string.len(child:getId()) >= 13  and string.sub(child:getId(), 1, 13) == 'grade_border_' then
+        if string.len(child:getId()) >= 13 and string.sub(child:getId(), 1, 13) == 'grade_border_' then
             child:show()
             child:setBackgroundColor(self.statsGradeColor)
         end
@@ -107,7 +107,7 @@ function UIStatsBar:onStyleApply(styleName, styleNode)
 end
 
 function UIStatsBar:setValue(value, total)
-    if not(value) or not(total) or total == 0 or not(self.statsType) or not(self.statsSize) or not (self.statsOrientation) then
+    if not (value) or not (total) or total == 0 or not (self.statsType) or not (self.statsSize) or not (self.statsOrientation) then
         return
     end
 
@@ -128,20 +128,28 @@ function UIStatsBar:setValue(value, total)
     local percent = (value * 100) / total
     if self.statsType == 'health' then
         if percent >= 100 then
-            self.bar:setImageSource('/images/bars/' .. self.statsOrientation .. '_health_progressbar_' .. self.statsSize .. '_100')
+            self.bar:setImageSource('/images/bars/' ..
+                self.statsOrientation .. '_health_progressbar_' .. self.statsSize .. '_100')
         elseif percent >= 95 then
-            self.bar:setImageSource('/images/bars/' .. self.statsOrientation .. '_health_progressbar_' .. self.statsSize .. '_95')
+            self.bar:setImageSource('/images/bars/' ..
+                self.statsOrientation .. '_health_progressbar_' .. self.statsSize .. '_95')
         elseif percent >= 60 then
-            self.bar:setImageSource('/images/bars/' .. self.statsOrientation .. '_health_progressbar_' .. self.statsSize .. '_60')
+            self.bar:setImageSource('/images/bars/' ..
+                self.statsOrientation .. '_health_progressbar_' .. self.statsSize .. '_60')
         elseif percent >= 30 then
-            self.bar:setImageSource('/images/bars/' .. self.statsOrientation .. '_health_progressbar_' .. self.statsSize .. '_30')
+            self.bar:setImageSource('/images/bars/' ..
+                self.statsOrientation .. '_health_progressbar_' .. self.statsSize .. '_30')
         elseif percent >= 10 then
-            self.bar:setImageSource('/images/bars/' .. self.statsOrientation .. '_health_progressbar_' .. self.statsSize .. '_10')
+            self.bar:setImageSource('/images/bars/' ..
+                self.statsOrientation .. '_health_progressbar_' .. self.statsSize .. '_10')
         else
-            self.bar:setImageSource('/images/bars/' .. self.statsOrientation .. '_health_progressbar_' .. self.statsSize .. '_4')
+            self.bar:setImageSource('/images/bars/' ..
+                self.statsOrientation .. '_health_progressbar_' .. self.statsSize .. '_4')
         end
     elseif self.statsType == 'mana' then
         self.bar:setImageSource('/images/bars/' .. self.statsOrientation .. '_mana_progressbar_' .. self.statsSize)
+    elseif self.statsType == 'manashield' then
+        self.bar:setImageSource('/images/bars/' .. self.statsOrientation .. '_manashield_progressbar_' .. self.statsSize)
     elseif self.statsType == 'experience' then
         self.bar:setImageSource('/images/bars/' .. self.statsOrientation .. '_experience_progressbar_' .. self.statsSize)
     elseif self.statsType == 'skill' then
@@ -151,7 +159,11 @@ function UIStatsBar:setValue(value, total)
     -- Text
     if self.showText then
         self.text:show()
-        self.text:setText(value .. '/' .. total)
+        if self.manaShieldText then
+            self.text:setText(self.manaShieldText)
+        else
+            self.text:setText(value .. '/' .. total)
+        end
     else
         self.text:hide()
     end

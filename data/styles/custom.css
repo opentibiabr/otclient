@@ -1,0 +1,91 @@
+window,
+minipanel {
+  position: relative;
+}
+
+window,
+FloatingInputWindow {
+  padding-top: 36;
+  padding-left: 16;
+  padding-right: 16;
+  padding-bottom: 16;
+}
+
+QtPanel {
+  padding: 10;
+}
+
+SmallReversedQtPanel {
+  padding: 4;
+}
+
+Item,
+Creature {
+  padding: 1;
+  width: 32;
+  height: 32;
+}
+
+CheckBoxButton {
+  padding: 5 10 5 10;
+}
+
+ComboBoxPopupMenuButton,
+ComboBoxPopupMenuButton,
+QtComboBoxPopupScrollMenuButton {
+  margin: 1;
+}
+
+CreatureButton {
+  margin-bottom: 5;
+}
+
+TextEdit {
+  padding: 4;
+  padding-bottom: 1;
+}
+
+MoveableTabBarPanel,
+MoveableTabBarButton,
+TabBarPanel,
+TabBarButton {
+  padding: 5;
+}
+
+TabBarQtVerticalPanel,
+TabBarQtVerticalButton {
+  margin-left: 7;
+  margin-right: 7;
+}
+
+InputBoxButtonsPanel {
+  margin-top: 4;
+}
+
+InputBoxLabel,
+InputBoxLineEdit,
+InputBoxTextEdit,
+InputBoxSpinBox,
+InputBoxCheckBox,
+InputBoxComboBox,
+InputBoxComboBoxPopupMenu,
+InputBoxComboBoxPopupMenuButton,
+InputBoxButton {
+  margin-left: 10;
+}
+
+TextQtEdit {
+  padding: 4;
+}
+
+.QtBorder {
+  --border-width-top: 1;
+  --border-color-top: black;
+  --border-width-left: 1;
+  --border-color-left: black;
+  --border-width-bottom: 1;
+  --border-color-bottom: #747474;
+  --border-width-right: 1;
+  --border-color-right: #747474;
+  --padding: 1 1 1 1;
+}

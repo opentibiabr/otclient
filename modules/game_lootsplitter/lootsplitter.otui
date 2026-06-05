@@ -1,0 +1,128 @@
+NewHeadlessWindow
+  id: lootSplitter
+  anchors.horizontalCenter: parent.horizontalCenter
+  size: 540 350
+  @onEscape: hide()
+  UIWidget
+    size: 145 56
+    anchors.top: parent.top
+    anchors.horizontalCenter: parent.horizontalCenter
+    margin-top: -33
+    image-source: /images/game/tutorial/backdrop_crest
+    phantom: true
+  Panel
+    id: contentPanel
+    anchors.fill: parent
+    margin: 15 13 17 13
+    Label
+      id: nameLabel0
+      anchors.top: parent.top
+      anchors.left: parent.left
+      margin-top: 5
+      margin-left: 95
+      !text: tr('Hunt Session Log')
+      text-wrap: true
+      font: Verdana Bold-11px
+      color: #C0C0C0
+      text-auto-resize: true
+      visible: false
+    TextEdit
+      id: huntLogContent
+      size: 350 250
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 5
+      vertical-scrollbar: huntLogScroll
+      text-wrap: true
+      padding-top: 5
+      padding-left: 5
+      visible: false
+    VerticalScrollBar
+      id: huntLogScroll
+      anchors.top: prev.top
+      anchors.bottom: prev.bottom
+      anchors.right: prev.right
+      margin: 1 1 1 0
+      visible: false
+
+    VerticalSeparator
+      id: verticalSeparator
+      anchors.top: huntLogContent.top
+      anchors.bottom: huntLogContent.bottom
+      anchors.left: parent.left
+      margin-left: 25
+    UIButton
+      id: generateButton
+      size: 10 24
+      anchors.top: prev.top
+      anchors.left: prev.left
+      margin-top: 60
+      margin-left: -4
+      image-source: /images/ui/percent-buttons
+      image-clip: 10 0 10 24
+      $pressed:
+        image-clip: 10 24 10 24
+      @onClick: onGenerateButtonClick()
+
+
+    Label
+      id: nameLabel1
+      anchors.top: parent.top
+      anchors.left: parent.left
+      margin-top: 5
+      !text: tr('Hunt Session Result')
+      text-wrap: true
+      font: Verdana Bold-11px
+      color: #C0C0C0
+      text-auto-resize: true
+    MultilineTextEdit
+      id: resultLogContent
+      size: 350 250
+      font: Verdana Bold-11px-wheel
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 5
+      vertical-scrollbar: resultLogScroll
+      text-wrap: true
+      selectable: true
+      editable: false
+      text-align: center
+      cursor-visible: false
+  
+    VerticalScrollBar
+      id: resultLogScroll
+      anchors.top: prev.top
+      anchors.bottom: prev.bottom
+      anchors.right: prev.right
+      margin: 1 1 1 0
+
+    HorizontalSeparator
+      id: separator
+      anchors.bottom: next.top
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-bottom: 10
+    Button
+      id: cancel
+      anchors.bottom: parent.bottom
+      anchors.right: parent.right
+      !text: tr('Close')
+      size: 43 20
+      @onClick: hide()
+    Button
+      id: copy
+      size: 43 20
+      anchors.bottom: parent.bottom
+      anchors.right: prev.left
+      margin-right: 5
+      !text: tr('Copy')
+      @onClick: copyResultText()
+    Button
+      id: advancedOptions
+      size: 83 20
+      image-source: /images/ui/buttons-blue
+      anchors.bottom: parent.bottom
+      anchors.left: parent.left
+      !text: tr('Advanced Options')
+      @onClick: showAdvancedOptions()

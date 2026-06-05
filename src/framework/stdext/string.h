@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,10 +22,14 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
-
 #include "cast.h"
+
+#ifndef USE_PRECOMPILED_HEADERS
+#include <cstdint>
+#include <string>
+#include <string_view>
+#include <vector>
+#endif
 
 namespace stdext
 {
@@ -44,9 +48,11 @@ namespace stdext
     void ltrim(std::string& s);
     void rtrim(std::string& s);
     void trim(std::string& s);
+    void trimSpacesAndNewlines(std::string& s);
     void ucwords(std::string& str);
     void eraseWhiteSpace(std::string& str);
     void replace_all(std::string& str, std::string_view search, std::string_view replacement);
+    std::string join(const std::vector<std::string>& vec, const std::string& sep = ",");
 
     [[nodiscard]] bool is_valid_utf8(std::string_view src);
     [[nodiscard]] std::string utf8_to_latin1(std::string_view src);
@@ -58,6 +64,9 @@ namespace stdext
     std::string utf16_to_latin1(std::wstring_view src);
     std::wstring latin1_to_utf16(std::string_view src);
 #endif
+
+    long long to_number(std::string_view s);
+    std::vector<long long> extractNumbers(std::string_view s);
 
     // always returns at least one element in vector
     [[nodiscard]] std::vector<std::string> split(std::string_view str, std::string_view separators = " ");

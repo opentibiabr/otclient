@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,73 +21,18 @@
  */
 
 #pragma once
-
-#include "lightview.h"
-#include <framework/core/inputevent.h>
+#include "declarations.h"
 #include <framework/graphics/declarations.h>
 #include <framework/luaengine/luaobject.h>
 
-struct AwareRange
-{
-    uint8_t left{ 0 };
-    uint8_t top{ 0 };
-    uint8_t right{ 0 };
-    uint8_t bottom{ 0 };
+#include "framework/core/timer.h"
+#include "staticdata.h"
+#include "framework/core/inputevent.h"
 
-    uint8_t horizontal() const { return left + right + 1; }
-    uint8_t vertical() const { return top + bottom + 1; }
-
-    Size dimension() const { return { left * 2 + 1 , top * 2 + 1 }; }
-
-    bool operator==(const AwareRange& other) const
-    { return left == other.left && top == other.top && right == other.right && bottom == other.bottom; }
-};
-
-struct MapPosInfo
-{
-    Rect rect;
-    Rect srcRect;
-    Point drawOffset;
-    float horizontalStretchFactor;
-    float verticalStretchFactor;
-    float scaleFactor;
-
-    bool isInRange(const Position& pos, const bool ignoreZ = false) const
-    {
-        return camera.isInRange(pos, awareRange.left - 1, awareRange.right - 2, awareRange.top - 1, awareRange.bottom - 2, ignoreZ);
-    }
-
-    bool isInRangeEx(const Position& pos, const bool ignoreZ = false)  const
-    {
-        return camera.isInRange(pos, awareRange.left, awareRange.right, awareRange.top, awareRange.bottom, ignoreZ);
-    }
-
-private:
-    Position camera;
-    AwareRange awareRange;
-
-    friend class MapView;
-};
-
-// @bindclass
+ // @bindclass
 class MapView final : public LuaObject
 {
 public:
-    enum FloorViewMode
-    {
-        NORMAL,
-        FADE,
-        LOCKED,
-        ALWAYS,
-        ALWAYS_WITH_TRANSPARENCY
-    };
-
-    enum AntialiasingMode :uint8_t
-    {
-        ANTIALIASING_DISABLED,
-        ANTIALIASING_ENABLED,
-        ANTIALIASING_SMOOTH_RETRO
-    };
 
     MapView();
     ~MapView() override;
@@ -109,8 +54,8 @@ public:
     void setVisibleDimension(const Size& visibleDimension);
 
     // view mode related
-    FloorViewMode getFloorViewMode() const { return m_floorViewMode; }
-    void setFloorViewMode(FloorViewMode viewMode);
+    Otc::FloorViewMode getFloorViewMode() const { return m_floorViewMode; }
+    void setFloorViewMode(Otc::FloorViewMode viewMode);
 
     // camera related
     CreaturePtr getFollowingCreature() { return m_followingCreature; }
@@ -133,13 +78,16 @@ public:
     bool isDrawingHealthBars() const { return m_drawHealthBars; }
 
     void setDrawLights(bool enable);
-    bool isDrawingLights() const { return m_drawingLight && m_lightView->isDark(); }
+    bool isDrawingLights() const;
 
     void setLimitVisibleDimension(const bool v) { m_limitVisibleDimension = v; }
     bool isLimitedVisibleDimension() const { return m_limitVisibleDimension; }
 
     void setDrawManaBar(const bool enable) { m_drawManaBar = enable; }
     bool isDrawingManaBar() const { return m_drawManaBar; }
+
+    void setDrawHarmony(const bool enable) { m_drawHarmony = enable; }
+    bool isDrawingHarmony() const { return m_drawHarmony; }
 
     void move(int32_t x, int32_t y);
 
@@ -170,7 +118,7 @@ public:
     TilePtr getTopTile(Position tilePos) const;
 
     void setCrosshairTexture(const std::string& texturePath);
-    void setAntiAliasingMode(AntialiasingMode mode);
+    void setAntiAliasingMode(Otc::AntialiasingMode mode);
 
     void onMouseMove(const Position& mousePos, bool isVirtualMove = false);
     void onKeyRelease(const InputEvent& inputEvent);
@@ -187,6 +135,9 @@ public:
 
     void addForegroundTile(const TilePtr& tile);
     void removeForegroundTile(const TilePtr& tile);
+
+    void setCursorAnimations(const bool enable) { m_cursorAnimations = enable; }
+    bool hasCursorAnimations() const { return m_cursorAnimations; }
 
 protected:
     void onGlobalLightChange(const Light& light);
@@ -247,7 +198,7 @@ private:
     void drawFloor();
     void drawLights();
 
-    bool canFloorFade() const { return m_floorViewMode == FADE && m_floorFading; }
+    bool canFloorFade() const { return m_floorViewMode == Otc::FADE && m_floorFading; }
 
     float getFadeLevel(const uint8_t z) const
     {
@@ -314,6 +265,7 @@ private:
     bool m_smooth{ true };
     bool m_follow{ true };
     bool m_drawingLight{ true };
+    bool m_drawHarmony{ true };
 
     bool m_fadeFinish{ false };
     bool m_autoViewMode{ false };
@@ -323,10 +275,11 @@ private:
     bool m_shiftPressed{ false };
     bool m_multithreading{ false };
     bool m_drawCoveredThings{ false };
+    bool m_cursorAnimations{ true };
 
     FadeType m_fadeType{ FadeType::NONE };
 
-    AntialiasingMode m_antiAliasingMode{ ANTIALIASING_DISABLED };
+    Otc::AntialiasingMode m_antiAliasingMode{ Otc::ANTIALIASING_DISABLED };
 
     std::vector<FloorData> m_floors;
     std::vector<std::vector<FloorData>> m_floorThreads;
@@ -339,7 +292,7 @@ private:
     CreaturePtr m_followingCreature;
 
     MapPosInfo m_posInfo;
-    FloorViewMode m_floorViewMode{ NORMAL };
+    Otc::FloorViewMode m_floorViewMode{ Otc::NORMAL };
 
     Timer m_fadeTimer;
 

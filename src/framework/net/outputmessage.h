@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -47,6 +47,7 @@ public:
     void addU32(uint32_t value);
     void addU64(uint64_t value);
     void addString(std::string_view buffer);
+    void addBytes(std::string_view buffer);
     void addPaddingBytes(int bytes, uint8_t byte = 0);
     void prependU8(uint8_t value);
     void prependU16(uint16_t value);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,14 +23,8 @@
 
 #include "connection.h"
 
-#include <framework/core/application.h>
+#include "framework/util/stats.h"
 #include "framework/core/graphicalapplication.h"
-
-#include <asio/read.hpp>
-#include <asio/read_until.hpp>
-#include <utility>
-
-#include <asio/io_service.hpp>
 
 asio::io_service g_ioService;
 std::list<std::shared_ptr<asio::streambuf>> Connection::m_outputStreams;
@@ -54,7 +48,8 @@ Connection::~Connection()
 
 void Connection::poll()
 {
-    // reset must always be called prior to poll
+	// reset must always be called prior to poll
+	AutoStat s(STATS_MAIN, "PollConnection");
     g_ioService.reset();
     g_ioService.poll();
 }

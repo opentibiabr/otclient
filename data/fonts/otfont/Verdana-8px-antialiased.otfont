@@ -1,0 +1,6 @@
+Font
+  name: Verdana-8px-antialiased
+  texture: Verdana-8px-antialiased
+  height: 11
+  glyph-size: 12 11
+  space-width: 4

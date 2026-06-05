@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,6 @@
 
 #pragma once
 
-#include "declarations.h"
 #include <framework/ui/uiwidget.h>
 
 struct Graph
@@ -82,12 +81,14 @@ protected:
     void cacheGraphs();
     void updateGraph(Graph& graph, bool& updated);
     void updateInfoBoxes();
+    std::string formatNumber(int value);
 
 private:
     // cache
     std::string m_minValue;
     std::string m_maxValue;
     std::string m_lastValue;
+    std::string m_avgValue;
     std::string m_title;
 
     bool m_showLabes{ true };

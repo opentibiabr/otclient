@@ -4,7 +4,7 @@ UISpinBox = extends(UITextEdit, 'UISpinBox')
 function UISpinBox.create()
     local spinbox = UISpinBox.internalCreate()
     spinbox:setFocusable(false)
-    spinbox:setValidCharacters('0123456789')
+    spinbox:setValidCharacters('0123456789,')
     spinbox.displayButtons = true
     spinbox.minimum = 0
     spinbox.maximum = 1
@@ -47,26 +47,84 @@ function UISpinBox:onKeyPress()
 end
 
 function UISpinBox:onTextChange(text, oldText)
-    if text:len() == 0 then
-        self:setValue(self.minimum)
-        return
-    end
+    if self.formattedMode then
+        local cursorPos = self:getCursorPos()
+        local cleanText = text:gsub(",", "")
 
-    local number = tonumber(text)
-    if not number then
-        self:setText(number)
-        return
-    else
-        if number < self.minimum then
-            self:setText(self.minimum)
-            return
-        elseif number > self.maximum then
-            self:setText(self.maximum)
+        if cleanText:len() == 0 then
+            self:setValue(self.minimum)
             return
         end
-    end
 
-    self:setValue(number)
+        local number = tonumber(cleanText)
+        if not number then
+            self:setText(oldText or "")
+            self:setCursorPos(cursorPos)
+            return
+        else
+            if number < self.minimum then
+                local formattedText = comma_value(self.minimum)
+                self:setText(formattedText)
+                self.value = self.minimum
+                self:setCursorPos(formattedText:len())
+                return
+            elseif number > self.maximum then
+                local formattedText = comma_value(self.maximum)
+                self:setText(formattedText)
+                self.value = self.maximum
+                self:setCursorPos(formattedText:len())
+                return
+            end
+        end
+
+        local formattedText = comma_value(number)
+        self:setText(formattedText)
+        self.value = number
+        self.originalValue = number
+
+        local commasBefore = 0
+        local cleanPos = 0
+        for i = 1, cursorPos do
+            if string.sub(text, i, i) ~= "," then
+                cleanPos = cleanPos + 1
+            end
+        end
+
+        local formattedPos = 0
+        local cleanCount = 0
+        for i = 1, formattedText:len() do
+            if string.sub(formattedText, i, i) ~= "," then
+                cleanCount = cleanCount + 1
+                if cleanCount <= cleanPos then
+                    formattedPos = i
+                end
+            end
+        end
+
+        self:setCursorPos(formattedPos)
+        signalcall(self.onValueChange, self, number)
+    else
+        if text:len() == 0 then
+            self:setValue(self.minimum)
+            return
+        end
+
+        local number = tonumber(text)
+        if not number then
+            self:setText(number)
+            return
+        else
+            if number < self.minimum then
+                self:setText(self.minimum)
+                return
+            elseif number > self.maximum then
+                self:setText(self.maximum)
+                return
+            end
+        end
+
+        self:setValue(number)
+    end
 end
 
 function UISpinBox:onValueChange(value)
@@ -205,4 +263,28 @@ end
 
 function UISpinBox:downSpin()
     self:setValue(self.value - self.step)
+end
+
+function UISpinBox:setFormattedValue(value)  
+    self.originalValue = value  
+    self:setText(comma_value(value))  
+    self.value = value  
+end  
+  
+function UISpinBox:getFormattedValue()  
+    if self.originalValue then  
+        return self.originalValue  
+    end  
+    local text = self:getText() or ""  
+    text = text:gsub(",", "")  
+    return tonumber(text) or 0  
+end  
+  
+function UISpinBox:setFormattedMode(enabled)  
+    self.formattedMode = enabled  
+    if enabled then  
+        self:setValidCharacters('0123456789,')  
+    else  
+        self:setValidCharacters('0123456789')  
+    end  
 end

@@ -1,5 +1,5 @@
 HTTP = {
-  timeout = 60,
+  timeout = 2,
   websocketTimeout = 15,
   agent = "Mozilla/5.0",
   imageId = 1000,

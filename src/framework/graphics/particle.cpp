@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,9 +21,9 @@
  */
 
 #include "particle.h"
-#include "drawpoolmanager.h"
 
-#include <framework/graphics/animatedtexture.h>
+#include "animatedtexture.h"
+#include "drawpoolmanager.h"
 
 void Particle::render() const
 {

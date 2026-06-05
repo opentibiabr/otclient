@@ -57,11 +57,15 @@ MarketCategory = {
     WandsRods = 21,
     PremiumScrolls = 22,
     TibiaCoins = 23,
+    CreatureProducts = 24,
+    Quivers = 25,
+    SoulCores = 26,
+	FistWeapons = 27,
     MetaWeapons = 255
 }
 
 MarketCategory.First = MarketCategory.Armors
-MarketCategory.Last = MarketCategory.TibiaCoins
+MarketCategory.Last = MarketCategory.FistWeapons
 
 MarketCategoryWeapons = {
     [MarketCategory.Ammunition] = {
@@ -80,6 +84,9 @@ MarketCategoryWeapons = {
         slots = {255, InventorySlotOther, InventorySlotLeft}
     },
     [MarketCategory.WandsRods] = {
+        slots = {255, InventorySlotOther, InventorySlotLeft}
+    },
+	[MarketCategory.FistWeapons] = {
         slots = {255, InventorySlotOther, InventorySlotLeft}
     }
 }
@@ -109,6 +116,10 @@ MarketCategoryStrings = {
     [21] = 'Wands and Rods',
     [22] = 'Premium Scrolls',
     [23] = 'Tibia Coins',
+    [24] = 'Creature Products',
+    [25] = 'Quivers',
+    [26] = 'Soul Cores',
+    [27] = 'Fist Weapons',
     [255] = 'Weapons'
 }
 
@@ -124,35 +135,6 @@ function getMarketCategoryId(name)
         return id
     end
 end
-
-MarketItemDescription = {
-    Armor = 1,
-    Attack = 2,
-    Container = 3,
-    Defense = 4,
-    General = 5,
-    DecayTime = 6,
-    Combat = 7,
-    MinLevel = 8,
-    MinMagicLevel = 9,
-    Vocation = 10,
-    Rune = 11,
-    Ability = 12,
-    Charges = 13,
-    WeaponName = 14,
-    Weight = 15,
-    Augment = 16,
-    ImbuingSlots = 17,
-    MagicShield = 18,
-    Cleave = 19,
-    Reflection = 20,
-    Perfect = 21,
-    UpgradeClassification = 22,
-    CurrentTier = 23
-}
-
-MarketItemDescription.First = MarketItemDescription.Armor
-MarketItemDescription.Last = MarketItemDescription.CurrentTier
 
 MarketItemDescriptionStrings = {
     [1] = 'Armor',
@@ -177,19 +159,15 @@ MarketItemDescriptionStrings = {
     [20] = 'Reflection',
     [21] = 'Perfect Show',
     [22] = 'Upgrade Classification',
-    [23] = 'Tier'
+    [23] = 'Tier',
+    [24] = 'Elemental Bond',
+    [25] = 'Mantra',
+    [26] = 'Imbuement Effect',
 }
 
 function getMarketDescriptionName(id)
     if table.haskey(MarketItemDescriptionStrings, id) then
         return MarketItemDescriptionStrings[id]
-    end
-end
-
-function getMarketDescriptionId(name)
-    local id = table.find(MarketItemDescriptionStrings, name)
-    if id then
-        return id
     end
 end
 

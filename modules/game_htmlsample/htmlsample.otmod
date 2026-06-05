@@ -1,0 +1,9 @@
+Module
+  name: game_htmlsample
+  description: HTML Sample
+  author:
+  website:
+  scripts: [ htmlsample.lua ]
+  sandboxed: true
+  @onLoad: HtmlSample:init()
+  @onUnload: HtmlSample:terminate()

@@ -159,6 +159,14 @@ function zoomOut()
     mapController.ui.minimapBorder.minimap:zoomOut()
 end
 
+function openCyclopediaMap()
+    if g_game.getClientVersion() >= 1310 then
+        modules.game_cyclopedia.toggle('map')
+    else
+        return fullscreen()
+    end
+end
+
 function fullscreen()
     local minimapWidget = mapController.ui.minimapBorder.minimap
     if not minimapWidget then

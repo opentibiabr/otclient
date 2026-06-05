@@ -5,10 +5,18 @@
     "asio",
     "abseil",
     "cpp-httplib",
+    "cppcodec",
     "discord-rpc",
     "liblzma",
+    "libarchive",
     "libobfuscate",
     "libogg",
+    {
+      "name": "libpng",
+      "features": [
+        "apng"
+      ]
+    },
     "libvorbis",
     "nlohmann-json",
     "openal-soft",
@@ -22,6 +30,16 @@
     "bshoshany-thread-pool",
     "fmt",
     "ixwebsocket",
+    "spdlog",
+    "utfcpp",
+    "gtest",
+    "freetype",
+    {
+      "name": "inih",
+      "features": [
+        "cpp"
+      ]
+    },
     {
       "name": "luajit",
       "platform": "!android & !wasm32"
@@ -32,12 +50,12 @@
     },
     {
       "name": "glew",
-      "platform": "windows | osx"
+      "platform": "windows | linux | osx"
     },
     {
       "name": "angle",
       "platform": "windows"
     }
   ],
-  "builtin-baseline":"b322364f06308bdd24823f9d8f03fe0cc86fd46f"
+  "builtin-baseline": "f3e10653cc27d62a37a3763cd84b38bca07c6075"
 }

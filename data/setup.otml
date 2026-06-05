@@ -1,11 +1,11 @@
 game
   sprite-size: 32
-  last-supported-version: 1412
   draw-typing: false
   typing-icon: /images/game/console/typing
   
   map
     viewport: 8 6
+    extended-view-ui: false
     max-z: 15
     sea-floor: 7
     underground-floor: 8
@@ -22,6 +22,7 @@ game
     shield-blink-ticks: 500
     volatile-square-duration: 1000
     adjust-creature-information-based-crop-size: false
+    use-crop-size-for-ui-draw: true
     diagonal-walk-speed: 3
 
   player
@@ -41,3 +42,4 @@ font
   static-text: verdana-11px-rounded
   animated-text: verdana-11px-rounded
   creature-text: verdana-11px-rounded
+  item-count: verdana-10px-rounded

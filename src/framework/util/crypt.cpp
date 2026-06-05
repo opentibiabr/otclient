@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,26 +21,43 @@
  */
 
 #include "crypt.h"
-#include "framework/core/application.h"
-#include <framework/core/logger.h>
-#include <framework/core/resourcemanager.h>
-#include <framework/platform/platform.h>
-#include <framework/stdext/math.h>
 
-#ifndef USE_GMP
-#include <openssl/bn.h>
-#include <openssl/err.h>
-#include <openssl/rsa.h>
-#endif
-#include <zlib.h>
-
+#ifndef USE_PRECOMPILED_HEADERS
 #include <algorithm>
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <functional>
+#include <iomanip>
+#include <ranges>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <utility>
+#include <zlib.h>
+#endif
+
+#include <cppcodec/base64_rfc4648.hpp>
+#include <openssl/evp.h>
 
 #include "framework/core/graphicalapplication.h"
-#include <openssl/sha.h>
+#include "framework/core/resourcemanager.h"
+#include "framework/platform/platform.h"
+#include "framework/stdext/math.h"
 
-static constexpr std::string_view base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-static inline bool is_base64(const uint8_t c) { return (isalnum(c) || (c == '+') || (c == '/')); }
+#ifndef USE_GMP
+#ifndef OPENSSL_API_COMPAT
+#define OPENSSL_API_COMPAT 0x10100000L
+#endif
+#ifndef OPENSSL_SUPPRESS_DEPRECATED
+#define OPENSSL_SUPPRESS_DEPRECATED
+#endif
+#include <openssl/bn.h>
+#include <openssl/rsa.h>
+#endif
+
+constexpr std::size_t CHECKSUM_BYTES = sizeof(uint32_t);
 
 Crypt g_crypt;
 
@@ -71,59 +88,25 @@ Crypt::~Crypt()
 }
 
 std::string Crypt::base64Encode(const std::string& decoded_string) {
-    size_t encoded_size = 4 * ((decoded_string.size() + 2) / 3);
-    std::string ret;
-    ret.reserve(encoded_size);
-
-    int val = 0, valb = -6;
-    for (uint8_t c : decoded_string) {
-        val = (val << 8) + c;
-        valb += 8;
-        while (valb >= 0) {
-            ret.push_back(base64_chars[(val >> valb) & 0x3F]);
-            valb -= 6;
-        }
-    }
-
-    while (valb > -6) {
-        ret.push_back(base64_chars[((val << 8) >> (valb + 8)) & 0x3F]);
-        valb -= 6;
-    }
-
-    while (ret.size() % 4) ret.push_back('=');
-    return ret;
+    return cppcodec::base64_rfc4648::encode(decoded_string);
 }
 
 std::string Crypt::base64Decode(const std::string_view& encoded_string) {
-    std::vector<int> T(256, -1);
-    for (int i = 0; i < 64; i++) T[base64_chars[i]] = i;
-
-    std::string ret;
-    ret.reserve(encoded_string.size() * 3 / 4);
-
-    int val = 0, valb = -8;
-    for (uint8_t c : encoded_string) {
-        if (T[c] == -1) break;
-        val = (val << 6) + T[c];
-        valb += 6;
-        if (valb >= 0) {
-            ret.push_back((val >> valb) & 0xFF);
-            valb -= 8;
-        }
+    try {
+        return cppcodec::base64_rfc4648::decode<std::string>(encoded_string);
+    } catch (const std::invalid_argument&) {
+        return {};
     }
-    return ret;
 }
 
-std::string Crypt::xorCrypt(const std::string& buffer, const std::string& key) {
-    if (key.empty()) return buffer;
+void Crypt::xorCrypt(std::string& buffer, const std::string& key)
+{
+    if (key.empty())
+        return;
 
-    std::string out(buffer);
-    size_t keySize = key.size();
-
-    std::transform(out.begin(), out.end(), out.begin(),
-                   [&](char c) { return c ^ key[(&c - &out[0]) % keySize]; });
-
-    return out;
+    const size_t keySize = key.size();
+    for (size_t i = 0; i < buffer.size(); ++i)
+        buffer[i] ^= key[i % keySize];
 }
 
 std::string Crypt::genUUID() {
@@ -169,45 +152,48 @@ std::string Crypt::getCryptKey(const bool useMachineUUID) const
 
 std::string Crypt::_encrypt(const std::string& decrypted_string, const bool useMachineUUID)
 {
-    uint32_t sum = stdext::adler32(reinterpret_cast<const uint8_t*>(decrypted_string.data()), decrypted_string.size());
+    const uint32_t sum = stdext::computeChecksum(
+        { reinterpret_cast<const uint8_t*>(decrypted_string.data()),
+          decrypted_string.size() });
 
-    std::string tmp;
-    tmp.reserve(4 + decrypted_string.size());
-
-    tmp.append(4, '\0'); 
+    std::string tmp(CHECKSUM_BYTES, '\0');
     tmp.append(decrypted_string);
 
-    stdext::writeULE32(reinterpret_cast<uint8_t*>(&tmp[0]), sum);
+    stdext::writeULE32(reinterpret_cast<uint8_t*>(tmp.data()), sum);
 
-    return base64Encode(xorCrypt(tmp, getCryptKey(useMachineUUID)));
+    const auto key = getCryptKey(useMachineUUID);
+    xorCrypt(tmp, key);
+    return base64Encode(tmp);
 }
 
 std::string Crypt::_decrypt(const std::string& encrypted_string, const bool useMachineUUID)
 {
     std::string decoded = base64Decode(encrypted_string);
-    std::string tmp = xorCrypt(decoded, getCryptKey(useMachineUUID));
-
-    if (tmp.size() < 4)
+    if (decoded.size() < CHECKSUM_BYTES)
         return {};
 
-    uint32_t readsum = stdext::readULE32(reinterpret_cast<const uint8_t*>(tmp.data()));
+    const auto key = getCryptKey(useMachineUUID);
+    xorCrypt(decoded, key);
 
-    std::string decrypted_string = tmp.substr(4);
+    const uint32_t readsum =
+        stdext::readULE32(reinterpret_cast<const uint8_t*>(decoded.data()));
+    decoded.erase(0, CHECKSUM_BYTES);
 
-    uint32_t sum = stdext::adler32(reinterpret_cast<const uint8_t*>(decrypted_string.data()), decrypted_string.size());
+    const uint32_t sum = stdext::computeChecksum(
+        { reinterpret_cast<const uint8_t*>(decoded.data()), decoded.size() });
 
-    return (readsum == sum) ? decrypted_string : std::string();
+    return (readsum == sum) ? std::move(decoded) : std::string();
 }
 
 void Crypt::rsaSetPublicKey(const std::string& n, const std::string& e)
 {
 #ifdef USE_GMP
-    mpz_set_str(m_n, n.c_str(), 10);
-    mpz_set_str(m_e, e.c_str(), 10);
+    mpz_set_str(m_n, n.data(), 10);
+    mpz_set_str(m_e, e.data(), 10);
 #else
     BIGNUM* bn = nullptr, * be = nullptr;
-    BN_dec2bn(&bn, n.c_str());
-    BN_dec2bn(&be, e.c_str());
+    BN_dec2bn(&bn, n.data());
+    BN_dec2bn(&be, e.data());
     RSA_set0_key(m_rsa, bn, be, nullptr);
 #endif
 }
@@ -215,17 +201,17 @@ void Crypt::rsaSetPublicKey(const std::string& n, const std::string& e)
 void Crypt::rsaSetPrivateKey(const std::string& p, const std::string& q, const std::string& d)
 {
 #ifdef USE_GMP
-    mpz_set_str(m_p, p, 10);
-    mpz_set_str(m_q, q, 10);
-    mpz_set_str(m_d, d, 10);
+    mpz_set_str(m_p, p.data(), 10);
+    mpz_set_str(m_q, q.data(), 10);
+    mpz_set_str(m_d, d.data(), 10);
 
     // n = p * q
     mpz_mul(m_n, m_p, m_q);
 #else
 #if OPENSSL_VERSION_NUMBER < 0x10100005L
-    BN_dec2bn(&m_rsa->p, p);
-    BN_dec2bn(&m_rsa->q, q);
-    BN_dec2bn(&m_rsa->d, d);
+    BN_dec2bn(&m_rsa->p, p.data());
+    BN_dec2bn(&m_rsa->q, q.data());
+    BN_dec2bn(&m_rsa->d, d.data());
     // clear rsa cache
     if (m_rsa->_method_mod_p) {
         BN_MONT_CTX_free(m_rsa->_method_mod_p);
@@ -237,9 +223,9 @@ void Crypt::rsaSetPrivateKey(const std::string& p, const std::string& q, const s
     }
 #else
     BIGNUM* bp = nullptr, * bq = nullptr, * bd = nullptr;
-    BN_dec2bn(&bp, p.c_str());
-    BN_dec2bn(&bq, q.c_str());
-    BN_dec2bn(&bd, d.c_str());
+    BN_dec2bn(&bp, p.data());
+    BN_dec2bn(&bq, q.data());
+    BN_dec2bn(&bd, d.data());
     RSA_set0_key(m_rsa, nullptr, nullptr, bd);
     RSA_set0_factors(m_rsa, bp, bq);
 #endif
@@ -313,7 +299,7 @@ int Crypt::rsaGetSize()
 std::string Crypt::crc32(const std::string& decoded_string, const bool upperCase)
 {
     uint32_t crc = ::crc32(0, nullptr, 0);
-    crc = ::crc32(crc, (const Bytef*)decoded_string.c_str(), decoded_string.size());
+    crc = ::crc32(crc, reinterpret_cast<const Bytef*>(decoded_string.data()), decoded_string.size());
     std::string result = stdext::dec_to_hex(crc);
     if (upperCase)
         std::ranges::transform(result, result.begin(), toupper);
@@ -322,55 +308,27 @@ std::string Crypt::crc32(const std::string& decoded_string, const bool upperCase
     return result;
 }
 
-// NOSONAR - Intentional use of SHA-1 as there is no security impact in this context
-std::string Crypt::sha1Encrypt(const std::string& input) {
-    unsigned char hash[SHA_DIGEST_LENGTH];
-    SHA1(reinterpret_cast<const unsigned char*>(input.data()), input.size(), hash);
-
-    std::ostringstream oss;
-    for (unsigned char byte : hash)
-        oss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(byte);
-
-    return oss.str();
-}
-
-void Crypt::sha1Block(const uint8_t* block, uint32_t* H)
+std::string Crypt::sha256(const std::string& decoded_string)
 {
-    uint32_t W[80];
-    for (int i = 0; i < 16; ++i) {
-        const size_t offset = i << 2;
-        W[i] = block[offset] << 24 | block[offset + 1] << 16 | block[offset + 2] << 8 | block[offset + 3];
-    }
+    std::array<unsigned char, EVP_MAX_MD_SIZE> digest{};
+    unsigned int digestLength = 0;
 
-    for (int i = 16; i < 80; ++i) {
-        W[i] = stdext::circularShift(1, W[i - 3] ^ W[i - 8] ^ W[i - 14] ^ W[i - 16]);
-    }
+    EVP_MD_CTX* context = EVP_MD_CTX_new();
+    if (!context)
+        return "";
 
-    uint32_t A = H[0], B = H[1], C = H[2], D = H[3], E = H[4];
+    const bool ok = EVP_DigestInit_ex(context, EVP_sha256(), nullptr) == 1 &&
+                    EVP_DigestUpdate(context, decoded_string.data(), decoded_string.size()) == 1 &&
+                    EVP_DigestFinal_ex(context, digest.data(), &digestLength) == 1;
+    EVP_MD_CTX_free(context);
 
-    for (int i = 0; i < 20; ++i) {
-        const uint32_t tmp = stdext::circularShift(5, A) + ((B & C) | ((~B) & D)) + E + W[i] + 0x5A827999;
-        E = D; D = C; C = stdext::circularShift(30, B); B = A; A = tmp;
-    }
+    if (!ok)
+        return "";
 
-    for (int i = 20; i < 40; ++i) {
-        const uint32_t tmp = stdext::circularShift(5, A) + (B ^ C ^ D) + E + W[i] + 0x6ED9EBA1;
-        E = D; D = C; C = stdext::circularShift(30, B); B = A; A = tmp;
-    }
+    std::ostringstream ss;
+    ss << std::hex << std::setfill('0');
+    for (unsigned int i = 0; i < digestLength; ++i)
+        ss << std::setw(2) << static_cast<int>(digest[i]);
 
-    for (int i = 40; i < 60; ++i) {
-        const uint32_t tmp = stdext::circularShift(5, A) + ((B & C) | (B & D) | (C & D)) + E + W[i] + 0x8F1BBCDC;
-        E = D; D = C; C = stdext::circularShift(30, B); B = A; A = tmp;
-    }
-
-    for (int i = 60; i < 80; ++i) {
-        const uint32_t tmp = stdext::circularShift(5, A) + (B ^ C ^ D) + E + W[i] + 0xCA62C1D6;
-        E = D; D = C; C = stdext::circularShift(30, B); B = A; A = tmp;
-    }
-
-    H[0] += A;
-    H[1] += B;
-    H[2] += C;
-    H[3] += D;
-    H[4] += E;
+    return ss.str();
 }

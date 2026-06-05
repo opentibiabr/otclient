@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,317 +22,52 @@
 
 #pragma once
 
-#include "animator.h"
 #include "declarations.h"
+#ifdef FRAMEWORK_PROTOBUF
+#include <appearances.pb.h>
+#endif
 
-#include <framework/core/declarations.h>
-#include <framework/graphics/drawpoolmanager.h>
-#include <framework/luaengine/luaobject.h>
-#include <framework/otml/declarations.h>
-#include <variant>
+#include "staticdata.h"
+#include "const.h"
+#include "framework/core/declarations.h"
+#include "framework/core/timer.h"
+#include "framework/graphics/declarations.h"
+#include "framework/luaengine/luaobject.h"
 
+#ifdef FRAMEWORK_PROTOBUF
 using namespace otclient::protobuf;
-
-enum FrameGroupType : uint8_t
-{
-    FrameGroupDefault = 0,
-    FrameGroupIdle = FrameGroupDefault,
-    FrameGroupMoving,
-    FrameGroupInitial
-};
-
-enum ThingCategory : uint8_t
-{
-    ThingCategoryItem = 0,
-    ThingCategoryCreature,
-    ThingCategoryEffect,
-    ThingCategoryMissile,
-    ThingInvalidCategory,
-    ThingExternalTexture,
-    ThingLastCategory = ThingInvalidCategory,
-};
-
-enum StaticDataCategory : uint8_t
-{
-    StaticDataMonster = 0,
-    StaticDataAchievement,
-    StaticDataHouse,
-    StaticDataBoss,
-    StaticDataQuest,
-    StaticDataLast = StaticDataQuest,
-};
-
-enum ThingAttr : uint8_t
-{
-    ThingAttrGround = 0,
-    ThingAttrGroundBorder = 1,
-    ThingAttrOnBottom = 2,
-    ThingAttrOnTop = 3,
-    ThingAttrContainer = 4,
-    ThingAttrStackable = 5,
-    ThingAttrForceUse = 6,
-    ThingAttrMultiUse = 7,
-    ThingAttrWritable = 8,
-    ThingAttrWritableOnce = 9,
-    ThingAttrFluidContainer = 10,
-    ThingAttrSplash = 11,
-    ThingAttrNotWalkable = 12,
-    ThingAttrNotMoveable = 13,
-    ThingAttrBlockProjectile = 14,
-    ThingAttrNotPathable = 15,
-    ThingAttrPickupable = 16,
-    ThingAttrHangable = 17,
-    ThingAttrHookSouth = 18,
-    ThingAttrHookEast = 19,
-    ThingAttrRotateable = 20,
-    ThingAttrLight = 21,
-    ThingAttrDontHide = 22,
-    ThingAttrTranslucent = 23,
-    ThingAttrDisplacement = 24,
-    ThingAttrElevation = 25,
-    ThingAttrLyingCorpse = 26,
-    ThingAttrAnimateAlways = 27,
-    ThingAttrMinimapColor = 28,
-    ThingAttrLensHelp = 29,
-    ThingAttrFullGround = 30,
-    ThingAttrLook = 31,
-    ThingAttrCloth = 32,
-    ThingAttrMarket = 33,
-    ThingAttrUsable = 34,
-    ThingAttrWrapable = 35,
-    ThingAttrUnwrapable = 36,
-    ThingAttrTopEffect = 37,
-    ThingAttrUpgradeClassification = 38,
-    ThingAttrWearOut = 39,
-    ThingAttrClockExpire = 40,
-    ThingAttrExpire = 41,
-    ThingAttrExpireStop = 42,
-    ThingAttrPodium = 43,
-    ThingAttrDecoKit = 44,
-
-    // additional
-    ThingAttrOpacity = 100,
-
-    ThingAttrDefaultAction = 251,
-
-    ThingAttrFloorChange = 252,
-    ThingAttrNoMoveAnimation = 253, // 10.10: real value is 16, but we need to do this for backwards compatibility
-    ThingAttrChargeable = 254, // deprecated
-    ThingLastAttr = 255
-};
-
-enum ThingFlagAttr :uint64_t
-{
-    ThingFlagAttrNone = 0,
-    ThingFlagAttrGround = 1 << 0,
-    ThingFlagAttrGroundBorder = 1 << 1,
-    ThingFlagAttrOnBottom = 1 << 2,
-    ThingFlagAttrOnTop = 1 << 3,
-    ThingFlagAttrContainer = 1 << 4,
-    ThingFlagAttrStackable = 1 << 5,
-    ThingFlagAttrForceUse = 1 << 6,
-    ThingFlagAttrMultiUse = 1 << 7,
-    ThingFlagAttrWritable = 1 << 8,
-    ThingFlagAttrChargeable = 1 << 9,
-    ThingFlagAttrWritableOnce = 1 << 10,
-    ThingFlagAttrFluidContainer = 1 << 11,
-    ThingFlagAttrSplash = 1 << 12,
-    ThingFlagAttrNotWalkable = 1 << 13,
-    ThingFlagAttrNotMoveable = 1 << 14,
-    ThingFlagAttrBlockProjectile = 1 << 15,
-    ThingFlagAttrNotPathable = 1 << 16,
-    ThingFlagAttrPickupable = 1 << 17,
-    ThingFlagAttrHangable = 1 << 18,
-    ThingFlagAttrHookSouth = 1 << 19,
-    ThingFlagAttrHookEast = 1 << 20,
-    ThingFlagAttrRotateable = 1 << 21,
-    ThingFlagAttrLight = 1 << 22,
-    ThingFlagAttrDontHide = 1 << 23,
-    ThingFlagAttrTranslucent = 1 << 24,
-    ThingFlagAttrDisplacement = 1 << 25,
-    ThingFlagAttrElevation = 1 << 26,
-    ThingFlagAttrLyingCorpse = 1 << 27,
-    ThingFlagAttrAnimateAlways = 1 << 28,
-    ThingFlagAttrMinimapColor = 1 << 29,
-    ThingFlagAttrLensHelp = 1 << 30,
-    ThingFlagAttrFullGround = static_cast<uint64_t>(1) << 31,
-    ThingFlagAttrLook = static_cast<uint64_t>(1) << 32,
-    ThingFlagAttrCloth = static_cast<uint64_t>(1) << 33,
-    ThingFlagAttrMarket = static_cast<uint64_t>(1) << 34,
-    ThingFlagAttrUsable = static_cast<uint64_t>(1) << 35,
-    ThingFlagAttrWrapable = static_cast<uint64_t>(1) << 36,
-    ThingFlagAttrUnwrapable = static_cast<uint64_t>(1) << 37,
-    ThingFlagAttrWearOut = static_cast<uint64_t>(1) << 38,
-    ThingFlagAttrClockExpire = static_cast<uint64_t>(1) << 39,
-    ThingFlagAttrExpire = static_cast<uint64_t>(1) << 40,
-    ThingFlagAttrExpireStop = static_cast<uint64_t>(1) << 41,
-    ThingFlagAttrPodium = static_cast<uint64_t>(1) << 42,
-    ThingFlagAttrTopEffect = static_cast<uint64_t>(1) << 43,
-    ThingFlagAttrDefaultAction = static_cast<uint64_t>(1) << 44,
-    ThingFlagAttrDecoKit = static_cast<uint64_t>(1) << 45,
-    ThingFlagAttrNPC = static_cast<uint64_t>(1) << 46
-};
-
-enum STACK_PRIORITY : uint8_t
-{
-    GROUND = 0,
-    GROUND_BORDER = 1,
-    ON_BOTTOM = 2,
-    ON_TOP = 3,
-    CREATURE = 4,
-    COMMON_ITEMS = 5
-};
-
-enum PLAYER_ACTION : uint8_t
-{
-    PLAYER_ACTION_NONE = 0,
-    PLAYER_ACTION_LOOK = 1,
-    PLAYER_ACTION_USE = 2,
-    PLAYER_ACTION_OPEN = 3,
-    PLAYER_ACTION_AUTOWALK_HIGHLIGHT = 4
-};
-
-enum ITEM_CATEGORY : uint8_t
-{
-    ITEM_CATEGORY_ARMORS = 1,
-    ITEM_CATEGORY_AMULETS = 2,
-    ITEM_CATEGORY_BOOTS = 3,
-    ITEM_CATEGORY_CONTAINERS = 4,
-    ITEM_CATEGORY_DECORATION = 5,
-    ITEM_CATEGORY_FOOD = 6,
-    ITEM_CATEGORY_HELMETS_HATS = 7,
-    ITEM_CATEGORY_LEGS = 8,
-    ITEM_CATEGORY_OTHERS = 9,
-    ITEM_CATEGORY_POTIONS = 10,
-    ITEM_CATEGORY_RINGS = 11,
-    ITEM_CATEGORY_RUNES = 12,
-    ITEM_CATEGORY_SHIELDS = 13,
-    ITEM_CATEGORY_TOOLS = 14,
-    ITEM_CATEGORY_VALUABLES = 15,
-    ITEM_CATEGORY_AMMUNITION = 16,
-    ITEM_CATEGORY_AXES = 17,
-    ITEM_CATEGORY_CLUBS = 18,
-    ITEM_CATEGORY_DISTANCE_WEAPONS = 19,
-    ITEM_CATEGORY_SWORDS = 20,
-    ITEM_CATEGORY_WANDS_RODS = 21,
-    ITEM_CATEGORY_PREMIUM_SCROLLS = 22,
-    ITEM_CATEGORY_TIBIA_COINS = 23,
-    ITEM_CATEGORY_CREATURE_PRODUCTS = 24,
-    ITEM_CATEGORY_QUIVER = 25,
-    ITEM_CATEGORY_TWOHANDWEAPON = 26,
-    ITEM_CATEGORY_HELMETS = 27,
-    ITEM_CATEGORY_BACKPACK = 28,
-    ITEM_CATEGORY_ONEHANDWEAPON = 29,
-    ITEM_CATEGORY_ARROW = 30
-};
-
-enum SpriteMask :uint8_t
-{
-    SpriteMaskRed = 1,
-    SpriteMaskGreen,
-    SpriteMaskBlue,
-    SpriteMaskYellow
-};
-
-struct Imbuement
-{
-    uint32_t id;
-    std::string name;
-    std::string description;
-    std::string group;
-    uint16_t imageId;
-    uint32_t duration;
-    bool premiumOnly;
-    std::vector<std::pair<ItemPtr, std::string>> sources;
-    uint32_t cost;
-    uint8_t successRate;
-    uint32_t protectionCost;
-};
-
-struct ImbuementSlot
-{
-    ImbuementSlot(const uint8_t id) : id(id) {}
-
-    uint8_t id;
-    std::string name;
-    uint16_t iconId = 0;
-    uint32_t duration = 0;
-    bool state = false; // paused, running
-};
-
-struct ImbuementTrackerItem
-{
-    ImbuementTrackerItem() : slot(0) {}
-    ImbuementTrackerItem(const uint8_t slot) : slot(slot) {}
-
-    uint8_t slot;
-    uint8_t totalSlots = 0;
-    ItemPtr item;
-    std::map<uint8_t, ImbuementSlot> slots;
-};
-
-struct MarketData
-{
-    std::string name;
-    ITEM_CATEGORY category;
-    uint16_t requiredLevel;
-    uint16_t restrictVocation;
-    uint16_t showAs;
-    uint16_t tradeAs;
-};
-
-struct NPCData
-{
-    std::string name;
-    std::string location;
-    uint32_t salePrice;
-    uint32_t buyPrice;
-    uint32_t currencyObjectTypeId;
-    std::string currencyQuestFlagDisplayName;
-};
-
-struct MarketOffer
-{
-    uint32_t timestamp = 0;
-    uint16_t counter = 0;
-    uint8_t action = 0;
-    uint16_t itemId = 0;
-    uint16_t amount = 0;
-    uint64_t price = 0;
-    std::string playerName;
-    uint8_t state = 0;
-    uint16_t var = 0;
-    uint8_t itemTier = 0;
-};
-
-struct Light
-{
-    Light() = default;
-    Light(const uint8_t intensity, const uint8_t color) : intensity(intensity), color(color) {}
-    uint8_t intensity = 0;
-    uint8_t color = 215;
-};
+#endif
 
 class ThingType final : public LuaObject
 {
 public:
+    struct SkillWheelGem
+    {
+        uint32_t gem_quality_id = 0;
+        uint32_t vocation_id = 0;
+
+        uint32_t getGemQualityId() { return gem_quality_id; }
+        uint32_t getVocationId() { return vocation_id; }
+    };
+#ifdef FRAMEWORK_PROTOBUF
+    void applyAppearanceFlags(const appearances::AppearanceFlags& flags);
     void unserializeAppearance(uint16_t clientId, ThingCategory category, const appearances::Appearance& appearance);
+#endif
     void unserialize(uint16_t clientId, ThingCategory category, const FileStreamPtr& fin);
     void unserializeOtml(const OTMLNodePtr& node);
-    void applyAppearanceFlags(const appearances::AppearanceFlags& flags);
 
 #ifdef FRAMEWORK_EDITOR
     void serialize(const FileStreamPtr& fin);
     void exportImage(const std::string& fileName);
 #endif
 
-    void draw(const Point& dest, int layer, int xPattern, int yPattern, int zPattern, int animationPhase, const Color& color, bool drawThings = true, const LightViewPtr& lightView = nullptr);
+    void draw(const Point& dest, int layer, int xPattern, int yPattern, int zPattern, int animationPhase, const Color& color, bool drawThings = true, LightView* lightView = nullptr);
 
     void drawWithFrameBuffer(const TexturePtr& texture, const Rect& screenRect, const Rect& textureRect, const Color& color);
 
     uint16_t getId() { return m_id; }
     ThingCategory getCategory() { return m_category; }
-    bool isNull() { return m_null; }
+    bool isNull() const { return m_null; }
     bool hasAttr(const ThingAttr attr) { return (m_flags & thingAttrToThingFlagAttr(attr)); }
 
     int getWidth() { return m_size.width(); }
@@ -343,7 +78,8 @@ public:
     int getNumPatternX() { return m_numPatternX; }
     int getNumPatternY() { return m_numPatternY; }
     int getNumPatternZ() { return m_numPatternZ; }
-    int getAnimationPhases() { return m_animator ? m_animator->getAnimationPhases() : m_animationPhases; }
+    int getAnimationPhases() const;
+    int getIdleAnimationPhases() const;
     Animator* getAnimator() const { return m_animator; }
     Animator* getIdleAnimator() const { return m_idleAnimator; }
 
@@ -352,31 +88,7 @@ public:
     const Light& getLight() { return m_light; }
     const MarketData& getMarketData() { return m_market; }
     const std::vector<NPCData>& getNpcSaleData() { return m_npcData; }
-    int getMeanPrice() {
-        static constexpr std::array<std::pair<uint32_t, uint32_t>, 3> forcedPrices = { {
-            {3043, 10000},
-            {3031, 50},
-            {3035, 50 }
-        } };
-
-        const uint32_t itemId = getId();
-
-        const auto it = std::ranges::find_if(forcedPrices, [itemId](const auto& pair) { return pair.first == itemId; });
-
-        if (it != forcedPrices.end()) {
-            return it->second;
-        }
-
-        const auto npcCount = m_npcData.size();
-        if (npcCount == 0) {
-            return 0;
-        }
-
-        const int totalBuyPrice = std::accumulate(m_npcData.begin(), m_npcData.end(), 0,
-            [](int sum, const auto& npc) { return sum + npc.buyPrice; });
-
-        return totalBuyPrice / static_cast<int>(npcCount);
-    }
+    int getMeanPrice();
 
     int getDisplacementX() { return getDisplacement().x; }
     int getDisplacementY() { return getDisplacement().y; }
@@ -400,7 +112,7 @@ public:
     bool isGroundBorder() { return (m_flags & ThingFlagAttrGroundBorder); }
     bool isOnBottom() { return (m_flags & ThingFlagAttrOnBottom); }
     bool isOnTop() { return (m_flags & ThingFlagAttrOnTop); }
-    bool isContainer() { return (m_flags & ThingFlagAttrContainer); }
+    bool isContainer() const { return (m_flags & ThingFlagAttrContainer); }
     bool isStackable() { return (m_flags & ThingFlagAttrStackable); }
     bool isForceUse() { return (m_flags & ThingFlagAttrForceUse); }
     bool isMultiUse() { return (m_flags & ThingFlagAttrMultiUse); }
@@ -423,6 +135,7 @@ public:
     bool isTranslucent() { return (m_flags & ThingFlagAttrTranslucent); }
     bool hasDisplacement() { return (m_flags & ThingFlagAttrDisplacement); }
     bool hasElevation() { return (m_flags & ThingFlagAttrElevation); }
+    bool hasFloorChange() const { return (m_flags & ThingFlagAttrFloorChange); }
     bool isLyingCorpse() { return (m_flags & ThingFlagAttrLyingCorpse); }
     bool isAnimateAlways() { return (m_flags & ThingFlagAttrAnimateAlways); }
     bool hasMiniMapColor() { return (m_flags & ThingFlagAttrMinimapColor); }
@@ -442,8 +155,22 @@ public:
     bool isTopEffect() { return (m_flags & ThingFlagAttrTopEffect); }
     bool hasAction() { return (m_flags & ThingFlagAttrDefaultAction); }
     bool isOpaque() { return m_opaque == 1; }
+
+    uint32_t getSkillWheelGemQualityId() { return m_skillWheelGem.gem_quality_id; }
+    uint32_t getSkillWheelGemVocationId() { return m_skillWheelGem.vocation_id; }
+    uint32_t getCyclopediaType() { return m_cyclopediaType; }
+    uint32_t getProficiencyId() { return m_proficiencyId; }
+    uint32_t getWeaponType() const { return m_weaponType; }
+    uint32_t getMinimumLevel() const { return m_minimumLevel; }
+    uint32_t getImbueSlots() const { return m_imbueSlots; }
+    const std::vector<uint32_t>& getRestrictVocation() const { return m_restrictVocation; }
+
     bool isDecoKit() { return (m_flags & ThingFlagAttrDecoKit); }
     bool isLoading() const { return m_loading.load(std::memory_order_acquire); }
+    bool isAmmo() { return (m_flags & ThingFlagAttrAmmo); }
+    bool isDualWield() { return (m_flags & ThingFlagAttrDualWield); }
+    bool hasSkillWheelGem() { return (m_flags & ThingFlagAttrSkillWheelGem); }
+    SkillWheelGem getSkillWheelGem() { return m_skillWheelGem; }
 
     bool isItem() const { return m_category == ThingCategoryItem; }
     bool isEffect() const { return m_category == ThingCategoryEffect; }
@@ -524,6 +251,12 @@ private:
     uint16_t m_groundSpeed{ 0 };
     uint16_t m_maxTextLength{ 0 };
     uint16_t m_upgradeClassification{ 0 };
+    uint32_t m_cyclopediaType{ 0 };
+    uint32_t m_proficiencyId{ 0 };
+    uint32_t m_weaponType{ 0 };
+    uint32_t m_minimumLevel{ 0 };
+    uint32_t m_imbueSlots{ 0 };
+    std::vector<uint32_t> m_restrictVocation;
 
     uint64_t m_flags{ 0 };
 
@@ -539,10 +272,11 @@ private:
     std::vector<uint32_t> m_spritesIndex;
     std::vector<TextureData> m_textureData;
 
-    std::atomic_bool m_loading;
+    std::atomic_bool m_loading{ false };
 
     Timer m_lastTimeUsage;
 
     std::string m_name;
     std::string m_description;
+    SkillWheelGem m_skillWheelGem;
 };

@@ -39,7 +39,7 @@ macro(60000, "Send message on trade", function()
     sayChannel(trade, storage.autoTradeMessage)
   end
 end)
-UI.TextEdit(storage.autoTradeMessage or "I'm using OTClientV8!", function(widget, text)
+UI.TextEdit(storage.autoTradeMessage or "I'm using OTClient Redemption!", function(widget, text)
   storage.autoTradeMessage = text
 end)
 

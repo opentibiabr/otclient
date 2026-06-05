@@ -1,0 +1,230 @@
+LootItem < UIItem
+  size: 32 32
+  virtual: true
+  show-count: false
+  virtual-count: true
+  font: verdana-11px-rounded
+  tooltip-delayed: true
+
+MiniWindow
+  id: lootAnalyserMiniWindow
+  &type: 'lootAnalyser'
+  !text: tr('Loot Analyser')
+  height: 225
+  &save: true
+  &autoOpen: false
+  @onExtra: modules.game_analyser.onLootingExtra(g_window.getMousePosition())
+
+  UIWidget
+    id: miniwindowIcon
+    anchors.top: miniwindowHeader.top
+    anchors.left: miniwindowHeader.left
+    margin-top: 2
+    margin-left: 4
+    size: 12 12
+    image-source: /images/icons/icon-lootanalyser-widget
+    image-smooth: false
+
+  Label
+    id: miniwindowTitle
+    anchors.top: miniwindowHeader.top
+    anchors.left: miniwindowHeader.left
+    anchors.right: miniwindowHeader.right
+    margin-top: 2
+    margin-left: 20
+    margin-right: 50
+    font: verdana-11px-monochrome
+    height: 13
+    color: #9d9d9dff
+    !text: tr('Loot Analyser')
+
+  ScrollablePanel
+    id: contentsPanel
+    anchors.fill: parent
+    margin: 16 18 5 5
+    vertical-scrollbar: miniwindowScrollBar
+    Label
+      id: goldLabel
+      !text: tr('Gold Value:')
+      anchors.top: parent.top
+      anchors.left: parent.left
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    UIWidget
+      size: 9 9
+      image-auto-resize: true
+      image-source: /game_cyclopedia/images/icon_gold
+      anchors.top: parent.top
+      anchors.right: parent.right
+      margin-top: 3
+
+    Label
+      id: gold
+      !text: tr('0')
+      anchors.top: parent.top
+      anchors.right: prev.left
+      margin-right: 4
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Label
+      id: perHourLabel
+      !text: tr('Per Hour:')
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 5
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    UIWidget
+      size: 9 9
+      image-auto-resize: true
+      image-source: /game_cyclopedia/images/icon_gold
+      anchors.top: prev.top
+      anchors.right: parent.right
+      margin-top: 3
+
+    Label
+      id: goldHour
+      !text: tr('0')
+      anchors.top: perHourLabel.top
+      anchors.right: prev.left
+      margin-right: 4
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    HorizontalSeparator
+      id: separator
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 5
+
+    Panel
+      id: lootedItems
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 5
+      layout:
+        type: grid
+        cell-size: 32 32
+        cell-spacing: 3
+        num-columns: 4
+
+    HorizontalSeparator
+      id: separatorLootedItems
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 5
+
+    Label
+      id: targetLabel
+      !text: tr('Target:')
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 5
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    UIWidget
+      id: goldLabelIcon
+      size: 9 9
+      image-auto-resize: true
+      image-source: /game_cyclopedia/images/icon_gold
+      anchors.top: prev.top
+      anchors.right: parent.right
+      margin-top: 3
+
+    Label
+      id: goldTarget
+      !text: tr('0')
+      anchors.top: targetLabel.top
+      anchors.right: prev.left
+      margin-right: 4
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    UIWidget
+      id: lootTargetBG
+      size: 152 11
+      image-auto-resize: true
+      image-source: /images/game/analyzer/targetBG
+      anchors.top: prev.bottom
+      anchors.right: parent.right
+      margin-top: 5
+
+      UIWidget
+        id: lootArrow
+        size: 9 8
+        image-auto-resize: true
+        image-source: /images/game/analyzer/arrow
+        anchors.bottom: parent.bottom
+        anchors.left: parent.left
+        margin-bottom: -2
+        margin-left: 71
+
+    HorizontalSeparator
+      id: separatorGauge
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 7
+
+    UIWidget
+      id: lootGraphBG
+      size: 129 83
+      image-auto-resize: true
+      image-source: /images/game/analyzer/graphBG
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-left: 15
+      margin-top: 14
+
+    UIGraph
+      id: graphPanel
+      capacity: 400
+      background-color: #383636
+      color: red
+      size: 129 83
+      show-labels: false
+      anchors.top: prev.top
+      anchors.left: prev.left
+      image-source: /images/game/analyzer/graphBG
+
+    UIWidget
+      id: graphHorizontal
+      size: 140 9
+      image-auto-resize: true
+      image-source: /images/game/analyzer/graphHorizontal
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-left: 7
+      margin-top: 5
+
+  UIWidget
+    id: miniborder
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    image-source: /images/ui/miniborder
+    size: 14 14
+    margin-left: 2
+    margin-bottom: 2
+
+  ResizeBorder
+    id: bottomResizeBorder
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    height: 3
+    minimum: 64
+    margin-left: 3
+    margin-right: 3

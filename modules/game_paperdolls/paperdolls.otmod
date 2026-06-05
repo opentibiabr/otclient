@@ -1,0 +1,9 @@
+Module
+  name: game_paperdolls
+  description: Attached Paperdolls System
+  author: Mehah
+  website:
+  scripts: [lib, setup, paperdolls, configs/demon]
+  sandboxed: true
+  @onLoad: controller:init()
+  @onUnload: controller:terminate()

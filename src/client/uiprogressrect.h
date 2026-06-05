@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,20 +22,42 @@
 
 #pragma once
 
-#include "declarations.h"
-#include "item.h"
 #include <framework/ui/uiwidget.h>
+
+#include "framework/core/declarations.h"
 
 class UIProgressRect final : public UIWidget
 {
 public:
+    ~UIProgressRect() override;
+
     void drawSelf(DrawPoolType drawPane) override;
 
     void setPercent(float percent);
     float getPercent() { return m_percent; }
 
+    void stop();
+    void setDuration(uint32_t duration);
+    void start();
+    void showTime(bool showTime);
+    void showProgress(bool showProgress);
+    uint32_t getTimeElapsed();
+    uint32_t getDuration() { return m_duration; }
+
 protected:
     void onStyleApply(std::string_view styleName, const OTMLNodePtr& styleNode) override;
 
+private:
+    void scheduleNextUpdate();
+    void updateProgress();
+    void updateProgressText(uint32_t remainingTimeMs);
+
     float m_percent{ 0 };
+    ScheduledEventPtr m_updateEvent{ nullptr };
+    uint32_t m_duration{ 0 };
+    uint32_t m_timeElapsed{ 0 };
+    ticks_t m_startTime{ 0 };
+    bool m_showTime{ true };
+    bool m_showProgress{ true };
+    bool m_running{ false };
 };

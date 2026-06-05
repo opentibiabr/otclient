@@ -47,7 +47,6 @@ blessingTEST < UIWidget
     margin-left: 3
   Label
     id: text
-    !text: tr('loooooong text')
     text-align: center
     margin-top: 5
     width: 65

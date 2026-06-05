@@ -1,0 +1,68 @@
+<style>
+  /* === WINDOW === */
+  .spells-window { width: 343px; height: 581px; }
+  /* === PREVIEW === */
+  .spells-preview-container { height: 30px; }
+  .spells-preview-icon { width: 30px; height: 30px; }
+  .spells-preview-label { white-space: pre-line; margin-left: 45px; width: 251px; --text-auto-resize: false; height: 30px; }
+  /* === SEARCH === */
+  .spells-search-input { width: 100%; display: block; --placeholder: "Search by name"; }
+  .spells-search-clear { --image-source: /game_cyclopedia/images/button_clear_search; width: 18px; height: 20px; --image-color: white; opacity: 0.8; position: relative; left: 342px; top: -18px;  }
+  .spells-search-clear:hover { opacity: 1; --image-color: white; }
+  .spells-search-clear:pressed { opacity: 1; --image-color: gray; }
+  /* === SCROLL AREA === */
+  .spells-scroll-area { height: 395px; overflow: scroll; padding-right: 4px; background-color: alpha; --border-width-top: 1; --border-color-top: black; --border-width-left: 1; --border-color-left: black; --border-width-bottom: 1; --border-color-bottom: #747474; --border-width-right: 1; --border-color-right: #747474; --padding: 1 1 1 1; }
+  /* === FILTER === */
+  .spells-filter-panel { margin-top: 5px; height: 20px; --border-width-top: 1; --border-color-top: black; --border-width-left: 1; --border-color-left: black; --border-width-bottom: 1; --border-color-bottom: #747474; --border-width-right: 1; --border-color-right: #747474; }
+  .spells-filter-checkbox { position: relative; top: 3px; left: 5px; --text-offset: 16 -1; color: #c0c0c0; --text-auto-resize: false; width: 251px; }
+  /* === PARAMETER === */
+  .spells-param-label { --text-offset: 0 2; display: inline-block; margin-top: 5px; }
+  .spells-param-input { margin-left: 10px; width: 251px; height: 20px; margin-top: 5px; }
+  /* === FOOTER === */
+  .spells-footer button { width: 25px; display: block; float: right; margin-right: 5px; font: cipsoftFont; }
+</style>
+
+<html>
+<window class="spells-window" placement="center" title="Assign Text to Action Button {{id}}" onescape="self:unloadHtml()">
+
+  <div class="spells-preview-container">
+    <img id="image" class="spells-preview-icon" src="/data/images/clienticon.png" />
+    <label id="preview" class="spells-preview-label" anchor="parent" text="No spell selected"></label>
+  </div>
+
+  <hr style="height: 2px;" />
+
+  <input id="searchText" class="spells-search-input" type="text" onchange="self:onSearchTextChange(event)" />
+  <UIWidget id="buttonClearSearchText" class="spells-search-clear" onclick="self:onClearSearchText()"></UIWidget>
+
+  <div id="spellList" class="spells-scroll-area UIScrollArea" layout="type:verticalBox">
+
+  </div>
+
+  <div class="spells-filter-panel">
+    <input class="spells-filter-checkbox" type="checkbox" text="Only show learnt spells" />
+  </div>
+
+  <label id="paramLabel" class="spells-param-label" text="Parameter:"></label>
+  <input id="paramText" class="spells-param-input" type="text" />
+
+  <hr style="height: 2px;" />
+
+  <div class="spells-footer">
+    <button id="buttonClose">
+      Cancel
+    </button>
+    <button id="buttonApply">
+      Apply
+    </button>
+    <button id="buttonOk">
+      Ok
+    </button>
+    <button id="dev" style="float:left;">
+      show All
+    </button>
+  </div>
+
+</window>
+
+</html>

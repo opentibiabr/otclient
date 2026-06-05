@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,7 +21,10 @@
  */
 
 #include "drawpool.h"
+
+#include "painter.h"
 #include "textureatlas.h"
+#include "coordsbuffer.h"
 
 DrawPool* DrawPool::create(const DrawPoolType type)
 {
@@ -52,35 +55,44 @@ void DrawPool::add(const Color& color, const TexturePtr& texture, DrawMethod&& m
 {
     Texture* textureAtlas = nullptr;
 
-    if (m_atlas && texture) {
-        if (const auto region = texture->getAtlasRegion(m_atlas->getType())) {
-            textureAtlas = region->atlas;
-            if (method.src.isValid())
-                method.src.translate(region->x, region->y);
+    if (texture) {
+        if (!method.src.isValid() && (!coordsBuffer || coordsBuffer->size() == 0)) {
+            resetOnlyOnceParameters();
+            return; // invalid draw: texture has no source rect and no vertex coordinates
+        }
+
+        if (m_atlas) {
+            if (const auto region = texture->getAtlasRegion(m_atlas->getType())) {
+                if (region->isEnabled()) {
+                    textureAtlas = region->atlas;
+
+                    if (method.src.isValid())
+                        method.src.translate(region->x, region->y);
+                }
+            }
         }
     }
 
-    if (!updateHash(method, textureAtlas ? textureAtlas : texture.get(), color, coordsBuffer != nullptr))
+    if (!updateHash(method, textureAtlas ? textureAtlas : texture.get(), color, coordsBuffer != nullptr)) {
+        resetOnlyOnceParameters();
         return;
+    }
 
     auto& list = m_objects[m_currentDrawOrder];
     auto& state = getCurrentState();
 
-    if (!list.empty() && list.back().state == state) {
+    if (!list.empty() && list.back().coords && list.back().state == state) {
         auto& last = list.back();
-        coordsBuffer ? last.coords->append(coordsBuffer.get())
-            : addCoords(*last.coords, method);
+        coordsBuffer ? last.coords->append(coordsBuffer.get()) : addCoords(*last.coords, method);
     } else if (m_alwaysGroupDrawings) {
         auto& coords = m_coords.try_emplace(state.hash, nullptr).first->second;
         if (!coords) {
             coords = list.emplace_back(getState(texture, textureAtlas, color), getCoordsBuffer()).coords.get();
         }
-        coordsBuffer ? coords->append(coordsBuffer.get())
-            : addCoords(*coords, method);
+        coordsBuffer ? coords->append(coordsBuffer.get()) : addCoords(*coords, method);
     } else {
         auto& draw = list.emplace_back(getState(texture, textureAtlas, color), getCoordsBuffer());
-        coordsBuffer ? draw.coords->append(coordsBuffer.get())
-            : addCoords(*draw.coords, method);
+        coordsBuffer ? draw.coords->append(coordsBuffer.get()) : addCoords(*draw.coords, method);
     }
 
     resetOnlyOnceParameters();
@@ -106,7 +118,7 @@ bool DrawPool::updateHash(const DrawMethod& method, const Texture* texture, cons
     state.hash = 0;
 
     { // State Hash
-        if (m_bindedFramebuffers)
+        if (m_bindedFramebuffers > -1)
             stdext::hash_combine(state.hash, m_lastFramebufferId);
 
         if (state.blendEquation != BlendEquation::ADD)
@@ -162,15 +174,22 @@ DrawPool::PoolState DrawPool::getState(const TexturePtr& texture, Texture* textu
 {
     PoolState copy = getCurrentState();
 
-    if (copy.color != color) copy.color = color;
+    if (copy.color != color)
+        copy.color = color;
 
     if (textureAtlas) {
+        // Texture is batched inside an atlas
         copy.textureId = textureAtlas->getId();
         copy.textureMatrixId = textureAtlas->getTransformMatrixId();
     } else if (texture) {
-        if (texture->isEmpty() || !texture->canCacheInAtlas() || texture->canCacheInAtlas() && m_atlas) {
+        if (texture->isEmpty() || // Texture not initialized in the current OpenGL context
+            !texture->canCacheInAtlas() || // Texture is marked as non-atlas-cacheable (short-lived/temporary, e.g. minimap)
+            (m_atlas && m_atlas->canAdd(texture)) // Force this texture to be packed into the current pool atlas,
+                                                  // even if it might already belong to another DrawPool's atlas
+        ) {
             copy.texture = texture;
         } else {
+            // Standalone GL texture cached in memory (non-atlased)
             copy.textureId = texture->getId();
             copy.textureMatrixId = texture->getTransformMatrixId();
         }
@@ -178,35 +197,52 @@ DrawPool::PoolState DrawPool::getState(const TexturePtr& texture, Texture* textu
 
     return copy;
 }
-
 void DrawPool::setCompositionMode(const CompositionMode mode, const bool onlyOnce)
 {
+    if (onlyOnce && !(m_onlyOnceStateFlag & STATE_COMPOSITE_MODE)) {
+        m_previousCompositionMode = getCurrentState().compositionMode;
+        m_onlyOnceStateFlag |= STATE_COMPOSITE_MODE;
+    }
     getCurrentState().compositionMode = mode;
-    if (onlyOnce) m_onlyOnceStateFlag |= STATE_COMPOSITE_MODE;
 }
 
 void DrawPool::setBlendEquation(const BlendEquation equation, const bool onlyOnce)
 {
+    if (onlyOnce && !(m_onlyOnceStateFlag & STATE_BLEND_EQUATION)) {
+        m_previousBlendEquation = getCurrentState().blendEquation;
+        m_onlyOnceStateFlag |= STATE_BLEND_EQUATION;
+    }
     getCurrentState().blendEquation = equation;
-    if (onlyOnce) m_onlyOnceStateFlag |= STATE_BLEND_EQUATION;
 }
 
 void DrawPool::setClipRect(const Rect& clipRect, const bool onlyOnce)
 {
+    if (onlyOnce && !(m_onlyOnceStateFlag & STATE_CLIP_RECT)) {
+        m_previousClipRect = getCurrentState().clipRect;
+        m_onlyOnceStateFlag |= STATE_CLIP_RECT;
+    }
     getCurrentState().clipRect = clipRect;
-    if (onlyOnce) m_onlyOnceStateFlag |= STATE_CLIP_RECT;
 }
 
 void DrawPool::setOpacity(const float opacity, const bool onlyOnce)
 {
+    if (onlyOnce && !(m_onlyOnceStateFlag & STATE_OPACITY)) {
+        m_previousOpacity = getCurrentState().opacity;
+        m_onlyOnceStateFlag |= STATE_OPACITY;
+    }
     getCurrentState().opacity = opacity;
-    if (onlyOnce) m_onlyOnceStateFlag |= STATE_OPACITY;
 }
 
 void DrawPool::setShaderProgram(const PainterShaderProgramPtr& shaderProgram, const bool onlyOnce, const std::function<void()>& action)
 {
     if (g_painter->isReplaceColorShader(getCurrentState().shaderProgram))
         return;
+
+    if (onlyOnce && !(m_onlyOnceStateFlag & STATE_SHADER_PROGRAM)) {
+        m_previousShaderProgram = getCurrentState().shaderProgram;
+        m_previousShaderAction = getCurrentState().action;
+        m_onlyOnceStateFlag |= STATE_SHADER_PROGRAM;
+    }
 
     if (shaderProgram) {
         if (!g_painter->isReplaceColorShader(shaderProgram.get()))
@@ -218,8 +254,6 @@ void DrawPool::setShaderProgram(const PainterShaderProgramPtr& shaderProgram, co
         getCurrentState().shaderProgram = nullptr;
         getCurrentState().action = nullptr;
     }
-
-    if (onlyOnce) m_onlyOnceStateFlag |= STATE_SHADER_PROGRAM;
 }
 
 void DrawPool::resetState()
@@ -232,18 +266,95 @@ void DrawPool::resetState()
     getCurrentState() = {};
     m_lastFramebufferId = 0;
     m_shaderRefreshDelay = 0;
-    m_scale = PlatformWindow::DEFAULT_DISPLAY_DENSITY;
+    m_scale = DEFAULT_DISPLAY_DENSITY;
 }
 
 bool DrawPool::canRepaint()
 {
-    uint16_t refreshDelay = m_refreshDelay;
-    if (m_shaderRefreshDelay > 0 && (m_refreshDelay == 0 || m_shaderRefreshDelay < m_refreshDelay))
-        refreshDelay = m_shaderRefreshDelay;
+    if (!m_enabled || shouldRepaint())
+        return false;
 
-    const bool canRepaint = m_hashCtrl.wasModified() || (refreshDelay > 0 && m_refreshTimer.ticksElapsed() >= refreshDelay);
+    return canRefresh();
+}
 
-    return canRepaint;
+void DrawPool::release() {
+    if (hasFrameBuffer() && !m_hashCtrl.wasModified() && !canRefresh()) {
+        for (auto& objs : m_objects)
+            objs.clear();
+        m_objectsFlushed.clear();
+        return;
+    }
+
+    m_refreshTimer.restart();
+
+    SpinLock::Guard guard(m_threadLock);
+
+    m_objectsDraw[0].clear();
+
+    if (!m_objectsFlushed.empty()) {
+        if (m_objectsDraw[0].size() < m_objectsFlushed.size())
+            m_objectsDraw[0].swap(m_objectsFlushed);
+
+        if (!m_objectsFlushed.empty()) {
+            m_objectsDraw[0].insert(
+                m_objectsDraw[0].end(),
+                std::make_move_iterator(m_objectsFlushed.begin()),
+                std::make_move_iterator(m_objectsFlushed.end()));
+        }
+        m_objectsFlushed.clear();
+    }
+
+    for (auto& objs : m_objects) {
+        if (m_objectsDraw[0].size() < objs.size())
+            m_objectsDraw[0].swap(objs);
+
+        bool addFirst = true;
+
+        if (!m_objectsDraw[0].empty() && !objs.empty()) {
+            auto& last = m_objectsDraw[0].back();
+            auto& first = objs.front();
+
+            if (last.state == first.state && last.coords && first.coords) {
+                last.coords->append(first.coords.get());
+                addFirst = false;
+            }
+        }
+
+        if (!objs.empty()) {
+            m_objectsDraw[0].insert(
+                m_objectsDraw[0].end(),
+                std::make_move_iterator(objs.begin() + (addFirst ? 0 : 1)),
+                std::make_move_iterator(objs.end()));
+            objs.clear();
+        }
+    }
+
+    m_shouldRepaint.store(true, std::memory_order_relaxed);
+}
+
+void DrawPool::flush()
+{
+    m_coords.clear();
+
+    for (auto& objs : m_objects) {
+        bool addFirst = true;
+        if (!objs.empty() && !m_objectsFlushed.empty()) {
+            auto& last = m_objectsFlushed.back();
+            auto& first = objs.front();
+
+            if (last.state == first.state && last.coords && first.coords) {
+                last.coords->append(first.coords.get());
+                addFirst = false;
+            }
+        }
+
+        m_objectsFlushed.insert(
+            m_objectsFlushed.end(),
+            std::make_move_iterator(objs.begin() + (addFirst ? 0 : 1)),
+            std::make_move_iterator(objs.end())
+        );
+        objs.clear();
+    }
 }
 
 void DrawPool::scale(const float factor)
@@ -337,10 +448,13 @@ void DrawPool::removeFramebuffer() {
     m_framebuffer = nullptr;
 }
 
-void DrawPool::addAction(const std::function<void()>& action)
+void DrawPool::addAction(const std::function<void()>& action, size_t hash)
 {
     const uint8_t order = m_type == DrawPoolType::MAP ? THIRD : FIRST;
     m_objects[order].emplace_back(action);
+    if (hasFrameBuffer() && hash > 0 && !m_hashCtrl.isLast(hash)) {
+        m_hashCtrl.put(hash);
+    }
 }
 
 void DrawPool::bindFrameBuffer(const Size& size, const Color& color)
@@ -365,13 +479,18 @@ void DrawPool::bindFrameBuffer(const Size& size, const Color& color)
 }
 void DrawPool::releaseFrameBuffer(const Rect& dest)
 {
+    releaseFrameBuffer(dest, 0);
+}
+
+void DrawPool::releaseFrameBuffer(const Rect& dest, uint8_t flipDirection)
+{
     backState();
 
-    addAction([this, dest, frameIndex = m_bindedFramebuffers, drawState = getCurrentState()] {
+    addAction([this, dest, flipDirection, frameIndex = m_bindedFramebuffers, drawState = getCurrentState()] {
         const auto& frame = getTemporaryFrameBuffer(frameIndex);
         frame->release();
         drawState.execute(this);
-        frame->draw(dest);
+        frame->draw(dest, flipDirection);
     });
 
     if (hasFrameBuffer() && !dest.isNull()) m_hashCtrl.put(dest.hash());

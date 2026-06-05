@@ -17,7 +17,7 @@ DebugLabel < Label
 
 MainWindow
   id: debugWindow
-  size: 600 150
+  size: 550 600
   !text: tr('Debug Info')
   @onClose: modules.client_debug_info.onMiniWindowClose()
   &save: false
@@ -25,10 +25,9 @@ MainWindow
   padding: 25 3 3 3
   opacity: 0.9
   $mobile:
-    size: 600 150
+    size: 550 300
   @onEnter: modules.client_debug_info.toggle()
   @onEscape: modules.client_debug_info.toggle()
-
 
   ScrollablePanel
     id: debugPanel
@@ -38,12 +37,107 @@ MainWindow
     padding-left: 5
     vertical-scrollbar: debugScroll
 
-    DebugLabel
-      !text: tr('Proxies')
+    DebugText
+      id: sleepTime
+      text: -
       anchors.top: parent.top
 
     DebugText
+      id: luaRamUsage
+      text: -
+
+    DebugText
+      id: atlas
+      text: -
+
+    DebugLabel
+      !text: tr('Proxies')
+
+    DebugText
       id: proxies
+      text: -
+
+    DebugLabel
+      !text: tr('Main')
+
+    DebugText
+      id: mainStats
+      text: -
+
+    DebugLabel
+      !text: tr('Render')
+
+    DebugText
+      id: adaptiveRender
+      text: -
+
+    DebugText
+      id: render
+      text: -
+
+    DebugLabel
+      !text: tr('Dispatcher')
+
+    DebugText
+      id: dispatcherStats
+      text: -
+
+    DebugLabel
+      !text: tr('Lua')
+
+    DebugText
+      id: luaStats
+      text: -
+
+    DebugLabel
+      !text: tr('Lua by callback')
+
+    DebugText
+      id: luaCallback
+      text: -
+
+    DebugLabel
+      !text: tr('Widgets & Objects')
+
+    QtCheckBox
+      id: widgetsInfoToggle
+      !text: tr('Enabled')
+      text-auto-resize: true
+      anchors.horizontalCenter: parent.horizontalCenter
+      anchors.top: prev.bottom
+      margin-top: 5
+      margin-bottom: 5
+
+    DebugText
+      id: widgetsInfo
+      text: ""
+
+    DebugLabel
+      !text: tr('Packets')
+
+    DebugText
+      id: packets
+      text: -
+
+    DebugLabel
+      !text: tr('Slow main functions')
+
+    DebugText
+      id: slowMain
+      text: -
+
+    DebugLabel
+      !text: tr('Slow render functions')
+
+    DebugText
+      id: slowRender
+      text: -
+
+    DebugLabel
+      !text: tr('Slow packets')
+
+    DebugText
+      id: slowPackets
       text: -
 
   VerticalScrollBar

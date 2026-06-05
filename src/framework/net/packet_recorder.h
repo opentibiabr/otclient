@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+* Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -21,11 +21,11 @@
 */
 
 #pragma once
+#include "declarations.h"
+#include "framework/luaengine/luaobject.h"
 
-#include <framework/net/inputmessage.h>
-#include <framework/net/outputmessage.h>
-
-class PacketRecorder : public LuaObject {
+class PacketRecorder : public LuaObject
+{
 public:
     PacketRecorder(const std::string_view& file);
     virtual ~PacketRecorder();

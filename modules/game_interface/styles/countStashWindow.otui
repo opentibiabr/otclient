@@ -1,0 +1,53 @@
+CountStashWindow < MainWindow
+  id: countStashWindow
+  !text: tr('Stow Items')
+  size: 196 90
+
+  SpinBox
+    id: spinBox
+    anchors.left: parent.left
+    anchors.top: parent.top
+    width: 1
+    height: 1
+    phantom: true
+    margin-top: 2
+    focusable: true
+
+  Item
+    id: item
+    anchors.left: parent.left
+    anchors.top: parent.top
+    margin-top: 2
+    margin-left: -4
+    focusable: false
+    virtual: true
+
+  HorizontalScrollBar
+    id: countScrollBar
+    anchors.left: prev.right
+    anchors.right: parent.right
+    anchors.top: prev.top
+    margin-left: 10
+    margin-top: -2
+    focusable: false
+
+  Button
+    id: buttonCancel
+    !text: tr('Cancel')
+    height: 20
+    anchors.left: countScrollBar.horizontalCenter
+    anchors.right: countScrollBar.right
+    anchors.top: countScrollBar.bottom
+    margin-top: 7
+    focusable: false
+
+  Button
+    id: buttonOk
+    !text: tr('Ok')
+    height: 20
+    anchors.right: countScrollBar.horizontalCenter
+    anchors.left: countScrollBar.left
+    anchors.top: countScrollBar.bottom
+    margin-top: 7
+    margin-right: 6
+    focusable: false

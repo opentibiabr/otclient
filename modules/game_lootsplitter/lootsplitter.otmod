@@ -1,0 +1,10 @@
+Module
+  name: game_lootsplitter
+  description: Handles the Loot Splitter Functions
+  author: OTClient team
+  website: https://github.com/mehah/otclient
+  sandboxed: true
+  autoload: true
+  scripts: [ lootsplitter ]
+  @onLoad: init()
+  @onUnload: terminate()

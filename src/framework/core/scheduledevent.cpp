@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,8 +22,11 @@
 
 #include "scheduledevent.h"
 
-ScheduledEvent::ScheduledEvent(const std::function<void()>& callback, const int delay, const int maxCycles) : Event(callback),
-m_ticks(g_clock.millis() + delay), m_delay(delay), m_maxCycles(maxCycles) {}
+#include "clock.h"
+
+ScheduledEvent::ScheduledEvent(const std::string& function, const std::function<void()>& callback, const int delay, const int maxCycles) :
+    Event(callback, function),
+    m_ticks(g_clock.millis() + delay), m_delay(delay), m_maxCycles(maxCycles) {}
 
 void ScheduledEvent::execute()
 {
@@ -39,6 +42,8 @@ void ScheduledEvent::execute()
     ++m_cyclesExecuted;
 }
 
+void ScheduledEvent::postpone() { m_ticks = g_clock.millis() + m_delay; }
+int ScheduledEvent::remainingTicks() { return m_ticks - g_clock.millis(); }
 bool ScheduledEvent::nextCycle()
 {
     if (m_callback && !m_canceled && (m_maxCycles == 0 || m_cyclesExecuted < m_maxCycles)) {

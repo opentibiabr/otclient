@@ -286,10 +286,10 @@ MiniWindow
         image-source: /images/icons/icon_fishing
         image-size: 9 9
       SkillPercentPanel
+      margin-bottom: 5
         
     HorizontalSeparator
       id: separadorOnOffenceInfoChange
-      margin-top: 5
       margin-bottom: 5
 
     SmallSkillButton
@@ -374,12 +374,14 @@ MiniWindow
       id: convertedDamage
       SkillNameLabel
         !text: tr('Converted Damage')
+        text-overflow-length: 15
       SkillValueLabel
     SmallSkillButton
       visible: false
       id: convertedElement
       SkillNameLabel
         !text: tr('Converted Element')
+        text-overflow-length: 16
       SkillValueLabel
       
     SmallSkillButton
@@ -543,6 +545,13 @@ MiniWindow
       SkillValueLabel
 
     SmallSkillButton
+      id: mantraValue
+      visible: false
+      SkillNameLabel
+        !text: tr('Mantra Value')
+      SkillValueLabel
+
+    SmallSkillButton
       id: mitigation
       visible: false
       SkillNameLabel
@@ -590,6 +599,7 @@ MiniWindow
       id: HorizontalSeparator
       margin-top: 5
       margin-bottom: 15
+      visible: false
 
   UIWidget
     id: miniborder

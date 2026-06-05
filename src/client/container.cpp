@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,6 +21,7 @@
  */
 
 #include "container.h"
+
 #include "item.h"
 
 ItemPtr Container::getItem(const int slot)
@@ -58,7 +59,7 @@ void Container::onAddItem(const ItemPtr& item, int slot)
 
     m_items.insert(m_items.begin() + slot, item);
     ++m_size;
-    
+
     updateItemsPositions();
 
     callLuaField("onSizeChange", m_size);

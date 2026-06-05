@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,31 +22,31 @@
 
 #include "mapview.h"
 
+#include <framework/graphics/drawpoolmanager.h>
+
 #include "animatedtext.h"
-#include "client.h"
 #include "creature.h"
 #include "game.h"
+#include "gameconfig.h"
 #include "lightview.h"
 #include "map.h"
 #include "missile.h"
-#include "statictext.h"
 #include "tile.h"
-
+#include "item.h"
+#include <framework/input/mouse.h>
+#include "framework/core/asyncdispatcher.h"
+#include "framework/core/eventdispatcher.h"
+#include <framework/core/graphicalapplication.h>
+#include "framework/graphics/graphics.h"
+#include "framework/graphics/painter.h"
+#include "framework/graphics/shadermanager.h"
 #include "framework/graphics/texturemanager.h"
-#include <framework/core/eventdispatcher.h>
-#include <framework/core/resourcemanager.h>
-#include <framework/graphics/drawpoolmanager.h>
-#include <framework/graphics/graphics.h>
-#include <framework/graphics/shadermanager.h>
 #include <framework/platform/platformwindow.h>
-#include <framework/core/asyncdispatcher.h>
-
-#include <algorithm>
 
 MapView::MapView() : m_lightView(std::make_unique<LightView>(Size())), m_pool(g_drawPool.get(DrawPoolType::MAP))
 {
     m_floors.resize(g_gameConfig.getMapMaxZ() + 1);
-    m_floorThreads.resize(g_asyncDispatcher.get_thread_count());
+    m_floorThreads.resize(g_asyncDispatcher->get_thread_count());
     for (auto& thread : m_floorThreads)
         thread.resize(m_floors.size());
 
@@ -134,7 +134,7 @@ void MapView::drawFloor()
             g_drawPool.setOpacity(fadeLevel);
 
         Position _camera = cameraPosition;
-        const bool alwaysTransparent = m_floorViewMode == ALWAYS_WITH_TRANSPARENCY && z < m_cachedFirstVisibleFloor && _camera.coveredUp(cameraPosition.z - z);
+        const bool alwaysTransparent = m_floorViewMode == Otc::ALWAYS_WITH_TRANSPARENCY && z < m_cachedFirstVisibleFloor && _camera.coveredUp(cameraPosition.z - z);
 
         const auto& map = m_floors[z].cachedVisibleTiles;
 
@@ -191,7 +191,7 @@ void MapView::drawLights() {
         if (fadeLevel == 0.f) break;
 
         Position _camera = cameraPosition;
-        const bool alwaysTransparent = m_floorViewMode == ALWAYS_WITH_TRANSPARENCY && z < m_cachedFirstVisibleFloor && _camera.coveredUp(cameraPosition.z - z);
+        const bool alwaysTransparent = m_floorViewMode == Otc::ALWAYS_WITH_TRANSPARENCY && z < m_cachedFirstVisibleFloor && _camera.coveredUp(cameraPosition.z - z);
 
         const auto& map = m_floors[z].cachedVisibleTiles;
 
@@ -205,10 +205,10 @@ void MapView::drawLights() {
         }
 
         for (const auto& tile : map.tiles)
-            tile->drawLight(transformPositionTo2D(tile->getPosition()), m_lightView);
+            tile->drawLight(transformPositionTo2D(tile->getPosition()), m_lightView.get());
 
         for (const auto& missile : g_map.getFloorMissiles(z))
-            missile->draw(transformPositionTo2D(missile->getPosition()), false, m_lightView);
+            missile->draw(transformPositionTo2D(missile->getPosition()), false, m_lightView.get());
     }
 }
 
@@ -219,9 +219,10 @@ void MapView::drawCreatureInformation() {
     if (m_drawNames) { flags |= Otc::DrawNames; }
     if (m_drawHealthBars) { flags |= Otc::DrawBars; }
     if (m_drawManaBar) { flags |= Otc::DrawManaBar; }
+    if (m_drawHarmony) { flags |= Otc::DrawHarmony; }
 
     Position _camera = m_posInfo.camera;
-    const bool alwaysTransparent = m_floorViewMode == ALWAYS_WITH_TRANSPARENCY && _camera.coveredUp(m_posInfo.camera.z - m_floorMin);
+    const bool alwaysTransparent = m_floorViewMode == Otc::ALWAYS_WITH_TRANSPARENCY && _camera.coveredUp(m_posInfo.camera.z - m_floorMin);
     for (const auto& [uid, creature] : g_map.getCreatures()) {
         const auto& tile = creature->getTile();
         if (!tile || !m_posInfo.isInRange(creature->getPosition()))
@@ -296,7 +297,7 @@ void MapView::updateVisibleTiles()
         m_floors[m_floorMin].cachedVisibleTiles.clear();
     } while (++m_floorMin <= m_floorMax);
 
-    m_lockedFirstVisibleFloor = m_floorViewMode == LOCKED ? m_posInfo.camera.z : -1;
+    m_lockedFirstVisibleFloor = m_floorViewMode == Otc::LOCKED ? m_posInfo.camera.z : -1;
 
     const auto prevFirstVisibleFloor = m_cachedFirstVisibleFloor;
 
@@ -305,7 +306,7 @@ void MapView::updateVisibleTiles()
             onFloorChange(m_posInfo.camera.z, m_lastCameraPosition.z);
         }
 
-        const auto cachedFirstVisibleFloor = calcFirstVisibleFloor(m_floorViewMode != ALWAYS);
+        const auto cachedFirstVisibleFloor = calcFirstVisibleFloor(m_floorViewMode != Otc::ALWAYS);
         m_cachedFirstVisibleFloor = cachedFirstVisibleFloor;
         m_cachedLastVisibleFloor = std::max<uint8_t>(cachedFirstVisibleFloor, calcLastVisibleFloor());
 
@@ -313,7 +314,7 @@ void MapView::updateVisibleTiles()
     }
 
     auto cachedFirstVisibleFloor = m_cachedFirstVisibleFloor;
-    if (m_floorViewMode == ALWAYS_WITH_TRANSPARENCY || canFloorFade()) {
+    if (m_floorViewMode == Otc::ALWAYS_WITH_TRANSPARENCY || canFloorFade()) {
         cachedFirstVisibleFloor = calcFirstVisibleFloor(false);
     }
 
@@ -363,7 +364,7 @@ void MapView::updateVisibleTiles()
                         bool addTile = true;
 
                         if (checkIsCovered && tile->isCompletelyCovered(m_cachedFirstVisibleFloor, m_resetCoveredCache)) {
-                            if (m_floorViewMode != ALWAYS_WITH_TRANSPARENCY || (tilePos.z < m_posInfo.camera.z && tile->isCovered(m_cachedFirstVisibleFloor))) {
+                            if (m_floorViewMode != Otc::ALWAYS_WITH_TRANSPARENCY || (tilePos.z < m_posInfo.camera.z && tile->isCovered(m_cachedFirstVisibleFloor))) {
                                 addTile = false;
                             }
                         }
@@ -390,7 +391,7 @@ void MapView::updateVisibleTiles()
     };
 
     if (m_multithreading) {
-        static const int numThreads = g_asyncDispatcher.get_thread_count();
+        static const int numThreads = g_asyncDispatcher->get_thread_count();
         static BS::multi_future<void> tasks(numThreads);
         tasks.clear();
 
@@ -403,7 +404,7 @@ void MapView::updateVisibleTiles()
             for (auto& floor : m_floorThreads[i])
                 floor.cachedVisibleTiles.clear();
 
-            tasks.emplace_back(g_asyncDispatcher.submit_task([=, this] {
+            tasks.emplace_back(g_asyncDispatcher->submit_task([=, this] {
                 processDiagonalRange(m_floorThreads[i], start, end);
             }));
         }
@@ -445,7 +446,12 @@ void MapView::updateRect(const Rect& rect) {
         m_posInfo.horizontalStretchFactor = rect.width() / static_cast<float>(m_posInfo.srcRect.width());
         m_posInfo.verticalStretchFactor = rect.height() / static_cast<float>(m_posInfo.srcRect.height());
 
-        const auto& mousePos = getPosition(g_window.getMousePosition() * g_window.getDisplayDensity());
+        auto mousePoint = g_window.getMousePosition();
+        if (g_app.getHUDScale() != DEFAULT_DISPLAY_DENSITY) {
+            mousePoint.scale(g_app.getHUDScale());
+        }
+
+        const auto& mousePos = getPosition(mousePoint * g_window.getDisplayDensity());
         if (mousePos != m_mousePosition)
             onMouseMove(m_mousePosition = mousePos, true);
     }
@@ -453,7 +459,7 @@ void MapView::updateRect(const Rect& rect) {
 
 void MapView::updateGeometry(const Size& visibleDimension)
 {
-    float scaleFactor = m_antiAliasingMode == ANTIALIASING_SMOOTH_RETRO ? 2.f : 1.f;
+    float scaleFactor = m_antiAliasingMode == Otc::ANTIALIASING_SMOOTH_RETRO ? 2.f : 1.f;
 
     auto maxAwareRange = std::max<size_t>(visibleDimension.width(), visibleDimension.height());
 
@@ -564,6 +570,75 @@ void MapView::onMouseMove(const Position& mousePos, const bool /*isVirtualMove*/
         destroyHighlightTile();
         updateHighlightTile(mousePos);
     }
+
+    if (!g_mouse.isCursorChanged()) {
+        bool cursorSet = false;
+        if (m_cursorAnimations) {
+            if (const auto& tile = getTopTile(mousePos)) {
+                if (const auto& creature = tile->getTopCreature()) {
+                    if (creature->isMonster()) {
+                        int id = g_mouse.getCursorId("attack");
+                        if (id != -1) {
+                            g_window.setMouseCursor(id);
+                            cursorSet = true;
+                        }
+                    } else if (creature->isNpc()) {
+                        int id = g_mouse.getCursorId("talk");
+                        if (id != -1) {
+                            g_window.setMouseCursor(id);
+                            cursorSet = true;
+                        }
+                    }
+                }
+                
+                if (!cursorSet) {
+                    if (const auto& thing = tile->getTopUseThing()) {
+                        // Check for both containers and corpses (corpses might not always be containers)
+                        if (thing->isContainer() || thing->isLyingCorpse()) {
+                            // Use quicklootcursor for dead creatures when quickloot is active
+                            const bool isDeadCreature = thing->isLyingCorpse();
+                            const bool quickLootActive = g_game.getFeature(Otc::GameThingQuickLoot);
+                            const char* cursorName = (isDeadCreature && quickLootActive) ? "quicklootcursor" : "containercursor";
+                            
+                            int id = g_mouse.getCursorId(cursorName);
+                            if (id != -1) {
+                                g_window.setMouseCursor(id);
+                                cursorSet = true;
+                            }
+                        }
+                    }
+                }
+
+                if (!cursorSet) {
+                    if (const auto& thing = tile->getTopUseThing()) {
+                        if (thing->isUsable()) {
+                            int id = g_mouse.getCursorId("pointinghand");
+                            if (id != -1) {
+                                g_window.setMouseCursor(id);
+                                cursorSet = true;
+                            }
+                        }
+                    }
+                }
+
+                if (!cursorSet && tile->isWalkable()) {
+                    int id = g_mouse.getCursorId("walk");
+                    if (id != -1) {
+                        g_window.setMouseCursor(id);
+                        cursorSet = true;
+                    }
+                }
+            }
+        }
+
+        if (!cursorSet) {
+            int id = g_mouse.getCursorId("default");
+            if (id != -1)
+                g_window.setMouseCursor(id);
+            else
+                g_window.restoreMouseCursor();
+        }
+    }
 }
 
 void MapView::onKeyRelease(const InputEvent& inputEvent)
@@ -619,7 +694,7 @@ void MapView::setVisibleDimension(const Size& visibleDimension)
     updateGeometry(visibleDimension);
 }
 
-void MapView::setFloorViewMode(const FloorViewMode floorViewMode)
+void MapView::setFloorViewMode(const Otc::FloorViewMode floorViewMode)
 {
     m_floorViewMode = floorViewMode;
 
@@ -627,12 +702,12 @@ void MapView::setFloorViewMode(const FloorViewMode floorViewMode)
     requestUpdateVisibleTiles();
 }
 
-void MapView::setAntiAliasingMode(const AntialiasingMode mode)
+void MapView::setAntiAliasingMode(const Otc::AntialiasingMode mode)
 {
     m_antiAliasingMode = mode;
 
     g_mainDispatcher.addEvent([=, this] {
-        m_pool->getFrameBuffer()->setSmooth(mode != ANTIALIASING_DISABLED);
+        m_pool->getFrameBuffer()->setSmooth(mode != Otc::ANTIALIASING_DISABLED);
     });
 
     updateGeometry(m_visibleDimension);
@@ -835,7 +910,7 @@ TilePtr MapView::getTopTile(Position tilePos) const
         return nullptr;
 
     // we must check every floor, from top to bottom to check for a clickable tile
-    if (m_floorViewMode == ALWAYS_WITH_TRANSPARENCY && tilePos.isInRange(m_lastCameraPosition, g_gameConfig.getTileTransparentFloorViewRange(), g_gameConfig.getTileTransparentFloorViewRange()))
+    if (m_floorViewMode == Otc::ALWAYS_WITH_TRANSPARENCY && tilePos.isInRange(m_lastCameraPosition, g_gameConfig.getTileTransparentFloorViewRange(), g_gameConfig.getTileTransparentFloorViewRange()))
         return g_map.getTile(tilePos);
 
     tilePos.coveredUp(tilePos.z - m_cachedFirstVisibleFloor);
@@ -875,6 +950,7 @@ void MapView::setShader(const std::string_view name, const float fadein, const f
     });
 }
 
+bool MapView::isDrawingLights() const { return m_drawingLight && m_lightView->isDark(); }
 void MapView::setDrawLights(const bool enable)
 {
     m_drawingLight = enable;

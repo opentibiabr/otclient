@@ -1,5 +1,5 @@
 local voc = player:getVocation()
-if voc == 1 or voc == 11 then
+if voc == 1 or voc == 11 or voc == 5 or voc == 15 then
     setDefaultTab("Cave")
     UI.Separator()
     local m = macro(100000, "Exeta when low hp", function() end)

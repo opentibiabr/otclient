@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,14 +21,12 @@
  */
 
 #include "protocol.h"
-#include <algorithm>
-#include <framework/core/application.h>
-#include <random>
 
+#include "client/game.h"
+#include "framework/core/graphicalapplication.h"
+#include "framework/proxy/proxy.h"
 #include "inputmessage.h"
 #include "outputmessage.h"
-#include "framework/core/graphicalapplication.h"
-#include "client/game.h"
 #ifdef __EMSCRIPTEN__
 #include "webconnection.h"
 #else
@@ -121,7 +119,7 @@ bool Protocol::isConnecting()
     return m_connection && m_connection->isConnecting();
 }
 
-void Protocol::send(const OutputMessagePtr& outputMessage)
+void Protocol::send(const OutputMessagePtr& outputMessage, bool raw)
 {
     if (m_player) {
         m_player->onOutputPacket(outputMessage);
@@ -132,28 +130,30 @@ void Protocol::send(const OutputMessagePtr& outputMessage)
         m_recorder->addOutputPacket(outputMessage);
     }
 
-    // padding
-    if (g_game.getClientVersion() >= 1405) {
-        outputMessage->writePaddingAmount();
-    }
+    if (!raw) {
+        // padding
+        if (g_game.getClientVersion() >= 1405) {
+            outputMessage->writePaddingAmount();
+        }
 
-    // encrypt
-    if (m_xteaEncryptionEnabled) {
-        xteaEncrypt(outputMessage);
-    }
+        // encrypt
+        if (m_xteaEncryptionEnabled) {
+            xteaEncrypt(outputMessage);
+        }
 
-    // write checksum
-    if (m_sequencedPackets) {
-        outputMessage->writeSequence(m_packetNumber++);
-    } else if (m_checksumEnabled) {
-        outputMessage->writeChecksum();
-    }
+        // write checksum
+        if (m_sequencedPackets) {
+            outputMessage->writeSequence(m_packetNumber++);
+        } else if (m_checksumEnabled) {
+            outputMessage->writeChecksum();
+        }
 
-    // write message size
-    if (g_game.getClientVersion() >= 1405) {
-        outputMessage->writeHeaderSize();
-    } else {
-        outputMessage->writeMessageSize();
+        // write message size
+        if (g_game.getClientVersion() >= 1405) {
+            outputMessage->writeHeaderSize();
+        } else {
+            outputMessage->writeMessageSize();
+        }
     }
 
     onSend();
@@ -204,12 +204,12 @@ void Protocol::internalRecvHeader(const uint8_t* buffer, const uint16_t size)
 {
     // read message size
     m_inputMessage->fillBuffer(buffer, size);
-    uint16_t remainingSize = m_inputMessage->readSize();
+    uint32_t remainingSize = m_inputMessage->readSize();
     if (g_game.getClientVersion() >= 1405) {
-        remainingSize = remainingSize * 8 + 4;
+        remainingSize = remainingSize * 8U + 4U;
     }
 
-    constexpr uint32_t MAX_PACKET = InputMessage::BUFFER_MAXSIZE;
+    constexpr uint32_t MAX_PACKET = std::numeric_limits<uint16_t>::max();
     if (remainingSize == 0 || remainingSize > MAX_PACKET) {
         g_logger.error(fmt::format("invalid packet size = {}", remainingSize));
         return;
@@ -217,7 +217,7 @@ void Protocol::internalRecvHeader(const uint8_t* buffer, const uint16_t size)
 
     // read remaining message data
     if (m_connection)
-        m_connection->read(remainingSize, [capture0 = asProtocol()](auto&& PH1, auto&& PH2) {
+        m_connection->read(static_cast<uint16_t>(remainingSize), [capture0 = asProtocol()](auto&& PH1, auto&& PH2) {
         capture0->internalRecvData(std::forward<decltype(PH1)>(PH1),
         std::forward<decltype(PH2)>(PH2));
     });
@@ -255,22 +255,52 @@ void Protocol::internalRecvData(const uint8_t* buffer, const uint16_t size)
         }
     }
 
+
+
     if (decompress) {
+        uint32_t totalSize = 0;
         static uint8_t zbuffer[InputMessage::BUFFER_MAXSIZE];
 
-        m_zstream.next_in = m_inputMessage->getDataBuffer();
-        m_zstream.next_out = zbuffer;
-        m_zstream.avail_in = m_inputMessage->getUnreadSize();
-        m_zstream.avail_out = InputMessage::BUFFER_MAXSIZE;
+        if (m_compressionMode == COMPRESSION_MODE_UNKNOWN || m_compressionMode == COMPRESSION_MODE_PER_PACKET) {
+            m_zstream.next_in = m_inputMessage->getDataBuffer();
+            m_zstream.next_out = zbuffer;
+            m_zstream.avail_in = m_inputMessage->getUnreadSize();
+            m_zstream.avail_out = InputMessage::BUFFER_MAXSIZE;
 
-        const int32_t ret = inflate(&m_zstream, Z_FINISH);
-        if (ret != Z_OK && ret != Z_STREAM_END) {
-            g_logger.traceError("failed to decompress message - {}", m_zstream.msg);
-            return;
+            const int32_t ret = inflate(&m_zstream, Z_FINISH);
+            totalSize = m_zstream.total_out;
+            if (ret == Z_STREAM_END && totalSize > 0) {
+                m_compressionMode = COMPRESSION_MODE_PER_PACKET;
+                inflateReset(&m_zstream);
+            } else if (m_compressionMode == COMPRESSION_MODE_UNKNOWN) {
+                // Detection: standard failed, fall through to sync-flush
+                inflateReset(&m_zstream);
+                m_compressionMode = COMPRESSION_MODE_STREAM;
+                totalSize = 0;
+            } else {
+                g_logger.traceError("failed to decompress message - {}", m_zstream.msg);
+                return;
+            }
+
         }
 
-        const uint32_t totalSize = m_zstream.total_out;
-        inflateReset(&m_zstream);
+        if (m_compressionMode == COMPRESSION_MODE_STREAM) {
+            m_inputMessage->addCompressionFooter();
+
+            m_zstream.next_in = m_inputMessage->getDataBuffer();
+            m_zstream.next_out = zbuffer;
+            m_zstream.avail_in = m_inputMessage->getUnreadSize();
+            m_zstream.avail_out = InputMessage::BUFFER_MAXSIZE;
+            m_zstream.total_out = 0;
+
+            const int32_t ret = inflate(&m_zstream, Z_SYNC_FLUSH);
+            if (ret != Z_OK && ret != Z_STREAM_END) {
+                g_logger.traceError("failed to decompress message - {}", m_zstream.msg);
+                return;
+            }
+            totalSize = m_zstream.total_out;
+        }
+
         if (totalSize == 0) {
             g_logger.traceError("invalid size of decompressed message - %i", totalSize);
             return;
@@ -375,7 +405,18 @@ void Protocol::xteaEncrypt(const OutputMessagePtr& outputMessage) const
     }
 }
 
-void Protocol::onConnect() { callLuaField("onConnect"); }
+void Protocol::onConnect() {
+    if (g_game.getClientVersion() >= 1200) {
+        std::string sendWorldName(g_game.getWorldName());
+        sendWorldName += '\n';
+        const auto& msg = std::make_shared<OutputMessage>();
+        msg->addBytes(std::string_view(sendWorldName));
+        send(msg, true);
+
+        enabledSequencedPackets();
+    }
+    callLuaField("onConnect"); 
+}
 
 void Protocol::onRecv(const InputMessagePtr& inputMessage)
 {
@@ -419,14 +460,14 @@ void Protocol::onLocalDisconnected(std::error_code ec)
     if (m_disconnected)
         return;
     auto self(asProtocol());
-    #ifndef __EMSCRIPTEN__
+#ifndef __EMSCRIPTEN__
     post(g_ioService, [&, ec] {
         if (m_disconnected)
             return;
         m_disconnected = true;
         onError(ec);
     });
-    #endif
+#endif
 }
 
 void Protocol::onPlayerPacket(const std::shared_ptr<std::vector<uint8_t>>& packet)
@@ -434,7 +475,7 @@ void Protocol::onPlayerPacket(const std::shared_ptr<std::vector<uint8_t>>& packe
     if (m_disconnected)
         return;
     auto self(asProtocol());
-    #ifndef __EMSCRIPTEN__
+#ifndef __EMSCRIPTEN__
     post(g_ioService, [&, packet] {
         if (m_disconnected)
             return;
@@ -445,7 +486,7 @@ void Protocol::onPlayerPacket(const std::shared_ptr<std::vector<uint8_t>>& packe
         m_inputMessage->setMessageSize(packet->size());
         onRecv(m_inputMessage);
     });
-    #endif
+#endif
 }
 
 void Protocol::playRecord(PacketPlayerPtr player)
@@ -461,7 +502,6 @@ void Protocol::playRecord(PacketPlayerPtr player)
     return onConnect();
 }
 
-void Protocol::setRecorder(PacketRecorderPtr recorder)
-{
-    m_recorder = recorder;
-}
+void Protocol::setRecorder(PacketRecorderPtr recorder) { m_recorder = recorder; }
+
+ticks_t Protocol::getElapsedTicksSinceLastRead() const { return m_connection ? m_connection->getElapsedTicksSinceLastRead() : -1; }

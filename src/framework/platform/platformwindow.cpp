@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +22,9 @@
 
 #include "platformwindow.h"
 
+#include "framework/core/clock.h"
+#include "framework/graphics/image.h"
+
 #ifdef WIN32
 #include "win32window.h"
 WIN32Window window;
@@ -31,15 +34,14 @@ AndroidWindow window;
 #elif defined __EMSCRIPTEN__
 #include "browserwindow.h"
 BrowserWindow window;
+#elif defined __APPLE__
+#include "cocoawindow.h"
+CocoaWindow window;
 #else
 #include "x11window.h"
 #include <framework/core/clock.h>
 X11Window window;
 #endif
-
-#include <framework/core/clock.h>
-#include <framework/graphics/image.h>
-#include <framework/util/color.h>
 
 PlatformWindow& g_window = window;
 
@@ -52,12 +54,7 @@ int PlatformWindow::loadMouseCursor(const std::string& file, const Point& hotSpo
     }
 
     if (image->getBpp() != 4) {
-        g_logger.error("the cursor image must have 4 channels");
-        return -1;
-    }
-
-    if (image->getWidth() != 32 || image->getHeight() != 32) {
-        g_logger.error("the cursor image must have 32x32 dimension");
+        g_logger.error("The cursor image must have 4 channels");
         return -1;
     }
 
@@ -92,20 +89,34 @@ void PlatformWindow::processKeyDown(Fw::Key keyCode)
     if (keyCode == Fw::KeyUnknown)
         return;
 
-    if (keyCode == Fw::KeyCtrl) {
-        m_inputEvent.keyboardModifiers |= Fw::KeyboardCtrlModifier;
-        return;
 #if defined(__APPLE__)
-    } else if (keyCode == Fw::KeyMeta) {
-        m_inputEvent.keyboardModifiers |= Fw::KeyboardAltModifier;
+    if (keyCode == Fw::KeyMeta) {
+        m_inputEvent.keyboardModifiers |= Fw::KeyboardPrimaryModifier;
         return;
-#else
     }
     if (keyCode == Fw::KeyAlt) {
         m_inputEvent.keyboardModifiers |= Fw::KeyboardAltModifier;
         return;
-#endif
     }
+    if (keyCode == Fw::KeyCtrl) {
+        m_inputEvent.keyboardModifiers |= Fw::KeyboardCtrlModifier;
+        return;
+    }
+#else
+    if (keyCode == Fw::KeyCtrl) {
+        m_inputEvent.keyboardModifiers |= Fw::KeyboardCtrlModifier;
+        m_inputEvent.keyboardModifiers |= Fw::KeyboardPrimaryModifier;
+        return;
+    }
+    if (keyCode == Fw::KeyAlt) {
+        m_inputEvent.keyboardModifiers |= Fw::KeyboardAltModifier;
+        return;
+    }
+    if (keyCode == Fw::KeyMeta) {
+        m_inputEvent.keyboardModifiers |= Fw::KeyboardMetaModifier;
+        return;
+    }
+#endif
     if (keyCode == Fw::KeyShift) {
         m_inputEvent.keyboardModifiers |= Fw::KeyboardShiftModifier;
         return;
@@ -137,20 +148,34 @@ void PlatformWindow::processKeyUp(Fw::Key keyCode)
     if (keyCode == Fw::KeyUnknown)
         return;
 
-    if (keyCode == Fw::KeyCtrl) {
-        m_inputEvent.keyboardModifiers &= ~Fw::KeyboardCtrlModifier;
-        return;
 #if defined(__APPLE__)
-    } else if (keyCode == Fw::KeyMeta) {
-        m_inputEvent.keyboardModifiers &= ~Fw::KeyboardAltModifier;
+    if (keyCode == Fw::KeyMeta) {
+        m_inputEvent.keyboardModifiers &= ~Fw::KeyboardPrimaryModifier;
         return;
-#else
     }
     if (keyCode == Fw::KeyAlt) {
         m_inputEvent.keyboardModifiers &= ~Fw::KeyboardAltModifier;
         return;
-#endif
     }
+    if (keyCode == Fw::KeyCtrl) {
+        m_inputEvent.keyboardModifiers &= ~Fw::KeyboardCtrlModifier;
+        return;
+    }
+#else
+    if (keyCode == Fw::KeyCtrl) {
+        m_inputEvent.keyboardModifiers &= ~Fw::KeyboardCtrlModifier;
+        m_inputEvent.keyboardModifiers &= ~Fw::KeyboardPrimaryModifier;
+        return;
+    }
+    if (keyCode == Fw::KeyAlt) {
+        m_inputEvent.keyboardModifiers &= ~Fw::KeyboardAltModifier;
+        return;
+    }
+    if (keyCode == Fw::KeyMeta) {
+        m_inputEvent.keyboardModifiers &= ~Fw::KeyboardMetaModifier;
+        return;
+    }
+#endif
     if (keyCode == Fw::KeyShift) {
         m_inputEvent.keyboardModifiers &= ~Fw::KeyboardShiftModifier;
         return;

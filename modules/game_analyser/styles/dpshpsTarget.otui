@@ -1,0 +1,84 @@
+Dps < Panel
+  id: dps
+  anchors.fill: parent
+  UIWidget
+    size: 287 24
+    anchors.top: parent.top
+    anchors.left: parent.left
+    margin-left: 1
+    image-source: /images/game/analyzer/labels/dps
+  TextEdit
+    id: target
+    size: 328 16
+    focusable: true
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 6
+    !placeholder: tr('1')
+    only-number: true
+    @onTextChange: modules.game_analyser.checkNumber(self, self:getText())
+
+Hps < Panel
+  id: hps
+  anchors.fill: parent
+  UIWidget
+    size: 287 24
+    anchors.top: parent.top
+    anchors.left: parent.left
+    margin-left: 1
+    image-source: /images/game/analyzer/labels/hps
+  TextEdit
+    id: target
+    size: 328 16
+    focusable: true
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 6
+    !placeholder: tr('1')
+    only-number: true
+    @onTextChange: modules.game_analyser.checkNumber(self, self:getText())
+
+NewMainWindow
+  id: dspHpsWindow
+  anchors.horizontalCenter: parent.horizontalCenter
+  !text: tr('Set DPS Target')
+  font: Verdana Bold-11px
+  color: #909090
+  size: 360 134
+  @onEscape: self:hide()
+
+  Panel
+    id: contentPanel
+    anchors.fill: parent
+    margin: 14 12 12 12
+
+    Dps
+      id: dps
+      visible: true
+    Hps
+      id: hps
+      visible: false
+
+    HorizontalSeparator
+      id: separator
+      anchors.bottom: next.top
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-bottom: 11
+
+    Button
+      id: cancel
+      anchors.bottom: parent.bottom
+      anchors.right: parent.right
+      !text: tr('Cancel')
+      size: 43 20
+
+    Button
+      id: ok
+      anchors.bottom: parent.bottom
+      anchors.right: prev.left
+      margin-right: 10
+      !text: tr('Ok')
+      size: 43 20

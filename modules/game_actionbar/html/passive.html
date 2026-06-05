@@ -1,0 +1,68 @@
+<style>
+  /* === WINDOW === */
+  .passive-window { width: 241px; height: 227px; }
+  /* === PREVIEW === */
+  .passive-preview-container { height: 30px; }
+  .passive-preview-icon { width: 30px; height: 30px; }
+  .passive-preview-label { white-space: pre-line; margin-left: 45px; width: 251px; --text-auto-resize: false; height: 30px; }
+  /* === SCROLL AREA === */
+  .passive-scroll-area { height: 118px; overflow: scroll; padding-right: 4px; background-color: alpha; --border-width-top: 1; --border-color-top: black; --border-width-left: 1; --border-color-left: black; --border-width-bottom: 1; --border-color-bottom: #747474; --border-width-right: 1; --border-color-right: #747474; --padding: 1 1 1 1; pointer-events: none; --focusable: false; }
+  /* === PASSIVE ITEM === */
+  .passive-item { height: 34px; --focusable: true; --change-cursor-image: false; margin-top: 2; margin-left: 3; }
+  .passive-item:not([checked]) { background-color: #ff070722; }
+  .passive-item[checked] { background-color: #ffffff22; }
+  .passive-item[disabled] { --image-color: #dfdfdf88; color: #dfdfdf88; opacity: 0.8; }
+  .passive-item-icon { width: 34px; height: 34px; padding: 1; }
+  .passive-item-label { position: relative; left: 15px; top: 10px; }
+  /* === FOOTER === */
+  .passive-footer button { width: 25px; display: block; float: right; margin-right: 5px; font: cipsoftFont; }
+
+</style>
+
+<!-- <script type="text">
+  self.PassiveAbilities = {
+    [1] = {
+      name = "Gift of Life",
+      exhaustion = 108000000,
+      type = 'Passive',
+      icon = '/images/game/spells/passiveability-icons-32x32'
+    }
+  }
+</script> -->
+
+<html>
+<window class="passive-window" placement="center" title="Assign Passive" onescape="self:unloadHtml()">
+
+  <div class="passive-preview-container">
+    <img id="image" class="passive-preview-icon" src="/images/game/spells/passiveability-icons-32x32" />
+    <label id="preview" class="passive-preview-label" placement="top-left" text="Gift of Life"></label>
+  </div>
+
+  <hr style="height: 2px;" />
+
+  <div id="passiveList" class="passive-scroll-area UIScrollArea" layout="type:verticalBox">
+    <!--    
+   How do I add a  UIRadioGroup.create() ?
+    <UICheckBox class="passive-item" *for="local passive in self.PassiveAbilities" onChange="self:onSelectPassive(event)">
+      <img class="passive-item-icon" *image-source="passive.icon" />
+      <label class="passive-item-label">{{passive.name}}</label>
+    </UICheckBox> -->
+  </div>
+
+  <hr style="height: 2px;" />
+
+  <div class="passive-footer">
+    <button id="buttonClose">
+      Cancel
+    </button>
+    <button id="buttonApply">
+      Apply
+    </button>
+    <button id="buttonOk">
+      Ok
+    </button>
+  </div>
+
+</window>
+
+</html>

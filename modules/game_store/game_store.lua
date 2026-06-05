@@ -147,6 +147,105 @@ local function setImagenHttp(widget, url, isIcon)
     end
 end
 
+local STORE_ICON_PATH = "/game_store/images/store-icons-inline"
+local STORE_ICON_TAGS = {
+    ["{info}"]                    = {clip = "0 0 13 13",   text = ""},
+    ["{character}"]               = {clip = "13 0 13 13",  text = "only usable by purchasing character"},
+    ["{charactericon}"]           = {clip = "13 0 13 13",  text = ""},
+    ["{usablebyall}"]             = {clip = "26 0 13 13",  text = "can be used by all characters that have access to the house"},
+    ["{usablebyallicon}"]         = {clip = "26 0 13 13",  text = ""},
+    ["{box}"]                     = {clip = "39 0 13 13",  text = "comes in a box which can only be unwrapped by purchasing character"},
+    ["{boxicon}"]                 = {clip = "39 0 13 13",  text = ""},
+    ["{storeinbox}"]              = {clip = "52 0 13 13",  text = "will be sent to your Store inbox and can only be stored there and in depot box"},
+    ["{storeinboxicon}"]          = {clip = "52 0 13 13",  text = ""},
+    ["{house}"]                   = {clip = "65 0 13 13",  text = "can only be unwrapped in a house owned by the purchasing character"},
+    ["{houseicon}"]               = {clip = "65 0 13 13",  text = ""},
+    ["{once}"]                    = {clip = "78 0 13 13",  text = "can only be purchased once"},
+    ["{onceicon}"]                = {clip = "78 0 13 13",  text = ""},
+    ["{backtoinbox}"]             = {clip = "91 0 13 13",  text = "will be wrapped back and sent to inbox if the purchasing character is no longer the house owner"},
+    ["{backtoinboxicon}"]         = {clip = "91 0 13 13",  text = ""},
+    ["{vocationlevelcheck}"]      = {clip = "104 0 13 13", text = "only buyable if fitting vocation and level of purchasing character"},
+    ["{vocationlevelcheckicon}"]  = {clip = "104 0 13 13", text = ""},
+    ["{speedboost}"]              = {clip = "117 0 13 13", text = "provides character with a speed boost"},
+    ["{speedboosticon}"]          = {clip = "117 0 13 13", text = ""},
+    ["{activated}"]               = {clip = "130 0 13 13", text = "activated at purchase"},
+    ["{activatedicon}"]           = {clip = "130 0 13 13", text = ""},
+    ["{battlesign}"]              = {clip = "143 0 13 13", text = "cannot be purchased by characters with protection zone block or battle sign"},
+    ["{battlesignicon}"]          = {clip = "143 0 13 13", text = ""},
+    ["{capacity}"]                = {clip = "156 0 13 13", text = "cannot be purchased if capacity is exceeded"},
+    ["{capacityicon}"]            = {clip = "156 0 13 13", text = ""},
+    ["{use}"]                     = {clip = "169 0 13 13", text = "can be used"},
+    ["{useicon}"]                 = {clip = "169 0 13 13", text = ""},
+    ["{transferableprice}"]       = {clip = "182 0 13 13", text = "can be purchased with transferable Tibia Coins"},
+    ["{transferablepriceicon}"]   = {clip = "182 0 13 13", text = ""},
+    ["{star}"]                    = {localImg = "/game_store/images/icon-star-gold", text = ""},
+}
+
+local function matchIconTag(line)
+    if line:byte(1) ~= 123 then return nil end -- fast bail if not '{'
+    local s, e, cap = line:find("^{limit|(%d+)}")
+    if s then
+        return {clip = "78 0 13 13", text = "maximum amount that can be owned by character: %s"}, e, cap
+    end
+    local close = line:find("}", 1, true)
+    if close then
+        local info = STORE_ICON_TAGS[line:sub(1, close)]
+        if info then return info, close, nil end
+    end
+end
+
+local function addDescriptionLine(container, lineText, color)
+    if not lineText:match("%S") then return end
+    lineText = lineText:gsub("<[^>]+>", ""):gsub("&nbsp;", " "):gsub("&#8226;", "- ")
+
+    local widget = g_ui.createWidget('DescriptionLine', container)
+    if not widget then return end
+
+    local iconWidget = widget:getChildById('icon')
+    local textWidget = widget:getChildById('text')
+    if not iconWidget or not textWidget then return end
+    if color then textWidget:setColor(color) end
+
+    local info, tagEnd, cap = matchIconTag(lineText)
+    if info then
+        iconWidget:setVisible(true)
+        if info.localImg then
+            iconWidget:setImageSource(info.localImg)
+        else
+            iconWidget:setImageSource(STORE_ICON_PATH)
+            iconWidget:setImageClip(info.clip)
+        end
+        local tagText = (cap and info.text:format(cap)) or info.text
+        local rest    = lineText:sub(tagEnd + 1):match("^%s*(.-)%s*$")
+        textWidget:setMarginLeft(16)
+        textWidget:setText(tagText ~= "" and (tagText .. " " .. rest) or rest)
+    else
+        textWidget:setMarginLeft(0)
+        textWidget:setText(lineText:match("^%s*(.-)%s*$"))
+    end
+
+    widget:setHeight(math.max(14, textWidget:getTextSize().height + 2))
+end
+
+local function renderDescription(panel, text, errorText)
+    local descPanel = panel:getChildById('descriptionPanel')
+    local container = descPanel and descPanel:getChildById('descriptionScrollArea')
+    if not container or container:isDestroyed() then return end
+    container:destroyChildren()
+
+    if errorText then
+        for line in errorText:gmatch("[^\r\n]+") do
+            addDescriptionLine(container, line, "#d33c3c")
+        end
+    end
+
+    if text and text ~= "" then
+        for line in text:gmatch("[^\r\n]+") do
+            addDescriptionLine(container, line, nil)
+        end
+    end
+end
+
 local function formatNumberWithCommas(value)
     local sign = value < 0 and "-" or ""
     value = math.abs(value)
@@ -169,12 +268,14 @@ local function getCoinsBalance()
         return tonumber(cleanNumber) or 0
     end
 
-    local lblCoins = controllerShop.ui.lblCoins.lblTibiaCoins
+    -- get coins: normal (non transferableCoins) | transfer(transferableCoins))
+    local lblNormal = controllerShop.ui.lblCoins.lblTibiaCoins
     local lblTransfer = controllerShop.ui.lblCoins.lblTibiaTransfer
 
-    local coins1 = lblCoins and extractNumber(lblCoins:getText()) or 0
-    local coins2 = lblTransfer and extractNumber(lblTransfer:getText()) or 0
-    return coins1, coins2
+    local normalCoins = lblNormal and extractNumber(lblNormal:getText()) or 0
+    local transferableCoins = lblTransfer and extractNumber(lblTransfer:getText()) or 0
+
+    return normalCoins, transferableCoins
 end
 
 local function fixServerNoSend0xF2()
@@ -481,6 +582,7 @@ function onParseStoreGetPurchaseStatus(purchaseStatus)
                 animationEvent = nil
             end
             fixServerNoSend0xF2()
+            g_game.sendRequestStorePremiumBoost() -- fix: request and refresh store to prevent XP Boost purchase bug
         end, 2000)
     end
 end
@@ -531,8 +633,7 @@ function onParseStoreCreateProducts(storeProducts)
             local coinsBalance2, coinsBalance1 = getCoinsBalance()
             local isTransferable = subOffer.coinType == GameStore.CoinType.Transferable
             local price = subOffer.price
-            local balance = isTransferable and coinsBalance1 or coinsBalance2
-
+            local balance = isTransferable and coinsBalance1 or (coinsBalance1 + coinsBalance2)
             priceLabel:setColor(balance < price and "#d33c3c" or "white")
 
             if isTransferable then
@@ -831,6 +932,10 @@ end
 
 
 
+function getUI()
+    return controllerShop.ui
+end
+
 function getCoinsWebsite()
     if GameStore.website.WEBSITE_GETCOINS ~= "" then
         g_platform.openUrl(GameStore.website.WEBSITE_GETCOINS)
@@ -882,7 +987,7 @@ function chooseOffert(self, focusedChild)
         description = descriptionInfo.description
     end
 
-    panel:getChildById('lblDescription'):setText(description)
+    renderDescription(panel, description)
 
     local data = getProductData(product)
     local imagePanel = panel:getChildById('image')
@@ -891,7 +996,9 @@ function chooseOffert(self, focusedChild)
         createProductImage(imagePanel, data)
     end
     fixServerNoSend0xF2()
-    local coinsBalance2, coinsBalance1 = getCoinsBalance()
+
+    -- example use getCoinsBalance
+    local normalCoins, transferableCoins = getCoinsBalance()
     local offerStackPanel = panel:getChildById('StackOffers')
     offerStackPanel:destroyChildren()
 
@@ -902,8 +1009,9 @@ function chooseOffert(self, focusedChild)
         local priceLabel = offerPanel:getChildById('lblPrice')
         priceLabel:setText(offer.price)
 
-        if offer.count and offer.count > 0 then
-            offerPanel:getChildById('btnBuy'):setText("Buy " .. offer.count .. "x")
+        local itemCount = (offer.count and offer.count > 0) and offer.count or 1
+        if itemCount > 1 then
+            offerPanel:getChildById('btnBuy'):setText("Buy " .. itemCount .. "x")
         end
 
         if product.configurable then
@@ -911,7 +1019,7 @@ function chooseOffert(self, focusedChild)
         end
 
         local isTransferable = offer.coinType == GameStore.CoinType.Transferable
-        local currentBalance = isTransferable and coinsBalance1 or coinsBalance2
+        local currentBalance = isTransferable and transferableCoins or (normalCoins + transferableCoins)
 
         if isTransferable then
             priceLabel:setIcon("/game_store/images/icon-tibiacointransferable")
@@ -926,99 +1034,110 @@ function chooseOffert(self, focusedChild)
             priceLabel:setColor("white")
             offerPanel:getChildById('btnBuy'):enable()
         end
+
         if offer.disabled then
             local btnBuy = offerPanel:getChildById('btnBuy')
             btnBuy:disable()
             btnBuy:setOpacity(0.8)
-        
-            local lblDescription = panel:getChildById('lblDescription')
-            lblDescription:parseColoredText(string.format(
-                "[color=#ff0000]The product is currently not available for this character. See the buy button tooltip for details.[/color]\n\n-%s",
-                description
-            ))
-        
-            -- Add tooltip overlay if reasonIdDisable exists
+            renderDescription(panel, description,
+                "The product is currently not available for this character. See the buy button tooltip for details.")
             if offer.reasonIdDisable then
                 local tooltipOverlay = g_ui.createWidget('UIWidget', offerPanel)
                 tooltipOverlay:setId('tooltipOverlay')
                 tooltipOverlay:setFocusable(false)
                 tooltipOverlay:setSize(btnBuy:getSize())
                 tooltipOverlay:setPosition(btnBuy:getPosition())
-        
-                local reasonText = oldProtocol and offer.reasonIdDisable 
-                    or reasonCategory[offer.reasonIdDisable + 1]
-        
+                local reasonText = oldProtocol and offer.reasonIdDisable or reasonCategory[offer.reasonIdDisable + 1]
                 tooltipOverlay:parseColoreDisplayToolTip(string.format(
                     "[color=#ff0000]The product is not available for this character:\n\n- %s[/color]",
                     reasonText
                 ))
-        
                 tooltipOverlay:setOpacity(0)
                 tooltipOverlay:addAnchor(AnchorLeft, btnBuy:getId(), AnchorLeft)
                 tooltipOverlay:addAnchor(AnchorTop, btnBuy:getId(), AnchorTop)
             end
         end
-        
 
+        -- 👇 Confirmação corrigida
         offerPanel:getChildById('btnBuy').onClick = function(widget)
             if acceptWindow then
                 destroyWindow(acceptWindow)
             end
 
-            if product.configurable or product.name == "Character Name Change" then -- test with canary , need improve identifier
+            if product.configurable or product.name == "Character Name Change" then
                 return displayChangeName(offer)
             end
 
-            if product.name == "Hireling Apprentice" then -- test with canary , need improve identifier
+            if product.name == "Hireling Apprentice" then
                 return displayErrorBox(controllerShop.ui:getText(), "not yet, UI missing")
             end
 
             local function acceptFunc()
                 fixServerNoSend0xF2()
-                local latestBalance2, latestBalance1 = getCoinsBalance()
-                local latestCurrentBalance = isTransferable and latestBalance1 or latestBalance2
+                local latestNormal, latestTransferable = getCoinsBalance()
+                local latestCurrentBalance = isTransferable and latestTransferable or (latestNormal + latestTransferable)
+
                 if latestCurrentBalance >= offer.price then
                     g_game.buyStoreOffer(offer.id, GameStore.ClientOfferTypes.CLIENT_STORE_OFFER_OTHER)
-                    local closeWindow = function()
-                        destroyWindow(processingWindow)
-                    end
+                    local closeWindow = function() destroyWindow(processingWindow) end
                     controllerShop.ui:hide()
-                    processingWindow = displayGeneralBox('Processing purchase.', 'Your purchase is being processed',
-                    {
-                      { text = tr('ok'),  callback = closeWindow },
-                      anchor = 50
-                    }, closeWindow, closeWindow)
-
+                    processingWindow = displayGeneralBox(
+                        'Processing purchase.', 
+                        'Your purchase is being processed',
+                        {
+                          { text = tr('ok'),  callback = closeWindow },
+                          anchor = 50
+                        }, 
+                        closeWindow, 
+                        closeWindow
+                    )
                 else
                     displayErrorBox(controllerShop.ui:getText(), tr("You don't have enough coins"))
                 end
                 destroyWindow(acceptWindow)
             end
+
             local function cancelFunc()
                 destroyWindow(acceptWindow)
             end
-            local coinType = isTransferable and "transferable coins" or "regular coins"
-            local confirmationMessage = string.format('Do you want to buy the product "%s" for %d %s?', product.name, offer.price, coinType)
-            local detailsMessage = string.format("%dx %s\nPrice: %d %s", offer.count or 1, product.name, offer.price, coinType)
-            local data = getProductData(product)
 
-            acceptWindow = displayGeneralSHOPBox(tr('Confirmation of Purchase'), confirmationMessage, detailsMessage, {
+            local coinType = isTransferable and "transferable coins" or "regular coins"
+            local confirmationMessage = string.format(
+                'Do you want to buy the product "%s" for %d %s?', 
+                product.name, 
+                offer.price, 
+                coinType
+            )
+
+            local itemCountConfirm = (offer.count and offer.count > 0) and offer.count or 1
+            local detailsMessage = string.format(
+                "%dx %s\nPrice: %d %s",
+                itemCountConfirm,
+                product.name,
+                offer.price,
+                coinType
+            )
+
+            acceptWindow = displayGeneralSHOPBox(
+                tr('Confirmation of Purchase'),
+                confirmationMessage,
+                detailsMessage,
                 {
-                    text = tr('Buy'),
-                    callback = acceptFunc
+                    { text = tr('Buy'), callback = acceptFunc },
+                    { text = tr('Cancel'), callback = cancelFunc },
+                    anchor = AnchorHorizontalCenter
                 },
-                {
-                    text = tr('Cancel'),
-                    callback = cancelFunc
-                },
-                anchor = AnchorHorizontalCenter
-            }, acceptFunc, cancelFunc)
+                acceptFunc,
+                cancelFunc
+            )
             if data then
                 createProductImage(acceptWindow.Box, data)
             end
         end
     end
 end
+
+
 -- /*=============================================
 -- =            Home                             =
 -- =============================================*/
@@ -1083,38 +1202,75 @@ function transferPoints()
     destroyWindow(transferPointsWindow)
     transferPointsWindow = g_ui.displayUI('style/transferpoints')
     transferPointsWindow:show()
+
     local playerBalance = g_game.getLocalPlayer():getResourceBalance(ResourceTypes.COIN_TRANSFERRABLE)
     fixServerNoSend0xF2()
-    local coinsBalance2, coinsBalance1  = getCoinsBalance()
+
+    local normalCoins, transferableCoins = getCoinsBalance()
+
     if playerBalance == 0 then
-        playerBalance = coinsBalance1 -- temp fix canary 1340
+        playerBalance = transferableCoins -- temp fix canary 1340
     end
+
     transferPointsWindow.giftable:setText(formatNumberWithCommas(playerBalance))
-    transferPointsWindow.amountBar:setValue(100)
-    transferPointsWindow.amountBar:setMinimum(0)
-    transferPointsWindow.amountBar:setMaximum(playerBalance)
+
+    local initialValue, minimumValue = 0, 0
+    if playerBalance >= 25 then
+        initialValue = 25
+        minimumValue = 25
+    end
+
+    transferPointsWindow.amountBar:setStep(25)
+    transferPointsWindow.amountBar:setMinimum(minimumValue)
+    local maxStep = math.floor(playerBalance / 25) * 25 -- coins multiple 25
+    transferPointsWindow.amountBar:setMaximum(maxStep)
+    transferPointsWindow.amountBar:setValue(initialValue)
+    transferPointsWindow.amount:setText(formatNumberWithCommas(initialValue))
+
+    local sliderButton = transferPointsWindow.amountBar:getChildById('sliderButton')
+    if sliderButton then
+        sliderButton:setEnabled(true)
+        sliderButton:setVisible(true)
+    end
 
     transferPointsWindow.onEscape = function()
         destroyWindow(transferPointsWindow)
     end
-    transferPointsWindow.amountBar.onValueChange = function()
-        transferPointsWindow.amount:setText(formatNumberWithCommas(transferPointsWindow.amountBar:getValue()))
+
+    local lastDisplayedValue = initialValue
+    transferPointsWindow.amountBar.onValueChange = function(scrollbar, value)
+        -- Round to the nearest multiple of 25
+        local val = math.floor((value + 12) / 25) * 25
+        
+        -- Only update the display if the value has changed
+        if val ~= lastDisplayedValue then
+            lastDisplayedValue = val
+            transferPointsWindow.amount:setText(formatNumberWithCommas(val))
+        end
     end
+
     transferPointsWindow.closeButton.onClick = function()
         destroyWindow(transferPointsWindow)
     end
+
     transferPointsWindow.buttonOk.onClick = function()
         local receipient = transferPointsWindow.transferPointsText:getText():trim()
+        local amount = transferPointsWindow.amountBar:getValue()
+
         if receipient:len() < 3 then
             return
         end
-        local amount = transferPointsWindow.amountBar:getValue()
         if amount < 1 or playerBalance < amount then
             return
         end
+
         g_game.transferCoins(receipient, amount)
+        destroyWindow(transferPointsWindow)
     end
 end
+
+
+
 
 -- /*=============================================
 -- =            Search Button            =
@@ -1126,4 +1282,3 @@ function search()
     end
     g_game.sendRequestStoreSearch(controllerShop.ui.SearchEdit:getText(), 0, 1)
 end
-

@@ -1,0 +1,8 @@
+Font
+  name: verdana-11px-mono-rounded
+  texture: verdana-11px-mono-rounded
+  height: 14
+  glyph-size: 16 16
+  y-offset: -1
+  spacing: -3 0
+  space-width: 6

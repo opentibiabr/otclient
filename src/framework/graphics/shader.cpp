@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,13 +21,11 @@
  */
 
 #include "shader.h"
+
 #include "graphics.h"
-
-#include <framework/core/application.h>
-#include <framework/core/eventdispatcher.h>
-#include <framework/core/resourcemanager.h>
-
+#include "framework/core/eventdispatcher.h"
 #include "framework/core/graphicalapplication.h"
+#include "framework/core/resourcemanager.h"
 
 Shader::Shader(ShaderType shaderType) : m_shaderId(glCreateShader(static_cast<GLenum>(shaderType))), m_shaderType(shaderType)
 {
@@ -79,7 +77,7 @@ bool Shader::compileSourceFile(const std::string_view sourceFile) const
         const auto& sourceCode = g_resources.readFileContents(sourceFile.data());
         return compileSourceCode(sourceCode);
     } catch (const stdext::exception& e) {
-        g_logger.error("unable to load shader source form file '{}': {}", sourceFile, e.what());
+        g_logger.error("Unable to load shader source form file '{}': {}", sourceFile, e.what());
     }
     return false;
 }

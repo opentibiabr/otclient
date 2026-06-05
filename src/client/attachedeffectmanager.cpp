@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,9 +21,10 @@
  */
 
 #include "attachedeffectmanager.h"
+
 #include "attachedeffect.h"
 #include "thingtypemanager.h"
-#include <framework/core/resourcemanager.h>
+#include "framework/core/resourcemanager.h"
 
 AttachedEffectManager g_attachedEffects;
 
@@ -55,7 +56,7 @@ AttachedEffectPtr AttachedEffectManager::registerByThing(uint16_t id, const std:
     obj->m_thingId = thingId;
     obj->m_thingCategory = category;
 
-    obj->m_name = { name.data() };
+    obj->m_name.assign(name.data(), name.size());
 
     m_effects.emplace(id, obj);
     return obj;
@@ -79,7 +80,7 @@ AttachedEffectPtr AttachedEffectManager::registerByImage(uint16_t id, const std:
     obj->m_texturePath = path;
     obj->m_smooth = smooth;
     obj->m_id = id;
-    obj->m_name = { name.data() };
+    obj->m_name.assign(name.data(), name.size());
 
     m_effects.emplace(id, obj);
     return obj;

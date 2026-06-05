@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,14 +22,23 @@
 
 #pragma once
 
-#include "../global.h"
+#ifndef USE_PRECOMPILED_HEADERS
+#include <cstdint>
+#include <string>
+#include <string_view>
+#endif
 
 #include <stduuid/uuid.h>
-#include <string>
 
 #ifdef USE_GMP
 #include <gmp.h>
 #else
+#ifndef OPENSSL_API_COMPAT
+#define OPENSSL_API_COMPAT 0x10100000L
+#endif
+#ifndef OPENSSL_SUPPRESS_DEPRECATED
+#define OPENSSL_SUPPRESS_DEPRECATED
+#endif
 #include <openssl/rsa.h>
 #endif
 
@@ -41,7 +50,12 @@ public:
 
     std::string base64Encode(const std::string& decoded_string);
     std::string base64Decode(const std::string_view& encoded_string);
-    std::string xorCrypt(const std::string& buffer, const std::string& key);
+    /**
+     * @brief Applies the XOR cipher to the provided buffer in place.
+     * @param buffer The data to encrypt or decrypt.
+     * @param key The repeating key used for the XOR operation.
+     */
+    void xorCrypt(std::string& buffer, const std::string& key);
     std::string encrypt(const std::string& decrypted_string) { return _encrypt(decrypted_string, true); }
     std::string decrypt(const std::string& encrypted_string) { return _decrypt(encrypted_string, true); }
     std::string genUUID();
@@ -55,10 +69,7 @@ public:
     int rsaGetSize();
 
     std::string crc32(const std::string& decoded_string, bool upperCase);
-    std::string sha1Encrypt(const std::string& input);
-
-protected:
-    void sha1Block(const uint8_t* block, uint32_t* H);
+    std::string sha256(const std::string& decoded_string);
 
 private:
     std::string _encrypt(const std::string& decrypted_string, bool useMachineUUID);

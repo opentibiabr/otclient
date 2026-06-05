@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,8 +22,11 @@
 
 #pragma once
 
+#ifndef USE_PRECOMPILED_HEADERS
+#include <cmath>
 #include <cstdint>
 #include <numbers>
+#endif
 
 #define DEG_TO_RAD (std::acos(-1.f)/180.f)
 #define RAD_TO_DEC (180.f/std::acos(-1.f))
@@ -280,8 +283,33 @@ namespace Fw
         KeyboardNoModifier = 0,
         KeyboardCtrlModifier = 1,
         KeyboardAltModifier = 2,
-        KeyboardShiftModifier = 4
+        KeyboardShiftModifier = 4,
+        KeyboardMetaModifier = 8,
+        KeyboardPrimaryModifier = 16
     };
+
+    inline bool isPrimaryModifierOnly(const int modifiers)
+    {
+#if defined(__APPLE__)
+        const int primaryMask = KeyboardPrimaryModifier;
+#else
+        const int primaryMask = KeyboardPrimaryModifier | KeyboardCtrlModifier;
+#endif
+        return (modifiers & primaryMask) == primaryMask &&
+               (modifiers & ~primaryMask) == 0;
+    }
+
+    inline bool isPrimaryShiftModifierOnly(const int modifiers)
+    {
+#if defined(__APPLE__)
+        const int primaryMask = KeyboardPrimaryModifier;
+#else
+        const int primaryMask = KeyboardPrimaryModifier | KeyboardCtrlModifier;
+#endif
+        const int requiredMask = primaryMask | KeyboardShiftModifier;
+        return (modifiers & requiredMask) == requiredMask &&
+               (modifiers & ~requiredMask) == 0;
+    }
 
     enum WidgetState : int32_t
     {

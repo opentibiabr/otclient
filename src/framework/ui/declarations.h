@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,24 @@
 
 #include <framework/global.h>
 
+#ifndef USE_PRECOMPILED_HEADERS
+#include <memory>
+#endif
+
 enum class DrawPoolType : uint8_t;
+enum FlagProp : uint64_t;
+enum class DisplayType : uint8_t;
+enum class FloatType : uint8_t;
+enum class ClearType : uint8_t;
+enum class JustifyItemsType : uint8_t;
+enum class FlexDirection : uint8_t;
+enum class FlexWrap : uint8_t;
+enum class JustifyContent : uint8_t;
+enum class AlignItems : uint8_t;
+enum class AlignContent : uint8_t;
+enum class AlignSelf : uint8_t;
+enum class Unit : uint8_t;
+enum class OverflowType : uint8_t;
 
 class UIManager;
 class UIWidget;

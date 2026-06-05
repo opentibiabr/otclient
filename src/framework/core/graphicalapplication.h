@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,10 +24,10 @@
 
 #include "application.h"
 
-#include <framework/core/adaptativeframecounter.h>
 #include <framework/core/inputevent.h>
 #include <framework/graphics/declarations.h>
-#include <framework/platform/platformwindow.h>
+
+#include "adaptativeframecounter.h"
 
 class ApplicationDrawEvents
 {
@@ -80,6 +80,8 @@ public:
     void setTargetFps(const uint16_t targetFps) { m_graphicFrameCounter.setTargetFps(targetFps); }
 
     uint16_t getFps() { return m_graphicFrameCounter.getFps(); }
+    uint16_t getGraphicsFps() { return m_graphicFrameCounter.getFps(); }
+    uint16_t getProcessingFps() { return m_mapProcessFrameCounter.getFps(); }
     uint8_t getMaxFps() { return m_graphicFrameCounter.getMaxFps(); }
     uint8_t getTargetFps() { return m_graphicFrameCounter.getTargetFps(); }
 
@@ -119,7 +121,7 @@ public:
     bool isLoadingAsyncTexture();
     void setLoadingAsyncTexture(bool v);
 
-    bool isScaled() { return g_window.getDisplayDensity() != 1.f; }
+    bool isScaled();
 
     bool isEncrypted() {
 #if ENABLE_ENCRYPTION == 1
@@ -140,6 +142,7 @@ protected:
     void inputEvent(const InputEvent& event);
 
 private:
+    bool canDrawMap() const;
     bool m_onInputEvent{ false };
     bool m_optimize{ true };
     bool m_forceEffectOptimization{ true };
@@ -147,9 +150,9 @@ private:
     bool m_drawText{ true };
     bool m_loadingAsyncTexture{ false };
 
-    float m_creatureInformationScale{ PlatformWindow::DEFAULT_DISPLAY_DENSITY };
-    float m_animatedTextScale{ PlatformWindow::DEFAULT_DISPLAY_DENSITY };
-    float m_staticTextScale{ PlatformWindow::DEFAULT_DISPLAY_DENSITY };
+    float m_creatureInformationScale{ DEFAULT_DISPLAY_DENSITY };
+    float m_animatedTextScale{ DEFAULT_DISPLAY_DENSITY };
+    float m_staticTextScale{ DEFAULT_DISPLAY_DENSITY };
 
     AdaptativeFrameCounter m_mapProcessFrameCounter;
     AdaptativeFrameCounter m_graphicFrameCounter;

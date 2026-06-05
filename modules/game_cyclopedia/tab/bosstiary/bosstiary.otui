@@ -9,7 +9,7 @@ UIWidget
     anchors.left: parent.left
     margin-top: 10
     size: 164 70
-    image-source: /images/game/actionbar/2pixel-up-frame-borderimage
+    image-source: /images/ui/2pixel_up_frame_borderimage
     image-border: 10
     UIWidget
       id: Info2

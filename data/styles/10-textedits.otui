@@ -1,21 +1,24 @@
 TextEdit < UITextEdit
-  font: verdana-11px-antialised
-  color: #f4f4f4ff
-  size: 86 22
-  text-offset: 0 4
+  font: Verdana Bold-11px
+  color: #c0c0c0
+  padding-left: 2
+  height: 16
   opacity: 1
-  padding: 4
-  padding-bottom: 1
   image-source: /images/ui/textedit
   image-border: 1
-  selection-color: #ffffffff
-  selection-background-color: #808080ff
+  selection-background-color: #808080
+  cursor: none
+  blink-speed: 600
   $disabled:
-    color: #c0c0c0ff
+    color: #27272788
     opacity: 0.5
 
 PasswordTextEdit < TextEdit
   text-hidden: true
+  font: pVerdana Bold-11px
+  color: #c0c0c0
+  padding-top: 2
+  padding-left: 3
 
 MultilineTextEdit < TextEdit
   multiline: true
@@ -98,3 +101,19 @@ HiddenTextQtToggleEdit < TextQtEdit
 
     $checked:
       image-clip: 0 20 19 20
+      
+AccTextEdit < TextEdit
+  font: pVerdana Bold-11px
+  color: #c0c0c0
+  padding-left: 3
+  padding-top: 2
+  height: 16
+  opacity: 1
+  image-source: /images/ui/textedit
+  image-border: 1
+  selection-background-color: #808080
+  cursor: none
+  blink-speed: 600
+  $disabled:
+    color: #27272788
+    opacity: 0.5

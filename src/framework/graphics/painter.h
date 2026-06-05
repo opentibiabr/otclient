@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,35 +22,9 @@
 
 #pragma once
 
-#include <framework/graphics/coordsbuffer.h>
 #include <framework/graphics/declarations.h>
 #include <framework/graphics/paintershaderprogram.h>
-
-enum class CompositionMode
-{
-    NORMAL,
-    MULTIPLY,
-    ADD,
-    REPLACE,
-    DESTINATION_BLENDING,
-    LIGHT
-};
-
-enum class DrawMode
-{
-    NONE = GL_NONE,
-    TRIANGLES = GL_TRIANGLES,
-    TRIANGLE_STRIP = GL_TRIANGLE_STRIP
-};
-
-enum class BlendEquation
-{
-    ADD = GL_FUNC_ADD,
-    MAX = GL_MAX,
-    MIN = GL_MIN,
-    SUBTRACT = GL_FUNC_SUBTRACT,
-    REVER_SUBTRACT = GL_FUNC_REVERSE_SUBTRACT,
-};
+#include "coordsbuffer.h"
 
 class Painter
 {

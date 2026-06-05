@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,21 +22,14 @@
 
 #pragma once
 
-#include "gameconfig.h"
 #include <framework/core/declarations.h>
-#include <framework/core/filestream.h>
 #include <framework/graphics/declarations.h>
 
 class FileMetadata
 {
 public:
     FileMetadata() = default;
-    FileMetadata(const FileStreamPtr& file) {
-        offset = file->getU32();
-        fileSize = file->getU32();
-        fileName = file->getString();
-        spriteId = std::stoi(fileName);
-    }
+    FileMetadata(const FileStreamPtr& file);
 
     uint32_t getSpriteId() const { return spriteId; }
     const std::string& getFileName() const { return fileName; }

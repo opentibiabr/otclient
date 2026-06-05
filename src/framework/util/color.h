@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,8 +22,13 @@
 
 #pragma once
 
-#include "../stdext/cast.h"
-#include "../stdext/types.h"
+#ifndef USE_PRECOMPILED_HEADERS
+#include <cstddef>
+#include <cstdint>
+#include <istream>
+#include <ostream>
+#include <string_view>
+#endif
 
 class Color
 {

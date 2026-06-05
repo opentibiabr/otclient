@@ -1,0 +1,89 @@
+SpellPreview < UICheckBox
+  height: 34
+  text-wrap: true
+  focusable: true
+  text-offset: 38 2
+
+
+  $hover !disabled:
+    color: #ffffff
+
+  $!checked:
+    background-color: alpha
+
+  $checked:
+    background-color: #585858
+    color: #f4f4f4
+
+  $disabled:
+    image-color: #dfdfdf88
+    color: #dfdfdf88
+    opacity: 0.8
+
+  UIWidget
+    id: image
+    anchors.left: parent.left
+    anchors.top: parent.top
+    phantom: true
+    padding: 1
+    size: 32 32
+
+    Panel
+      id: gray
+      size: 32 32
+      anchors.left: parent.left
+      anchors.top: parent.top
+      margin-top: -1
+      margin-left: -1
+      image-source: /images/ui/ditherpattern
+      visible: false
+
+  UIWidget
+    id: imageGroup
+    size: 20 20
+    anchors.top: parent.top
+    anchors.right: parent.right
+    margin-top: 8
+    margin-right: 99
+    phantom: true
+    visible: false
+    image-source: /images/game/spells/spellgroup-icons-20x20
+    image-clip: 1 25 20 20
+
+  Label
+    id: levelLabel
+    anchors.top: parent.top
+    anchors.left: prev.right
+    margin-top: 12
+    margin-left: 6
+    !text: tr('Level: 0')
+
+    text-auto-resize: true
+    visible: false
+
+PassivePreview < UICheckBox
+  height: 34
+  focusable: true
+  text-offset: 38 8
+  change-cursor-image: false
+  margin-top: 2
+  margin-left: 3
+
+  $!checked:
+    background-color: alpha
+
+  $checked:
+    background-color: #ffffff22
+
+  $disabled:
+    image-color: #dfdfdf88
+    color: #dfdfdf88
+    opacity: 0.8
+
+  UIWidget
+    id: image
+    anchors.left: parent.left
+    anchors.top: parent.top
+    phantom: true
+    padding: 1
+    size: 34 34

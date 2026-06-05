@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,20 +22,14 @@
 
 #pragma once
 
-#include "mapview.h"
 #include "outfit.h"
 #include "thing.h"
 #include <framework/core/declarations.h>
-#include <framework/core/timer.h>
 #include <framework/graphics/cachedtext.h>
 
-struct PreyMonster
-{
-    std::string name;
-    Outfit outfit;
-};
+#include "staticdata.h"
 
-// @bindclass
+ // @bindclass
 class Creature : public Thing
 {
 public:
@@ -53,9 +47,9 @@ public:
     void onAppear() override;
     void onDisappear() override;
 
-    void draw(const Point& dest, bool drawThings = true, const LightViewPtr& lightView = nullptr) override;
+    void draw(const Point& dest, bool drawThings = true, LightView* lightView = nullptr) override;
     void draw(const Rect& destRect, uint8_t size, bool center = false);
-    void drawLight(const Point& dest, const LightViewPtr& lightView) override;
+    void drawLight(const Point& dest, LightView* lightView) override;
 
     void internalDraw(Point dest, const Color& color = Color::white);
     void drawInformation(const MapPosInfo& mapRect, const Point& dest, int drawFlags);
@@ -66,7 +60,7 @@ public:
     void setHealthPercent(uint8_t healthPercent);
     void setManaPercent(uint8_t value) { m_manaPercent = value; }
     void setDirection(Otc::Direction direction);
-    void setOutfit(const Outfit& outfit);
+    void setOutfit(const Outfit& outfit, bool fireEvent = true);
     void setLight(const Light& light) { m_light = light; }
     void setSpeed(uint16_t speed);
     void setBaseSpeed(uint16_t baseSpeed);
@@ -132,7 +126,7 @@ public:
     int getDrawElevation();
 
     Otc::Direction getDirection() { return m_direction; }
-    Outfit getOutfit() { return m_outfit; }
+    const auto& getOutfit() { return m_outfit; }
     const Light& getLight() const override;
     bool hasLight() const override { return Thing::hasLight() || getLight().intensity > 0; }
     bool hasMountShader() const { return m_mountShaderId > 0; }
@@ -153,11 +147,14 @@ public:
     bool isWalking() { return m_walking; }
 
     bool isRemoved() { return m_removed; }
+    bool isRemoved() const { return m_removed; }
+    const Position& getOldPosition() const { return m_oldPosition; }
     bool isInvisible() { return m_outfit.isEffect() && m_outfit.getAuxId() == 13; }
     bool isDead() { return m_healthPercent <= 0; }
+    bool isHidden() const;
     bool isFullHealth() { return m_healthPercent == 100; }
     bool canBeSeen() { return !isInvisible() || isPlayer(); }
-    bool isCreature() override { return true; }
+    bool isCreature() const override { return true; }
     bool isCovered() { return m_isCovered; }
 
     void setCovered(bool covered);
@@ -184,6 +181,9 @@ minHeight,
     void setWidgetInformation(const UIWidgetPtr& info);
     UIWidgetPtr getWidgetInformation() { return m_widgetInformation; }
 
+    void setNameShader(const std::string& name) { m_nameShader = name; }
+    std::string getNameShader() { return m_nameShader; }
+
     void setText(const std::string& text, const Color& color);
     std::string getText();
     void clearText() { setText("", Color::white); }
@@ -203,13 +203,30 @@ minHeight,
     }
 
     void setVocation(uint8_t vocation) { m_vocation = vocation; }
-    const uint8_t getVocation() { return m_vocation; }
+    uint8_t getVocation() { return m_vocation; }
+
+    void attachPaperdoll(const PaperdollPtr& obj);
+    void clearPaperdolls();
+    bool hasPaperdoll(uint16_t id);
+
+    bool detachPaperdollById(uint16_t id);
+    bool detachPaperdollByPriority(uint8_t priority);
+
+    PaperdollPtr getPaperdollById(uint16_t id);
+
+    const std::vector<PaperdollPtr>& getPaperdolls() { return m_paperdolls; };
 
 protected:
     virtual void terminateWalk();
     virtual void onWalking() {};
     void updateWalkOffset(uint8_t totalPixelsWalked);
     void updateWalk();
+
+    void setOldPositionSilently(const Position& pos) { m_oldPosition = pos; }
+    void setRemovedSilently(const bool removed) { m_removed = removed; }
+
+    void onDetachPaperdoll(const PaperdollPtr& paperdoll);
+    void setPaperdollsDirection(Otc::Direction dir) const;
 
     ThingType* getThingType() const override;
     ThingType* getMountThingType() const;
@@ -261,6 +278,8 @@ private:
         CachedText numberText;
     };
 
+    std::vector<PaperdollPtr> m_paperdolls;
+
     UIWidgetPtr m_widgetInformation;
 
     TilePtr m_walkingTile;
@@ -281,6 +300,7 @@ private:
     EventPtr m_disappearEvent;
 
     CachedText m_name;
+    std::string m_nameShader;
     CachedStep m_stepCache;
 
     Position m_lastStepToPosition;
@@ -297,12 +317,7 @@ private:
     Color m_staticSquareColor{ Color::white };
     Color m_informationColor{ Color::white };
 
-    struct
-    {
-        uint8_t minHeight{ 0 };
-        uint8_t height{ 0 };
-        uint16_t speed{ 0 };
-    } m_bounce;
+    Bounce m_bounce;
 
     // jump related
     Timer m_jumpTimer;
@@ -362,12 +377,12 @@ private:
 class Npc final : public Creature
 {
 public:
-    bool isNpc() override { return true; }
+    bool isNpc() const override { return true; }
 };
 
 // @bindclass
 class Monster final : public Creature
 {
 public:
-    bool isMonster() override { return true; }
+    bool isMonster() const override { return true; }
 };

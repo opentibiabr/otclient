@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,21 +21,24 @@
  */
 
 #include "game.h"
+
+#include "attachedeffect.h"
 #include "container.h"
-#include "creature.h"
+#include "gameconfig.h"
+#include "item.h"
 #include "localplayer.h"
-#include "luavaluecasts_client.h"
 #include "map.h"
-#include "protocolcodes.h"
 #include "protocolgame.h"
-#include <framework/core/application.h>
-#include <framework/core/eventdispatcher.h>
-
-#include "framework/core/graphicalapplication.h"
+#include "protocolcodes.h"
+#include "thingtype.h"
+#include "thingtypemanager.h"
 #include "tile.h"
-
-#include <framework/net/packet_player.h>
-#include <framework/net/packet_recorder.h>
+#include "framework/core/eventdispatcher.h"
+#include "framework/core/graphicalapplication.h"
+#include "framework/luaengine/luainterface.h"
+#include "framework/net/packet_player.h"
+#include "framework/net/packet_recorder.h"
+#include "luavaluecasts_client.h"
 
 Game g_game;
 
@@ -53,7 +56,6 @@ void Game::terminate()
 void Game::resetGameStates()
 {
     m_online = false;
-    enableBotCall();
     m_dead = false;
     m_serverBeat = 50;
     m_seq = 0;
@@ -61,6 +63,7 @@ void Game::resetGameStates()
     m_mapUpdatedAt = 0;
     m_mapUpdateTimer = { true, Timer{} };
     setCanReportBugs(false);
+    setCanExivaOptions(false);
     m_fightMode = Otc::FightBalanced;
     m_chaseMode = Otc::DontChase;
     m_pvpMode = Otc::WhiteDove;
@@ -170,11 +173,6 @@ void Game::processGameStart()
     // synchronize fight modes with the server
     m_protocolGame->sendChangeFightModes(m_fightMode, m_chaseMode, m_safeFight, m_pvpMode);
 
-    // NOTE: the entire map description and local player information is not known yet (bot call is allowed here)
-    enableBotCall();
-    g_lua.callGlobalField("g_game", "onGameStart");
-    disableBotCall();
-
     if (g_game.getFeature(Otc::GameClientPing) || g_game.getFeature(Otc::GameExtendedClientPing)) {
         m_pingEvent = g_dispatcher.scheduleEvent([] { g_game.ping(); }, m_pingDelay);
     }
@@ -188,6 +186,8 @@ void Game::processGameStart()
             m_connectionFailWarned = false;
         }
     }, 1000);
+
+    g_lua.callGlobalField("g_game", "onGameStart");
 }
 
 void Game::processGameEnd()
@@ -248,9 +248,7 @@ void Game::processPlayerModes(const Otc::FightModes fightMode, const Otc::ChaseM
 void Game::processPing()
 {
     g_lua.callGlobalField("g_game", "onPing");
-    enableBotCall();
     m_protocolGame->sendPingBack();
-    disableBotCall();
 }
 
 void Game::processPingBack()
@@ -265,7 +263,7 @@ void Game::processPingBack()
         if (oldPing != m_ping)
             g_lua.callGlobalField("g_game", "onPingBack", m_ping);
     } else
-        g_logger.error("got an invalid ping from server");
+        g_logger.error("Got an invalid ping from server");
 
     m_pingEvent = g_dispatcher.scheduleEvent([] { g_game.ping(); }, m_pingDelay);
 }
@@ -289,9 +287,7 @@ void Game::processOpenContainer(const uint8_t containerId, const ItemPtr& contai
     container->onAddItems(items);
 
     // we might want to close a container here
-    enableBotCall();
     container->onOpen(previousContainer);
-    disableBotCall();
 
     if (previousContainer)
         previousContainer->onClose();
@@ -502,9 +498,9 @@ void Game::processModalDialog(const uint32_t id, const std::string_view title, c
     g_lua.callGlobalField("g_game", "onModalDialog", id, title, message, buttonList, enterButton, escapeButton, choiceList, priority);
 }
 
-void Game::processItemDetail(const uint32_t itemId, const std::vector<std::tuple<std::string, std::string>>& descriptions)
+void Game::processItemDetail(const ItemInspectionData& data)
 {
-    g_lua.callGlobalField("g_game", "onParseItemDetail", itemId, descriptions);
+    g_lua.callGlobalField("g_game", "onParseItemDetail", data);
 }
 
 void Game::processCyclopediaCharacterGeneralStats(const CyclopediaCharacterGeneralStats& stats, const std::vector<std::vector<uint16_t>>& skills,
@@ -524,6 +520,16 @@ void Game::processCyclopediaCharacterGeneralStatsBadge(const uint8_t showAccount
                                                 const std::string_view loyaltyTitle, const std::vector<std::tuple<uint32_t, std::string>>& badgesVector)
 {
     g_lua.callGlobalField("g_game", "onParseCyclopediaCharacterBadges", showAccountInformation, playerOnline, playerPremium, loyaltyTitle, badgesVector);
+}
+
+void Game::processCyclopediaCharacterInspection(const CyclopediaCharacterInspection& data)
+{
+    g_lua.callGlobalField("g_game", "onParseCyclopediaCharacterInspection", data);
+}
+
+void Game::processInspectionState(const uint32_t creatureId, const uint8_t state)
+{
+    g_lua.callGlobalField("g_game", "onInspectionState", creatureId, state);
 }
 
 void Game::processCyclopediaCharacterItemSummary(const CyclopediaCharacterItemSummary& data)
@@ -638,13 +644,11 @@ void Game::playRecord(const std::string_view& file)
 
 void Game::cancelLogin()
 {
-    enableBotCall();
     // send logout even if the game has not started yet, to make sure that the player doesn't stay logged there
     if (m_protocolGame)
         m_protocolGame->sendLogout();
 
     processDisconnect();
-    disableBotCall();
 }
 
 void Game::forceLogout()
@@ -1140,6 +1144,41 @@ void Game::partyShareExperience(const bool active)
     m_protocolGame->sendShareExperience(active);
 }
 
+void Game::sendPartyAnalyzerReset()
+{
+    if (!canPerformGameAction())
+        return;
+
+    m_protocolGame->sendPartyAnalyzerAction(Otc::PartyAnalyzerAction_t::PARTYANALYZERACTION_RESET);
+}
+
+void Game::sendPartyAnalyzerPriceType()
+{
+    if (!canPerformGameAction())
+        return;
+
+    // server just toggles between Market/Leader
+    m_protocolGame->sendPartyAnalyzerAction(Otc::PartyAnalyzerAction_t::PARTYANALYZERACTION_PRICETYPE);
+}
+
+void Game::sendPartyAnalyzerPriceValue()
+{
+    if (!canPerformGameAction())
+        return;
+
+    // For now, send empty items vector - the server will handle getting the prices
+    // This matches what the server code expects for PARTYANALYZERACTION_PRICEVALUE
+    m_protocolGame->sendPartyAnalyzerAction(Otc::PartyAnalyzerAction_t::PARTYANALYZERACTION_PRICEVALUE);
+}
+
+void Game::sendPartyAnalyzerAction(const uint8_t action, const std::vector<std::tuple<uint16_t, uint64_t>>& items)
+{
+    if (!canPerformGameAction())
+        return;
+
+    m_protocolGame->sendPartyAnalyzerAction(action, items);
+}
+
 void Game::requestOutfit()
 {
     if (!canPerformGameAction())
@@ -1451,6 +1490,21 @@ void Game::equipItem(const ItemPtr& item)
     }
 }
 
+void Game::equipItemId(const uint16_t itemId, const uint8_t tier)
+{
+    if (!canPerformGameAction())
+        return;
+
+    if (g_game.getFeature(Otc::GameThingUpgradeClassification)) {
+        const auto& thing = g_things.getThingType(itemId, ThingCategoryItem);
+        if (thing && thing->getClassification() > 0) {
+            m_protocolGame->sendEquipItemWithTier(itemId, tier);
+            return;
+        }
+    }
+    m_protocolGame->sendEquipItemWithCountOrSubType(itemId, tier);
+}
+
 void Game::mount(const bool mount)
 {
     if (!canPerformGameAction())
@@ -1496,7 +1550,7 @@ void Game::buyStoreOffer(const uint32_t offerId, const uint8_t action, const std
     if (!canPerformGameAction())
         return;
 
-    m_protocolGame->sendBuyStoreOffer(offerId, action, name, type,location);
+    m_protocolGame->sendBuyStoreOffer(offerId, action, name, type, location);
 }
 
 void Game::requestTransactionHistory(const uint32_t page, const uint32_t entriesPerPage)
@@ -1544,7 +1598,7 @@ void Game::sendRequestStoreOfferById(const uint32_t offerId, const uint8_t sortO
     if (!canPerformGameAction())
         return;
 
-    m_protocolGame->sendRequestStoreOfferById(offerId, sortOrder , serviceType);
+    m_protocolGame->sendRequestStoreOfferById(offerId, sortOrder, serviceType);
 }
 
 void Game::sendRequestStoreSearch(const std::string_view searchText, const uint8_t sortOrder, const uint8_t serviceType)
@@ -1587,9 +1641,7 @@ void Game::ping()
     if (m_pingReceived != m_pingSent)
         return;
 
-    enableBotCall();
     m_protocolGame->sendPing();
-    disableBotCall();
     ++m_pingSent;
     m_pingTimer.restart();
 }
@@ -1601,6 +1653,10 @@ void Game::changeMapAwareRange(const uint8_t xrange, const uint8_t yrange)
 
     m_protocolGame->sendChangeMapAwareRange(xrange, yrange);
 }
+
+bool Game::isAttacking() { return !!m_attackingCreature && !m_attackingCreature->isRemoved(); }
+bool Game::isFollowing() { return !!m_followingCreature && !m_followingCreature->isRemoved(); }
+bool Game::isConnectionOk() { return m_protocolGame && m_protocolGame->getElapsedTicksSinceLastRead() < 5000; }
 
 bool Game::canPerformGameAction() const
 {
@@ -1713,19 +1769,21 @@ Otc::OperatingSystem_t Game::getOs()
 
 void Game::leaveMarket()
 {
-    enableBotCall();
+    if (!canPerformGameAction())
+        return;
+
     m_protocolGame->sendMarketLeave();
-    disableBotCall();
 
     g_lua.callGlobalField("g_game", "onMarketLeave");
 }
 
-void Game::browseMarket(const uint8_t browseId, const uint8_t browseType)
+void Game::browseMarket(const uint8_t browseId, const uint16_t browseType, const uint8_t tier)
 {
-    if (!canPerformGameAction())
+    if (!canPerformGameAction()) {
         return;
+    }
 
-    m_protocolGame->sendMarketBrowse(browseId, browseType);
+    m_protocolGame->sendMarketBrowse(browseId, browseType, tier);
 }
 
 void Game::createMarketOffer(const uint8_t type, const uint16_t itemId, const uint8_t itemTier, const uint16_t amount, const uint64_t price, const uint8_t anonymous)
@@ -1768,6 +1826,203 @@ void Game::preyRequest()
     m_protocolGame->sendPreyRequest();
 }
 
+namespace
+{
+    uint8_t toServerDifficulty(const uint16_t uiDifficulty)
+    {
+        if (std::cmp_equal(uiDifficulty, 0)) {
+            g_logger.warning("ToServerDifficulty received invalid UI difficulty 0");
+            return 1;
+        }
+        if (std::cmp_greater_equal(uiDifficulty, 4)) {
+            return 3;
+        }
+        return static_cast<uint8_t>(uiDifficulty - 1);
+    }
+}
+
+void Game::bountyTaskAction(const uint8_t actionType, const uint16_t value)
+{
+    if (!canPerformGameAction())
+        return;
+
+    switch (actionType) {
+        case Otc::BOUNTY_ACTION_REQUEST:
+            m_protocolGame->sendTaskBoardAction(Otc::TASK_BOARD_OPTION_OPEN_BOUNTY);
+            break;
+        case Otc::BOUNTY_ACTION_REROLL:
+            m_protocolGame->sendTaskBoardAction(Otc::TASK_BOARD_OPTION_BOUNTY_REROLL);
+            break;
+        case Otc::BOUNTY_ACTION_SELECT:
+            m_protocolGame->sendTaskBoardAction(Otc::TASK_BOARD_OPTION_BOUNTY_SELECT_TASK, value);
+            break;
+        case Otc::BOUNTY_ACTION_CLAIM_REWARD:
+            m_protocolGame->sendTaskBoardAction(Otc::TASK_BOARD_OPTION_BOUNTY_CLAIM_REWARD);
+            break;
+        case Otc::BOUNTY_ACTION_CHANGE_DIFFICULTY:
+            m_protocolGame->sendTaskBoardAction(Otc::TASK_BOARD_OPTION_BOUNTY_CHANGE_DIFFICULTY, toServerDifficulty(value));
+            break;
+        case Otc::BOUNTY_ACTION_CLAIM_DAILY:
+            m_protocolGame->sendTaskBoardAction(Otc::TASK_BOARD_OPTION_BOUNTY_CLAIM_DAILY);
+            break;
+        default:
+            g_logger.warning("Unknown bounty task action type {}", static_cast<int>(actionType));
+            break;
+    }
+}
+
+void Game::weeklyTaskAction(const uint8_t actionType, const uint16_t value)
+{
+    if (!canPerformGameAction())
+        return;
+
+    switch (actionType) {
+        case Otc::WEEKLY_ACTION_REFRESH_DATA:
+            m_protocolGame->sendTaskBoardAction(Otc::TASK_BOARD_OPTION_OPEN_WEEKLY);
+            break;
+        case Otc::WEEKLY_ACTION_SELECT_DIFFICULTY:
+            m_protocolGame->sendTaskBoardAction(Otc::TASK_BOARD_OPTION_WEEKLY_SELECT_DIFFICULTY, toServerDifficulty(value));
+            break;
+        case Otc::WEEKLY_ACTION_DELIVER_ITEM:
+            m_protocolGame->sendTaskBoardAction(Otc::TASK_BOARD_OPTION_WEEKLY_DELIVER, value);
+            break;
+        default:
+            g_logger.warning("Unknown weekly task action type {}", static_cast<int>(actionType));
+            break;
+    }
+}
+
+void Game::taskHuntingShopRequest()
+{
+    if (!canPerformGameAction())
+        return;
+
+    m_protocolGame->sendTaskBoardAction(Otc::TASK_BOARD_OPTION_OPEN_HUNTING_SHOP);
+}
+
+void Game::taskHuntingShopPurchase(const uint8_t offerIndex)
+{
+    if (!canPerformGameAction())
+        return;
+
+    m_protocolGame->sendTaskBoardAction(Otc::TASK_BOARD_OPTION_HUNTING_SHOP_BUY_OFFER, offerIndex, 0);
+}
+
+void Game::bountyTalismanUpgrade(const uint8_t pathIndex)
+{
+    if (!canPerformGameAction())
+        return;
+
+    if (std::cmp_greater(pathIndex, 3)) {
+        g_logger.warning("BountyTalismanUpgrade: invalid pathIndex {}", static_cast<int>(pathIndex));
+        return;
+    }
+
+    m_protocolGame->sendTaskBoardAction(Otc::TASK_BOARD_OPTION_BOUNTY_TALISMAN_UPGRADE, pathIndex);
+}
+
+void Game::bountyPreferredAction(const uint8_t actionType, const uint16_t slot, const uint16_t raceId)
+{
+    if (!canPerformGameAction())
+        return;
+
+    switch (actionType) {
+        case Otc::PREFERRED_ACTION_REQUEST:
+            m_protocolGame->sendTaskBoardAction(Otc::TASK_BOARD_OPTION_OPEN_BOUNTY);
+            break;
+        case Otc::PREFERRED_ACTION_BUY_SLOT:
+            if (std::cmp_not_equal(slot, 0)) {
+                m_protocolGame->sendTaskBoardAction(Otc::TASK_BOARD_OPTION_PREFERRED_UNLOCK, slot);
+            }
+            break;
+        case Otc::PREFERRED_ACTION_SET_PREFERRED:
+            if (std::cmp_not_equal(slot, 0) && std::cmp_not_equal(raceId, 0)) {
+                m_protocolGame->sendTaskBoardAction(Otc::TASK_BOARD_OPTION_PREFERRED_ASSIGN, slot, raceId);
+            }
+            break;
+        case Otc::PREFERRED_ACTION_SET_UNWANTED:
+            if (std::cmp_not_equal(slot, 0) && std::cmp_not_equal(raceId, 0)) {
+                m_protocolGame->sendTaskBoardAction(Otc::TASK_BOARD_OPTION_UNWANTED_ASSIGN, slot, raceId);
+            }
+            break;
+        case Otc::PREFERRED_ACTION_REMOVE_PREFERRED:
+            if (std::cmp_not_equal(slot, 0)) {
+                m_protocolGame->sendTaskBoardAction(Otc::TASK_BOARD_OPTION_PREFERRED_CLEAR, slot);
+            }
+            break;
+        case Otc::PREFERRED_ACTION_REMOVE_UNWANTED:
+            if (std::cmp_not_equal(slot, 0)) {
+                m_protocolGame->sendTaskBoardAction(Otc::TASK_BOARD_OPTION_UNWANTED_CLEAR, slot);
+            }
+            break;
+        default:
+            g_logger.warning("Unknown bounty preferred action type {}", static_cast<int>(actionType));
+            break;
+    }
+}
+
+void Game::soulsealFightAction(const uint16_t raceId)
+{
+    if (!canPerformGameAction() || std::cmp_equal(raceId, 0))
+        return;
+
+    m_protocolGame->sendSoulSealsAction(raceId);
+}
+
+void Game::sendStartOfflineTraining(const uint8_t skillType)
+{
+    if (!canPerformGameAction())
+        return;
+
+    m_protocolGame->sendStartOfflineTraining(skillType);
+}
+
+void Game::sendTutorialChangeVocation(uint8_t vocationClientId)
+{
+    if (!canPerformGameAction())
+        return;
+
+    m_protocolGame->sendTutorialChangeVocation(vocationClientId);
+}
+
+void Game::openPortableForgeRequest()
+{
+    if (!canPerformGameAction())
+        return;
+    m_protocolGame->sendOpenPortableForge();
+}
+
+void Game::forgeRequest(Otc::ForgeAction_t actionType, bool convergence, uint16_t firstItemid, uint8_t firstItemTier, uint16_t secondItemId, bool improveChance, bool tierLoss)
+{
+    if (!canPerformGameAction())
+        return;
+    m_protocolGame->sendForgeRequest(actionType, convergence, firstItemid, firstItemTier, secondItemId, improveChance, tierLoss);
+}
+
+void Game::sendForgeBrowseHistoryRequest(uint16_t page)
+{
+    if (!canPerformGameAction())
+        return;
+    m_protocolGame->sendForgeBrowseHistoryRequest(page);
+}
+
+void Game::sendExivaOptions(
+    const bool allowAll, const bool allowOwnGuild, const bool allowOwnParty,
+    const bool allowVipList, const bool allowPlayerWhitelist, const bool allowGuildWhitelist,
+    const std::vector<std::string>& characterWhiteList,
+    const std::vector<std::string>& removeCharacter,
+    const std::vector<std::string>& guildWhiteList,
+    const std::vector<std::string>& removeGuild)
+{
+    if (!canPerformGameAction() || !canExivaOptions())
+        return;
+
+    m_protocolGame->sendExivaRestrictions(
+        allowAll, allowOwnGuild, allowOwnParty, allowVipList,
+        allowPlayerWhitelist, allowGuildWhitelist,
+        characterWhiteList, removeCharacter, guildWhiteList, removeGuild);
+}
+
 void Game::applyImbuement(const uint8_t slot, const uint32_t imbuementId, const bool protectionCharm)
 {
     if (!canPerformGameAction())
@@ -1792,6 +2047,22 @@ void Game::closeImbuingWindow()
     m_protocolGame->sendCloseImbuingWindow();
 }
 
+void Game::selectImbuementItem(const uint16_t itemId, const Position& pos, const uint8_t stackpos)
+{
+    if (!canPerformGameAction())
+        return;
+
+    m_protocolGame->sendImbuementWindowAction(Otc::IMBUEMENT_WINDOW_SELECT_ITEM, itemId, pos, stackpos);
+}
+
+void Game::selectImbuementScroll()
+{
+    if (!canPerformGameAction())
+        return;
+
+    m_protocolGame->sendImbuementWindowAction(Otc::IMBUEMENT_WINDOW_SCROLL);
+}
+
 void Game::imbuementDurations(const bool isOpen)
 {
     if (!canPerformGameAction())
@@ -1806,6 +2077,14 @@ void Game::stashWithdraw(const uint16_t itemId, const uint32_t count, const uint
         return;
 
     m_protocolGame->sendStashWithdraw(itemId, count, stackpos);
+}
+
+void Game::stashStowItem(const Position& position, const uint16_t itemId, const uint32_t count, const uint8_t stackpos, const uint8_t action)
+{
+    if (!canPerformGameAction())
+        return;
+
+    m_protocolGame->sendStashStow(position, itemId, count, stackpos, action);
 }
 
 void Game::requestHighscore(const uint8_t action, const uint8_t category, const uint32_t vocation, const std::string_view world, const uint8_t worldType, const uint8_t battlEye, const uint16_t page, const uint8_t totalPages)
@@ -1883,6 +2162,17 @@ void Game::inspectionObject(const Otc::InspectObjectTypes inspectionType, const 
     m_protocolGame->sendInspectionObject(inspectionType, itemId, itemCount);
 }
 
+void Game::inspectCharacter(const uint32_t creatureId, const uint8_t tab)
+{
+    if (!canPerformGameAction())
+        return;
+
+    if (creatureId == 0)
+        return;
+    
+    m_protocolGame->sendInspectCharacter(creatureId, tab);
+}
+
 void Game::requestBestiary()
 {
     if (!canPerformGameAction())
@@ -1891,12 +2181,12 @@ void Game::requestBestiary()
     m_protocolGame->sendRequestBestiary();
 }
 
-void Game::requestBestiaryOverview(const std::string_view catName)
+void Game::requestBestiaryOverview(const std::string_view catName, bool search, std::vector<uint16_t> raceIds)
 {
     if (!canPerformGameAction())
         return;
 
-    m_protocolGame->sendRequestBestiaryOverview(catName);
+    m_protocolGame->sendRequestBestiaryOverview(catName, search, raceIds);
 }
 
 void Game::requestBestiarySearch(const uint16_t raceId)
@@ -1987,12 +2277,18 @@ void Game::requestGetRewardDaily(const uint8_t bonusShrine, const std::map<uint1
     m_protocolGame->sendGetRewardDaily(bonusShrine, items);
 }
 
-void Game::sendRequestTrackerQuestLog(const std::map<uint16_t, std::string>& quests)
+void Game::sendRequestTrackerQuestLog(const std::vector<uint16_t>& missionIds, const bool autoTrackNewQuests, const bool autoUntrackCompletedQuests, const uint8_t extra)
 {
-    if (!canPerformGameAction())
+    if (!canPerformGameAction()) {
         return;
+    }
 
-    m_protocolGame->sendRequestTrackerQuestLog(quests);
+    m_protocolGame->sendRequestTrackerQuestLog(
+        missionIds,
+        autoTrackNewQuests,
+        autoUntrackCompletedQuests,
+        extra
+    );
 }
 
 void Game::processCyclopediaCharacterOffenceStats(const CyclopediaCharacterOffenceStats& data)
@@ -2010,3 +2306,39 @@ void Game::processCyclopediaCharacterMiscStats(const CyclopediaCharacterMiscStat
     g_lua.callGlobalField("g_game", "onCyclopediaCharacterMiscStats", data);
 }
 
+void Game::openWheel(uint32_t playerId)
+{
+    if (!canPerformGameAction())
+        return;
+    m_protocolGame->sendOpenWheel(playerId);
+}
+
+void Game::gemAction(const uint8_t actionType, const uint8_t param, const uint8_t pos)
+{
+    if (!canPerformGameAction())
+        return;
+    m_protocolGame->sendWheelGemAction(actionType, param, pos);
+}
+
+void Game::sendApplyWheelPoints(const std::vector<uint16_t>& slotPoints,uint16_t greenGem,uint16_t redGem,uint16_t acquaGem,uint16_t purpleGem)
+{
+    if (!canPerformGameAction())
+        return;
+    m_protocolGame->sendApplyWheelPoints(slotPoints, greenGem, redGem, acquaGem, purpleGem);
+}
+
+void Game::sendWeaponProficiencyAction(const uint8_t actionType, const uint16_t itemId)
+{
+    if (!canPerformGameAction())
+        return;
+
+    m_protocolGame->sendWeaponProficiencyAction(actionType, itemId);
+}
+
+void Game::sendWeaponProficiencyApply(const uint16_t itemId, const std::vector<uint8_t>& levels, const std::vector<uint8_t>& perkPositions)
+{
+    if (!canPerformGameAction())
+        return;
+
+    m_protocolGame->sendWeaponProficiencyApply(itemId, levels, perkPositions);
+}

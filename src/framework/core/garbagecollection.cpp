@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,13 +21,15 @@
  */
 
 #include "garbagecollection.h"
-#include <client/thingtypemanager.h>
-#include <framework/core/asyncdispatcher.h>
-#include <framework/core/eventdispatcher.h>
-#include <framework/graphics/animatedtexture.h>
-#include <framework/graphics/drawpoolmanager.h>
-#include <framework/graphics/texturemanager.h>
-#include <framework/luaengine/luainterface.h>
+
+#include "client/const.h"
+#include "client/thingtype.h"
+#include "client/thingtypemanager.h"
+#include "framework/graphics/declarations.h"
+#include "framework/graphics/texture.h"
+#include "framework/graphics/texturemanager.h"
+#include "framework/graphics/animatedtexture.h"
+#include "framework/luaengine/luainterface.h"
 
 constexpr uint32_t LUA_TIME = 15 * 60 * 1000; // 15min
 constexpr uint32_t TEXTURE_TIME = 30 * 60 * 1000; // 30min

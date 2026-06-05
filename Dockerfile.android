@@ -1,0 +1,50 @@
+# Use a standard Android SDK image
+FROM thyrlian/android-sdk:10.0 AS builder
+
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git cmake curl zip unzip tar automake ca-certificates build-essential \
+    libncurses5-dev libssl-dev python3 python3-pip ninja-build nasm gperf \
+    pkg-config libtool bison flex \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install vcpkg with FULL history
+WORKDIR /opt
+RUN git clone https://github.com/microsoft/vcpkg.git \
+    && cd vcpkg && ./bootstrap-vcpkg.sh
+
+ENV VCPKG_ROOT=/opt/vcpkg
+ENV ANDROID_HOME=/opt/android-sdk
+ENV ANDROID_NDK_HOME=/opt/android-sdk/ndk/29.0.13599879
+ENV VCPKG_FORCE_SYSTEM_BINARIES=1
+
+# Install NDK and stable CMake via sdkmanager
+RUN yes | sdkmanager --sdk_root=$ANDROID_HOME "ndk;29.0.13599879" "cmake;3.22.1"
+
+# Set workdir for the project
+WORKDIR /otclient
+COPY . /otclient
+
+# Install gcc-multilib for 32-bit LuaJIT cross-compilation
+RUN apt-get update && apt-get install -y --no-install-recommends gcc-multilib \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Clone LuaJIT source and cross-compile for all Android ABIs
+RUN git clone --depth 1 https://github.com/LuaJIT/LuaJIT.git /otclient/luajit-src \
+    && cd /otclient/luajit-src && git fetch --depth 1 origin d0e88930ddde28ff662503f9f20facf34f7265aa \
+    && git checkout d0e88930ddde28ff662503f9f20facf34f7265aa
+RUN cd /otclient && chmod +x build_luajit_android.sh && ./build_luajit_android.sh
+
+# Generate data.zip asset bundle
+RUN mkdir -p /otclient/android/app/src/main/assets \
+    && cd /otclient && zip -r android/app/src/main/assets/data.zip data mods modules init.lua otclientrc.lua
+
+# Build APK inside the image
+RUN cd /otclient/android \
+    && tr -d '\r' < gradlew > gradlew_unix \
+    && chmod +x gradlew_unix \
+    && ./gradlew_unix assembleRelease
+
+# Minimal stage to extract APK
+FROM scratch AS apk-artifacts
+COPY --from=builder /otclient/android/app/build/outputs/apk/release/ /

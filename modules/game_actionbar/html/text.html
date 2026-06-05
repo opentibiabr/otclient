@@ -1,0 +1,38 @@
+<style>
+  /* === WINDOW === */
+  .text-window { width: 243px; height: 121px; position: relative; background-color: red; }
+  /* === LABEL === */
+  .text-label { margin-top: 5px; width: 238px; }
+  /* === INPUT === */
+  .text-input { margin-top: 5px; width: 100%; display: block; }
+  /* === CHECKBOX PANEL === */
+  .text-checkbox-panel { margin-top: 6px; height: 22px; width: 100%; display: block; }
+  .text-checkbox-panel > #tick { margin-left: 5px; margin-top: 4px; height: 20px; display: block; width: 100%; }
+  /* === FOOTER === */
+  .text-footer { display: block; margin-top: -5px; height: 22px; }
+  .text-footer button { width: 25px; display: block; float: right; margin-right: 5px; font: cipsoftFont; }
+</style>
+
+<html>
+<Window id="assignTextWindow" class="text-window" onescape="self:unloadHtml()">
+
+  <label class="text-label" text="Text:"></label>
+
+  <input id="text" class="text-input" type="text" placeholder="Type to search"
+    onchange="self:updateAssignTextState(event)" />
+
+  <div class="text-checkbox-panel FlatPanel">
+    <input id="tick" type="checkbox" text="Send automatically" />
+  </div>
+
+  <hr style="height: 2px;" />
+
+  <div class="text-footer">
+    <button id="buttonClose" onclick="self:unloadHtml()">Cancel</button>
+    <button id="buttonApply" enabled="false">Apply</button>
+    <button id="buttonOk" enabled="false">Ok</button>
+  </div>
+
+</Window>
+
+</html>

@@ -1,8 +1,9 @@
 Module
   name: game_actionbar
+  description: game_actionbar
+  author: game_actionbar
+  website: game_actionbar
   sandboxed: true
-  scripts: [ game_actionbar ]
-  autoload: true
-  autoload-priority: 1001
-  @onLoad: init()
-  @onUnload: terminate()
+  @onLoad: ActionBarController:init()
+  @onUnload: ActionBarController:terminate()
+  scripts: [ game_actionbar, logics/ActionBarLayout, logics/ActionButtonLogic, logics/ActionAssignmentWindows, logics/MultiActionLogic, logics/ActionHotkeys, logics/ActionBarOptions , logics/const]

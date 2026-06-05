@@ -15,17 +15,7 @@ SelectColumnButton < CheckBox
 GameBottomPanel < UIWindow
   image-source: /images/ui/background_dark
   image-repeated: true
-  padding-top: 6
   draggable:false
-
-  UIWidget
-    image-source: /images/ui/divider_horizontal
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.top: parent.top
-    margin-top: -6
-    height: 5
-    focusable: false
 
   ResizeBorder
     id: bottomResizeBorder
@@ -33,7 +23,6 @@ GameBottomPanel < UIWindow
     anchors.left: parent.left
     anchors.right: parent.right
     enabled: false
-    border: 4 red
     height: 5
     margin-top: 5
     minimum: 170
@@ -44,7 +33,6 @@ GameBottomPanel < UIWindow
     anchors.top: parent.top
     anchors.bottom: parent.bottom
     enabled: false
-    border: 3 blue
     minimum: 300
 
 
@@ -63,12 +51,13 @@ UIWidget
 
   GameMapPanel
     id: gameMapPanel
-    anchors.left: gameLeftExtraPanel.right
-    anchors.right: gameRightExtraPanel.left
+    anchors.left: gameLeftActionPanel.right
+    anchors.right: gameRightActionPanel.left
     anchors.top: gameTopPanel.bottom
-    anchors.bottom: gameBottomPanel.top
-    
+    anchors.bottom: bottomSplitter.top
     focusable: false
+    margin-top: 1
+    margin-bottom: 1
 
     Button
       id: showTopMenuButton
@@ -78,11 +67,137 @@ UIWidget
       height: 32
       visible: false
 
+// actionbar
+  Panel
+    id: gameLeftActionPanel
+    phantom: true
+    focusable: false
+    anchors.top: gameTopPanel.bottom
+    anchors.left: gameLeftExtraPanel.right
+    anchors.bottom: bottomSplitter.top
+    padding-top: 1
+    margin-left: 1
+    border-width-right: 1
+    border-color-right: #292929
+    width: 36
+    image-source: /images/ui/actionbar/actionbar_background-light
+    image-border: 1
+    margin-bottom: 16
+    padding-right: 3 
+    layout:
+      type: horizontalBox
+      fit-children: true
+      spacing: 2
+  UIWidget
+    id: lockLeftPanel
+    size: 38 16
+    anchors.top: gameLeftActionPanel.bottom
+    anchors.left: gameLeftActionPanel.left
+    border-width-right: 1
+    border-color-right: #292929
+    image-source: /images/ui/actionbar/actionbar_background-light
+    Button
+      id: leftLock
+      size: 34 16
+      anchors.top: parent.top
+      anchors.right: parent.right
+      margin-right: 1
+      @onClick: modules.game_actionbar.changeLockStatus(self, "Left")
+      $pressed:
+        icon-offset: 1 1
+
+  Panel
+    id: gameRightActionPanel
+    phantom: true
+    focusable: false
+    anchors.top: gameTopPanel.bottom
+    anchors.right: gameRightExtraPanel.left
+    anchors.bottom: bottomSplitter.top
+    margin-right: 1
+    margin-top: 1
+    border-width-left: 1
+    border-color-left: #747474
+    width: 36
+    image-source: /images/ui/actionbar/actionbar_background-light
+    image-border: 1
+    margin-bottom: 16
+    padding-left: 3
+
+    layout:
+      type: horizontalBox
+      fit-children: true
+      spacing: 2
+  UIWidget
+    id: lockRightPanel
+    size: 38 16
+    anchors.top: gameRightActionPanel.bottom
+    anchors.right: gameRightActionPanel.right
+    border-width-left: 1
+    border-color-left: #747474
+    image-source: /images/ui/actionbar/actionbar_background-light
+
+    Button
+      id: rightLock
+      size: 34 16
+      anchors.top: parent.top
+      anchors.right: parent.right
+      margin-right: 1
+      @onClick: modules.game_actionbar.changeLockStatus(self, "Right")
+      $pressed:
+        icon-offset: 1 1
+  Panel
+    id: gameBottomActionPanel
+    phantom: true
+    focusable: false
+    margin-right: 12
+    padding-bottom: 2
+    anchors.left: bottomSplitter.left
+    anchors.right: bottomSplitter.right
+    anchors.top: gameBottomStatsBarPanel.bottom
+    layout:
+      type: verticalBox
+      fit-children: true
+
+  UIWidget
+    id: lockPanel
+    size: 12 79
+    anchors.top: gameBottomActionPanel.top
+    anchors.bottom: gameBottomActionPanel.bottom
+    anchors.left: gameBottomActionPanel.right
+    margin-left: 1
+    border-width-top: 1
+    border-color-top: #292929
+    image-source: /images/ui/actionbar/background-dark
+
+    Button
+      id: bottomLock
+      width: 12
+      anchors.top: parent.top
+      anchors.right: parent.right
+      margin-top: 1
+      margin-bottom: 1
+      icon-source: /images/ui/actionbar/locked
+      icon-offset: 0 0
+      @onClick: modules.game_actionbar.changeLockStatus(self, "Bottom")
+      $pressed:
+        icon-offset: 1 1
+
+  Panel
+    id: gameBottomCooldownPanel
+    phantom: true
+    focusable: false
+    anchors.left: bottomSplitter.left
+    anchors.right: bottomSplitter.right
+    anchors.top: gameBottomActionPanel.bottom
+    layout:
+      type: verticalBox
+      fit-children: true
+// end actionsbar
   GameBottomPanel
     id: gameBottomPanel
-    anchors.left: gameLeftExtraPanel.right
-    anchors.right: gameRightExtraPanel.left
-    anchors.top: gameBottomStatsBarPanel.bottom
+    anchors.left: gameBottomCooldownPanel.left
+    anchors.right: gameBottomCooldownPanel.right
+    anchors.top: gameBottomCooldownPanel.bottom
     anchors.bottom: parent.bottom
 
   GameSidePanel
@@ -166,12 +281,31 @@ UIWidget
     anchors.left: gameLeftExtraPanel.right
     anchors.right: gameRightExtraPanel.left
     anchors.bottom: parent.bottom
+    height: 6
+    image-source: /images/ui/actionbar/splitterActBottom
+    size: 300 6
+    opacity: 100
+    margin-right: 1
     relative-margin: bottom
-    margin-bottom: 172
-    image-source: /images/ui/divider_horizontal
-    height: 5
-    @canUpdateMargin: function(self, newMargin) if modules.client_options.getOption('dontStretchShrink') then return self:getMarginBottom() end return math.max(math.min(newMargin, self:getParent():getHeight() - 300), 160) end
-    @onGeometryChange: function(self) self:setMarginBottom(math.min(math.max(self:getParent():getHeight() - 300, 160), self:getMarginBottom())) end
+    margin-bottom: 200
+    @canUpdateMargin: |
+      function(self, newMargin)
+        local dontStretch = modules.client_options.getOption('dontStretchShrink')
+        local actionBars = modules.game_actionbar.getActiveBottomBars()
+        local maxHeight = 118 + (35 * actionBars)
+        local result = math.max(math.min(newMargin, self:getParent():getHeight() - 150), maxHeight)
+        if dontStretch then
+          result = result > 650 and 650 or (result > 450 and 450 or 200)
+        end
+        return result
+      end
+    @onGeometryChange: |
+      function(self)
+        local actionBars = modules.game_actionbar.getActiveBottomBars()
+        local maxHeight = 118 + (35 * actionBars)
+        local parentHeight = self:getParent():getHeight()
+        self:setMarginBottom(math.min(math.max(parentHeight - 150, maxHeight), self:getMarginBottom()))
+      end
 
   UIWidget
     id: mouseGrabber
@@ -203,53 +337,52 @@ UIWidget
     size: 9 27
     @onClick: onIncreaseLeftPanels()
 
-    $pressed !disabled:
-      image-clip: 36 0 9 27
-
+    $hover:
+      image-clip: 27 0 9 27
     $disabled:
-      image-clip: 45 0 9 27
+      image-clip: 36 0 9 27
 
   Button
     id: leftDecreaseSidePanels
     anchors.left: leftIncreaseSidePanels.left
     anchors.top: leftIncreaseSidePanels.bottom
     image-source: /images/ui/topstats_button_panel
-    image-clip: 0 0 9 27
+    image-clip: 36 26 9 27
     size: 9 27
     @onClick: onDecreaseLeftPanels()
 
-    $pressed !disabled:
-      image-clip: 9 0 9 27
+    $hover:
+      image-clip: 36 26 9 27
 
     $disabled:
-      image-clip: 18 0 9 27
+      image-clip: 27 27 9 27
 
   Button
     id: rightIncreaseSidePanels
     anchors.right: gameRightExtraPanel.left
     anchors.top: parent.top
     image-source: /images/ui/topstats_button_panel
-    image-clip: 27 27 9 27
+    image-clip: 0 0 9 27
     size: 9 27
     @onClick: onIncreaseRightPanels()
 
-    $pressed !disabled:
-      image-clip: 36 27 9 27
+    $hover:
+      image-clip: 0 0 9 27
 
     $disabled:
-      image-clip: 45 27 9 27
+      image-clip: 9 0 9 27
 
   Button
     id: rightDecreaseSidePanels
     anchors.right: rightIncreaseSidePanels.right
     anchors.top: rightIncreaseSidePanels.bottom
     image-source: /images/ui/topstats_button_panel
-    image-clip: 0 27 9 27
+    image-clip: 9 27 9 27
     size: 9 27
     @onClick: onDecreaseRightPanels()
 
-    $pressed !disabled:
+    $hover:
       image-clip: 9 27 9 27
 
     $disabled:
-      image-clip: 18 27 9 27
+      image-clip: 0 27 9 27

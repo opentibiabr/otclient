@@ -1,0 +1,269 @@
+/* === Base global === */
+* {
+  height: auto;
+  width: auto;
+  color: white;
+  background-color: alpha;
+  opacity: 1;
+  rotate: 0;
+  text-align: left;
+  overflow: visible;
+  display: inline;
+  margin: 0;
+  padding: 0;
+  --icon-color: white;
+  --icon-align: none;
+  --text-draw-order: 0;
+  --image-draw-order: 0;
+  --icon-draw-order: 0;
+  --border-draw-order: 0;
+  --background-draw-order: 0;
+  --image-color: white;
+}
+
+/* === Form controls === */
+button {
+  display: inline-block;
+  text-align: center !important;
+  padding: 5 10 5 10;
+}
+
+button > :pressed {
+  padding: 8 10;
+}
+
+input[type="password"] {
+  --text-hidden: true;
+}
+
+input {
+  width: 80;
+  height: 20;
+  padding: 2;
+}
+
+input:disabled {
+  color: #c0c0c0ff;
+  opacity: 0.5;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  width: 14;
+  height: 14;
+  padding: 0;
+  margin: 0;
+}
+
+textarea {
+  width: 128;
+  height: 128;
+}
+
+select {
+  min-width: 24;
+  min-height: 20;
+  text-align: center;
+}
+
+/* === Core structural elements === */
+br {
+  display: block;
+  height: 15;
+}
+
+div {
+  display: block;
+}
+
+pre {
+  display: block;
+  white-space: pre;
+  margin: 16 0;
+}
+
+hr {
+  display: block;
+  height: 1;
+  margin-top: 8;
+  margin-bottom: 8;
+}
+
+/* === Headings === */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  display: block;
+  margin-top: 11;
+  margin-bottom: 11;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+h1,
+h1 *,
+h2,
+h2 *,
+h3,
+h3 *,
+h4,
+h4 *,
+h5,
+h5 *,
+h6,
+h6 * {
+  font: terminus-14px-bold;
+}
+
+h1,
+h1 * {
+  --font-scale: 2;
+}
+h2,
+h2 * {
+  --font-scale: 1.5;
+}
+h3,
+h3 * {
+  --font-scale: 1;
+}
+h4,
+h4 * {
+  --font-scale: 0.8;
+}
+h5,
+h5 * {
+  --font-scale: 0.5;
+}
+h6,
+h6 * {
+  --font-scale: 0.3;
+}
+
+/* === Lists === */
+ul,
+ol,
+dl {
+  display: block;
+}
+
+li {
+  display: list-item;
+}
+
+dt,
+dd {
+  display: block;
+}
+
+/* === Tables === */
+table,
+thead,
+tbody,
+tfoot,
+tr,
+td,
+th {
+  width: fit-content;
+  height: fit-content;
+}
+
+td,
+th {
+  padding: 1;
+}
+
+table {
+  display: table;
+  border-collapse: separate;
+  border-spacing: 2px;
+}
+
+thead {
+  display: table-header-group;
+}
+tbody {
+  display: table-row-group;
+}
+tfoot {
+  display: table-footer-group;
+}
+tr {
+  display: table-row;
+}
+td {
+  display: table-cell;
+}
+th {
+  display: table-cell;
+  font-weight: bold;
+  text-align: center;
+}
+colgroup {
+  display: table-column-group;
+}
+col {
+  display: table-column;
+}
+caption {
+  display: table-caption;
+  text-align: center;
+  caption-side: top;
+}
+
+/* === Embedded & media elements === */
+img,
+iframe,
+embed,
+object,
+canvas,
+video,
+audio,
+progress,
+meter {
+  display: inline-block;
+}
+
+/* === Semantic block-level elements (faltavam no original) === */
+address,
+article,
+aside,
+footer,
+header,
+hgroup,
+main,
+nav,
+section,
+figcaption,
+figure,
+details,
+dialog,
+fieldset,
+form,
+menu,
+summary,
+blockquote,
+p {
+  display: block;
+}
+
+/* === Extras === */
+legend {
+  display: block;
+}
+summary {
+  display: list-item;
+}
+
+/* === Hidden elements === */
+script,
+style,
+template,
+source,
+track,
+area {
+  display: none;
+}

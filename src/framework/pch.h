@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,53 +22,99 @@
 
 #pragma once
 
- // common C headers
+// ===== C Standard Library =====
 #include <cassert>
+#include <cctype>
+#include <chrono>
+#include <climits>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
-// common STL headers
+// ===== C++ Standard Library =====
 #include <algorithm>
 #include <array>
+#include <bitset>
+#include <charconv>
 #include <deque>
+#include <exception>
+#include <filesystem>
 #include <functional>
 #include <iomanip>
+#include <initializer_list>
+#include <ios>
 #include <iostream>
+#include <istream>
+#include <iterator>
+#include <limits>
 #include <list>
 #include <map>
 #include <memory>
+#include <mutex>
+#include <optional>
+#include <ostream>
+#include <queue>
+#include <ranges>
+#include <regex>
+#include <set>
+#include <span>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <tuple>
+#include <type_traits>
 #include <typeinfo>
 #include <unordered_map>
+#include <unordered_set>
+#include <utility>
 #include <vector>
+#include <numbers>
+#include <future>
+#include <atomic>
+#include <random>
 
+// ===== Third-Party Libraries =====
+// zlib
+#include <zlib.h>
+
+// parallel-hashmap
 #include <parallel_hashmap/btree.h>
 #include <parallel_hashmap/phmap.h>
+
+// pugixml
 #include <pugixml.hpp>
 
+// ixwebsocket
 #include <ixwebsocket/IXHttp.h>
 #include <ixwebsocket/IXHttpClient.h>
 #include <ixwebsocket/IXWebSocket.h>
 #include <ixwebsocket/IXWebSocketMessage.h>
 
-// FMT
+// fmt
+#include <fmt/args.h>
 #include <fmt/chrono.h>
 #include <fmt/core.h>
 #include <fmt/format.h>
-#include <fmt/args.h>
 #include <fmt/ranges.h>
 
+// Asio (standalone)
+#include <asio/io_service.hpp>
+#include <asio/ip/tcp.hpp>
+#include <asio/read.hpp>
+#include <asio/read_until.hpp>
+#include <asio/ssl.hpp>
+#include <asio/streambuf.hpp>
+#include <asio/write.hpp>
+
+// ===== Utilities / Helpers =====
 // FMT Custom Formatter for Enums
 template <typename E>
 std::enable_if_t<std::is_enum_v<E>, std::underlying_type_t<E>>
 format_as(E e) {
     return static_cast<std::underlying_type_t<E>>(e);
 }
-
-using namespace std::literals;

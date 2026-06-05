@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,10 +21,17 @@
  */
 
 #include "configmanager.h"
+#include <INIReader.h>
+#include "resourcemanager.h"
 
 ConfigManager g_configs;
 
-void ConfigManager::init() { m_settings = std::make_shared<Config>(); }
+void ConfigManager::init() {
+    m_settings = std::make_shared<Config>();
+
+    // Comment out or remove this line to skip loading config.ini.
+    loadPublicConfig("config.ini");
+}
 
 void ConfigManager::terminate()
 {
@@ -117,3 +124,33 @@ bool ConfigManager::unload(const std::string& file)
 }
 
 void ConfigManager::remove(const ConfigPtr& config) { m_configs.remove(config); }
+
+void ConfigManager::saveSettings()
+{
+    if (m_settings)
+        m_settings->save();
+}
+
+void ConfigManager::loadPublicConfig(const std::string& fileName) {
+    try {
+        auto content = g_resources.readFileContents(fileName);
+        INIReader reader(content.c_str(), content.size());
+
+        if (reader.ParseError() < 0) {
+            g_logger.error("Failed to read config otml '{}''", fileName);
+            return;
+        }
+
+        m_publicConfig.graphics.maxAtlasSize = std::max<int>(2048, reader.GetInteger("graphics", "maxAtlasSize", m_publicConfig.graphics.maxAtlasSize));
+        m_publicConfig.graphics.mapAtlasSize = reader.GetInteger("graphics", "mapAtlasSize", m_publicConfig.graphics.mapAtlasSize);
+        m_publicConfig.graphics.foregroundAtlasSize = reader.GetInteger("graphics", "foregroundAtlasSize", m_publicConfig.graphics.foregroundAtlasSize);
+        
+        m_publicConfig.font.widget = reader.Get("font", "widget", m_publicConfig.font.widget);
+        m_publicConfig.font.staticText = reader.Get("font", "static-text", m_publicConfig.font.staticText);
+        m_publicConfig.font.animatedText = reader.Get("font", "animated-text", m_publicConfig.font.animatedText);
+        m_publicConfig.font.creatureText = reader.Get("font", "creature-text", m_publicConfig.font.creatureText);
+        m_publicConfig.font.itemCount = reader.Get("font", "item-count", m_publicConfig.font.itemCount);
+    } catch (const std::exception& e) {
+        g_logger.error("Failed to parse public config '{}': {}", fileName, e.what());
+    }
+}

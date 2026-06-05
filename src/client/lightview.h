@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,10 +22,10 @@
 
 #pragma once
 
-#include "declarations.h"
-#include "thingtype.h"
+#include "framework/graphics/coordsbuffer.h"
+#include "framework/luaengine/luaobject.h"
+#include "staticdata.h"
 #include <framework/graphics/declarations.h>
-#include <framework/graphics/framebuffer.h>
 
 class LightView final : public LuaObject
 {
@@ -46,8 +46,8 @@ public:
     }
 
     bool isDark() const { return m_isDark; }
-    bool isEnabled() const { return m_pool->isEnabled(); }
-    void setEnabled(const bool v) { m_pool->setEnable(v); }
+    bool isEnabled() const;
+    void setEnabled(const bool v);
     void clear() {
         m_lightData.lights.clear();
         m_lightData.tiles.assign(m_mapSize.area(), {});

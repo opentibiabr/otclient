@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,8 +24,6 @@
 
 #ifdef FRAMEWORK_EDITOR
 #include "declarations.h"
-#include "tile.h"
-
 #include <framework/luaengine/luaobject.h>
 
 class House : public LuaObject
@@ -57,7 +55,7 @@ public:
     Position getEntry() { return m_entry; }
 
     void addDoor(const ItemPtr& door);
-    void removeDoor(const ItemPtr& door) { removeDoorById(door->getDoorId()); }
+    void removeDoor(const ItemPtr& door);
     void removeDoorById(uint32_t doorId);
 
 protected:
@@ -65,7 +63,7 @@ protected:
     void save(pugi::xml_node& node);
 
 private:
-    TileMap m_tiles;
+    stdext::map<Position, TilePtr, Position::Hasher> m_tiles;
     ItemVector m_doors;
     uint32_t m_lastDoorId{ 0 };
     uint32_t m_id{ 0 };

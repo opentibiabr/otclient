@@ -3,5 +3,6 @@ Module
   description: game_cyclopedia
   scripts: [ game_cyclopedia, tab/*, utils]
   sandboxed: true
+  autoload: true
   @onLoad: controllerCyclopedia:init()
   @onUnload: controllerCyclopedia:terminate()

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -41,7 +41,7 @@ void UILayout::update()
     } while(parent);
     */
 
-    if (m_updateDisabled)
+    if (isUpdateDisabled())
         return;
 
     if (m_updating) {
@@ -57,7 +57,7 @@ void UILayout::update()
 
 void UILayout::updateLater()
 {
-    if (m_updateDisabled || m_updateScheduled)
+    if (isUpdateDisabled() || m_updateScheduled)
         return;
 
     if (!getParentWidget())

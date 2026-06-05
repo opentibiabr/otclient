@@ -1,0 +1,78 @@
+PlayerOptionInfo < Panel
+  size: 130 70
+  image-source: /images/ui/3pixel-frame-borderimage
+  image-border: 3
+  Label
+    id: playerNameLabel
+    anchors.top: parent.top
+    anchors.left: parent.left
+    margin-top: 7
+    margin-left: 5
+    !text: tr('PlayerName')
+  TextEdit
+    id: extraCostText
+    size: 120 20
+    anchors.top: prev.bottom
+    anchors.left: prev.left
+    margin-top: 5
+    padding-top: 2
+    box-text-padding: 70
+    !placeholder: tr('Extra Gold Costs')
+  CheckBox
+    id: removePlayer
+    size: 12 12
+    anchors.top: prev.bottom
+    anchors.left: prev.left
+    margin-top: 5
+    !text: tr('Remove Player')
+    font: Verdana Bold-11px
+    text-auto-resize: true
+    color: #C0C0C0
+    image-source: /images/ui/checkbox
+    image-clip: 0 0 12 12
+
+NewMainWindow
+  id: advancedOptionsWindow
+  size: 450 320
+  !text: tr('Loot Splitter - Advanced Options')
+  anchors.horizontalCenter: parent.horizontalCenter
+  Panel
+    id: contentPanel
+    anchors.fill: parent
+    margin: 15 13 17 13
+    Panel
+      id: playersList
+      anchors.top: parent.top
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: separator.top
+      margin: 6 6 3 6
+      layout:
+        type: grid
+        cell-size: 130 70
+        cell-spacing: 5
+        num-lines: 3
+        num-columns: 3
+
+    HorizontalSeparator
+      id: separator
+      anchors.bottom: next.top
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-bottom: 10
+
+    Button
+      id: cancel
+      anchors.bottom: parent.bottom
+      anchors.right: parent.right
+      !text: tr('Close')
+      size: 43 20
+      @onClick: advancedOptions:hide() lootsplitter:show()
+    Button
+      id: apply
+      size: 43 20
+      anchors.bottom: parent.bottom
+      anchors.right: prev.left
+      margin-right: 5
+      !text: tr('Apply')
+      @onClick: applyChanges()

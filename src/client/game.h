@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,567 +22,13 @@
 
 #pragma once
 
-#include "container.h"
-#include "creature.h"
 #include "declarations.h"
-#include "outfit.h"
 #include "protocolgame.h"
-#include <bitset>
-#include <framework/core/timer.h>
+#include "staticdata.h"
 
-struct UnjustifiedPoints
-{
-    bool operator==(const UnjustifiedPoints& other) const
-    {
-        return killsDay == other.killsDay &&
-            killsDayRemaining == other.killsDayRemaining &&
-            killsWeek == other.killsWeek &&
-            killsWeekRemaining == other.killsWeekRemaining &&
-            killsMonth == other.killsMonth &&
-            killsMonthRemaining == other.killsMonthRemaining &&
-            skullTime == other.skullTime;
-    }
-    uint8_t killsDay;
-    uint8_t killsDayRemaining;
-    uint8_t killsWeek;
-    uint8_t killsWeekRemaining;
-    uint8_t killsMonth;
-    uint8_t killsMonthRemaining;
-    uint8_t skullTime;
-};
+#include "framework/core/declarations.h"
 
-struct BlessData
-{
-    uint16_t blessBitwise;
-    uint8_t playerBlessCount;
-    uint8_t store;
-};
-
-struct LogData
-{
-    uint32_t timestamp;
-    uint8_t colorMessage;
-    std::string historyMessage;
-};
-
-struct BlessDialogData
-{
-    uint8_t totalBless;
-    std::vector<BlessData> blesses;
-    uint8_t premium;
-    uint8_t promotion;
-    uint8_t pvpMinXpLoss;
-    uint8_t pvpMaxXpLoss;
-    uint8_t pveExpLoss;
-    uint8_t equipPvpLoss;
-    uint8_t equipPveLoss;
-    uint8_t skull;
-    uint8_t aol;
-    std::vector<LogData> logs;
-};
-
-using Vip = std::tuple<std::string, uint32_t, std::string, int, bool, std::vector<uint8_t>>;
-
-struct StoreCategory
-{
-    std::string name;
-    std::vector<StoreCategory> subCategories;
-    uint8_t state;
-    std::vector<std::string> icons;
-    std::string parent;
-};
-
-struct SubOffer
-{
-    uint32_t id;
-    uint16_t count;
-    uint32_t price;
-    uint8_t coinType;
-    bool disabled;
-    uint16_t disabledReason;
-    uint16_t reasonIdDisable;
-    uint8_t state;
-    uint32_t validUntil;
-    uint32_t basePrice;
-    std::string name;         // oldProtocol
-    std::string description;  // oldProtocol
-    std::vector<std::string> icons; // oldProtocol
-    std::string parent;       // oldProtocol
-};
-
-struct StoreOffer
-{
-    std::string name;
-    std::vector<SubOffer> subOffers;
-    uint32_t id;
-    std::string description;
-    uint32_t price; // oldProtocol
-    uint8_t state; // oldProtocol
-    uint32_t basePrice; // oldProtocol
-    bool disabled; // oldProtocol
-    std::string reasonIdDisable; // oldProtocol
-    uint8_t type;
-    std::string icon;
-    uint16_t mountId;
-    uint16_t itemId;
-    uint16_t outfitId;
-    uint8_t outfitHead, outfitBody, outfitLegs, outfitFeet;
-    uint8_t sex;
-    uint16_t maleOutfitId, femaleOutfitId;
-    uint8_t tryOnType;
-    uint16_t collection;
-    uint16_t popularityScore;
-    uint32_t stateNewUntil;
-    bool configurable;
-    uint16_t productsCapacity;
-};
-
-struct HomeOffer
-{
-    std::string name;
-    uint8_t unknownByte;
-    uint32_t id;
-    uint16_t unknownU16;
-    uint32_t price;
-    uint8_t coinType;
-    uint16_t disabledReasonIndex;
-    uint8_t unknownByte2;
-    uint8_t type;
-    std::string icon;
-    uint16_t mountClientId;
-    uint16_t itemType;
-    uint16_t sexId;
-    struct { uint8_t lookHead, lookBody, lookLegs, lookFeet; } outfit;
-    uint8_t tryOnType;
-    uint16_t collection;
-    uint16_t popularityScore;
-    uint32_t stateNewUntil;
-    uint8_t userConfiguration;
-    uint16_t productsCapacity;
-};
-
-struct Banner
-{
-    std::string image;
-    uint8_t bannerType;
-    uint32_t offerId;
-    uint8_t unknownByte1, unknownByte2;
-};
-
-struct StoreData
-{
-    std::string categoryName;
-    uint32_t redirectId;
-    std::vector<std::string> disableReasons;
-    std::vector<HomeOffer> homeOffers;
-    std::vector<StoreOffer> storeOffers;
-    std::vector<Banner> banners;
-    uint8_t bannerDelay;
-    bool tooManyResults;
-    std::vector<std::string> menuFilter;
-};
-
-struct CyclopediaCharacterGeneralStats
-{
-    uint64_t experience;
-    uint16_t level;
-    uint8_t levelPercent;
-    uint16_t baseExpGain;
-    uint16_t lowLevelExpBonus;
-    uint16_t XpBoostPercent;
-    uint16_t staminaExpBonus;
-    uint16_t XpBoostBonusRemainingTime;
-    uint8_t canBuyXpBoost;
-    uint32_t health;
-    uint32_t maxHealth;
-    uint32_t mana;
-    uint32_t maxMana;
-    uint8_t soul;
-    uint16_t staminaMinutes;
-    uint16_t regenerationCondition;
-    uint16_t offlineTrainingTime;
-    uint16_t speed;
-    uint16_t baseSpeed;
-    uint32_t capacity;
-    uint32_t baseCapacity;
-    uint32_t freeCapacity;
-    uint16_t magicLevel;
-    uint16_t baseMagicLevel;
-    uint16_t loyaltyMagicLevel;
-    uint16_t magicLevelPercent;
-};
-
-struct CyclopediaCharacterCombatStats
-{
-    uint8_t weaponElement;
-    uint16_t weaponMaxHitChance;
-    uint8_t weaponElementDamage;
-    uint8_t weaponElementType;
-    uint16_t defense;
-    uint16_t armor;
-    uint8_t haveBlessings;
-};
-
-struct CyclopediaBestiaryRace
-{
-    uint8_t race;
-    std::string bestClass;
-    uint16_t count;
-    uint16_t unlockedCount;
-};
-
-struct CharmData
-{
-    uint8_t id;
-    std::string name;
-    std::string description;
-    uint16_t unlockPrice;
-    bool unlocked;
-    bool asignedStatus;
-    uint16_t raceId;
-    uint32_t removeRuneCost;
-    uint8_t availableCharmSlots;
-    uint8_t tier;
-};
-
-struct BestiaryCharmsData
-{
-    uint64_t resetAllCharmsCost;
-    uint8_t availableCharmSlots;
-
-    uint32_t points;
-    std::vector<CharmData> charms;
-    std::vector<uint16_t> finishedMonsters;
-};
-
-struct BestiaryOverviewMonsters
-{
-    uint16_t id;
-    uint8_t currentLevel;
-    uint8_t occurrence;
-    uint16_t creatureAnimusMasteryBonus;
-};
-
-struct LootItem
-{
-    uint16_t itemId;
-    uint8_t diffculty;
-    uint8_t specialEvent;
-    std::string name;
-    uint8_t amount;
-};
-
-struct BestiaryMonsterData
-{
-    uint16_t id;
-    std::string bestClass;
-    uint8_t currentLevel;
-    uint16_t AnimusMasteryBonus;
-    uint16_t AnimusMasteryPoints;
-    uint32_t killCounter;
-    uint16_t thirdDifficulty;
-    uint16_t secondUnlock;
-    uint16_t lastProgressKillCount;
-    uint8_t difficulty;
-    uint8_t ocorrence;
-    std::vector<LootItem> loot;
-    uint16_t charmValue;
-    uint8_t attackMode;
-    uint32_t maxHealth;
-    uint32_t experience;
-    uint16_t speed;
-    uint16_t armor;
-    double mitigation;
-    std::map<uint8_t, uint16_t> combat;
-    std::string location;
-};
-
-struct BosstiaryData
-{
-    uint32_t raceId;
-    uint8_t category;
-    uint32_t kills;
-    uint8_t isTrackerActived;
-};
-
-struct BosstiarySlot
-{
-    uint8_t bossRace;
-    uint32_t killCount;
-    uint16_t lootBonus;
-    uint8_t killBonus;
-    uint8_t bossRaceRepeat;
-    uint32_t removePrice;
-    uint8_t inactive;
-};
-
-struct BossUnlocked
-{
-    uint32_t bossId;
-    uint8_t bossRace;
-};
-
-struct BosstiarySlotsData
-{
-    uint32_t playerPoints;
-    uint32_t totalPointsNextBonus;
-    uint16_t currentBonus;
-    uint16_t nextBonus;
-    bool isSlotOneUnlocked;
-    uint32_t bossIdSlotOne;
-    std::optional<BosstiarySlot> slotOneData;
-    bool isSlotTwoUnlocked;
-    uint32_t bossIdSlotTwo;
-    std::optional<BosstiarySlot> slotTwoData;
-    bool isTodaySlotUnlocked;
-    uint32_t boostedBossId;
-    std::optional<BosstiarySlot> todaySlotData;
-    bool bossesUnlocked;
-    std::vector<BossUnlocked> bossesUnlockedData;
-};
-
-struct ItemSummary
-{
-    uint16_t itemId;
-    uint8_t tier;
-    uint32_t amount;
-};
-
-struct CyclopediaCharacterItemSummary
-{
-    std::vector<ItemSummary> inventory;
-    std::vector<ItemSummary> store;
-    std::vector<ItemSummary> stash;
-    std::vector<ItemSummary> depot;
-    std::vector<ItemSummary> inbox;
-};
-
-struct RecentPvPKillEntry
-{
-    uint32_t timestamp;
-    std::string description;
-    uint8_t status;
-};
-
-struct CyclopediaCharacterRecentPvPKills
-{
-    std::vector<RecentPvPKillEntry> entries;
-};
-
-struct RecentDeathEntry
-{
-    uint32_t timestamp;
-    std::string cause;
-};
-
-struct CyclopediaCharacterRecentDeaths
-{
-    std::vector<RecentDeathEntry> entries;
-};
-
-struct OutfitColorStruct
-{
-    uint8_t lookHead;
-    uint8_t lookBody;
-    uint8_t lookLegs;
-    uint8_t lookFeet;
-    uint8_t lookMountHead;
-    uint8_t lookMountBody;
-    uint8_t lookMountLegs;
-    uint8_t lookMountFeet;
-};
-
-struct CharacterInfoOutfits
-{
-    uint16_t lookType;
-    std::string name;
-    uint8_t addons;
-    uint8_t type;
-    uint32_t isCurrent;
-};
-
-struct CharacterInfoMounts
-{
-    uint16_t mountId;
-    std::string name;
-    uint8_t type;
-    uint32_t isCurrent;
-};
-
-struct CharacterInfoFamiliar
-{
-    uint16_t lookType;
-    std::string name;
-    uint8_t type;
-    uint32_t isCurrent;
-};
-
-struct DailyRewardItem
-{
-    uint16_t itemId;
-    std::string name;
-    uint32_t weight;
-};
-
-struct DailyRewardBundle
-{
-    uint8_t bundleType;
-    uint16_t itemId;
-    std::string name;
-    uint8_t count;
-};
-
-struct DailyRewardDay
-{
-    uint8_t redeemMode;
-    uint8_t itemsToSelect;
-    std::vector<DailyRewardItem> selectableItems;
-    std::vector<DailyRewardBundle> bundleItems;
-};
-
-struct DailyRewardBonus
-{
-    std::string name;
-    uint8_t id;
-};
-
-struct DailyRewardData
-{
-    uint8_t days;
-    std::vector<DailyRewardDay> freeRewards;
-    std::vector<DailyRewardDay> premiumRewards;
-    std::vector<DailyRewardBonus> bonuses;
-    uint8_t maxUnlockableDragons;
-};
-
-struct CyclopediaCharacterOffenceStats
-{
-    double critChance;
-    double critDamage;
-    double critDamageBase;
-    double critDamageImbuement;
-    double critDamageWheel;
-
-    double lifeLeech;
-    double lifeLeechBase;
-    double lifeLeechImbuement;
-    double lifeLeechWheel;
-
-    double manaLeech;
-    double manaLeechBase;
-    double manaLeechImbuement;
-    double manaLeechWheel;
-
-    double onslaught;
-    double onslaughtBase;
-    double onslaughtBonus;
-
-    double cleavePercent;
-
-    std::vector<uint16_t> perfectShotDamage;
-
-    uint16_t flatDamage;
-    uint16_t flatDamageBase;
-
-    uint16_t weaponAttack;
-    uint16_t weaponFlatModifier;
-    uint16_t weaponDamage;
-    uint8_t weaponSkillType;
-    uint16_t weaponSkillLevel;
-    uint16_t weaponSkillModifier;
-    uint8_t weaponElement;
-    double weaponElementDamage;
-    uint8_t weaponElementType;
-    std::vector<double> weaponAccuracy;
-};
-
-struct CyclopediaCharacterDefenceStats
-{
-    double dodgeTotal;
-    double dodgeBase;
-    double dodgeBonus;
-    double dodgeWheel;
-
-    uint32_t magicShieldCapacity;
-    uint16_t magicShieldCapacityFlat;
-    double magicShieldCapacityPercent;
-
-    uint16_t reflectPhysical;
-    uint16_t armor;
-
-    uint16_t defense;
-    uint16_t defenseEquipment;
-    uint8_t defenseSkillType;
-    uint16_t shieldingSkill;
-    uint16_t defenseWheel;
-
-    double mitigation;
-    double mitigationBase;
-    double mitigationEquipment;
-    double mitigationShield;
-    double mitigationWheel;
-    double mitigationCombatTactics;
-
-    struct ElementalResistance
-    {
-        uint8_t element;
-        double value;
-    };
-
-    std::vector<ElementalResistance> resistances;
-};
-
-struct CyclopediaCharacterMiscStats
-{
-    double momentumTotal;
-    double momentumBase;
-    double momentumBonus;
-    double momentumWheel;
-
-    double dodgeTotal;
-    double dodgeBase;
-    double dodgeBonus;
-    double dodgeWheel;
-
-    double damageReflectionTotal;
-    double damageReflectionBase;
-    double damageReflectionBonus;
-
-    uint8_t haveBlesses;
-    uint8_t totalBlesses;
-
-    struct Concoction
-    {
-        uint16_t id;
-        uint32_t duration;
-    };
-
-    std::vector<Concoction> concoctions;
-};
-
-struct ForgeItemInfo
-{
-    uint16_t id{ 0 };
-    uint8_t tier{ 0 };
-    uint16_t count{ 0 };
-};
-
-struct ForgeTransferData
-{
-    std::vector<ForgeItemInfo> donors;
-    std::vector<ForgeItemInfo> receivers;
-};
-
-struct ForgeOpenData
-{
-    std::vector<ForgeItemInfo> fusionItems;
-    std::vector<std::vector<ForgeItemInfo>> convergenceFusion;
-    std::vector<ForgeTransferData> transfers;
-    std::vector<ForgeTransferData> convergenceTransfers;
-    uint16_t dustLevel{ 0 };
-};
-
-//@bindsingleton g_game
+ //@bindsingleton g_game
 class Game
 {
 public:
@@ -686,7 +132,7 @@ protected:
                                    & choiceList, bool priority);
 
     // cyclopedia
-    static void processItemDetail(uint32_t itemId, const std::vector<std::tuple<std::string, std::string>>& descriptions);
+    static void processItemDetail(const ItemInspectionData& data);
     static void processCyclopediaCharacterGeneralStats(const CyclopediaCharacterGeneralStats& stats, const std::vector<std::vector<uint16_t>>& skills,
                                                     const std::vector<std::tuple<uint8_t, uint16_t>>& combats);
     static void processCyclopediaCharacterCombatStats(const CyclopediaCharacterCombatStats& data, double mitigation,
@@ -697,6 +143,8 @@ protected:
     static void processCyclopediaCharacterGeneralStatsBadge(uint8_t showAccountInformation, uint8_t playerOnline, uint8_t playerPremium,
                                                             std::string_view loyaltyTitle,
                                                             const std::vector<std::tuple<uint32_t, std::string>>& badgesVector);
+    static void processCyclopediaCharacterInspection(const CyclopediaCharacterInspection& data);
+    static void processInspectionState(uint32_t creatureId, uint8_t state);
     static void processCyclopediaCharacterItemSummary(const CyclopediaCharacterItemSummary& data);
     static void processCyclopediaCharacterAppearances(const OutfitColorStruct& currentOutfit, const std::vector<CharacterInfoOutfits>& outfits,
                                                     const std::vector<CharacterInfoMounts>& mounts, const std::vector<CharacterInfoFamiliar>& familiars);
@@ -774,6 +222,10 @@ public:
     void partyPassLeadership(uint32_t creatureId);
     void partyLeave();
     void partyShareExperience(bool active);
+    void sendPartyAnalyzerReset();
+    void sendPartyAnalyzerPriceType();
+    void sendPartyAnalyzerPriceValue(); // For action 3, will get items from cyclopedia
+    void sendPartyAnalyzerAction(uint8_t action, const std::vector<std::tuple<uint16_t, uint64_t>>& items = {});
 
     // outfit related
     void requestOutfit();
@@ -834,6 +286,7 @@ public:
 
     // 870 only
     void equipItem(const ItemPtr& item);
+    void equipItemId(const uint16_t itemId, const uint8_t tier);
     void mount(bool mount);
 
     // 910 only
@@ -875,7 +328,13 @@ public:
     void setProtocolVersion(uint16_t version);
     int getProtocolVersion() { return m_protocolVersion; }
 
-    bool isUsingProtobuf() { return getProtocolVersion() >= 1281 && !getFeature(Otc::GameLoadSprInsteadProtobuf); }
+    bool isUsingProtobuf() {
+#ifdef FRAMEWORK_PROTOBUF
+        return getProtocolVersion() >= 1281 && !getFeature(Otc::GameLoadSprInsteadProtobuf);
+#else
+        return false;
+#endif
+    }
 
     void setClientVersion(uint16_t version);
     int getClientVersion() { return m_clientVersion; }
@@ -888,13 +347,15 @@ public:
     bool isOnline() { return m_online; }
     bool isLogging() { return !m_online && m_protocolGame; }
     bool isDead() { return m_dead; }
-    bool isAttacking() { return !!m_attackingCreature && !m_attackingCreature->isRemoved(); }
-    bool isFollowing() { return !!m_followingCreature && !m_followingCreature->isRemoved(); }
-    bool isConnectionOk() { return m_protocolGame && m_protocolGame->getElapsedTicksSinceLastRead() < 5000; }
+    bool isAttacking();
+    bool isFollowing();
+    bool isConnectionOk();
     auto mapUpdatedAt() const { return m_mapUpdatedAt; }
     void resetMapUpdatedAt() { m_mapUpdatedAt = 0; }
 
     int getPing() { return m_ping; }
+    int getRecivedPacketsCount() { return m_protocolGame ? m_protocolGame->getRecivedPacketsCount() : 0; }
+    int getRecivedPacketsSize() { return m_protocolGame ? m_protocolGame->getRecivedPacketsSize() : 0; }
     ContainerPtr getContainer(const int index) { return m_containers[index]; }
     stdext::map<int, ContainerPtr> getContainers() { return m_containers; }
     stdext::map<int, Vip> getVips() { return m_vips; }
@@ -903,7 +364,9 @@ public:
     void setServerBeat(const int beat) { m_serverBeat = beat; }
     int getServerBeat() { return m_serverBeat; }
     void setCanReportBugs(const bool enable) { m_canReportBugs = enable; }
+    void setCanExivaOptions(const bool enable) { m_CanExivaOptions = enable; }
     bool canReportBugs() { return m_canReportBugs; }
+    bool canExivaOptions() { return m_CanExivaOptions; }
     void setExpertPvpMode(const bool enable) { m_expertPvpMode = enable; }
     bool getExpertPvpMode() { return m_expertPvpMode; }
     LocalPlayerPtr getLocalPlayer() { return m_localPlayer; }
@@ -918,7 +381,7 @@ public:
 
     // market related
     void leaveMarket();
-    void browseMarket(uint8_t browseId, uint8_t browseType);
+    void browseMarket(uint8_t browseId, uint16_t browseType, uint8_t tier = 0);
     void createMarketOffer(uint8_t type, uint16_t itemId, uint8_t itemTier, uint16_t amount, uint64_t price, uint8_t anonymous);
     void cancelMarketOffer(uint32_t timestamp, uint16_t counter);
     void acceptMarketOffer(uint32_t timestamp, uint16_t counter, uint16_t amount);
@@ -927,16 +390,48 @@ public:
     void preyAction(uint8_t slot, uint8_t actionType, uint16_t index);
     void preyRequest();
 
+    // Task Board / SoulSeals / Offline Training related
+    void bountyTaskAction(uint8_t actionType, uint16_t value = 0);
+    void weeklyTaskAction(uint8_t actionType, uint16_t value = 0);
+    void taskHuntingShopRequest();
+    void taskHuntingShopPurchase(uint8_t offerIndex);
+    void bountyTalismanUpgrade(uint8_t pathIndex);
+    void bountyPreferredAction(uint8_t actionType, uint16_t slot, uint16_t raceId);
+    void soulsealFightAction(uint16_t raceId);
+    void sendStartOfflineTraining(const uint8_t skillType);
+    void sendTutorialChangeVocation(uint8_t vocationClientId);
+
+    // exiva related
+    void sendExivaOptions(bool allowAll, bool allowOwnGuild, bool allowOwnParty, bool allowVipList,
+                          bool allowPlayerWhitelist, bool allowGuildWhitelist,
+                          const std::vector<std::string>& characterWhiteList,
+                          const std::vector<std::string>& removeCharacter,
+                          const std::vector<std::string>& guildWhiteList,
+                          const std::vector<std::string>& removeGuild);
+
+    // forge related
+    void openPortableForgeRequest();
+    void forgeRequest(Otc::ForgeAction_t actionType, bool convergence = false, uint16_t firstItemid = 0, uint8_t firstItemTier = 0, uint16_t secondItemId = 0, bool improveChance = false, bool tierLoss = false);
+    void sendForgeBrowseHistoryRequest(uint16_t page);
+
     // imbuing related
     void applyImbuement(uint8_t slot, uint32_t imbuementId, bool protectionCharm);
     void clearImbuement(uint8_t slot);
     void closeImbuingWindow();
     void imbuementDurations(bool isOpen = false);
+    void selectImbuementItem(uint16_t itemId, const Position& pos, uint8_t stackpos);
+    void selectImbuementScroll();
+
+    // weapon proficiency related
+    void sendWeaponProficiencyAction(uint8_t actionType, uint16_t itemId = 0);
+    void sendWeaponProficiencyApply(uint16_t itemId, const std::vector<uint8_t>& levels, const std::vector<uint8_t>& perkPositions);
 
     void enableTileThingLuaCallback(const bool value) { m_tileThingsLuaCallback = value; }
     bool isTileThingLuaCallbackEnabled() { return m_tileThingsLuaCallback; }
 
     void stashWithdraw(uint16_t itemId, uint32_t count, uint8_t stackpos);
+
+    void stashStowItem(const Position& position, const uint16_t itemId, const uint32_t count, const uint8_t stackpos, const uint8_t action);
 
     // highscore related
     void requestHighscore(uint8_t action, uint8_t category, uint32_t vocation, std::string_view world, uint8_t worldType, uint8_t battlEye, uint16_t page, uint8_t totalPages);
@@ -958,8 +453,9 @@ public:
     // cyclopedia related
     void inspectionNormalObject(const Position& position);
     void inspectionObject(Otc::InspectObjectTypes inspectionType, uint16_t itemId, uint8_t itemCount);
+    void inspectCharacter(const uint32_t creatureId, const uint8_t tab);
     void requestBestiary();
-    void requestBestiaryOverview(std::string_view catName);
+    void requestBestiaryOverview(std::string_view catName, bool search = false, std::vector<uint16_t> raceIds = {});
     void requestBestiarySearch(uint16_t raceId);
     void requestSendBuyCharmRune(uint8_t runeId, uint8_t action, uint16_t raceId);
     void requestSendCharacterInfo(uint32_t playerId, Otc::CyclopediaCharacterInfoType_t characterInfoType, uint16_t entriesPerPage = 0, uint16_t page = 0);
@@ -971,10 +467,15 @@ public:
     void sendOpenRewardWall();
     void requestOpenRewardHistory();
     void requestGetRewardDaily(const uint8_t bonusShrine, const std::map<uint16_t, uint8_t>& items);
-    void sendRequestTrackerQuestLog(const std::map<uint16_t, std::string>& quests);
+    void sendRequestTrackerQuestLog(const std::vector<uint16_t>& missionIds, bool autoTrackNewQuests, bool autoUntrackCompletedQuests, uint8_t extra = 0x2A);
     void processCyclopediaCharacterOffenceStats(const CyclopediaCharacterOffenceStats& data);
     void processCyclopediaCharacterDefenceStats(const CyclopediaCharacterDefenceStats& data);
     void processCyclopediaCharacterMiscStats(const CyclopediaCharacterMiscStats& data);
+
+    //whell of destiny 
+    void openWheel(uint32_t playerId);
+    void sendApplyWheelPoints(const std::vector<uint16_t>& slotPoints,uint16_t greenGem,uint16_t redGem,uint16_t acquaGem,uint16_t purpleGem);
+    void gemAction(uint8_t actionType, uint8_t param, uint8_t pos);
 
     void updateMapLatency() {
         if (!m_mapUpdateTimer.first) {
@@ -985,10 +486,6 @@ public:
 
     auto getWalkMaxSteps() { return m_walkMaxSteps; }
     void setWalkMaxSteps(uint8_t v) { m_walkMaxSteps = v; }
-
-protected:
-    void enableBotCall() { m_denyBotCall = false; }
-    void disableBotCall() { m_denyBotCall = true; }
 
 private:
     void setAttackingCreature(const CreaturePtr& creature);
@@ -1009,13 +506,13 @@ private:
 
     bool m_tileThingsLuaCallback{ false };
     bool m_online{ false };
-    bool m_denyBotCall{ false };
     bool m_dead{ false };
     bool m_expertPvpMode{ false };
     bool m_connectionFailWarned{ false };
     bool m_scheduleLastWalk{ false };
     bool m_safeFight{ true };
     bool m_canReportBugs{ false };
+    bool m_CanExivaOptions{ false };
 
     uint16_t m_mapUpdatedAt{ 0 };
     std::pair<uint16_t, Timer> m_mapUpdateTimer = { true, Timer{} };

@@ -1,6 +1,6 @@
 function translateNetworkError(errcode, connecting, errdesc)
     local text
-    if errcode == 111 then
+    if errcode == 111 or errcode == 61 then
         text = tr('Connection refused, the server might be offline or restarting.\nPlease try again later.')
     elseif errcode == 110 then
         text = tr('Connection timed out. Either your network is failing or the server is offline.')

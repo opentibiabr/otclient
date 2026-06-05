@@ -1,4 +1,23 @@
 Cyclopedia.Items = {}
+Cyclopedia.Items.currentItemId = nil
+
+-- Additional variables for new features
+local itemsData = {}
+local lastSelectedItem = nil
+local lastSelectedItemId = nil
+local oldBuyChild = nil
+local oldSaleChild = nil
+
+local function getItemWidgetId(widget)
+    if not widget then
+        return nil
+    end
+    if widget.getId then
+        return tonumber(widget:getId())
+    end
+    return tonumber(widget.id)
+end
+
 Cyclopedia.CategoryItems = {
     { id = 1, name = "Armors" },
     { id = 2, name = "Amulets" },
@@ -33,6 +52,106 @@ local UI = nil
 
 focusCategoryList = nil
 
+-- JSON Data Management Functions
+function Cyclopedia.Items.terminate()
+	Cyclopedia.Items.saveJson()
+end
+
+function Cyclopedia.Items.loadJson()
+	if not LoadedPlayer or not LoadedPlayer:isLoaded() then
+		return true
+	end
+
+	local file = "/characterdata/" .. LoadedPlayer:getId() .. "/itemprices.json"
+	if g_resources.fileExists(file) then
+		local status, result = pcall(function()
+			return json.decode(g_resources.readFileContents(file))
+		end)
+
+		if not status then
+			g_logger.error("Error while reading characterdata file. Details: " .. result)
+			-- Initialize with empty data on error
+			itemsData = {
+				["primaryLootValueSources"] = {},
+				["customSalePrices"] = {}
+			}
+			return
+		end
+
+		itemsData = result
+	else
+		itemsData = {
+			["customSalePrices"] = {},
+			["primaryLootValueSources"] = {}
+		}
+		Cyclopedia.Items.saveJson()
+	end
+
+	if table.empty(itemsData) then
+		itemsData = {
+			["primaryLootValueSources"] = {},
+			["customSalePrices"] = {}
+		}
+	end
+
+	-- Ensure both required tables exist
+	if not itemsData["primaryLootValueSources"] then
+		itemsData["primaryLootValueSources"] = {}
+	end
+	if not itemsData["customSalePrices"] then
+		itemsData["customSalePrices"] = {}
+	end
+	if not itemsData["dropTrackerItems"] then
+		itemsData["dropTrackerItems"] = {}
+	end
+
+	local useMarketPrice = {}
+	for k, v in pairs(itemsData["primaryLootValueSources"]) do
+		table.insert(useMarketPrice, k)
+	end
+
+	local customPrice = {}
+	if g_things.getItemsPrice then
+		customPrice = g_things.getItemsPrice()
+	end
+	
+	for k, v in pairs(itemsData["customSalePrices"]) do
+		local key = tonumber(k) or k
+		customPrice[key] = v
+	end
+
+	local player = g_game.getLocalPlayer()
+	if not player then
+		return true
+	end
+
+	if player.setCyclopediaMarketList then
+		player:setCyclopediaMarketList(useMarketPrice)
+	end
+	if player.setCyclopediaCustomPrice then
+		player:setCyclopediaCustomPrice(customPrice)
+	end
+end
+
+function Cyclopedia.Items.saveJson()
+	if not LoadedPlayer or not LoadedPlayer:isLoaded() then
+		return true
+	end
+
+	local file = "/characterdata/" .. LoadedPlayer:getId() .. "/itemprices.json"
+	local status, result = pcall(function() return json.encode(itemsData, 2) end)
+	if not status then
+		g_logger.error("Error while saving profile itemsData. Data won't be saved. Details: " .. result)
+		return
+	end
+
+	if result:len() > 100 * 1024 * 1024 then
+		g_logger.error("Something went wrong, file is above 100MB, won't be saved")
+		return
+	end
+	g_resources.writeFileContents(file, result)
+end
+
 function Cyclopedia.ResetItemCategorySelection(list)
     for i, child in pairs(list:getChildren()) do
         child:setChecked(false)
@@ -40,15 +159,472 @@ function Cyclopedia.ResetItemCategorySelection(list)
     end
 end
 
+-- Get NPC buy value for a ThingType or Item
+-- @param itemOrThingType: The Item or ThingType object (both have getNpcSaleData method)
+-- @param useBuyPrice: true for buyPrice (what NPCs pay us), false for salePrice (what NPCs charge us)
+function Cyclopedia.Items.getNpcValue(itemOrThingType, useBuyPrice)
+	local npcValue = 0
+	if useBuyPrice == nil then
+		useBuyPrice = true  -- Default to buyPrice for backward compatibility
+	end
+	
+	if itemOrThingType and itemOrThingType.getNpcSaleData then
+		local success, npcSaleData = pcall(function() return itemOrThingType:getNpcSaleData() end)
+		if success and npcSaleData and #npcSaleData > 0 then
+			if useBuyPrice then
+				-- Get the highest buy price from NPCs (what NPCs will pay us for the item)
+				for _, npcData in ipairs(npcSaleData) do
+					if npcData.buyPrice and npcData.buyPrice > npcValue then
+						npcValue = npcData.buyPrice
+					end
+				end
+			else
+				-- Get the highest sale price from NPCs (what NPCs charge us for the item)
+				-- Note: Using 'salePrice' (not 'sellPrice') based on actual API data
+				for _, npcData in ipairs(npcSaleData) do
+					if npcData.salePrice and npcData.salePrice > npcValue then
+						npcValue = npcData.salePrice
+					end
+				end
+			end
+		end
+	end
+	
+	return npcValue
+end
+
+-- Function to calculate market offer averages: (sell offers average + buy offers average) / 2
+function Cyclopedia.Items.getMarketOfferAverages(itemId)
+	-- TODO: Access market statistics from game_market module to get:
+	-- 1. Sell offers average price (from saleOfferStatistic in Market.updateDetails)
+	-- 2. Buy offers average price (from purchaseOfferStatistic in Market.updateDetails)
+	-- 3. Calculate (sellAverage + buyAverage) / 2
+	
+	-- The market statistics are processed in modules/game_market/market.lua in the updateDetails function
+	-- We need to either:
+	-- A) Add a public function in Market module to get averages for a specific itemId
+	-- B) Request market details for the itemId and cache the results
+	-- C) Access the market statistics data structures directly if they're made global
+	
+	-- Current market average calculation logic from market.lua (for reference):
+	-- if totalPrice > 0 and transactions > 0 then
+	--     averagePrice = math.floor(totalPrice / transactions)
+	-- end
+	
+	-- For now, return 0 until market statistics access is implemented
+	return 0
+end
+
+-- Advanced Item Value Functions
+function Cyclopedia.Items.showItemPrice(obj)
+	if not obj then
+		return 0
+	end
+
+	-- Detect object type and get the necessary data
+	local item, thingType, itemId
+	if obj.getMarketData then
+		-- This is a ThingType object
+		thingType = obj
+		itemId = thingType:getId()
+		-- Create Item from ThingType for compatibility
+		item = Item.create(itemId)
+	else
+		-- This is an Item object
+		item = obj
+		itemId = item:getId()
+		thingType = g_things.getThingType(itemId, ThingCategoryItem)
+	end
+
+	-- Use getMarketOfferAverages() with safety checks
+	local avgMarket = 0
+	if itemId then
+		avgMarket = Cyclopedia.Items.getMarketOfferAverages(itemId)
+	end
+	
+	if UI.InfoBase.MarketGoldPriceBase and UI.InfoBase.MarketGoldPriceBase.Value then
+        -- Calculate market offer averages: (sell offers average + buy offers average) / 2
+        local marketOfferAverages = Cyclopedia.Items.getMarketOfferAverages(itemId)        
+		UI.InfoBase.MarketGoldPriceBase.Value:setText(comma_value(marketOfferAverages))
+	end
+
+	local isMarketPrice = false
+	if itemsData["primaryLootValueSources"] and itemsData["primaryLootValueSources"][tostring(itemId)] then
+		isMarketPrice = true
+	end
+
+	-- Get NPC value (use thingType if available, fallback to item)
+	local npcValue = Cyclopedia.Items.getNpcValue(thingType or item, true)
+	
+	-- If no NPC buy price found, fallback to market average price
+	if npcValue == 0 then
+		npcValue = avgMarket
+	end
+
+	-- Priority 1: Custom value always takes precedence
+	local resulting = 0
+	if itemsData["customSalePrices"] and itemsData["customSalePrices"][tostring(itemId)] then
+		resulting = itemsData["customSalePrices"][tostring(itemId)]
+		if UI.InfoBase.OwnValueEdit then
+			UI.InfoBase.OwnValueEdit:setText(tostring(resulting))
+		end
+	else
+		-- Priority 2 & 3: Use selected loot value source
+		if isMarketPrice then
+			resulting = avgMarket  -- Use market price
+		else
+			resulting = npcValue   -- Use NPC price
+		end
+		
+		-- Clear custom value field since no custom value is set
+		if UI.InfoBase.OwnValueEdit then
+			UI.InfoBase.OwnValueEdit:clearText(true)
+		end
+	end
+
+	-- Update ResultGoldBase.Value using the new calculation logic
+	Cyclopedia.Items.updateResultGoldValue(itemId, resulting, avgMarket, npcValue)
+
+	-- Update loot value source checkboxes
+	if UI.LootValue then
+		if isMarketPrice then
+			UI.LootValue.NpcBuyCheck:setChecked(false)
+			UI.LootValue.MarketCheck:setChecked(true)
+		else
+			UI.LootValue.NpcBuyCheck:setChecked(true)
+			UI.LootValue.MarketCheck:setChecked(false)
+		end
+	end
+
+	return resulting
+end
+
+function Cyclopedia.Items.getCurrentItemValue(item)
+	if not item then
+		return 0
+	end
+
+	-- Use getMarketOfferAverages() with safety checks
+	local avgMarket = 0
+	local itemId = item:getId()
+	if itemId then
+		avgMarket = Cyclopedia.Items.getMarketOfferAverages(itemId)
+	end
+
+	local isMarketPrice = false
+	if itemsData["primaryLootValueSources"] and itemsData["primaryLootValueSources"][tostring(item:getId())] then
+		isMarketPrice = true
+	end
+
+	-- Get NPC value
+	local npcValue = Cyclopedia.Items.getNpcValue(item, true)
+	
+	-- If no NPC buy price found, fallback to market average price
+	if npcValue == 0 then
+		npcValue = avgMarket
+	end
+
+	-- Priority 1: Custom value always takes precedence
+	local resulting = 0
+	if itemsData["customSalePrices"] and itemsData["customSalePrices"][tostring(item:getId())] then
+		resulting = itemsData["customSalePrices"][tostring(item:getId())]
+	else
+		-- Priority 2 & 3: Use selected loot value source
+		if isMarketPrice then
+			resulting = avgMarket  -- Use market price
+		else
+			resulting = npcValue   -- Use NPC price
+		end
+	end
+	
+	return resulting
+end
+
+-- Function to update ResultGoldBase.Value based on conditions
+-- Priority logic:
+-- 1. If OwnValueEdit has content: Use custom value
+-- 2. If OwnValueEdit is empty and "NPC Buy Value" selected: Use getNpcValue (buyPrice)
+-- 3. If OwnValueEdit is empty and "Market Average Value" selected:
+--    a. If MarketGoldPriceBase.Value > 0: Use market value
+--    b. If MarketGoldPriceBase.Value = 0: Fallback to getNpcValue (buyPrice)
+-- 4. If none of the above applies or all values are 0/nil: Set to 0
+function Cyclopedia.Items.updateResultGoldValue(itemId, customValue, avgMarket, npcValue)
+	if not UI.InfoBase.ResultGoldBase or not UI.InfoBase.ResultGoldBase.Value then
+		return
+	end
+	
+	local finalValue = customValue
+	
+	-- Check if OwnValueEdit field is empty (no custom value)
+	local ownValueText = ""
+	if UI.InfoBase.OwnValueEdit then
+		ownValueText = UI.InfoBase.OwnValueEdit:getText() or ""
+		ownValueText = ownValueText:gsub("%s+", "") -- Remove whitespace
+	end
+	
+	-- If OwnValueEdit is empty AND no custom value is stored
+	if #ownValueText == 0 and (not itemsData["customSalePrices"] or not itemsData["customSalePrices"][tostring(itemId)]) then
+		-- Check which loot value source is selected using the same logic as showItemPrice
+		local isMarketPrice = false
+		if itemsData["primaryLootValueSources"] and itemsData["primaryLootValueSources"][tostring(itemId)] then
+			isMarketPrice = true
+		end
+		
+		if isMarketPrice then
+			-- Use Market Average Value (MarketGoldPriceBase.Value)
+			local marketValue = 0
+			if UI.InfoBase.MarketGoldPriceBase and UI.InfoBase.MarketGoldPriceBase.Value then
+				local marketValueText = UI.InfoBase.MarketGoldPriceBase.Value:getText() or "0"
+				marketValueText = marketValueText:gsub(",", "") -- Remove commas
+				marketValue = tonumber(marketValueText) or 0
+			end
+			
+			-- Enhancement: If market value is 0 or nil, fallback to NPC value
+			if marketValue == 0 then
+				finalValue = npcValue
+			else
+				finalValue = marketValue
+			end
+		else
+			-- Use NPC Buy Value (getNpcValue function output, buyPrice)
+			finalValue = npcValue
+		end
+		
+		-- Final fallback: if all values are 0 or nil, set to 0
+		if not finalValue or finalValue == 0 then
+			finalValue = 0
+		end
+	end
+	
+	-- Update the ResultGoldBase.Value display
+	UI.InfoBase.ResultGoldBase.Value:setText(comma_value(finalValue))
+	
+	-- Update rarity visual indicator based on final value
+	if finalValue > 0 and UI.InfoBase.ResultGoldBase.Rarity then
+		ItemsDatabase.setRarityItem(UI.InfoBase.ResultGoldBase.Rarity, finalValue)
+	elseif UI.InfoBase.ResultGoldBase.Rarity then
+		UI.InfoBase.ResultGoldBase.Rarity:setImageSource("")
+	end
+	
+	return finalValue
+end
+
+-- External accessor function to get ResultGoldBase value directly
+function Cyclopedia.Items.getResultGoldValue()
+	if not UI.InfoBase.ResultGoldBase or not UI.InfoBase.ResultGoldBase.Value then
+		return 0
+	end
+	
+	local valueText = UI.InfoBase.ResultGoldBase.Value:getText() or "0"
+	valueText = valueText:gsub(",", "") -- Remove commas
+	return tonumber(valueText) or 0
+end
+
+function Cyclopedia.Items.onSourceValueChange(checked, npcSource)
+	if checked or not lastSelectedItem then
+		return
+	end
+
+	local player = g_game.getLocalPlayer()
+	if not player then
+		return
+	end
+
+	local item = lastSelectedItem.Sprite:getItem()
+	if not item then
+		return
+	end
+	
+	local itemId = item:getId()
+	local currentItemID = tostring(itemId)
+	local currentPrice = 0
+
+	if not itemsData["primaryLootValueSources"] then
+		itemsData["primaryLootValueSources"] = {}
+	end
+
+	if npcSource then
+		local newItemList = {}
+		newItemList["primaryLootValueSources"] = {}
+		for k, v in pairs(itemsData["primaryLootValueSources"]) do
+			if k ~= currentItemID then
+				newItemList["primaryLootValueSources"][k] = v
+			end
+		end
+
+		itemsData["primaryLootValueSources"] = newItemList["primaryLootValueSources"]
+		Cyclopedia.Items.showItemPrice(item)
+		if player.updateCyclopediaMarketList then
+			player:updateCyclopediaMarketList(itemId, true)
+		end
+	else
+		itemsData["primaryLootValueSources"][currentItemID] = "market"
+		Cyclopedia.Items.showItemPrice(item)
+		if player.updateCyclopediaMarketList then
+			player:updateCyclopediaMarketList(itemId, false)
+		end
+	end
+
+	-- Get the actual value displayed in ResultGoldBase.Value (same logic as updateResultGoldValue)
+	if UI.InfoBase.ResultGoldBase and UI.InfoBase.ResultGoldBase.Value then
+		local valueText = UI.InfoBase.ResultGoldBase.Value:getText() or "0"
+		valueText = valueText:gsub(",", "") -- Remove commas
+		currentPrice = tonumber(valueText) or 0
+	else
+		-- Fallback: calculate using the same logic as updateResultGoldValue
+		local isMarketPrice = false
+		if itemsData["primaryLootValueSources"] and itemsData["primaryLootValueSources"][currentItemID] then
+			isMarketPrice = true
+		end
+		
+		-- Check if there's a custom price
+		if itemsData["customSalePrices"] and itemsData["customSalePrices"][currentItemID] then
+			currentPrice = itemsData["customSalePrices"][currentItemID]
+		else
+			-- Get the necessary values
+			local avgMarket = 0
+			local npcValue = 0
+			local marketOfferAverages = 0
+			
+			-- Get market offer averages (same as MarketGoldPriceBase.Value)
+			marketOfferAverages = Cyclopedia.Items.getMarketOfferAverages(itemId)
+			avgMarket = marketOfferAverages  -- Use the same value for consistency
+			
+			-- Get NPC value
+			npcValue = Cyclopedia.Items.getNpcValue(item, true)
+			
+			-- Apply the same logic as updateResultGoldValue
+			if isMarketPrice then
+				-- Market Average Value is selected
+				if marketOfferAverages > 0 then
+					currentPrice = marketOfferAverages
+				else
+					-- Enhancement: If market offer averages is 0, fallback to NPC value
+					currentPrice = npcValue
+				end
+			else
+				-- NPC Buy Value is selected (default)
+				currentPrice = npcValue
+			end
+		end
+	end
+
+	if player.updateCyclopediaCustomPrice then
+		player:updateCyclopediaCustomPrice(itemId, currentPrice)
+	end
+	
+	-- Update analyzer modules if they exist
+	if modules.game_analyser then
+		if modules.game_analyser.HuntingAnalyser and modules.game_analyser.HuntingAnalyser.updateLootedItemValue then
+			modules.game_analyser.HuntingAnalyser:updateLootedItemValue(itemId, currentPrice)
+		end
+		if modules.game_analyser.LootAnalyser and modules.game_analyser.LootAnalyser.updateBasePriceFromLootedItems then
+			modules.game_analyser.LootAnalyser:updateBasePriceFromLootedItems(itemId, currentPrice)
+		end
+	end
+end
+
+function Cyclopedia.Items.onChangeCustomPrice(widget)
+	if not lastSelectedItem then
+		return
+	end
+
+	local player = g_game.getLocalPlayer()
+	if not player then
+		return
+	end
+
+	local currentText = widget:getText()
+	local item = lastSelectedItem.Sprite:getItem()
+	local itemId = item:getId()
+	local itemIdStr = tostring(itemId)
+	
+	if not itemsData["customSalePrices"] then
+		itemsData["customSalePrices"] = {}
+	end
+
+	if #currentText == 0 then
+		local newItemList = {}
+		newItemList["customSalePrices"] = {}
+
+		for k, v in pairs(itemsData["customSalePrices"]) do
+			if k ~= itemIdStr then
+				newItemList["customSalePrices"][k] = v
+			end
+		end
+
+		itemsData["customSalePrices"] = newItemList["customSalePrices"]
+		Cyclopedia.Items.showItemPrice(item)
+		
+		-- Get the current item value (NPC or market based on selection)
+		local itemDefaultValue = Cyclopedia.Items.getCurrentItemValue(item)
+		
+		if player.updateCyclopediaCustomPrice then
+			player:updateCyclopediaCustomPrice(itemId, itemDefaultValue)
+		end
+		
+		-- Update analyzer modules if they exist
+		if modules.game_analyser then
+			if modules.game_analyser.HuntingAnalyser then
+				modules.game_analyser.HuntingAnalyser:updateLootedItemValue(itemId, itemDefaultValue)
+			end
+			if modules.game_analyser.LootAnalyser then
+				modules.game_analyser.LootAnalyser:updateBasePriceFromLootedItems(itemId, itemDefaultValue)
+			end
+		end
+		return
+	end
+
+	currentText = currentText:gsub("[^%d]", "")
+	widget:setText(currentText)
+
+	local numericValue = tonumber(currentText)
+	if numericValue then
+		if numericValue >= 999999999 then
+			currentText = "999999999"
+			widget:setText(currentText)
+		end
+	end
+
+	numericValue = tonumber(currentText)
+	if not numericValue then
+		widget:setText("0")
+		numericValue = 0
+	end
+
+	itemsData["customSalePrices"][itemIdStr] = numericValue
+	
+	-- Update result display using our new logic
+	-- Get necessary values for the update function
+	local avgMarket = Cyclopedia.Items.getMarketOfferAverages(itemId)
+	local npcValue = Cyclopedia.Items.getNpcValue(item, true)
+	
+	Cyclopedia.Items.updateResultGoldValue(itemId, numericValue, avgMarket, npcValue)
+	
+	if player.updateCyclopediaCustomPrice then
+		player:updateCyclopediaCustomPrice(itemId, numericValue)
+	end
+	
+	-- Update analyzer modules if they exist
+	if modules.game_analyser then
+		if modules.game_analyser.LootAnalyser then
+			modules.game_analyser.LootAnalyser:updateBasePriceFromLootedItems(itemId, numericValue)
+		end
+		if modules.game_analyser.HuntingAnalyser then
+			modules.game_analyser.HuntingAnalyser:updateLootedItemValue(itemId, numericValue)
+		end
+	end
+end
+
 function showItems()
     UI = g_ui.loadUI("items", contentContainer)
     UI:show()
-    UI.VocFilter = false
-    UI.LevelFilter = false
-    UI.h1Filter = false
-    UI.h2Filter = false
-    UI.ClassificationFilter = 0
-    UI.SelectedCategory = nil
+    Cyclopedia.Items.VocFilter = false
+    Cyclopedia.Items.LevelFilter = false
+    Cyclopedia.Items.h1Filter = false
+    Cyclopedia.Items.h2Filter = false
+    Cyclopedia.Items.ClassificationFilter = 0
+    UI.selectedCategory = nil
     UI.LootValue.NpcBuyCheck.onClick = Cyclopedia.onChangeLootValue
     UI.LootValue.MarketCheck.onClick = Cyclopedia.onChangeLootValue
     UI.EmptyLabel:setVisible(true)
@@ -57,6 +633,23 @@ function showItems()
     UI.H1Button:disable()
     UI.H2Button:disable()
     UI.ItemFilter:disable()
+    
+    -- Initialize itemsData
+    if table.empty(itemsData) then
+        itemsData = {
+            ["primaryLootValueSources"] = {},
+            ["customSalePrices"] = {}
+        }
+    end
+    
+    -- Load JSON data
+    Cyclopedia.Items.loadJson()
+    
+    -- Register inspection handler
+    if g_game.sendInspectionObject then
+        connect(g_game, { onInspectionObject = Cyclopedia.Items.onInspection })
+    end
+    
     controllerCyclopedia.ui.CharmsBase:setVisible(false)
     controllerCyclopedia.ui.GoldBase:setVisible(false)
     controllerCyclopedia.ui.BestiaryTrackerButton:setVisible(false)
@@ -78,6 +671,7 @@ function showItems()
             Cyclopedia.ResetItemCategorySelection(UI.CategoryList)
             self:setChecked(true)
             self:setBackgroundColor("#585858")
+            Cyclopedia.onCategoryChange(self)
         end
 
         CategoryColor = CategoryColor == "#484848" and "#414141" or "#484848"
@@ -111,6 +705,14 @@ function Cyclopedia.onCategoryChange(widget)
     if widget:isChecked() then
         Cyclopedia.selectItemCategory(tonumber(widget:getId()))
         UI.selectedCategory = widget
+    end
+end
+
+function Cyclopedia.onChangeLootValue(widget)
+    if widget:getId() == "NpcBuyCheck" then
+        Cyclopedia.Items.onSourceValueChange(widget:isChecked(), true)
+    elseif widget:getId() == "MarketCheck" then
+        Cyclopedia.Items.onSourceValueChange(widget:isChecked(), false)
     end
 end
 
@@ -245,6 +847,13 @@ function Cyclopedia.internalCreateItem(data)
     item.Value = price
     item.Vocation = marketData.restrictVocation
     ItemsDatabase.setRarityItem(item.Sprite, item.Sprite:getItem())
+    
+    -- Add visual feedback for tracked items
+    if Cyclopedia.Items.isInDropTracker(data:getId()) then
+        item.Name:setColor("#FF9854")  -- Orange color for tracked items
+    else
+        item.Name:setColor("#c0c0c0")  -- Default color
+    end
 
     function item.onClick(widget)
         UI.InfoBase.SellBase.List:destroyChildren()
@@ -259,7 +868,8 @@ function Cyclopedia.internalCreateItem(data)
             oldSelected:setBackgroundColor("#00000000")
         end
 
-        g_game.inspectionObject(3, itemId)
+        Cyclopedia.Items.currentItemId = itemId
+        g_game.inspectionObject(InspectObjectTypes.INSPECT_CYCLOPEDIA, itemId)
 
         if not lootValue:isVisible() then
             lootValue:setVisible(true)
@@ -269,6 +879,15 @@ function Cyclopedia.internalCreateItem(data)
         UI.InfoBase:setVisible(true)
         UI.InfoBase.ResultGoldBase.Value:setText(Cyclopedia.formatGold(item.Value))
         UI.SelectedItem.Sprite:setItemId(data:getId())
+
+        -- Store reference to selected item
+        lastSelectedItem = widget
+        lastSelectedItemId = itemId
+
+        -- Update item price display
+        if data then
+            Cyclopedia.Items.showItemPrice(data)
+        end
 
         if price > 0 then
             ItemsDatabase.setRarityItem(UI.SelectedItem.Rarity, price)
@@ -292,6 +911,34 @@ function Cyclopedia.internalCreateItem(data)
             end
         end
         UI.InfoBase.quickLootCheck:setChecked(modules.game_quickloot.QuickLoot.lootExists(data:getId(), modules.game_quickloot.QuickLoot.data.filter))
+
+        -- Setup drop tracker if available
+        if UI.InfoBase.TrackCheck then
+            -- Temporarily disable the callback to prevent unwanted triggers
+            local originalCallback = UI.InfoBase.TrackCheck.onCheckChange
+            UI.InfoBase.TrackCheck.onCheckChange = nil
+            
+            UI.InfoBase.TrackCheck.itemId = data:getId()  -- Store item ID for callback
+            local inTracker = Cyclopedia.Items.isInDropTracker(data:getId())
+            UI.InfoBase.TrackCheck:setChecked(inTracker)
+            
+            -- Restore the callback
+            UI.InfoBase.TrackCheck.onCheckChange = originalCallback
+        end
+
+        -- Setup quick sell whitelist if available
+        if UI.InfoBase.quickSellCheck then
+            local inWhitelist = Cyclopedia.Items.isInQuickSellWhitelist(data:getId())
+            UI.InfoBase.quickSellCheck:setChecked(inWhitelist)
+            UI.InfoBase.quickSellCheck.itemId = data:getId()  -- Store item ID for callback
+        end
+
+        -- Setup custom price edit handler
+        if UI.InfoBase.OwnValueEdit then
+            UI.InfoBase.OwnValueEdit.onTextChange = function(self)
+                Cyclopedia.Items.onChangeCustomPrice(self)
+            end
+        end
 
         local buy, sell = Cyclopedia.formatSaleData(internalData:getNpcSaleData())
         local sellColor = "#484848"
@@ -371,6 +1018,15 @@ function Cyclopedia.ItemSearch(text, clearTextEdit)
         for _, data in ipairs(searchedItems) do
             local item = Cyclopedia.internalCreateItem(data)
         end
+
+        local firstChild = UI.ItemListBase.List:getFirstChild()
+        if firstChild and firstChild.onClick then
+            local firstChildItemId = getItemWidgetId(firstChild)
+            if firstChildItemId and firstChildItemId ~= lastSelectedItemId then
+                lastSelectedItemId = firstChildItemId
+                firstChild:onClick()
+            end
+        end
     else
         UI.SelectedItem.Sprite:setItemId(0)
         UI.SelectedItem.Rarity:setImageSource("")
@@ -388,9 +1044,12 @@ local function isHandWeapon(id)
 end
 
 function Cyclopedia.selectItemCategory(id)
-    if not isHandWeapon(id) then
-        setCheckedWithoutRecursion(false, false)
-    end
+    -- Reset all filters when changing categories
+    setCheckedWithoutRecursion(false, false)
+    UI.LevelButton:setChecked(false)
+    UI.VocationButton:setChecked(false)
+    Cyclopedia.Items.VocFilter = false
+    Cyclopedia.Items.LevelFilter = false
 
     if UI.SearchEdit:getText() ~= "" then
         Cyclopedia.ItemSearch("", true)
@@ -472,17 +1131,20 @@ function Cyclopedia.FillItemList()
     end
 end
 
-function Cyclopedia.loadItemDetail(itemId, descriptions)
+function Cyclopedia.loadItemDetail(data)
+    if not (UI and UI.InfoBase and UI.InfoBase.DetailsBase) then
+        return
+    end
+    
     UI.InfoBase.DetailsBase.List:destroyChildren()
 
+    local itemId = data.item:getId()
     local internalData = g_things.getThingType(itemId, ThingCategoryItem)
     local classification = internalData:getClassification()
 
-    for _, description in ipairs(descriptions) do
+    for _, description in ipairs(data.descriptions) do
         local widget = g_ui.createWidget("UIWidget", UI.InfoBase.DetailsBase.List)
-        local key = description[1]
-        local value = description[2]
-        widget:setText(key .. ": " .. value)
+        widget:setText(description.key .. ": " .. description.value)
         widget:setColor("#C0C0C0")
         widget:setTextWrap(true)
     end
@@ -493,3 +1155,280 @@ function Cyclopedia.loadItemDetail(itemId, descriptions)
         widget:setColor("#C0C0C0")
     end
 end
+
+-- Inspection handler for item details
+function Cyclopedia.Items.onInspection(data)
+    if data.inspectionType ~= InspectObjectTypes.INSPECT_CYCLOPEDIA then return end
+    if not data.item or data.item:getId() ~= Cyclopedia.Items.currentItemId then return end
+    if UI and UI.InfoBase and UI.InfoBase.DetailsBase then
+        Cyclopedia.loadItemDetail(data)
+    end
+end
+
+function Cyclopedia.openItem(arg)
+    local itemName
+    if type(arg) == 'number' then
+        local thingType = g_things.getThingType(arg, ThingCategoryItem)
+        itemName = thingType and thingType:getName() or ''
+    else
+        itemName = tostring(arg or '')
+    end
+    if itemName == '' then return end
+    if controllerCyclopedia and controllerCyclopedia.ui and controllerCyclopedia.ui:isVisible() then
+        SelectWindow('items', false)
+    else
+        show('items')
+    end
+    scheduleEvent(function()
+        if Cyclopedia.ItemSearch then
+            Cyclopedia.ItemSearch(itemName, false)
+        end
+    end, 100)
+end
+
+-- Utility function for comma-separated values
+function comma_value(amount)
+    if not amount then return "0" end
+    local formatted = tostring(amount)
+    while true do  
+        formatted, k = string.gsub(formatted, "^(-?%d+)(%d%d%d)", '%1,%2')
+        if k == 0 then
+            break
+        end
+    end
+    return formatted
+end
+
+-- Enhanced formatGold function that uses comma formatting
+function Cyclopedia.formatGold(value)
+    return comma_value(value or 0)
+end
+
+-- Send party loot items function
+function Cyclopedia.Items.sendPartyLootItems()
+    if not Cyclopedia.ItemList then return end
+    
+    local totalList = {}
+    for i, category in pairs(Cyclopedia.ItemList) do
+        local skipCategory = (i == 1000 or i == 30) -- Skip WeaponsAll and Gold categories
+
+        if not skipCategory then
+            for _, itemInfo in ipairs(category) do
+                if itemInfo then
+                    local item = Item.create(itemInfo:getId())
+                    if item then
+                        local itemValue = Cyclopedia.Items.getCurrentItemValue(item)
+                        totalList[tonumber(itemInfo:getId())] = itemValue
+                    end
+                end
+            end
+        end
+    end
+
+	if g_game.sendPartyLootPrice then
+		g_game.sendPartyLootPrice(totalList)
+	end
+end
+
+function Cyclopedia.Items.addToDropTracker(itemId)
+    if modules.game_analyser and modules.game_analyser.managerDropTracker then
+        modules.game_analyser.managerDropTracker(itemId, true)
+    end
+    
+    -- Also store in our JSON backup
+    if not itemsData["dropTrackerItems"] then
+        itemsData["dropTrackerItems"] = {}
+    end
+    itemsData["dropTrackerItems"][tostring(itemId)] = true
+    Cyclopedia.Items.saveJson()
+    
+    -- Update visual feedback for all items with this ID
+    Cyclopedia.Items.updateItemVisualFeedback(itemId, true)
+end
+
+function Cyclopedia.Items.removeFromDropTracker(itemId)
+    if modules.game_analyser and modules.game_analyser.managerDropTracker then
+        modules.game_analyser.managerDropTracker(itemId, false)
+    end
+    
+    -- Also remove from our JSON backup
+    if itemsData["dropTrackerItems"] then
+        itemsData["dropTrackerItems"][tostring(itemId)] = nil
+        Cyclopedia.Items.saveJson()
+    end
+    
+    -- Update visual feedback for all items with this ID
+    Cyclopedia.Items.updateItemVisualFeedback(itemId, false)
+end
+
+function Cyclopedia.Items.updateItemVisualFeedback(itemId, isTracked)
+    -- Update visual feedback for all widgets in the item list with this ID
+    if UI and UI.ItemListBase and UI.ItemListBase.List then
+        for _, widget in pairs(UI.ItemListBase.List:getChildren()) do
+            if widget:getId() == tostring(itemId) and widget.Name then
+                if isTracked then
+                    widget.Name:setColor("#FF9854")  -- Orange color for tracked items
+                else
+                    widget.Name:setColor("#c0c0c0")  -- Default color
+                end
+            end
+        end
+    end
+end
+
+function Cyclopedia.Items.isInDropTracker(itemId)
+    -- First try the game_analyser module
+    if modules.game_analyser and modules.game_analyser.isInDropTracker then
+        local inAnalyser = modules.game_analyser.isInDropTracker(itemId)
+        if inAnalyser then
+            return true
+        end
+    end
+    
+    -- Fallback to our JSON backup
+    if itemsData["dropTrackerItems"] and itemsData["dropTrackerItems"][tostring(itemId)] then
+        return true
+    end
+    
+    return false
+end
+
+-- Helper functions for Drop Tracker integration (avoiding circular dependencies)
+function Cyclopedia.Items.removeFromDropTrackerDirectly(itemId)
+    -- Remove from our JSON backup without calling back to game_analyser
+    if itemsData["dropTrackerItems"] then
+        itemsData["dropTrackerItems"][tostring(itemId)] = nil
+        Cyclopedia.Items.saveJson()
+    end
+    
+    -- Update visual feedback for all items with this ID
+    Cyclopedia.Items.updateItemVisualFeedback(itemId, false)
+end
+
+function Cyclopedia.Items.refreshCurrentItem()
+    -- Force refresh the currently displayed item's tracking state
+    if UI and UI.InfoBase and UI.InfoBase.TrackCheck and UI.InfoBase.TrackCheck.itemId then
+        local itemId = UI.InfoBase.TrackCheck.itemId
+        
+        -- Temporarily disable the callback to prevent unwanted triggers
+        local originalCallback = UI.InfoBase.TrackCheck.onCheckChange
+        UI.InfoBase.TrackCheck.onCheckChange = nil
+        
+        local inTracker = Cyclopedia.Items.isInDropTracker(itemId)
+        UI.InfoBase.TrackCheck:setChecked(inTracker)
+        
+        -- Restore the callback
+        UI.InfoBase.TrackCheck.onCheckChange = originalCallback
+    end
+end
+
+function Cyclopedia.Items.removeAllFromDropTrackerDirectly()
+    -- Clear all drop tracker items from our JSON backup without calling back to game_analyser
+    if itemsData then
+        itemsData["dropTrackerItems"] = {}
+        Cyclopedia.Items.saveJson()
+    end
+    
+    -- Update visual feedback for all items in the list
+    if UI and UI.ItemListBase and UI.ItemListBase.List then
+        for _, widget in pairs(UI.ItemListBase.List:getChildren()) do
+            if widget.Name then
+                widget.Name:setColor("#c0c0c0")  -- Reset to default color
+            end
+        end
+    end
+end
+
+-- Safe wrapper functions for module compatibility
+function Cyclopedia.Items.addToQuickSellWhitelist(itemId)
+	if modules.game_npctrade then
+		if modules.game_npctrade.addToWhitelist then
+			modules.game_npctrade.addToWhitelist(itemId)
+		elseif modules.game_npctrade.addToList then
+			modules.game_npctrade.addToList(itemId)
+		end
+	end
+end
+
+function Cyclopedia.Items.removeFromQuickSellWhitelist(itemId)
+	if modules.game_npctrade then
+		if modules.game_npctrade.removeItemInList then
+			modules.game_npctrade.removeItemInList(itemId)
+		elseif modules.game_npctrade.removeFromList then
+			modules.game_npctrade.removeFromList(itemId)
+		elseif modules.game_npctrade.removeItem then
+			modules.game_npctrade.removeItem(itemId)
+		end
+	end
+end
+
+function Cyclopedia.Items.isInQuickSellWhitelist(itemId)
+    if not modules.game_npctrade then return false end
+    
+    -- Try different possible function names
+    local npctrade = modules.game_npctrade
+    if npctrade.inWhiteList then
+        return npctrade.inWhiteList(itemId)
+    elseif npctrade.isInList then
+        return npctrade.isInList(itemId)
+    elseif npctrade.contains then
+        return npctrade.contains(itemId)
+    end
+    
+    return false
+end
+
+function Cyclopedia.Items.onChangeLootValue(self)
+    if not self or not self:getParent() then return end
+    
+    local parent = self:getParent()
+    local npcCheck = parent:getChildById('NpcBuyCheck')
+    local marketCheck = parent:getChildById('MarketCheck')
+    
+    if not npcCheck or not marketCheck then return end
+    
+    -- Ensure only one is checked at a time
+    if self:getId() == 'NpcBuyCheck' and self:isChecked() then
+        marketCheck:setChecked(false)
+    elseif self:getId() == 'MarketCheck' and self:isChecked() then
+        npcCheck:setChecked(false)
+    end
+    
+    -- If neither is checked, default to NPC
+    if not npcCheck:isChecked() and not marketCheck:isChecked() then
+        npcCheck:setChecked(true)
+    end
+    
+    -- Update the primaryLootValueSources data structure
+    if lastSelectedItem and lastSelectedItem.data then
+        local item = lastSelectedItem.Sprite:getItem()
+        if item then
+            local itemId = item:getId()
+            local currentItemID = tostring(itemId)
+            
+            if not itemsData["primaryLootValueSources"] then
+                itemsData["primaryLootValueSources"] = {}
+            end
+            
+            -- Update the data structure based on which checkbox is checked
+            if marketCheck:isChecked() then
+                -- Market checkbox is checked - add to market list
+                itemsData["primaryLootValueSources"][currentItemID] = "market"
+            else
+                -- NPC checkbox is checked - remove from market list (default to NPC)
+                itemsData["primaryLootValueSources"][currentItemID] = nil
+            end
+            
+            -- Update the player's market list on the server
+            local player = g_game.getLocalPlayer()
+            if player and player.updateCyclopediaMarketList then
+                player:updateCyclopediaMarketList(itemId, not marketCheck:isChecked()) -- true for NPC, false for market
+            end
+        end
+        
+        -- Refresh the price display using the last selected item
+        Cyclopedia.Items.showItemPrice(lastSelectedItem.data)
+    end
+end
+
+-- End of Cyclopedia Items module

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+* Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -22,14 +22,14 @@
 
 #pragma once
 
-#include "declarations.h"
-
 #include <framework/core/declarations.h>
 #include <framework/core/timer.h>
 
+#ifdef FRAMEWORK_PROTOBUF
 #include <appearances.pb.h>
 
 using namespace otclient::protobuf;
+#endif
 
 enum AnimationPhase : int16_t
 {
@@ -47,7 +47,9 @@ enum AnimationDirection : uint8_t
 class Animator : public std::enable_shared_from_this<Animator>
 {
 public:
+#ifdef FRAMEWORK_PROTOBUF
     void unserializeAppearance(const appearances::SpriteAnimation& animation);
+#endif
     void unserialize(int animationPhases, const FileStreamPtr& fin);
     void serialize(const FileStreamPtr& fin) const;
     void setPhase(int phase);
@@ -63,6 +65,9 @@ public:
 
     bool isAsync() const { return m_async; }
     bool isComplete() const { return m_isComplete; }
+    bool isInfiniteLoop() const { return m_loopType == appearances::ANIMATION_LOOP_TYPE_INFINITE || m_loopType == appearances::ANIMATION_LOOP_TYPE_PINGPONG; }
+    int8_t getLoopCount() const { return m_loopCount; }
+    appearances::ANIMATION_LOOP_TYPE getLoopType() const { return m_loopType; }
 
     uint16_t getTotalDuration() const;
 
@@ -75,6 +80,7 @@ private:
 
     int8_t m_startPhase{ 0 };
     int8_t m_loopCount{ 0 };
+    appearances::ANIMATION_LOOP_TYPE m_loopType{ appearances::ANIMATION_LOOP_TYPE_COUNTED };
 
     uint8_t m_currentLoop{ 0 };
     uint8_t m_phase{ 0 };

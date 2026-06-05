@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -33,7 +33,7 @@ public:
     static OTMLNodePtr create(std::string_view tag, std::string_view value);
 
     std::string tag() { return m_tag; }
-    int size() const { return m_children.size(); }
+    size_t size() const { return m_children.size(); }
     std::string source() { return m_source; }
     std::string rawValue() { return m_value; }
 

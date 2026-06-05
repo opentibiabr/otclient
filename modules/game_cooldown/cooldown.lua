@@ -11,6 +11,7 @@ lastPlayer = nil
 
 cooldown = {}
 groupCooldown = {}
+tierUpgradeFeatureEnabled = false
 
 function init()
     connect(g_game, {
@@ -33,6 +34,7 @@ function init()
     -- preload cooldown images
     for k, v in pairs(SpelllistSettings) do
         g_textures.preload(v.iconFile)
+        g_textures.preload(v.iconsForGameCooldown)
     end
 
     if g_game.isOnline() then
@@ -49,24 +51,17 @@ function terminate()
     })
 
     cooldownWindow:destroy()
-
 end
 
 function loadIcon(iconId)
     local spell, profile, spellName = Spells.getSpellByIcon(iconId)
     if not spellName then
-        print('[WARNING] loadIcon: empty spellName for tfs spell id: ' .. iconId)
-        return
+        print('[WARNING] loadIcon: empty spellName for server spell id: ' .. iconId)
+        return nil, nil
     end
     if not profile then
-        print('[WARNING] loadIcon: empty profile for tfs spell id: ' .. iconId)
-        return
-    end
-
-    clientIconId = Spells.getClientId(spellName)
-    if not clientIconId then
-        print('[WARNING] loadIcon: empty clientIconId for tfs spell id: ' .. iconId)
-        return
+        print('[WARNING] loadIcon: empty profile for server spell id: ' .. iconId)
+        return nil, nil
     end
 
     local icon = cooldownPanel:getChildById(iconId)
@@ -77,24 +72,32 @@ function loadIcon(iconId)
 
     local spellSettings = SpelllistSettings[profile]
     if spellSettings then
-        icon:setImageSource(spellSettings.iconFile)
-        icon:setImageClip(Spells.getImageClip(clientIconId, profile))
+        icon:setImageSource(spellSettings.iconsForGameCooldown)
+        icon:setImageClip(Spells.getImageClipCooldown(spell.clientId, profile))
+        icon.spellName = spellName
+        local progressRect = icon:getChildById(iconId)
+        local isNewProgressRect = false
+        if not progressRect then
+            progressRect = g_ui.createWidget('SpellProgressRect', icon)
+            progressRect:setId(iconId)
+            progressRect:fill('parent')
+            isNewProgressRect = true
+        end
+        progressRect.icon = icon
+        progressRect:setTooltip(spellName .. " (" .. (spell.exhaustion / 1000) .. " sec. cooldown)")
+        if isNewProgressRect then
+            progressRect:setPercent(0)
+        end
     else
-        print('[WARNING] loadIcon: empty spell icon for tfs spell id: ' .. iconId)
+        print('[WARNING] loadIcon: empty spell icon for server spell id: ' .. iconId)
         icon = nil
     end
-    return icon
-end
-
-function onMiniWindowOpen()
-    modules.client_options.setOption('showSpellGroupCooldowns', true)
-end
-
-function onMiniWindowClose()
-    modules.client_options.setOption('showSpellGroupCooldowns', false)
+    return icon, spellName
 end
 
 function online()
+    tierUpgradeFeatureEnabled = g_game.getFeature(GameForgeSkillStats) or g_game.getFeature(GameCharacterSkillStats)
+
     local console = modules.game_console.consolePanel
     if console then
         console:addAnchor(AnchorTop, cooldownWindow:getId(), AnchorBottom)
@@ -102,6 +105,21 @@ function online()
     if not g_game.getFeature(GameSpellList) then
         modules.client_options.setOption('showSpellGroupCooldowns', false)
         return
+    end
+    local children = contentsPanel:getChildren()
+    local oldProtocol = g_game.getClientVersion() > 1100
+    local monkFeature = g_game.getFeature(GameVocationMonk)
+    for i = 9, #children - 2 do -- hide group icons old protocol
+        local widget = children[i]
+        if widget then
+            local id = widget:getId()
+            local visible = oldProtocol
+            if id and string.find(id, 'Virtue') then
+                visible = monkFeature
+            end
+            widget:setVisible(visible)
+            widget:setWidth(visible and 22 or 0)
+        end
     end
 
     if not lastPlayer or lastPlayer ~= g_game.getCharacterName() then
@@ -111,6 +129,8 @@ function online()
 end
 
 function offline()
+    tierUpgradeFeatureEnabled = false
+
     local console = modules.game_console.consolePanel
     if console then
         console:removeAnchor(AnchorTop)
@@ -118,7 +138,6 @@ function offline()
     end
     if g_game.getFeature(GameSpellList) then
         --cooldownWindow:setParent(nil, true)
-   
     end
 end
 
@@ -139,6 +158,8 @@ end
 
 function turnOffCooldown(progressRect)
     removeEvent(progressRect.event)
+    progressRect.event = nil
+    progressRect.callback = nil
     if progressRect.icon then
         progressRect.icon:setOn(false)
         progressRect.icon = nil
@@ -162,33 +183,63 @@ function initCooldown(progressRect, updateCallback, finishCallback)
     updateCallback()
 end
 
+function hasTierUpgradeFeature()
+    return tierUpgradeFeatureEnabled
+end
+
 function updateCooldown(progressRect, duration)
+    if not progressRect or progressRect:isDestroyed() then
+        return
+    end
+
+    local callbacks = progressRect.callback
+    if not callbacks then
+        return
+    end
     progressRect:setPercent(progressRect:getPercent() + 10000 / duration)
 
     if progressRect:getPercent() < 100 then
         removeEvent(progressRect.event)
-
+        local updateCallback = callbacks[ProgressCallback.update]
+        if not updateCallback then
+            return
+        end
         progressRect.event = scheduleEvent(function()
-            progressRect.callback[ProgressCallback.update]()
+            if progressRect and not progressRect:isDestroyed() and progressRect.callback then
+                updateCallback()
+            end
         end, 100)
     else
-        progressRect.callback[ProgressCallback.finish]()
+        local finishCallback = callbacks[ProgressCallback.finish]
+        if finishCallback then
+            finishCallback()
+        end
     end
 end
 
 function isGroupCooldownIconActive(groupId)
-    return groupCooldown[groupId]
+    if hasTierUpgradeFeature() then
+        local current = groupCooldown[groupId]
+        return type(current) == 'number' and g_clock.millis() < current
+    else
+        return groupCooldown[groupId] == true
+    end
 end
 
 function isCooldownIconActive(iconId)
-    return cooldown[iconId]
+    if hasTierUpgradeFeature() then
+        local current = cooldown[iconId]
+        return type(current) == 'number' and g_clock.millis() < current
+    else
+        return cooldown[iconId] == true
+    end
 end
 
 function onSpellCooldown(iconId, duration)
     if not cooldownWindow:isVisible() then
         return
     end
-    local icon = loadIcon(iconId)
+    local icon, spellName = loadIcon(iconId)
     if not icon then
         print('[WARNING] Can not load cooldown icon on spell with id: ' .. iconId)
         return
@@ -199,22 +250,24 @@ function onSpellCooldown(iconId, duration)
     if not progressRect then
         progressRect = g_ui.createWidget('SpellProgressRect', icon)
         progressRect:setId(iconId)
-        progressRect.icon = icon
         progressRect:fill('parent')
-    else
-        progressRect:setPercent(0)
     end
-    progressRect:setTooltip(spellName)
+    progressRect.icon = icon
+    progressRect:setPercent(0)
 
     local updateFunc = function()
         updateCooldown(progressRect, duration)
     end
     local finishFunc = function()
         removeCooldown(progressRect)
-        cooldown[iconId] = false
+        cooldown[iconId] = nil
     end
     initCooldown(progressRect, updateFunc, finishFunc)
-    cooldown[iconId] = true
+    if hasTierUpgradeFeature() then
+        cooldown[iconId] = g_clock.millis() + duration
+    else
+        cooldown[iconId] = true
+    end
 end
 
 function onSpellGroupCooldown(groupId, duration)
@@ -240,10 +293,14 @@ function onSpellGroupCooldown(groupId, duration)
         end
         local finishFunc = function()
             turnOffCooldown(progressRect)
-            groupCooldown[groupId] = false
+            groupCooldown[groupId] = nil
         end
         initCooldown(progressRect, updateFunc, finishFunc)
-        groupCooldown[groupId] = true
+        if hasTierUpgradeFeature() then
+            groupCooldown[groupId] = g_clock.millis() + duration
+        else
+            groupCooldown[groupId] = true
+        end
     end
 end
 

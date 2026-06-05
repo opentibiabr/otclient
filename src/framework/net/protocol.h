@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,16 +21,16 @@
  */
 
 #pragma once
-#ifdef __EMSCRIPTEN__
-#include "webconnection.h"
-#else
-#include "connection.h"
-#endif
-#include "declarations.h"
 
+#include "declarations.h"
 #include <framework/luaengine/luaobject.h>
-#include <framework/proxy/proxy.h>
-#include <zlib.h>
+
+enum CompressionMode_t : uint8_t
+{
+    COMPRESSION_MODE_UNKNOWN = 0,
+    COMPRESSION_MODE_PER_PACKET = 1,
+    COMPRESSION_MODE_STREAM = 2,
+};
 
  // @bindclass
 class Protocol : public LuaObject
@@ -51,7 +51,7 @@ public:
 
     bool isConnected();
     bool isConnecting();
-    ticks_t getElapsedTicksSinceLastRead() const { return m_connection ? m_connection->getElapsedTicksSinceLastRead() : -1; }
+    ticks_t getElapsedTicksSinceLastRead() const;
 #ifdef __EMSCRIPTEN__
     WebConnectionPtr getConnection() { return m_connection; }
 #else
@@ -71,7 +71,7 @@ public:
     void enableChecksum() { m_checksumEnabled = true; }
     void enabledSequencedPackets() { m_sequencedPackets = true; }
 
-    virtual void send(const OutputMessagePtr& outputMessage);
+    virtual void send(const OutputMessagePtr& outputMessage, bool raw = false);
     virtual void recv();
 
     ProtocolPtr asProtocol() { return static_self_cast<Protocol>(); }
@@ -109,6 +109,6 @@ private:
     ConnectionPtr m_connection;
 #endif
     InputMessagePtr m_inputMessage;
-
+    CompressionMode_t m_compressionMode{ COMPRESSION_MODE_UNKNOWN };
     z_stream m_zstream{};
 };

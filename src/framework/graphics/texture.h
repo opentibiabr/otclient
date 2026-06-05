@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -48,7 +48,7 @@ public:
     const Size& getSize() const { return m_size; }
     auto getTransformMatrixId() const { return m_transformMatrixId; }
 
-    const auto getAtlasRegion(Fw::TextureAtlasType type) const { return m_atlas[type]; }
+    auto getAtlasRegion(Fw::TextureAtlasType type) const { return m_atlas[type]; }
     const AtlasRegion* getAtlasRegion() const;
 
     ticks_t getTime() const { return m_time; }

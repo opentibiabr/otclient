@@ -1,7 +1,7 @@
 setDefaultTab("Tools")
 -- allows to test/edit bot lua scripts ingame, you can have multiple scripts like this, just change storage.ingame_lua
 UI.Button("Ingame script editor", function(newText)
-    UI.MultilineEditorWindow(storage.ingame_hotkeys or "", {title="Hotkeys editor", description="You can add your custom scrupts here"}, function(text)
+    UI.MultilineEditorWindow(storage.ingame_hotkeys or "", {title="Hotkeys editor", description="You can add your custom scripts here"}, function(text)
       storage.ingame_hotkeys = text
       reload()
     end)

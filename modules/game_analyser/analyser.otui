@@ -1,0 +1,192 @@
+MiniWindow
+  id: analyserMiniWindow
+  &type: 'analyticsSelector'
+  !text: tr('Analytics Selector')
+  height: 237
+  max-height: 237
+  @onClose: modules.game_analyser.hide();
+  @onOpen: modules.game_analyser.onOpen();
+  &save: true
+  &autoOpen: true
+
+  UIWidget
+    id: miniwindowIcon
+    anchors.top: miniwindowHeader.top
+    anchors.left: miniwindowHeader.left
+    margin-top: 2
+    margin-left: 4
+    size: 12 12
+    image-source: /images/icons/icon-analyticsselector-widget
+    image-smooth: false
+
+  Label
+    id: miniwindowTitle
+    anchors.top: miniwindowHeader.top
+    anchors.left: miniwindowHeader.left
+    anchors.right: miniwindowHeader.right
+    margin-top: 2
+    margin-left: 20
+    margin-right: 50
+    font: verdana-11px-monochrome
+    height: 13
+    color: #9d9d9dff
+    !text: tr('Analytics Selector')
+
+  MiniWindowContents
+    id: contentsPanel
+    anchors.fill: parent
+    margin: 20 9 5 9
+
+    Button
+      id: huntingButton
+      size: 148 20
+      anchors.top: parent.top
+      anchors.left: parent.left
+      image-source: /images/game/analyzer/huntingButton
+      image-clip: 0 0 158 20
+      $hover !on:
+        image-clip: 0 0 158 20
+      $pressed:
+        image-clip: 0 20 158 20
+      $on:
+        image-clip: 0 20 158 20
+      @onClick: toggleAnalysers('huntingButton')
+
+    Button
+      id: lootButton
+      size: 148 20
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 3
+      image-source: /images/game/analyzer/lootButton
+      image-clip: 0 0 158 20
+      $hover !on:
+        image-clip: 0 0 158 20
+      $pressed:
+        image-clip: 0 20 158 20
+      $on:
+        image-clip: 0 20 158 20
+      @onClick: toggleAnalysers('lootButton')
+
+    Button
+      id: supplyButton
+      size: 148 20
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 3
+      image-source: /images/game/analyzer/supplyButton
+      image-clip: 0 0 158 20
+      $hover !on:
+        image-clip: 0 0 158 20
+      $pressed:
+        image-clip: 0 20 158 20
+      $on:
+        image-clip: 0 20 158 20
+      @onClick: toggleAnalysers('supplyButton')
+
+    Button
+      id: impactButton
+      size: 148 20
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 3
+      image-source: /images/game/analyzer/impactButton
+      image-clip: 0 0 158 20
+      $hover !on:
+        image-clip: 0 0 158 20
+      $pressed:
+        image-clip: 0 20 158 20
+      $on:
+        image-clip: 0 20 158 20
+      @onClick: toggleAnalysers('impactButton')
+
+    Button
+      id: damageButton
+      size: 148 20
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 3
+      image-source: /images/game/analyzer/damageButton
+      image-clip: 0 0 158 20
+      $hover !on:
+        image-clip: 0 0 158 20
+      $pressed:
+        image-clip: 0 20 158 20
+      $on:
+        image-clip: 0 20 158 20
+      @onClick: toggleAnalysers('damageButton')
+
+    Button
+      id: xpButton
+      size: 148 20
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 3
+      image-source: /images/game/analyzer/xpButton
+      image-clip: 0 0 158 20
+      $hover !on:
+        image-clip: 0 0 158 20
+      $pressed:
+        image-clip: 0 20 158 20
+      $on:
+        image-clip: 0 20 158 20
+      @onClick: toggleAnalysers('xpButton')
+
+    Button
+      id: dropButton
+      size: 148 20
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 3
+      image-source: /images/game/analyzer/dropButton
+      image-clip: 0 0 158 20
+      $hover !on:
+        image-clip: 0 0 158 20
+      $pressed:
+        image-clip: 0 20 158 20
+      $on:
+        image-clip: 0 20 158 20
+      @onClick: toggleAnalysers('dropButton')
+
+    Button
+      id: partyButton
+      size: 148 20
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 3
+      image-source: /images/game/analyzer/partyButton
+      image-clip: 0 0 158 20
+      $hover !on:
+        image-clip: 0 0 158 20
+      $pressed:
+        image-clip: 0 20 158 20
+      $on:
+        image-clip: 0 20 158 20
+      @onClick: toggleAnalysers('partyButton')
+
+    Button
+      id: bossButton
+      size: 148 20
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 3
+      image-source: /images/game/analyzer/bossButton
+      image-clip: 0 0 158 20
+      $hover !on:
+        image-clip: 0 0 158 20
+      $pressed:
+        image-clip: 0 20 158 20
+      $on:
+        image-clip: 0 20 158 20
+      @onClick: toggleAnalysers('bossButton')
+
+  ResizeBorder
+    id: bottomResizeBorder
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    height: 3
+    minimum: 247
+    maximum: 247
+    margin-left: 3
+    margin-right: 3

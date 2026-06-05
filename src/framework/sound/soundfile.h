@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,7 @@
 #pragma once
 
 #include "declarations.h"
-#include <framework/core/filestream.h>
+#include <framework/core/declarations.h>
 
 class SoundFile : public std::enable_shared_from_this<SoundFile>
 {
@@ -35,7 +35,7 @@ public:
 
     virtual int read(void* /*buffer*/, int /*bufferSize*/) { return -1; }
     virtual void reset() {}
-    bool eof() const { return m_file->eof(); }
+    bool eof() const;
 
     ALenum getSampleFormat() const;
 
@@ -43,7 +43,7 @@ public:
     int getRate() const { return m_rate; }
     int getBps() const { return m_bps; }
     int getSize() const { return m_size; }
-    std::string getName() const { return m_file ? m_file->name() : std::string(); }
+    std::string getName() const;
 
 protected:
     FileStreamPtr m_file;

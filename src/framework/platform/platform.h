@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,9 +23,9 @@
 #pragma once
 
 #include <framework/core/inputevent.h>
-#include <framework/stdext/types.h>
-#include <string>
-#include <vector>
+#include <framework/global.h>
+
+#include "staticdata.h"
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten/emscripten.h>
@@ -34,34 +34,6 @@
 class Platform
 {
 public:
-    enum OperatingSystem
-    {
-        OsUnknown,
-        Windows,
-        Linux,
-        macOS,
-        Android,
-        iOS
-    };
-
-    enum DeviceType
-    {
-        DeviceUnknown,
-        Desktop,
-        Mobile,
-        Browser,
-        Console
-    };
-
-    struct Device
-    {
-        Device() = default;
-        Device(const DeviceType t, const OperatingSystem o) : type(t), os(o) {}
-        DeviceType type{ DeviceUnknown };
-        OperatingSystem os{ OsUnknown };
-
-        bool operator==(const Device& rhs) const { return type == rhs.type && os == rhs.os; }
-    };
 
     void init(std::vector<std::string>& args);
     void processArgs(std::vector<std::string>& args);
@@ -79,6 +51,7 @@ public:
     bool openDir(std::string path, bool now = false);
     std::string getCPUName();
     double getTotalSystemMemory();
+    double getMemoryUsage();
     std::string getOSName();
     Device getDevice() { return m_device; }
     void setDevice(const Device device) { m_device = device; }

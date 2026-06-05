@@ -25,6 +25,13 @@ UI.Container = function(callback, unique, parent, widget)
 
   local oldItems = {}
 
+  local scrollToBottom = function()
+    local scrollbar = widget.scroll
+    if scrollbar and scrollbar.setValue and scrollbar.getMaximum then
+      scrollbar:setValue(scrollbar:getMaximum())
+    end
+  end
+
   local updateItems = function()
     local items = widget:getItems()
 
@@ -71,6 +78,7 @@ UI.Container = function(callback, unique, parent, widget)
     for i, child in ipairs(widget.items:getChildren()) do
       child.onItemChange = updateItems
     end
+    scrollToBottom()
   end
 
   widget.getItems = function()

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,10 +20,13 @@
  * THE SOFTWARE.
  */
 
-#include "soundfile.h"
 #include "oggsoundfile.h"
+#include "soundfile.h"
+#include "framework/core/filestream.h"
 #include <framework/core/resourcemanager.h>
 
+std::string SoundFile::getName() const { return m_file ? m_file->name() : std::string(); }
+bool SoundFile::eof() const { return m_file->eof(); }
 SoundFilePtr SoundFile::loadSoundFile(const std::string& filename)
 {
     const auto& file = g_resources.openFile(filename);

@@ -11,7 +11,7 @@ PhantomMiniWindow
     anchors.left: parent.left
     margin-top: 5
     margin-left: 8
-    size: 108 111
+    size: 115 111
     image-source: /images/ui/1pixel_down_frame
 
     Minimap
@@ -75,7 +75,10 @@ PhantomMiniWindow
     anchors.bottom: minimapBorder.bottom
     margin-right: 4
     size: 20 20
-    @onClick: fullscreen()
+    @onClick: openCyclopediaMap()
+
+    $hover !disabled:
+      image-clip: 0 0 20 20
 
     $pressed !disabled:
       image-clip: 20 0 20 20
@@ -90,6 +93,9 @@ PhantomMiniWindow
     size: 20 20
     @onClick: zoomIn()
 
+    $hover !disabled:
+      image-clip: 0 40 20 20
+
     $pressed !disabled:
       image-clip: 20 40 20 20
 
@@ -102,6 +108,9 @@ PhantomMiniWindow
     margin-bottom: 2
     size: 20 20
     @onClick: zoomOut()
+
+    $hover !disabled:
+      image-clip: 0 20 20 20
 
     $pressed !disabled:
       image-clip: 20 20 20 20
@@ -155,6 +164,9 @@ PhantomMiniWindow
       @onClick: |
         onClickRoseButton('north')
 
+      $hover !disabled:
+        image-clip: 14 0 15 8
+
       $pressed !disabled:
         image-clip: 57 0 15 8
 
@@ -167,6 +179,9 @@ PhantomMiniWindow
       size: 15 15
       @onClick: |
         onClickRoseButton('north-east')
+
+      $hover !disabled:
+        image-clip: 28 0 15 15
 
       $pressed !disabled:
         image-clip: 114 0 15 15
@@ -182,6 +197,9 @@ PhantomMiniWindow
       @onClick: |
         onClickRoseButton('east')
 
+      $hover !disabled:
+        image-clip: 35 14 8 15
+
       $pressed !disabled:
         image-clip: 164 14 8 15  
 
@@ -195,6 +213,9 @@ PhantomMiniWindow
       size: 15 15
       @onClick: |
         onClickRoseButton('south-east')
+
+      $hover !disabled:
+        image-clip: 28 28 15 15
 
       $pressed !disabled:
         image-clip: 200 28 15 15
@@ -210,6 +231,9 @@ PhantomMiniWindow
       @onClick: |
         onClickRoseButton('south')
 
+      $hover !disabled:
+        image-clip: 14 35 15 8
+
       $pressed !disabled:
         image-clip: 229 35 15 8
 
@@ -222,6 +246,9 @@ PhantomMiniWindow
       size: 15 15
       @onClick: |
         onClickRoseButton('south-west')
+
+      $hover !disabled:
+        image-clip: 0 28 15 15
 
       $pressed !disabled:
         image-clip: 258 28 15 15
@@ -236,6 +263,9 @@ PhantomMiniWindow
       @onClick: |
         onClickRoseButton('west')
 
+      $hover !disabled:
+        image-clip: 0 14 8 15
+
       $pressed !disabled:
         image-clip: 301 14 8 15
 
@@ -247,6 +277,9 @@ PhantomMiniWindow
       size: 15 15
       @onClick: |
         onClickRoseButton('north-west')
+
+      $hover !disabled:
+        image-clip: 0 0 15 15
 
       $pressed !disabled:
         image-clip: 344 0 15 15

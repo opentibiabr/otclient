@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,9 +23,9 @@
 #pragma once
 
 #include "declarations.h"
-#include <framework/core/inputevent.h>
-#include <framework/otml/declarations.h>
-#include <framework/platform/platform.h>
+#include "framework/core/inputevent.h"
+#include "framework/otml/declarations.h"
+#include "framework/platform/platform.h"
 
  //@bindsingleton g_ui
 class UIManager
@@ -39,8 +39,10 @@ public:
     void inputEvent(const InputEvent& event);
 
     void updatePressedWidget(const UIWidgetPtr& newPressedWidget, const Point& clickedPos = {}, bool fireClicks = true);
+    void updatePressedWidgetHTML(const UIWidgetList& widgets, const Point& clickedPos = {}, bool fireClicks = true);
     bool updateDraggingWidget(const UIWidgetPtr& draggingWidget, const Point& clickedPos = {});
     void updateHoveredWidget(bool now = false);
+    void updateHoveredText(bool now = false);
 
     void clearStyles();
     bool importStyle(const std::string& fl, bool checkDeviceStyles = true);
@@ -53,8 +55,8 @@ public:
 
     UIWidgetPtr loadUI(const std::string& file, const UIWidgetPtr& parent);
     UIWidgetPtr loadUIFromString(const std::string& data, const UIWidgetPtr& parent);
-    OTMLNodePtr loadDeviceUI(const std::string& file, Platform::OperatingSystem os);
-    OTMLNodePtr loadDeviceUI(const std::string& file, Platform::DeviceType deviceType);
+    OTMLNodePtr loadDeviceUI(const std::string& file, OperatingSystem os);
+    OTMLNodePtr loadDeviceUI(const std::string& file, DeviceType deviceType);
     UIWidgetPtr displayUI(const std::string& file) { return loadUI(file, m_rootWidget); }
     UIWidgetPtr createWidget(std::string_view styleName, const UIWidgetPtr& parent);
     UIWidgetPtr createWidgetFromOTML(const OTMLNodePtr& widgetNode, const UIWidgetPtr& parent);
@@ -91,9 +93,13 @@ private:
     UIWidgetPtr m_draggingWidget;
     UIWidgetPtr m_hoveredWidget;
     UIWidgetPtr m_pressedWidget;
+    UIWidgetList m_hoveredWidgets;
+    UIWidgetList m_pressedWidgets;
     bool m_hoverUpdateScheduled{ false };
     bool m_drawDebugBoxes{ false };
+    bool m_hoverTextUpdateScheduled{ false };
     stdext::map<std::string, OTMLNodePtr> m_styles;
+    std::string m_hoveredText;
     UIWidgetList m_destroyedWidgets;
     ScheduledEventPtr m_checkEvent;
 };

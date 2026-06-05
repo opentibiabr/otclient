@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,19 +21,16 @@
  */
 
 #include "attachableobject.h"
-#include <framework/graphics/particleeffect.h>
-#include <framework/graphics/particlemanager.h>
 
-#include <framework/core/eventdispatcher.h>
-#include <framework/ui/uimanager.h>
-#include <framework/ui/uiwidget.h>
-
-#include <algorithm>
-
+#include "attachedeffect.h"
 #include "client.h"
-#include "game.h"
 #include "map.h"
 #include "uimap.h"
+#include "framework/core/eventdispatcher.h"
+#include "framework/graphics/drawpoolmanager.h"
+#include "framework/graphics/particleeffect.h"
+#include "framework/graphics/particlemanager.h"
+#include "framework/ui/uiwidget.h"
 
 extern ParticleManager g_particles;
 
@@ -152,11 +149,11 @@ AttachedEffectPtr AttachableObject::getAttachedEffectById(uint16_t id)
     return *it;
 }
 
-void AttachableObject::drawAttachedEffect(const Point& dest, const LightViewPtr& lightView, const bool isOnTop)
+void AttachableObject::drawAttachedEffect(const Point& originalDest, const Point& dest, LightView* lightView, const bool isOnTop)
 {
     if (!hasAttachedEffects()) return;
     for (const auto& effect : m_data->attachedEffects) {
-        effect->draw(dest, isOnTop, lightView);
+        effect->draw(effect->isFollowingOwner() ? dest : originalDest, isOnTop, lightView);
         if (effect->getLoop() == 0) {
             g_dispatcher.addEvent([self = std::static_pointer_cast<AttachableObject>(shared_from_this()), effect] {
                 self->detachEffect(effect);
@@ -165,7 +162,7 @@ void AttachableObject::drawAttachedEffect(const Point& dest, const LightViewPtr&
     }
 }
 
-void AttachableObject::drawAttachedLightEffect(const Point& dest, const LightViewPtr& lightView) {
+void AttachableObject::drawAttachedLightEffect(const Point& dest, LightView* lightView) {
     if (!hasAttachedEffects()) return;
     for (const auto& effect : m_data->attachedEffects)
         effect->drawLight(dest, lightView);

@@ -1,18 +1,20 @@
 SpellGroupIcon < UIWidget
   size: 22 22
   image-size: 22 22
-  image-source: /images/game/spells/cooldowns
+  image-source: /images/game/spells/spellgroup-icons-20x20
   focusable: false
   margin-top: 3
+  opacity: 0.5
+  $on:
+    opacity: 1
 
 
 SpellIcon < UIWidget
-  size: 24 24
-  image-size: 24 24
+  size: 20 20
+  image-size: 20 20
   focusable: false
-
   $!first:
-    margin-left: 1
+    margin-left: 5
 
 SpellProgressRect < UIProgressRect
   background: #585858AA
@@ -34,14 +36,13 @@ Panel
   Panel
     id:contentsPanel2
     anchors.fill: parent
+    margin-left: 5
     SpellGroupIcon
       id: groupIconAttack
       image-clip: 0 0 20 20
       anchors.top: parent.top
       anchors.left: parent.left
       margin-left: 2
-      $on:
-        image-clip: 0 20 20 20
 
     SpellProgressRect
       id: progressRectAttack
@@ -54,8 +55,6 @@ Panel
       anchors.top: parent.top
       anchors.left: groupIconAttack.right
       margin-left: 3
-      $on:
-        image-clip: 20 20 20 20
 
     SpellProgressRect
       id: progressRectHealing
@@ -68,8 +67,6 @@ Panel
       anchors.top: parent.top
       anchors.left: groupIconHealing.right
       margin-left: 3
-      $on:
-        image-clip: 40 20 20 20
 
     SpellProgressRect
       id: progressRectSupport
@@ -82,8 +79,6 @@ Panel
       anchors.top: parent.top
       anchors.left: groupIconSupport.right
       margin-left: 3
-      $on:
-        image-clip: 60 20 20 20
 
     SpellProgressRect
       id: progressRectSpecial
@@ -92,12 +87,10 @@ Panel
 
     SpellGroupIcon
       id: groupIconCrippling
-      image-clip: 80 0 20 20
+      image-clip: 100 0 20 20
       anchors.top: parent.top
       anchors.left: groupIconSpecial.right
       margin-left: 3
-      $on:
-        image-clip: 80 20 20 20
 
     SpellProgressRect
       id: progressRectCrippling
@@ -106,12 +99,10 @@ Panel
 
     SpellGroupIcon
       id: groupIconFocus
-      image-clip: 100 0 20 20
+      image-clip: 120 0 20 20
       anchors.top: parent.top
       anchors.left: groupIconCrippling.right
       margin-left: 3
-      $on:
-        image-clip: 100 20 20 20
 
     SpellProgressRect
       id: progressRectFocus
@@ -119,27 +110,23 @@ Panel
       !tooltip: tr('Focus')
 
     SpellGroupIcon
-      id: groupIconUltimateStrike
-      image-clip: 120 0 20 20
+      id: groupIconUltimateStrikes
+      image-clip: 140 0 20 20
       anchors.top: parent.top
       anchors.left: groupIconFocus.right
       margin-left: 3
-      $on:
-        image-clip: 120 20 20 20
 
     SpellProgressRect
-      id: progressRectUltimateStrike
-      anchors.fill: groupIconUltimateStrike
+      id: progressRectUltimateStrikes
+      anchors.fill: groupIconUltimateStrikes
       !tooltip: tr('Ultimate Strike')
 
     SpellGroupIcon
       id: groupIconGreatBeams
-      image-clip: 140 0 20 20
+      image-clip: 160 0 20 20
       anchors.top: parent.top
-      anchors.left: groupIconUltimateStrike.right
+      anchors.left: groupIconUltimateStrikes.right
       margin-left: 3
-      $on:
-        image-clip: 140 20 20 20
 
     SpellProgressRect
       id: progressRectGreatBeams
@@ -147,27 +134,47 @@ Panel
       !tooltip: tr('Great Beams')
 
     SpellGroupIcon
-      id: groupIconBurstOfNature
-      image-clip: 160 0 20 20
+      id: groupIconBurstsOfNature
+      image-clip: 180 0 20 20
       anchors.top: parent.top
       anchors.left: groupIconGreatBeams.right
       margin-left: 3
-      $on:
-        image-clip: 160 20 20 20
 
     SpellProgressRect
-      id: progressRectBurstOfNature
-      anchors.fill: groupIconBurstOfNature
-      !tooltip: tr('Burst of Nature')
+      id: progressRectBurstsOfNature
+      anchors.fill: groupIconBurstsOfNature
+      !tooltip: tr('Bursts of Nature')
+
+    SpellGroupIcon
+      id: groupIconVirtue
+      image-clip: 200 0 20 20
+      anchors.top: parent.top
+      anchors.left: groupIconBurstsOfNature.right
+      margin-left: 3
+
+    SpellProgressRect
+      id: progressRectVirtue
+      anchors.fill: groupIconVirtue
+      !tooltip: tr('Virtue')
+
+    VerticalSeparator
+      id: separator
+      anchors.top: parent.top
+      anchors.left: prev.right
+      margin-left: 5
+      margin-top: 2
+      height: 22
 
     Panel
+      height: 22
       id: cooldownPanel
+      margin-top: 4
+      margin-bottom: 5
+      anchors.top: parent.top
+      anchors.bottom: parent.bottom
+      anchors.left: prev.right
+      anchors.right: parent.right
       layout:
         type: horizontalBox
 
-      margin-top: 3
-      padding: 3
-      anchors.top: groupIconSpecial.bottom
-      anchors.left: parent.left
-      anchors.right: parent.right
 

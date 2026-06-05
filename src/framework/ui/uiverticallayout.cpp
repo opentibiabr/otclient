@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,7 @@
 #include <framework/core/eventdispatcher.h>
 
 #include "uiwidget.h"
-#include <ranges>
+#include "framework/otml/otmlnode.h"
 
 void UIVerticalLayout::applyStyle(const OTMLNodePtr& styleNode)
 {
@@ -96,7 +96,7 @@ bool UIVerticalLayout::internalUpdate()
     if (m_fitChildren && preferredHeight != parentWidget->getHeight()) {
         // must set the preferred width later
         g_dispatcher.deferEvent([=] {
-            parentWidget->setHeight(preferredHeight);
+            parentWidget->setHeight_px(preferredHeight);
         });
     }
 

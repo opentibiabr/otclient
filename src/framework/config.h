@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,9 @@
 #pragma once
 #include <obfuscate.h>
 
- // APPEARANCES
+static constexpr float DEFAULT_DISPLAY_DENSITY = 1.f;
+
+// APPEARANCES
 #define BYTES_IN_SPRITE_SHEET 384 * 384 * 4
 #define LZMA_UNCOMPRESSED_SIZE BYTES_IN_SPRITE_SHEET + 122
 #define LZMA_HEADER_SIZE LZMA_PROPS_SIZE + 8
@@ -43,7 +45,7 @@
 // DISCORD RPC (https://discord.com/developers/applications)
 // Enable Discord Rich Presence
 #ifndef ENABLE_DISCORD_RPC
-    #define ENABLE_DISCORD_RPC 0 // 1 to enable | 0 to disable
+#define ENABLE_DISCORD_RPC 0 // 1 to enable | 0 to disable
 #endif
 #define RPC_API_KEY "1060650448522051664" // Your API Key
 // RPC Configs (https://youtu.be/zCHYtRlD58g) step by step to config your rich presence

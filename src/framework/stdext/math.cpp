@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,11 +20,15 @@
  * THE SOFTWARE.
  */
 
-#include <algorithm>
-#include <climits>
+#include "math.h"
+
+#ifndef USE_PRECOMPILED_HEADERS
 #include <cmath>
-#include <random>
 #include <stdexcept>
+#include <utility>
+#endif
+
+#include <zlib.h>
 
 #ifdef _MSC_VER
 #pragma warning(disable:4267) // '?' : conversion from 'A' to 'B', possible loss of data
@@ -32,26 +36,11 @@
 
 namespace stdext
 {
-    uint32_t adler32(const uint8_t* buffer, size_t size)
+    uint32_t computeChecksum(std::span<const uint8_t> data) noexcept
     {
-        constexpr uint32_t MOD_ADLER = 65521;
-        uint32_t a = 1, b = 0;
-
-        while (size > 0) {
-            size_t tlen = std::min<size_t>(size, size_t(5552));
-            size -= tlen;
-
-            for (size_t i = 0; i < tlen; ++i) {
-                a += buffer[i];
-                b += a;
-            }
-            buffer += tlen;
-
-            a %= MOD_ADLER;
-            b %= MOD_ADLER;
-        }
-
-        return (b << 16) | a;
+        const uInt n = static_cast<uInt>(data.size());
+        return ::adler32(::adler32(0L, Z_NULL, 0),
+                        reinterpret_cast<const Bytef*>(data.data()), n);
     }
 
     std::mt19937& random_gen() {

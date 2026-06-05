@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,9 +21,10 @@
  */
 
 #include "cachedtext.h"
-#include "fontmanager.h"
-#include <framework/graphics/drawpoolmanager.h>
-#include <framework/graphics/textureatlas.h>
+
+#include "bitmapfont.h"
+#include "coordsbuffer.h"
+#include "drawpoolmanager.h"
 
 CachedText::CachedText() : m_align(Fw::AlignCenter), m_coordsBuffer(std::make_shared<CoordsBuffer>()) {}
 

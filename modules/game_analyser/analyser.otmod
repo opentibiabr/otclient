@@ -1,0 +1,10 @@
+Module
+  name: game_analyser
+  description: Game Analysers - All
+  author: libergod, matheussf, Mehah and others.
+  sandboxed: true
+  scripts: [ analyser, classes/Controller, classes/HuntingAnalyser, classes/LootAnalyser, classes/SupplyAnalyser, classes/ImpactAnalyser, classes/InputAnalyser, classes/XPAanalyser, classes/DropTrackerAnalyser, classes/PartyHuntAnalyser, classes/BossCooldown ]
+  autoload: true
+  dependencies: [ game_interface, game_cyclopedia ]
+  @onLoad: init()
+  @onUnload: terminate()

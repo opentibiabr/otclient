@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,24 +20,29 @@
  * THE SOFTWARE.
  */
 
-#include <framework/core/eventdispatcher.h>
-#include <framework/util/crypt.h>
+#include "protocolhttp.h"
+
+#include "framework/core/eventdispatcher.h"
+#include "framework/util/crypt.h"
 
 #include <algorithm>
+#include <fmt/format.h>
 #include <utility>
 #include <vector>
-
-#include "protocolhttp.h"
 
 Http g_http;
 std::shared_ptr<ix::HttpClient> g_ixHttpClient;
 
 void Http::init()
 {
-    m_working = true;
+    // Construct the client eagerly so every subsequent get/post/download/ws
+    // call can rely on it being available. Lazy initialization from each
+    // public method was not thread-safe and could construct a second client
+    // if a request came in after Http::terminate() reset the pointer.
     if (!g_ixHttpClient) {
         g_ixHttpClient = std::make_shared<ix::HttpClient>(true);
     }
+    m_working = true;
 }
 
 void Http::terminate()
@@ -86,40 +91,28 @@ void Http::terminate()
 int Http::get(const std::string& url, int timeout)
 {
     if (!timeout)
-        timeout = 5;
+        timeout = 2;
 
-    if (!g_ixHttpClient) {
-        g_ixHttpClient = std::make_shared<ix::HttpClient>(true);
+    if (!m_working || !g_ixHttpClient) {
+        g_logger.error("Http::get called while the client is not running ({})", url);
+        return -1;
     }
 
-    const int operationId = m_operationId++;
-    auto result = std::make_shared<HttpResult>();
-    result->url = url;
-    result->operationId = operationId;
-
-    {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        m_operations[operationId] = result;
-    }
-
-    auto request = g_ixHttpClient->createRequest(url, ix::HttpClient::kGet);
-    request->connectTimeout = timeout;
-    if (m_enable_time_out_on_read_write) {
-        request->transferTimeout = timeout;
-    }
-    request->followRedirects = true;
-    request->extraHeaders["User-Agent"] = m_userAgent;
-    for (const auto& header : m_custom_header) {
-        request->extraHeaders[header.first] = header.second;
-    }
-
+    int operationId = 0;
+    auto result = registerOperation(url, operationId);
+    auto request = buildRequest(url, ix::HttpClient::kGet, timeout);
     result->request = request;
 
-    request->onProgressCallback = [this, result](int current, int total) {
+    const auto lastProgress = std::make_shared<ticks_t>(0);
+
+    request->onProgressCallback = [this, result, lastProgress](int current, int total) {
         if (result->finished || result->canceled)
             return false;
 
         result->progress = computeProgress(current, total);
+        if (!shouldEmitProgress(*lastProgress, result->progress))
+            return true;
+
         g_dispatcher.addEvent([result] {
             if (!result->finished) {
                 g_lua.callGlobalField("g_http", "onGetProgress", result->operationId, result->url, result->progress);
@@ -137,11 +130,7 @@ int Http::get(const std::string& url, int timeout)
             result->progress = 100;
         }
         result->error = describeHttpError(response, result);
-
-        {
-            std::lock_guard<std::mutex> lock(m_mutex);
-            m_operations.erase(operationId);
-        }
+        unregisterOperation(operationId);
 
         g_dispatcher.addEvent([result] {
             g_lua.callGlobalField("g_http", "onGet", result->operationId, result->url, result->error, result->response);
@@ -151,10 +140,7 @@ int Http::get(const std::string& url, int timeout)
     if (!g_ixHttpClient->performRequest(request, callback)) {
         result->finished = true;
         result->error = "http_error::queue";
-        {
-            std::lock_guard<std::mutex> lock(m_mutex);
-            m_operations.erase(operationId);
-        }
+        unregisterOperation(operationId);
         g_dispatcher.addEvent([result] {
             g_lua.callGlobalField("g_http", "onGet", result->operationId, result->url, result->error, result->response);
         });
@@ -166,53 +152,40 @@ int Http::get(const std::string& url, int timeout)
 int Http::post(const std::string& url, const std::string& data, int timeout, bool isJson, bool /*checkContentLength*/)
 {
     if (!timeout)
-        timeout = 5;
+        timeout = 2;
     if (data.empty()) {
         g_logger.error("Invalid post request for {}, empty data, use get instead", url);
         return -1;
     }
 
-    if (!g_ixHttpClient) {
-        g_ixHttpClient = std::make_shared<ix::HttpClient>(true);
+    if (!m_working || !g_ixHttpClient) {
+        g_logger.error("Http::post called while the client is not running ({})", url);
+        return -1;
     }
 
-    const int operationId = m_operationId++;
-    auto result = std::make_shared<HttpResult>();
-    result->url = url;
-    result->operationId = operationId;
+    int operationId = 0;
+    auto result = registerOperation(url, operationId);
     result->postData = data;
 
-    {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        m_operations[operationId] = result;
-    }
-
-    auto request = g_ixHttpClient->createRequest(url, ix::HttpClient::kPost);
-    request->connectTimeout = timeout;
-    if (m_enable_time_out_on_read_write) {
-        request->transferTimeout = timeout;
-    }
-    request->followRedirects = true;
+    auto request = buildRequest(url, ix::HttpClient::kPost, timeout);
     request->body = data;
-    request->extraHeaders["User-Agent"] = m_userAgent;
     request->extraHeaders["Accept"] = "*/*";
     request->extraHeaders["Connection"] = "close";
-    if (isJson) {
-        request->extraHeaders["Content-Type"] = "application/json";
-    } else {
-        request->extraHeaders["Content-Type"] = "application/x-www-form-urlencoded";
-    }
-    for (const auto& header : m_custom_header) {
-        request->extraHeaders[header.first] = header.second;
-    }
-
+    request->extraHeaders["Content-Type"] = isJson
+        ? "application/json"
+        : "application/x-www-form-urlencoded";
     result->request = request;
 
-    request->onProgressCallback = [this, result](int current, int total) {
+    const auto lastProgress = std::make_shared<ticks_t>(0);
+
+    request->onProgressCallback = [this, result, lastProgress](int current, int total) {
         if (result->finished || result->canceled)
             return false;
 
         result->progress = computeProgress(current, total);
+        if (!shouldEmitProgress(*lastProgress, result->progress))
+            return true;
+
         g_dispatcher.addEvent([result] {
             if (!result->finished) {
                 g_lua.callGlobalField("g_http", "onPostProgress", result->operationId, result->url, result->progress);
@@ -230,11 +203,7 @@ int Http::post(const std::string& url, const std::string& data, int timeout, boo
             result->progress = 100;
         }
         result->error = describeHttpError(response, result);
-
-        {
-            std::lock_guard<std::mutex> lock(m_mutex);
-            m_operations.erase(operationId);
-        }
+        unregisterOperation(operationId);
 
         g_dispatcher.addEvent([result] {
             g_lua.callGlobalField("g_http", "onPost", result->operationId, result->url, result->error, result->response);
@@ -244,10 +213,7 @@ int Http::post(const std::string& url, const std::string& data, int timeout, boo
     if (!g_ixHttpClient->performRequest(request, callback)) {
         result->finished = true;
         result->error = "http_error::queue";
-        {
-            std::lock_guard<std::mutex> lock(m_mutex);
-            m_operations.erase(operationId);
-        }
+        unregisterOperation(operationId);
         g_dispatcher.addEvent([result] {
             g_lua.callGlobalField("g_http", "onPost", result->operationId, result->url, result->error, result->response);
         });
@@ -259,50 +225,36 @@ int Http::post(const std::string& url, const std::string& data, int timeout, boo
 int Http::download(const std::string& url, const std::string& path, int timeout)
 {
     if (!timeout)
-        timeout = 5;
+        timeout = 2;
 
-    if (!g_ixHttpClient) {
-        g_ixHttpClient = std::make_shared<ix::HttpClient>(true);
+    if (!m_working || !g_ixHttpClient) {
+        g_logger.error("Http::download called while the client is not running ({})", url);
+        return -1;
     }
 
-    const int operationId = m_operationId++;
-    auto result = std::make_shared<HttpResult>();
-    result->url = url;
-    result->operationId = operationId;
-
-    {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        m_operations[operationId] = result;
-    }
-
-    auto request = g_ixHttpClient->createRequest(url, ix::HttpClient::kGet);
-    request->connectTimeout = timeout;
-    if (m_enable_time_out_on_read_write) {
-        request->transferTimeout = timeout;
-    }
-    request->followRedirects = true;
-    request->extraHeaders["User-Agent"] = m_userAgent;
-    for (const auto& header : m_custom_header) {
-        request->extraHeaders[header.first] = header.second;
-    }
-
+    int operationId = 0;
+    auto result = registerOperation(url, operationId);
+    auto request = buildRequest(url, ix::HttpClient::kGet, timeout);
     result->request = request;
 
-    const auto lastUpdate = std::make_shared<ticks_t>(stdext::millis());
+    const auto lastSpeedSample = std::make_shared<ticks_t>(stdext::millis());
     const auto lastBytes = std::make_shared<int>(0);
+    const auto lastProgress = std::make_shared<ticks_t>(0);
 
-    request->onProgressCallback = [this, result, lastUpdate, lastBytes](int current, int total) {
+    request->onProgressCallback = [this, result, lastSpeedSample, lastBytes, lastProgress](int current, int total) {
         if (result->finished || result->canceled)
             return false;
 
         const ticks_t now = stdext::millis();
-        const ticks_t elapsed = now - *lastUpdate;
+        const ticks_t elapsed = now - *lastSpeedSample;
         if (elapsed > 0) {
             result->speed = ((current - *lastBytes) * 1000) / elapsed;
-            *lastUpdate = now;
+            *lastSpeedSample = now;
             *lastBytes = current;
         }
         result->progress = computeProgress(current, total);
+        if (!shouldEmitProgress(*lastProgress, result->progress))
+            return true;
 
         g_dispatcher.addEvent([result] {
             if (!result->finished) {
@@ -323,11 +275,7 @@ int Http::download(const std::string& url, const std::string& path, int timeout)
         result->error = describeHttpError(response, result);
 
         const auto checksum = g_crypt.crc32(result->response, false);
-
-        {
-            std::lock_guard<std::mutex> lock(m_mutex);
-            m_operations.erase(operationId);
-        }
+        unregisterOperation(operationId);
 
         g_dispatcher.addEvent([this, result, path, checksum] {
             if (result->error.empty()) {
@@ -344,10 +292,7 @@ int Http::download(const std::string& url, const std::string& path, int timeout)
         result->finished = true;
         result->error = "http_error::queue";
         const auto checksum = g_crypt.crc32(result->response, false);
-        {
-            std::lock_guard<std::mutex> lock(m_mutex);
-            m_operations.erase(operationId);
-        }
+        unregisterOperation(operationId);
         g_dispatcher.addEvent([this, result, path, checksum] {
             g_lua.callGlobalField("g_http", "onDownload", result->operationId, result->url, result->error, path, checksum);
         });
@@ -359,7 +304,12 @@ int Http::download(const std::string& url, const std::string& path, int timeout)
 int Http::ws(const std::string& url, int timeout)
 {
     if (!timeout)
-        timeout = 5;
+        timeout = 2;
+
+    if (!m_working) {
+        g_logger.error("Http::ws called while the client is not running ({})", url);
+        return -1;
+    }
 
     const int operationId = m_operationId++;
     auto result = std::make_shared<HttpResult>();
@@ -375,6 +325,11 @@ int Http::ws(const std::string& url, int timeout)
     websocket->setUrl(url);
     websocket->setHandshakeTimeout(timeout);
     websocket->setPingInterval(10);
+    // Keep the ix::WebSocket reconnection disabled: the Lua callbacks
+    // (onWsClose / onWsError) own the reconnection policy so any custom
+    // timing, authentication refresh or backoff implemented in the higher
+    // level modules keeps working. Re-enabling the built-in reconnection
+    // would race with the dispatcher-deferred cleanup of m_websockets.
     websocket->disableAutomaticReconnection();
 
     ix::WebSocketHttpHeaders headers;
@@ -391,44 +346,74 @@ int Http::ws(const std::string& url, int timeout)
             g_dispatcher.addEvent([result] {
                 g_lua.callGlobalField("g_http", "onWsOpen", result->operationId, "code::websocket_open");
             });
-            return;
-        }
-
-        if (msg->type == ix::WebSocketMessageType::Message) {
+        } else if (msg->type == ix::WebSocketMessageType::Message) {
             const std::string payload = msg->str;
             g_dispatcher.addEvent([result, payload] {
                 g_lua.callGlobalField("g_http", "onWsMessage", result->operationId, payload);
             });
-            return;
-        }
-
-        if (msg->type == ix::WebSocketMessageType::Error) {
+        } else if (msg->type == ix::WebSocketMessageType::Error) {
             result->error = msg->errorInfo.reason;
             const std::string errorReason = fmt::format("close_code::error {}", result->error);
-            g_dispatcher.addEvent([result, errorReason] {
-                g_lua.callGlobalField("g_http", "onWsError", result->operationId, errorReason);
-            });
-        }
 
-        if (msg->type == ix::WebSocketMessageType::Close) {
-            const std::string closeMessage = "close_code::normal";
+            // Mirror the Close branch: transfer the socket ownership to the
+            // dispatcher event so its destructor runs off the worker thread.
+            // Without this the websocket remained alive in m_websockets after
+            // a terminal error, leaking the connection until Http::terminate.
+            std::shared_ptr<ix::WebSocket> expiringSocket;
             {
                 std::lock_guard<std::mutex> lock(m_mutex);
-                m_websockets.erase(operationId);
+                const auto wit = m_websockets.find(operationId);
+                if (wit != m_websockets.end()) {
+                    expiringSocket = std::move(wit->second);
+                    m_websockets.erase(wit);
+                }
                 m_operations.erase(operationId);
             }
-            g_dispatcher.addEvent([result, closeMessage] {
+
+            g_dispatcher.addEvent([result, errorReason, expiringSocket = std::move(expiringSocket)] {
+                (void)expiringSocket;
+                g_lua.callGlobalField("g_http", "onWsError", result->operationId, errorReason);
+            });
+        } else if (msg->type == ix::WebSocketMessageType::Close) {
+            const std::string closeMessage = "close_code::normal";
+
+            // The Close callback runs on the WebSocket's own worker thread.
+            // Dropping the last shared_ptr<ix::WebSocket> here triggers
+            // ~WebSocket() -> stop() -> thread::join(), which tries to join
+            // the current thread and throws resource_deadlock_would_occur,
+            // terminating the process. Transfer ownership to the dispatcher
+            // event so the destruction happens on the main thread.
+            std::shared_ptr<ix::WebSocket> expiringSocket;
+            {
+                std::lock_guard<std::mutex> lock(m_mutex);
+                const auto wit = m_websockets.find(operationId);
+                if (wit != m_websockets.end()) {
+                    expiringSocket = std::move(wit->second);
+                    m_websockets.erase(wit);
+                }
+                m_operations.erase(operationId);
+            }
+
+            g_dispatcher.addEvent([result, closeMessage, expiringSocket = std::move(expiringSocket)] {
+                // expiringSocket is destroyed on the dispatcher thread after
+                // the callback returns, avoiding the self-join above.
+                (void)expiringSocket;
                 g_lua.callGlobalField("g_http", "onWsClose", result->operationId, closeMessage);
             });
         }
     });
 
-    websocket->start();
-
+    // Track the socket before start() so an immediate Close/Error arriving
+    // on a fast reject path (TLS failure, TCP RST, server close on handshake)
+    // finds the map entry and releases the socket through the deferred-destroy
+    // path, rather than silently leaking into m_websockets after the insert
+    // completes.
     {
         std::lock_guard<std::mutex> lock(m_mutex);
         m_websockets[operationId] = websocket;
     }
+
+    websocket->start();
 
     return operationId;
 }
@@ -529,4 +514,52 @@ void Http::copyHeaders(const std::unordered_map<std::string, std::string>& sourc
     for (const auto& header : source) {
         target[header.first] = header.second;
     }
+}
+
+HttpResult_ptr Http::registerOperation(const std::string& url, int& operationId)
+{
+    operationId = m_operationId++;
+    auto result = std::make_shared<HttpResult>();
+    result->url = url;
+    result->operationId = operationId;
+
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_operations[operationId] = result;
+    }
+    return result;
+}
+
+std::shared_ptr<ix::HttpRequestArgs> Http::buildRequest(const std::string& url, const std::string& verb, int timeout)
+{
+    auto request = g_ixHttpClient->createRequest(url, verb);
+    request->connectTimeout = timeout;
+    if (m_enable_time_out_on_read_write) {
+        request->transferTimeout = timeout;
+    }
+    request->followRedirects = true;
+    request->extraHeaders["User-Agent"] = m_userAgent;
+    for (const auto& header : m_custom_header) {
+        request->extraHeaders[header.first] = header.second;
+    }
+    return request;
+}
+
+void Http::unregisterOperation(int operationId)
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_operations.erase(operationId);
+}
+
+bool Http::shouldEmitProgress(ticks_t& lastEmit, int progress)
+{
+    // Port the 100 ms cadence the old ASIO implementation used so a busy
+    // download does not flood the dispatcher with a Lua callback per
+    // transfer tick. Always emit the terminal 100% update.
+    const ticks_t now = stdext::millis();
+    if (progress >= 100 || lastEmit == 0 || now - lastEmit >= 100) {
+        lastEmit = now;
+        return true;
+    }
+    return false;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,7 +25,61 @@
 #include "glutil.h"
 #include <framework/global.h>
 
-enum class DrawPoolType : uint8_t;
+#ifndef USE_PRECOMPILED_HEADERS
+#include <memory>
+#endif
+
+enum class CompositionMode
+{
+    NORMAL,
+    MULTIPLY,
+    ADD,
+    REPLACE,
+    DESTINATION_BLENDING,
+    LIGHT
+};
+
+enum class DrawMode
+{
+    NONE = GL_NONE,
+    TRIANGLES = GL_TRIANGLES,
+    TRIANGLE_STRIP = GL_TRIANGLE_STRIP
+};
+
+enum class BlendEquation
+{
+    ADD = GL_FUNC_ADD,
+    MAX = GL_MAX,
+    MIN = GL_MIN,
+    SUBTRACT = GL_FUNC_SUBTRACT,
+    REVER_SUBTRACT = GL_FUNC_REVERSE_SUBTRACT,
+};
+
+enum class DrawPoolType : uint8_t
+{
+    MAP,
+    CREATURE_INFORMATION,
+    LIGHT,
+    FOREGROUND_MAP,
+    FOREGROUND,
+    LAST
+};
+
+enum DrawOrder : uint8_t
+{
+    FIRST,  // GROUND
+    SECOND, // BORDER
+    THIRD,  // BOTTOM & TOP
+    FOURTH, // TOP ~ TOP
+    FIFTH,  // ABOVE ALL - MISSILE
+    LAST
+};
+
+enum class ShaderType
+{
+    VERTEX = GL_VERTEX_SHADER,
+    FRAGMENT = GL_FRAGMENT_SHADER
+};
 
 class Texture;
 class TextureManager;

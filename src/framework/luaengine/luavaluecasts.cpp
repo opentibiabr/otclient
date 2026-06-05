@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -233,7 +233,7 @@ bool luavalue_cast(const int index, Size& size)
 }
 
 // device
-int push_luavalue(const Platform::Device& device)
+int push_luavalue(const Device& device)
 {
     g_lua.createTable(0, 2);
     g_lua.pushInteger(device.type);
@@ -243,13 +243,13 @@ int push_luavalue(const Platform::Device& device)
     return 1;
 }
 
-bool luavalue_cast(const int index, Platform::Device& device)
+bool luavalue_cast(const int index, Device& device)
 {
     if (g_lua.isTable(index)) {
         g_lua.getField("type", index);
-        device.type = static_cast<Platform::DeviceType>(g_lua.popInteger());
+        device.type = static_cast<DeviceType>(g_lua.popInteger());
         g_lua.getField("os", index);
-        device.os = static_cast<Platform::OperatingSystem>(g_lua.popInteger());
+        device.os = static_cast<OperatingSystem>(g_lua.popInteger());
         return true;
     }
     if (g_lua.isNil()) {

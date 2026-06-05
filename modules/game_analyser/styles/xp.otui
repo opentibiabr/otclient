@@ -1,0 +1,229 @@
+MiniWindow
+  id: xpAnalyserMiniWindow
+  &type: 'xpAnalyser'
+  !text: tr('XP Analyser')
+  height: 225
+  &save: true
+  &autoOpen: false
+  @onExtra: modules.game_analyser.onXPExtra(g_window.getMousePosition())
+
+  UIWidget
+    id: miniwindowIcon
+    anchors.top: miniwindowHeader.top
+    anchors.left: miniwindowHeader.left
+    margin-top: 2
+    margin-left: 4
+    size: 12 12
+    image-source: /images/icons/icon-progressanalyser-widget
+    image-smooth: false
+
+  Label
+    id: miniwindowTitle
+    anchors.top: miniwindowHeader.top
+    anchors.left: miniwindowHeader.left
+    anchors.right: miniwindowHeader.right
+    margin-top: 2
+    margin-left: 20
+    margin-right: 50
+    font: verdana-11px-monochrome
+    height: 13
+    color: #9d9d9dff
+    !text: tr('XP Analyser')
+
+  ScrollablePanel
+    id: contentsPanel
+    anchors.fill: parent
+    margin: 16 18 5 5
+    vertical-scrollbar: miniwindowScrollBar
+    UIWidget
+      id: topParent
+      size: 1 1
+      anchors.top: parent.top
+      anchors.left: parent.left
+
+    Label
+      id: rawXpLabel
+      !text: tr('Raw XP Gain:')
+      anchors.top: topParent.bottom
+      anchors.left: parent.left
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Label
+      id: rawXpGain
+      !text: tr('0')
+      anchors.top: topParent.top
+      anchors.right: parent.right
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Label
+      id: xpLabel
+      !text: tr('XP Gain:')
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 5
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Label
+      id: xpGain
+      !text: tr('0')
+      anchors.top: prev.top
+      anchors.right: parent.right
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Label
+      id: rawXpHourLabel
+      !text: tr('Raw XP/h:')
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 5
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Label
+      id: rawXpHour
+      !text: tr('0')
+      anchors.top: prev.top
+      anchors.right: parent.right
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Label
+      id: xpHourLabel
+      !text: tr('XP/h:')
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 5
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Label
+      id: xpHour
+      !text: tr('0')
+      anchors.top: prev.top
+      anchors.right: parent.right
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Label
+      id: nextLevelLabel
+      !text: tr('Next Level:')
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 5
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    Label
+      id: nextLevel
+      !text: tr('-')
+      anchors.top: prev.top
+      anchors.right: parent.right
+      text-auto-resize: true
+      color: #c0c0c0
+      font: Verdana Bold-11px
+
+    ProgressBar
+      id: percent
+      background-color: #008000
+      height: 5
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 5
+      phantom: false
+
+    HorizontalSeparator
+      id: separatorPercent
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 5
+
+    UIWidget
+      id: xpBG
+      size: 152 11
+      image-auto-resize: true
+      image-source: /images/game/analyzer/targetBG
+      anchors.top: prev.bottom
+      anchors.right: parent.right
+      margin-top: 5
+
+      UIWidget
+        id: xpArrow
+        size: 9 8
+        image-auto-resize: true
+        image-source: /images/game/analyzer/arrow
+        anchors.bottom: parent.bottom
+        anchors.left: parent.left
+        margin-bottom: -2
+        margin-left: 71
+
+    HorizontalSeparator
+      id: separatorGauge
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 7
+
+    UIWidget
+      id: xpGraphBG
+      size: 129 83
+      image-auto-resize: true
+      image-source: /images/game/analyzer/xpGraphBG
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-left: 15
+      margin-top: 14
+
+    UIGraph
+      id: graphPanel
+      capacity: 3600
+      background-color: #383636
+      color: red
+      size: 129 83
+      anchors.top: prev.top
+      anchors.left: prev.left
+      show-labels: false
+      image-source: /images/game/analyzer/xpGraphBG
+
+    UIWidget
+      id: graphHorizontal
+      size: 140 9
+      image-auto-resize: true
+      image-source: /images/game/analyzer/graphHorizontal
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-left: 7
+      margin-top: 5
+
+  UIWidget
+    id: miniborder
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    image-source: /images/ui/miniborder
+    size: 14 14
+    margin-left: 2
+    margin-bottom: 2
+
+  ResizeBorder
+    id: bottomResizeBorder
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    height: 3
+    minimum: 85
+    margin-left: 3
+    margin-right: 3

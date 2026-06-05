@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,20 +22,20 @@
 
 #pragma once
 
-#include "clock.h"
+#include "declarations.h"
 #include "event.h"
 
  // @bindclass
 class ScheduledEvent final : public Event
 {
 public:
-    ScheduledEvent(const std::function<void()>& callback, int delay, int maxCycles = 0);
+    ScheduledEvent(const std::string& function, const std::function<void()>& callback, int delay, int maxCycles = 0);
     void execute() override;
-    void postpone() { m_ticks = g_clock.millis() + m_delay; }
+    void postpone();
     bool nextCycle();
 
     int ticks() { return m_ticks; }
-    int remainingTicks() { return m_ticks - g_clock.millis(); }
+    int remainingTicks();
     int delay() { return m_delay; }
     int cyclesExecuted() { return m_cyclesExecuted; }
     int maxCycles() { return m_maxCycles; }

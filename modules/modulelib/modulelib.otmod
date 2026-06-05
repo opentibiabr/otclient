@@ -5,8 +5,6 @@ Module
   website: https://github.com/mehah/otclient
 
   @onLoad: |
-    dofile 'htmlcssparser/htmlparser'
-    dofile 'htmlcssparser/luacs'
-    dofile 'htmlloader'
+    dofile 'watchlist'
     dofile 'eventcontroller'
     dofile 'controller'

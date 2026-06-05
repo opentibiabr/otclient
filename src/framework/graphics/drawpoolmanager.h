@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -32,9 +32,9 @@ public:
     DrawPool* get(const DrawPoolType type) const { return m_pools[static_cast<uint8_t>(type)]; }
 
     void select(DrawPoolType type);
-    void preDraw(const DrawPoolType type, const std::function<void()>& f, const bool alwaysDraw = false) { preDraw(type, f, nullptr, {}, {}, Color::alpha, alwaysDraw); }
-    void preDraw(const DrawPoolType type, const std::function<void()>& f, const Rect& dest, const Rect& src, const Color& colorClear = Color::alpha, const bool alwaysDraw = false) { preDraw(type, f, nullptr, dest, src, colorClear, alwaysDraw); }
-    void preDraw(DrawPoolType type, const std::function<void()>& f, const std::function<void()>& beforeRelease, const Rect& dest, const Rect& src, const Color& colorClear = Color::alpha, bool alwaysDraw = false);
+    void preDraw(const DrawPoolType type, const std::function<void()>& f) { preDraw(type, f, nullptr, {}, {}, Color::alpha); }
+    void preDraw(const DrawPoolType type, const std::function<void()>& f, const Rect& dest, const Rect& src, const Color& colorClear = Color::alpha) { preDraw(type, f, nullptr, dest, src, colorClear); }
+    void preDraw(DrawPoolType type, const std::function<void()>& f, const std::function<void()>& beforeRelease, const Rect& dest, const Rect& src, const Color& colorClear = Color::alpha);
 
     void addTexturedPoint(const TexturePtr& texture, const Point& point, const Color& color = Color::white) const
     { addTexturedRect(Rect(point, texture->getSize()), texture, color); }
@@ -52,10 +52,11 @@ public:
     void addFilledRect(const Rect& dest, const Color& color = Color::white) const;
     void addFilledTriangle(const Point& a, const Point& b, const Point& c, const Color& color = Color::white) const;
     void addBoundingRect(const Rect& dest, const Color& color = Color::white, uint16_t innerLineWidth = 1) const;
-    void addAction(const std::function<void()>& action) const { getCurrentPool()->addAction(action); }
+    void addAction(const std::function<void()>& action, size_t hash = 0) const { getCurrentPool()->addAction(action, hash); }
 
     void bindFrameBuffer(const Size& size, const Color& color = Color::white) const { getCurrentPool()->bindFrameBuffer(size, color); }
     void releaseFrameBuffer(const Rect& dest) const { getCurrentPool()->releaseFrameBuffer(dest); };
+    void releaseFrameBuffer(const Rect& dest, uint8_t flipDirection) const { getCurrentPool()->releaseFrameBuffer(dest, flipDirection); };
 
     void setOpacity(const float opacity, const bool onlyOnce = false) const { getCurrentPool()->setOpacity(opacity, onlyOnce); }
     void setClipRect(const Rect& clipRect, const bool onlyOnce = false) const { getCurrentPool()->setClipRect(clipRect, onlyOnce); }
@@ -63,7 +64,7 @@ public:
     void setCompositionMode(const CompositionMode mode, const bool onlyOnce = false) const { getCurrentPool()->setCompositionMode(mode, onlyOnce); }
     void setDrawOrder(DrawOrder order)const { getCurrentPool()->setDrawOrder(order); }
 
-    bool shaderNeedFramebuffer() const { return getCurrentPool()->getCurrentState().shaderProgram && getCurrentPool()->getCurrentState().shaderProgram->useFramebuffer(); }
+    bool shaderNeedFramebuffer() const;
     void setShaderProgram(const PainterShaderProgramPtr& shaderProgram, const std::function<void()>& action) const { getCurrentPool()->setShaderProgram(shaderProgram, false, action); }
     void setShaderProgram(const PainterShaderProgramPtr& shaderProgram, const bool onlyOnce = false, const std::function<void()>& action = nullptr) const { getCurrentPool()->setShaderProgram(shaderProgram, onlyOnce, action); }
 
@@ -76,6 +77,7 @@ public:
     void resetShaderProgram() const { getCurrentPool()->resetShaderProgram(); }
     void resetCompositionMode() const { getCurrentPool()->resetCompositionMode(); }
     void resetDrawOrder() const { getCurrentPool()->resetDrawOrder(); }
+    void resetOnlyOnceParameters() const { getCurrentPool()->resetOnlyOnceParameters(); }
 
     void pushTransformMatrix() const { getCurrentPool()->pushTransformMatrix(); }
     void popTransformMatrix() const { getCurrentPool()->popTransformMatrix(); }
@@ -113,6 +115,7 @@ public:
     bool isPreDrawing() const;
 
     void removeTextureFromAtlas(uint32_t id, bool smooth);
+    std::string getAtlasStats() const;
 
 private:
     DrawPool* getCurrentPool() const;
@@ -123,6 +126,11 @@ private:
     void drawObject(DrawPool* pool, const DrawPool::DrawObject& obj);
     void drawPool(DrawPoolType type);
     void drawObjects(DrawPool* pool);
+
+    inline bool isDrawing(const DrawPoolType type) const {
+        auto pool = get(type);
+        return pool->isEnabled() && pool->shouldRepaint();
+    }
 
     std::array<DrawPool*, static_cast<uint8_t>(DrawPoolType::LAST)> m_pools{};
 

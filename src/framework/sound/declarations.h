@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +23,10 @@
 #pragma once
 
 #include <framework/global.h>
+
+#ifndef USE_PRECOMPILED_HEADERS
+#include <memory>
+#endif
 
 #include <AL/al.h>
 #include <AL/alc.h>

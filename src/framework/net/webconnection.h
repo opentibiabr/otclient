@@ -24,12 +24,9 @@
 
 #ifdef __EMSCRIPTEN__
 
-#include <asio/streambuf.hpp>
-#include <framework/luaengine/luaobject.h>
 #include "declarations.h"
+#include <framework/luaengine/luaobject.h>
 #include <emscripten/websocket.h>
-#include <queue>
-
 
 class WebConnection : public LuaObject
 {
@@ -75,7 +72,7 @@ protected:
     void onRecv(const uint16_t recvSize);
     void onTimeout();
 
-    static void runOnConnectCallback(std::function<void ()> callback);
+    static void runOnConnectCallback(std::function<void()> callback);
     static void runOnErrorCallback(ErrorCallback callback);
 
     std::function<void()> m_connectCallback;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,7 +25,7 @@
 
 #include <framework/core/eventdispatcher.h>
 
-#include <utility>
+#include "framework/otml/otmlnode.h"
 
 UIGridLayout::UIGridLayout(UIWidgetPtr parentWidget) : UILayout(std::move(parentWidget)) {}
 
@@ -113,7 +113,7 @@ bool UIGridLayout::internalUpdate()
     if (m_fitChildren && preferredHeight != parentWidget->getHeight()) {
         // must set the preferred height later
         g_dispatcher.deferEvent([=] {
-            parentWidget->setHeight(preferredHeight);
+            parentWidget->setHeight_px(preferredHeight);
         });
     }
 

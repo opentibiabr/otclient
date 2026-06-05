@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -56,6 +56,23 @@ Fw::AlignmentFlag Fw::translateAlignment(std::string aligment)
         return AlignCenter;
 
     return AlignNone;
+}
+
+Fw::AlignmentFlag Fw::translatePlacement(std::string s) {
+    stdext::tolower(s);
+
+    if (s == "auto" || s.empty()) return Fw::AlignNone;
+    if (s == "top-left") return Fw::AlignTopLeft;
+    if (s == "top-right") return Fw::AlignTopRight;
+    if (s == "bottom-left") return Fw::AlignBottomLeft;
+    if (s == "bottom-right") return Fw::AlignBottomRight;
+    if (s == "left-center" || s == "center-left") return Fw::AlignLeftCenter;
+    if (s == "right-center" || s == "center-right") return Fw::AlignRightCenter;
+    if (s == "top-center" || s == "center-top") return Fw::AlignTopCenter;
+    if (s == "bottom-center" || s == "center-bottom") return Fw::AlignBottomCenter;
+    if (s == "center" || s == "middle") return Fw::AlignCenter;
+
+    return Fw::AlignTopLeft;
 }
 
 Fw::AnchorEdge Fw::translateAnchorEdge(std::string anchorEdge)

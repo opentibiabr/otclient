@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,11 +21,11 @@
  */
 
 #include "lightview.h"
-#include "map.h"
 
-#include <framework/core/asyncdispatcher.h>
-#include <framework/core/eventdispatcher.h>
-#include <framework/graphics/drawpoolmanager.h>
+#include "gameconfig.h"
+#include "framework/core/eventdispatcher.h"
+#include "framework/graphics/drawpoolmanager.h"
+#include "framework/graphics/painter.h"
 
 LightView::LightView(const Size& size) : m_pool(g_drawPool.get(DrawPoolType::LIGHT)) {
     g_mainDispatcher.addEvent([this, size] {
@@ -33,6 +33,9 @@ LightView::LightView(const Size& size) : m_pool(g_drawPool.get(DrawPoolType::LIG
         m_texture->setSmooth(true);
     });
 }
+
+bool LightView::isEnabled() const { return m_pool->isEnabled(); }
+void LightView::setEnabled(const bool v) { m_pool->setEnable(v); }
 
 void LightView::resize(const Size& size, const uint16_t tileSize) {
     if (!m_texture || (m_mapSize == size && m_tileSize == tileSize))
@@ -95,15 +98,15 @@ void LightView::draw(const Rect& dest, const Rect& src)
 
         SpinLock::Guard guard(m_pool->getThreadLock());
         m_pixels[0].swap(m_pixels[1]);
-        updatePixel.store(true, std::memory_order_release);
+        updatePixel.store(true, std::memory_order_relaxed);
     }
     m_pool->getHashController().reset();
 
     g_drawPool.addAction([=, this] {
-        if (updatePixel.load(std::memory_order_acquire)) {
+        if (updatePixel.load(std::memory_order_relaxed)) {
             SpinLock::Guard guard(m_pool->getThreadLock());
             m_texture->updatePixels(m_pixels[1].data());
-            updatePixel = false;
+            updatePixel.store(false, std::memory_order_relaxed);
         }
 
         updateCoords(dest, src);

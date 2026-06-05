@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,18 +19,19 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 #include "uimanager.h"
-#include "ui.h"
-
-#include <framework/core/eventdispatcher.h>
-#include <framework/core/modulemanager.h>
-#include <framework/core/resourcemanager.h>
 #include <framework/graphics/drawpoolmanager.h>
-#include <framework/otml/otml.h>
-#include <framework/platform/platformwindow.h>
 
+#include "uiwidget.h"
+#include "framework/core/eventdispatcher.h"
+#include "framework/core/modulemanager.h"
+#include "framework/core/resourcemanager.h"
 #include "framework/graphics/graphics.h"
+#include "framework/otml/otmldocument.h"
+#include "framework/otml/otmlexception.h"
+#include "framework/otml/otmlnode.h"
+#include <framework/platform/platformwindow.h>
+#include <framework/util/stats.h>
 
 UIManager g_ui;
 
@@ -38,6 +39,7 @@ void UIManager::init()
 {
     // creates root widget
     m_rootWidget = std::make_shared<UIWidget>();
+    m_rootWidget->m_positionType = PositionType::Relative;
     m_rootWidget->setId("root");
     m_mouseReceiver = m_rootWidget;
     m_keyboardReceiver = m_rootWidget;
@@ -56,6 +58,9 @@ void UIManager::terminate()
     m_styles.clear();
     m_destroyedWidgets.clear();
     m_checkEvent = nullptr;
+    m_hoveredWidgets.clear();
+    m_pressedWidgets.clear();
+    m_hoveredText.clear();
 }
 
 void UIManager::render(DrawPoolType drawPane) const
@@ -87,15 +92,25 @@ void UIManager::inputEvent(const InputEvent& event)
             m_keyboardReceiver->propagateOnKeyUp(event.keyCode, event.keyboardModifiers);
             break;
         case Fw::MousePressInputEvent:
+            m_mouseReceiver->propagateOnMouseEvent(event.mousePos, widgetList);
+
             if (event.mouseButton == Fw::MouseLeftButton && m_mouseReceiver->isVisible()) {
                 auto pressedWidget = m_mouseReceiver->recursiveGetChildByPos(event.mousePos, false);
-                if (pressedWidget && !pressedWidget->isEnabled())
-                    pressedWidget = nullptr;
 
-                updatePressedWidget(pressedWidget, event.mousePos);
+                bool isOnHTML = false;
+                if (pressedWidget) {
+                    isOnHTML = pressedWidget->isOnHtml();
+
+                    if (!pressedWidget->isEnabled())
+                        pressedWidget = nullptr;
+                }
+
+                if (isOnHTML)
+                    updatePressedWidgetHTML(pressedWidget ? widgetList : UIWidgetList{}, event.mousePos);
+                else
+                    updatePressedWidget(pressedWidget, event.mousePos);
             }
 
-            m_mouseReceiver->propagateOnMouseEvent(event.mousePos, widgetList);
             for (const auto& widget : widgetList) {
                 widget->recursiveFocus(Fw::MouseFocusReason);
                 if (widget->onMousePress(event.mousePos, event.mouseButton))
@@ -127,8 +142,12 @@ void UIManager::inputEvent(const InputEvent& event)
                 }
             }
 
-            if (m_pressedWidget && event.mouseButton == Fw::MouseLeftButton)
-                updatePressedWidget(nullptr, event.mousePos, !accepted);
+            if (m_pressedWidget && event.mouseButton == Fw::MouseLeftButton) {
+                if (m_pressedWidget->isOnHtml())
+                    updatePressedWidgetHTML(UIWidgetList{}, event.mousePos, !accepted);
+                else
+                    updatePressedWidget(nullptr, event.mousePos, !accepted);
+            }
             break;
         }
         case Fw::MouseMoveInputEvent:
@@ -142,6 +161,7 @@ void UIManager::inputEvent(const InputEvent& event)
 
             // mouse move can change hovered widgets
             updateHoveredWidget(true);
+            updateHoveredText(true);
 
             // first fire dragging move
             if (m_draggingWidget) {
@@ -171,6 +191,29 @@ void UIManager::inputEvent(const InputEvent& event)
             break;
         default:
             break;
+    }
+}
+
+void  UIManager::updatePressedWidgetHTML(const UIWidgetList& newPressed, const Point& clickedPos, bool fireClicks) {
+    auto oldPressedWidgets = std::move(m_pressedWidgets);
+    m_pressedWidgets = newPressed;
+    m_pressedWidget = !newPressed.empty() ? newPressed.front() : nullptr;
+
+    for (const auto& p : newPressed) {
+        const auto w = p.get();
+        if (!w->isEnabled())
+            continue;
+
+        w->updateState(Fw::PressedState, true);
+    }
+
+    for (const auto& p : std::views::reverse(oldPressedWidgets)) {
+        const auto w = p.get();
+
+        if (fireClicks && w->isEnabled() && w->containsPoint(clickedPos))
+            w->onClick(clickedPos);
+
+        w->updateState(Fw::PressedState, false);
     }
 }
 
@@ -234,11 +277,43 @@ void UIManager::updateHoveredWidget(const bool now)
             return;
 
         m_hoverUpdateScheduled = false;
-        //if(!g_window.isMouseButtonPressed(Fw::MouseLeftButton) && !g_window.isMouseButtonPressed(Fw::MouseRightButton)) {
-        auto hoveredWidget = m_rootWidget->recursiveGetChildByPos(g_window.getMousePosition(), false);
+
+        const auto& mousePos = g_window.getMousePosition();
+        auto hoveredWidget = m_rootWidget->recursiveGetChildByPos(mousePos, false);
+
+        if (hoveredWidget && hoveredWidget->isOnHtml()) {
+            UIWidgetList newHovered;
+            m_mouseReceiver->propagateOnMouseEvent(mousePos, newHovered);
+
+            for (const auto& p : std::views::reverse(m_hoveredWidgets)) {
+                const auto w = p.get();
+
+                bool still = std::any_of(newHovered.begin(), newHovered.end(),
+                                         [&](const UIWidgetPtr& p) { return p.get() == w; });
+                if (!still) {
+                    w->updateState(Fw::HoverState, false);
+                    w->onHoverChange(false);
+                }
+            }
+
+            for (const auto& p : newHovered) {
+                const auto w = p.get();
+                if (!w->isEnabled())
+                    continue;
+
+                bool was = std::any_of(m_hoveredWidgets.begin(), m_hoveredWidgets.end(),
+                                       [&](const UIWidgetPtr& q) { return q.get() == w; });
+                if (!was) {
+                    w->updateState(Fw::HoverState, true);
+                    w->onHoverChange(true);
+                }
+            }
+
+            m_hoveredWidgets = std::move(newHovered);
+        }
+
         if (hoveredWidget && !hoveredWidget->isEnabled())
             hoveredWidget = nullptr;
-        //}
 
         if (hoveredWidget != m_hoveredWidget) {
             const UIWidgetPtr oldHovered = m_hoveredWidget;
@@ -246,6 +321,10 @@ void UIManager::updateHoveredWidget(const bool now)
             if (oldHovered) {
                 oldHovered->updateState(Fw::HoverState);
                 oldHovered->onHoverChange(false);
+                if (oldHovered->hasEventListener(EVENT_TEXT_HOVER) && m_hoveredText.length() > 0) {
+                    oldHovered->onTextHoverChange(m_hoveredText, false);
+                    m_hoveredText.clear();
+                }
             }
             if (hoveredWidget) {
                 hoveredWidget->updateState(Fw::HoverState);
@@ -264,18 +343,27 @@ void UIManager::updateHoveredWidget(const bool now)
 
 void UIManager::onWidgetAppear(const UIWidgetPtr& widget)
 {
-    if (widget->containsPoint(g_window.getMousePosition()))
+    if (widget->containsPoint(g_window.getMousePosition())) {
         updateHoveredWidget();
+        updateHoveredText();
+    }
 }
 
 void UIManager::onWidgetDisappear(const UIWidgetPtr& widget)
 {
-    if (widget->containsPoint(g_window.getMousePosition()))
+    if (widget->containsPoint(g_window.getMousePosition())) {
         updateHoveredWidget();
+        updateHoveredText();
+    }
 }
 
 void UIManager::onWidgetDestroy(const UIWidgetPtr& widget)
 {
+    std::string extra = widget->getId();
+    if (widget->getParent())
+        extra += " (" + widget->getParent()->getId() + ")";
+    AutoStat s(STATS_MAIN, "UIManager::onWidgetDestroy", extra);
+
     // release input grabs
     if (m_keyboardReceiver == widget)
         resetKeyboardReceiver();
@@ -283,14 +371,32 @@ void UIManager::onWidgetDestroy(const UIWidgetPtr& widget)
     if (m_mouseReceiver == widget)
         resetMouseReceiver();
 
-    if (m_hoveredWidget == widget)
+    if (m_hoveredWidget == widget) {
         updateHoveredWidget();
+        updateHoveredText();
+    }
 
-    if (m_pressedWidget == widget)
+    if (m_pressedWidget == widget) {
         updatePressedWidget(nullptr);
+    }
 
     if (m_draggingWidget == widget)
         updateDraggingWidget(nullptr);
+
+    if (widget->isOnHtml()) {
+        { // Pressed Widgets
+            auto it = std::find(m_pressedWidgets.begin(), m_pressedWidgets.end(), widget);
+            if (it != m_pressedWidgets.end()) {
+                m_pressedWidgets.erase(it);
+            }
+        }
+        {  // Hovered Widgets
+            auto it = std::find(m_hoveredWidgets.begin(), m_hoveredWidgets.end(), widget);
+            if (it != m_hoveredWidgets.end()) {
+                m_hoveredWidgets.erase(it);
+            }
+        }
+    }
 
     // Avoid the garbage collector
     if (!g_modules.isAutoReloadEnabled())
@@ -312,7 +418,7 @@ void UIManager::onWidgetDestroy(const UIWidgetPtr& widget)
             g_lua.collectGarbage();
             for (const auto& widget : backupList) {
                 if (widget.use_count() != 1)
-                    g_logger.warning("widget '{}' destroyed but still have {} reference(s) left", widget->getId(), widget.use_count() - 1);
+                    g_logger.warning("Widget '{}' destroyed but still have {} reference(s) left", widget->getId(), widget.use_count() - 1);
             }
         }, 1);
     }, 1000);
@@ -329,8 +435,14 @@ bool UIManager::importStyle(const std::string& fl, const bool checkDeviceStyles)
     try {
         const auto& doc = OTMLDocument::parse(file);
 
-        for (const auto& styleNode : doc->children())
+        for (const auto& styleNode : doc->children()) {
+            const std::string tag = styleNode->tag();
+            if (!tag.empty() && tag.front() == '&')
+                continue;
+            if (tag.find('<') == std::string::npos)
+                continue;
             importStyleFromOTML(styleNode);
+        }
     } catch (stdext::exception& e) {
         g_logger.error("Failed to import UI styles from '{}': {}", file, e.what());
         return false;
@@ -381,7 +493,7 @@ void UIManager::importStyleFromOTML(const OTMLNodePtr& styleNode)
     if(!g_app.isRunning() && (oldStyle && !oldStyle->valueAt("__unique", false))) {
         auto it = m_styles.find(name);
         if(it != m_styles.end())
-            g_logger.warning("style '{}' is being redefined", name);
+            g_logger.warning("Style '{}' is being redefined", name);
     }
     */
 
@@ -457,6 +569,9 @@ OTMLNodePtr UIManager::findMainWidgetNode(const OTMLDocumentPtr& doc)
     for (const auto& node : doc->children()) {
         std::string tag = node->tag();
 
+        if (!tag.empty() && tag.front() == '&')
+            continue;
+
         if (tag.find('<') == std::string::npos) {
             if (mainNode)
                 throw Exception("cannot have multiple main widgets in otui files");
@@ -466,28 +581,28 @@ OTMLNodePtr UIManager::findMainWidgetNode(const OTMLDocumentPtr& doc)
     return mainNode;
 }
 
-OTMLNodePtr UIManager::loadDeviceUI(const std::string& file, const Platform::OperatingSystem os)
+OTMLNodePtr UIManager::loadDeviceUI(const std::string& file, const OperatingSystem os)
 {
     const auto rawName = file.substr(0, file.find("."));
     const auto osName = g_platform.getOsShortName(os);
 
     const auto& doc = OTMLDocument::parse(g_resources.guessFilePath(rawName + "." + osName, "otui"));
     if (doc) {
-        g_logger.info("found os style '{}' for '{}'", osName, rawName);
+        g_logger.info("Found os style '{}' for '{}'", osName, rawName);
         importStyleFromOTML(doc);
         return findMainWidgetNode(doc);
     }
     return nullptr;
 }
 
-OTMLNodePtr UIManager::loadDeviceUI(const std::string& file, const Platform::DeviceType deviceType)
+OTMLNodePtr UIManager::loadDeviceUI(const std::string& file, const DeviceType deviceType)
 {
     const auto rawName = file.substr(0, file.find("."));
     const auto deviceName = g_platform.getDeviceShortName(deviceType);
 
     const auto& doc = OTMLDocument::parse(g_resources.guessFilePath(rawName + "." + deviceName, "otui"));
     if (doc) {
-        g_logger.info("found device style '{}' for '{}'", deviceName, rawName);
+        g_logger.info("Found device style '{}' for '{}'", deviceName, rawName);
         importStyleFromOTML(doc);
         return findMainWidgetNode(doc);
     }
@@ -502,6 +617,9 @@ UIWidgetPtr UIManager::loadUI(const std::string& file, const UIWidgetPtr& parent
 
         for (const auto& node : doc->children()) {
             std::string tag = node->tag();
+
+            if (!tag.empty() && tag.front() == '&')
+                continue;
 
             // import styles in these files too
             if (tag.find('<') != std::string::npos)
@@ -520,24 +638,24 @@ UIWidgetPtr UIManager::loadUI(const std::string& file, const UIWidgetPtr& parent
             if (deviceWidgetNode)
                 widgetNode = deviceWidgetNode;
         } catch (stdext::exception& e) {
-            g_logger.fine("no device ui found for '{}', reason: '{}'", file, e.what());
+            g_logger.fine("No device ui found for '{}', reason: '{}'", file, e.what());
         }
         try {
             const auto osWidgetNode = loadDeviceUI(file, device.os);
             if (osWidgetNode)
                 widgetNode = osWidgetNode;
         } catch (stdext::exception& e) {
-            g_logger.fine("no os ui found for '{}', reason: '{}'", file, e.what());
+            g_logger.fine("No os ui found for '{}', reason: '{}'", file, e.what());
         }
 
         if (!widgetNode) {
-            g_logger.debug("failed to load a widget from '{}'", file);
+            g_logger.debug("Failed to load a widget from '{}'", file);
             return nullptr;
         }
 
         return createWidgetFromOTML(widgetNode, parent);
     } catch (stdext::exception& e) {
-        g_logger.error("failed to load UI from '{}': {}", file, e.what());
+        g_logger.error("Failed to load UI from '{}': {}", file, e.what());
         return nullptr;
     }
 }
@@ -554,8 +672,11 @@ UIWidgetPtr UIManager::loadUIFromString(const std::string& data, const UIWidgetP
         for (const OTMLNodePtr& node : doc->children()) {
             std::string tag = node->tag();
 
+            if (!tag.empty() && tag.front() == '&')
+                continue;
+
             // import styles in these files too
-            if (tag.find("<") != std::string::npos)
+            if (tag.find('<') != std::string::npos)
                 importStyleFromOTML(node);
             else {
                 if (widget)
@@ -566,7 +687,7 @@ UIWidgetPtr UIManager::loadUIFromString(const std::string& data, const UIWidgetP
 
         return widget;
     } catch (stdext::exception& e) {
-        g_logger.error("failed to load UI from string: {}", e.what());
+        g_logger.error("Failed to load UI from string: {}", e.what());
         return nullptr;
     }
 }
@@ -577,7 +698,7 @@ UIWidgetPtr UIManager::createWidget(const std::string_view styleName, const UIWi
     try {
         return createWidgetFromOTML(node, parent);
     } catch (stdext::exception& e) {
-        g_logger.error("failed to create widget from style '{}': {}", styleName, e.what());
+        g_logger.error("Failed to create widget from style '{}': {}", styleName, e.what());
         return nullptr;
     }
 }
@@ -598,8 +719,13 @@ UIWidgetPtr UIManager::createWidgetFromOTML(const OTMLNodePtr& widgetNode, const
     if (!widget)
         throw Exception("unable to create widget of type '{}'", widgetType);
 
-    if (parent)
-        parent->addChild(widget);
+    if (parent) {
+        if (parent->m_insertChildIndex > -1) {
+            parent->insertChild(parent->m_insertChildIndex, widget);
+            parent->m_insertChildIndex = -1;
+        } else
+            parent->addChild(widget);
+    }
 
     widget->callLuaField("onCreate");
 
@@ -614,4 +740,39 @@ UIWidgetPtr UIManager::createWidgetFromOTML(const OTMLNodePtr& widgetNode, const
 
     widget->callLuaField("onSetup");
     return widget;
+}
+
+void UIManager::updateHoveredText(bool now)
+{
+    if ((m_hoverTextUpdateScheduled && !now) || !m_hoveredWidget)
+        return;
+
+    auto func = [this] {
+        if (!m_rootWidget || !m_hoveredWidget)
+            return;
+
+        m_hoverTextUpdateScheduled = false;
+
+        if (m_hoveredWidget->hasEventListener(EVENT_TEXT_HOVER)) {
+            std::string hoveredText = m_hoveredWidget->getTextByPos(g_window.getMousePosition());
+
+            if (hoveredText != m_hoveredText) {
+                std::string oldHovered = m_hoveredText;
+                m_hoveredText = hoveredText;
+
+                if (oldHovered.length() > 0)
+                    m_hoveredWidget->onTextHoverChange(oldHovered, false);
+
+                if (m_hoveredText.length() > 0)
+                    m_hoveredWidget->onTextHoverChange(m_hoveredText, true);
+            }
+        }
+    };
+
+    if (now)
+        func();
+    else {
+        m_hoverTextUpdateScheduled = true;
+        g_dispatcher.deferEvent(func);
+    }
 }

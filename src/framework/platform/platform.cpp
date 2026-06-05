@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,13 +24,13 @@
 
 Platform g_platform;
 
-std::unordered_map<Platform::DeviceType, std::string> Platform::m_deviceShortNames = {
+std::unordered_map<DeviceType, std::string> Platform::m_deviceShortNames = {
     {Desktop, "desktop"},
     {Mobile,  "mobile"},
     {Console, "console"},
 };
 
-std::unordered_map<Platform::OperatingSystem, std::string> Platform::m_osShortNames = {
+std::unordered_map<OperatingSystem, std::string> Platform::m_osShortNames = {
     {Windows, "windows"},
     {Linux,   "linux"},
     {macOS,   "macos"},
@@ -60,7 +60,7 @@ std::string Platform::getOsShortName(OperatingSystem os)
     return it->second;
 }
 
-Platform::DeviceType Platform::getDeviceTypeByName(std::string shortName)
+DeviceType Platform::getDeviceTypeByName(std::string shortName)
 {
     for (const auto& [type, name] : m_deviceShortNames) {
         if (name == shortName)
@@ -69,7 +69,7 @@ Platform::DeviceType Platform::getDeviceTypeByName(std::string shortName)
     return DeviceUnknown;
 }
 
-Platform::OperatingSystem Platform::getOsByName(std::string shortName)
+OperatingSystem Platform::getOsByName(std::string shortName)
 {
     for (const auto& [type, name] : m_osShortNames) {
         if (name == shortName)

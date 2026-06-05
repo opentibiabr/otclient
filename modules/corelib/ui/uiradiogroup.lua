@@ -1,5 +1,5 @@
 -- @docclass
-UIRadioGroup = newclass('UIRadioGroup')
+UIRadioGroup = extends(UIWidget, 'UIRadioGroup')
 
 function UIRadioGroup.create()
     local radiogroup = UIRadioGroup.internalCreate()

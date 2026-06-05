@@ -8,6 +8,11 @@ ManaCircle < UIProgressBar
   opacity: 0.7
   phantom: true
 
+ManaShieldCircle < UIProgressBar
+  image-source: /data/images/game/healthcircle/right_extra_empty
+  opacity: 0.7
+  phantom: true
+
 ExpCircle < UIProgressBar
   image-source: /data/images/game/healthcircle/top_empty
   opacity: 0.7
@@ -29,6 +34,12 @@ ManaCircleFront < UIProgressBar
   image-color: #3F92EA
   phantom: true
 
+ManaShieldCircleFront < UIProgressBar
+  image-source: /data/images/game/healthcircle/right_extra_full
+  opacity: 0.7
+  image-color: #7F00A9
+  phantom: true
+
 ExpCircleFront < UIProgressBar
   image-source: /data/images/game/healthcircle/top_full
   opacity: 0.7
@@ -39,4 +50,23 @@ SkillCircleFront < UIProgressBar
   image-source: /data/images/game/healthcircle/bottom_full
   opacity: 0.7
   image-color: #FC8CFF
+  phantom: true
+
+MonkCircleBackground < UIWidget
+  image-source: /data/images/game/healthcircle/left/default-bg-full-monk
+  opacity: 0.5
+  phantom: true
+
+MonkHealthCircle < UIProgressBar
+  image-source: /data/images/game/healthcircle/left/default-maximal-monk
+  opacity: 0.7
+  phantom: true
+
+MonkSereneCircle < UIWidget
+  image-source: /data/images/game/healthcircle/left/default-circle-purple-monk
+  opacity: 0.7
+  phantom: true
+
+MonkHarmonySlot < UIWidget
+  opacity: 0.7
   phantom: true

@@ -1,0 +1,242 @@
+ActionButton < UIButton
+  font: cipsoftFont
+  size: 34 34
+  margin-left: 2
+  image-source: /images/game/actionbar/actionbarslot
+  Item
+    id: item
+    anchors.fill: parent
+    padding: 1
+    virtual: true
+    draggable: true
+    &selectable: true
+    &editable: false
+    font: verdana-8px-rounded
+    always-show-count: true
+    $!on:
+      image-source: /images/game/actionbar/actionbarslot
+      image-color: #dfdfdf
+      image-clip: 0 0 34 34
+      image-border: 0
+    $on:
+      image-source: /images/ui/button
+      image-color: #dfdfdf
+      image-clip: 0 0 22 23
+      image-border: 3
+    $pressed on:
+      image-clip: 0 46 22 23
+    $checked on:
+      image-clip: 0 46 22 23
+
+    Panel
+      id: gray
+      anchors.fill: parent
+      image-source: /images/ui/ditherpattern
+      visible: false
+    Label
+      id: text
+      size: 30 27
+      anchors.fill: prev
+      text-wrap: true
+      text-align: center
+      margin: 1
+      font: small-9px
+      phantom: true
+      Panel
+        id: gray
+        anchors.fill: parent
+        image-source: /images/ui/ditherpattern
+        visible: false
+
+  Label
+    id: hotkeyLabel
+    anchors.top: parent.top
+    anchors.right: parent.right
+    margin-right: 2
+    text-offset: 0 2
+    text-allign: right
+    text-auto-resize: true
+    text-wrap: false
+    phantom: true
+    font: verdana-8px-rounded
+
+  Label
+    id: parameterText
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    margin-bottom: 1
+    margin-left: 2
+    margin-right: 2
+    font: small-9px
+    phantom: true
+    text-align: left
+
+  UIProgressRect
+    id: cooldown
+    background: #101010aa
+    percent: 100
+    focusable: false
+    phantom: true
+    anchors.fill: parent
+    font: verdana-11px-rounded
+    color: white
+    border-color: #9fa0a0
+  
+  Panel
+    id: activeSpell
+    anchors.fill: parent
+    margin: 1 1 1 1
+    image-source: /images/game/actionbar/border_activespell
+    phantom: true
+    visible: false
+
+  UIWidget
+    id: multiIcon
+    image-source: /images/game/actionbar/marker-multiactionbutton
+    size: 5 11
+    anchors.left: parent.left
+    anchors.top: parent.top
+    margin-left: 1
+    margin-top: 1
+    phantom: true
+    visible: false
+
+LeftSliders < Panel
+  size: 17 34
+  UIButton
+    id: prev
+    size: 17 17
+    anchors.top: parent.top
+    anchors.left: parent.left
+    @onClick: modules.game_actionbar.moveActionButtons(self)
+    image-source: /images/game/actionbar/arrow-left
+    image-clip: 0 0 17 17
+    margin-left: -1
+    $pressed:
+      image-clip: 0 17 17 17
+    $!on:
+      image-clip: 0 34 17 17
+      tooltip: No further action buttons in this direction
+    $on:
+      tooltip: Move to the previous action button
+
+  UIButton
+    id: first
+    size: 17 17
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    @onClick: modules.game_actionbar.moveActionButtons(self)
+    image-source: /images/game/actionbar/double-arrow-left
+    image-clip: 0 0 17 17
+    margin-left: -1
+    margin-top: 1
+
+    $pressed:
+      image-clip: 0 17 17 17
+
+    $!on:
+      image-clip: 0 34 17 17
+      tooltip: No further action buttons in this direction
+
+    $on:
+      tooltip: Move to the first action button
+
+RightSliders < Panel
+  size: 17 34
+
+  UIButton
+    id: next
+    size: 17 17
+    anchors.top: parent.top
+    anchors.right: parent.right
+    margin-right: -1
+    @onClick: modules.game_actionbar.moveActionButtons(self)
+    image-source: /images/game/actionbar/arrow-right
+    image-clip: 0 0 17 17
+    on: true
+
+    $pressed:
+      image-clip: 0 17 17 17
+
+    $!on:
+      image-clip: 0 34 17 17
+      tooltip: No further action buttons in this direction
+
+    $on:
+      tooltip: Move to the next action button
+
+  UIButton
+    id: last
+    size: 17 17
+    anchors.top: parent.top
+    anchors.right: parent.right
+    margin-right: -1
+    margin-top: 17
+    @onClick: modules.game_actionbar.moveActionButtons(self)
+    on: true
+    image-source: /images/game/actionbar/double-arrow-right
+    image-clip: 0 0 17 17
+
+    $pressed:
+      image-clip: 0 17 17 17
+
+    $!on:
+      image-clip: 0 34 17 17
+      tooltip: No further action buttons in this direction
+
+    $on:
+      tooltip: Move to the last action button
+
+Panel
+  id: actionBar
+  focusable: false
+  image-source: /images/ui/actionbar/actionbar_background-light
+  image-border: 1
+  //margin-top: 2
+  padding-top: 3
+  padding-bottom: 1
+
+  $on:
+    height: 36
+    visible: true
+
+  $!on:
+    height: 0
+    visible: false
+
+  LeftSliders
+    id: prevPanel
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 1
+    margin-top: -1
+
+  ScrollablePanel
+    id: tabBar
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    anchors.left: prev.right
+    anchors.right: nextPanel.left
+    //margin-left: 1
+    margin-right: 4
+    margin-top: -2
+    horizontal-scrollbar: actionScroll
+    layout: horizontalBox
+    @onGeometryChange: modules.game_actionbar.updateVisibleWidgets()
+
+  HorizontalScrollBar
+    id: actionScroll
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    anchors.right: parent.right
+    step: 37
+    pixels-scroll: true
+    visible: false
+
+  RightSliders
+    id: nextPanel
+    anchors.right: parent.right
+    anchors.verticalCenter: parent.verticalCenter
+    margin-right: 1
+    margin-top: -1

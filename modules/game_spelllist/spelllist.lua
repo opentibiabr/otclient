@@ -19,6 +19,7 @@ vocationBoxSorcerer = nil
 vocationBoxDruid = nil
 vocationBoxPaladin = nil
 vocationBoxKnight = nil
+vocationBoxMonk = nil
 
 groupBoxAny = nil
 groupBoxAttack = nil
@@ -43,6 +44,7 @@ FILTER_VOCATION_SORCERER = 1
 FILTER_VOCATION_DRUID = 2
 FILTER_VOCATION_PALADIN = 3
 FILTER_VOCATION_KNIGHT = 4
+FILTER_VOCATION_MONK = 5
 
 FILTER_GROUP_ANY = 0
 FILTER_GROUP_ATTACK = 1
@@ -121,6 +123,7 @@ function init()
     vocationBoxDruid = spelllistWindow:getChildById('vocationBoxDruid')
     vocationBoxPaladin = spelllistWindow:getChildById('vocationBoxPaladin')
     vocationBoxKnight = spelllistWindow:getChildById('vocationBoxKnight')
+    vocationBoxMonk = spelllistWindow:getChildById('vocationBoxMonk')
 
     groupBoxAny = spelllistWindow:getChildById('groupBoxAny')
     groupBoxAttack = spelllistWindow:getChildById('groupBoxAttack')
@@ -137,6 +140,7 @@ function init()
     vocationRadioGroup:addWidget(vocationBoxDruid)
     vocationRadioGroup:addWidget(vocationBoxPaladin)
     vocationRadioGroup:addWidget(vocationBoxKnight)
+    vocationRadioGroup:addWidget(vocationBoxMonk)
 
     groupRadioGroup = UIRadioGroup.create()
     groupRadioGroup:addWidget(groupBoxAny)
@@ -199,32 +203,33 @@ function terminate()
 end
 
 function initializeSpelllist()
-    for i = 1, #SpelllistSettings[SpelllistProfile].spellOrder do
-        local spell = SpelllistSettings[SpelllistProfile].spellOrder[i]
-        local info = SpellInfo[SpelllistProfile][spell]
+    local spells = {}
+    for spellName, info in pairs(SpellInfo[SpelllistProfile]) do
+        table.insert(spells, spellName)
+    end
+    table.sort(spells)
+    for _, spellName in ipairs(spells) do
+        local info = SpellInfo[SpelllistProfile][spellName]
+        if info then
+            local tmpLabel = g_ui.createWidget('SpellListLabel', spellList)
+            tmpLabel:setId(spellName)
+            tmpLabel:setText(spellName .. '\n\'' .. info.words .. '\'')
+            tmpLabel:setPhantom(false)
 
-        local tmpLabel = g_ui.createWidget('SpellListLabel', spellList)
-        tmpLabel:setId(spell)
-        tmpLabel:setText(spell .. '\n\'' .. info.words .. '\'')
-        tmpLabel:setPhantom(false)
+            local iconId = tonumber(info.clientId)
+            if not iconId then
+                perror('Spell icon \'' .. info.icon .. '\' not found.')
+            end
 
-        local iconId = tonumber(info.icon)
-        if not iconId and SpellIcons[info.icon] then
-            iconId = SpellIcons[info.icon][1]
+            tmpLabel:setHeight(SpelllistSettings[SpelllistProfile].iconSize.height + 4)
+            tmpLabel:setTextOffset(topoint((SpelllistSettings[SpelllistProfile].iconSize.width + 10) .. ' ' ..
+                                               (SpelllistSettings[SpelllistProfile].iconSize.height - 32) / 2 + 3))
+            tmpLabel:setImageSource(SpelllistSettings[SpelllistProfile].iconFile)
+            tmpLabel:setImageClip(Spells.getImageClip(iconId, SpelllistProfile))
+            tmpLabel:setImageSize(tosize(SpelllistSettings[SpelllistProfile].iconSize.width .. ' ' ..
+                                             SpelllistSettings[SpelllistProfile].iconSize.height))
+            tmpLabel.onClick = updateSpellInformation
         end
-
-        if not (iconId) then
-            perror('Spell icon \'' .. info.icon .. '\' not found.')
-        end
-
-        tmpLabel:setHeight(SpelllistSettings[SpelllistProfile].iconSize.height + 4)
-        tmpLabel:setTextOffset(topoint((SpelllistSettings[SpelllistProfile].iconSize.width + 10) .. ' ' ..
-                                           (SpelllistSettings[SpelllistProfile].iconSize.height - 32) / 2 + 3))
-        tmpLabel:setImageSource(SpelllistSettings[SpelllistProfile].iconFile)
-        tmpLabel:setImageClip(Spells.getImageClip(iconId, SpelllistProfile))
-        tmpLabel:setImageSize(tosize(SpelllistSettings[SpelllistProfile].iconSize.width .. ' ' ..
-                                         SpelllistSettings[SpelllistProfile].iconSize.height))
-        tmpLabel.onClick = updateSpellInformation
     end
 
     connect(spellList, {
@@ -239,9 +244,8 @@ end
 
 function changeSpelllistProfile(oldProfile)
     -- Delete old labels
-    for i = 1, #SpelllistSettings[oldProfile].spellOrder do
-        local spell = SpelllistSettings[oldProfile].spellOrder[i]
-        local tmpLabel = spellList:getChildById(spell)
+    for spellName, info in pairs(SpellInfo[oldProfile]) do
+        local tmpLabel = spellList:getChildById(spellName)
 
         tmpLabel:destroy()
     end
@@ -252,17 +256,23 @@ function changeSpelllistProfile(oldProfile)
     resetWindow()
 end
 
-function updateSpelllist()
-    for i = 1, #SpelllistSettings[SpelllistProfile].spellOrder do
-        local spell = SpelllistSettings[SpelllistProfile].spellOrder[i]
-        local info = SpellInfo[SpelllistProfile][spell]
-        local tmpLabel = spellList:getChildById(spell)
+local function vocationMatches(vocations, filterId)
+    if filterId == FILTER_VOCATION_ANY then
+        return true
+    end
+    if filterId == FILTER_VOCATION_MONK then
+        return table.find(vocations, VocationsServer.Monk) or table.find(vocations, VocationsServer.ExaltedMonk)
+    end
+    return table.find(vocations, filterId) or table.find(vocations, filterId + 4)
+end
 
+function updateSpelllist()
+    for spellName, info in pairs(SpellInfo[SpelllistProfile]) do
+        local tmpLabel = spellList:getChildById(spellName)
         local localPlayer = g_game.getLocalPlayer()
         if (not (filters.level) or info.level <= localPlayer:getLevel()) and
             (not (filters.vocation) or table.find(info.vocations, localPlayer:getVocation())) and
-            (filters.vocationId == FILTER_VOCATION_ANY or table.find(info.vocations, filters.vocationId) or
-                table.find(info.vocations, filters.vocationId + 4)) and
+            (filters.vocationId == FILTER_VOCATION_ANY or vocationMatches(info.vocations, filters.vocationId)) and
             (filters.groupId == FILTER_GROUP_ANY or info.group[filters.groupId]) and
             (filters.premium == FILTER_PREMIUM_ANY or (info.premium and filters.premium == FILTER_PREMIUM_YES) or
                 (not (info.premium) and filters.premium == FILTER_PREMIUM_NO)) then
@@ -327,12 +337,34 @@ function updateSpellInformation(widget)
     descriptionValueLabel:setText(description)
 end
 
+function selectDefaultVocation()
+    local player = g_game.getLocalPlayer()
+    if not player then 
+        return
+    end
+    local vocation = player:getVocation()
+    local widget = vocationBoxAny
+    if vocation == VocationsClient.Knight or vocation == VocationsClient.EliteKnight then
+        widget = vocationBoxKnight
+    elseif vocation == VocationsClient.Paladin or vocation == VocationsClient.RoyalPaladin then
+        widget = vocationBoxPaladin
+    elseif vocation == VocationsClient.Sorcerer or vocation == VocationsClient.MasterSorcerer then
+        widget= vocationBoxSorcerer
+    elseif vocation == VocationsClient.Druid or vocation == VocationsClient.ElderDruid then
+        widget = vocationBoxDruid
+    elseif vocation == VocationsClient.Monk or vocation == VocationsClient.ExaltedMonk then
+        widget = vocationBoxMonk
+    end
+    vocationRadioGroup:selectWidget(widget)
+end
+
 function toggle()
     if spelllistButton:isOn() then
         spelllistButton:setOn(false)
         spelllistWindow:hide()
     else
         spelllistButton:setOn(true)
+        selectDefaultVocation()
         spelllistWindow:show()
         spelllistWindow:raise()
         spelllistWindow:focus()
@@ -352,6 +384,8 @@ function toggleFilter(widget, selectedWidget)
             filters.vocationId = FILTER_VOCATION_PALADIN
         elseif boxId == 'vocationBoxKnight' then
             filters.vocationId = FILTER_VOCATION_KNIGHT
+        elseif boxId == 'vocationBoxMonk' then
+            filters.vocationId = FILTER_VOCATION_MONK
         end
     elseif widget == groupRadioGroup then
         local boxId = selectedWidget:getId()

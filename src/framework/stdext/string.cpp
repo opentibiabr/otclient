@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,13 +20,21 @@
  * THE SOFTWARE.
  */
 
-#include <algorithm>
-#include <ranges>
-#include <vector>
-#include <charconv>
-
+#include "string.h"
 #include "exception.h"
 #include "types.h"
+
+#ifndef USE_PRECOMPILED_HEADERS
+#include <algorithm>
+#include <charconv>
+#include <cctype>
+#include <cstdint>
+#include <ctime>
+#include <iterator>
+#include <ranges>
+#endif
+
+#include <utf8cpp/utf8.h>
 
 #ifdef _MSC_VER
 #pragma warning(disable:4267) // '?' : conversion from 'A' to 'B', possible loss of data
@@ -34,13 +42,19 @@
 
 namespace stdext
 {
+    class string_error : public exception
+    {
+    public:
+        using exception::exception;
+    };
+
     [[nodiscard]] std::string resolve_path(std::string_view filePath, std::string_view sourcePath) {
         if (filePath.starts_with("/"))
             return std::string(filePath);
 
         auto slashPos = sourcePath.find_last_of('/');
         if (slashPos == std::string::npos)
-            throw std::runtime_error("Invalid source path '" + std::string(sourcePath) + "' for file '" + std::string(filePath) + "'");
+            throw string_error("Invalid source path '" + std::string(sourcePath) + "' for file '" + std::string(filePath) + "'");
 
         return std::string(sourcePath.substr(0, slashPos + 1)) + std::string(filePath);
     }
@@ -56,17 +70,19 @@ namespace stdext
         localtime_r(&tnow, &ts);
 #endif
 
-        char date[20];  // Reduce buffer size based on expected format
-        if (std::strftime(date, sizeof(date), format, &ts) == 0)
-            throw std::runtime_error("Failed to format date-time string");
+        std::string date(128, '\0');
+        const auto length = std::strftime(date.data(), date.size(), format, &ts);
+        if (length == 0)
+            throw string_error("Failed to format date-time string");
 
-        return std::string(date);
+        date.resize(length);
+        return date;
     }
 
     [[nodiscard]] std::string dec_to_hex(uint64_t num) {
-        char buffer[17]; // 16 characters for a uint64_t in hex + null terminator
+        char buffer[17];
         auto [ptr, ec] = std::to_chars(buffer, buffer + sizeof(buffer) - 1, num, 16);
-        *ptr = '\0'; // Null-terminate the string
+        *ptr = '\0';
         return std::string(buffer);
     }
 
@@ -74,81 +90,76 @@ namespace stdext
         uint64_t num = 0;
         auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), num, 16);
         if (ec != std::errc())
-            throw std::runtime_error("Invalid hexadecimal input");
+            throw string_error("Invalid hexadecimal input");
         return num;
     }
 
     [[nodiscard]] bool is_valid_utf8(std::string_view src) {
-        for (size_t i = 0; i < src.size();) {
-            unsigned char c = src[i];
-            size_t bytes = (c < 0x80) ? 1 : (c < 0xE0) ? 2 : (c < 0xF0) ? 3 : (c < 0xF5) ? 4 : 0;
-            if (!bytes || i + bytes > src.size() || (bytes > 1 && (src[i + 1] & 0xC0) != 0x80))
-                return false;
-            i += bytes;
-        }
-        return true;
+        return utf8::is_valid(src.begin(), src.end());
     }
 
     [[nodiscard]] std::string utf8_to_latin1(std::string_view src) {
         std::string out;
-        out.reserve(src.size()); // Reserve memory to avoid multiple allocations
-        for (size_t i = 0; i < src.size(); ++i) {
-            uint8_t c = static_cast<uint8_t>(src[i]);
-            if ((c >= 32 && c < 128) || c == 0x0d || c == 0x0a || c == 0x09) {
-                out += c;
-            } else if (c == 0xc2 || c == 0xc3) {
-                if (i + 1 < src.size()) {
-                    uint8_t c2 = static_cast<uint8_t>(src[++i]);
-                    out += (c == 0xc2) ? c2 : (c2 + 64);
-                }
-            } else {
-                // Skip multi-byte characters
-                while (i + 1 < src.size() && (src[i + 1] & 0xC0) == 0x80) {
-                    ++i;
+        out.reserve(src.size());
+
+        try {
+            auto it = src.begin();
+            const auto end = src.end();
+
+            while (it != end) {
+                const uint32_t codepoint = utf8::next(it, end);
+
+                if (codepoint <= 0xFF) {
+                    if ((codepoint >= 32 && codepoint < 128) || codepoint == 0x0d || codepoint == 0x0a || codepoint == 0x09 || codepoint >= 0xA0)
+                        out += static_cast<char>(codepoint);
                 }
             }
+        } catch (const utf8::exception&) {
+            return "";
         }
+
         return out;
     }
 
     [[nodiscard]] std::string latin1_to_utf8(std::string_view src) {
         std::string out;
-        out.reserve(src.size() * 2); // Reserve space to reduce allocations
-        for (uint8_t c : src) {
-            if ((c >= 32 && c < 128) || c == 0x0d || c == 0x0a || c == 0x09) {
-                out += c; // Directly append ASCII characters
-            } else {
-                out.push_back(0xc2 + (c > 0xbf));
-                out.push_back(0x80 + (c & 0x3f));
-            }
+        out.reserve(src.size() * 2);
+
+        try {
+            for (const unsigned char c : src)
+                utf8::append(static_cast<uint32_t>(c), std::back_inserter(out));
+        } catch (const utf8::exception&) {
+            return "";
         }
+
         return out;
     }
 
 #ifdef WIN32
-#include <winsock2.h>
-#include <windows.h>
-
     std::wstring utf8_to_utf16(const std::string_view src)
     {
-        constexpr size_t BUFFER_SIZE = 65536;
+        std::wstring out;
 
-        std::wstring res;
-        wchar_t out[BUFFER_SIZE];
-        if (MultiByteToWideChar(CP_UTF8, 0, src.data(), -1, out, BUFFER_SIZE))
-            res = out;
-        return res;
+        try {
+            utf8::utf8to16(src.begin(), src.end(), std::back_inserter(out));
+        } catch (const utf8::exception&) {
+            return L"";
+        }
+
+        return out;
     }
 
     std::string utf16_to_utf8(const std::wstring_view src)
     {
-        constexpr size_t BUFFER_SIZE = 65536;
+        std::string out;
 
-        std::string res;
-        char out[BUFFER_SIZE];
-        if (WideCharToMultiByte(CP_UTF8, 0, src.data(), -1, out, BUFFER_SIZE, nullptr, nullptr))
-            res = out;
-        return res;
+        try {
+            utf8::utf16to8(src.begin(), src.end(), std::back_inserter(out));
+        } catch (const utf8::exception&) {
+            return "";
+        }
+
+        return out;
     }
 
     std::wstring latin1_to_utf16(const std::string_view src) { return utf8_to_utf16(latin1_to_utf8(src)); }
@@ -164,7 +175,29 @@ namespace stdext
 
     void rtrim(std::string& s) { s.erase(std::ranges::find_if(s | std::views::reverse, [](unsigned char ch) { return !std::isspace(ch); }).base(), s.end()); }
 
-    void trim(std::string& s) { ltrim(s);       rtrim(s); }
+    void trim(std::string& s) { ltrim(s); rtrim(s); }
+
+    void trimSpacesAndNewlines(std::string& s) {
+        if (s.empty()) return;
+
+        const unsigned char* data = reinterpret_cast<const unsigned char*>(s.data());
+        size_t start = 0;
+        size_t end = s.size();
+
+        while (start < end && std::isspace(data[start]))
+            ++start;
+
+        while (end > start && std::isspace(data[end - 1]))
+            --end;
+
+        if (start > 0 || end < s.size()) {
+            const size_t newSize = end - start;
+            if (start > 0)
+                s.erase(0, start);
+            if (newSize < s.size())
+                s.resize(newSize);
+        }
+    }
 
     void ucwords(std::string& str) {
         bool capitalize = true;
@@ -186,6 +219,22 @@ namespace stdext
         }
     }
 
+    std::string join(const std::vector<std::string>& vec, const std::string& sep) {
+        if (vec.empty()) return {};
+
+        size_t total_size = (vec.size() - 1) * sep.size();
+        for (const auto& s : vec) total_size += s.size();
+
+        std::string result;
+        result.reserve(total_size);
+
+        for (size_t i = 0; i < vec.size(); ++i) {
+            if (i > 0) result += sep;
+            result += vec[i];
+        }
+        return result;
+    }
+
     void eraseWhiteSpace(std::string& str) { std::erase_if(str, isspace); }
 
     [[nodiscard]] std::vector<std::string> split(std::string_view str, std::string_view separators) {
@@ -197,16 +246,91 @@ namespace stdext
 
         while (p < end) {
             const char* token_start = p;
-            while (p < end && separators.find(*p) == std::string_view::npos)
-                ++p;
 
-            if (p > token_start)
+            while (p < end && separators.find(*p) == std::string_view::npos) {
+                ++p;
+            }
+
+            if (p > token_start) {
                 result.emplace_back(token_start, p - token_start);
+            }
 
-            while (p < end && separators.find(*p) != std::string_view::npos)
+            while (p < end && separators.find(*p) != std::string_view::npos) {
                 ++p;
+            }
         }
 
         return result;
+    }
+
+    long long to_number(std::string_view s) {
+        const char* p = s.data();
+        const char* end = p + s.size();
+
+        long long num = 0;
+        bool found = false;
+        bool negative = false;
+        int frac = 0;
+        bool hasFrac = false;
+
+        while (p < end) {
+            unsigned char c = static_cast<unsigned char>(*p++);
+            if (!found && c == '-') {
+                negative = true;
+            } else if (c >= '0' && c <= '9') {
+                found = true;
+                if (!hasFrac) {
+                    num = num * 10 + (c - '0');
+                } else {
+                    if (frac == 0) frac = c - '0';
+                }
+            } else if (c == '.') {
+                hasFrac = true;
+            }
+        }
+
+        if (!found) return 0;
+
+        if (hasFrac && frac >= 5) {
+            num += 1;
+        }
+
+        return negative ? -num : num;
+    }
+
+    std::vector<long long> extractNumbers(std::string_view s) {
+        std::vector<long long> out;
+        out.reserve(s.size() / 3);
+
+        const char* p = s.data();
+        const char* end = p + s.size();
+
+        long long val = 0;
+        bool building = false;
+        bool neg = false;
+
+        while (p < end) {
+            unsigned char c = static_cast<unsigned char>(*p);
+
+            if (c >= '0' && c <= '9') {
+                if (!building) { building = true; val = 0; }
+                val = val * 10 + (c - '0');
+            } else {
+                if (building) {
+                    out.emplace_back(neg ? -val : val);
+                    building = false;
+                    neg = false;
+                    val = 0;
+                } else {
+                    neg = (c == '-');
+                }
+            }
+            ++p;
+        }
+
+        if (building) out.emplace_back(neg ? -val : val);
+        if (out.empty()) out.emplace_back(0);
+
+        return out;
     }
 }

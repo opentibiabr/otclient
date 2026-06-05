@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,8 @@
 
 #include <framework/core/resourcemanager.h>
 
-#include <pugixml.hpp>
+#include "item.h"
+#include "tile.h"
 
 HouseManager g_houses;
 
@@ -48,7 +49,7 @@ void House::setTile(const TilePtr& tile)
 
 TilePtr House::getTile(const Position& position)
 {
-    const TileMap::const_iterator iter = m_tiles.find(position);
+    const auto iter = m_tiles.find(position);
     if (iter != m_tiles.end())
         return iter->second;
     return nullptr;
@@ -60,6 +61,8 @@ void House::addDoor(const ItemPtr& door)
     door->setDoorId(m_lastDoorId);
     m_doors[++m_lastDoorId] = door;
 }
+
+void House::removeDoor(const ItemPtr& door) { removeDoorById(door->getDoorId()); }
 
 void House::removeDoorById(uint32_t doorId)
 {

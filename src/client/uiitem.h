@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,6 @@
 #pragma once
 
 #include "declarations.h"
-#include "item.h"
 #include <framework/ui/uiwidget.h>
 
 class UIItem final : public UIWidget
@@ -38,16 +37,21 @@ public:
     void setItemVisible(const bool visible) { m_itemVisible = visible; }
     void setItem(const ItemPtr& item);
     void setShowCount(const bool value) { m_alwaysShowCount = value; }
+    void setShowDuration(const bool value) { m_showDuration = value; repaint(); }
+    void setShowCharges(const bool value) { m_showCharges = value; repaint(); }
+    void setDisplayCount(int count) { m_displayCount = count; }
     void setVirtual(const bool virt) { m_virtual = virt; }
+    void setFlipDirection(const uint8_t direction) { m_flipDirection = direction; repaint(); }
     void clearItem() { setItemId(0); }
 
-    int getItemId() { return m_item ? m_item->getId() : 0; }
-    int getItemCount() { return m_item ? m_item->getCount() : 0; }
-    int getItemSubType() { return m_item ? m_item->getSubType() : 0; }
-    int getItemCountOrSubType() { return m_item ? m_item->getCountOrSubType() : 0; }
+    int getItemId();
+    int getItemCount();
+    int getItemSubType();
+    int getItemCountOrSubType();
     ItemPtr getItem() { return m_item; }
     bool isVirtual() { return m_virtual; }
     bool isItemVisible() { return m_itemVisible; }
+    uint8_t getFlipDirection() { return m_flipDirection; }
 
     void setShader(std::string_view name) override;
     bool hasShader() override;
@@ -57,8 +61,13 @@ protected:
 
     std::string m_shaderName;
     ItemPtr m_item;
+    uint32_t m_itemId{ 0 };
     bool m_virtual{ false };
     bool m_showId{ false };
     bool m_itemVisible{ true };
-    bool m_alwaysShowCount{ false };
+    bool m_alwaysShowCount{ true };
+    bool m_showDuration{ false };
+    bool m_showCharges{ false };
+    int m_displayCount{ 0 };
+    uint8_t m_flipDirection{ 0 }; // 0 = none, 1 = horizontal, 2 = vertical
 };

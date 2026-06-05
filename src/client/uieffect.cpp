@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,7 +21,11 @@
  */
 
 #include "uieffect.h"
-#include "lightview.h"
+
+#include "effect.h"
+#include "framework/graphics/drawpoolmanager.h"
+#include "framework/otml/otmlnode.h"
+#include "gameconfig.h"
 
 UIEffect::UIEffect() { setProp(PropDraggable, true, false); }
 
@@ -85,6 +89,8 @@ void UIEffect::onStyleApply(const std::string_view styleName, const OTMLNodePtr&
 
     UIWidget::onStyleApply(styleName, styleNode);
 }
+
+int UIEffect::getEffectId() { return m_effect ? m_effect->getId() : 0; }
 
 void UIEffect::setShader(std::string_view name) {
     m_shaderName = name;

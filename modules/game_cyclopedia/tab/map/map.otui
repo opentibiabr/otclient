@@ -291,6 +291,9 @@ UIWidget
             @onClick: |
               modules.game_cyclopedia.Cyclopedia.onClickRoseButton('north')
 
+            $hover !disabled:
+              image-clip: 14 0 15 8
+
             $pressed !disabled:
               image-clip: 57 0 15 8
 
@@ -303,6 +306,9 @@ UIWidget
             size: 15 15
             @onClick: |
               modules.game_cyclopedia.Cyclopedia.onClickRoseButton('north-east')
+
+            $hover !disabled:
+              image-clip: 28 0 15 15
 
             $pressed !disabled:
               image-clip: 114 0 15 15
@@ -318,6 +324,9 @@ UIWidget
             @onClick: |
               modules.game_cyclopedia.Cyclopedia.onClickRoseButton('east')
 
+            $hover !disabled:
+              image-clip: 35 14 8 15
+
             $pressed !disabled:
               image-clip: 164 14 8 15  
 
@@ -331,6 +340,9 @@ UIWidget
             size: 15 15
             @onClick: |
               modules.game_cyclopedia.Cyclopedia.onClickRoseButton('south-east')
+
+            $hover !disabled:
+              image-clip: 28 28 15 15
 
             $pressed !disabled:
               image-clip: 200 28 15 15
@@ -346,6 +358,9 @@ UIWidget
             @onClick: |
               modules.game_cyclopedia.Cyclopedia.onClickRoseButton('south')
 
+            $hover !disabled:
+              image-clip: 14 35 15 8
+
             $pressed !disabled:
               image-clip: 229 35 15 8
 
@@ -358,6 +373,9 @@ UIWidget
             size: 15 15
             @onClick: |
               modules.game_cyclopedia.Cyclopedia.onClickRoseButton('south-west')
+
+            $hover !disabled:
+              image-clip: 0 28 15 15
 
             $pressed !disabled:
               image-clip: 258 28 15 15
@@ -372,6 +390,9 @@ UIWidget
             @onClick: |
               modules.game_cyclopedia.Cyclopedia.onClickRoseButton('west')
 
+            $hover !disabled:
+              image-clip: 0 14 8 15
+
             $pressed !disabled:
               image-clip: 301 14 8 15
 
@@ -383,6 +404,9 @@ UIWidget
             size: 15 15
             @onClick: |
               modules.game_cyclopedia.Cyclopedia.onClickRoseButton('north-west')
+
+            $hover !disabled:
+              image-clip: 0 0 15 15
 
             $pressed !disabled:
               image-clip: 344 0 15 15

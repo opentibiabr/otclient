@@ -1,53 +1,81 @@
 .reward-wall-window {
-  width: 541;
-  height: 525;
-  font: verdana-11px-antialised;
-  opacity: 1;
+  position: relative;
+  width: 541px;
+  height: 495px;
   display: block;
   color: #929292;
 }
 
 .history-panel {
-  height: 443;
-  visible: false;
+  height: 445px;
 }
 
 .history-list {
   background-color: #363636;
   display: block;
   border-color: #00000077;
-  border-width: 1;
-  focusable: false;
+  border-width: 1px;
+  width: 98%;
 }
 
 .content-panel {
-  width: 506;
-  height: 126;
-  margin-left: 5;
-  margin-top: -5;
-  focusable: false;
+  width: 529px;
+  height: 136px;
+  margin-left: 5px;
+  margin-top: -5px;
 }
 
 .resting-area-info {
-  margin-left: -10;
-  height: 108;
-  width: 108;
-  focusable: false;
+  margin-left: -10px;
+  height: 108px;
+  width: 108px;
 }
 
 .resting-area-icon {
-  margin-left: 44;
-  image-size: 66 44;
-  image-fixed-ratio: true;
-  text-offset: 0 -2;
+  margin-left: 44px;
+  width: 22px;
+  height: 55px;
+  --image-size: 66 44;
+  --image-fixed-ratio: true;
+  --text-offset: 25 -7;
 }
 
 .resting-area-time {
-  size: 22 20;
-  text-align: center;
+  width: 22px;
+  height: 28px;
   margin-left: 30;
-  image-border: 3;
-  image-source: /images/ui/test/button-verydarkgrey-down;
+  --image-border: 3;
+  --image-source: /images/ui/test/button-verydarkgrey-down;
+}
+
+#bonusIcon1 {
+  --icon-clip: 0 0 64 64;
+  width: 100%;
+}
+
+#bonusIcon2 {
+  --icon-clip: 64 0 64 64;
+  width: 100%;
+}
+
+#bonusIcon3 {
+  --icon-clip: 128 0 64 64;
+  width: 100%;
+}
+
+#bonusIcon4 {
+  --icon-clip: 192 0 64 64;
+  width: 100%;
+}
+
+#bonusIcon5 {
+  --icon-clip: 256 0 64 64;
+  width: 100%;
+}
+
+#bonusIcon6 {
+  --icon-clip: 320 0 64 64;
+  width: 100%;
 }
 
 .resting-area-gold {
@@ -56,74 +84,77 @@
 }
 
 .bonus-icons-container {
-  margin-left: 90;
+  margin-left: 90px;
   border-color: #00000077;
-  height: 71;
-  width: 390;
-  background-color: #404040;
-  focusable: false;
+  height: 71px;
+  --phantom: true;
 }
 
-
 .premium-message {
-  text-align: center;
-  text-wrap: true;
-  white-space: normal;
   border-color: #00000077;
-  height: 38;
-  width: 370;
-  margin-top: 70;
-  margin-left: 110;
+  height: 38px;
+  width: 400px;
+  margin-top: 70px;
+  margin-left: 111px;
+  --text-auto-resize: false;
 }
 
 .daily-rewards-panel {
-  height: 133;
+  height: 139px;
+  padding-left: 25px;
 }
 
 .reward-item {
-  size: 68 95;
-  margin-top: -9;
-  focusable: false;
+  width: 68px;
+  height: 95px;
+  margin-top: -9px;
 }
 
 .reward-button {
-  size: 68 68;
+  width: 68px;
+  height: 68px;
 }
 
 .reward-label {
-  size: 68 22;
-  focusable: false;
+  width: 68px;
+  height: 22px;
 }
 
 .reward-arrow {
-  image-offset: 1 25;
-  image-clip: 0 0 5 7;
-  size: 5 7;
-  image-auto-resize: false;
-  image-size: 5 7;
+  --image-offset: 1 25;
+  --image-clip: 0 0 5 7;
+  width: 5px;
+  height: 7px;
+  --image-auto-resize: false;
+  --image-size: 5 7;
 }
 
 .reward-arrow-loop {
-  image-offset: -466 90;
-  image-size: 435 13;
+  --image-offset: -466 90;
+  --image-size: 435 13;
+  --phantom: true;
 }
 
 .premium-panel {
-  height: 55;
-  width: 22;
+  height: 55px;
+  width: 22px;
+  --image-source: /images/ui/2pixel_up_frame_borderimage; 
+  --image-border: 3; 
+  --text-offset: 15 -15;
+  text-wrap: true; 
+  padding: 10 10 10 10;
+  display: block; 
 }
 
 .info-label {
-  text-align: center;
-  text-wrap: true;
-  white-space: normal;
-  border-color: #00000077;
+  white-space: pre-wrap;
 }
 
 .premium-info2 {
-  height: 38;
-  width: 350;
-  margin-left: -0
+  height: 38px;
+  width: 350px;
+  margin-left: -0px;
+  margin-top: -5px;
 }
 
 .premium-button {
@@ -131,78 +162,81 @@
 }
 
 .infoPanel {
-  height: 104;
+  height: 92px;
   text-align: left
 }
-
 
 .free-info {
   text-align: top-left;
   text-wrap: true;
-  width: 255;
+  width: 255px;
   color: #808080;
 }
 
 .premium-info {
-  margin-left: 58;
+  margin-left: 58px;
   text-align: top-left;
   text-wrap: true;
-  width: 255;
+  width: 255px;
 }
 
 .footer-panel {
-  width: 506;
-  height: 126;
-  margin-left: 5;
-  margin-top: -5;
-  focusable: false;
+  width: 506px;
+  height: 126px;
+  margin-left: 5px;
 }
 
 .footer-separator {
-  width: 506;
+  width: 540px;
+  height: 2px;
 }
 
 .footer-gold-1 {
-  width: 30;
-  height: 22;
-  margin-top: 10;
+  width: 30px;
+  height: 22px;
+  margin-top: 120px;
 }
 
 .footer-gold-2 {
-  height: 22;
-  width: 50;
-  margin-left: 5;
-  margin-top: 10;
+  height: 22px;
+  width: 50px;
+  margin-left: 5px;
+  margin-top: 10px;
 }
 
 .instant-reward-button {
-  margin-top: 10;
-  margin-left: 5;
+  margin-top: 10px;
+  margin-left: 5px;
 }
 
 .action-button {
   font: cipsoftFont;
-  text-auto-resize: true;
+  --text-auto-resize: true;
 }
-
+.close-button {
+  margin-left: 5px;
+  float: right;
+  text-align: center;
+  vertical-align: center;
+}
 .history-button {
   float: right;
-  margin-right: 44;
+  margin-right: 10px;
 }
 
-.close-button {
-  margin-left: 5;
-}
-/* not work 
-#footerGold2 #gold {
-  image-source: /game_rewardwall/images/instant-reward-access-icon;
-  image-size: 12 12;
-  image-offset: -5 0;
+.imgBonusesCss {
+  width: 60px;
+  height: 70px;
 }
 
-.footer-gold-2 #gold {
-  image-source: /game_rewardwall/images/instant-reward-access-icon;
-  image-size: 12 12;
-  image-offset: -5 0;
-}
-  */
+
+.bottom-panel { 
+  text-wrap: true; 
+  --image-source: /images/ui/2pixel_up_frame_borderimage; 
+  --image-border: 3; 
+  display: block; 
+  margin-top: 10px; 
+  height: 95px; 
+  width: 100%; 
+  --text-offset: 10 2;
+ }

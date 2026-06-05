@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,16 +21,24 @@
  */
 
 #include "spritemanager.h"
+
 #include "game.h"
 #include "gameconfig.h"
 #include "spriteappearances.h"
-#include <framework/core/asyncdispatcher.h>
-#include <framework/core/filestream.h>
-#include <framework/core/graphicalapplication.h>
-#include <framework/core/resourcemanager.h>
-#include <framework/graphics/image.h>
+#include "framework/core/asyncdispatcher.h"
+#include "framework/core/filestream.h"
+#include "framework/core/graphicalapplication.h"
+#include "framework/core/resourcemanager.h"
+#include "framework/graphics/image.h"
 
 SpriteManager g_sprites;
+
+FileMetadata::FileMetadata(const FileStreamPtr& file) {
+    offset = file->getU32();
+    fileSize = file->getU32();
+    fileName = file->getString();
+    spriteId = std::stoi(fileName);
+}
 
 void SpriteManager::init() {}
 void SpriteManager::terminate() { unload(); }
@@ -46,7 +54,7 @@ void SpriteManager::reload() {
 }
 
 void SpriteManager::load() {
-    m_spritesFiles.resize(g_asyncDispatcher.get_thread_count());
+    m_spritesFiles.resize(g_asyncDispatcher->get_thread_count());
     if (g_app.isLoadingAsyncTexture()) {
         for (auto& file : m_spritesFiles)
             file = std::make_unique<FileStream_m>(g_resources.openFile(m_lastFileName));

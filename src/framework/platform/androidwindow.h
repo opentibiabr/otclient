@@ -135,6 +135,7 @@ public:
     void onNativeKeyUp(int);
 protected:
     int internalLoadMouseCursor(const ImagePtr& image, const Point& hotSpot);
+    void onDisplayDensityChanged(float newDensity) override;
 private:
     android_app* m_app;
 
@@ -148,6 +149,11 @@ private:
 
     ticks_t m_lastPress = 0;
     bool m_isDragging = false;
+
+    float m_baseDisplayDensity{ DEFAULT_DISPLAY_DENSITY };
+    bool m_hasBaseDisplayDensity{ false };
+
+    void updateDisplayDensityFromSystem(float screenDensity);
 };
 
 extern "C" {

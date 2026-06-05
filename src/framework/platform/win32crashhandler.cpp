@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,11 +23,7 @@
 #include "framework/core/application.h"
 #if defined(WIN32) && defined(CRASH_HANDLER)
 
-#include "crashhandler.h"
-#include <framework/global.h>
-
 #include <windows.h>
-#include <winsock2.h>
 
 #ifdef _MSC_VER
 
@@ -114,8 +110,14 @@ void Stacktrace(LPEXCEPTION_POINTERS e, std::stringstream& ss)
         dwModBase = SymGetModuleBase(process, sf.AddrPC.Offset);
         if (dwModBase)
             GetModuleFileName(reinterpret_cast<HINSTANCE>(dwModBase), modname, MAX_PATH);
-        else
-            strcpy(modname, "Unknown");
+        else {
+#ifdef _MSC_VER
+            strcpy_s(modname, sizeof(modname), "Unknown");
+#else
+            strncpy(modname, "Unknown", sizeof(modname));
+            modname[sizeof(modname) - 1] = '\0';
+#endif
+        }
 
         Disp = 0;
         pSym->SizeOfStruct = sizeof(symBuffer);

@@ -47,6 +47,7 @@ function UIComboBox:setCurrentOption(text, dontSignal)
         if v.text == text and self.currentIndex ~= i then
             self.currentIndex = i
             self:setText(text)
+            self:setTextAlign(AlignCenter)
             if not dontSignal then
                 signalcall(self.onOptionChange, self, text, v.data)
             end
@@ -96,6 +97,10 @@ function UIComboBox:addOption(text, data)
         self:setCurrentOption(text)
     end
     return index
+end
+
+function UIComboBox:addOptionFromHtml(text, value)
+    return self:addOption(text, value)
 end
 
 function UIComboBox:removeOption(text)
@@ -190,14 +195,6 @@ end
 
 function UIComboBox:canMouseScroll()
     return self.mouseScroll
-end
-
-function UIComboBox:HTML_onReadNodes(nodes)
-    for _, el in pairs(nodes) do
-        self:addOption(el:getcontent(), el.attributes.value)
-    end
-
-    return false
 end
 
 function UIComboBox:getCurrentIndex()

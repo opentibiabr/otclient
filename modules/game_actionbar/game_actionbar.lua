@@ -1,1152 +1,830 @@
-HOTKEY_USE = nil
-HOTKEY_USEONSELF = 1
-HOTKEY_USEONTARGET = 2
-HOTKEY_USEWITH = 3
+ApiJson = dofile('logics/ApiJson.lua')
 
-local maxSlots = 60
-local isLocked = false
-actionBar = nil
-actionBarPanel = nil
-bottomPanel = nil
-slotToEdit = nil
-spellAssignWindow = nil
-spellsPanel = nil
-textAssignWindow = nil
-objectAssignWindow = nil
-mouseGrabberWidget = nil
-actionRadioGroup = nil
-editHotkeyWindow = nil
-missedSlotToEdit = nil
-itemDragRetry = nil
-slotReassign = nil
-lastHotkeyTime = 0
-cooldown = {}
-groupCooldown = {}
-
-local ProgressCallback = {
-    update = 1,
-    finish = 2
+player = nil --localplayer
+-- @array
+passiveData = {
+    cooldown = 0,
+    max = 0
+}
+hotkeyItemList = {} --[ItemPtr, desc]
+spellListData = {} -- [[SpellsIdLearn]]
+spellCooldownCache = {--[[     
+    [SpellId] = { 
+        ["startTime"] = ms,
+        ["exhaustion"] = ms
+    } 
+]]
+}
+spellGroupCooldownCache = {--[[
+    [GroupId] = {
+        ["startTime"] = ms,
+        ["exhaustion"] = ms
+    }
+]]
+}
+spellGroupPressed = {--[[ 
+    [GroupId] = bool -- Tracks if spell group is currently pressed
+]]
+}
+cachedItemWidget = { --[[
+     [ItemID] = { 
+        [SlotId] = Widget1,
+        [SlotId] = Widget2,
+     ]]
+}
+actionBars = { --[[ 
+    -- ActionBarId=1-3: bottom
+    -- ActionBarId=4-6: left
+    -- ActionBarId=7-9: right
+    [ActionBarId] = widget
+]]
+}
+activeActionBars = {--[[ 
+    [VisibleActionBarId] = widget
+ ]]
 }
 
-function init()
-    bottomPanel = modules.game_interface.getBottomPanel()
-    actionBar = g_ui.loadUI('game_actionbar', bottomPanel)
-    actionBarPanel = actionBar:getChildById('actionBarPanel')
+-- @ widgets
+dragButton = nil
+dragItem = nil
+mouseGrabberWidget = nil
+gameRootPanel = nil
+lastHighlightWidget = nil
+-- @ boolean
+isLoaded = false
+local areEventsConnected = false
+
+--- checks if action bar is visible
+local function isActionBarVisible(actionBar)
+    return actionBar and actionBar:isVisible()
+end
+
+--- Adds an action bar to the active list
+function addActiveActionBar(actionBar)
+    if not actionBar then
+        return false
+    end
+
+    for _, activeBar in ipairs(activeActionBars) do
+        if activeBar == actionBar then
+            return false
+        end
+    end
+
+    table.insert(activeActionBars, actionBar)
+    return true
+end
+--- Rebuilds the list of active action bars
+local function rebuildActiveActionBars()
+    local previousCount = #activeActionBars
+    local visibleCount = 0
+
+    for _, actionBar in ipairs(actionBars) do
+        if isActionBarVisible(actionBar) then
+            visibleCount = visibleCount + 1
+            activeActionBars[visibleCount] = actionBar
+        end
+    end
+
+    for index = visibleCount + 1, previousCount do
+        activeActionBars[index] = nil
+    end
+
+    return visibleCount > 0
+end
+--- Removes an action bar from the active list
+function removeActiveActionBar(actionBar)
+    if not actionBar then
+        return false
+    end
+
+    local removed = false
+    local index = 1
+    while index <= #activeActionBars do
+        if activeActionBars[index] == actionBar then
+            table.remove(activeActionBars, index)
+            removed = true
+        else
+            index = index + 1
+        end
+    end
+
+    return removed
+end
+
+--- Checks if there are any active action bars
+function hasAnyActiveActionBar()
+    if not g_game.isOnline() then
+        return false
+    end
+
+    if rebuildActiveActionBars() then
+        return true
+    end
+
+    return false
+end
+
+--- Sets up an action bar by index
+function setupActionBar(n)
+    local actionbar = actionBars[n]
+    local barState = ApiJson.getActionBar(n) or {}
+    local visible = barState.isVisible and true or false
+    actionbar:setVisible(visible)
+    actionbar:setOn(visible)
+    local locked = barState.isLocked and true or false
+    actionbar.tabBar.onMouseWheel = nil
+    actionbar.locked = locked
+    local items = {}
+    for i = 1, 50 do
+        local layout = n < 4 and 'ActionButton' or 'SideActionButton'
+        local widget = actionbar.tabBar:getChildById(n .. "." .. i)
+        
+           if not widget then
+               local hasMapping = ApiJson.getMapping(n, i)
+           
+           if hasMapping then
+               widget = g_ui.createWidget(layout, actionbar.tabBar)
+               widget:setId(n .. "." .. i)
+           else
+               widget = g_ui.createWidget('UIWidget', actionbar.tabBar)
+               widget:setId(n .. "." .. i)
+               widget:setSize({width = 34, height = 34})
+               widget:setMarginLeft(2)
+               widget:setImageSource('/images/game/actionbar/actionbarslot')
+               widget:setDraggable(false)
+               
+               widget.onDrop = function(self, draggedWidget, mousePos)
+                    if draggedWidget and draggedWidget.currentDragThing then
+                        if tryAssignActionButtonFromDrop(mousePos, draggedWidget, draggedWidget.currentDragThing) then
+                            return true
+                        end
+                    end
+               end
+               
+               widget.onMouseRelease = function(self, mousePos, mouseButton)
+                    if mouseButton == MouseRightButton then
+                        local parent = self:getParent()
+                        local id = self:getId()
+                        updateButton(self)
+                        local newButton = parent:getChildById(id)
+                        if newButton and newButton.onMouseRelease then
+                            newButton.onMouseRelease(newButton, mousePos, mouseButton)
+                        end
+                        return true
+                    end
+               end
+           end
+        end
+        
+        -- Only update if it's a real button
+        if widget:getChildById('item') and g_game.isOnline() then
+             updateButton(widget)
+        end
+         
+         if widget.cooldown then
+             widget.cooldown:stop()
+         end
+         if widget.item and widget.item:getItemId() > 100 then
+             table.insert(items, widget.item:getItem())
+         end
+    end
+end
+
+--- Gets the count of active bottom action bars
+function getActiveBottomBars()
+    if #actionBars == 0 then
+        return 0
+    end
+    local count = 0
+    for i = 1, 3 do
+        local state = ApiJson.getActionBar(i) or {}
+        if state.isVisible then
+            count = count + 1
+        end
+    end
+    return count
+end
+
+--- Gets the count of active right action bars
+function getActiveRightBars()
+    if #actionBars == 0 then
+        return 0
+    end
+    local count = 0
+    for i = 7, 9 do
+        local state = ApiJson.getActionBar(i) or {}
+        if state.isVisible then
+            count = count + 1
+        end
+    end
+    return count
+end
+
+function getActiveLeftBars()
+    if #actionBars == 0 then
+        return 0
+    end
+    local count = 0
+    for i = 4, 6 do
+        local state = ApiJson.getActionBar(i) or {}
+        if state.isVisible then
+            count = count + 1
+        end
+    end
+    return count
+end
+
+local function onUpdateActionBarStatus()
+    if #activeActionBars == 0 then
+        return true
+    end
+
+    for _, actionbar in pairs(activeActionBars) do
+        for _, button in pairs(actionbar.tabBar:getChildren()) do
+            updateButtonState(button)
+        end
+    end
+end
+
+-- /*=============================================
+-- =            Event             =
+-- =============================================*/
+
+
+--- Connects player events
+local function connecting()
+    if areEventsConnected then
+        return
+    end
+
+    connect(LocalPlayer, {
+        onManaChange = onUpdateActionBarStatus,
+        onSoulChange = onUpdateActionBarStatus,
+        onLevelChange = onUpdateLevel,
+        onSpellsChange = onSpellsChange
+    })
+    connect(g_game, {
+        onItemInfo = onHotkeyItems,
+        onPassiveData = onPassiveData,
+        onSpellCooldown = onSpellCooldown,
+        onMultiUseCooldown = onMultiUseCooldown,
+        onSpellGroupCooldown = onSpellGroupCooldown,
+        updateInventoryItems = updateInventoryItems
+    })
+
+    areEventsConnected = true
+end
+
+--- Disconnects player events
+local function disconnecting()
+    if not areEventsConnected then
+        return
+    end
+
+    disconnect(LocalPlayer, {
+        onManaChange = onUpdateActionBarStatus,
+        onSoulChange = onUpdateActionBarStatus,
+        onLevelChange = onUpdateLevel,
+        onSpellsChange = onSpellsChange
+    })
+    disconnect(g_game, {
+        onItemInfo = onHotkeyItems,
+        onPassiveData = onPassiveData,
+        onSpellCooldown = onSpellCooldown,
+        onMultiUseCooldown = onMultiUseCooldown,
+        onSpellGroupCooldown = onSpellGroupCooldown,
+        updateInventoryItems = updateInventoryItems
+    })
+
+    areEventsConnected = false
+end
+
+--- Updates event subscriptions based on active bars
+function updateActionBarEventSubscriptions()
+    if hasAnyActiveActionBar() then
+        connecting()
+        return
+    end
+
+    disconnecting()
+end
+
+-- /*=============================================
+-- =            Controller             =
+-- =============================================*/
+ActionBarController = Controller:new()
+
+local function cleanupMultiActionState()
+    if closeCurrentMultiActionPanel then
+        closeCurrentMultiActionPanel()
+    end
+    if multiActionCooldownEvents then
+        for buttonId, events in pairs(multiActionCooldownEvents) do
+            for _, eventId in pairs(events) do
+                removeEvent(eventId)
+            end
+            multiActionCooldownEvents[buttonId] = nil
+        end
+    end
+    cacheMultiActionButtons = {}
+    if pendingMultiButtonUpdate then
+        removeEvent(pendingMultiButtonUpdate)
+        pendingMultiButtonUpdate = nil
+        pendingMultiButtons = {}
+        pendingMultiButtonsTracker = {}
+    end
+end
+
+--- Initializes the action bar controller
+function ActionBarController:onInit()
+    g_ui.importStyle("otui/style.otui")
+    g_ui.importStyle("otui/multiaction.otui")
+    gameRootPanel = modules.game_interface.getRootPanel()
     mouseGrabberWidget = g_ui.createWidget('UIWidget')
     mouseGrabberWidget:setVisible(false)
     mouseGrabberWidget:setFocusable(false)
-    mouseGrabberWidget.onMouseRelease = onChooseItemMouseRelease
-
-    if g_game.isOnline() then
-
-        addEvent(function()
-            online()
-            setupActionBar()
-            loadActionBar()
-        end)
-    end
-
-    connect(g_game, {
-        onGameStart = online,
-        onGameEnd = offline,
-        onSpellGroupCooldown = onSpellGroupCooldown,
-        onSpellCooldown = onSpellCooldown
-    })
-
+    mouseGrabberWidget.onMouseRelease = onDropActionButton
 end
 
-function terminate()
-    actionBar:destroy()
-    mouseGrabberWidget:destroy()
-    disconnect(g_game, {
-        onGameStart = online,
-        onGameEnd = offline,
-        onSpellGroupCooldown = onSpellGroupCooldown,
-        onSpellCooldown = onSpellCooldown
-    })
-    if spellAssignWindow then
-        closeSpellAssignWindow()
+--- Handles termination event
+function ActionBarController:onTerminate()
+    ApiJson.saveData()
+    cleanupMultiActionState()
+    for _, actionbar in pairs(actionBars) do
+        if actionbar and not actionbar:isDestroyed() then
+            actionbar:destroy()
+        end
     end
-    if objectAssignWindow then
-        closeObjectAssignWindow()
+    if mouseGrabberWidget then
+        mouseGrabberWidget:destroy()
+        mouseGrabberWidget = nil
     end
-    if textAssignWindow then
-        closeTextAssignWindow()
+    if lastHighlightWidget then
+        lastHighlightWidget:destroy()
+        lastHighlightWidget = nil
     end
-    if editHotkeyWindow then
-        closeEditHotkeyWindow()
+    if dragButton then
+        dragButton:destroy()
+        dragButton = nil
     end
-    if spellsPanel then
-        disconnect(spellsPanel, {
-            onChildFocusChange = function(self, focusedChild)
-                if focusedChild == nil then
-                    return
-                end
-                updatePreviewSpell(focusedChild)
-            end
-        })
+    if dragItem then
+        dragItem:destroy()
+        dragItem = nil
     end
-
+    actionBars = {}
+    activeActionBars = {}
+    disconnecting()
 end
 
-function online()
-    local console = modules.game_cooldown.cooldownWindow
-    if console then
-        console:addAnchor(AnchorTop, actionBar:getId(), AnchorBottom)
+--- Handles game start event
+function ActionBarController:onGameStart()
+    onCreateActionBars()
+    
+    -- Ensure fresh cache
+    if clearHotkeyCache then clearHotkeyCache() end
+    updateActionBarEventSubscriptions()
+    dragItem = nil
+    dragButton = nil
+    cachedItemWidget = {}
+    player = g_game.getLocalPlayer()
+    hotkeyItemList = {}
+    spellGroupPressed = {}
+    spellGroupCooldownCache = {}
+    for i = 1, #actionBars do
+        setupActionBar(i)
     end
-    actionBarPanel:destroyChildren()
-    addEvent(function()
-        setupActionBar()
-        loadActionBar()
-    end)
+    ActionBarController:scheduleEvent(function()
+        onMultiUseCooldown()
+        onUpdateActionBarStatus()
+        updateActionPassive()
+        updateVisibleWidgets()
+        isLoaded = true
+    end, 300, "update_items")
 end
 
-function offline()
-    saveActionBar()
-    unbindHotkeys()
-end
-
-function copySlot(fromSlotId, toSlotId, visible)
-    local fromSlot = actionBarPanel:getChildById(fromSlotId)
-    local tmpslot = actionBarPanel:getChildById(toSlotId)
-    if not tmpslot then
-        tmpslot = g_ui.createWidget('ActionSlot', actionBarPanel)
-        tmpslot:setId(toSlotId)
+function ActionBarController:onGameEnd()
+    isLoaded = false
+    cleanupMultiActionState()
+    spellGroupCooldownCache = {}
+    for _, actionbar in pairs(activeActionBars) do
+        unbindActionBarEvent(actionbar)
     end
-    tmpslot:setVisible(visible)
-    local tmptext = not fromSlot.text
-    local tmpid = not fromSlot.itemId
-    local tmpwords = not fromSlot.words
-    local imageSource = fromSlot:getImageSource()
-    local imageClip = fromSlot:getImageClip()
-    local imgsrcbool = not imageSource
-    local imgclipbool = not imageClip
-    imageSource = (imgsrcbool or (tmptext and tmpid and tmpwords)) and '/images/game/actionbar/slot-actionbar' or
-                      imageSource
-    imageClip = imgclipbool and '0 0 0 0' or imageClip
-    tmpslot:setImageSource(imageSource)
-    tmpslot:setImageClip(imageClip)
-    local tmpItem = fromSlot:getItem()
-    if tmpItem then
-        tmpslot:setItem(tmpItem)
-    else
-        tmpslot:setItem(nil)
+    activeActionBars = {}
+    hotkeyItemList = {}
+    if g_tooltip then
+        g_tooltip.hide()
+        g_tooltip.hideSpecial()
     end
-    tmpslot:setText(fromSlot:getText())
-    tmpslot.autoSend = fromSlot.autoSend
-    tmpslot.itemId = fromSlot.itemId
-    tmpslot.subType = fromSlot.subType
-    tmpslot.words = fromSlot.words
-    tmpslot.text = fromSlot.text
-    tmpslot.parameter = fromSlot.parameter
-    tmpslot.useType = fromSlot.useType
-    tmpslot.getTier = fromSlot.getTier
-    tmpslot:getChildById('text'):setText(fromSlot:getChildById('text'):getText())
-    tmpslot:setTooltip(fromSlot:getTooltip())
+    updateActionBarEventSubscriptions()
 end
+-- /*=============================================
+-- =            Events Call            =
+-- =============================================*/
 
-function onDropFunc(slotId)
-    if isLocked then
+
+--- Handles spell cooldown events
+local pendingMultiButtonUpdate = nil
+local pendingMultiButtons = {}
+local pendingMultiButtonsTracker = {}
+
+local function schedulePendingMultiButtonUpdate()
+    if pendingMultiButtonUpdate then
         return
     end
-
-    if slotReassign then
-        local fromSlotId = slotToEdit
-        local toSlotId = slotId
-        local fromSlot = actionBarPanel:getChildById(fromSlotId)
-        local toSlot = actionBarPanel:getChildById(toSlotId)
-        if fromSlot and toSlot then
-            local tmpslotid = 'slot' .. maxSlots + 1
-            copySlot(fromSlotId, tmpslotid, false)
-            copySlot(toSlotId, fromSlotId, true)
-            copySlot(tmpslotid, toSlotId, true)
-            clearSlotById(tmpslotid)
-        end
-        slotReassign = nil
-        slotToEdit = nil
-    end
-    slotToEdit = slotId
-    if itemDragRetry and missedSlotToEdit then -- first drag doesn't register slotToEdit
-        local widget1 = missedSlotToEdit[1]
-        local mousePos1 = missedSlotToEdit[2]
-        local item1 = missedSlotToEdit[3]
-        if widget1 and mousePos1 and item1 then
-            onChooseItemByDrag(widget1, mousePos1, item1)
-        end
-        itemDragRetry = nil
-        missedSlotToEdit = nil
-    end
-    setupHotkeys()
-end
-
-function setupActionBar()
-    local slotsToDisplay = math.floor((actionBarPanel:getWidth()) / 34)
-    for i = 1, maxSlots do
-        slot = g_ui.createWidget('ActionSlot', actionBarPanel)
-        slot:setId('slot' .. i)
-        slot:setVisible(true)
-        slot.itemId = nil
-        slot.subType = nil
-        slot.words = nil
-        slot.text = nil
-        slot.useType = nil
-        slot.getTier = nil
-        g_mouse.bindPress(slot, function()
-            slotToEdit = 'slot' .. i .. ''
-        end, MouseLeftButton)
-        g_mouse.bindPress(slot, function()
-            createMenu('slot' .. i)
-        end, MouseRightButton)
-        if not isLocked then
-            g_mouse.bindOnDrop(slot, function()
-                if slotToEdit == 'slot' .. i then
-                    slotReassign = 'slot' .. i
-                end
-                onDropFunc('slot' .. i)
-            end)
-        end
-        if i == 1 then
-            slot:addAnchor(AnchorLeft, 'parent', AnchorLeft)
-        end
-    end
-end
-
-function createMenu(slotId)
-    local menu = g_ui.createWidget('PopupMenu')
-    slotToEdit = slotId
-    menu:addOption('Assign Spell', function()
-        openSpellAssignWindow()
-    end)
-    menu:addOption('Assign Object', function()
-        startChooseItem()
-        openObjectAssignWindow()
-    end)
-    menu:addOption('Assign Text', function()
-        openTextAssignWindow()
-    end)
-    menu:addOption('Edit Hotkey', function()
-        openEditHotkeyWindow()
-    end)
-    local actionSlot = actionBarPanel:recursiveGetChildById(slotToEdit)
-    if actionSlot.itemId or actionSlot.words or actionSlot.text or actionSlot.useType or actionSlot.hotkey then
-        menu:addOption('Clear Slot', function()
-            clearSlot()
-            clearHotkey()
-        end)
-    end
-    menu:display()
-end
-
-function openSpellAssignWindow()
-    spellAssignWindow = g_ui.loadUI('assign_spell', g_ui.getRootWidget())
-    spellsPanel = spellAssignWindow:getChildById('spellsPanel')
-    addEvent(function()
-        initializeSpelllist()
-    end)
-    spellAssignWindow:raise()
-    spellAssignWindow:focus()
-    spellAssignWindow:getChildById('filterTextEdit'):focus()
-    spellAssignWindow.hotkeyBlock = modules.game_hotkeys.createHotkeyBlock("spell_assign_window")
-end
-
-function closeSpellAssignWindow()
-    spellAssignWindow:destroy()
-    spellAssignWindow = nil
-    spellsPanel = nil
-end
-
-function initializeSpelllist()
-    g_keyboard.bindKeyPress('Down', function()
-        spellsPanel:focusNextChild(KeyboardFocusReason)
-    end, spellsPanel:getParent())
-    g_keyboard.bindKeyPress('Up', function()
-        spellsPanel:focusPreviousChild(KeyboardFocusReason)
-    end, spellsPanel:getParent())
-
-    for spellProfile, _ in pairs(SpelllistSettings) do
-        for i = 1, #SpelllistSettings[spellProfile].spellOrder do
-            local spell = SpelllistSettings[spellProfile].spellOrder[i]
-            local info = SpellInfo[spellProfile][spell]
-            if info then
-                local tmpLabel = g_ui.createWidget('SpellListLabel', spellsPanel)
-                tmpLabel:setId(spell)
-                tmpLabel:setText(spell .. '\n\'' .. info.words .. '\'')
-                tmpLabel:setPhantom(false)
-                tmpLabel.defaultHeight = tmpLabel:getHeight()
-                tmpLabel.words = info.words:lower()
-                tmpLabel.name = spell:lower()
-
-                local iconId = tonumber(info.icon)
-                if not iconId and SpellIcons[info.icon] then
-                    iconId = SpellIcons[info.icon][1]
-                end
-
-                tmpLabel:setHeight(SpelllistSettings[spellProfile].iconSize.height + 4)
-                tmpLabel:setTextOffset(topoint((SpelllistSettings[spellProfile].iconSize.width + 10) .. ' ' ..
-                                                   (SpelllistSettings[spellProfile].iconSize.height - 32) / 2 + 3))
-                tmpLabel:setImageSource(SpelllistSettings[spellProfile].iconFile)
-                tmpLabel:setImageClip(Spells.getImageClip(iconId, spellProfile))
-                tmpLabel:setImageSize(tosize(SpelllistSettings[spellProfile].iconSize.width .. ' ' ..
-                                                 SpelllistSettings[spellProfile].iconSize.height))
+    pendingMultiButtonUpdate = scheduleEvent(function()
+        for _, button in ipairs(pendingMultiButtons) do
+            if button and not button:isDestroyed() then
+                updateMultiButtonState(button)
             end
         end
-    end
-
-    for v, k in ipairs(spellsPanel:getChildren()) do
-        if k:isVisible() then
-            spellsPanel:focusChild(k, KeyboardFocusReason)
-            updatePreviewSpell(k)
-            break
-        end
-    end
-    connect(spellsPanel, {
-        onChildFocusChange = function(self, focusedChild)
-            if focusedChild == nil then
-                return
-            end
-            updatePreviewSpell(focusedChild)
-        end
-    })
+        pendingMultiButtons = {}
+        pendingMultiButtonsTracker = {}
+        pendingMultiButtonUpdate = nil
+    end, 50)
 end
 
-function updatePreviewSpell(focusedChild)
-    local spellName = focusedChild:getId()
-    iconId = tonumber(Spells.getClientId(spellName))
-    local spell = Spells.getSpellByName(spellName)
-    local profile = Spells.getSpellProfileByName(spellName)
-    spellsPanel:getParent():getChildById('previewSpell'):setImageSource(SpelllistSettings[profile].iconFile)
-    spellsPanel:getParent():getChildById('previewSpell'):setImageClip(Spells.getImageClip(iconId, profile))
-    spellsPanel:getParent():getChildById('previewSpellName'):setText(spellName)
-    spellsPanel:getParent():getChildById('previewSpellWords'):setText('\'' .. spell.words .. '\'')
-    if spell.parameter then
-        spellAssignWindow:getChildById('parameterTextEdit'):enable()
-    else
-        spellAssignWindow:getChildById('parameterTextEdit'):disable()
+local function addPendingMultiButton(button)
+    if not pendingMultiButtonsTracker[button] then
+        pendingMultiButtons[#pendingMultiButtons + 1] = button
+        pendingMultiButtonsTracker[button] = true
     end
 end
 
-function spellAssignAccept()
-    clearSlot()
-    local focusedChild = spellsPanel:getFocusedChild()
-    if not focusedChild then
-        return
+function onSpellCooldown(spellId, delay)
+    local showProgress = modules.client_options.getOption("graphicalCooldown")
+    local showTime = modules.client_options.getOption("cooldownSecond")
+    if not showProgress and not showTime then
+        return true
     end
-    local spellName = focusedChild:getId()
-    iconId = tonumber(Spells.getClientId(spellName))
-    local spell = Spells.getSpellByName(spellName)
-    local profile = Spells.getSpellProfileByName(spellName)
-    local slot = actionBarPanel:getChildById(slotToEdit)
-    slot:setImageSource(Spells.getIconFileByProfile(profile))
-    slot:setImageClip(Spells.getImageClip(iconId, profile))
-    slot.words = spell.words
-    slot.itemId = 469
-    slot:setItemId(469)
-    if spell.parameter then
-        slot.parameter = spellAssignWindow:getChildById('parameterTextEdit'):getText():gsub('"', '')
-    else
-        slot.parameter = nil
-    end
-    closeSpellAssignWindow()
-    setupHotkeys()
-end
+    local cooldownStart = g_clock.millis()
+    local isRune = Spells.isRuneSpell(spellId)
+    spellCooldownCache[spellId] = {
+        exhaustion = delay,
+        startTime = cooldownStart
+    }
 
-function clearSlot()
-    local slot = actionBarPanel:getChildById(slotToEdit)
-    slot:setImageSource('/images/game/actionbar/slot-actionbar')
-    slot:setImageClip('0 0 0 0')
-    slot:clearItem()
-    slot:setText('')
-    slot.itemId = nil
-    slot.subType = nil
-    slot.words = nil
-    slot.text = nil
-    slot.useType = nil
-    slot.getTier = nil
-    slot:getChildById('tier'):setVisible(false)
-    slot:getChildById('text'):setText('')
-    slot:setTooltip('')
-end
-
-function clearSlotById(slotId)
-    local slot = actionBarPanel:getChildById(slotId)
-    slot:setImageSource('/images/game/actionbar/slot-actionbar')
-    slot:setImageClip('0 0 0 0')
-    slot:clearItem()
-    slot:setText('')
-    slot.itemId = nil
-    slot.subType = nil
-    slot.words = nil
-    slot.text = nil
-    slot.useType = nil
-    slot.getTier = nil
-    slot:getChildById('tier'):setVisible(false)
-    slot:getChildById('text'):setText('')
-    slot:setTooltip('')
-end
-
-function clearHotkey()
-    local slot = actionBarPanel:getChildById(slotToEdit)
-    slot.hotkey = nil
-    slot:getChildById('key'):setText('')
-end
-
-function openTextAssignWindow()
-    textAssignWindow = g_ui.loadUI('assign_text', g_ui.getRootWidget())
-    textAssignWindow:raise()
-    textAssignWindow:focus()
-    textAssignWindow.hotkeyBlock = modules.game_hotkeys.createHotkeyBlock("text_assign_window")
-end
-
-function closeTextAssignWindow()
-    textAssignWindow:destroy()
-    textAssignWindow = nil
-end
-
-function textAssignAccept()
-    local text = textAssignWindow:getChildById('textToSendTextEdit'):getText()
-    if text == '' then
-        return
-    end
-    local checkForParameter = text:split(' "')
-    local name, parameter = nil, nil
-    if #checkForParameter == 2 then
-        name = checkForParameter[1]
-        parameter = checkForParameter[2]
-    else
-        name = text
-    end
-
-    local spell, profile, spellName = Spells.getSpellByWords(name)
-
-    local slot = actionBarPanel:getChildById(slotToEdit)
-    if spellName then
-        iconId = tonumber(Spells.getClientId(spellName))
-        clearSlot()
-        slot:setImageSource(Spells.getIconFileByProfile(profile))
-        slot:setImageClip(Spells.getImageClip(iconId, profile))
-        slot.words = spell.words
-        slot.itemId = 469
-        slot:setItemId(469)
-        if parameter and spell.parameter then
-            slot.parameter = parameter
-        else
-            slot.parameter = nil
-        end
-    else
-        clearSlot()
-        slot:getChildById('text'):setText(text)
-        while slot:getChildById('text'):getTextSize().height > 30 do
-            local subString = slot:getChildById('text'):getText()
-            subString = string.sub(subString, 1, #subString - 1)
-            slot:getChildById('text'):setText(subString)
-        end
-        slot:setImageSource('/images/game/actionbar/item-background')
-        slot.text = text
-        slot.itemId = 469
-        slot:setItemId(469)
-        slot.autoSend = textAssignWindow:recursiveGetChildById('sendAutomaticallyCheckBox'):isChecked()
-        slot:setTooltip(slot.text)
-        setupHotkeys()
-    end
-    closeTextAssignWindow()
-end
-
-function openObjectAssignWindow()
-    if objectAssignWindow ~= nil then
-        objectAssignWindow:destroy()
-    end
-    objectAssignWindow = g_ui.loadUI('assign_object', g_ui.getRootWidget())
-    actionRadioGroup = UIRadioGroup.create()
-    actionRadioGroup:addWidget(objectAssignWindow:getChildById('useOnYourselfCheckbox'))
-    actionRadioGroup:addWidget(objectAssignWindow:getChildById('useOnTargetCheckbox'))
-    actionRadioGroup:addWidget(objectAssignWindow:getChildById('useWithCrosshairCheckbox'))
-    actionRadioGroup:addWidget(objectAssignWindow:getChildById('equipCheckbox'))
-    actionRadioGroup:addWidget(objectAssignWindow:getChildById('useCheckbox'))
-    objectAssignWindow:setVisible(false)
-end
-
-function closeObjectAssignWindow()
-    objectAssignWindow:destroy()
-    objectAssignWindow = nil
-    actionRadioGroup = nil
-end
-
-function startChooseItem()
-    if g_ui.isMouseGrabbed() then
-        return
-    end
-    mouseGrabberWidget:grabMouse()
-    g_mouse.pushCursor('target')
-end
-
-function objectAssignAccept()
-    clearSlot()
-    local item = objectAssignWindow:getChildById('previewItem'):getItem()
-    if not item then
-        return
-    end
-    local slot = actionBarPanel:getChildById(slotToEdit)
-    slot:setItem(item)
-    slot:setImageSource('/images/game/actionbar/item-background')
-    slot:setBorderWidth(0)
-    slot.itemId = item:getId()
-    slot.getTier = objectAssignWindow:getChildById('previewItem').auxTier
-    ItemsDatabase.setTier(slot, slot.getTier)
-    if item:isFluidContainer() then
-        slot.subType = item:getSubType()
-    end
-    if objectAssignWindow:getChildById('equipCheckbox'):isChecked() then
-        slot.useType = 'equip'
-    elseif objectAssignWindow:getChildById('useCheckbox'):isChecked() then
-        slot.useType = 'use'
-    elseif objectAssignWindow:getChildById('useOnYourselfCheckbox'):isChecked() then
-        slot.useType = 'useOnSelf'
-    elseif objectAssignWindow:getChildById('useOnTargetCheckbox'):isChecked() then
-        slot.useType = 'useOnTarget'
-    elseif objectAssignWindow:getChildById('useWithCrosshairCheckbox'):isChecked() then
-        slot.useType = 'useWith'
-    end
-    setupHotkeys()
-    closeObjectAssignWindow()
-end
-
-function onChooseItemMouseRelease(self, mousePosition, mouseButton)
-    local item = nil
-    if mouseButton == MouseLeftButton then
-        local clickedWidget = modules.game_interface.getRootPanel():recursiveGetChildByPos(mousePosition, false)
-        if clickedWidget then
-            if clickedWidget:getClassName() == 'UIItem' and not clickedWidget:isVirtual() then
-                item = clickedWidget:getItem()
-            end
-        end
-    end
-
-    if item and item:getPosition().x == 65535 and slotToEdit then
-        objectAssignWindow:getChildById('previewItem'):setItemId(item:getId())
-        local tier = item:getTier()
-        ItemsDatabase.setTier(objectAssignWindow:getChildById('previewItem'), tier)
-        objectAssignWindow:getChildById('previewItem').auxTier = tier
-        objectAssignWindow:getChildById('previewItem'):setItemCount(1)
-        objectAssignWindow:getChildById('equipCheckbox'):setEnabled(false)
-        objectAssignWindow:getChildById('useCheckbox'):setEnabled(false)
-        objectAssignWindow:getChildById('useOnYourselfCheckbox'):setEnabled(false)
-        objectAssignWindow:getChildById('useOnTargetCheckbox'):setEnabled(false)
-        objectAssignWindow:getChildById('useWithCrosshairCheckbox'):setEnabled(false)
-        if item:getClothSlot() > 0 then
-            objectAssignWindow:getChildById('equipCheckbox'):setEnabled(true)
-            if item:isMultiUse() then
-                objectAssignWindow:getChildById('useOnYourselfCheckbox'):setEnabled(true)
-                objectAssignWindow:getChildById('useOnTargetCheckbox'):setEnabled(true)
-                objectAssignWindow:getChildById('useWithCrosshairCheckbox'):setEnabled(true)
-            else
-                objectAssignWindow:getChildById('useCheckbox'):setEnabled(true)
-            end
-            actionRadioGroup:selectWidget(objectAssignWindow:getChildById('equipCheckbox'))
-        elseif item:isMultiUse() then
-            objectAssignWindow:getChildById('useOnYourselfCheckbox'):setEnabled(true)
-            objectAssignWindow:getChildById('useOnTargetCheckbox'):setEnabled(true)
-            objectAssignWindow:getChildById('useWithCrosshairCheckbox'):setEnabled(true)
-            objectAssignWindow:getChildById('equipCheckbox'):setEnabled(true)
-            actionRadioGroup:selectWidget(objectAssignWindow:getChildById('useOnYourselfCheckbox'))
-        else
-            objectAssignWindow:getChildById('useCheckbox'):setEnabled(true)
-            actionRadioGroup:selectWidget(objectAssignWindow:getChildById('useCheckbox'))
-        end
-        if not objectAssignWindow:isVisible() then
-            objectAssignWindow:show()
-        end
-        objectAssignWindow:raise()
-        objectAssignWindow:focus()
-    end
-    g_mouse.popCursor('target')
-    self:ungrabMouse()
-    return true
-end
-
-function onChooseItemByDrag(self, mousePosition, item)
-    if isLocked then
-        return
-    end
-
-    if item and item:getPosition().x == 65535 and slotToEdit then
-        openObjectAssignWindow()
-        objectAssignWindow:getChildById('previewItem'):setItemId(item:getId())
-        local tier = item:getTier()
-        ItemsDatabase.setTier(objectAssignWindow:getChildById('previewItem'), tier)
-        objectAssignWindow:getChildById('previewItem').auxTier = tier
-        objectAssignWindow:getChildById('previewItem'):setItemCount(1)
-        objectAssignWindow:getChildById('equipCheckbox'):setEnabled(false)
-        objectAssignWindow:getChildById('useCheckbox'):setEnabled(false)
-        objectAssignWindow:getChildById('useOnYourselfCheckbox'):setEnabled(false)
-        objectAssignWindow:getChildById('useOnTargetCheckbox'):setEnabled(false)
-        objectAssignWindow:getChildById('useWithCrosshairCheckbox'):setEnabled(false)
-        if item:getClothSlot() > 0 then
-            objectAssignWindow:getChildById('equipCheckbox'):setEnabled(true)
-            if item:isMultiUse() then
-                objectAssignWindow:getChildById('useOnYourselfCheckbox'):setEnabled(true)
-                objectAssignWindow:getChildById('useOnTargetCheckbox'):setEnabled(true)
-                objectAssignWindow:getChildById('useWithCrosshairCheckbox'):setEnabled(true)
-            else
-                objectAssignWindow:getChildById('useCheckbox'):setEnabled(true)
-            end
-            actionRadioGroup:selectWidget(objectAssignWindow:getChildById('equipCheckbox'))
-        elseif item:isMultiUse() then
-            objectAssignWindow:getChildById('useOnYourselfCheckbox'):setEnabled(true)
-            objectAssignWindow:getChildById('useOnTargetCheckbox'):setEnabled(true)
-            objectAssignWindow:getChildById('useWithCrosshairCheckbox'):setEnabled(true)
-            objectAssignWindow:getChildById('equipCheckbox'):setEnabled(true)
-            actionRadioGroup:selectWidget(objectAssignWindow:getChildById('useOnYourselfCheckbox'))
-        else
-            objectAssignWindow:getChildById('useCheckbox'):setEnabled(true)
-            actionRadioGroup:selectWidget(objectAssignWindow:getChildById('useCheckbox'))
-        end
-        if not objectAssignWindow:isVisible() then
-            objectAssignWindow:show()
-        end
-        objectAssignWindow:raise()
-        objectAssignWindow:focus()
-    elseif not slotToEdit then
-        itemDragRetry = true
-        missedSlotToEdit = {self, mousePosition, item}
-    end
-end
-
-function onDragReassign(self, item)
-    slotReassign = self
-end
-
-function openEditHotkeyWindow()
-    editHotkeyWindow = g_ui.loadUI('edit_hotkey', g_ui.getRootWidget())
-    editHotkeyWindow:grabKeyboard()
-
-    local comboLabel = editHotkeyWindow:recursiveGetChildById('comboPreview')
-    comboLabel.keyCombo = ''
-    editHotkeyWindow.onKeyDown = hotkeyCapture
-    editHotkeyWindow:raise()
-    editHotkeyWindow:focus()
-    editHotkeyWindow.hotkeyBlock = modules.game_hotkeys.createHotkeyBlock("edit_hotkey_window")
-end
-
-function closeEditHotkeyWindow()
-    editHotkeyWindow:destroy()
-    editHotkeyWindow = nil
-end
-
-function unbindHotkeys()
-    for v, slot in pairs(actionBarPanel:getChildren()) do
-        if slot.hotkey and slot.hotkey ~= '' then
-            g_keyboard.unbindKeyPress(slot.hotkey)
-        end
-    end
-end
-
-function setupHotkeys()
-    local horizontalScroll = actionBar:getChildById('horizontalScroll')
-    if horizontalScroll:getValue() == horizontalScroll:getMaximum() then
-        actionBar:getChildById('nextButton'):setEnabled(false)
-        actionBar:getChildById('nextSkipButton'):setEnabled(false)
-    else
-        actionBar:getChildById('nextButton'):setEnabled(true)
-        actionBar:getChildById('nextSkipButton'):setEnabled(true)
-    end
-    if horizontalScroll:getValue() == horizontalScroll:getMinimum() then
-        actionBar:getChildById('prevButton'):setEnabled(false)
-        actionBar:getChildById('prevSkipButton'):setEnabled(false)
-    else
-        actionBar:getChildById('prevButton'):setEnabled(true)
-        actionBar:getChildById('prevSkipButton'):setEnabled(true)
-    end
-
-    unbindHotkeys()
-    for v, slot in pairs(actionBarPanel:getChildren()) do
-        slot.onMouseRelease = function()
-            if g_clock.millis() - lastHotkeyTime < modules.client_options.getOption('hotkeyDelay') then
-                return
-            end
-
-            lastHotkeyTime = g_clock.millis()
-            if slot.itemId and slot.useType then
-                if slot.useType == 'use' then
-                    modules.game_hotkeys.executeHotkeyItem(HOTKEY_USE, slot.itemId, slot.subType)
-                elseif slot.useType == 'useOnTarget' then
-                    modules.game_hotkeys.executeHotkeyItem(HOTKEY_USEONTARGET, slot.itemId, slot.subType)
-                elseif slot.useType == 'useWith' then
-                    modules.game_hotkeys.executeHotkeyItem(HOTKEY_USEWITH, slot.itemId, slot.subType)
-                elseif slot.useType == 'useOnSelf' then
-                    modules.game_hotkeys.executeHotkeyItem(HOTKEY_USEONSELF, slot.itemId, slot.subType)
-                elseif slot.useType == 'equip' then
-                    local item = Item.create(slot.itemId)
-                    if item then
-                        item:setTier(slot.getTier)
-                        g_game.equipItem(item)
-                    end
-                end
-            elseif slot.words then
-                if slot.parameter and slot.parameter ~= '' then
-                    g_game.talk(slot.words .. ' "' .. slot.parameter)
-                else
-                    g_game.talk(slot.words)
-                end
-            elseif slot.text then
-                if slot.autoSend then
-                    if not modules.game_console.isChatEnabled() then
-                        g_game.talk(slot.text)
-                    else
-                        modules.game_console.sendMessage(slot.text)
-                    end
-                else
-                    if not modules.game_console.isChatEnabled() then
-                        modules.game_console.switchChatOnCall()
-                    end
-                    modules.game_console.setTextEditText(slot.text)
-                end
-            end
-        end
-
-        if slot.hotkey and slot.hotkey ~= '' then
-            g_keyboard.bindKeyPress(slot.hotkey, function()
-                if not modules.game_hotkeys.canPerformKeyCombo(slot.hotkey) then
-                    return
-                end
-                if g_clock.millis() - lastHotkeyTime < modules.client_options.getOption('hotkeyDelay') then
-                    return
-                end
-
-                lastHotkeyTime = g_clock.millis()
-                if slot.itemId and slot.useType then
-                    if slot.useType == 'use' then
-                        modules.game_hotkeys.executeHotkeyItem(HOTKEY_USE, slot.itemId, slot.subType)
-                    elseif slot.useType == 'useOnTarget' then
-                        modules.game_hotkeys.executeHotkeyItem(HOTKEY_USEONTARGET, slot.itemId, slot.subType)
-                    elseif slot.useType == 'useWith' then
-                        modules.game_hotkeys.executeHotkeyItem(HOTKEY_USEWITH, slot.itemId, slot.subType)
-                    elseif slot.useType == 'useOnSelf' then
-                        modules.game_hotkeys.executeHotkeyItem(HOTKEY_USEONSELF, slot.itemId, slot.subType)
-                    elseif slot.useType == 'equip' then
-                        local item = Item.create(slot.itemId)
-                        if item then
-                            item:setTier(slot.getTier)
-                            g_game.equipItem(item)
+    for _, actionbar in pairs(activeActionBars) do
+        for _, button in pairs(actionbar.tabBar:getChildren()) do
+            local cache = getButtonCache(button)
+            if cache and cache.multiActions and not table.empty(cache.multiActions) then
+                for _, actionData in pairs(cache.multiActions) do
+                    if actionData and actionData["chatText"] then
+                        local spellData = Spells.getSpellDataByParamWords(actionData["chatText"]:lower())
+                        if spellData and spellData.id == spellId then
+                            addPendingMultiButton(button)
+                            if scheduleMultiActionCooldownEvent then
+                                local effectiveDelay = math.max(delay, spellData.exhaustion or 0)
+                                scheduleMultiActionCooldownEvent(button, "spell_" .. spellId, effectiveDelay)
+                            end
+                            break
+                        end
+                    elseif actionData and actionData["useObject"] then
+                        local runeSpellData = Spells.getRuneSpellByItem(actionData["useObject"])
+                        if runeSpellData and runeSpellData.id == spellId then
+                            addPendingMultiButton(button)
+                            if scheduleMultiActionCooldownEvent then
+                                local effectiveDelay = math.max(delay, runeSpellData.exhaustion or 0)
+                                scheduleMultiActionCooldownEvent(button, "rune_" .. spellId, effectiveDelay)
+                            end
+                            break
                         end
                     end
-                elseif slot.words then
-                    if slot.parameter and slot.parameter ~= '' then
-                        g_game.talk(slot.words .. ' "' .. slot.parameter)
-                    else
-                        g_game.talk(slot.words)
+                end
+            end
+
+            if cache and (cache.isSpell or cache.isRuneSpell) then
+                local shouldUpdate = true
+                if cache.isRuneSpell and not isRune then
+                    shouldUpdate = false
+                elseif cache.isRuneSpell and
+                    (not cache.spellData or cache.spellData.id ~= spellId) then
+                    shouldUpdate = false
+                elseif not cache.isRuneSpell and cache.spellID ~= spellId then
+                    shouldUpdate = false
+                elseif cache.cooldownEvent ~= nil and button.cooldown:getTimeElapsed() > delay then
+                    shouldUpdate = false
+                end
+                if shouldUpdate then
+                    updateCooldown(button, delay)
+                    if cache.removeCooldownEvent then
+                        removeEvent(button.cache.removeCooldownEvent)
+                        button.cache.removeCooldownEvent = nil
                     end
-                elseif slot.text then
-                    if slot.autoSend then
-                        modules.game_console.sendMessage(slot.text)
-                    else
-                        scheduleEvent(function()
-                            if not modules.game_console.isChatEnabled() then
-                                modules.game_console.switchChatOnCall()
+                    button.cache.removeCooldownEvent = scheduleEvent(function()
+                        removeCooldown(button)
+                    end, delay)
+                end
+            end
+        end
+    end
+
+    schedulePendingMultiButtonUpdate()
+end
+
+function onSpellGroupCooldown(groupId, delay)
+    local showProgress = modules.client_options.getOption("graphicalCooldown")
+    local showTime = modules.client_options.getOption("cooldownSecond")
+    if not showProgress and not showTime then
+        return true
+    end
+    spellGroupCooldownCache[groupId] = {
+        exhaustion = delay,
+        startTime = g_clock.millis()
+    }
+
+    for _, actionbar in pairs(activeActionBars) do
+        for _, button in pairs(actionbar.tabBar:getChildren()) do
+            local cache = getButtonCache(button)
+            if cache and cache.multiActions and not table.empty(cache.multiActions) then
+                for _, actionData in pairs(cache.multiActions) do
+                    if actionData and actionData["chatText"] then
+                        local spellData = Spells.getSpellDataByParamWords(actionData["chatText"]:lower())
+                        if spellData and
+                            (Spells.getCooldownByGroup(spellData, groupId) or
+                                Spells.getCooldownBySecondaryGroup(spellData, groupId)) then
+                            addPendingMultiButton(button)
+                            if scheduleMultiActionCooldownEvent then
+                                scheduleMultiActionCooldownEvent(button, "group_" .. groupId .. "_spell_" .. spellData.id,
+                                    delay)
                             end
-                            modules.game_console.setTextEditText(slot.text)
-                        end, 1)
+                            break
+                        end
+                    elseif actionData and actionData["useObject"] then
+                        local runeSpellData = Spells.getRuneSpellByItem(actionData["useObject"])
+                        if runeSpellData and
+                            (Spells.getCooldownByGroup(runeSpellData, groupId) or
+                                Spells.getCooldownBySecondaryGroup(runeSpellData, groupId)) then
+                            addPendingMultiButton(button)
+                            if scheduleMultiActionCooldownEvent then
+                                scheduleMultiActionCooldownEvent(button, "group_" .. groupId .. "_rune_" .. runeSpellData.id,
+                                    delay)
+                            end
+                            break
+                        end
                     end
                 end
-            end)
+            end
+
+            if cache and (not cache.isRuneSpell and cache.spellData) then
+                if Spells.getCooldownByGroup(cache.spellData, groupId) then
+                    local resttime = button.cooldown:getDuration() - button.cooldown:getTimeElapsed()
+                    if resttime < delay then
+                        updateCooldown(button, delay)
+                        if button.cache.removeCooldownEvent then
+                            removeEvent(button.cache.removeCooldownEvent)
+                            button.cache.removeCooldownEvent = nil
+                        end
+                        button.cache.removeCooldownEvent = scheduleEvent(function()
+                            removeCooldown(button)
+                        end, delay)
+                    end
+                end
+                if Spells.getCooldownBySecondaryGroup(cache.spellData, groupId) then
+                    local resttime = button.cooldown:getDuration() - button.cooldown:getTimeElapsed()
+                    if resttime < delay then
+                        updateCooldown(button, delay)
+                        if button.cache.removeCooldownEvent then
+                            removeEvent(button.cache.removeCooldownEvent)
+                            button.cache.removeCooldownEvent = nil
+                        end
+                        button.cache.removeCooldownEvent = scheduleEvent(function()
+                            removeCooldown(button)
+                        end, delay)
+                    end
+                end
+            end
+        end
+    end
+
+    schedulePendingMultiButtonUpdate()
+end
+
+--- Handles passive ability data updates
+function onPassiveData(currentCooldown, maxCooldown, canDecay)
+    passiveData = {
+        cooldown = currentCooldown,
+        max = maxCooldown
+    }
+    updateActionPassive()
+end
+
+--- Handles spell list changes
+function onSpellsChange(player, list)
+    spellListData = {}
+    for _, spellId in pairs(list) do
+        local spell = Spells.getSpellByClientId(spellId)
+        if spell then
+            spellListData[tostring(spell.id)] = spell
         end
     end
 end
 
-function checkHotkey(hotkey)
-    for v, k in pairs(actionBarPanel:getChildren()) do
-        if k.hotkey == hotkey then
-            return true
+function onHotkeyItems(itemList)
+    for _, data in pairs(itemList) do
+        table.insert(hotkeyItemList, data)
+    end
+    for _, actionbar in pairs(activeActionBars) do
+        for _, button in pairs(actionbar.tabBar:getChildren()) do
+            if button.item and button.item:getItemId() >= 100 then
+                setupButtonTooltip(button, false)
+            end
         end
     end
 end
 
-function hotkeyCapture(assignWindow, keyCode, keyboardModifiers)
-    local hotkeyAlreadyUsed = false
-    assignWindow:raise()
-    assignWindow:focus()
-    local keyCombo = determineKeyComboDesc(keyCode, keyboardModifiers)
-    local comboPreview = assignWindow:recursiveGetChildById('comboPreview')
-    local errorLabel = editHotkeyWindow:recursiveGetChildById('errorLabel')
-    if checkHotkey(keyCombo) then
-        errorLabel:setVisible(true)
-        editHotkeyWindow:setHeight(180)
-    else
-        errorLabel:setVisible(false)
-        editHotkeyWindow:setHeight(160)
+--- Handles level updates
+function onUpdateLevel(localPlayer, level, levelPercent, oldLevel, oldLevelPercent)
+    if level ~= oldLevel then
+        onUpdateActionBarStatus()
     end
-    comboPreview:setText(tr('Current hotkey to change: %s', keyCombo))
-    comboPreview.keyCombo = keyCombo
-    comboPreview:resizeToText()
-    assignWindow:getChildById('applyButton'):enable()
+end
+
+--- Handles multi-use cooldown updates
+function onMultiUseCooldown(multiUseCooldown)
+    for _, actionbar in pairs(activeActionBars) do
+        for _, button in pairs(actionbar.tabBar:getChildren()) do
+            updateButtonState(button)
+            if multiUseCooldown and button.item and button.cache and button.cache.itemId then
+                local item = button.item:getItem()
+                if item and item:isMultiUse() then
+                    local marketArray = {MarketCategory.Potions, MarketCategory.Runes, MarketCategory.Tools}
+                    if table.contains(marketArray, item:getMarketData().category) then
+                        updateCooldown(button, multiUseCooldown)
+                    end
+                end
+            end
+        end
+    end
+end
+
+function updateInventoryItems(_)
+    for _, widgetList in pairs(cachedItemWidget) do
+        for _, widget in pairs(widgetList) do
+            updateButtonState(widget)
+        end
+    end
+end
+
+--- Updates visible widgets externally
+function updateVisibleWidgetsExternal()
+    updateVisibleWidgets()
+end
+
+function selectHotkeySet(name)
+    if not ApiJson or not ApiJson.setCurrentHotkeySetName then
+        return false
+    end
+
+    if not ApiJson.setCurrentHotkeySetName(name) then
+        return false
+    end
+
+    if clearHotkeyCache then
+        clearHotkeyCache()
+    end
+
+    ApiJson.saveData()
+
+    if #actionBars == 0 then
+        return true
+    end
+
+    for _, actionbar in pairs(actionBars) do
+        if actionbar and not actionbar:isDestroyed() then
+            unbindActionBarEvent(actionbar)
+        end
+    end
+
+    for i = 1, #actionBars do
+        setupActionBar(i)
+    end
+
+    updateVisibleWidgets()
+    updateActionBarEventSubscriptions()
+
     return true
 end
 
-function hotkeyClear(assignWindow)
-    local comboPreview = assignWindow:recursiveGetChildById('comboPreview')
-    comboPreview:setText(tr('Current hotkey to change: none'))
-    comboPreview.keyCombo = ''
-    comboPreview:resizeToText()
-    assignWindow:getChildById('applyButton'):disable()
+function createHotkeySet(name, sourceName)
+    if not ApiJson or not ApiJson.createHotkeySet then
+        return false
+    end
+
+    local ok = ApiJson.createHotkeySet(name, sourceName)
+    if ok then
+        ApiJson.saveData()
+    end
+    return ok
 end
 
-function hotkeyCaptureOk(assignWindow, keyCombo)
-    local slot = actionBarPanel:getChildById(slotToEdit)
-    if checkHotkey(keyCombo) then
-        for v, k in pairs(actionBarPanel:getChildren()) do
-            if k.hotkey == keyCombo then
-                k.hotkey = ''
-                k:getChildById('key'):setText('')
+function renameHotkeySet(oldName, newName)
+    if not ApiJson or not ApiJson.renameHotkeySet then
+        return false
+    end
+
+    local ok = ApiJson.renameHotkeySet(oldName, newName)
+    if ok then
+        ApiJson.saveData()
+    end
+    return ok
+end
+
+function removeHotkeySet(name)
+    if not ApiJson or not ApiJson.removeHotkeySet then
+        return false
+    end
+
+    local ok = ApiJson.removeHotkeySet(name)
+    if ok then
+        ApiJson.saveData()
+    end
+    return ok
+end
+
+--- Toggles cooldown display options
+function toggleCooldownOption()
+    for _, actionbar in pairs(activeActionBars) do
+        for _, button in pairs(actionbar.tabBar:getChildren()) do
+            if button.cooldown and button.cooldown:getPercent() < 100 then
+                 local remaining = button.cooldown:getDuration() - button.cooldown:getTimeElapsed()
+                 if remaining > 0 then
+                     updateCooldown(button, remaining) 
+                 end
             end
         end
     end
-    unbindHotkeys()
-    slot.hotkey = keyCombo
-    local text = slot.hotkey
-    text = text:gsub('Shift', 'S')
-    text = text:gsub('Alt', 'A')
-    text = text:gsub('Ctrl', 'C')
-    text = text:gsub('+', '')
-    slot:getChildById('key'):setText(text)
-    setupHotkeys()
-    if assignWindow == editHotkeyWindow then
-        closeEditHotkeyWindow()
-        return
-    end
-    assignWindow:destroy()
 end
 
-function saveActionBar()
-    local hotkeySettings = g_settings.getNode('game_actionbar') or {}
-    local hotkeys = hotkeySettings
-
-    local char = g_game.getCharacterName()
-    if not hotkeys[char] then
-        hotkeys[char] = {}
-    end
-    hotkeys = hotkeys[char]
-
-    table.clear(hotkeys)
-    local currentHotkeys = actionBarPanel:getChildren()
-    for v, slot in ipairs(currentHotkeys) do
-        hotkeys[slot:getId()] = {
-            hotkey = slot.hotkey,
-            autoSend = slot.autoSend,
-            itemId = slot.itemId,
-            subType = slot.subType,
-            useType = slot.useType,
-            text = slot.text,
-            words = slot.words,
-            parameter = slot.parameter,
-            getTier = slot.getTier
-        }
-    end
-
-    g_settings.setNode('game_actionbar', hotkeySettings)
-    g_settings.save()
-end
-
-function loadSpell(slot)
-    local spell, profile, spellName = Spells.getSpellByWords(slot.words)
-    iconId = tonumber(Spells.getClientId(spellName))
-    slot:setImageSource(Spells.getIconFileByProfile(profile))
-    slot:setImageClip(Spells.getImageClip(iconId, profile))
-    slot:getChildById('text'):setText('')
-    slot:setBorderWidth(0)
-    setupHotkeys()
-end
-
-function loadObject(slot)
-    slot:setItemId(slot.itemId)
-    slot:setImageSource('/images/game/actionbar/item-background')
-    slot:setImageClip('0 0 0 0')
-    slot:getChildById('text'):setText('')
-    slot:setBorderWidth(0)
-    ItemsDatabase.setTier(slot, slot.getTier)
-    setupHotkeys()
-end
-
-function loadText(slot)
-    slot:getChildById('text'):setText(slot.text)
-    while slot:getChildById('text'):getTextSize().height > 30 do
-        local subString = slot:getChildById('text'):getText()
-        subString = string.sub(subString, 1, #subString - 1)
-        slot:getChildById('text'):setText(subString)
-    end
-    slot:setImageSource('/images/game/actionbar/item-background')
-    slot:setImageClip('0 0 0 0')
-    setupHotkeys()
-end
-
-function loadActionBar()
-    unbindHotkeys()
-    local hotkeySettings = g_settings.getNode('game_actionbar')
-    local hotkeys = {}
-
-    if not table.empty(hotkeySettings) then
-        hotkeys = hotkeySettings
-    end
-    if not table.empty(hotkeys) then
-        hotkeys = hotkeys[g_game.getCharacterName()]
-    end
-    if hotkeys then
-        for slot, setting in pairs(hotkeys) do
-            slot = actionBarPanel:getChildById(slot)
-            if slot then
-                slot.itemId = setting.itemId
-                slot:setItemId(setting.itemId)
-                slot.subType = setting.subType
-                slot.words = setting.words
-                slot.text = setting.text
-                slot.hotkey = setting.hotkey
-                slot.useType = setting.useType
-                slot.autoSend = setting.autoSend
-                slot.parameter = setting.parameter
-                slot.getTier = setting.getTier
-                ItemsDatabase.setTier(slot, slot.getTier)
-                if slot.hotkey then
-                    local text = slot.hotkey
-                    if type(text) == 'string' then
-                        text = text:gsub('Shift', 'S')
-                        text = text:gsub('Alt', 'A')
-                        text = text:gsub('Ctrl', 'C')
-                        text = text:gsub('+', '')
-                    end
-                    slot:getChildById('key'):setText(text)
-                end
-                if slot.words then
-                    loadSpell(slot)
-                elseif slot.text then
-                    loadText(slot)
-                elseif slot.itemId and slot.itemId > 0 then
-                    loadObject(slot)
-                end
-            end
-        end
-    end
-    setupHotkeys()
-end
-
-function setActionBarVisible(visible)
-    if visible then
-        actionBar:setHeight(38)
-        actionBar:show()
-    else
-        actionBar:setHeight(0)
-        actionBar:hide()
-    end
-end
-
-function round(n)
-    return n % 1 >= 0.5 and math.ceil(n) or math.floor(n)
-end
-
-function updateCooldown(progressRect, duration, spellId, count)
-    progressRect:setPercent(progressRect:getPercent() + 10000 / duration)
-    local cd = round(duration - (progressRect:getPercent() * duration / 100)) / 1000
-    if cd > 0 then
-        progressRect:setText(cd .. 's')
-    end
-
-    if progressRect:getPercent() < 100 then
-        removeEvent(progressRect.event)
-        cooldown[spellId] = duration - count * 100
-        progressRect.event = scheduleEvent(function()
-            updateCooldown(progressRect, duration, spellId, count + 1)
-        end, 100)
-    else
-        cooldown[spellId] = nil
-        if progressRect and not progressRect:isDestroyed() then
-            progressRect:destroy()
-            progressRect = nil
-        end
-    end
-end
-
-function updateGroupCooldown(progressRect, duration, groupId)
-    progressRect:setPercent(progressRect:getPercent() + 10000 / duration)
-    local cd = round(duration - (progressRect:getPercent() * duration / 100)) / 1000
-    if cd > 0 then
-        progressRect:setText(cd .. 's')
-    end
-
-    if progressRect:getPercent() < 100 then
-        removeEvent(progressRect.event)
-        progressRect.event = scheduleEvent(function()
-            updateGroupCooldown(progressRect, duration, groupId)
-        end, 100)
-    else
-        groupCooldown[groupId] = nil
-        if progressRect and not progressRect:isDestroyed() then
-            progressRect:destroy()
-            progressRect = nil
-        end
-    end
-end
-
-function onSpellCooldown(spellId, duration)
-    local slot
-    for v, k in pairs(actionBarPanel:getChildren()) do
-        local spell, profile, spellName = Spells.getSpellByIcon(spellId)
-        if not spell then
-            print('[WARNING] Can not set cooldown on spell with id: ' .. spellId)
-            return true
-        end
-        if k.words == spell.words or spell.clientId and spell.clientId == k.itemId then
-            slot = k
-            local progressRect = slot:recursiveGetChildById('progress' .. spell.id)
-            if not progressRect then
-                progressRect = g_ui.createWidget('SpellProgressRect', slot)
-                progressRect:setId('progress' .. spell.id)
-                progressRect.item = slot
-                progressRect:fill('parent')
-                progressRect:setFont('verdana-11px-rounded')
-            else
-                progressRect:setPercent(0)
-            end
-
-            local updateFunc = function()
-                updateCooldown(progressRect, duration, spell.id, 0)
-            end
-            local finishFunc = function()
-                cooldown[spell.id] = nil
-                progressRect:hide()
-            end
-            progressRect:setPercent(0)
-            updateFunc()
-            cooldown[spell.id] = duration
-        end
-    end
-end
-
-function onSpellGroupCooldown(groupId, duration)
-    local slot
-    local spellGroup = 0
-    for v, k in pairs(actionBarPanel:getChildren()) do
-        local spell, profile, spellName
-        if k.words then
-            spell, profile, spellName = Spells.getSpellByWords(k.words)
+function configureActionBar(key, value)
+    local map = {
+        actionBarShowBottom1 = 1,
+        actionBarShowBottom2 = 2,
+        actionBarShowBottom3 = 3,
+        actionBarShowLeft1 = 4,
+        actionBarShowLeft2 = 5,
+        actionBarShowLeft3 = 6,
+        actionBarShowRight1 = 7,
+        actionBarShowRight2 = 8,
+        actionBarShowRight3 = 9
+    }
+    local n = map[key]
+    if not n then return end
+    local actionbar = actionBars[n]
+    if actionbar then
+        ApiJson.setBarVisibility(n, key, value)
+        actionbar:setVisible(value)
+        actionbar:setOn(value)
+        if value then
+            addActiveActionBar(actionbar)
+            setupActionBar(n)
         else
-            if k.itemId and k.itemId > 0 then
-                spell, profile, spellName = Spells.getSpellByClientId(k.itemId)
-            end
+            removeActiveActionBar(actionbar)
         end
-        if spell then
-            if spell.group[groupId] ~= nil then
-                local continue = false
-                if not cooldown[spell.id] or cooldown[spell.id] and cooldown[spell.id] < duration then
-                    local oldProgressBar = k:recursiveGetChildById('progress' .. spell.id)
-                    if oldProgressBar then
-                        cooldown[spell.id] = nil
-                        oldProgressBar:hide()
-                    end
-                    continue = true
-                elseif cooldown[spell.id] and cooldown[spell.id] >= duration then
-                    continue = false
-                end
-                if continue then
-                    slot = k
-                    local progressRect = slot:recursiveGetChildById('progress' .. groupId)
-                    if not progressRect then
-                        progressRect = g_ui.createWidget('SpellProgressRect', slot)
-                        progressRect:setId('progress' .. groupId)
-                        progressRect.item = slot
-                        progressRect:fill('parent')
-                        progressRect:setFont('verdana-11px-rounded')
-                    else
-                        progressRect:setPercent(0)
-                    end
+        if resizeLockButtons then
+            resizeLockButtons()
+        end
+        if ActionBarController then
+            ActionBarController:scheduleEvent(onUpdateActionBarStatus)
+        end
+    end
+end
 
-                    local updateFunc = function()
-                        updateGroupCooldown(progressRect, duration, groupId)
-                    end
-                    local finishFunc = function()
-                        groupCooldown[groupId] = false
-                        progressRect:hide()
-                    end
-                    progressRect:setPercent(0)
-                    updateFunc()
-                    groupCooldown[groupId] = true
-                end
+--- Updates visible options
+function updateVisibleOptions(type, value)
+    for _, actionbar in pairs(activeActionBars) do
+        for _, button in pairs(actionbar.tabBar:getChildren()) do
+            if type == 'hotkey' and button.hotkeyLabel then
+                button.hotkeyLabel:setVisible(value)
+            elseif type == 'parameter' and button.parameterText then
+                button.parameterText:setVisible(value)
+            elseif type == 'tooltip' then
+                setupButtonTooltip(button, false)
+            elseif type == 'amount' then
+                updateButtonState(button)
             end
         end
     end
 end
 
-function filterSpells(text)
-    if #text > 0 then
-        text = text:lower()
-
-        for index, spellListLabel in pairs(spellsPanel:getChildren()) do
-            if string.find(spellListLabel.name:lower(), text) or string.find(spellListLabel.words:lower(), text) then
-                showSpell(spellListLabel)
-            else
-                hideSpell(spellListLabel)
-            end
-        end
-
-    else
-        for index, spellListLabel in pairs(spellsPanel:getChildren()) do
-            showSpell(spellListLabel)
+--- Resets a specific action bar
+function resetAction(barId)
+    local actionbar = actionBars[barId]
+    if not actionbar then return end
+    
+    for i = 1, 50 do
+        ApiJson.removeAction(barId, i)
+        
+        local button = actionbar.tabBar:getChildById(barId .. "." .. i)
+        if button then
+            updateButton(button)
         end
     end
 end
 
-function hideSpell(spellListLabel)
-    if spellListLabel:isVisible() then
-        spellListLabel:hide()
-        spellListLabel:setHeight(0)
+--- Resets all action bars
+function resetActionBars()
+    for i = 1, 9 do
+        resetAction(i)
     end
-end
-
-function showSpell(spellListLabel)
-    if not spellListLabel:isVisible() then
-        spellListLabel:setHeight(spellListLabel.defaultHeight)
-        spellListLabel:show()
-    end
-end
-
-function onDecrementHorizontalScroll(value)
-    if value == 999 then
-        value = math.floor(actionBarPanel:getWidth() / 36) * 36
-    end
-
-    actionBar:getChildById('nextButton'):setEnabled(true)
-    actionBar:getChildById('nextSkipButton'):setEnabled(true)
-    local horizontalScroll = actionBar:getChildById('horizontalScroll')
-    if (horizontalScroll:getValue() - value) <= horizontalScroll:getMinimum() then
-        actionBar:getChildById('prevButton'):setEnabled(false)
-        actionBar:getChildById('prevSkipButton'):setEnabled(false)
-    else
-        actionBar:getChildById('prevButton'):setEnabled(true)
-        actionBar:getChildById('prevSkipButton'):setEnabled(true)
-    end
-
-    horizontalScroll:decrement(value)
-end
-
-function onIncrementHorizontalScroll(value)
-    if value == 999 then
-        value = math.floor(actionBarPanel:getWidth() / 36) * 36
-    end
-
-    actionBar:getChildById('prevButton'):setEnabled(true)
-    actionBar:getChildById('prevSkipButton'):setEnabled(true)
-    local horizontalScroll = actionBar:getChildById('horizontalScroll')
-    if (horizontalScroll:getValue() + value) >= horizontalScroll:getMaximum() then
-        actionBar:getChildById('nextButton'):setEnabled(false)
-        actionBar:getChildById('nextSkipButton'):setEnabled(false)
-    else
-        actionBar:getChildById('nextButton'):setEnabled(true)
-        actionBar:getChildById('nextSkipButton'):setEnabled(true)
-    end
-
-    horizontalScroll:increment(value)
-end
-
-function setLocked(v)
-    isLocked = v
-end
-
-function getPanelActionbar()
-    return actionBar
 end

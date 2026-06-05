@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,11 +21,12 @@
  */
 
 #include "animatedtext.h"
+
 #include "game.h"
 #include "gameconfig.h"
 #include "map.h"
-#include <framework/core/eventdispatcher.h>
-#include <framework/core/graphicalapplication.h>
+#include "framework/core/eventdispatcher.h"
+#include "framework/core/graphicalapplication.h"
 
 AnimatedText::AnimatedText()
 {

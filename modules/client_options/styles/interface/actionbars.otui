@@ -1,0 +1,357 @@
+UIWidget
+  anchors.fill: parent
+  visible: false
+
+  UIScrollArea
+    id: actionBarsScrollArea
+    anchors.left: parent.left
+    anchors.right: actionBarsScrollBar.left
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    vertical-scrollbar: actionBarsScrollBar
+
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: parent.top
+      height: 67
+
+      Label
+        !text: tr('Show Bottom Action Bars:')
+        anchors.left: parent.left
+        anchors.top: parent.top
+        margin-top: 5
+        color: #c0c0c0ff
+
+      OptionCheckBox
+        id: allActionBar13
+        !text: tr('All')
+        anchors.left: prev.right
+        anchors.top: parent.top
+        margin-top: 5
+        margin-left: 12
+
+      OptionCheckBox
+        id: actionBarShowBottom1
+        !text: tr('Bar 1')
+        anchors.left: prev.left
+        anchors.top: parent.top
+        text-offset: 14 0
+        margin-top: 5
+        margin-left: 53
+
+      OptionCheckBox
+        id: actionBarShowBottom2
+        !text: tr('Bar 2')
+        anchors.left: prev.left
+        anchors.top: parent.top
+        margin-top: 5
+        margin-left: 53
+        text-offset: 14 0
+      OptionCheckBox
+        id: actionBarShowBottom3
+        !text: tr('Bar 3')
+        anchors.left: prev.left
+        anchors.top: parent.top
+        margin-top: 5
+        margin-left: 53
+        text-offset: 14 0
+      Label
+        id: leftActionLabel
+        !text: tr('Show Left Action Bars:')
+        anchors.left: parent.left
+        anchors.top: prev.bottom
+        margin-top: 5
+        color: #c0c0c0ff
+
+      OptionCheckBox
+        id: allActionBar46
+        !text: tr('All')
+        anchors.left: prev.right
+        anchors.top: prev.top
+        margin-left: 30
+
+      OptionCheckBox
+        id: actionBarShowLeft1
+        !text: tr('Bar 1')
+        text-offset: 14 0
+        anchors.left: prev.left
+        anchors.top: prev.top
+        margin-left: 53
+
+      OptionCheckBox
+        id: actionBarShowLeft2
+        !text: tr('Bar 2')
+        anchors.left: prev.left
+        anchors.top: prev.top
+        margin-left: 53
+        text-offset: 14 0
+      OptionCheckBox
+        id: actionBarShowLeft3
+        !text: tr('Bar 3')
+        anchors.left: prev.left
+        anchors.top: prev.top
+        margin-left: 53
+        text-offset: 14 0
+      Label
+        id: rightActionLabel
+        !text: tr('Show Right Action Bars:')
+        anchors.left: parent.left
+        anchors.top: leftActionLabel.bottom
+        margin-top: 5
+        color: #c0c0c0ff
+
+      OptionCheckBox
+        id: allActionBar79
+        !text: tr('All')
+        anchors.left: prev.right
+        anchors.top: prev.top
+        margin-left: 23
+
+      OptionCheckBox
+        id: actionBarShowRight1
+        !text: tr('Bar 1')
+        text-offset: 14 0
+        anchors.left: prev.left
+        anchors.top: prev.top
+        margin-left: 53
+
+      OptionCheckBox
+        id: actionBarShowRight2
+        !text: tr('Bar 2')
+        text-offset: 14 0
+        anchors.left: prev.left
+        anchors.top: prev.top
+        margin-left: 54
+
+      OptionCheckBox
+        id: actionBarShowRight3
+        !text: tr('Bar 3')
+        text-offset: 14 0
+        anchors.left: prev.left
+        anchors.top: prev.top
+        margin-left: 53
+
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 7
+      height: 22
+
+      OptionCheckBoxMarked
+        id: showAssignedHKButton
+        !text: tr('Show Assigned Hotkey for Action Button')
+        !tooltip: tr('Display the hotkey assigned to each action button')
+
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 7
+      height: 22
+
+      OptionCheckBoxMarked
+        id: showHKObjectsBars
+        !text: tr('Show Amount of Assigned Objects')
+        !tooltip: tr('Display the quantity of items assigned to action buttons')
+
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 7
+      height: 22
+
+      OptionCheckBoxMarked
+        id: showSpellParameters
+        !text: tr('Show Spell Parameters')
+        !tooltip: tr('Display spell parameters on action buttons')
+
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 7
+      height: 22
+
+      OptionCheckBoxMarked
+        id: graphicalCooldown
+        !text: tr('Show Graphical Cooldown')
+        !tooltip: tr('Display visual cooldown animation on action buttons')
+
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 7
+      height: 22
+
+      OptionCheckBoxMarked
+        id: cooldownSecond
+        !text: tr('Show Cooldown in Seconds')
+        !tooltip: tr('Display remaining cooldown time in seconds')
+
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 7
+      height: 22
+
+      OptionCheckBoxMarked
+        id: actionTooltip
+        !text: tr('Show Action Button Tooltip')
+        !tooltip: tr('Display tooltips when hovering over action buttons')
+
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 7
+      height: 75
+
+      Label
+        !text: tr('Clear Bottom Action Bars:')
+        anchors.left: parent.left
+        anchors.top: parent.top
+        margin-left: 10
+        margin-top: 5
+        color: #c0c0c0ff
+
+      UIWidget
+        id: toolTipWidgetClearBottom
+        image-source: /images/icons/show_gui_help_grey
+        size: 12 12
+        anchors.right: parent.right
+        anchors.top: parent.top
+        margin-right: 3
+        margin-top: 5
+        !tooltip: tr('Clear all assignments from bottom action bars')
+
+      QtButton
+        id: clearBottomBar1
+        !text: tr('Bar 1')
+        width: 60
+        height: 18
+        anchors.right: parent.right
+        anchors.top: parent.top
+        margin-right: 130
+        margin-top: 3
+        @onClick: modules.game_actionbar.resetAction(1)
+      QtButton
+        id: clearBottomBar2
+        !text: tr('Bar 2')
+        width: 60
+        height: 18
+        anchors.right: parent.right
+        anchors.top: parent.top
+        margin-right: 65
+        margin-top: 3
+        @onClick: modules.game_actionbar.resetAction(2)
+      QtButton
+        id: clearBottomBar3
+        !text: tr('Bar 3')
+        width: 60
+        height: 18
+        anchors.right: parent.right
+        anchors.top: parent.top
+        margin-right: 0
+        margin-top: 3
+        @onClick: modules.game_actionbar.resetAction(3)
+      Label
+        !text: tr('Clear Left Action Bars:')
+        anchors.left: parent.left
+        anchors.top: clearBottomBar1.bottom
+        margin-left: 10
+        margin-top: 5
+        color: #c0c0c0ff
+
+      QtButton
+        id: clearLeftBar1
+        !text: tr('Bar 1')
+        width: 60
+        height: 18
+        anchors.right: parent.right
+        anchors.top: clearBottomBar1.bottom
+        margin-right: 130
+        margin-top: 3
+        @onClick: modules.game_actionbar.resetAction(4)
+      QtButton
+        id: clearLeftBar2
+        !text: tr('Bar 2')
+        width: 60
+        height: 18
+        anchors.right: parent.right
+        anchors.top: clearBottomBar2.bottom
+        margin-right: 65
+        margin-top: 3
+        @onClick: modules.game_actionbar.resetAction(5)
+      QtButton
+        id: clearLeftBar3
+        !text: tr('Bar 3')
+        width: 60
+        height: 18
+        anchors.right: parent.right
+        anchors.top: clearBottomBar3.bottom
+        margin-right: 0
+        margin-top: 3
+        @onClick: modules.game_actionbar.resetAction(6)
+      Label
+        !text: tr('Clear Right Action Bars:')
+        anchors.left: parent.left
+        anchors.top: clearLeftBar1.bottom
+        margin-left: 10
+        margin-top: 5
+        color: #c0c0c0ff
+
+      QtButton
+        id: clearRightBar1
+        !text: tr('Bar 1')
+        width: 60
+        height: 18
+        anchors.right: parent.right
+        anchors.top: clearLeftBar1.bottom
+        margin-right: 130
+        margin-top: 3
+        @onClick: modules.game_actionbar.resetAction(7)
+      QtButton
+        id: clearRightBar2
+        !text: tr('Bar 2')
+        width: 60
+        height: 18
+        anchors.right: parent.right
+        anchors.top: clearLeftBar2.bottom
+        margin-right: 65
+        margin-top: 3
+        @onClick: modules.game_actionbar.resetAction(8)
+      QtButton
+        id: clearRightBar3
+        !text: tr('Bar 3')
+        width: 60
+        height: 18
+        anchors.right: parent.right
+        anchors.top: clearLeftBar3.bottom
+        margin-right: 0
+        margin-top: 3
+        @onClick: modules.game_actionbar.resetAction(7)
+
+    QtButton
+      id: clearRightBar3
+      !text: tr('reset')
+      width: 60
+      height: 18
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 12
+      @onClick: modules.game_actionbar.resetActionBars()
+
+  VerticalScrollBar
+    id: actionBarsScrollBar
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    anchors.right: parent.right
+    step: 14
+    pixels-scroll: true
+    $!mobile:
+      visible: false

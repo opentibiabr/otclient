@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,11 +21,11 @@
  */
 
 #include "module.h"
+
 #include "modulemanager.h"
 #include "resourcemanager.h"
-
-#include <framework/luaengine/luainterface.h>
-#include <framework/otml/otml.h>
+#include "framework/otml/otmlnode.h"
+#include "framework/platform/platform.h"
 
 Module::Module(const std::string_view name) : m_sandboxEnv(g_lua.newSandboxEnv()), m_name(name.data()) {}
 
@@ -86,8 +86,8 @@ bool Module::load()
 
         m_loaded = true;
 
-        g_logger.debug( "Loaded module '{}' ({:.2f}s)", m_name, (stdext::millis() - startTime) / 1000.0
-);
+        g_logger.debug("Loaded module '{}' ({:.2f}s)", m_name, (stdext::millis() - startTime) / 1000.0
+        );
     } catch (const stdext::exception& e) {
         // remove from package.loaded
         g_lua.getGlobalField("package", "loaded");
@@ -190,11 +190,11 @@ bool Module::hasDependency(const std::string_view name, const bool recursive)
     return false;
 }
 
-bool Module::hasSupportedDevice(const Platform::Device device)
+bool Module::hasSupportedDevice(const Device device)
 {
     for (const auto& sd : m_supportedDevices) {
-        if (sd.type == device.type || sd.type == Platform::DeviceUnknown) {
-            if (sd.os == device.os || sd.os == Platform::OsUnknown)
+        if (sd.type == device.type || sd.type == DeviceUnknown) {
+            if (sd.os == device.os || sd.os == OsUnknown)
                 return true;
         }
     }
@@ -226,7 +226,7 @@ void Module::discover(const OTMLNodePtr& moduleNode)
             if (deviceInfo.empty())
                 continue;
 
-            auto device = Platform::Device();
+            auto device = Device();
             device.type = Platform::getDeviceTypeByName(deviceInfo.at(0));
             if (deviceInfo.size() > 1) device.os = Platform::getOsByName(deviceInfo.at(1));
             m_supportedDevices.emplace_back(device);

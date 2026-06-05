@@ -1,95 +1,156 @@
 <style>
-  .blessing-window {
-    width: 615;
-    height: 460;
-    padding-top: 36;
-    padding-left: 16;
-    padding-right: 16;
-    padding-bottom: 16;
-    font: verdana-11px-antialised;
-    opacity: 1;
+  /* Main window styling */
+  .blessings-window {
+    position: relative;
+    width: 615px;
+    height: 410px;
     display: block;
   }
 
-  .promotion-status {
-    width: 583;
-    height: 85;
-    margin-top: 10;
+  /* Layout containers */
+  .record-panel {
+    width: 100%;
+    height: 110px;
+    margin-top: 10px;
     display: block;
   }
 
-  .death-penalty {
-    width: 583;
-    height: 113;
-    margin-top: 10;
-    display: block;
+  .promo-panel {
+    width: 100%;
+    height: 113px;
+    margin-top: 10px;
+    padding-top: 45px;
   }
 
-  .premium-image {
-    margin-top: -10;
+  .death-panel {
+    width: 100%;
+    height: 120px;
+    margin-top: 10px;
+  }
+
+
+  /* Record container */
+  .record-container {
+    width: 580px;
+    height: 100%;
+    overflow: scroll;
+  }
+
+  /* Promotion status layout */
+  .promo-container {
+    width: 100%;
+    height: 50px;
+    align-items: center;
+  }
+
+  #promotionStatusLabel {
+    text-align: right;
+    height: 50px;
+  }
+
+  #premium_only {
+    width: auto;
+    margin-right: 34px;
     float: right;
   }
 
-  .test {
-    display: block;
-    margin-top: 22;
-    width: 580;
+  .full-separator {
+    width: 100%;
+    margin-top: 5px;
+    height: 2px;
   }
 
-  .contenedor {
-    width: 580;
-    display: block;
-    font: verdana-11px-antialised;
+
+  .buttons button {
+    float: right;
+    margin-right: 5px;
+    width: 40px;
   }
 
-  .record-blessing {
-    width: 590;
-    height: 120;
-    display: block;
+  .history-panel {
+    height: 370px;
   }
-  
-  .mini-panel {
-    width: 580;
-    height: 350;
+
+  /* History scroll area */
+  .history-scroll {
+    border: 1px #00000077;
     background-color: #404040;
+    height: 100%;
+    width: 600px;
+    overflow: scroll;
+  }
 
-    margin-bottom: 10;
+  /* Text styling */
+  .justified {
     display: block;
+    width: 100%;
+    text-align: justify;
+    margin-bottom: 2px;
+  }
+
+  .big-premium-button {
+    width: 128px;
+    height: 37px;
+    --image-source: /images/ui/getpremium;
+    --image-clip: 0 0 128 37;
+    --image-border: 3;
+    display: inline-block;
+    background-repeat: no-repeat;
+  }
+
+  .big-premium-button:active {
+    --image-clip: 0 37 128 37;
+  }
+
+  .big-premium-button[on="false"],
+  .big-premium-button[on="0"],
+  .big-premium-button:not([on]) {
+    --image-clip: 0 74 128 37;
+  }
+
+  .big-premium-button:disabled {
+    opacity: 0.8;
+    color: #c0c0c0;
   }
 </style>
 
-<window id="main" anchor="parent" class="blessing-window" text="Blessings">
+<html>
+<Window id="main" placement="center" class="blessings-window" title="Blessings" onescape="self:close()">
 
-  <minipanel class="mini-panel" text="History" id="blessingHistory" >
-    <UIScrollArea id ="here" layout="type: verticalBox" style="border-width: 1;border-color: #00000077;background-color:#ffffff11;height: 320;width: 570;margin-top:-12;background-color: #404040;vertical-scrollbar: ListBadgeScrollbar" >
-<!--      
-    <UIScrollArea id ="here" layout="type: verticalBox" style="height: 222;width: 570;margin-top:-12; vertical-scrollbar: ListBadgeScrollbar" >
-      <VerticalScrollBar  id ="scroll" >
-      </VerticalScrollBar> -->
+  <!-- History Panel (initially hidden) -->
+  <div id="historyPanel" placement="top-left" class="history-panel minipanel" title="History"
+    *if="self.historyButtonText == 'Back'">
+    <div id="historyScrollArea" class="history-scroll">
+    </div>
+  </div>
 
-    </UIScrollArea>
-  </minipanel>
+  <!-- Blessing Records Panel -->
+  <div id="blessingsRecordPanel" placement="top-left" class="record-panel minipanel" title="Record of Blessings"
+    layout="type: horizontalBox">
+  </div>
 
-  <minipanel id="minipanel1" anchor="parent" class="record-blessing" layout="type: horizontalBox; fit-children: true;cell-size: 88 20;cell-spacing: 1">
-    Record of Blessings</minipanel>
+  <!-- Promotion Status Panel -->
+  <div id="promotionPanel" class="promo-panel minipanel" title="Promotion and Premium Status">
+    <label id="promotionStatusLabel"></label>
+    <UIbutton id="premium_only" class="big-premium-button" onclick="self:onClickSendStore()"
+      *on="(g_game:getLocalPlayer() and not g_game:getLocalPlayer():isPremium()) or false">
+    </UIbutton>
+  </div>
 
-  <minipanel class="promotion-status" text="Promotion and Premium Status" id="promotionStatus2">
-    <label id="rank" style="margin-top:12">If your account had Premium status, your XP loss would be 0% lower.</label>
-    <BigPremiumButton class="premium-image" id="premium_only"></BigPremiumButton>
-  </minipanel>
+  <!-- Death Penalty Panel -->
+  <div id="deathPenaltyPanel" class="death-panel minipanel" title="Effect on Death Penalty">
+    <label id="fightRulesLabel" class="justified"></label>
+    <label id="expLossLabel" class="justified"></label>
+    <label id="containerLossLabel" class="justified"></label>
+    <label id="equipmentLossLabel" class="justified"></label>
+  </div>
+  <!-- Separator -->
+  <hr class="full-separator" />
+  <!-- Action Buttons -->
+  <div id="buttonsPanel" class="buttons" focusable="false">
+    <button id="historyButton" onclick="self:showHistory()">{{self.historyButtonText}}</button>
+    <button onclick="self:close()">Close</button>
+  </div>
+</Window>
 
-  <minipanel class="death-penalty" text="Effect on Death Penalty" id="promotionStatus">
-    <label class="contenedor" id="fightRules">- Depending on the fair fight rules, you will lose between 2% and 1% less
-      XP and skill </br> \n points upon your next PvP death.</label>
-    <label class="contenedor" id="expLoss">- You will lose 3% less XP and skill points upon your next PvE death.</label>
-    <label class="contenedor" id="containerLoss">- There is a 2% chance that you will lose your equipped container on
-      your next\n death.</label>
-    <label class="contenedor" id="equipmentLoss">- There is a 1% chance that you will lose items upon your next
-      death.</label>
-  </minipanel>
-
-  <HorizontalSeparator class="test"></HorizontalSeparator>
-
-  <button style="margin-top:18;margin-left:370" onclick="self:showHistory()" id="historyButton">history</button> <!-- temporal fix -->
-  <button style="margin-top:18" onclick="self:close()">close</button>
-</window>
+</html>

@@ -8,7 +8,6 @@ TextMessageLabel < UILabel
 
 Panel
   anchors.fill: gameMapPanel
-  anchors.bottom: gameMapPanel.bottom
   focusable: false
 
   Panel
@@ -16,7 +15,7 @@ Panel
     layout:
       type: verticalBox
       fit-children: true
-    width: 255
+    width: 303
     anchors.centerIn: parent
 
     TextMessageLabel
@@ -32,10 +31,11 @@ Panel
     anchors.bottom: centerTextMessagePanel.top
     anchors.horizontalCenter: parent.horizontalCenter
     text-auto-resize: false
-    width: 255
+    width: 290
 
   TextMessageLabel
     id: statusLabel
     anchors.bottom: parent.bottom
-    anchors.left: parent.left
-    anchors.right: parent.right
+    anchors.horizontalCenter: parent.horizontalCenter
+    margin-bottom: 7
+    width: 300
