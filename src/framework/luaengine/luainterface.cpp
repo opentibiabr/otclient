@@ -418,7 +418,7 @@ std::string LuaInterface::getCurrentSourcePath(int level)
         return path;
 
     if (g_luaThreadId > -1 && g_luaThreadId != stdext::getThreadId()) {
-        g_logger.warning("getCurrentSourcePath is being called outside the context of the lua call.");
+        g_logger.warning("GetCurrentSourcePath is being called outside the context of the lua call.");
         return path;
     }
 
@@ -538,7 +538,7 @@ int LuaInterface::signalCall(const int numArgs, const int numRets)
             throw LuaException("attempt to call a non function value", 0);
         }
     } catch (stdext::exception& e) {
-        g_logger.error("protected lua call failed: {}", e.what());
+        g_logger.error("Protected lua call failed: {}", e.what());
     }
 
     // pushes nil values if needed
@@ -1247,7 +1247,7 @@ void LuaInterface::pushObject(const LuaObjectPtr& obj)
 
     obj->luaGetMetatable();
     if (isNil())
-        g_logger.fatal("metatable for class '{}' not found, did you bind the C++ class?", obj->getClassName());
+        g_logger.fatal("Metatable for class '{}' not found, did you bind the C++ class?", obj->getClassName());
     setMetatable();
 }
 

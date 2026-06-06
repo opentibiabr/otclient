@@ -100,9 +100,15 @@ function init()
     connect(g_game, {
         onGameStart = setPlayerValues
     })
+    if StatusIconBar and StatusIconBar.init then
+        StatusIconBar.init()
+    end
 end
 
 function terminate()
+    if StatusIconBar and StatusIconBar.terminate then
+        StatusIconBar.terminate()
+    end
     healthCircle:destroy()
     healthCircle = nil
     manaCircle:destroy()
@@ -566,6 +572,9 @@ function whenMapResizeChange()
     end
 
     updateManaShieldDisplay()
+    if StatusIconBar and StatusIconBar.updatePosition then
+        StatusIconBar.updatePosition()
+    end
 end
 
 -------------------------------------------------
@@ -658,7 +667,6 @@ function setSkillType(skill)
     end
 
     local char = g_game.getCharacterName()
-    local skillType = skillTypes[char]
 
     skillTypes[char] = skill
     whenMapResizeChange()

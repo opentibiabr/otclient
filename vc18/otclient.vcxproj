@@ -728,11 +728,11 @@
     <Message Text="RunProtoCompile value: $(RunProtoCompile)" Importance="high" />
   </Target>
   <PropertyGroup Condition="'$(RunProtoCompile)'=='true'">
-    <ProtocPath>$(VcpkgInstalledDir)\$(VcpkgTriplet)\tools\protobuf\protoc.exe</ProtocPath>
+    <ProtocPath>$(VcpkgInstalledDir)\tools\protobuf\protoc.exe</ProtocPath>
     <ProtoPath>$(SourcePath)protobuf</ProtoPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(RunProtoCompile)'=='false'">
-    <ProtocPath>$(VcpkgInstalledDir)\$(VcpkgTriplet)\tools\protobuf\protoc.exe</ProtocPath>
+    <ProtocPath>$(VcpkgInstalledDir)\tools\protobuf\protoc.exe</ProtocPath>
     <ProtoPath>$(SourcePath)protobuf</ProtoPath>
   </PropertyGroup>
   <ItemGroup>
@@ -753,6 +753,6 @@
   </Target>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="$(VcpkgRoot)\\scripts\\buildsystems\\msbuild\\vcpkg.targets" Condition="Exists('$(VcpkgRoot)\\scripts\\buildsystems\\msbuild\\vcpkg.targets')" />
+    <Import Project="$(VcpkgRoot)\scripts\buildsystems\msbuild\vcpkg.targets" Condition="'$(_ZVcpkgRoot)'=='' and '$(VcpkgRoot)'!='' and Exists('$(VcpkgRoot)\scripts\buildsystems\msbuild\vcpkg.targets')" />
   </ImportGroup>
 </Project>

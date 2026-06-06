@@ -31,7 +31,7 @@ int16_t g_mainThreadId = stdext::getThreadId();
 int16_t g_eventThreadId = -1;
 
 void EventDispatcher::init() {
-    for (size_t i = 0; i < g_asyncDispatcher.get_thread_count(); ++i) {
+    for (size_t i = 0; i < g_asyncDispatcher->get_thread_count(); ++i) {
         m_threads.emplace_back(std::make_unique<ThreadTask>());
     }
 }

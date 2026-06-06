@@ -25,7 +25,11 @@ static/
 cmake-build-*/
 vcpkg_installed/
 vc17/
+vc18/
 /build-emscripten-web/
+/bin/
+/data/sounds/*/
+/data/things/*/
 
 # MSTest test Results
 [Tt]est[Rr]esult*/
@@ -196,6 +200,7 @@ pip-log.txt
 #################
 
 /otclient
+/OTClient.app
 /modules/otclientrc.lua
 src/framework/graphics/dx/
 

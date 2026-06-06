@@ -54,7 +54,8 @@ namespace {
         {"border", "image-border"},
         {"auto-resize", "image-auto-resize"},
         {"individual-animation", "image-individual-animation"},
-        {"src", "image-source"}
+        {"src", "image-source"},
+        {"*src", "*image-source"}
     };
 
     static const std::unordered_set<std::string_view> kProps = {
@@ -238,8 +239,10 @@ bool checkSpecialCase(const HtmlNodePtr& node, const UIWidgetPtr& parent, const 
 
     if (!node->getAttr("*for").empty()) {
         const auto condition = node->getAttr("*for");
+        const auto finished = node->getAttr("*for-finished");
         node->removeAttr("*for");
-        parent->callLuaField("__childFor", moduleName, condition, node->outerHTML(), parent->getChildren().size());
+        node->removeAttr("*for-finished");
+        parent->callLuaField("__childFor", moduleName, condition, node->outerHTML(), parent->getChildren().size(), finished);
         return false;
     }
 

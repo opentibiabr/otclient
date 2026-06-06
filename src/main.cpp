@@ -35,6 +35,8 @@
 #ifdef FRAMEWORK_EDITOR
 #include "tools/datdump.h"
 #endif
+#include <iostream>
+#include <ctime>
 
 #ifndef ANDROID
 #if ENABLE_DISCORD_RPC == 1
@@ -75,17 +77,36 @@ void printHelp(const std::string& executableName)
                  "    --dump-dat-compact          Emit compact (single-line) JSON\n";
 }
 
+std::string buildStartupTimestamp()
+{
+    std::time_t now = std::time(nullptr);
+    std::tm localTime{};
+#ifdef _WIN32
+    localtime_s(&localTime, &now);
+#else
+    localtime_r(&now, &localTime);
+#endif
+
+    char buffer[64];
+    if (std::strftime(buffer, sizeof(buffer), "%b %d %Y %H:%M:%S", &localTime) == 0) {
+        return "unknown";
+    }
+
+    return buffer;
+}
+
 } // namespace
 
-    int main(const int argc, const char* argv[])
-    {
-        std::vector<std::string> args(argv, argv + argc);
+int main(const int argc, const char* argv[])
+{
+    std::vector<std::string> args(argv, argv + argc);
+    g_logger.info("Application started at {}", buildStartupTimestamp());
 
-        // process args encoding
-        g_platform.init(args);
-        ALOGD("main: platform init done");
+    // process args encoding
+    g_platform.init(args);
+    ALOGD("main: platform init done");
 
-        // initialize resources
+    // initialize resources
 #ifdef ANDROID
     // Unzip Android assets/data.zip
         ALOGD("main: starting unZipAssetData...");
@@ -94,52 +115,52 @@ void printHelp(const std::string& executableName)
         g_resources.init(nullptr);
         ALOGD("main: resources init done");
 #else
-        g_resources.init(args[0].data());
+    g_resources.init(args[0].data());
 #endif
 
 #if ENABLE_ENCRYPTION == 1 && ENABLE_ENCRYPTION_BUILDER == 1
-        if (std::find(args.begin(), args.end(), "--encrypt") != args.end()) {
-            g_lua.init();
-            g_resources.runEncryption(args.size() >= 3 ? args[2] : std::string(ENCRYPTION_PASSWORD));
-            std::cout << "Encryption complete" << std::endl;
+    if (std::find(args.begin(), args.end(), "--encrypt") != args.end()) {
+        g_lua.init();
+        g_resources.runEncryption(args.size() >= 3 ? args[2] : std::string(ENCRYPTION_PASSWORD));
+        g_logger.info("Encryption complete");
 #ifdef WIN32
-            MessageBoxA(NULL, "Encryption complete", "Success", 0);
+        MessageBoxA(NULL, "Encryption complete", "Success", 0);
 #endif
-            return 0;
-        }
+        return 0;
+    }
 #endif
 
-        if (g_resources.launchCorrect(args)) {
-            return 0; // started other executable
-        }
+    if (g_resources.launchCorrect(args)) {
+        return 0; // started other executable
+    }
 
-        // find script init.lua and run it
-        ALOGD("main: discovering work dir...");
-        if (!g_resources.discoverWorkDir("init.lua"))
-            g_logger.fatal("Unable to find work directory, the application cannot be initialized.");
-        ALOGD("main: work dir found: %s", g_resources.getWorkDir().c_str());
+    // find script init.lua and run it
+    ALOGD("main: discovering work dir...");
+    if (!g_resources.discoverWorkDir("init.lua"))
+        g_logger.fatal("Unable to find work directory, the application cannot be initialized.");
+    ALOGD("main: work dir found: %s", g_resources.getWorkDir().c_str());
 
-        if (shouldShowHelp(args)) {
-            printHelp(args[0]);
-            return 0;
-        }
+    if (shouldShowHelp(args)) {
+        printHelp(args[0]);
+        return 0;
+    }
 
 #ifdef FRAMEWORK_EDITOR
-        if (const auto dumpRequest = datdump::parseRequest(args); dumpRequest) {
-            return datdump::run(*dumpRequest) ? 0 : 1;
-        }
+    if (const auto dumpRequest = datdump::parseRequest(args); dumpRequest) {
+        return datdump::run(*dumpRequest) ? 0 : 1;
+    }
 #endif
 
-        // initialize application framework and otclient
-        ALOGD("main: initializing app framework...");
-        const auto drawEvents = ApplicationDrawEventsPtr(&g_client, [](ApplicationDrawEvents*) {});
-        g_app.init(args, new GraphicalApplicationContext(g_gameConfig.getSpriteSize(), drawEvents));
-        ALOGD("main: app framework initialized");
+    // initialize application framework and otclient
+    ALOGD("main: initializing app framework...");
+    const auto drawEvents = ApplicationDrawEventsPtr(&g_client, [](ApplicationDrawEvents*) {});
+    g_app.init(args, new GraphicalApplicationContext(g_gameConfig.getSpriteSize(), drawEvents));
+    ALOGD("main: app framework initialized");
 
 #ifndef ANDROID
 #if ENABLE_DISCORD_RPC == 1
-        std::function<bool()> canUpdate = []() -> bool { return g_game.isOnline(); };
-        std::function<void(std::string&)> onUpdate = [](std::string& info) {
+    std::function<bool()> canUpdate = []() -> bool { return g_game.isOnline(); };
+    std::function<void(std::string&)> onUpdate = [](std::string& info) {
 #if SHOW_CHARACTER_NAME_RPC == 1
             info = "Name: " + g_game.getCharacterName();
 #endif
@@ -151,36 +172,36 @@ void printHelp(const std::string& executableName)
             if (!info.empty()) info += "\n";
             info += "World: " + g_game.getWorldName();
 #endif
-        };
-        g_discord.init(canUpdate, onUpdate);
+    };
+    g_discord.init(canUpdate, onUpdate);
 #endif
 #endif
 
-        ALOGD("main: initializing client...");
-        g_client.init(args);
+    ALOGD("main: initializing client...");
+    g_client.init(args);
 #ifdef FRAMEWORK_NET
-        g_http.init();
+    g_http.init();
 #endif
 
-        ALOGD("main: running init.lua...");
-        if (!g_lua.safeRunScript("init.lua"))
-            g_logger.fatal("Unable to run script init.lua!");
-        ALOGD("main: init.lua executed successfully");
+    ALOGD("main: running init.lua...");
+    if (!g_lua.safeRunScript("init.lua"))
+        g_logger.fatal("Unable to run script init.lua!");
+    ALOGD("main: init.lua executed successfully");
 
-        // the run application main loop
-        g_app.run();
+    // the run application main loop
+    g_app.run();
 
-        // unload modules
-        g_app.deinit();
+    // unload modules
+    g_app.deinit();
 
-        // terminate everything and free memory
-        g_client.terminate();
-        g_app.terminate();
+    // terminate everything and free memory
+    g_client.terminate();
+    g_app.terminate();
 #ifdef FRAMEWORK_NET
-        g_http.terminate();
+    g_http.terminate();
 #endif
-        return 0;
-    }
+    return 0;
+}
 #ifdef ANDROID
 }
 #endif

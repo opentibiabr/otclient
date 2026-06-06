@@ -256,9 +256,9 @@ function UIMinimap:onMouseWheel(mousePos, direction)
         self:zoomIn()
     elseif direction == MouseWheelDown and keyboardModifiers == KeyboardNoModifier then
         self:zoomOut()
-    elseif direction == MouseWheelDown and keyboardModifiers == KeyboardCtrlModifier then
+    elseif direction == MouseWheelDown and g_keyboard.isPrimaryModifierOnly(keyboardModifiers) then
         self:floorUp(1)
-    elseif direction == MouseWheelUp and keyboardModifiers == KeyboardCtrlModifier then
+    elseif direction == MouseWheelUp and g_keyboard.isPrimaryModifierOnly(keyboardModifiers) then
         self:floorDown(1)
     end
 end

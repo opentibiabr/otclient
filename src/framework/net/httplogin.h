@@ -22,11 +22,11 @@
 
 #pragma once
 
-#ifndef CPPHTTPLIB_OPENSSL_SUPPORT
-#    define CPPHTTPLIB_OPENSSL_SUPPORT
-#endif
+#include <atomic>
+#include <cstdint>
+#include <string>
+
 #include <framework/luaengine/luaobject.h>
-#include <httplib.h>
 
 class LoginHttp final : public LuaObject
 {
@@ -51,23 +51,32 @@ public:
                    uint16_t port, const std::string& email,
                     const std::string& password, int request_id, bool httpLogin, const std::string& token);
 
-    httplib::Result loginHttpsJson(const std::string& host,
-                                   const std::string& path, uint16_t port,
-                                   const std::string& email,
-                                   const std::string& password,
-                                   const std::string& token);
-
-    httplib::Result loginHttpJson(const std::string& host,
-                                  const std::string& path, uint16_t port,
-                                  const std::string& email,
-                                  const std::string& password,
-                                  const std::string& token);
-
     void cancel();
 
     enum Result : int { Success = 200, Error = -1 };
 
 private:
+    struct HttpResponse {
+        bool connected{ false };
+        int status{ Error };
+        std::string reason;
+        std::string body;
+
+        explicit operator bool() const { return connected; }
+    };
+
+    HttpResponse loginHttpsJson(const std::string& host,
+                                const std::string& path, uint16_t port,
+                                const std::string& email,
+                                const std::string& password,
+                                const std::string& token);
+
+    HttpResponse loginHttpJson(const std::string& host,
+                               const std::string& path, uint16_t port,
+                               const std::string& email,
+                               const std::string& password,
+                               const std::string& token);
+
     std::string characters;
     std::string worlds;
     std::string session;

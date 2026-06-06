@@ -54,7 +54,7 @@ void unzipper::extract(const char* fileBuffer, uint fileLength, std::string& des
     if ( unzGetGlobalInfo( zipfile, &global_info ) != UNZ_OK )
     {
         unzClose( zipfile );
-        g_logger.fatal("could not read file global info");
+        g_logger.fatal("Could not read file global info");
     }
 
     uint readSize = 8192;
@@ -76,7 +76,7 @@ void unzipper::extract(const char* fileBuffer, uint fileLength, std::string& des
                 nullptr, 0, nullptr, 0 ) != UNZ_OK )
         {
             unzClose( zipfile );
-            g_logger.fatal("could not read file info");
+            g_logger.fatal("Could not read file info");
         }
 
         // Check if this entry is a directory or file.
@@ -85,7 +85,7 @@ void unzipper::extract(const char* fileBuffer, uint fileLength, std::string& des
         // Guard against zip-slip: reject entries that escape the destination folder
         const auto entryPath = std::filesystem::path(filename).lexically_normal();
         if (entryPath.is_absolute() || entryPath.string().starts_with("..")) {
-            g_logger.warning("skipping zip entry with unsafe path: {}", filename);
+            g_logger.warning("Skipping zip entry with unsafe path: {}", filename);
             if ( ( i+1 ) < global_info.number_entry )
                 unzGoToNextFile( zipfile );
             continue;
@@ -102,7 +102,7 @@ void unzipper::extract(const char* fileBuffer, uint fileLength, std::string& des
             if ( unzOpenCurrentFile( zipfile ) != UNZ_OK )
             {
                 unzClose( zipfile );
-                g_logger.fatal("could not open file");
+                g_logger.fatal("Could not open file");
             }
 
             // Open a file to write out the data.
@@ -117,7 +117,7 @@ void unzipper::extract(const char* fileBuffer, uint fileLength, std::string& des
             {
                 unzCloseCurrentFile( zipfile );
                 unzClose( zipfile );
-                g_logger.fatal("could not open destination file");
+                g_logger.fatal("Could not open destination file");
             }
 
             int error = UNZ_OK;
@@ -149,7 +149,7 @@ void unzipper::extract(const char* fileBuffer, uint fileLength, std::string& des
             if ( unzGoToNextFile( zipfile ) != UNZ_OK )
             {
                 unzClose( zipfile );
-                g_logger.fatal("cound not read next file");
+                g_logger.fatal("Cound not read next file");
             }
         }
     }

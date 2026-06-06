@@ -64,7 +64,7 @@ bool ShaderProgram::addShaderFromSourceCode(ShaderType shaderType, const std::st
     if (shader->compileSourceCode(sourceCode))
         return addShader(shader);
 
-    g_logger.error("failed to compile shader: {}", shader->log());
+    g_logger.error("Failed to compile shader: {}", shader->log());
     return false;
 }
 
@@ -74,7 +74,7 @@ bool ShaderProgram::addShaderFromSourceFile(ShaderType shaderType, const std::st
     if (shader->compileSourceFile(sourceFile))
         return addShader(shader);
 
-    g_logger.error("failed to compile shader: {}", shader->log());
+    g_logger.error("Failed to compile shader: {}", shader->log());
     return false;
 }
 

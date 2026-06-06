@@ -224,6 +224,11 @@ GameCharacterSkillStats = 127
 GameCreaturePaperdoll = 128
 GameMultiSpr = 129
 GameVocationMonk = 130
+GameLevelPercentU16 = 131
+GameEffectSource = 132
+GameNpcWindowRedesign = 133
+GameTaskboard = 134
+GameProficiency = 135
 
 TextColors = {
     red = '#f55e5e',    -- '#c83200'
@@ -369,12 +374,22 @@ PreviewState = {
 
 Blessings = {
     None = 0,
-    Adventurer = 1,
-    SpiritualShielding = 2,
-    EmbraceOfTibia = 4,
-    FireOfSuns = 8,
-    WisdomOfSolitude = 16,
-    SparkOfPhoenix = 32
+    Adventurer = 1,          -- bit 1
+    TwistOfFate = 2,         -- bit 2
+    WisdomOfSolitude = 4,    -- bit 3
+    SparkOfPhoenix = 8,      -- bit 4
+    FireOfSuns = 16,         -- bit 5
+    SpiritualShielding = 32, -- bit 6
+    EmbraceOfTibia = 64,     -- bit 7
+    HeartOfMountain = 128,   -- bit 8
+    BloodOfMountain = 256,   -- bit 9
+
+    -- Compatibility / Legacy values
+    LegacySpiritualShielding = 2,
+    LegacyEmbraceOfTibia = 4,
+    LegacyFireOfSuns = 8,
+    LegacyWisdomOfSolitude = 16,
+    LegacySparkOfPhoenix = 32
 }
 
 DeathType = {
@@ -424,7 +439,7 @@ ChannelEvent = {
 ResourceTypes = {
     BANK_BALANCE = 0,
     GOLD_EQUIPPED = 1,
-    CURRENCY_CUSTOM_EQUIPPED = 2,
+    NPC_TRADE = 2,
     PREY_WILDCARDS = 10,
     DAILYREWARD_STREAK = 20,
     DAILYREWARD_JOKERS = 21,
@@ -433,15 +448,18 @@ ResourceTypes = {
     MAX_CHARM = 32,
     MAX_MINOR_CHARM = 33,
     TASK_HUNTING = 50,
+    NPC_STORAGE_TRADE = 60,
     FORGE_DUST = 70,
     FORGE_SLIVER = 71,
     FORGE_CORES = 72,
+    WHEEL_POINTS = 80,
     LESSER_GEMS = 81,
     REGULAR_GEMS = 82,
     GREATER_GEMS = 83,
-    LESSER_FRAGMENTS = 84,
-    GREATER_FRAGMENTS = 85,
-    WHEEL_OF_DESTINY = 86,
+    LESSER_FRAGMENT = 84,
+    GREATER_FRAGMENT = 85,
+    BOUNTY_POINTS = 86,
+    SOULSEALS = 87,
     COIN_NORMAL = 90,
     COIN_TRANSFERRABLE = 91,
     COIN_AUCTION = 92,
@@ -468,6 +486,23 @@ CyclopediaCharacterInfoTypes = {
 }
 
 StoreConst = {
+	PREY_THIRDSLOT_REAL = 0,
+	PREY_WILDCARD = 1,
+	INSTANT_REWARD = 2,
+	CHARM_EXPANSION = 3,
+	BLESSING_SOLITUDE = 4,
+	BLESSING_PHOENIX = 5,
+	BLESSING_SUNS = 6,
+	BLESSING_SPIRITUAL = 7,
+	BLESSING_EMBRACE = 8,
+	BLESSING_BLOOD = 9,
+	BLESSING_HEART = 10,
+	BLESSING_ALL_PVE = 11,
+	BLESSING_TWIST = 12,
+	TASKHUNTING_THIRDSLOT = 13,
+	BLESSING_ALL_PVP = 14,
+	PREY_THIRDSLOT_REDIRECT = 15,
+	WEEKLY_TASK_EXPANSION = 16,
     InstantRewardAccess = 233,
 }
 
@@ -500,3 +535,34 @@ FlipDirection = {
     Horizontal = 1,
     Vertical = 2,
 }
+
+InspectObjectTypes = {
+    INSPECT_NORMALOBJECT = 0,
+    INSPECT_NPCTRADE = 1,
+    INSPECT_PLAYERTRADE = 2,
+    INSPECT_CYCLOPEDIA = 3,
+    INSPECT_PROFICIENCY = 4
+}
+
+-- INSPECT_CREATURE is speculative: no public server source confirms the tab value.
+-- If the server rejects unknown tab ids, this may produce a protocol error.
+InspectCreaturesTypes = {
+    INSPECT_CREATURE = 4,
+}
+
+WeaponProficiency = {
+    WEAPON_PROFICIENCY_ITEM_INFO = 0,
+    WEAPON_PROFICIENCY_LIST_INFO = 1,
+    WEAPON_PROFICIENCY_RESET_PERKS = 2,
+    WEAPON_PROFICIENCY_APPLY_PERKS = 3
+}
+
+WEAPON_NONE = 0
+WEAPON_SWORD = 1
+WEAPON_AXE = 2
+WEAPON_CLUB = 3
+WEAPON_FIST = 4
+WEAPON_BOW = 5
+WEAPON_CROSSBOW = 6
+WEAPON_WANDROD = 7
+WEAPON_THROW = 8

@@ -21,7 +21,7 @@ function ActionBarController:onClearSearchText()
     search:setText('')
 end
 
-function assignSpell(button)
+function assignSpell(button, multiSlotIndex)
     local dev = true
     local actionbar = button:getParent():getParent()
     if actionbar.locked then
@@ -35,7 +35,8 @@ function assignSpell(button)
     ActionBarController:loadHtml('html/spells.html')
     ActionBarController.ui:show()
     ActionBarController.ui:raise()
-    ActionBarController.ui:setTitle("Assign Spell to Action Button " .. button:getId())
+    local titleSuffix = multiSlotIndex and (" (Slot " .. multiSlotIndex .. ")") or ""
+    ActionBarController.ui:setTitle("Assign Spell to Action Button " .. button:getId() .. titleSuffix)
     local spellList = ActionBarController:findWidget("#spellList")
     local previewWidget = ActionBarController:findWidget("#preview")
     local imageWidget = ActionBarController:findWidget("#image")
@@ -81,8 +82,26 @@ function assignSpell(button)
     for i, widget in ipairs(widgets) do
         spellList:moveChildToIndex(widget, i)
     end
-    if button.cache.spellData and not button.cache.isRuneSpell then
-        local spellData = button.cache.spellData
+    local preselectSpellData = nil
+    local preselectCastParam = nil
+    if multiSlotIndex and button.cache and button.cache.multiActions then
+        local slot = button.cache.multiActions[multiSlotIndex]
+        if slot and slot["chatText"] then
+            local spellData, param = Spells.getSpellDataByParamWords(slot["chatText"]:lower())
+            if spellData then
+                preselectSpellData = spellData
+                if param then
+                    preselectCastParam = param:gsub('"', '')
+                end
+            end
+        end
+    elseif button.cache.spellData and not button.cache.isRuneSpell then
+        preselectSpellData = button.cache.spellData
+        preselectCastParam = button.cache.castParam
+    end
+
+    if preselectSpellData then
+        local spellData = preselectSpellData
         local spellId = spellData.clientId
         if not spellId then
             print("Warning Spell ID not found L81 modules/game_actionbar/logics/ActionAssignmentWindows.lua")
@@ -93,9 +112,9 @@ function assignSpell(button)
         imageWidget:setImageClip(clip)
         paramLabel:setOn(spellData.parameter)
         paramText:setEnabled(spellData.parameter)
-        if spellData.parameter and button.cache.castParam then
-            paramText:setText(button.cache.castParam)
-            paramText:setCursorPos(#button.cache.castParam)
+        if spellData.parameter and preselectCastParam then
+            paramText:setText(preselectCastParam)
+            paramText:setCursorPos(#preselectCastParam)
         end
         for i, k in ipairs(widgets) do
             if k:getId() == tostring(spellData.id) then
@@ -118,7 +137,7 @@ function assignSpell(button)
             end
         end
     end
-    if #widgets > 0 and not button.cache.spellData then
+    if #widgets > 0 and not preselectSpellData then
         radio:selectWidget(widgets[1])
     end
     local function cancelFunc()
@@ -146,8 +165,16 @@ function assignSpell(button)
         if not string_empty(paramValue) then
             param = param .. ' "' .. paramValue:gsub('"', '') .. '"'
         end
-        ApiJson.createOrUpdateText(tonumber(barID), tonumber(buttonID), param, true)
-        updateButton(button)
+        if multiSlotIndex then
+            if not button.cache.multiActions then button.cache.multiActions = {{}, {}, {}} end
+            button.cache.multiActions[multiSlotIndex] = {chatText = param, sendAutomatically = true}
+            ApiJson.createOrUpdateMultiText(tonumber(barID), tonumber(buttonID), multiSlotIndex, param, true)
+            if updateMultiButtonState then updateMultiButtonState(button) end
+            if assignMultiAction then assignMultiAction(button, true) end
+        else
+            ApiJson.createOrUpdateText(tonumber(barID), tonumber(buttonID), param, true)
+            updateButton(button)
+        end
 
         if destroy then
             ActionBarController:unloadHtml()
@@ -199,7 +226,7 @@ end
 -- /*=============================================
 -- =            SetText html Windows             =
 -- =============================================*/
-function assignText(button)
+function assignText(button, multiSlotIndex)
     local actionbar = button:getParent():getParent()
     if actionbar.locked then
         alert('Action bar is locked')
@@ -216,21 +243,41 @@ function assignText(button)
     ui:show()
     ui:raise()
     ui:focus()
-    ui:setTitle("Assign Text to Action Button " .. button:getId())
+    local titleSuffix = multiSlotIndex and (" (Slot " .. multiSlotIndex .. ")") or ""
+    ui:setTitle("Assign Text to Action Button " .. button:getId() .. titleSuffix)
     local textWidget = ActionBarController:findWidget("#text")
     local tickWidget = ActionBarController:findWidget("#tick")
-    local param = button.cache.param or ''
+    local param = ''
+    local sendAuto = false
+    if multiSlotIndex and button.cache and button.cache.multiActions then
+        local slot = button.cache.multiActions[multiSlotIndex]
+        if slot and slot["chatText"] then
+            param = slot["chatText"]
+            sendAuto = slot["sendAutomatically"] or false
+        end
+    else
+        param = button.cache.param or ''
+        sendAuto = button.cache.sendAutomatic or false
+    end
     textWidget:setText(param)
     textWidget:setCursorPos(#param)
     local hasText = #param > 0
-    tickWidget:setChecked(hasText and button.cache.sendAutomatic or false)
+    tickWidget:setChecked(hasText and sendAuto or false)
     local function saveText(closeAfter)
         local autoSay = tickWidget:isChecked()
         local text = textWidget:getText()
         local formattedText = Spells.getSpellFormatedName(text)
         local barID, buttonID = string.match(button:getId(), "(.*)%.(.*)")
-        ApiJson.createOrUpdateText(tonumber(barID), tonumber(buttonID), formattedText, autoSay)
-        updateButton(button)
+        if multiSlotIndex then
+            if not button.cache.multiActions then button.cache.multiActions = {{}, {}, {}} end
+            button.cache.multiActions[multiSlotIndex] = {chatText = formattedText, sendAutomatically = autoSay}
+            ApiJson.createOrUpdateMultiText(tonumber(barID), tonumber(buttonID), multiSlotIndex, formattedText, autoSay)
+            if updateMultiButtonState then updateMultiButtonState(button) end
+            if assignMultiAction then assignMultiAction(button, true) end
+        else
+            ApiJson.createOrUpdateText(tonumber(barID), tonumber(buttonID), formattedText, autoSay)
+            updateButton(button)
+        end
         if closeAfter then
             ActionBarController:unloadHtml()
         end
@@ -272,7 +319,7 @@ local function canEquipItem(item)
     return false
 end
 
-function assignItem(button, itemId, itemTier, dragEvent)
+function assignItem(button, itemId, itemTier, dragEvent, multiSlotIndex)
     if not isLoaded then
         return true
     end
@@ -291,7 +338,7 @@ function assignItem(button, itemId, itemTier, dragEvent)
         updateButton(button)
         return
     end
-    if dragEvent then
+    if dragEvent and not multiSlotIndex then
         updateButton(button)
         return
     end
@@ -306,7 +353,8 @@ function assignItem(button, itemId, itemTier, dragEvent)
     ui:show()
     ui:raise()
     ui:focus()
-    ui:setTitle("Assign Object to Action Button " .. button:getId())
+    local titleSuffix = multiSlotIndex and (" (Slot " .. multiSlotIndex .. ")") or ""
+    ui:setTitle("Assign Object to Action Button " .. button:getId() .. titleSuffix)
     local itemWidget = ui:querySelector("#item")
     local selectButton = ui:querySelector("button[text='Select Object']")
     local checkbox1 = ui:querySelector("#UseOnYourself")
@@ -321,10 +369,24 @@ function assignItem(button, itemId, itemTier, dragEvent)
     if selectButton then
         selectButton.onClick = function()
             ActionBarController:unloadHtml()
-            assignItemEvent(button)
+            assignItemEvent(button, multiSlotIndex)
         end
     end
-    local fromSelect = button.item:getItemId() > 0 and button.item:getItemId() ~= itemId
+    local preselectActionType = nil
+    local preselectItemId = nil
+    if multiSlotIndex and button.cache and button.cache.multiActions then
+        local slot = button.cache.multiActions[multiSlotIndex]
+        if slot and slot["useObject"] then
+            preselectItemId = slot["useObject"]
+            preselectActionType = slot["useType"]
+        end
+    end
+    local fromSelect
+    if multiSlotIndex then
+        fromSelect = preselectItemId and preselectItemId ~= itemId or false
+    else
+        fromSelect = button.item:getItemId() > 0 and button.item:getItemId() ~= itemId
+    end
     itemWidget:setItemId(itemId)
     if not item or item:getId() == 0 then
         item = itemWidget:getItem()
@@ -355,6 +417,7 @@ function assignItem(button, itemId, itemTier, dragEvent)
         useType = "Use"
     }}
 
+    local activeActionType = multiSlotIndex and preselectActionType or button.cache.actionType
     local selectedCheckbox = nil
     for _, cbData in ipairs(checkboxWidgets) do
         if cbData.widget then
@@ -373,8 +436,8 @@ function assignItem(button, itemId, itemTier, dragEvent)
 
                 if not selectedCheckbox and
                     not (item:getClothSlot() > 0 or (item:getClothSlot() == 0 and item:getClassification() > 0)) then
-                    if fromSelect or button.cache.actionType == 0 or button.cache.actionType == cbData.useType or
-                        button.cache.actionType == UseTypes[cbData.useType] then
+                    if fromSelect or activeActionType == 0 or activeActionType == cbData.useType or
+                        activeActionType == UseTypes[cbData.useType] then
                         selectedCheckbox = cbData.widget
                     end
                 end
@@ -387,8 +450,8 @@ function assignItem(button, itemId, itemTier, dragEvent)
         checkbox5:setEnabled(true)
 
         if not selectedCheckbox then
-            if fromSelect or button.cache.actionType == 0 or button.cache.actionType == "Equip" or
-                button.cache.actionType == UseTypes["Equip"] then
+            if fromSelect or activeActionType == 0 or activeActionType == "Equip" or
+                activeActionType == UseTypes["Equip"] then
                 selectedCheckbox = checkbox5
             end
         end
@@ -399,7 +462,7 @@ function assignItem(button, itemId, itemTier, dragEvent)
         checkbox6:setEnabled(true)
 
         if not selectedCheckbox then
-            if fromSelect or button.cache.actionType == 0 or button.cache.actionType == "Use" or button.cache.actionType ==
+            if fromSelect or activeActionType == 0 or activeActionType == "Use" or activeActionType ==
                 UseTypes["Use"] then
                 selectedCheckbox = checkbox6
             end
@@ -456,8 +519,16 @@ function assignItem(button, itemId, itemTier, dragEvent)
                 end
             end
         end
-        ApiJson.createOrUpdateAction(tonumber(barID), tonumber(buttonID), selected, itemId, itemTier)
-        updateButton(button)
+        if multiSlotIndex then
+            if not button.cache.multiActions then button.cache.multiActions = {{}, {}, {}} end
+            button.cache.multiActions[multiSlotIndex] = {useObject = itemId, useType = selected, upgradeTier = itemTier, useEquipSmartMode = false}
+            ApiJson.createOrUpdateMultiAction(tonumber(barID), tonumber(buttonID), multiSlotIndex, selected, itemId, itemTier, false)
+            if updateMultiButtonState then updateMultiButtonState(button) end
+            if assignMultiAction then assignMultiAction(button, true) end
+        else
+            ApiJson.createOrUpdateAction(tonumber(barID), tonumber(buttonID), selected, itemId, itemTier)
+            updateButton(button)
+        end
 
         if destroy then
             ActionBarController:unloadHtml()
@@ -596,7 +667,7 @@ function onDropActionButton(self, mousePosition, mouseButton)
     self:ungrabMouse()
 end
 
-function assignItemEvent(button)
+function assignItemEvent(button, multiSlotIndex)
     mouseGrabberWidget:grabMouse()
     -- Use native cursor when enabled, otherwise use custom cursor
     if modules.client_options and modules.client_options.getOption('nativeCursor') then
@@ -605,11 +676,11 @@ function assignItemEvent(button)
         g_mouse.pushCursor('target')
     end
     mouseGrabberWidget.onMouseRelease = function(self, mousePosition, mouseButton)
-        onAssignItem(self, mousePosition, mouseButton, button)
+        onAssignItem(self, mousePosition, mouseButton, button, multiSlotIndex)
     end
 end
 
-function onAssignItem(self, mousePosition, mouseButton, button)
+function onAssignItem(self, mousePosition, mouseButton, button, multiSlotIndex)
     mouseGrabberWidget:ungrabMouse()
     -- Restore cursor
     if modules.client_options and modules.client_options.getOption('nativeCursor') then
@@ -641,7 +712,7 @@ function onAssignItem(self, mousePosition, mouseButton, button)
         modules.game_textmessage.displayFailureMessage(tr('Invalid object'))
         return true
     end
-    assignItem(button, itemId, itemTier)
+    assignItem(button, itemId, itemTier, false, multiSlotIndex)
 end
 
 -- /*=============================================

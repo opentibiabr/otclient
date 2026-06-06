@@ -2,6 +2,17 @@ name: Reusable Docker Build
 
 on:
   workflow_call:
+    inputs:
+      push:
+        description: Publish the Docker image to GHCR.
+        required: false
+        type: boolean
+        default: false
+      vcpkg_binary_cache_access:
+        description: vcpkg binary cache access mode. Use readwrite only for trusted publishing events.
+        required: false
+        type: string
+        default: read
 
 permissions:
   contents: read
@@ -11,6 +22,10 @@ jobs:
   build:
     name: Image Build
     runs-on: ubuntu-latest
+    env:
+      DOCKER_PUBLISH_CONTEXT: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'opentibiabr/otclient' && 'true' || 'false' }}
+      DOCKER_PUBLISH: ${{ inputs.push && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'opentibiabr/otclient' && secrets.VCPKG_PACKAGES_TOKEN != '' && 'true' || 'false' }}
+      VCPKG_BINARY_CACHE_ACCESS: ${{ inputs.vcpkg_binary_cache_access == 'readwrite' && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'opentibiabr/otclient' && secrets.VCPKG_PACKAGES_TOKEN != '' && 'readwrite' || 'read' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -27,16 +42,26 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
+      - name: Warn when Docker publishing is disabled
+        if: inputs.push && env.DOCKER_PUBLISH != 'true'
+        shell: bash
+        run: |
+          if [ "${DOCKER_PUBLISH_CONTEXT}" != "true" ]; then
+            echo "::warning::Docker publishing was requested outside the opentibiabr/otclient push-to-main context; building without publishing."
+          else
+            echo "::warning::Docker publishing was requested, but VCPKG_PACKAGES_TOKEN is not configured; building without publishing."
+          fi
+
       - name: Login to GHCR
-        if: github.ref == 'refs/heads/main'
-        uses: docker/login-action@v4
+        if: env.DOCKER_PUBLISH == 'true'
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.VCPKG_PACKAGES_TOKEN }}
 
-      - name: Build and push (main)
-        if: github.ref == 'refs/heads/main'
+      - name: Build and push
+        if: env.DOCKER_PUBLISH == 'true'
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -45,8 +70,8 @@ jobs:
           build-args: |
             VCPKG_FEED_URL=https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
             VCPKG_FEED_USERNAME=${{ github.repository_owner }}
-            VCPKG_BINARY_CACHE_ACCESS=readwrite
-            VCPKG_BINARY_SOURCES=clear;nuget,https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json,readwrite;nugettimeout,1200
+            VCPKG_BINARY_CACHE_ACCESS=${{ env.VCPKG_BINARY_CACHE_ACCESS }}
+            VCPKG_BINARY_SOURCES=clear;nuget,https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json,${{ env.VCPKG_BINARY_CACHE_ACCESS }};nugettimeout,1200
           secrets: |
             github_token=${{ secrets.VCPKG_PACKAGES_TOKEN || github.token }}
           tags: |
@@ -55,8 +80,8 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Build and export (PR)
-        if: github.ref != 'refs/heads/main'
+      - name: Build and export
+        if: env.DOCKER_PUBLISH != 'true'
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -66,15 +91,15 @@ jobs:
           build-args: |
             VCPKG_FEED_URL=https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
             VCPKG_FEED_USERNAME=${{ github.repository_owner }}
-            VCPKG_BINARY_CACHE_ACCESS=read
-            VCPKG_BINARY_SOURCES=clear;nuget,https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json,read;nugettimeout,1200
+            VCPKG_BINARY_CACHE_ACCESS=${{ env.VCPKG_BINARY_CACHE_ACCESS }}
+            VCPKG_BINARY_SOURCES=clear;nuget,https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json,${{ env.VCPKG_BINARY_CACHE_ACCESS }};nugettimeout,1200
           tags: |
-            ghcr.io/${{ steps.repo_lower.outputs.value }}:pr
+            ghcr.io/${{ steps.repo_lower.outputs.value }}:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Upload docker artifact
-        if: github.ref != 'refs/heads/main'
+        if: env.DOCKER_PUBLISH != 'true'
         uses: actions/upload-artifact@v7
         with:
           name: docker-otclient

@@ -17,6 +17,20 @@ local function unregisterModalHandle(self, handle)
     return false
 end
 
+local function registerModalHandle(self, handle)
+    if not handle then
+        return nil
+    end
+
+    local eventType = handle.controllerEventType
+    if not self.modalHandles[eventType] then
+        self.modalHandles[eventType] = {}
+    end
+
+    table.insert(self.modalHandles[eventType], handle)
+    return handle
+end
+
 local function destroyHandle(self, handle)
     if handle.htmlId then
         local htmlId = handle.htmlId
@@ -249,83 +263,66 @@ function Controller:createWidgetFromHTML(html, parent)
     return widget
 end
 
--- Opens an OTUI widget by style name on demand, without affecting self.ui.
--- Returns a handle: { ui }. Auto-destroyed on terminate (or onGameEnd if opened during onGameStart).
-function Controller:openModalOtui(widgetType, parent)
-    local ui = g_ui.createWidget(widgetType, parent or rootWidget)
-    if not ui then
-        perror('openModalOtui: failed to create widget "' .. tostring(widgetType) .. '" in ' .. tostring(self.name))
-        return nil
-    end
-    local handle = { ui = ui, controllerEventType = self.currentTypeEvent }
-    if not self.modalHandles[handle.controllerEventType] then
-        self.modalHandles[handle.controllerEventType] = {}
-    end
-    table.insert(self.modalHandles[handle.controllerEventType], handle)
-    return handle
-end
+-- Opens a modal on demand without affecting self.ui / self.htmlId.
+-- Supported modes:
+--   'otui' (default): source is a widget style name
+--   'file': source is an OTUI file path relative to the module
+--   'html': source is an HTML path relative to the module
+-- Returns a handle that is auto-destroyed on terminate (or onGameEnd if opened during onGameStart).
+function Controller:openModal(source, options)
+    options = options or {}
 
--- Opens an OTUI file on demand, without affecting self.ui.
--- Returns a handle: { ui }. Auto-destroyed on terminate (or onGameEnd if opened during onGameStart).
-function Controller:openModalOtuiFile(path, parent)
-    local ui = g_ui.loadUI('/' .. self.name .. '/' .. path, parent or rootWidget)
-    if not ui then
-        perror('openModalOtuiFile: failed to load "' .. tostring(path) .. '" in ' .. tostring(self.name))
-        return nil
-    end
-    local handle = { ui = ui, controllerEventType = self.currentTypeEvent }
-    if not self.modalHandles[handle.controllerEventType] then
-        self.modalHandles[handle.controllerEventType] = {}
-    end
-    table.insert(self.modalHandles[handle.controllerEventType], handle)
-    return handle
-end
+    local mode = options.mode or 'otui'
+    local parent = options.parent
 
--- Destroys a handle returned by openModalOtui or openModalOtuiFile.
-function Controller:closeModalOtui(handle)
-    if not handle then return end
-    if not unregisterModalHandle(self, handle) then
-        perror('closeModalOtui: handle not registered in ' .. tostring(self.name))
-    end
-    if handle.ui and not handle.ui:isDestroyed() then
-        handle.ui:destroy()
-    end
-    handle.ui = nil
-end
+    if mode == 'html' then
+        local suffix = ".html"
+        local relativePath = source
+        if relativePath:sub(-#suffix) ~= suffix then
+            relativePath = relativePath .. suffix
+        end
 
--- Opens a secondary HTML window without affecting self.ui / self.htmlId.
--- Returns a handle: { htmlId, ui }.
--- The modal HTML's onclick="self:method()" resolves to this controller (same self.name).
-function Controller:openModalHtml(relativePath)
-    local suffix = ".html"
-    if relativePath:sub(-#suffix) ~= suffix then
-        relativePath = relativePath .. suffix
+        local htmlId = g_html.load(self.name, relativePath, parent or g_ui.getRootWidget())
+        if not htmlId or htmlId == 0 then
+            perror('openModal: failed to load HTML "' .. tostring(relativePath) .. '" in ' .. tostring(self.name))
+            return nil
+        end
+
+        return registerModalHandle(self, {
+            htmlId = htmlId,
+            ui = g_html.getRootWidget(htmlId),
+            controllerEventType = self.currentTypeEvent
+        })
     end
-    local htmlId = g_html.load(self.name, relativePath, g_ui.getRootWidget())
-    local handle = {
-        htmlId = htmlId,
-        ui = g_html.getRootWidget(htmlId),
+
+    local ui
+    if mode == 'file' then
+        ui = g_ui.loadUI('/' .. self.name .. '/' .. source, parent or rootWidget)
+        if not ui then
+            perror('openModal: failed to load OTUI file "' .. tostring(source) .. '" in ' .. tostring(self.name))
+            return nil
+        end
+    else
+        ui = g_ui.createWidget(source, parent or rootWidget)
+        if not ui then
+            perror('openModal: failed to create OTUI widget "' .. tostring(source) .. '" in ' .. tostring(self.name))
+            return nil
+        end
+    end
+
+    return registerModalHandle(self, {
+        ui = ui,
         controllerEventType = self.currentTypeEvent
-    }
-    if not self.modalHandles[handle.controllerEventType] then
-        self.modalHandles[handle.controllerEventType] = {}
-    end
-    table.insert(self.modalHandles[handle.controllerEventType], handle)
-    return handle
+    })
 end
 
--- Destroys a handle returned by openModalHtml.
-function Controller:closeModalHtml(handle)
+-- Destroys a handle returned by openModal.
+function Controller:closeModal(handle)
     if not handle then return end
     if not unregisterModalHandle(self, handle) then
-        perror('closeModalHtml: handle not registered in ' .. tostring(self.name))
+        perror('closeModal: handle not registered in ' .. tostring(self.name))
     end
-    local htmlId = handle.htmlId
-    handle.htmlId = nil
-    handle.ui = nil
-    if htmlId then
-        g_html.destroy(htmlId)
-    end
+    destroyHandle(self, handle)
 end
 
 function Controller:loadUI(name, parent)

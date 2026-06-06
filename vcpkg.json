@@ -8,8 +8,15 @@
     "cppcodec",
     "discord-rpc",
     "liblzma",
+    "libarchive",
     "libobfuscate",
     "libogg",
+    {
+      "name": "libpng",
+      "features": [
+        "apng"
+      ]
+    },
     "libvorbis",
     "nlohmann-json",
     "openal-soft",
@@ -22,6 +29,7 @@
     "zlib",
     "bshoshany-thread-pool",
     "fmt",
+    "spdlog",
     "utfcpp",
     "freetype",
     {
@@ -55,5 +63,5 @@
       ]
     }
   },
-  "builtin-baseline": "56bb2411609227288b70117ead2c47585ba07713"
+  "builtin-baseline": "f3e10653cc27d62a37a3763cd84b38bca07c6075"
 }

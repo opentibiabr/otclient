@@ -42,12 +42,15 @@ enum ITEM_CATEGORY {
 	ITEM_CATEGORY_TIBIA_COINS = 23;
 	ITEM_CATEGORY_CREATURE_PRODUCTS = 24;
 	ITEM_CATEGORY_QUIVER = 25;
-	ITEM_CATEGORY_SOUL_CORES = 26;
+	ITEM_CATEGORY_TWOHANDWEAPON = 26;
 	ITEM_CATEGORY_FIST_WEAPONS = 27;
+	ITEM_CATEGORY_BACKPACK = 28;
+	ITEM_CATEGORY_ONEHANDWEAPON = 29;
+	ITEM_CATEGORY_ARROW = 30;
+	ITEM_CATEGORY_SOULCORES = 31;
 }
 
 enum PLAYER_PROFESSION {
-	PLAYER_PROFESSION_ANY = -1;
 	PLAYER_PROFESSION_NONE = 0;
 	PLAYER_PROFESSION_KNIGHT = 1;
 	PLAYER_PROFESSION_PALADIN = 2;
@@ -55,6 +58,19 @@ enum PLAYER_PROFESSION {
 	PLAYER_PROFESSION_DRUID = 4;
 	PLAYER_PROFESSION_MONK = 5;
 	PLAYER_PROFESSION_PROMOTED = 10;
+}
+
+
+enum WEAPON_TYPE {
+	WEAPON_TYPE_NOWEAPON = 0;
+	WEAPON_TYPE_SWORD = 1;
+	WEAPON_TYPE_AXE = 2;
+	WEAPON_TYPE_CLUB = 3;
+	WEAPON_TYPE_FIST = 4;
+	WEAPON_TYPE_BOW = 5;
+	WEAPON_TYPE_CROSSBOW = 6;
+	WEAPON_TYPE_WAND_ROD = 7;
+	WEAPON_TYPE_THROW = 8;
 }
 
 enum ANIMATION_LOOP_TYPE {
@@ -183,7 +199,12 @@ message AppearanceFlags {
 	optional bool deco_kit = 57;
 	optional AppearanceFlagSkillWheelGem skillwheel_gem = 58;
 	optional bool dual_wielding = 59;
-	reserved 60, 61, 62, 63, 64, 65, 66, 67, 68, 69;
+	optional AppearanceFlagImbueable imbueable = 60;
+	optional AppearanceFlagProficiency proficiency = 61;
+	repeated PLAYER_PROFESSION restrict_to_vocation = 62;
+	optional uint32 minimum_level = 63;
+	optional WEAPON_TYPE weapon_type = 64;
+	reserved 65, 66, 67, 68, 69;
 	optional bool hook_south = 70;
 	optional bool hook_east = 71;
 	optional AppearanceFlagTransparencyLevel transparencylevel = 72;
@@ -282,6 +303,14 @@ message SpecialMeaningAppearanceIds {
 	optional uint32 tibia_coin_id = 4;
 	optional uint32 stamped_letter_id = 5;
 	optional uint32 supply_stash_id = 6;
+}
+
+message AppearanceFlagImbueable {
+	optional uint32 slot_count = 1;
+}
+
+message AppearanceFlagProficiency {
+  optional uint32 proficiency_id = 1;
 }
 
 enum FIXED_FRAME_GROUP {

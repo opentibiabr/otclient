@@ -185,7 +185,7 @@ JNIEnv* AndroidManager::getJNIEnv() {
     JNIEnv *env;
 
     if (m_app->activity->vm->AttachCurrentThread(&env, nullptr) < 0) {
-        g_logger.fatal("failed to attach current thread");
+        g_logger.fatal("Failed to attach current thread");
         return nullptr;
     }
 

@@ -89,8 +89,11 @@ void Effect::draw(const Point& dest, const bool drawThings, LightView* lightView
         return;
 
     if (g_drawPool.getCurrentType() == DrawPoolType::MAP) {
-        if (drawThings && g_client.getEffectAlpha() < 1.f)
-            g_drawPool.setOpacity(g_client.getEffectAlpha(), true);
+        if (drawThings) {
+            float alpha = g_client.getEffectAlpha(m_source);
+            if (alpha < 1.f)
+                g_drawPool.setOpacity(alpha, true);
+        }
     }
 
     if (drawThings && hasShader())

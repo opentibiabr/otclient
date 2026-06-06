@@ -35,6 +35,7 @@
 #include "framework/html/htmlmanager.h"
 #include "framework/html/htmlnode.h"
 #include "framework/otml/otmlnode.h"
+#include "framework/graphics/coordsbuffer.h"
 #include <framework/platform/platformwindow.h>
 #include <framework/util/stats.h>
 
@@ -58,6 +59,8 @@ UIWidget::UIWidget()
     m_positions.set(Unit::Auto);
     m_clickTimer.stop();
 
+    m_textUnderline = std::make_shared<CoordsBuffer>();
+
     initBaseStyle();
     initText();
     initImage();
@@ -70,7 +73,7 @@ UIWidget::~UIWidget()
 #ifndef NDEBUG
     assert(!g_app.isTerminated());
     if (!isDestroyed())
-        g_logger.warning("widget '{}' was not explicitly destroyed", m_id);
+        g_logger.warning("Widget '{}' was not explicitly destroyed", m_id);
 #endif
 
     g_stats.removeWidget(this);
@@ -360,7 +363,7 @@ void UIWidget::focusChild(const UIWidgetPtr& child, const Fw::FocusReason reason
         return;
 
     if (child && !hasChild(child)) {
-        g_logger.error("attempt to focus an unknown child in a UIWidget");
+        g_logger.error("Attempt to focus an unknown child in a UIWidget");
         return;
     }
 
@@ -977,7 +980,7 @@ void UIWidget::internalDestroy()
 void UIWidget::destroy()
 {
     if (isDestroyed())
-        g_logger.warning("attempt to destroy widget '{}' ({}) two times", m_id, m_source);
+        g_logger.warning("Attempt to destroy widget '{}' ({}) two times", m_id, m_source);
 
     // hold itself reference
     const UIWidgetPtr self = static_self_cast<UIWidget>();
@@ -1142,7 +1145,7 @@ bool UIWidget::setRect(const Rect& rect)
     }
     /*
     if(rect.width() > 8192 || rect.height() > 8192) {
-        g_logger.error("attempt to set huge rect size ({}) for {}", stdext::to_string(rect), m_id);
+        g_logger.error("Attempt to set huge rect size ({}) for {}", stdext::to_string(rect), m_id);
         return false;
     }
     */

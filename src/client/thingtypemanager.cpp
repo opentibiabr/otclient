@@ -23,7 +23,6 @@
 #include "thingtypemanager.h"
 
 #include <nlohmann/json.hpp>
-#include <nlohmann/json_fwd.hpp>
 
 #include "game.h"
 #include "spriteappearances.h"
@@ -41,9 +40,25 @@
 #include <framework/core/binarytree.h>
 #endif
 
-using json = nlohmann::json;
 
 ThingTypeManager g_things;
+
+const nlohmann::json& ThingTypeManager::getCatalogContent(const std::string& file)
+{
+    const auto path = g_resources.resolvePath(g_resources.guessFilePath(file + "catalog-content", "json"));
+    if (path != m_catalogContentPath) {
+        m_catalogContent = std::make_unique<nlohmann::json>(nlohmann::json::parse(g_resources.readFileContents(path)));
+        m_catalogContentPath = path;
+    }
+
+    return *m_catalogContent;
+}
+
+void ThingTypeManager::clearCatalogContent()
+{
+    m_catalogContentPath.clear();
+    m_catalogContent.reset();
+}
 
 void ThingTypeManager::init()
 {
@@ -62,6 +77,10 @@ void ThingTypeManager::terminate()
         m_thingType.clear();
 
     m_nullThingType = nullptr;
+    m_proficienciesFile.clear();
+    m_proficiencyThingsCache.clear();
+    m_proficiencyThingsCacheDirty = true;
+    clearCatalogContent();
 
 #ifdef FRAMEWORK_EDITOR
     m_itemTypes.clear();
@@ -159,7 +178,7 @@ bool ThingTypeManager::loadAppearances(const std::string& file)
             g_spriteAppearances.unload();
             int spritesCount = 0;
             std::string appearancesFile;
-            json document = json::parse(g_resources.readFileContents(g_resources.resolvePath(g_resources.guessFilePath(file + "catalog-content", "json"))));
+            const auto& document = getCatalogContent(file);
             for (const auto& obj : document) {
                 const auto& type = obj["type"];
                 if (type == "appearances") {
@@ -213,6 +232,7 @@ bool ThingTypeManager::loadAppearances(const std::string& file)
                 }
             }
             m_datLoaded = true;
+            m_proficiencyThingsCacheDirty = true;
         } else {
             std::stringstream datFileStream;
             auto appearancesLib = appearances::Appearances();
@@ -248,6 +268,8 @@ namespace {
             RaceType otcRaceType = RaceType();
             otcRaceType.raceId = protobufRace.raceid();
             otcRaceType.name = protobufRace.name();
+            otcRaceType.hasCategory = protobufRace.has_category();
+            otcRaceType.category = protobufRace.category();
             otcRaceType.boss = boss;
 
             Outfit otcOutfit;
@@ -266,8 +288,8 @@ namespace {
                 }
             }
 
-            otcRaceType.outfit = otcOutfit;
-            otcRaceList.emplace_back(otcRaceType);
+            otcRaceType.outfit = std::move(otcOutfit);
+            otcRaceList.emplace_back(std::move(otcRaceType));
         }
     }
 }
@@ -277,7 +299,7 @@ bool ThingTypeManager::loadStaticData(const std::string& file)
     try {
         std::string staticDataFile;
 
-        json document = json::parse(g_resources.readFileContents(g_resources.resolvePath(g_resources.guessFilePath(file + "catalog-content", "json"))));
+        const auto& document = getCatalogContent(file);
         for (const auto& obj : document) {
             const auto& type = obj["type"];
             if (type == "staticdata") {
@@ -322,6 +344,42 @@ bool ThingTypeManager::loadStaticData(const std::string& file)
 }
 #endif
 
+bool ThingTypeManager::resolveProficienciesFile(const std::string& file)
+{
+    m_proficienciesFile.clear();
+
+    if (!g_game.getFeature(Otc::GameProficiency)) {
+        return false;
+    }
+
+    try {
+        std::string proficienciesFile;
+
+        const auto& document = getCatalogContent(file);
+        for (const auto& obj : document) {
+            const auto& type = obj["type"];
+            if (type == "proficiencies") {
+                proficienciesFile = obj["file"];
+            }
+        }
+
+        if (proficienciesFile.empty()) {
+            return false;
+        }
+
+        const auto proficienciesPath = fmt::format("{}{}", file, proficienciesFile);
+        if (!g_resources.fileExists(proficienciesPath)) {
+            return false;
+        }
+
+        m_proficienciesFile = proficienciesPath;
+        return true;
+    } catch (const std::exception&) {
+        m_proficienciesFile.clear();
+        return false;
+    }
+}
+
 const ThingTypeList& ThingTypeManager::getThingTypes(const ThingCategory category)
 {
     if (category < ThingLastCategory)
@@ -333,7 +391,7 @@ const ThingTypeList& ThingTypeManager::getThingTypes(const ThingCategory categor
 const ThingTypePtr& ThingTypeManager::getThingType(const uint16_t id, const ThingCategory category)
 {
     if (category >= ThingLastCategory || id >= m_thingTypes[category].size()) {
-        g_logger.error("invalid thing type client id {} in category {}", id, static_cast<uint8_t>(category));
+        g_logger.error("Invalid thing type client id {} in category {}", id, static_cast<uint8_t>(category));
         return m_nullThingType;
     }
     return m_thingTypes[category][id];
@@ -341,7 +399,7 @@ const ThingTypePtr& ThingTypeManager::getThingType(const uint16_t id, const Thin
 
 ThingType* ThingTypeManager::getRawThingType(uint16_t id, ThingCategory category) {
     if (category >= ThingLastCategory || id >= m_thingTypes[category].size()) {
-        g_logger.error("invalid thing type client id {} in category {}", id, static_cast<uint8_t>(category));
+        g_logger.error("Invalid thing type client id {} in category {}", id, static_cast<uint8_t>(category));
         return nullptr;
     }
     return m_thingTypes[category][id].get();
@@ -354,6 +412,46 @@ ThingTypeList ThingTypeManager::findThingTypeByAttr(const ThingAttr attr, const 
         if (type->hasAttr(attr))
             ret.emplace_back(type);
     return ret;
+}
+
+void ThingTypeManager::buildProficiencyCache()
+{
+    m_proficiencyThingsCache.clear();
+    for (const auto& type : m_thingTypes[ThingCategoryItem]) {
+        if (type && type->getProficiencyId() > 0) {
+            m_proficiencyThingsCache.emplace_back(type);
+        }
+    }
+    m_proficiencyThingsCacheDirty = false;
+}
+
+const ThingTypeList& ThingTypeManager::getProficiencyThings()
+{
+    if (m_proficiencyThingsCacheDirty) {
+        buildProficiencyCache();
+    }
+    return m_proficiencyThingsCache;
+}
+
+std::string ThingTypeManager::getCyclopediaItemName(uint16_t id)
+{
+    const auto& type = getThingType(id, ThingCategoryItem);
+    if (type->isNull()) return "";
+    if (!type->getMarketData().name.empty()) return type->getMarketData().name;
+    return type->getName();
+}
+
+std::string ThingTypeManager::getProficienciesFile()
+{
+    if (!g_game.getFeature(Otc::GameProficiency)) {
+        return "";
+    }
+
+    if (!m_proficienciesFile.empty() && g_resources.fileExists(m_proficienciesFile)) {
+        return m_proficienciesFile;
+    }
+
+    return "";
 }
 
 const RaceType& ThingTypeManager::getRaceData(uint32_t raceId)
@@ -481,7 +579,7 @@ ItemTypeList ThingTypeManager::findItemTypesByString(const std::string& name)
 const ItemTypePtr& ThingTypeManager::getItemType(uint16_t id)
 {
     if (id >= m_itemTypes.size() || m_itemTypes[id] == m_nullItemType) {
-        g_logger.error("invalid thing type, server id: {}", id);
+        g_logger.error("Invalid thing type, server id: {}", id);
         return m_nullItemType;
     }
     return m_itemTypes[id];
@@ -623,7 +721,7 @@ void ThingTypeManager::loadXml(const std::string& file)
         }
 
         m_xmlLoaded = true;
-        g_logger.debug("items.xml read successfully.");
+        g_logger.debug("Items.xml read successfully.");
     } catch (const std::exception& e) {
         g_logger.error("Failed to load '{}' (XML file): {}", file, e.what());
     }

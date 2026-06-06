@@ -259,8 +259,8 @@ void UIWidget::parseTextStyle(const OTMLNodePtr& styleNode)
     }
 
     if (!ttfFontName.empty()) {
-        g_logger.debug("parseTextStyle: setting TTF font '{}' size {} stroke {} rgba({},{},{},{})", 
-                      ttfFontName, ttfFontSize, ttfStrokeWidth, 
+        g_logger.debug("ParseTextStyle: setting TTF font '{}' size {} stroke {} rgba({},{},{},{})",
+                      ttfFontName, ttfFontSize, ttfStrokeWidth,
                       ttfStrokeColor.r(), ttfStrokeColor.g(), ttfStrokeColor.b(), ttfStrokeColor.a());
         setTTFFont(ttfFontName, ttfFontSize, ttfStrokeWidth, ttfStrokeColor);
     }
