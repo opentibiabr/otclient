@@ -57,7 +57,7 @@ _G.WidgetWatch = WidgetWatch
 -- table.watchList
 -- Watches an array-like table (1..N) for structural changes.
 -- Emits only inserts and removes (no move callbacks).
--- Keys come from ops.keyOf(item) or default to the item reference itself.
+-- Keys come from ops.keyOf(item, index) or default to the item reference itself.
 -- initial inserts via ops.initialScan = true or w:scan(true).
 function table.watchList(realList, ops)
     local self       = {}
@@ -66,14 +66,16 @@ function table.watchList(realList, ops)
     local endBatch   = ops and ops.endBatch
     local onInsert   = ops and ops.onInsert
     local onRemove   = ops and ops.onRemove
+    local onUpdate   = ops and ops.onUpdate
 
     self.list        = realList
+    self.keyOf       = keyOf
     self.prev        = {}
     self.prevK       = {}
 
     for i = 1, #realList do
         self.prev[i]  = realList[i]
-        self.prevK[i] = keyOf(realList[i])
+        self.prevK[i] = self.keyOf(realList[i], i)
     end
 
     local function buildIndexMap(keys)
@@ -94,12 +96,21 @@ function table.watchList(realList, ops)
 
         local curr = self.list
         local wantK = {}
-        for i = 1, #curr do wantK[i] = keyOf(curr[i]) end
+        for i = 1, #curr do wantK[i] = self.keyOf(curr[i], i) end
 
         if beginBatch then beginBatch() end
 
         local prevK   = self.prevK
         local prev    = self.prev
+        local needsUpdate = #curr ~= #prev
+        if onUpdate and not needsUpdate then
+            for i = 1, #curr do
+                if curr[i] ~= prev[i] then
+                    needsUpdate = true
+                    break
+                end
+            end
+        end
 
         local wantSet = {}
         for i = 1, #wantK do wantSet[wantK[i]] = true end
@@ -143,6 +154,10 @@ function table.watchList(realList, ops)
                     i = i + 1
                 end
             end
+        end
+
+        if onUpdate and needsUpdate then
+            for i = 1, #curr do onUpdate(i, curr[i]) end
         end
 
         if endBatch then endBatch() end

@@ -41,11 +41,13 @@ MessageBoxWindow < UIMessageBox
     anchors.top: parent.top
     text-wrap: true
     text-auto-resize: true
+    overflow-wrap: anywhere
     color: #c0c0c0ff
     margin-left: 15
     margin-top: 32
 
   HorizontalSeparator
+    id: messageBoxSeparator
     anchors.left: parent.left
     anchors.right: parent.right
     anchors.top: content.bottom
@@ -104,6 +106,7 @@ MessageBoxShopWindow < UIMessageBox
     anchors.top: parent.top
     text-wrap: true
     text-auto-resize: true
+    overflow-wrap: anywhere
     color: #c0c0c0ff
     margin-left: 15
     margin-top: 32

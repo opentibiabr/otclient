@@ -31,7 +31,7 @@ bool OggSoundFile::prepareOgg()
 
     const vorbis_info* vi = ov_info(&m_vorbisFile, -1);
     if (!vi) {
-        g_logger.error("ogg file not supported: {}", m_file->name());
+        g_logger.error("Ogg file not supported: {}", m_file->name());
         return false;
     }
 

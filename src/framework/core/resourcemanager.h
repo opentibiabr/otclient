@@ -42,11 +42,13 @@ public:
     void searchAndAddPackages(const std::string& packagesDir, const std::string& packageExt);
 
     bool fileExists(const std::string& fileName);
+    bool fileExistsInWorkDir(const std::string& fileName);
     bool directoryExists(const std::string& directoryName);
 
     // @dontbind
     void readFileStream(const std::string& fileName, std::iostream& out);
     std::string readFileContents(const std::string& fileName);
+    std::string readFileContentsFromWorkDir(const std::string& fileName);
     // @dontbind
     bool writeFileBuffer(const std::string& fileName, const uint8_t* data, uint32_t size, bool createDirectory = false);
     bool writeFileContents(const std::string& fileName, const std::string& data);
@@ -84,6 +86,14 @@ public:
     void save_string_into_file(const std::string& contents, const std::string& name);
 
     std::string fileChecksum(const std::string& path);
+    std::string fileSha256(const std::string& path);
+    std::string fileSha256InWorkDir(const std::string& path);
+    bool writeDownloadedFile(const std::string& path, std::string destinationPath, bool decompressLzma);
+    bool writeDownloadedFileToWorkDir(const std::string& path, std::string destinationPath, bool decompressLzma);
+    bool extractDownloadedArchive(const std::string& path, std::string destinationPath, const std::string& entryPrefix, bool stripPrefix);
+    bool extractDownloadedArchiveToWorkDir(const std::string& path, std::string destinationPath, const std::string& entryPrefix, bool stripPrefix);
+    bool extractDownloadedZip(const std::string& path, std::string destinationPath, const std::string& entryPrefix, bool stripPrefix);
+    bool writeFileContentsToWorkDir(const std::string& fileName, const std::string& data);
     std::unordered_map<std::string, std::string> filesChecksums();
     std::string selfChecksum();
     void updateFiles(const std::set<std::string>& files);

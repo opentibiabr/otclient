@@ -338,8 +338,8 @@ function Cyclopedia.CreateCharmItem(data)
     end
 
     local player = g_game.getLocalPlayer()
-    if widget.icon == 1 and player:getResourceBalance(ResourceTypes.GOLD_EQUIPPED) then
-        local canAfford = data.removeRuneCost <= player:getResourceBalance(ResourceTypes.GOLD_EQUIPPED)
+    if widget.icon == 1 and player:getTotalMoney() then
+        local canAfford = data.removeRuneCost <= player:getTotalMoney()
         value:setColor(canAfford and "#C0C0C0" or "#D33C3C")
     elseif widget.icon == 0 then
         local canAfford = data.unlockPrice <= UI.CharmsPoints
@@ -375,11 +375,16 @@ function Cyclopedia.loadCharms(charmsData)
             ResourceTypes.MAX_CHARM))
         controllerCyclopedia.ui.CharmsBase1410.Value:setText(
             formatResourceBalance(ResourceTypes.MINOR_CHARM, ResourceTypes.MAX_MINOR_CHARM))
+        local canAfford = charmsData.resetAllCharmsCost <= player:getTotalMoney()
+        UI.anotherPanel.CharmsBase1410.Value:setText(Cyclopedia.formatGold(charmsData.resetAllCharmsCost))
+        UI.anotherPanel.CharmsBase1410.Value:setColor(canAfford and "#BDBDBD" or "#D33C3C")
+        UI.anotherPanel.resetAllButton:setEnabled(canAfford)
     else
         controllerCyclopedia.ui.CharmsBase.Value:setText(Cyclopedia.formatGold(charmsData.points))
     end
 
     UI.CharmsPoints = charmsData.points
+    UI.resetAllCharmsCost = charmsData.resetAllCharmsCost
 
     Cyclopedia.Charms.Monsters = {}
     local raceIdNamePairs = {}
@@ -479,7 +484,7 @@ local function getUIBase()
             ItemBase = UI.InformationBase.ItemBase,
             PriceBase = UI.InformationBase.verticalPanelUnLockClearChram.PriceBaseGold,
             UnlockButton = UI.InformationBase.verticalPanelUnLockClearChram.UnlockButton,
-            SearchEdit = UI.InformationBase.PanelCreatureList.SearchEdit.SearchEdit,
+            SearchEdit = UI.InformationBase.PanelCreatureList.SearchPanel.SearchEdit,
             SearchLabel = UI.InformationBase.SearchLabel,
             CreaturesBase = UI.InformationBase.PanelCreatureList.CreaturesBase,
             CreaturesLabel = UI.InformationBase.panelSelectCreature.CreaturesLabel
@@ -527,12 +532,13 @@ local function updateUIColors(widget, UI_BASE)
             UI.InformationBase.verticalPanelUnLockClearChram.PriceBaseCharm.Value:setColor("#C0C0C0")
             UI.InformationBase.verticalPanelUnLockClearChram.UnlockButton:setEnabled(false)
         end
-        if not widget.data.asignedStatus then
-            priceValue:setText(0)
-        end
+        priceValue:setText(comma_value(widget.data.removeRuneCost))
+        local canAfford = widget.data.removeRuneCost <= player:getTotalMoney()
+        priceValue:setColor(canAfford and "#C0C0C0" or "#D33C3C")
+        UI.InformationBase.verticalPanelUnLockClearChram.ClearButton:setEnabled(canAfford and widget.data.asignedStatus)
     else
-        if widget.icon == 1 and player:getResourceBalance(ResourceTypes.GOLD_EQUIPPED) then
-            local canAfford = widget.data.removeRuneCost <= player:getResourceBalance(ResourceTypes.GOLD_EQUIPPED)
+        if widget.icon == 1 and player:getTotalMoney() then
+            local canAfford = widget.data.removeRuneCost <= player:getTotalMoney()
             priceValue:setColor(canAfford and "#C0C0C0" or "#D33C3C")
             UI_BASE.UnlockButton:setEnabled(canAfford)
 
@@ -662,20 +668,22 @@ function Cyclopedia.selectCharm(widget, isChecked)
         creatureWidget:setEnabled(false)
         creatureWidget:setColor("#707070")
 
-        UI_BASE.SearchEdit:setEnabled(false)
-        if UI_BASE.SearchLabel then
-            UI_BASE.SearchLabel:setEnabled(false)
+        if not isModernUI then
+            UI_BASE.SearchEdit:setEnabled(false)
+            if UI_BASE.SearchLabel then
+                UI_BASE.SearchLabel:setEnabled(false)
+            end
+            UI_BASE.CreaturesLabel:setEnabled(false)
         end
-        UI_BASE.CreaturesLabel:setEnabled(false)
     end
 
     if not widget.data.unlocked then
         UI_BASE.UnlockButton:setText("Unlock")
-        UI_BASE.SearchEdit:setEnabled(false)
-        if UI_BASE.SearchLabel then
-            UI_BASE.SearchLabel:setEnabled(false)
-        end
         if not isModernUI then
+            UI_BASE.SearchEdit:setEnabled(false)
+            if UI_BASE.SearchLabel then
+                UI_BASE.SearchLabel:setEnabled(false)
+            end
             UI_BASE.CreaturesLabel:setEnabled(false)
         end
     end
@@ -980,6 +988,113 @@ function Cyclopedia.actionSelectCharmButton(widget)
                     },
                     anchor = AnchorHorizontalCenter
                 }, yesCallback, noCallback)
+        end
+    end
+end
+
+function Cyclopedia.clearCharm()
+    local confirmWindow
+    local data = UI.InformationBase.data
+    if not data then
+        return
+    end
+
+    local charm = charms[data.id]
+    if not charm then
+        return
+    end
+
+    local function yesCallback()
+        g_game.BuyCharmRune(2, data.id, 0)
+        if confirmWindow then
+            confirmWindow:destroy()
+            confirmWindow = nil
+        end
+    end
+
+    local function noCallback()
+        if confirmWindow then
+            confirmWindow:destroy()
+            confirmWindow = nil
+        end
+    end
+
+    if not confirmWindow then
+        confirmWindow = displayGeneralBox("Confirm Charm Removal",
+            string.format("Do you want to remove the Charm %s from this creature? This will cost you %s gold pieces.",
+                charm.name, comma_value(data.removeRuneCost)), {
+                {
+                    text = "Yes",
+                    callback = yesCallback
+                },
+                {
+                    text = "No",
+                    callback = noCallback
+                },
+                anchor = AnchorHorizontalCenter
+            }, yesCallback, noCallback)
+    end
+end
+
+function Cyclopedia.resetAllCharms()
+    if not UI or not UI.resetAllCharmsCost then
+        return
+    end
+
+    local title = "Confirm Reset of Charms"
+    local text = string.format("Do you want to reset all Charms? This will cost you %s gold?",
+        comma_value(UI.resetAllCharmsCost))
+
+    local yesCallback = function()
+        g_game.BuyCharmRune(3, -58, 0)
+        if UI.displayGeneralBox then
+            UI.displayGeneralBox:destroy()
+            UI.displayGeneralBox = nil
+        end
+    end
+
+    local noCallback = function()
+        if UI.displayGeneralBox then
+            UI.displayGeneralBox:destroy()
+            UI.displayGeneralBox = nil
+        end
+    end
+
+    if UI.displayGeneralBox then
+        UI.displayGeneralBox:destroy()
+    end
+
+    UI.displayGeneralBox = displayGeneralBox(title, text, {
+        {
+            text = 'Yes',
+            callback = yesCallback
+        },
+        {
+            text = 'No',
+            callback = noCallback
+        }
+    }, yesCallback, noCallback)
+end
+
+function Cyclopedia.onSearchTextChange(text, panel)
+    local creaturesBase = panel:getChildById('CreaturesBase')
+    if not creaturesBase then
+        return
+    end
+
+    local creatureList = creaturesBase:getChildById('CreatureList')
+    if not creatureList then
+        return
+    end
+
+    local children = creatureList:getChildren()
+    text = text:lower()
+    for _, child in ipairs(children) do
+        local name = child:getText():lower()
+        if name:find(text, 1, true) then
+            child:show()
+        else
+            child:hide()
         end
     end
 end

@@ -120,20 +120,6 @@ WheelDomainOrder = {
 	[3] = {22, 23, 28, 24, 29, 34, 30, 35, 36}
 }
 
-local function short_text(text, chars_limit)
-	if not text then
-		return ""
-	end
-	
-	chars_limit = chars_limit or 20
-	
-	if string.len(text) <= chars_limit then
-		return text
-	end
-	
-	return string.sub(text, 1, chars_limit - 3) .. "..."
-end
-
 local function firstSpellIsUnlocked(attribute)
   return WheelOfDestiny.isLitFull(attribute[1]) or WheelOfDestiny.isLitFull(attribute[2])
 end

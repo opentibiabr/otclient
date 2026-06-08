@@ -24,6 +24,7 @@
 
 #include "painter.h"
 #include "textureatlas.h"
+#include "coordsbuffer.h"
 
 DrawPool* DrawPool::create(const DrawPoolType type)
 {

@@ -26,7 +26,7 @@ EnterGameWindow
   &authenticatorHeight: 44
   &stayLoggedBoxEnabled: false
   &stayLoggedBoxHeight: 24
-  size: 280 302
+  size: 280 285
   @onEnter: EnterGame.doLogin()
 
   Label
