@@ -521,8 +521,8 @@ if (WASM)
   )
 endif()
 
-if(ANDROID)
-  # Vendored minizip sources for APK asset extraction (must be after SOURCE_FILES definition)
+if(NOT WASM)
+  # Vendored minizip sources for ZIP extraction fallback (must be after SOURCE_FILES definition)
   set(SOURCE_FILES ${SOURCE_FILES}
           framework/core/minizip/ioapi.c
           framework/core/minizip/ioapi_mem.c
@@ -567,8 +567,8 @@ else()
   message(STATUS "Use precompiled header: OFF")
 endif(TOGGLE_PRE_COMPILED_HEADER)
 
-# Exclude vendored minizip C files from PCH and unity build (Android only, C files cannot use C++ PCH)
-if(ANDROID)
+# Exclude vendored minizip C files from PCH and unity build (C files cannot use C++ PCH)
+if(NOT WASM)
   set_source_files_properties(
     framework/core/minizip/ioapi.c
     framework/core/minizip/ioapi_mem.c

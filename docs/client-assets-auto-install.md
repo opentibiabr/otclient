@@ -31,8 +31,8 @@ Do not introduce an alternative permanent assets root for runtime loading.
 
 The flow supports:
 
-- manifest-driven installation as the default path
-- archive installation from release/tag package when explicitly preferred or when no manifest exists
+- archive installation from the release/tag source ZIP as the default path
+- manifest-driven installation as a fallback path when the archive cannot be installed
 - manifest hash identifier installation into `data/things/<version>/assets.json.sha256`
 - packaged files list (including large binaries distributed as `.zip`/`.rar`)
 - extraction of `.zip` and `.rar`
@@ -52,9 +52,10 @@ Release cache is scoped per source (`releasesUrl` / repository key), avoiding st
 
 ## Runtime/Platform Notes
 
-- Desktop targets use `libarchive` for archive extraction.
-- Android build excludes `libarchive` dependency (CI compatibility). In this target, archive extraction through `ResourceManager` is unavailable and returns failure explicitly.
-- The default flow avoids archive-first installs because some desktop/community builds may also lack archive extraction support. Those builds can still install assets through `assets.json`.
+- Desktop targets use `libarchive` for archive extraction when it is available.
+- Builds without `libarchive` still extract `.zip` archives through the vendored minizip fallback. This keeps the GitHub source ZIP flow functional on clean desktop builds.
+- `.rar` extraction requires `libarchive`. If a packaged `.rar` is optional and the build cannot extract it, installation should fail clearly or skip it according to the package configuration.
+- The default flow is archive-first because the release source ZIP is the canonical package for this repository. The manifest path remains a compatibility fallback, not the primary installation path.
 - Emscripten login fallback was aligned with native `httpLogin` semantics.
 
 ## UX Behavior
@@ -76,7 +77,7 @@ Check:
 
 ### 2) Missing `.lzma` package file
 
-If the console shows a 404 for `*.lzma` followed by a raw file fallback, the source release likely contains the raw file but not the official compressed package. The client can install this through `allowMissingPackedRawFallback`, but the preferred fix is to publish an assets manifest where that entry points directly at the raw file with `unpack = false`.
+If the console shows a 404 for `*.lzma`, the client is using the manifest fallback instead of the release source ZIP. First check why archive installation failed. The manifest fallback can install raw files through `allowMissingPackedRawFallback`, but this path is slower and should not be the normal flow for clean installs.
 
 ### 3) SHA-256 mismatch
 
