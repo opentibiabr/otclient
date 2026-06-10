@@ -197,7 +197,7 @@ HttpResult_ptr getDownloadedFile(std::string path)
 }
 
 #ifndef FRAMEWORK_HAVE_LIBARCHIVE
-bool extractDownloadedZipArchive(const std::string& path, const std::string& archive, std::string destinationPath, const std::string& entryPrefix, const bool stripPrefix)
+bool extractDownloadedZipArchive(ResourceManager& resourceManager, const std::string& path, const std::string& archive, std::string destinationPath, const std::string& entryPrefix, const bool stripPrefix)
 {
     if (archive.size() > UINT32_MAX) {
         g_logger.error("Downloaded archive '{}' is too large for zip extraction", path);
@@ -275,7 +275,7 @@ bool extractDownloadedZipArchive(const std::string& path, const std::string& arc
             }
 
             const auto destinationFile = destinationPath + relativePath;
-            if (!writeFileBuffer(
+            if (!resourceManager.writeFileBuffer(
                     destinationFile,
                     reinterpret_cast<const uint8_t*>(contents.data()),
                     static_cast<uint32_t>(contents.size()),
@@ -952,7 +952,7 @@ bool ResourceManager::extractDownloadedArchive(const std::string& path, std::str
         return false;
     }
 
-    return extractDownloadedZipArchive(path, archive, std::move(destinationPath), entryPrefix, stripPrefix);
+    return extractDownloadedZipArchive(*this, path, archive, std::move(destinationPath), entryPrefix, stripPrefix);
 #else
     const auto downloadedFile = getDownloadedFile(path);
     if (!downloadedFile) {
