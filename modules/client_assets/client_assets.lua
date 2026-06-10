@@ -1202,7 +1202,18 @@ local function installPackagedFileList(config, descriptor, files, index, callbac
     scheduleDownloadStep(function()
       local ok, extractError = installDownloadedArchive(config, downloadPath, destinationPath, '', false)
       if not ok then
-        return callback(false, extractError)
+        if descriptor.packagedFilesRequired then
+          return callback(false, extractError)
+        end
+        logWarning(string.format(
+          'Skipping optional packaged file %d/%d for client %s: %s (%s).',
+          index,
+          #files,
+          versionLabel(descriptor.version),
+          path,
+          extractError or 'unable to extract archive'
+        ))
+        return installPackagedFileList(config, descriptor, files, index + 1, callback)
       end
 
       logInfo(string.format('Finished packaged file %d/%d for client %s: %s.', index, #files, versionLabel(descriptor.version), path))
@@ -1244,6 +1255,8 @@ local function installPackagedFiles(config, descriptor, callback)
 end
 
 local function installDescriptor(config, descriptor, callback)
+  local archiveAttempted = false
+
   local function finishWithPackagedFiles(ok, message)
     if not ok then
       return callback(false, message)
@@ -1254,20 +1267,27 @@ local function installDescriptor(config, descriptor, callback)
     end)
   end
 
+  local function archiveFallback(nextCallback)
+    archiveAttempted = true
+    installFromArchive(config, descriptor, nextCallback)
+  end
+
   local function manifestFallback()
     installFromManifest(config, descriptor, function(ok, message)
-      if ok or not descriptor.archiveUrl then
+      if ok or not descriptor.archiveUrl or archiveAttempted then
         return finishWithPackagedFiles(ok, message)
       end
-      installFromArchive(config, descriptor, finishWithPackagedFiles)
+      logWarning((message or 'Asset manifest install failed.') .. ' Trying archive fallback.')
+      archiveFallback(finishWithPackagedFiles)
     end)
   end
 
-  if descriptor.preferArchive or config.preferArchive then
-    return installFromArchive(config, descriptor, function(ok, message)
+  if (descriptor.preferArchive or config.preferArchive) and descriptor.archiveUrl then
+    return archiveFallback(function(ok, message)
       if ok or not descriptor.manifestUrl then
         return finishWithPackagedFiles(ok, message)
       end
+      logWarning((message or 'Archive asset install failed.') .. ' Falling back to asset manifest.')
       manifestFallback()
     end)
   end
