@@ -801,6 +801,7 @@ function EnterGame.doLogin()
     g_settings.set('client-version', clientVersion)
 
     if clientVersion >= 1281 and modules.client_assets and modules.client_assets.ensureClientVersion and
+        (not modules.client_assets.isEnabled or modules.client_assets.isEnabled()) and
         not modules.client_assets.isClientVersionInstalled(clientVersion) then
         modules.client_assets.ensureClientVersion(clientVersion, function(success, message)
             if success then
