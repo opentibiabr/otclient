@@ -140,8 +140,11 @@ void SatelliteMap::draw(const Rect& screenRect, const Position& cameraPos, float
     const auto oldClipRect = g_drawPool.getClipRect();
     g_drawPool.setClipRect(screenRect);
     
-    // Water background only for floor 7 (sea floor). All other floors use black.
-    g_drawPool.addFilledRect(screenRect, cameraPos.z == g_gameConfig.getMapSeaFloor() ? Color(0xFFA54C27U) : Color::black);
+    // Match Minimap::draw(): widget color controls the background/alpha only.
+    // Satellite chunks are drawn unmodulated to preserve the source imagery.
+    Color background = cameraPos.z == g_gameConfig.getMapSeaFloor() ? Color(0xFFA54C27U) : Color::black;
+    background.setAlpha(background.aF() * color.aF());
+    g_drawPool.addFilledRect(screenRect, background);
 
     const Point screenCenter = screenRect.center();
 
@@ -231,7 +234,11 @@ void SatelliteMap::drawStaticMinimap(const Rect& screenRect, const Position& cam
     const auto oldClipRect = g_drawPool.getClipRect();
     g_drawPool.setClipRect(screenRect);
 
-    g_drawPool.addFilledRect(screenRect, cameraPos.z == g_gameConfig.getMapSeaFloor() ? Color(0xFFA54C27U) : Color::black);
+    // Match Minimap::draw(): widget color controls the background/alpha only.
+    // Satellite chunks are drawn unmodulated to preserve the source imagery.
+    Color background = cameraPos.z == g_gameConfig.getMapSeaFloor() ? Color(0xFFA54C27U) : Color::black;
+    background.setAlpha(background.aF() * color.aF());
+    g_drawPool.addFilledRect(screenRect, background);
 
     const Point screenCenter = screenRect.center();
     const int floor = cameraPos.z;
