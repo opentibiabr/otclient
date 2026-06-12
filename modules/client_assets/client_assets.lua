@@ -10,7 +10,9 @@ local DEFAULT_CONFIG = {
   preferPackedManifestUrls = true,
   strictManifestSha256 = true,
   allowRawFallbackHashMismatch = false,
+  allowMissingPackedRawFallback = true,
   preferArchive = true,
+  fallbackToArchiveOnManifestFailure = false,
   installArchiveExtras = true,
   archiveExtraPrefixes = { 'bin' },
   archiveExtrasDestination = '',
@@ -65,6 +67,29 @@ end
 
 local function isLzmaPath(path)
   return endsWith(tostring(path or ''):lower(), '.lzma')
+end
+
+local function isNotFoundError(message)
+  message = tostring(message or ''):lower()
+  return message:find('404', 1, true) or message:find('not found', 1, true)
+end
+
+local function isMissingPackedHashError(message)
+  return tostring(message or ''):find(HTTP_NOT_FOUND_SHA256, 1, true) ~= nil
+end
+
+local function isPackedToRawFallback(downloadInfo, fallbackDownload)
+  if not downloadInfo or not fallbackDownload then
+    return false
+  end
+
+  local sourcePath = tostring(downloadInfo.sourcePath or '')
+  local fallbackPath = tostring(fallbackDownload.sourcePath or '')
+  if fallbackPath == '' or isLzmaPath(fallbackPath) or isArchivePath(fallbackPath) then
+    return false
+  end
+
+  return isLzmaPath(sourcePath) or isArchivePath(sourcePath)
 end
 
 local function parentPath(path)
@@ -316,6 +341,18 @@ end
 
 local function shouldInstallInWorkDir(config)
   return config and config.installInWorkDir ~= false
+end
+
+local function writeInstallFile(config, path, contents)
+  if shouldInstallInWorkDir(config) and g_resources.writeFileContentsToWorkDir then
+    return g_resources.writeFileContentsToWorkDir(path, contents)
+  end
+
+  local directory = parentPath(path)
+  if directory ~= '' then
+    g_resources.makeDir('/' .. directory)
+  end
+  return g_resources.writeFileContents('/' .. path, contents)
 end
 
 local function hasCatalogEntryFile(basePath, entry)
@@ -751,18 +788,32 @@ local function extractDownloadedArchive(config, downloadPath, destinationPath, e
   return g_resources.extractDownloadedArchive(downloadPath, destinationPath, entryPrefix or '', stripPrefix == true)
 end
 
-local function installDownloadedFile(config, downloadPath, destinationPath, decompressLzma, expectedFileSha256, allowHashMismatch)
+local function installDownloadedFile(config, downloadPath, destinationPath, decompressLzma, expectedFileSha256, allowHashMismatch, allowHashMismatchReason)
   if not writeDownloadedFile(config, downloadPath, destinationPath, decompressLzma) then
     return false, 'Unable to write downloaded asset: ' .. destinationPath
   end
 
   local ok, hashError = verifyInstalledSha256(destinationPath, expectedFileSha256, not allowHashMismatch)
   if not ok and allowHashMismatch and not hashError:find(HTTP_NOT_FOUND_SHA256, 1, true) then
-    logWarning(hashError .. ' Continuing with raw fallback because allowRawFallbackHashMismatch is enabled.')
+    logWarning(hashError .. ' Continuing because ' .. (allowHashMismatchReason or 'allowRawFallbackHashMismatch is enabled') .. '.')
     return true
   end
 
   return ok, hashError
+end
+
+local function writeManifestHashIdentifier(config, version, sha256)
+  if not sha256 or sha256 == '' then
+    return true
+  end
+
+  local destinationPath = string.format('data/things/%d/assets.json.sha256', version)
+  if not writeInstallFile(config, destinationPath, sha256 .. '\n') then
+    return false, 'Unable to write asset hash identifier: ' .. destinationPath
+  end
+
+  logInfo(string.format('Asset hash identifier install path: %s.', physicalInstallPath(destinationPath)))
+  return true
 end
 
 local function installDownloadedArchive(config, downloadPath, destinationPath, entryPrefix, stripPrefix, expectedPath, expectedSha256)
@@ -892,11 +943,15 @@ local function installManifestEntries(config, descriptor, files, index, installe
     return installManifestEntries(config, descriptor, files, index + 1, installed, total, callback)
   end
 
-  local preferPacked = descriptor.preferPackedManifestUrls or config.preferPackedManifestUrls
+  local preferPacked = descriptor.preferPackedManifestUrls
+  if preferPacked == nil then
+    preferPacked = config.preferPackedManifestUrls
+  end
   local directDownload = buildManifestDownload(entry, descriptor, selectedEntry, preferPacked)
   local fallbackDownload
   if config.allowRawFallbackHashMismatch ~= false and not directDownload.extractArchive and not isLzmaPath(directDownload.sourcePath) then
     directDownload.allowHashMismatch = true
+    directDownload.allowHashMismatchReason = 'allowRawFallbackHashMismatch is enabled'
   end
   if entry.url then
     fallbackDownload = buildManifestDownload(entry, descriptor, selectedEntry, not preferPacked)
@@ -904,6 +959,7 @@ local function installManifestEntries(config, descriptor, files, index, installe
       fallbackDownload = nil
     elseif config.allowRawFallbackHashMismatch ~= false and not isArchivePath(fallbackDownload.sourcePath) and not isLzmaPath(fallbackDownload.sourcePath) then
       fallbackDownload.allowHashMismatch = true
+      fallbackDownload.allowHashMismatchReason = 'allowRawFallbackHashMismatch is enabled'
     end
   end
   if directDownload.expectedFileSha256 and g_resources.fileSha256('/' .. directDownload.destinationPath) == directDownload.expectedFileSha256 then
@@ -930,6 +986,10 @@ local function installManifestEntries(config, descriptor, files, index, installe
           return downloadEntry(downloadInfo, nextFallback, retriesLeft - 1)
         end
         if nextFallback then
+          if config.allowMissingPackedRawFallback ~= false and isNotFoundError(err) and isPackedToRawFallback(downloadInfo, nextFallback) then
+            nextFallback.allowHashMismatch = true
+            nextFallback.allowHashMismatchReason = 'the packed asset is missing and allowMissingPackedRawFallback is enabled'
+          end
           logWarning(string.format('Download failed for %s: %s. Trying %s.', downloadInfo.sourcePath, err, nextFallback.sourcePath))
           return downloadEntry(nextFallback, nil, config.retries or 0)
         end
@@ -939,11 +999,15 @@ local function installManifestEntries(config, descriptor, files, index, installe
       local ok, hashError = verifyDownloadedSha256(path, downloadInfo.expectedDownloadSha256)
       if not ok then
         if nextFallback then
+          if config.allowMissingPackedRawFallback ~= false and isMissingPackedHashError(hashError) and isPackedToRawFallback(downloadInfo, nextFallback) then
+            nextFallback.allowHashMismatch = true
+            nextFallback.allowHashMismatchReason = 'the packed asset is missing and allowMissingPackedRawFallback is enabled'
+          end
           logWarning(hashError .. ' Trying ' .. nextFallback.sourcePath .. '.')
           return downloadEntry(nextFallback, nil, config.retries or 0)
         end
         if downloadInfo.allowHashMismatch and not hashError:find(HTTP_NOT_FOUND_SHA256, 1, true) then
-          logWarning(hashError .. ' Continuing with raw fallback because allowRawFallbackHashMismatch is enabled.')
+          logWarning(hashError .. ' Continuing because ' .. (downloadInfo.allowHashMismatchReason or 'allowRawFallbackHashMismatch is enabled') .. '.')
           ok = true
         else
           return callback(false, hashError)
@@ -965,7 +1029,7 @@ local function installManifestEntries(config, descriptor, files, index, installe
           downloadInfo.expectedFileSha256
         )
       else
-        ok, hashError = installDownloadedFile(config, path, downloadInfo.destinationPath, downloadInfo.decompressLzma, downloadInfo.expectedFileSha256, downloadInfo.allowHashMismatch)
+        ok, hashError = installDownloadedFile(config, path, downloadInfo.destinationPath, downloadInfo.decompressLzma, downloadInfo.expectedFileSha256, downloadInfo.allowHashMismatch, downloadInfo.allowHashMismatchReason)
       end
       if not ok then
         if nextFallback then
@@ -1018,8 +1082,8 @@ local function installFromManifest(config, descriptor, callback)
     end
 
     fetchManifestSha256(config, descriptor, function(expectedSha256)
+      local actualSha256 = g_crypt.sha256(data)
       if expectedSha256 then
-        local actualSha256 = g_crypt.sha256(data)
         if actualSha256 ~= expectedSha256 then
           local hashError = string.format('Invalid assets manifest SHA-256 for %s. Expected %s, got %s.', descriptor.manifestUrl, expectedSha256, actualSha256)
           if descriptor.strictManifestSha256 or config.strictManifestSha256 then
@@ -1034,6 +1098,11 @@ local function installFromManifest(config, descriptor, callback)
       end)
       if not ok or type(manifest) ~= 'table' or type(manifest.files) ~= 'table' then
         return callback(false, 'Invalid assets manifest.')
+      end
+
+      local wroteHashIdentifier, writeHashError = writeManifestHashIdentifier(config, descriptor.version, actualSha256)
+      if not wroteHashIdentifier then
+        return callback(false, writeHashError)
       end
 
       installManifestEntries(config, descriptor, manifest.files, 1, 0, #manifest.files, callback)
@@ -1202,7 +1271,18 @@ local function installPackagedFileList(config, descriptor, files, index, callbac
     scheduleDownloadStep(function()
       local ok, extractError = installDownloadedArchive(config, downloadPath, destinationPath, '', false)
       if not ok then
-        return callback(false, extractError)
+        if descriptor.packagedFilesRequired then
+          return callback(false, extractError)
+        end
+        logWarning(string.format(
+          'Skipping optional packaged file %d/%d for client %s: %s (%s).',
+          index,
+          #files,
+          versionLabel(descriptor.version),
+          path,
+          extractError or 'unable to extract archive'
+        ))
+        return installPackagedFileList(config, descriptor, files, index + 1, callback)
       end
 
       logInfo(string.format('Finished packaged file %d/%d for client %s: %s.', index, #files, versionLabel(descriptor.version), path))
@@ -1244,6 +1324,8 @@ local function installPackagedFiles(config, descriptor, callback)
 end
 
 local function installDescriptor(config, descriptor, callback)
+  local archiveAttempted = false
+
   local function finishWithPackagedFiles(ok, message)
     if not ok then
       return callback(false, message)
@@ -1254,25 +1336,49 @@ local function installDescriptor(config, descriptor, callback)
     end)
   end
 
+  local function archiveFallback(nextCallback)
+    archiveAttempted = true
+    installFromArchive(config, descriptor, nextCallback)
+  end
+
   local function manifestFallback()
     installFromManifest(config, descriptor, function(ok, message)
-      if ok or not descriptor.archiveUrl then
+      local allowArchiveFallback = descriptor.fallbackToArchiveOnManifestFailure
+      if allowArchiveFallback == nil then
+        allowArchiveFallback = config.fallbackToArchiveOnManifestFailure
+      end
+      if ok or not descriptor.archiveUrl or archiveAttempted or not allowArchiveFallback then
         return finishWithPackagedFiles(ok, message)
       end
-      installFromArchive(config, descriptor, finishWithPackagedFiles)
+      logWarning((message or 'Asset manifest install failed.') .. ' Trying archive fallback.')
+      archiveFallback(finishWithPackagedFiles)
     end)
   end
 
-  if descriptor.preferArchive or config.preferArchive then
-    return installFromArchive(config, descriptor, function(ok, message)
+  local preferArchive = descriptor.preferArchive
+  if preferArchive == nil then
+    preferArchive = config.preferArchive
+  end
+
+  if preferArchive and descriptor.archiveUrl then
+    return archiveFallback(function(ok, message)
       if ok or not descriptor.manifestUrl then
         return finishWithPackagedFiles(ok, message)
       end
+      logWarning((message or 'Archive asset install failed.') .. ' Falling back to asset manifest.')
       manifestFallback()
     end)
   end
 
-  manifestFallback()
+  if descriptor.manifestUrl then
+    return manifestFallback()
+  end
+
+  if descriptor.archiveUrl then
+    return archiveFallback(finishWithPackagedFiles)
+  end
+
+  finishWithPackagedFiles(false, 'No assets source found.')
 end
 
 local function resolveFromCustomManifest(config, version, callback)

@@ -31,8 +31,9 @@ Do not introduce an alternative permanent assets root for runtime loading.
 
 The flow supports:
 
-- archive-first installation from release/tag package
-- manifest-driven installation
+- archive installation from the release/tag source ZIP as the default path
+- manifest-driven installation as a fallback path when the archive cannot be installed
+- manifest hash identifier installation into `data/things/<version>/assets.json.sha256`
 - packaged files list (including large binaries distributed as `.zip`/`.rar`)
 - extraction of `.zip` and `.rar`
 - optional `.lzma` decompression
@@ -43,13 +44,18 @@ Defaults are hardened:
 
 - `strictManifestSha256 = true`
 - `allowRawFallbackHashMismatch = false`
+- `allowMissingPackedRawFallback = true`
+
+`allowMissingPackedRawFallback` is a narrow compatibility fallback for repository releases that reference official `.lzma`/archive package files not stored in the assets repository. It is only used after the packed file is missing and the client falls back to the raw file from the same manifest/release source. It does not enable arbitrary hash mismatches for normal raw downloads.
 
 Release cache is scoped per source (`releasesUrl` / repository key), avoiding stale cross-source reuse.
 
 ## Runtime/Platform Notes
 
-- Desktop targets use `libarchive` for archive extraction.
-- Android build excludes `libarchive` dependency (CI compatibility). In this target, archive extraction through `ResourceManager` is unavailable and returns failure explicitly.
+- Desktop targets use `libarchive` for archive extraction when it is available.
+- Builds without `libarchive` still extract `.zip` archives through the vendored minizip fallback. This keeps the GitHub source ZIP flow functional on clean desktop builds.
+- `.rar` extraction requires `libarchive`. If a packaged `.rar` is optional and the build cannot extract it, installation should fail clearly or skip it according to the package configuration.
+- The default flow is archive-first because the release source ZIP is the canonical package for this repository. The manifest path remains a compatibility fallback, not the primary installation path.
 - Emscripten login fallback was aligned with native `httpLogin` semantics.
 
 ## UX Behavior
@@ -69,11 +75,15 @@ Check:
 - `data/things/<version>/assets.json.sha256`
 - `data/sounds/<version>/catalog-sound.json` (when sounds are enabled)
 
-### 2) SHA-256 mismatch
+### 2) Missing `.lzma` package file
+
+If the console shows a 404 for `*.lzma`, the client is using the manifest fallback instead of the release source ZIP. First check why archive installation failed. The manifest fallback can install raw files through `allowMissingPackedRawFallback`, but this path is slower and should not be the normal flow for clean installs.
+
+### 3) SHA-256 mismatch
 
 By default, mismatches fail installation. Verify upstream files and hashes first before changing integrity flags.
 
-### 3) Slow progress / “stuck”
+### 4) Slow progress / “stuck”
 
 If Content-Length is missing, UI may run in indeterminate mode during download and extraction. Use console logs to confirm active phase.
 
@@ -90,4 +100,3 @@ When changing this system, validate:
 3. Runtime loads modern assets from those paths.
 4. Hash verification behavior matches configuration.
 5. Windows/Linux CI remains green; Android does not attempt to resolve unsupported libarchive linkage.
-

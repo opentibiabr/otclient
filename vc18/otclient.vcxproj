@@ -411,6 +411,26 @@
     <ClCompile Include="..\src\framework\core\logger.cpp" />
     <ClCompile Include="..\src\framework\core\module.cpp" />
     <ClCompile Include="..\src\framework\core\modulemanager.cpp" />
+    <ClCompile Include="..\src\framework\core\minizip\crypt.c">
+      <IncludeInUnityFile>false</IncludeInUnityFile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles></ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="..\src\framework\core\minizip\ioapi.c">
+      <IncludeInUnityFile>false</IncludeInUnityFile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles></ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="..\src\framework\core\minizip\ioapi_mem.c">
+      <IncludeInUnityFile>false</IncludeInUnityFile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles></ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="..\src\framework\core\minizip\unzip.c">
+      <IncludeInUnityFile>false</IncludeInUnityFile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles></ForcedIncludeFiles>
+    </ClCompile>
     <ClCompile Include="..\src\framework\core\resourcemanager.cpp" />
     <ClCompile Include="..\src\framework\core\scheduledevent.cpp" />
     <ClCompile Include="..\src\framework\core\timer.cpp" />

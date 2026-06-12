@@ -41,6 +41,10 @@
 #ifdef FRAMEWORK_HAVE_LIBARCHIVE
 #include <archive.h>
 #include <archive_entry.h>
+#else
+#include "minizip/ioapi.h"
+#include "minizip/ioapi_mem.h"
+#include "minizip/unzip.h"
 #endif
 
 ResourceManager g_resources;
@@ -191,6 +195,109 @@ HttpResult_ptr getDownloadedFile(std::string path)
         path.erase(0, std::string("downloads/").size());
     return g_http.getFile(path);
 }
+
+#ifndef FRAMEWORK_HAVE_LIBARCHIVE
+bool extractDownloadedZipArchive(ResourceManager& resourceManager, const std::string& path, const std::string& archive, std::string destinationPath, const std::string& entryPrefix, const bool stripPrefix)
+{
+    if (archive.size() > UINT32_MAX) {
+        g_logger.error("Downloaded archive '{}' is too large for zip extraction", path);
+        return false;
+    }
+
+    zlib_filefunc_def fileFunctions = {};
+    ourmemory_t archiveMemory = {};
+    archiveMemory.base = const_cast<char*>(archive.data());
+    archiveMemory.size = static_cast<uint32_t>(archive.size());
+    archiveMemory.grow = 0;
+    fill_memory_filefunc(&fileFunctions, &archiveMemory);
+
+    unzFile zipFile = unzOpen2(nullptr, &fileFunctions);
+    if (!zipFile) {
+        g_logger.error("Unable to open downloaded zip archive '{}'. Non-zip archives require libarchive support.", path);
+        return false;
+    }
+
+    unz_global_info globalInfo = {};
+    if (unzGetGlobalInfo(zipFile, &globalInfo) != UNZ_OK) {
+        g_logger.error("Unable to read zip archive info for '{}'", path);
+        unzClose(zipFile);
+        return false;
+    }
+
+    destinationPath = normalizeVirtualPath(std::move(destinationPath));
+    if (!destinationPath.empty() && !destinationPath.ends_with('/'))
+        destinationPath.push_back('/');
+
+    bool wroteFile = false;
+    constexpr int maxFilenameSize = 1024;
+    constexpr int readSize = 8192;
+    std::array<char, maxFilenameSize> fileName = {};
+    std::array<char, readSize> readBuffer = {};
+
+    for (uint32_t i = 0; i < globalInfo.number_entry; ++i) {
+        unz_file_info fileInfo = {};
+        fileName.fill('\0');
+        if (unzGetCurrentFileInfo(zipFile, &fileInfo, fileName.data(), static_cast<uint16_t>(fileName.size()), nullptr, 0, nullptr, 0) != UNZ_OK) {
+            g_logger.error("Unable to read zip entry info from '{}'", path);
+            unzClose(zipFile);
+            return false;
+        }
+
+        std::string entryName = fileName.data();
+        const bool isDirectory = entryName.ends_with('/') || entryName.ends_with('\\');
+        const auto relativePath = selectArchiveEntryPath(entryName, entryPrefix, stripPrefix);
+
+        if (!isDirectory && !relativePath.empty()) {
+            if (unzOpenCurrentFile(zipFile) != UNZ_OK) {
+                g_logger.error("Unable to open zip entry '{}' from '{}'", entryName, path);
+                unzClose(zipFile);
+                return false;
+            }
+
+            std::string contents;
+            int readBytes = 0;
+            do {
+                readBytes = unzReadCurrentFile(zipFile, readBuffer.data(), readBuffer.size());
+                if (readBytes < 0) {
+                    g_logger.error("Unable to read zip entry '{}' from '{}': {}", entryName, path, readBytes);
+                    unzCloseCurrentFile(zipFile);
+                    unzClose(zipFile);
+                    return false;
+                }
+                if (readBytes > 0)
+                    contents.append(readBuffer.data(), static_cast<size_t>(readBytes));
+            } while (readBytes > 0);
+
+            if (unzCloseCurrentFile(zipFile) != UNZ_OK) {
+                g_logger.error("Unable to close zip entry '{}' from '{}'", entryName, path);
+                unzClose(zipFile);
+                return false;
+            }
+
+            const auto destinationFile = destinationPath + relativePath;
+            if (!resourceManager.writeFileBuffer(
+                    destinationFile,
+                    reinterpret_cast<const uint8_t*>(contents.data()),
+                    static_cast<uint32_t>(contents.size()),
+                    true
+                )) {
+                unzClose(zipFile);
+                return false;
+            }
+            wroteFile = true;
+        }
+
+        if (i + 1 < globalInfo.number_entry && unzGoToNextFile(zipFile) != UNZ_OK) {
+            g_logger.error("Unable to advance zip archive '{}' to next entry", path);
+            unzClose(zipFile);
+            return false;
+        }
+    }
+
+    unzClose(zipFile);
+    return wroteFile;
+}
+#endif
 
 } // namespace
 
@@ -833,12 +940,19 @@ bool ResourceManager::writeDownloadedFileToWorkDir(const std::string& path, std:
 bool ResourceManager::extractDownloadedArchive(const std::string& path, std::string destinationPath, const std::string& entryPrefix, const bool stripPrefix)
 {
 #ifndef FRAMEWORK_HAVE_LIBARCHIVE
-    (void)path;
-    (void)destinationPath;
-    (void)entryPrefix;
-    (void)stripPrefix;
-    g_logger.error("Archive extraction is unavailable on this platform.");
-    return false;
+    const auto downloadedFile = getDownloadedFile(path);
+    if (!downloadedFile) {
+        g_logger.error("Cannot find downloaded archive '{}'", path);
+        return false;
+    }
+
+    const auto& archive = downloadedFile->response;
+    if (archive.empty()) {
+        g_logger.error("Downloaded archive '{}' is empty", path);
+        return false;
+    }
+
+    return extractDownloadedZipArchive(*this, path, archive, std::move(destinationPath), entryPrefix, stripPrefix);
 #else
     const auto downloadedFile = getDownloadedFile(path);
     if (!downloadedFile) {
