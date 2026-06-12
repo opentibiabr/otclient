@@ -1,11 +1,11 @@
 game
   sprite-size: 32
-  last-supported-version: 1511
   draw-typing: false
   typing-icon: /images/game/console/typing
   
   map
     viewport: 8 6
+    extended-view-ui: false
     max-z: 15
     sea-floor: 7
     underground-floor: 8
@@ -42,3 +42,4 @@ font
   static-text: verdana-11px-rounded
   animated-text: verdana-11px-rounded
   creature-text: verdana-11px-rounded
+  item-count: verdana-10px-rounded

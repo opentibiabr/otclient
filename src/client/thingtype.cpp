@@ -65,6 +65,11 @@ void ThingType::unserializeAppearance(const uint16_t clientId, const ThingCatego
         m_animationPhases = 0;
         int totalSpritesCount = 0;
 
+        struct FrameGroupInfo {
+            int startIndex, numPatternX, numPatternY, numPatternZ, layers, phases;
+        };
+        std::vector<FrameGroupInfo> fgInfos;
+
         for (const auto& framegroup : appearance.frame_group()) {
             const int frameGroupType = framegroup.fixed_frame_group();
             const auto& spriteInfo = framegroup.sprite_info();
@@ -78,7 +83,8 @@ void ThingType::unserializeAppearance(const uint16_t clientId, const ThingCatego
             m_layers = spriteInfo.layers();
             m_opaque = spriteInfo.is_opaque();
 
-            m_animationPhases += std::max<int>(1, spritesPhases.size());
+            const int groupPhases = std::max<int>(1, spritesPhases.size());
+            m_animationPhases += groupPhases;
 
             if (const auto& sheet = g_spriteAppearances.getSheetBySpriteId(spriteInfo.sprite_id(0), false)) {
                 m_size = sheet->getSpriteSize() / g_gameConfig.getSpriteSize();
@@ -95,17 +101,73 @@ void ThingType::unserializeAppearance(const uint16_t clientId, const ThingCatego
                     m_idleAnimator = animator;
             }
 
-            const int totalSprites = m_layers * m_numPatternX * m_numPatternY * m_numPatternZ * std::max<int>(1, spritesPhases.size());
+            const int totalSprites = m_layers * m_numPatternX * m_numPatternY * m_numPatternZ * groupPhases;
 
             if (totalSpritesCount + totalSprites > 4096)
                 throw Exception("a thing type has more than 4096 sprites");
 
+            const int fgStartIndex = totalSpritesCount;
             m_spritesIndex.resize(totalSpritesCount + totalSprites);
             for (int j = totalSpritesCount, spriteId = 0; j < (totalSpritesCount + totalSprites); ++j, ++spriteId) {
                 m_spritesIndex[j] = spriteInfo.sprite_id(spriteId);
             }
 
+            fgInfos.push_back({fgStartIndex, (int)m_numPatternX, (int)m_numPatternY, (int)m_numPatternZ, (int)m_layers, groupPhases});
             totalSpritesCount += totalSprites;
+        }
+
+        // When frame groups have different pattern dimensions (e.g. idle patternX=1 vs moving patternX=4),
+        // the sprite index formula breaks. Remap all groups to the maximum dimensions found across
+        // all frame groups: smaller groups repeat their sprites, larger groups are never truncated.
+        if (fgInfos.size() > 1) {
+            int tgtX = 1, tgtY = 1, tgtZ = 1, tgtL = 1;
+            for (const auto& fg : fgInfos) {
+                tgtX = std::max(tgtX, fg.numPatternX);
+                tgtY = std::max(tgtY, fg.numPatternY);
+                tgtZ = std::max(tgtZ, fg.numPatternZ);
+                tgtL = std::max(tgtL, fg.layers);
+            }
+
+            bool dimensionMismatch = false;
+            for (const auto& fg : fgInfos) {
+                if (fg.numPatternX != tgtX || fg.numPatternY != tgtY ||
+                    fg.numPatternZ != tgtZ || fg.layers != tgtL) {
+                    dimensionMismatch = true;
+                    break;
+                }
+            }
+
+            if (dimensionMismatch) {
+                const auto oldIndex = std::move(m_spritesIndex);
+                m_spritesIndex.clear();
+                m_spritesIndex.reserve(m_animationPhases * tgtX * tgtY * tgtZ * tgtL);
+
+                for (const auto& fg : fgInfos) {
+                    for (int a = 0; a < fg.phases; ++a) {
+                        for (int z = 0; z < tgtZ; ++z) {
+                            for (int y = 0; y < tgtY; ++y) {
+                                for (int x = 0; x < tgtX; ++x) {
+                                    for (int l = 0; l < tgtL; ++l) {
+                                        const int srcX = std::min(x, fg.numPatternX - 1);
+                                        const int srcY = std::min(y, fg.numPatternY - 1);
+                                        const int srcZ = std::min(z, fg.numPatternZ - 1);
+                                        const int srcL = std::min(l, fg.layers - 1);
+                                        const int srcIdx = fg.startIndex +
+                                            (((a * fg.numPatternZ + srcZ) * fg.numPatternY + srcY) * fg.numPatternX + srcX) * fg.layers + srcL;
+                                        m_spritesIndex.push_back(oldIndex[srcIdx]);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Update member dimensions to reflect the unified target grid.
+                m_numPatternX = tgtX;
+                m_numPatternY = tgtY;
+                m_numPatternZ = tgtZ;
+                m_layers      = tgtL;
+            }
         }
 
         m_textureData.resize(m_animationPhases);
@@ -145,6 +207,10 @@ void ThingType::applyAppearanceFlags(const appearances::AppearanceFlags& flags)
 
     if (flags.has_forceuse() && flags.forceuse()) {
         m_flags |= ThingFlagAttrForceUse;
+    }
+
+    if (flags.has_usable() && flags.usable()) {
+        m_flags |= ThingFlagAttrUsable;
     }
 
     if (flags.has_write()) {
@@ -327,7 +393,10 @@ void ThingType::applyAppearanceFlags(const appearances::AppearanceFlags& flags)
     // charged to expire
     // corpse
     // player_corpse
-    // cyclopediaitem
+    if (flags.has_cyclopediaitem()) {
+        m_cyclopediaType = flags.cyclopediaitem().cyclopedia_type();
+    }
+
     // ammo
     if (flags.has_ammo() && flags.ammo()) {
         m_flags |= ThingFlagAttrAmmo;
@@ -364,9 +433,18 @@ void ThingType::applyAppearanceFlags(const appearances::AppearanceFlags& flags)
     }
 
     if (flags.has_deco_kit() && flags.deco_kit()) {
-        m_flags |= ThingFlagAttrExpireStop;
+        m_flags |= ThingFlagAttrDecoKit;
     }
 
+    // proficiency flag
+    if (flags.has_proficiency()) {
+        if (g_game.getFeature(Otc::GameProficiency)) {
+            m_proficiencyId = flags.proficiency().proficiency_id();
+            m_flags |= ThingFlagAttrProficiency;
+        }
+    }
+
+    // skill wheel gem
     if (flags.has_skillwheel_gem()) {
         m_skillWheelGem.gem_quality_id = flags.skillwheel_gem().gem_quality_id();
         m_skillWheelGem.vocation_id = flags.skillwheel_gem().vocation_id();
@@ -375,6 +453,39 @@ void ThingType::applyAppearanceFlags(const appearances::AppearanceFlags& flags)
 
     if (flags.has_dual_wielding() && flags.dual_wielding()) {
         m_flags |= ThingFlagAttrDualWield;
+    }
+
+    if (flags.has_imbueable()) {
+        m_imbueSlots = flags.imbueable().slot_count();
+        m_flags |= ThingFlagAttrImbueable;
+    }
+
+    for (int i = 0; i < flags.restrict_to_vocation_size(); ++i) {
+        m_restrictVocation.push_back(static_cast<uint32_t>(flags.restrict_to_vocation(i)));
+    }
+
+    if (flags.has_minimum_level()) {
+        m_minimumLevel = flags.minimum_level();
+    }
+
+    if (flags.has_weapon_type()) {
+        const auto wt = flags.weapon_type();
+        if (wt == otclient::protobuf::appearances::WEAPON_TYPE_SWORD)
+            m_weaponType = ITEM_CATEGORY_SWORDS;
+        else if (wt == otclient::protobuf::appearances::WEAPON_TYPE_AXE)
+            m_weaponType = ITEM_CATEGORY_AXES;
+        else if (wt == otclient::protobuf::appearances::WEAPON_TYPE_CLUB)
+            m_weaponType = ITEM_CATEGORY_CLUBS;
+        else if (wt == otclient::protobuf::appearances::WEAPON_TYPE_FIST)
+            m_weaponType = ITEM_CATEGORY_FIST_WEAPONS;
+        else if (wt == otclient::protobuf::appearances::WEAPON_TYPE_BOW
+              || wt == otclient::protobuf::appearances::WEAPON_TYPE_CROSSBOW
+              || wt == otclient::protobuf::appearances::WEAPON_TYPE_THROW)
+            m_weaponType = ITEM_CATEGORY_DISTANCE_WEAPONS;
+        else if (wt == otclient::protobuf::appearances::WEAPON_TYPE_WAND_ROD)
+            m_weaponType = ITEM_CATEGORY_WANDS_RODS;
+        else
+            m_weaponType = 0;
     }
 }
 #endif
@@ -736,7 +847,7 @@ const TexturePtr& ThingType::getTexture(const int animationPhase)
             m_loading.store(false, std::memory_order_release);
         };
 
-        g_asyncDispatcher.detach_task(std::move(action));
+        g_asyncDispatcher->detach_task(std::move(action));
     }
 
     return m_textureNull;
@@ -1026,6 +1137,11 @@ ThingFlagAttr ThingType::thingAttrToThingFlagAttr(const ThingAttr attr) {
 
 bool ThingType::isTall(const bool useRealSize) { return useRealSize ? getRealSize() > g_gameConfig.getSpriteSize() : getHeight() > 1; }
 int ThingType::getAnimationPhases() const { return m_animator ? m_animator->getAnimationPhases() : m_animationPhases; }
+int ThingType::getIdleAnimationPhases() const {
+    if (m_idleAnimator) return m_idleAnimator->getAnimationPhases();
+    if (m_animator) return std::max(0, m_animationPhases - m_animator->getAnimationPhases());
+    return 0;
+}
 
 int ThingType::getMeanPrice() {
     static constexpr std::array<std::pair<uint32_t, uint32_t>, 3> forcedPrices = { {

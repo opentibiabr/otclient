@@ -25,6 +25,12 @@
 #include "../const.h"
 #include "point.h"
 
+#ifndef USE_PRECOMPILED_HEADERS
+#include <algorithm>
+#include <istream>
+#include <ostream>
+#endif
+
 template<class T>
 class TSize
 {
@@ -128,5 +134,10 @@ private:
     T wd, ht;
 };
 
-using Size = TSize<int>;
-using SizeF = TSize<float>;
+namespace Fw {
+    using Size = TSize<int>;
+    using SizeF = TSize<float>;
+}
+
+using Fw::Size;
+using Fw::SizeF;

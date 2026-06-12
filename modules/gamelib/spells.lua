@@ -348,6 +348,17 @@ function Spells.getSpellByIcon(iconId)
     return nil
 end
 
+function Spells.getSpellByClientId(clientId)
+    for profile, data in pairs(SpellInfo) do
+        for k, spell in pairs(data) do
+            if spell.clientId == clientId then
+                return spell, profile, k
+            end
+        end
+    end
+    return nil
+end
+
 function Spells.getSpellIconIds()
     local ids = {}
     for profile, data in pairs(SpellInfo) do

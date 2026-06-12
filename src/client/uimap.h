@@ -31,6 +31,9 @@ public:
     UIMap();
     ~UIMap() override;
 
+    using UIWidget::draw;
+    using UIWidget::setShader;
+
     void drawSelf(DrawPoolType drawPane) override;
     void draw(DrawPoolType drawPane);
 
@@ -108,6 +111,7 @@ protected:
 private:
     void updateVisibleDimension();
     void updateMapSize();
+    void resetCursorToDefault();
 
     MapViewPtr m_mapView;
     Rect m_mapRect;

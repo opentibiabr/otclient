@@ -106,6 +106,9 @@ void Paperdoll::drawLight(const Point& dest, bool mount, LightView* lightView) {
 
 int Paperdoll::getCurrentAnimationPhase()
 {
+    if (!m_thingType)
+        return 0;
+
     const auto* animator = m_thingType->getIdleAnimator();
     if (!animator && m_thingType->isAnimateAlways())
         animator = m_thingType->getAnimator();
@@ -114,8 +117,15 @@ int Paperdoll::getCurrentAnimationPhase()
         return animator->getPhaseAt(m_animationTimer, getSpeed());
 
     if (m_thingType->isCreature() && m_thingType->isAnimateAlways()) {
-        const int ticksPerFrame = std::round(1000 / m_thingType->getAnimationPhases()) / getSpeed();
-        return (g_clock.millis() % (static_cast<long long>(ticksPerFrame) * m_thingType->getAnimationPhases())) / ticksPerFrame;
+        const int animationPhases = m_thingType->getAnimationPhases();
+        const float speed = getSpeed();
+        if (animationPhases <= 0 || speed <= 0.f) return 0;
+
+        const int ticksPerFrame = std::max<int>(1, static_cast<int>(std::round((1000.0 / animationPhases) / speed)));
+        const long long animationPeriod = static_cast<long long>(ticksPerFrame) * animationPhases;
+        if (animationPeriod <= 0) return 0;
+
+        return static_cast<int>((g_clock.millis() % animationPeriod) / ticksPerFrame);
     }
 
     return 0;

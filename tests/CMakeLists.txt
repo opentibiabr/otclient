@@ -38,6 +38,16 @@ function(otclient_add_gtest TARGET_NAME)
             FRAMEWORK_XML
     )
 
+    if(ASAN_ENABLED)
+        if(MSVC)
+            target_compile_options(${TARGET_NAME} PRIVATE /fsanitize=address)
+            target_link_options(${TARGET_NAME} PRIVATE /fsanitize=address)
+        else()
+            target_compile_options(${TARGET_NAME} PRIVATE -fsanitize=address)
+            target_link_options(${TARGET_NAME} PRIVATE -fsanitize=address)
+        endif()
+    endif()
+
     if(MSVC)
         target_compile_options(${TARGET_NAME} PRIVATE /utf-8)
         if(BUILD_STATIC_LIBRARY)

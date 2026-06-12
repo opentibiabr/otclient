@@ -25,8 +25,20 @@
 #include <framework/global.h>
 #include <framework/stdext/uri.h>
 
- //  result
-class HttpSession;
+#ifdef __EMSCRIPTEN__
+#include <emscripten/fetch.h>
+#include <emscripten/websocket.h>
+#else
+#include <ixwebsocket/IXHttp.h>
+#include <ixwebsocket/IXWebSocket.h>
+#endif
+
+#include <atomic>
+#include <memory>
+#include <mutex>
+#include <queue>
+
+#include <zlib.h>
 
 struct HttpResult
 {
@@ -34,172 +46,32 @@ struct HttpResult
     int operationId = 0;
     int status = 0;
     int size = 0;
-    int progress = 0; // from 0 to 100
-    int speed = 0;
+    std::atomic<int> progress{ 0 }; // from 0 to 100
+    std::atomic<int> speed{ 0 };
     int redirects = 0; // redirect
-    bool connected = false;
-    bool finished = false;
-    bool canceled = false;
+    std::atomic_bool connected{ false };
+    std::atomic_bool finished{ false };
+    std::atomic_bool canceled{ false };
     std::string postData;
     std::string response;
     std::string error;
-    std::weak_ptr<HttpSession> session;
+#ifndef __EMSCRIPTEN__
+    std::shared_ptr<ix::HttpRequestArgs> request;
+#endif
 };
 
 using HttpResult_ptr = std::shared_ptr<HttpResult>;
-using HttpResult_cb = std::function<void(HttpResult_ptr)>;
-
-//  session
-
-class HttpSession : public std::enable_shared_from_this<HttpSession>
-{
-public:
-
-    HttpSession(asio::io_service& service, std::string url, std::string agent,
-                const bool& enable_time_out_on_read_write,
-                const std::unordered_map<std::string, std::string>& custom_header,
-                const int timeout, const bool isJson, const bool checkContentLength, HttpResult_ptr result, HttpResult_cb callback) :
-        m_service(service),
-        m_url(std::move(url)),
-        m_agent(std::move(agent)),
-        m_enable_time_out_on_read_write(enable_time_out_on_read_write),
-        m_custom_header(custom_header),
-        m_timeout(timeout),
-        m_isJson(isJson),
-        m_checkContentLength(checkContentLength),
-        m_result(std::move(result)),
-        m_callback(std::move(callback)),
-        m_socket(service),
-        m_resolver(service),
-        m_timer(service)
-    {
-        assert(m_callback != nullptr);
-        assert(m_result != nullptr);
-
-        // Configure SSL context properly
-        m_context.set_default_verify_paths();
-        m_context.set_verify_mode(asio::ssl::verify_none);
-        m_context.set_options(asio::ssl::context::default_workarounds |
-                              asio::ssl::context::no_sslv2 |
-                              asio::ssl::context::no_sslv3 |
-                              asio::ssl::context::single_dh_use);
-    };
-    void start();
-    void cancel() const { onError("canceled"); }
-    void close();
-
-private:
-    asio::io_service& m_service;
-    std::string m_url;
-    std::string m_agent;
-    bool m_enable_time_out_on_read_write;
-    std::unordered_map<std::string, std::string> m_custom_header;
-    int m_timeout;
-    bool m_isJson;
-    bool m_checkContentLength;
-    HttpResult_ptr m_result;
-    HttpResult_cb m_callback;
-    asio::ip::tcp::socket m_socket;
-    asio::ip::tcp::resolver m_resolver;
-    asio::steady_timer m_timer;
-    ParsedURI instance_uri;
-
-    asio::ssl::context m_context{ asio::ssl::context::sslv23_client };
-    asio::ssl::stream<asio::ip::tcp::socket> m_ssl{ m_service, m_context };
-
-    std::string m_request;
-    asio::streambuf m_response;
-    int sum_bytes_response = 0;
-    int sum_bytes_speed_response = 0;
-    ticks_t m_last_progress_update = stdext::millis();
-
-    void on_resolve(const std::error_code& ec, asio::ip::tcp::resolver::iterator iterator);
-    void on_connect(const std::error_code& ec);
-
-    void on_request_sent(const std::error_code& ec, size_t bytes_transferred);
-
-    void on_write();
-    void on_read(const std::error_code& ec, size_t bytes_transferred);
-
-    void onTimeout(const std::error_code& ec);
-    void onError(const std::string& ec, const std::string& details = "") const;
-};
-
-//  web socket
-enum class WebsocketCallbackType { OPEN, MESSAGE, ERROR_, CLOSE };
-using WebsocketSession_cb = std::function<void(WebsocketCallbackType, const std::string& message)>;
-
-class WebsocketSession : public std::enable_shared_from_this<WebsocketSession>
-{
-public:
-
-    WebsocketSession(asio::io_service& service, std::string url, std::string agent,
-                     const bool& enable_time_out_on_read_write, const int timeout, HttpResult_ptr result, WebsocketSession_cb callback) :
-        m_service(service),
-        m_url(std::move(url)),
-        m_agent(std::move(agent)),
-        m_enable_time_out_on_read_write(enable_time_out_on_read_write),
-        m_timeout(timeout),
-        m_result(std::move(result)),
-        m_callback(std::move(callback)),
-        m_timer(service),
-        m_socket(service),
-        m_resolver(service)
-    {
-        assert(m_callback != nullptr);
-        assert(m_result != nullptr);
-    };
-
-    void start();
-    void send(const std::string& data, uint8_t ws_opcode = 0);
-    void close();
-
-private:
-    asio::io_service& m_service;
-    std::string m_url;
-    std::string m_agent;
-    std::string m_read_buffer;
-    std::queue<std::pair<std::string, uint8_t>> m_pending_messages;
-    bool m_enable_time_out_on_read_write;
-    int m_timeout;
-    HttpResult_ptr m_result;
-    WebsocketSession_cb m_callback;
-    asio::steady_timer m_timer;
-    asio::ip::tcp::socket m_socket;
-    asio::ip::tcp::resolver m_resolver;
-    bool m_closed{ false };
-    bool m_handshake_complete{ false };
-    ParsedURI instance_uri;
-
-    asio::ssl::context m_context{ asio::ssl::context::sslv23_client };
-    asio::ssl::stream<asio::ip::tcp::socket> m_ssl{ m_service, m_context };
-
-    std::queue<std::string> m_sendQueue;
-
-    std::string m_request;
-    asio::streambuf m_response;
-
-    void on_resolve(const std::error_code& ec, asio::ip::tcp::resolver::iterator iterator);
-    void on_connect(const std::error_code& ec);
-    void on_request_sent(const std::error_code& ec, size_t bytes_transferred);
-
-    void on_write(const std::error_code& ec, size_t bytes_transferred);
-    void on_read(const std::error_code& ec, size_t bytes_transferred);
-
-    void on_close(const std::error_code& ec);
-    void onTimeout(const std::error_code& ec);
-    void onError(const std::string& ec, const std::string& details = "");
-};
 
 class Http
 {
 public:
-    Http() : m_guard(make_work_guard(m_ios)) {}
-
     void init();
     void terminate();
 
     int get(const std::string& url, int timeout = 5);
+    // The trailing checkContentLength parameter is preserved for Lua binding
+    // compatibility. ixwebsocket does not expose the old Content-Length hook,
+    // so new call-sites should omit it.
     int post(const std::string& url, const std::string& data, int timeout = 5, bool isJson = false, bool checkContentLength = true);
     int download(const std::string& url, const std::string& path, int timeout = 5);
     int ws(const std::string& url, int timeout = 5);
@@ -228,17 +100,47 @@ public:
     void setEnableTimeOutOnReadWrite(const bool enable_time_out_on_read_write) { m_enable_time_out_on_read_write = enable_time_out_on_read_write; }
 
 private:
-    bool m_working = false;
+#ifdef __EMSCRIPTEN__
+    struct FetchContext;
+    struct WebSocketContext;
+
+    static void onFetchSuccess(emscripten_fetch_t* fetch);
+    static void onFetchError(emscripten_fetch_t* fetch);
+    static void onFetchProgress(emscripten_fetch_t* fetch);
+    static EM_BOOL onWebSocketOpen(int eventType, const EmscriptenWebSocketOpenEvent* event, void* userData);
+    static EM_BOOL onWebSocketMessage(int eventType, const EmscriptenWebSocketMessageEvent* event, void* userData);
+    static EM_BOOL onWebSocketError(int eventType, const EmscriptenWebSocketErrorEvent* event, void* userData);
+    static EM_BOOL onWebSocketClose(int eventType, const EmscriptenWebSocketCloseEvent* event, void* userData);
+
+    void completeFetch(FetchContext* context, emscripten_fetch_t* fetch, std::string error);
+    void cleanupWebSocket(WebSocketContext* context, const std::string& closeMessage, bool dispatchClose);
+#else
+    std::string describeHttpError(const ix::HttpResponsePtr& response, bool canceled);
+    void copyHeaders(const std::unordered_map<std::string, std::string>& source, ix::WebSocketHttpHeaders& target);
+    std::shared_ptr<ix::HttpRequestArgs> buildRequest(const std::string& url, const std::string& verb, int timeout);
+#endif
+
+    int computeProgress(const int current, const int total);
+    HttpResult_ptr registerOperation(const std::string& url, int& operationId);
+    void unregisterOperation(int operationId);
+    bool shouldEmitProgress(ticks_t& lastEmit, int progress);
+
+    std::atomic_bool m_working{ false };
     bool m_enable_time_out_on_read_write = false;
-    int m_operationId = 1;
-    std::thread m_thread;
-    asio::io_context m_ios{};
-    asio::executor_work_guard<asio::io_context::executor_type> m_guard;
+    std::atomic<int> m_operationId{ 1 };
     std::unordered_map<int, HttpResult_ptr> m_operations;
-    std::unordered_map<int, std::shared_ptr<WebsocketSession>> m_websockets;
+#ifdef __EMSCRIPTEN__
+    std::unordered_map<int, std::shared_ptr<WebSocketContext>> m_websockets;
+#else
+    std::unordered_map<int, std::shared_ptr<ix::WebSocket>> m_websockets;
+#endif
     std::unordered_map<std::string, HttpResult_ptr> m_downloads;
     std::string m_userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
     std::unordered_map<std::string, std::string> m_custom_header;
+    std::mutex m_mutex;
 };
 
 extern Http g_http;
+#ifndef __EMSCRIPTEN__
+extern std::shared_ptr<ix::HttpClient> g_ixHttpClient;
+#endif

@@ -1,8 +1,14 @@
 .content {
   position: relative;
-  background-color: red;
-  width: 500;
-  height: 350;
+  background-color: #2b2b2b;
+}
+
+.tabs {
+  padding: 8;
+}
+
+.tabs > button {
+  margin-right: 5;
 }
 
 .form {
@@ -18,7 +24,123 @@
   border: 1px red;
 }
 
-.footer {
+#examplesTab {
+  position: absolute;
+  top: 40;
+  left: 8;
+  right: 8;
+  bottom: 42;
+}
+
+.exampleControls {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 24;
+}
+
+.exampleControls > label {
+  margin-right: 8;
+}
+
+.exampleControls > select {
+  min-width: 300;
+}
+
+.examplePreview {
+  position: absolute;
+  top: 28;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 1px #8a8a8a;
+  background-color: #ffffff;
+  overflow: scroll;
+}
+
+.examplePreview window,
+.examplePreview > window,
+.examplePreview > .exampleRoot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 8;
+  display: block;
+}
+
+#responsiveTab {
+  position: absolute;
+  top: 40;
+  left: 8;
+  right: 8;
+  bottom: 42;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #d8d8d8;
+}
+
+.responsiveHeader {
+  position: relative;
+  flex: 0 0 auto;
+  height: 18;
+}
+
+.responsiveTitle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-weight: bold;
+}
+
+.responsiveMeta {
+  position: absolute;
+  right: 0;
+  top: 0;
+  color: #b8c7ff;
+}
+
+.responsiveHint {
+  flex: 0 0 auto;
+  color: #bdbdbd;
+}
+
+.responsiveStage {
+  flex-grow: 1;
+  min-height: 0;
+  border: 1px #676767;
+  background-color: #1f1f1f;
+  padding: 12;
+  overflow: auto;
+}
+
+.responsiveViewportFrame {
+  width: 100%;
+  text-align: left;
+}
+
+.responsiveViewport {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 0px;
+  width: 480;
+  min-height: 220;
+  background-color: #3b3b3b;
+  border: 1px #808080;
+}
+
+.responsiveBox {
+  height: 34;
+  flex: 0 0 auto;
+}
+
+.appFooter {
   position: absolute;
   left: 5;
   right: 10;
@@ -73,6 +195,6 @@ img.shield {
   width: 64;
   height: 64;
   position: absolute;
-  right: 0;
+  right: 30;
   --shader: Map - Party;
 }

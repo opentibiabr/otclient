@@ -2,6 +2,11 @@ local function onAttach(effect, owner)
     local category, thingId = AttachedEffectManager.getDataThing(owner)
     local config = AttachedEffectManager.getConfig(effect:getId(), category, thingId)
 
+    if not config then
+        g_logger.debug(string.format("[AttachedEffect] onAttach: No config found for effect ID %d (category: %d, thingId: %d)", effect:getId(), category, thingId))
+        return
+    end
+
     if config.isThingConfig then
         AttachedEffectManager.executeThingConfig(effect, category, thingId)
     end
@@ -14,6 +19,11 @@ end
 local function onDetach(effect, oldOwner)
     local category, thingId = AttachedEffectManager.getDataThing(oldOwner)
     local config = AttachedEffectManager.getConfig(effect:getId(), category, thingId)
+
+    if not config then
+        g_logger.debug(string.format("[AttachedEffect] onDetach: No config found for effect ID %d (category: %d, thingId: %d)", effect:getId(), category, thingId))
+        return
+    end
 
     if config.onDetach then
         config.onDetach(effect, oldOwner, config.__onDetach)

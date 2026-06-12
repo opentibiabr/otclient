@@ -1,0 +1,34 @@
+name: Reusable Lua Syntax
+
+on:
+  workflow_call:
+
+jobs:
+  job:
+    name: Check Lua Syntax
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup LuaJIT
+        run: sudo apt-get update && sudo apt-get install -y luajit
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Compile Lua files
+        shell: bash
+        run: |
+          set -euo pipefail
+          for root in data modules mods; do
+            if [[ ! -d "${root}" ]]; then
+              echo "Missing Lua root: ${root}" >&2
+              exit 1
+            fi
+          done
+          failed=0
+          while IFS= read -r -d '' file; do
+            echo "=== ${file} ==="
+            if ! luajit -b "${file}" /dev/null; then
+              failed=1
+            fi
+          done < <(find data modules mods -type f -name "*.lua" -print0)
+          exit "${failed}"

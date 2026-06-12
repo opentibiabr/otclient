@@ -424,7 +424,7 @@ SlotBossSlots < UIWidget
       padding-right: 15
       placeholder: Type to search
       placeholder-color: #6E706F
-      @onTextChange: modules.game_cyclopedia.Cyclopedia.SelectBossSearchText(self:getText())
+      @onTextChange: modules.game_cyclopedia.Cyclopedia.SelectBossSearchText(self:getText(), false, self)
     UIWidget
       id: SearchClearButton
       anchors.right: SearchEdit.right
@@ -973,8 +973,7 @@ BosstiaryItem < UIWidget
     !text: tr('Track')
     text-auto-resize: true
     color: #C1C1C1
-    @onCheckChange: |
-      g_game.sendStatusTrackerBestiary(self:getParent():getId(),self:isChecked())
+    @onCheckChange: modules.game_cyclopedia.Cyclopedia.onBosstiaryTrackCheckChange(self)
   UICreature
     id: Sprite
     anchors.bottom: TrackCheck.top

@@ -418,7 +418,7 @@ void UIManager::onWidgetDestroy(const UIWidgetPtr& widget)
             g_lua.collectGarbage();
             for (const auto& widget : backupList) {
                 if (widget.use_count() != 1)
-                    g_logger.warning("widget '{}' destroyed but still have {} reference(s) left", widget->getId(), widget.use_count() - 1);
+                    g_logger.warning("Widget '{}' destroyed but still have {} reference(s) left", widget->getId(), widget.use_count() - 1);
             }
         }, 1);
     }, 1000);
@@ -493,7 +493,7 @@ void UIManager::importStyleFromOTML(const OTMLNodePtr& styleNode)
     if(!g_app.isRunning() && (oldStyle && !oldStyle->valueAt("__unique", false))) {
         auto it = m_styles.find(name);
         if(it != m_styles.end())
-            g_logger.warning("style '{}' is being redefined", name);
+            g_logger.warning("Style '{}' is being redefined", name);
     }
     */
 
@@ -588,7 +588,7 @@ OTMLNodePtr UIManager::loadDeviceUI(const std::string& file, const OperatingSyst
 
     const auto& doc = OTMLDocument::parse(g_resources.guessFilePath(rawName + "." + osName, "otui"));
     if (doc) {
-        g_logger.info("found os style '{}' for '{}'", osName, rawName);
+        g_logger.info("Found os style '{}' for '{}'", osName, rawName);
         importStyleFromOTML(doc);
         return findMainWidgetNode(doc);
     }
@@ -602,7 +602,7 @@ OTMLNodePtr UIManager::loadDeviceUI(const std::string& file, const DeviceType de
 
     const auto& doc = OTMLDocument::parse(g_resources.guessFilePath(rawName + "." + deviceName, "otui"));
     if (doc) {
-        g_logger.info("found device style '{}' for '{}'", deviceName, rawName);
+        g_logger.info("Found device style '{}' for '{}'", deviceName, rawName);
         importStyleFromOTML(doc);
         return findMainWidgetNode(doc);
     }
@@ -638,24 +638,24 @@ UIWidgetPtr UIManager::loadUI(const std::string& file, const UIWidgetPtr& parent
             if (deviceWidgetNode)
                 widgetNode = deviceWidgetNode;
         } catch (stdext::exception& e) {
-            g_logger.fine("no device ui found for '{}', reason: '{}'", file, e.what());
+            g_logger.fine("No device ui found for '{}', reason: '{}'", file, e.what());
         }
         try {
             const auto osWidgetNode = loadDeviceUI(file, device.os);
             if (osWidgetNode)
                 widgetNode = osWidgetNode;
         } catch (stdext::exception& e) {
-            g_logger.fine("no os ui found for '{}', reason: '{}'", file, e.what());
+            g_logger.fine("No os ui found for '{}', reason: '{}'", file, e.what());
         }
 
         if (!widgetNode) {
-            g_logger.debug("failed to load a widget from '{}'", file);
+            g_logger.debug("Failed to load a widget from '{}'", file);
             return nullptr;
         }
 
         return createWidgetFromOTML(widgetNode, parent);
     } catch (stdext::exception& e) {
-        g_logger.error("failed to load UI from '{}': {}", file, e.what());
+        g_logger.error("Failed to load UI from '{}': {}", file, e.what());
         return nullptr;
     }
 }
@@ -687,7 +687,7 @@ UIWidgetPtr UIManager::loadUIFromString(const std::string& data, const UIWidgetP
 
         return widget;
     } catch (stdext::exception& e) {
-        g_logger.error("failed to load UI from string: {}", e.what());
+        g_logger.error("Failed to load UI from string: {}", e.what());
         return nullptr;
     }
 }
@@ -698,7 +698,7 @@ UIWidgetPtr UIManager::createWidget(const std::string_view styleName, const UIWi
     try {
         return createWidgetFromOTML(node, parent);
     } catch (stdext::exception& e) {
-        g_logger.error("failed to create widget from style '{}': {}", styleName, e.what());
+        g_logger.error("Failed to create widget from style '{}': {}", styleName, e.what());
         return nullptr;
     }
 }
@@ -744,7 +744,7 @@ UIWidgetPtr UIManager::createWidgetFromOTML(const OTMLNodePtr& widgetNode, const
 
 void UIManager::updateHoveredText(bool now)
 {
-    if (m_hoverTextUpdateScheduled && !now || !m_hoveredWidget)
+    if ((m_hoverTextUpdateScheduled && !now) || !m_hoveredWidget)
         return;
 
     auto func = [this] {

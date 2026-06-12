@@ -192,7 +192,7 @@ bool Texture::setupSize(const Size& size)
     // checks texture max size
     if (std::max<int>(size.width(), size.height()) > g_graphics.getMaxTextureSize()) {
         g_logger.error(
-            "loading texture with size {}x{} failed, "
+            "Loading texture with size {}x{} failed, "
             "the maximum size allowed by the graphics card is {}x{}, "
             "to prevent crashes the texture will be displayed as a blank texture",
             size.width(), size.height(), g_graphics.getMaxTextureSize(), g_graphics.getMaxTextureSize()
