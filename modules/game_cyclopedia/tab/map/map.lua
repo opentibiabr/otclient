@@ -350,7 +350,7 @@ function Cyclopedia.onClickRoseButton(dir)
     end
 end
 
-function Cyclopedia.setZooom(zoom)
+function Cyclopedia.setZoom(zoom)
     if zoom then
         UI.MapBase.minimap:zoomIn()
     else
