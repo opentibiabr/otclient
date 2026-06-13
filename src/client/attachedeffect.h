@@ -36,6 +36,8 @@ public:
 
     uint16_t getId() { return m_id; }
 
+	uint16_t getThingId() { return m_thingId; }
+
     AttachedEffectPtr clone();
 
     float getSpeed() { return m_speed / 100.f; }
