@@ -127,7 +127,7 @@ function resizeLockButtons()
     bottomLockPanel:setVisible(true)
     updateLockIcon(bottomLockPanel, "actionBarBottomLocked")
     if bottomCount >= 1 and bottomCount <= 3 then
-        bottomLockPanel:setHeight(34 + (bottomCount - 1) * 36)
+        bottomLockPanel:setHeight(34 + (bottomCount - 1) * 34)
     else
         bottomLockPanel:setHeight(0)
         bottomLockPanel:setVisible(false)
@@ -153,7 +153,8 @@ function updateVisibleWidgets()
             local tabBar = actionBar.tabBar
             local children = tabBar:getChildren()
             local dimension = actionBar.isVertical and tabBar:getHeight() or tabBar:getWidth()
-            local visibleCount = math.max(1, math.floor(dimension / 36))
+            local slotSize = actionBar.isVertical and 36 or 36
+            local visibleCount = math.max(1, math.floor(dimension / slotSize))
             local firstIndex = actionBar.firstVisibleIndex or 1
             local totalChildren = #children
             
@@ -226,7 +227,8 @@ function moveActionButtons(widget)
     local children = tabBar:getChildren()
     local reverseChildren = tabBar.getReverseChildren and tabBar:getReverseChildren() or {}
     local dimension = actionBar.isVertical and tabBar:getHeight() or tabBar:getWidth()
-    local visibleCount = math.max(1, math.floor(dimension / 36))
+    local slotSize = actionBar.isVertical and 36 or 36
+    local visibleCount = math.max(1, math.floor(dimension / slotSize))
     if dir == "next" then
         local firstVisible = getFirstVisibleButton(actionBar)
         if not firstVisible then
@@ -239,7 +241,7 @@ function moveActionButtons(widget)
         end
         firstVisible:setVisible(false)
         nextInvisible:setVisible(true)
-        scroll:increment(36)
+        scroll:increment(slotSize)
         actionBar.firstVisibleIndex = tabBar:getChildIndex(firstVisible) + 1
         actionBar.lastVisibleIndex = tabBar:getChildIndex(nextInvisible)
     elseif dir == "prev" then
@@ -250,7 +252,7 @@ function moveActionButtons(widget)
         end
         prevInvisible:setVisible(true)
         lastVisible:setVisible(false)
-        scroll:decrement(36)
+        scroll:decrement(slotSize)
         actionBar.firstVisibleIndex = tabBar:getChildIndex(prevInvisible)
         actionBar.lastVisibleIndex = tabBar:getChildIndex(lastVisible) - 1
     elseif dir == "first" then

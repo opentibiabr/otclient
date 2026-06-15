@@ -88,6 +88,11 @@ public:
 
     void addBoudingRect(const Rect& dest, int innerLineWidth);
     void addRepeatedRects(const Rect& dest, const Rect& src);
+    // Same as addRepeatedRects but the vertical tiling phase is locked to the
+    // bottom edge of dest: the bottom row is always a full tile and the partial
+    // (clipped) row is absorbed at the top. Used by widgets whose top edge moves
+    // while the bottom stays pinned, so the pattern does not scroll on resize.
+    void addBottomRepeatedRects(const Rect& dest, const Rect& src);
 
     void append(const CoordsBuffer* buffer)
     {

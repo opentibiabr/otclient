@@ -57,7 +57,8 @@ UIWidget
     anchors.bottom: bottomSplitter.top
     focusable: false
     margin-top: 1
-    margin-bottom: 1
+    margin-left: -1
+    margin-bottom: -4
 
     Button
       id: showTopMenuButton
@@ -72,18 +73,19 @@ UIWidget
     id: gameLeftActionPanel
     phantom: true
     focusable: false
-    anchors.top: gameTopPanel.bottom
-    anchors.left: gameLeftExtraPanel.right
+    anchors.top: leftDecreaseSidePanels.bottom
+    anchors.left: gameLeftThirdPanel.right
     anchors.bottom: bottomSplitter.top
-    padding-top: 1
+    margin-top: 0
     margin-left: 1
+    padding-top: 1
     border-width-right: 1
     border-color-right: #292929
     width: 36
     image-source: /images/ui/actionbar/actionbar_background-light
     image-border: 1
-    margin-bottom: 16
-    padding-right: 3 
+    margin-bottom: 8
+    padding-right: 3
     layout:
       type: horizontalBox
       fit-children: true
@@ -94,6 +96,7 @@ UIWidget
     anchors.top: gameLeftActionPanel.bottom
     anchors.left: gameLeftActionPanel.left
     border-width-right: 1
+    padding-top: -3
     border-color-right: #292929
     image-source: /images/ui/actionbar/actionbar_background-light
     Button
@@ -101,7 +104,7 @@ UIWidget
       size: 34 16
       anchors.top: parent.top
       anchors.right: parent.right
-      margin-right: 1
+      margin-right: 3
       @onClick: modules.game_actionbar.changeLockStatus(self, "Left")
       $pressed:
         icon-offset: 1 1
@@ -110,17 +113,18 @@ UIWidget
     id: gameRightActionPanel
     phantom: true
     focusable: false
-    anchors.top: gameTopPanel.bottom
-    anchors.right: gameRightExtraPanel.left
+    anchors.top: rightDecreaseSidePanels.bottom
+    anchors.right: gameRightFourthPanel.left
     anchors.bottom: bottomSplitter.top
     margin-right: 1
-    margin-top: 1
+    margin-top: 0
+    padding-top: 1
     border-width-left: 1
-    border-color-left: #747474
+    border-color-left: #292929
     width: 36
     image-source: /images/ui/actionbar/actionbar_background-light
     image-border: 1
-    margin-bottom: 16
+    margin-bottom: 8
     padding-left: 3
 
     layout:
@@ -133,7 +137,8 @@ UIWidget
     anchors.top: gameRightActionPanel.bottom
     anchors.right: gameRightActionPanel.right
     border-width-left: 1
-    border-color-left: #747474
+    padding-top: -3
+    border-color-left: #292929
     image-source: /images/ui/actionbar/actionbar_background-light
 
     Button
@@ -141,7 +146,7 @@ UIWidget
       size: 34 16
       anchors.top: parent.top
       anchors.right: parent.right
-      margin-right: 1
+      margin-right: 0
       @onClick: modules.game_actionbar.changeLockStatus(self, "Right")
       $pressed:
         icon-offset: 1 1
@@ -150,10 +155,13 @@ UIWidget
     phantom: true
     focusable: false
     margin-right: 12
+    padding-top: 6
     padding-bottom: 2
     anchors.left: bottomSplitter.left
     anchors.right: bottomSplitter.right
     anchors.top: gameBottomStatsBarPanel.bottom
+    image-source: /images/ui/actionbar/background-dark
+    image-repeated: true
     layout:
       type: verticalBox
       fit-children: true
@@ -174,7 +182,7 @@ UIWidget
       width: 12
       anchors.top: parent.top
       anchors.right: parent.right
-      margin-top: 1
+      margin-top: 8
       margin-bottom: 1
       icon-source: /images/ui/actionbar/locked
       icon-offset: 0 0
@@ -192,6 +200,32 @@ UIWidget
     layout:
       type: verticalBox
       fit-children: true
+
+  UIWidget
+    id: leftActionPanelFiller
+    phantom: true
+    focusable: false
+    anchors.top: gameTopPanel.bottom
+    anchors.left: gameLeftActionPanel.left
+    anchors.right: gameLeftActionPanel.right
+    anchors.bottom: gameLeftActionPanel.top
+    image-source: /images/ui/actionbar/actionbar_background-light
+    image-border: 1
+    border-width-right: 1
+    border-color-right: #292929
+
+  UIWidget
+    id: rightActionPanelFiller
+    phantom: true
+    focusable: false
+    anchors.top: gameTopPanel.bottom
+    anchors.left: gameRightActionPanel.left
+    anchors.right: gameRightActionPanel.right
+    anchors.bottom: gameRightActionPanel.top
+    image-source: /images/ui/actionbar/actionbar_background-light
+    image-border: 1
+    border-width-left: 1
+    border-color-left: #292929
 // end actionsbar
   GameBottomPanel
     id: gameBottomPanel
@@ -226,6 +260,19 @@ UIWidget
       visible: false
 
   GameSidePanel
+    id: gameLeftThirdPanel
+    anchors.left: prev.right
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    margin-left: 1
+    focusable: false
+    visible: true
+    on: true
+    $!on:
+      width: 0
+      visible: false
+
+  GameSidePanel
     id: gameMainRightPanel
     anchors.right: parent.right
     anchors.top: parent.top
@@ -240,11 +287,38 @@ UIWidget
     anchors.right: parent.right
     anchors.top: gameMainRightPanel.bottom
     anchors.bottom: parent.bottom
+    margin-top: 1
     focusable: false
     on: true
 
   GameSidePanel
     id: gameRightExtraPanel
+    anchors.right: prev.left
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    margin-right: 1
+    focusable: false
+    visible: true
+    on: true
+    $!on:
+      width: 0
+      visible: false
+
+  GameSidePanel
+    id: gameRightThirdPanel
+    anchors.right: prev.left
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    margin-right: 1
+    focusable: false
+    visible: true
+    on: true
+    $!on:
+      width: 0
+      visible: false
+
+  GameSidePanel
+    id: gameRightFourthPanel
     anchors.right: prev.left
     anchors.top: parent.top
     anchors.bottom: parent.bottom
@@ -270,21 +344,39 @@ UIWidget
     id: gameSelectRightExtraColumn
     anchors.right: gameRightExtraPanel.right
     anchors.bottom: gameRightExtraPanel.bottom
-    
+
+  SelectColumnButton
+    id: gameSelectRightThirdColumn
+    anchors.right: gameRightThirdPanel.right
+    anchors.bottom: gameRightThirdPanel.bottom
+
+  SelectColumnButton
+    id: gameSelectRightFourthColumn
+    anchors.right: gameRightFourthPanel.right
+    anchors.bottom: gameRightFourthPanel.bottom
+
   SelectColumnButton
     id: gameSelectLeftExtraColumn
     anchors.right: gameLeftExtraPanel.right
     anchors.bottom: gameLeftExtraPanel.bottom
 
+  SelectColumnButton
+    id: gameSelectLeftThirdColumn
+    anchors.right: gameLeftThirdPanel.right
+    anchors.bottom: gameLeftThirdPanel.bottom
+
   Splitter
     id: bottomSplitter
-    anchors.left: gameLeftExtraPanel.right
-    anchors.right: gameRightExtraPanel.left
+    anchors.left: gameLeftThirdPanel.right
+    anchors.right: gameRightFourthPanel.left
     anchors.bottom: parent.bottom
-    height: 6
+    height: 7
     image-source: /images/ui/actionbar/splitterActBottom
-    size: 300 6
+    size: 300 12
     opacity: 100
+    margin-left: 1
+    image-offset-y: 5
+    background: #00000000
     margin-right: 1
     relative-margin: bottom
     margin-bottom: 200
@@ -292,7 +384,7 @@ UIWidget
       function(self, newMargin)
         local dontStretch = modules.client_options.getOption('dontStretchShrink')
         local actionBars = modules.game_actionbar.getActiveBottomBars()
-        local maxHeight = 118 + (35 * actionBars)
+        local maxHeight = 123 + (36 * actionBars)
         local result = math.max(math.min(newMargin, self:getParent():getHeight() - 150), maxHeight)
         if dontStretch then
           result = result > 650 and 650 or (result > 450 and 450 or 200)
@@ -302,7 +394,7 @@ UIWidget
     @onGeometryChange: |
       function(self)
         local actionBars = modules.game_actionbar.getActiveBottomBars()
-        local maxHeight = 118 + (35 * actionBars)
+        local maxHeight = 123 + (36 * actionBars)
         local parentHeight = self:getParent():getHeight()
         self:setMarginBottom(math.min(math.max(parentHeight - 150, maxHeight), self:getMarginBottom()))
       end
@@ -314,56 +406,70 @@ UIWidget
 
   TopStatsBar
     id: gameTopPanel
-    anchors.left: gameLeftExtraPanel.right
-    anchors.right: gameRightExtraPanel.left
+    anchors.left: leftIncreaseSidePanels.right
+    anchors.right: rightIncreaseSidePanels.left
     anchors.top: parent.top
+    margin-left: -1
+    margin-right: 1
+    margin-top: 0
     focusable: false
 
   TopStatsBar
     id: gameBottomStatsBarPanel
-    anchors.left: gameLeftExtraPanel.right
-    anchors.right: gameRightExtraPanel.left
+    anchors.left: gameLeftThirdPanel.right
+    anchors.right: gameRightFourthPanel.left
     anchors.top: bottomSplitter.bottom
+    margin-top: 1
     margin-left: 1
     margin-right: 1
     focusable: false
 
   Button
     id: leftIncreaseSidePanels
-    anchors.left: gameLeftExtraPanel.right
+    anchors.left: gameLeftThirdPanel.right
     anchors.top: parent.top
+    margin-left: 1
+    margin-top: 0
     image-source: /images/ui/topstats_button_panel
     image-clip: 27 0 9 27
     size: 9 27
+    opacity: 1
     @onClick: onIncreaseLeftPanels()
 
     $hover:
       image-clip: 27 0 9 27
     $disabled:
       image-clip: 36 0 9 27
+      opacity: 1
 
   Button
     id: leftDecreaseSidePanels
     anchors.left: leftIncreaseSidePanels.left
     anchors.top: leftIncreaseSidePanels.bottom
     image-source: /images/ui/topstats_button_panel
-    image-clip: 36 26 9 27
+    margin-top: 1
+    image-clip: 36 27 9 27
     size: 9 27
+    opacity: 1
     @onClick: onDecreaseLeftPanels()
 
     $hover:
-      image-clip: 36 26 9 27
+      image-clip: 36 27 9 27
 
     $disabled:
       image-clip: 27 27 9 27
+      opacity: 1
 
   Button
     id: rightIncreaseSidePanels
-    anchors.right: gameRightExtraPanel.left
+    anchors.right: gameRightFourthPanel.left
     anchors.top: parent.top
+    margin-right: -1
+    margin-top: 0
     image-source: /images/ui/topstats_button_panel
     image-clip: 0 0 9 27
     size: 9 27
+    opacity: 1
     @onClick: onIncreaseRightPanels()
 
     $hover:
@@ -371,14 +477,17 @@ UIWidget
 
     $disabled:
       image-clip: 9 0 9 27
+      opacity: 1
 
   Button
     id: rightDecreaseSidePanels
     anchors.right: rightIncreaseSidePanels.right
     anchors.top: rightIncreaseSidePanels.bottom
+    margin-top: 1
     image-source: /images/ui/topstats_button_panel
     image-clip: 9 27 9 27
     size: 9 27
+    opacity: 1
     @onClick: onDecreaseRightPanels()
 
     $hover:
@@ -386,3 +495,4 @@ UIWidget
 
     $disabled:
       image-clip: 0 27 9 27
+      opacity: 1

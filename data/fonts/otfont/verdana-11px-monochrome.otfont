@@ -1,6 +1,7 @@
 Font
   name: verdana-11px-monochrome
   texture: verdana-11px-monochrome_cp1252
-  height: 14
+  height: 16
   glyph-size: 16 16
+  spacing: 1 0
   space-width: 3

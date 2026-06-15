@@ -1,0 +1,7 @@
+Font
+  name: segoe-ui-regular-12
+  texture: segoe-ui-regular-12
+  height: 18
+  glyph-size: 19 18
+  space-width: 3
+  spacing: -1 -3

@@ -178,16 +178,17 @@ MiniWindow
 
   Panel
     id: filterPanel
-    margin-top: 20
+    margin-top: 18
     anchors.top: parent.top
-    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.left: parent.left
+    margin-left: 12
     height: 46
-    width: 130
+    width: 152
     layout:
       type: grid
       flow: true
       cell-spacing: 2
-      num-columns: 6
+      num-columns: 7
       cell-size: 20 20
       fit-children: false
 
@@ -252,7 +253,7 @@ MiniWindow
       @onClick: modules.game_battle.onFilterButtonClick(self)
 
   Panel
-    height: 18
+    height: 0
     anchors.top: filterPanel.bottom
     anchors.left: parent.left
     anchors.right: parent.right
@@ -263,7 +264,8 @@ MiniWindow
     anchors.top: prev.bottom
     anchors.left: parent.left
     anchors.right: parent.right
-    margin-right: 3
+    margin-left: 4
+    margin-right: 4
     margin-top: 0
     height: 2
     color: #cccccc
@@ -271,7 +273,7 @@ MiniWindow
   MiniWindowContents
     id: contentsPanel
     anchors.top: prev.bottom
-    margin-top: 6
+    margin-top: -6
 
     Panel
       id: battlePanel
@@ -279,7 +281,7 @@ MiniWindow
       anchors.right: parent.right
       anchors.top: parent.top
       margin-top: 5
-      padding-right: 5
+      padding-right: 0
       layout:
         type: verticalBox
         fit-children: true

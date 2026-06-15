@@ -11,7 +11,7 @@ local currentDayTime = {
 }
 
 local function refreshVirtualFloors()
-    mapController.ui.layersPanel.layersMark:setMarginTop(((virtualFloor + 1) * 4) - 3)
+    mapController.ui.layersPanel.layersMark:setMarginTop(((virtualFloor + 1) * 4) - 4)
     mapController.ui.layersPanel.automapLayers:setImageClip((virtualFloor * 14) .. ' 0 14 67')
 end
 

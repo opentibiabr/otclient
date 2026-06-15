@@ -348,6 +348,7 @@ function updateTopBarProficiency()
         local label = profWidget:getChildById('proficiencyLabel')
         if progressBar then
             progressBar:setPercent(0)
+            progressBar:setVisible(false)
         end
         if label then
             label:setText('0%')
@@ -396,6 +397,7 @@ function updateTopBarProficiency()
         local bg = profWidget:getChildById('proficiencyBg')
 
         if progressBar then
+            progressBar:setVisible(percent > 0)
             progressBar:setPercent(percent)
         end
         if label then

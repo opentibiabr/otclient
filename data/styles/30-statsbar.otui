@@ -164,6 +164,7 @@ InvManaBar < UIStatsBar
 
 StatsBarUp < UIStatsBar
   StatsBarDarkBackground
+    id: statsDarkBackground
     anchors.fill: parent
     phantom: true
 
@@ -186,120 +187,30 @@ StatsBarUp < UIStatsBar
     anchors.verticalCenter: parent.verticalCenter
     anchors.horizontalCenter: parent.horizontalCenter
     text-align: center
+    font: verdana-11px-monochrome
+    color: #ffffffff
     visible: false
     !text: '9999999999/9999999999'
 
 StatsBarTopWithShrink < UIWidget
   UIWidget
     anchors.fill: parent
-    image-source: /images/ui/background
-    image-repeated: true
-
-  UIWidget
-    anchors.right: rightIncreaseSidePanels.left
-    anchors.left: leftIncreaseSidePanels.right
-    anchors.top: parent.top
-    height: 2
-    background-color: white
-    opacity: 0.35
-
-  UIWidget
-    anchors.right: rightIncreaseSidePanels.left
-    anchors.top: parent.top
-    anchors.bottom: rightDecreaseSidePanels.bottom
-    margin-bottom: -2
-    margin-top: 2
-    width: 2
-    background-color: black
-    opacity: 0.35
-
-  UIWidget
-    anchors.right: parent.right
-    anchors.left: prev.left
-    anchors.top: rightDecreaseSidePanels.bottom
-    height: 2
-    background-color: white
-    opacity: 0.35
-
-  UIWidget
-    anchors.right: parent.right
-    anchors.top: prev.bottom
-    anchors.bottom: parent.bottom
-    width: 2
-    background-color: black
-    opacity: 0.35
-
-  UIWidget
-    anchors.right: parent.right
-    anchors.left: parent.left
-    anchors.bottom: parent.bottom
-    margin-left: 2
-    margin-right: 2
-    height: 2
-    background-color: black
-    opacity: 0.35
-
-  UIWidget
-    anchors.bottom: parent.bottom
-    anchors.left: parent.left
-    anchors.top: leftDecreaseSidePanels.bottom
-    width: 1
-    background-color: white
-    opacity: 0.35
-
-  UIWidget
-    anchors.left: parent.left
-    anchors.top: leftDecreaseSidePanels.bottom
-    anchors.right: leftDecreaseSidePanels.right
-    margin-left: 1
-    height: 1
-    background-color: white
-    opacity: 0.35
-
-  UIWidget
-    anchors.left: leftDecreaseSidePanels.right
-    anchors.bottom: leftDecreaseSidePanels.bottom
-    anchors.top: parent.top
-    margin-top: 2
-    width: 2
-    background-color: black
-    opacity: 0.35
-
-  UIWidget
-    id: leftIncreaseSidePanels
-    anchors.left: parent.left
-    anchors.top: parent.top
-    size: 9 27
-
-  UIWidget
-    id: leftDecreaseSidePanels
-    anchors.left: parent.left
-    anchors.top: leftIncreaseSidePanels.bottom
-    size: 9 27
-
-  UIWidget
-    id: rightIncreaseSidePanels
-    anchors.right: parent.right
-    anchors.top: parent.top
-    size: 9 27
-
-  UIWidget
-    id: rightDecreaseSidePanels
-    anchors.right: parent.right
-    anchors.top: rightIncreaseSidePanels.bottom
-    size: 9 27
+    image-source: /images/ui/2pixel_up_frame_borderimage
+    image-border: 4
 
 TopStatsSkillElement < UIWidget
-  height: 20
+  height: 11
 
   Label
     id: level
     !text: '99999'
     color: #c0c0c0ff
+    font: verdana-11px-monochrome
     text-align: right
     anchors.left: parent.left
     anchors.verticalCenter: parent.verticalCenter
-    margin-left: 10
+    margin-left: -3
+    margin-top: -2
 
   UIWidget
     id: icon
@@ -316,8 +227,9 @@ TopStatsSkillElement < UIWidget
     !statsbar-size: 'tiny'
     !statsbar-orientation: 'horizontal'
     statsbar-text: true
-    margin-left: 5
-    height: 7
+    margin-left: 6
+    margin-right: 75
+    height: 5
 
 HarmonyIcon < UIWidget
   size: 13 13
@@ -391,7 +303,7 @@ TopStatsBarLargeOnTop < UIWidget
   Panel
     id: icons
     image-border: 3
-    image-source: /images/ui/containerslot
+    image-source: /images/ui/buffbar_cip
     anchors.top: parent.top
     anchors.horizontalCenter: parent.horizontalCenter
     margin-top: 5
@@ -510,13 +422,13 @@ TopStatsBarParallelOnTop < UIWidget
     id: proficiencyTopBar
     anchors.top: skills.bottom
     anchors.right: icons.left
-    margin-right: 4
+    margin-right: 12
     size: 113 13
 
   Panel
     id: icons
     image-border: 3
-    image-source: /images/ui/containerslot
+    image-source: /images/ui/buffbar_cip
     anchors.top: skills.bottom
     anchors.horizontalCenter: parent.horizontalCenter
     size: 103 14
@@ -542,9 +454,9 @@ TopStatsBarDefaultOnTop < UIWidget
     !statsbar-size: 'small'
     !statsbar-orientation: 'horizontal'
     statsbar-text: true
-    margin-left: 12
-    margin-right: 5
-    margin-top: 5
+    margin-left: 4
+    margin-right: 2
+    margin-top: 4
     height: 14
 
   StatsBarUp
@@ -556,9 +468,9 @@ TopStatsBarDefaultOnTop < UIWidget
     !statsbar-size: 'small'
     !statsbar-orientation: 'horizontal'
     statsbar-text: true
-    margin-right: 12
-    margin-left: 5
-    margin-top: 5
+    margin-right: 4
+    margin-left: 4
+    margin-top: 4
     height: 14
 
   StatsBarUp
@@ -578,24 +490,30 @@ TopStatsBarDefaultOnTop < UIWidget
     anchors.left: parent.left
     anchors.right: parent.right
     anchors.top: manashield.bottom
-    margin-left: 12
+    margin-left: 5
     margin-right: 18
+    margin-top: 9
     height: 0
 
   ProficiencyTopBarWidget
     id: proficiencyTopBar
     anchors.top: skills.bottom
     anchors.right: icons.left
-    margin-right: 4
+    margin-right: 11
+    margin-left: 61
+    margin-top: 4
     size: 113 13
 
   Panel
     id: icons
     image-border: 3
-    image-source: /images/ui/containerslot
+    image-source: /images/ui/buffbar_cip
     anchors.top: skills.bottom
     anchors.horizontalCenter: parent.horizontalCenter
-    size: 103 14
+    margin-top: 4
+    margin-left: 62
+    size: 103 13
+    padding-left: 1
     layout:
       type: horizontalBox
 
@@ -603,7 +521,8 @@ TopStatsBarDefaultOnTop < UIWidget
     anchors.top: skills.bottom
     anchors.left: icons.right
     anchors.bottom: parent.bottom
-
+    margin-left: 62
+    margin-top: 2
 
 TopStatsBarCompactOnTop < UIWidget
   StatsBarTopWithShrink
@@ -612,7 +531,7 @@ TopStatsBarCompactOnTop < UIWidget
   Panel
     id: icons
     image-border: 3
-    image-source: /images/ui/containerslot
+    image-source: /images/ui/buffbar_cip
     anchors.top: parent.top
     anchors.horizontalCenter: parent.horizontalCenter
     margin-top: 5
@@ -700,7 +619,7 @@ TopStatsBar < UIWidget
     anchors.fill: parent
     visible: false
     phantom: true
-    
+
   TopStatsBarLargeOnBottom
     id: largeOnBottom
     anchors.fill: parent
@@ -887,6 +806,7 @@ StatsVerticalLeftBarGrade < UIWidget
 
 StatsBarUp < UIStatsBar
   StatsBarDarkBackground
+    id: statsDarkBackground
     anchors.fill: parent
     phantom: true
 
@@ -909,6 +829,8 @@ StatsBarUp < UIStatsBar
     anchors.verticalCenter: parent.verticalCenter
     anchors.horizontalCenter: parent.horizontalCenter
     text-align: center
+    font: verdana-11px-monochrome
+    color: #ffffffff
     visible: false
     !text: '9999999999/9999999999'
 
@@ -1050,7 +972,7 @@ TopStatsBarLargeOnBottom < UIWidget
   Panel
     id: icons
     image-border: 3
-    image-source: /images/ui/containerslot
+    image-source: /images/ui/buffbar_cip
     anchors.top: parent.top
     anchors.horizontalCenter: parent.horizontalCenter
     margin-top: 7
@@ -1164,7 +1086,7 @@ TopStatsBarParallelOnBottom < UIWidget
   Panel
     id: icons
     image-border: 3
-    image-source: /images/ui/containerslot
+    image-source: /images/ui/buffbar_cip
     anchors.top: skills.bottom
     anchors.horizontalCenter: parent.horizontalCenter
     size: 103 14
@@ -1225,7 +1147,7 @@ TopStatsBarDefaultOnBottom < UIWidget
   Panel
     id: icons
     image-border: 3
-    image-source: /images/ui/containerslot
+    image-source: /images/ui/buffbar_cip
     anchors.top: skills.bottom
     anchors.horizontalCenter: parent.horizontalCenter
     size: 103 14
@@ -1239,7 +1161,7 @@ TopStatsBarCompactOnBottom < UIWidget
   Panel
     id: icons
     image-border: 3
-    image-source: /images/ui/containerslot
+    image-source: /images/ui/buffbar_cip
     anchors.top: parent.top
     anchors.horizontalCenter: parent.horizontalCenter
     anchors.bottom: parent.bottom
@@ -1301,13 +1223,14 @@ TopStatsBarCompactOnBottom < UIWidget
 // Structure: [Button+Highlight] [Progress Bar with % label] [Tree Icon]
 ProficiencyTopBarWidget < UIWidget
   id: proficiencyTopBar
-  size: 113 13
+  size: 113 14
   visible: false
 
   UIButton
     id: proficiencyButton
     anchors.left: parent.left
     anchors.verticalCenter: parent.verticalCenter
+    margin-left: 5
     size: 13 13
     image-source: /images/game/topbar/proficiency-button
     image-clip: 0 0 13 13
@@ -1337,8 +1260,8 @@ ProficiencyTopBarWidget < UIWidget
     anchors.top: parent.top
     anchors.bottom: parent.bottom
     margin-left: 3
-    image-source: /images/game/topbar/proficiency-bg
-    image-border: 2
+    image-source: /images/ui/buffbar_cip
+    image-border: 3
     !tooltip: tr('Proficiency Progress')
 
   ProgressBar
@@ -1348,6 +1271,7 @@ ProficiencyTopBarWidget < UIWidget
     anchors.top: proficiencyBg.top
     anchors.bottom: proficiencyBg.bottom
     margin: 1 1 1 1
+    image-source:
     background-color: #1abc9c
     percent: 0
 
@@ -1356,9 +1280,10 @@ ProficiencyTopBarWidget < UIWidget
     anchors.left: proficiencyBg.left
     anchors.right: proficiencyBg.right
     anchors.verticalCenter: proficiencyBg.verticalCenter
+    margin-top: 1
     text-align: center
-    font: verdana-11px-rounded
-    color: #ffffff
+    font: verdana-11px-monochrome
+    color: #f4f4f4
     text: 0%
     phantom: true
 
@@ -1366,7 +1291,7 @@ ProficiencyTopBarWidget < UIWidget
     id: proficiencyIcon
     anchors.right: proficiencyBg.right
     anchors.verticalCenter: proficiencyBg.verticalCenter
-    margin-right: 1
+    margin-right: -4
     size: 9 11
     phantom: true
     image-source: /images/game/topbar/icon-proficiencytree-on

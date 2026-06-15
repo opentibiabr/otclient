@@ -3,9 +3,9 @@ SpellGroupIcon < UIWidget
   image-size: 20 20
   image-source: /images/game/spells/spellgroup-icons-20x20
   focusable: false
-  opacity: 0.3
+  image-color: #4B4B4B
   $on:
-    opacity: 1.0
+    image-color: #FFFFFF
 
 SpellIcon < UIWidget
   size: 20 20
@@ -35,10 +35,11 @@ Panel
   anchors.right: parent.right
   focusable: false
   phantom: true
+  margin-top: 1
   Panel
     id: contentsPanel2
     anchors.fill: parent
-    margin-left: 5
+    margin-left: 1
 
     UIWidget
       id: containerAttack
@@ -92,7 +93,7 @@ Panel
       focusable: false
       anchors.top: parent.top
       anchors.left: containerAttack.right
-      margin-left: 3
+      margin-left: 4
       margin-top: 1
 
       SpellGroupIcon
@@ -136,7 +137,7 @@ Panel
       focusable: false
       anchors.top: parent.top
       anchors.left: containerHealing.right
-      margin-left: 3
+      margin-left: 4
       margin-top: 1
 
       SpellGroupIcon
@@ -180,7 +181,7 @@ Panel
       focusable: false
       anchors.top: parent.top
       anchors.left: containerSupport.right
-      margin-left: 3
+      margin-left: 4
       margin-top: 1
 
       SpellGroupIcon
@@ -224,7 +225,7 @@ Panel
       focusable: false
       anchors.top: parent.top
       anchors.left: containerSpecial.right
-      margin-left: 3
+      margin-left: 4
       margin-top: 1
 
       SpellGroupIcon
@@ -268,7 +269,7 @@ Panel
       focusable: false
       anchors.top: parent.top
       anchors.left: containerCrippling.right
-      margin-left: 3
+      margin-left: 4
       margin-top: 1
 
       SpellGroupIcon
@@ -312,7 +313,7 @@ Panel
       focusable: false
       anchors.top: parent.top
       anchors.left: containerFocus.right
-      margin-left: 3
+      margin-left: 4
       margin-top: 1
 
       SpellGroupIcon
@@ -356,7 +357,7 @@ Panel
       focusable: false
       anchors.top: parent.top
       anchors.left: containerUltimateStrikes.right
-      margin-left: 3
+      margin-left: 4
       margin-top: 1
 
       SpellGroupIcon
@@ -400,7 +401,7 @@ Panel
       focusable: false
       anchors.top: parent.top
       anchors.left: containerGreatBeams.right
-      margin-left: 3
+      margin-left: 4
       margin-top: 1
 
       SpellGroupIcon
@@ -444,7 +445,7 @@ Panel
       focusable: false
       anchors.top: parent.top
       anchors.left: containerBurstsOfNature.right
-      margin-left: 3
+      margin-left: 4
       margin-top: 1
 
       SpellGroupIcon
@@ -484,7 +485,7 @@ Panel
       id: separator
       anchors.top: parent.top
       anchors.left: prev.right
-      margin-left: 3
+      margin-left: 4
       margin-top: 1
       height: 24
 
@@ -497,7 +498,7 @@ Panel
       anchors.bottom: parent.bottom
       anchors.left: prev.right
       anchors.right: parent.right
-      margin-left: 3
+      margin-left: 4
       layout:
         type: horizontalBox
         spacing: 3

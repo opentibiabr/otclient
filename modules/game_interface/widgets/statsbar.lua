@@ -20,7 +20,7 @@ local statsBarsDimensions = {
         height = 52
     },
     Default = {
-        height = 52
+        height = 45
     },
     Parallel = {
         height = 55
@@ -37,7 +37,7 @@ local currentStats = {
     placement = "hide"
 }
 
-local skillsLineHeight = 20
+local skillsLineHeight = 11
 local skillsTuples = {
     { skill = nil,             key = 'experience', icon = '/images/icons/icon_experience', placement = 'center', order = 0, name = "Level" },
     { skill = nil,             key = 'magic',      icon = '/images/icons/icon_magic',      placement = 'left',   order = 1, name = "Magic Level" },
@@ -51,6 +51,11 @@ local skillsTuples = {
 }
 
 StatsBar = {}
+
+-- The experience bar is shown by default; other skill bars are opt-in.
+local function isSkillTupleEnabled(skillTuple)
+    return g_settings.getBoolean('top_statsbar_' .. skillTuple.key, skillTuple.key == 'experience')
+end
 
 function getConfigurations()
     -- This method will return all the stats bar configurations.
@@ -79,7 +84,7 @@ local function reloadSkillsTab(skills, parent)
     local tuples = {}
     for i = 1, #skillsTuples do
         local skillTuple = skillsTuples[i]
-        if skillTuple and g_settings.getBoolean('top_statsbar_' .. skillTuple.key) then
+        if skillTuple and isSkillTupleEnabled(skillTuple) then
             table.insert(tuples, skillTuple)
         end
     end
@@ -120,6 +125,10 @@ local function reloadSkillsTab(skills, parent)
         widget.bar.showText = false
         if skillTuple.key == 'experience' then
             widget.bar.statsType = 'experience'
+            local darkBg = widget.bar:getChildById('statsDarkBackground')
+            if darkBg then
+                darkBg:hide()
+            end
         else
             widget.bar.statsType = 'skill'
         end
@@ -151,7 +160,7 @@ local function reloadSkillsTab(skills, parent)
         end
     end
 
-    skills:setHeight((lines * skillsLineHeight) + 5)
+    skills:setHeight((lines * skillsLineHeight))
     parent:setHeight(40 + skills:getHeight())
     statsBar:setHeight(statsBar:getHeight() + skills:getHeight())
 end
@@ -425,6 +434,7 @@ function StatsBar.reloadCurrentStatsBarDeepInfo()
             end
         end
     end
+
 end
 
 function StatsBar.onHarmonyChange(localPlayer, harmony, oldHarmony)
@@ -544,7 +554,7 @@ local function openDropMenu(mousePos)
     local current = StatsBar.getCurrentStatsBarWithPosition()
     if current and current.skills then
         for _, skillTuple in ipairs(skillsTuples) do
-            if not g_settings.getBoolean('top_statsbar_' .. skillTuple.key) then
+            if not isSkillTupleEnabled(skillTuple) then
                 menu:addOption(tr('Show') .. ' ' .. tr(skillTuple.name), function()
                     g_settings.set('top_statsbar_' .. skillTuple.key, true)
                     reloadSkillsTab(current.skills, current)

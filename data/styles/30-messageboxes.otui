@@ -1,6 +1,6 @@
 MessageBoxWindow < UIMessageBox
   icon-rect: 4 4 16 16
-  size: 246 116
+  size: 120 116
   image-source: /images/ui/window
   image-border: 4
   image-border-top: 16

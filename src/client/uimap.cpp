@@ -79,7 +79,17 @@ void UIMap::drawSelf(const DrawPoolType drawPane)
     UIWidget::drawSelf(drawPane);
 
     if (drawPane == DrawPoolType::FOREGROUND) {
-        g_drawPool.addBoundingRect(m_mapRect.expanded(1), Color::black);
+        const auto border = m_mapRect.expanded(1);
+        const Color darkEdge(0x14, 0x14, 0x14);
+        const Color lightEdge(0x76, 0x76, 0x76);
+        // top edge (dark)
+        g_drawPool.addFilledRect(Rect(border.left(), border.top(), border.width(), 1), darkEdge);
+        // left edge (dark)
+        g_drawPool.addFilledRect(Rect(border.left(), border.top() + 1, 1, border.height() - 2), darkEdge);
+        // bottom edge (light)
+        g_drawPool.addFilledRect(Rect(border.left(), border.bottom(), border.width(), 1), lightEdge);
+        // right edge (light)
+        g_drawPool.addFilledRect(Rect(border.right(), border.top() + 1, 1, border.height() - 2), lightEdge);
         g_drawPool.addAction([] {glDisable(GL_BLEND); });
         g_drawPool.addFilledRect(m_mapRect, Color::alpha);
         g_drawPool.addAction([] {glEnable(GL_BLEND); });

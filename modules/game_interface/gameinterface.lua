@@ -3,8 +3,11 @@ gameMapPanel = nil
 gameMainRightPanel = nil
 gameRightPanel = nil
 gameRightExtraPanel = nil
+gameRightThirdPanel = nil
+gameRightFourthPanel = nil
 gameLeftPanel = nil
 gameLeftExtraPanel = nil
+gameLeftThirdPanel = nil
 gameSelectedPanel = nil
 panelsList = {}
 panelsRadioGroup = nil
@@ -44,17 +47,40 @@ local mobileConfig = {
 }
 local isExtendedViewActive = false
 
+-- The four side columns share a budget of MAX_SIDE_PANELS total.
+-- The right side always keeps at least its base panel (the equipment/stats
+-- column), so combinations like 3L1R, 1L3R or 0L4R are valid.
+local MAX_SIDE_PANELS = 4
+
+local function leftPanelCount()
+    local o = modules.client_options.getOption
+    return (o('showLeftPanel') and 1 or 0) +
+        (o('showLeftExtraPanel') and 1 or 0) +
+        (o('showLeftThirdPanel') and 1 or 0)
+end
+
+local function rightPanelCount()
+    local o = modules.client_options.getOption
+    return 1 +
+        (o('showRightExtraPanel') and 1 or 0) +
+        (o('showRightThirdPanel') and 1 or 0) +
+        (o('showRightFourthPanel') and 1 or 0)
+end
+
 local function updateSidePanelButtons()
-    leftIncreaseSidePanels:setEnabled(not modules.client_options.getOption('showLeftExtraPanel'))
+    local left = leftPanelCount()
+    local right = rightPanelCount()
+    local hasBudget = (left + right) < MAX_SIDE_PANELS
+
+    leftIncreaseSidePanels:setEnabled(hasBudget and left < (MAX_SIDE_PANELS - 1))
+    rightIncreaseSidePanels:setEnabled(hasBudget and right < MAX_SIDE_PANELS)
+
     if g_platform.isMobile() then
         leftDecreaseSidePanels:setEnabled(false)
     else
-        leftDecreaseSidePanels:setEnabled(
-            modules.client_options.getOption('showLeftPanel') or
-            modules.client_options.getOption('showLeftExtraPanel'))
+        leftDecreaseSidePanels:setEnabled(left >= 1)
     end
-    rightIncreaseSidePanels:setEnabled(not modules.client_options.getOption('showRightExtraPanel'))
-    rightDecreaseSidePanels:setEnabled(modules.client_options.getOption('showRightExtraPanel'))
+    rightDecreaseSidePanels:setEnabled(right >= 2)
 end
 
 local function applyMobileMargins()
@@ -105,7 +131,10 @@ function init()
     gameMainRightPanel = gameRootPanel:getChildById('gameMainRightPanel')
     gameRightPanel = gameRootPanel:getChildById('gameRightPanel')
     gameRightExtraPanel = gameRootPanel:getChildById('gameRightExtraPanel')
+    gameRightThirdPanel = gameRootPanel:getChildById('gameRightThirdPanel')
+    gameRightFourthPanel = gameRootPanel:getChildById('gameRightFourthPanel')
     gameLeftExtraPanel = gameRootPanel:getChildById('gameLeftExtraPanel')
+    gameLeftThirdPanel = gameRootPanel:getChildById('gameLeftThirdPanel')
     gameLeftPanel = gameRootPanel:getChildById('gameLeftPanel')
     gameBottomPanel = gameRootPanel:getChildById('gameBottomPanel')
     gameTopPanel = gameRootPanel:getChildById('gameTopPanel')
@@ -133,11 +162,20 @@ function init()
         panel = gameRightExtraPanel,
         checkbox = gameRootPanel:getChildById('gameSelectRightExtraColumn')
     }, {
+        panel = gameRightThirdPanel,
+        checkbox = gameRootPanel:getChildById('gameSelectRightThirdColumn')
+    }, {
+        panel = gameRightFourthPanel,
+        checkbox = gameRootPanel:getChildById('gameSelectRightFourthColumn')
+    }, {
         panel = gameLeftPanel,
         checkbox = gameRootPanel:getChildById('gameSelectLeftColumn')
     }, {
         panel = gameLeftExtraPanel,
         checkbox = gameRootPanel:getChildById('gameSelectLeftExtraColumn')
+    }, {
+        panel = gameLeftThirdPanel,
+        checkbox = gameRootPanel:getChildById('gameSelectLeftThirdColumn')
     } }
 
     panelsRadioGroup = UIRadioGroup.create()
@@ -155,7 +193,10 @@ function init()
     gameMapPanel.onClick = toggleInternalFocus
     gameRightPanel.onClick = toggleInternalFocus
     gameRightExtraPanel.onClick = toggleInternalFocus
+    gameRightThirdPanel.onClick = toggleInternalFocus
+    gameRightFourthPanel.onClick = toggleInternalFocus
     gameLeftExtraPanel.onClick = toggleInternalFocus
+    gameLeftThirdPanel.onClick = toggleInternalFocus
     gameLeftPanel.onClick = toggleInternalFocus
     gameBottomPanel.onClick = toggleInternalFocus
 
@@ -325,19 +366,28 @@ function hide()
     modules.client_background.show()
 end
 
+-- The splitter rests 3px lower than its persisted drag value. We store the
+-- un-offset value and re-apply the offset on load so the shift is permanent
+-- and does not drift across save/load cycles.
+local splitterOffset = 3
+
 function save()
     local settings = {}
-    settings.splitterMarginBottom = bottomSplitter:getMarginBottom()
+    settings.splitterMarginBottom = bottomSplitter:getMarginBottom() + splitterOffset
     g_settings.setNode('game_interface', settings)
 end
 
 function load()
     local settings = g_settings.getNode('game_interface')
+    g_logger.info('[SPLITTER] load() called. settings=' .. tostring(settings ~= nil) ..
+        ' saved=' .. tostring(settings and settings.splitterMarginBottom) ..
+        ' currentMargin=' .. tostring(bottomSplitter:getMarginBottom()))
     if settings then
         if settings.splitterMarginBottom then
-            bottomSplitter:setMarginBottom(settings.splitterMarginBottom)
+            bottomSplitter:setMarginBottom(settings.splitterMarginBottom - splitterOffset)
         end
     end
+    g_logger.info('[SPLITTER] load() done. marginNow=' .. tostring(bottomSplitter:getMarginBottom()))
 end
 
 function onLoginAdvice(message)
@@ -450,6 +500,9 @@ function tryLogout(prompt)
 end
 
 function updateStretchShrink()
+    g_logger.info('[SPLITTER] updateStretchShrink() dontStretch=' ..
+        tostring(modules.client_options.getOption('dontStretchShrink')) ..
+        ' marginBefore=' .. tostring(bottomSplitter:getMarginBottom()))
     if modules.client_options.getOption('dontStretchShrink') and not alternativeView then
         gameMapPanel:setVisibleDimension({
             width = 15,
@@ -459,6 +512,7 @@ function updateStretchShrink()
         -- Set gameMapPanel size to height = 11 * 32 + 2
         bottomSplitter:setMarginBottom(bottomSplitter:getMarginBottom() + (gameMapPanel:getHeight() - 32 * 11) - 10)
     end
+    g_logger.info('[SPLITTER] updateStretchShrink() marginAfter=' .. tostring(bottomSplitter:getMarginBottom()))
     -- Update action bar layout when window geometry changes
     if modules.game_actionbar and modules.game_actionbar.updateVisibleWidgetsExternal then
         addEvent(function()
@@ -1673,6 +1727,18 @@ function getLeftExtraPanel()
     return gameLeftExtraPanel
 end
 
+function getLeftThirdPanel()
+    return gameLeftThirdPanel
+end
+
+function getRightThirdPanel()
+    return gameRightThirdPanel
+end
+
+function getRightFourthPanel()
+    return gameRightFourthPanel
+end
+
 function getSelectedPanel()
     return gameSelectedPanel
 end
@@ -1759,14 +1825,23 @@ function setupViewMode(mode)
         gameLeftPanel:setOn(modules.client_options.getOption('showLeftPanel'))
         gameRightExtraPanel:setOn(modules.client_options.getOption('showRightExtraPanel'))
         gameLeftExtraPanel:setOn(modules.client_options.getOption('showLeftExtraPanel'))
+        gameLeftThirdPanel:setOn(modules.client_options.getOption('showLeftThirdPanel'))
+        gameRightThirdPanel:setOn(modules.client_options.getOption('showRightThirdPanel'))
+        gameRightFourthPanel:setOn(modules.client_options.getOption('showRightFourthPanel'))
         gameLeftPanel:setImageColor('white')
         gameRightPanel:setImageColor('white')
         gameRightExtraPanel:setImageColor('white')
         gameLeftExtraPanel:setImageColor('white')
+        gameLeftThirdPanel:setImageColor('white')
+        gameRightThirdPanel:setImageColor('white')
+        gameRightFourthPanel:setImageColor('white')
         gameLeftPanel:setMarginTop(0)
         gameRightPanel:setMarginTop(0)
         gameRightExtraPanel:setMarginTop(0)
         gameLeftExtraPanel:setMarginTop(0)
+        gameLeftThirdPanel:setMarginTop(0)
+        gameRightThirdPanel:setMarginTop(0)
+        gameRightFourthPanel:setMarginTop(0)
         gameBottomPanel:setImageColor('white')
     end
 
@@ -1800,6 +1875,9 @@ function setupViewMode(mode)
         gameRightPanel:setImageColor('alpha')
         gameRightExtraPanel:setImageColor('alpha')
         gameLeftExtraPanel:setImageColor('alpha')
+        gameLeftThirdPanel:setImageColor('alpha')
+        gameRightThirdPanel:setImageColor('alpha')
+        gameRightFourthPanel:setImageColor('alpha')
         gameLeftPanel:setOn(true)
         gameLeftPanel:setVisible(true)
         gameRightPanel:setOn(true)
@@ -1807,6 +1885,12 @@ function setupViewMode(mode)
         gameRightExtraPanel:setVisible(false)
         gameLeftExtraPanel:setOn(false)
         gameLeftExtraPanel:setVisible(false)
+        gameLeftThirdPanel:setOn(false)
+        gameLeftThirdPanel:setVisible(false)
+        gameRightThirdPanel:setOn(false)
+        gameRightThirdPanel:setVisible(false)
+        gameRightFourthPanel:setOn(false)
+        gameRightFourthPanel:setVisible(false)
         gameMapPanel:setOn(true)
         gameBottomPanel:setImageColor('#ffffff88')
     end
@@ -1825,35 +1909,17 @@ function updateStatsBar(dimension, placement)
     StatsBar.updateStatsBarOption()
 end
 
-function onIncreaseLeftPanels()
-    leftDecreaseSidePanels:setEnabled(true)
-    if not modules.client_options.getOption('showLeftPanel') then
-        modules.client_options.setOption('showLeftPanel', true)
-        -- Update action bars when left panel is shown
-        if modules.game_actionbar and modules.game_actionbar.updateVisibleWidgetsExternal then
-            addEvent(function()
-                modules.game_actionbar.updateVisibleWidgetsExternal()
-            end)
-        end
-        return
-    end
-
-    if not modules.client_options.getOption('showLeftExtraPanel') then
-        modules.client_options.setOption('showLeftExtraPanel', true)
-        leftIncreaseSidePanels:setEnabled(false)
-        -- Update action bars when left extra panel is shown
-        if modules.game_actionbar and modules.game_actionbar.updateVisibleWidgetsExternal then
-            addEvent(function()
-                modules.game_actionbar.updateVisibleWidgetsExternal()
-            end)
-        end
-        return
+local function updateActionBars()
+    if modules.game_actionbar and modules.game_actionbar.updateVisibleWidgetsExternal then
+        addEvent(function()
+            modules.game_actionbar.updateVisibleWidgetsExternal()
+        end)
     end
 end
 
 local function movePanel(mainpanel)
     for _, widget in pairs(mainpanel:getChildren()) do
-        if widget then
+        if widget and not widget.isColumnFiller and not widget.isDropPlaceholder then
             local panel = modules.game_interface.findContentPanelAvailable(widget, widget:getMinimumHeight())
             if panel then
                 if not panel:hasChild(widget) then
@@ -1869,62 +1935,62 @@ local function movePanel(mainpanel)
     end
 end
 
+function onIncreaseLeftPanels()
+    local o = modules.client_options.getOption
+    if not o('showLeftPanel') then
+        modules.client_options.setOption('showLeftPanel', true)
+    elseif not o('showLeftExtraPanel') then
+        modules.client_options.setOption('showLeftExtraPanel', true)
+    elseif not o('showLeftThirdPanel') then
+        modules.client_options.setOption('showLeftThirdPanel', true)
+    end
+    updateSidePanelButtons()
+    updateActionBars()
+end
+
 function onDecreaseLeftPanels()
-    leftIncreaseSidePanels:setEnabled(true)
-    if modules.client_options.getOption('showLeftExtraPanel') then
+    local o = modules.client_options.getOption
+    if o('showLeftThirdPanel') then
+        modules.client_options.setOption('showLeftThirdPanel', false)
+        movePanel(gameLeftThirdPanel)
+    elseif o('showLeftExtraPanel') then
         modules.client_options.setOption('showLeftExtraPanel', false)
         movePanel(gameLeftExtraPanel)
-        if g_platform.isMobile() then
-            leftDecreaseSidePanels:setEnabled(false)
-        end
-        -- Update action bars when left extra panel is hidden
-        if modules.game_actionbar and modules.game_actionbar.updateVisibleWidgetsExternal then
-            addEvent(function()
-                modules.game_actionbar.updateVisibleWidgetsExternal()
-            end)
-        end
-        return
+    elseif not g_platform.isMobile() and o('showLeftPanel') then
+        modules.client_options.setOption('showLeftPanel', false)
+        movePanel(gameLeftPanel)
     end
-
-    if not g_platform.isMobile() then
-        if modules.client_options.getOption('showLeftPanel') then
-            modules.client_options.setOption('showLeftPanel', false)
-            movePanel(gameLeftPanel)
-            leftDecreaseSidePanels:setEnabled(false)
-            -- Update action bars when left panel is hidden
-            if modules.game_actionbar and modules.game_actionbar.updateVisibleWidgetsExternal then
-                addEvent(function()
-                    modules.game_actionbar.updateVisibleWidgetsExternal()
-                end)
-            end
-            return
-        end
-    end
+    updateSidePanelButtons()
+    updateActionBars()
 end
 
 function onIncreaseRightPanels()
-    rightIncreaseSidePanels:setEnabled(false)
-    rightDecreaseSidePanels:setEnabled(true)
-    modules.client_options.setOption('showRightExtraPanel', true)
-    -- Update action bars when right extra panel is shown
-    if modules.game_actionbar and modules.game_actionbar.updateVisibleWidgetsExternal then
-        addEvent(function()
-            modules.game_actionbar.updateVisibleWidgetsExternal()
-        end)
+    local o = modules.client_options.getOption
+    if not o('showRightExtraPanel') then
+        modules.client_options.setOption('showRightExtraPanel', true)
+    elseif not o('showRightThirdPanel') then
+        modules.client_options.setOption('showRightThirdPanel', true)
+    elseif not o('showRightFourthPanel') then
+        modules.client_options.setOption('showRightFourthPanel', true)
     end
+    updateSidePanelButtons()
+    updateActionBars()
 end
 
 function onDecreaseRightPanels()
-    rightIncreaseSidePanels:setEnabled(true)
-    rightDecreaseSidePanels:setEnabled(false)
-    movePanel(gameRightExtraPanel)
-    modules.client_options.setOption('showRightExtraPanel', false)
-    -- Update action bars when right extra panel is hidden
-    if modules.game_actionbar and modules.game_actionbar.updateVisibleWidgetsExternal then
-        addEvent(function()
-            modules.game_actionbar.updateVisibleWidgetsExternal()
-        end)
+    local o = modules.client_options.getOption
+    if o('showRightFourthPanel') then
+        modules.client_options.setOption('showRightFourthPanel', false)
+        movePanel(gameRightFourthPanel)
+    elseif o('showRightThirdPanel') then
+        modules.client_options.setOption('showRightThirdPanel', false)
+        movePanel(gameRightThirdPanel)
+    elseif o('showRightExtraPanel') then
+        modules.client_options.setOption('showRightExtraPanel', false)
+        movePanel(gameRightExtraPanel)
     end
+    updateSidePanelButtons()
+    updateActionBars()
 end
 
 function setupOptionsMainButton()
@@ -1938,11 +2004,10 @@ function setupOptionsMainButton()
 end
 
 function checkAndOpenLeftPanel()
-    leftDecreaseSidePanels:setEnabled(true)
     if not modules.client_options.getOption('showLeftPanel') then
         modules.client_options.setOption('showLeftPanel', true)
-        return
     end
+    updateSidePanelButtons()
 end
 
 function applyExtendedViewLayout(extendedView)
@@ -1980,6 +2045,8 @@ function applyExtendedViewLayout(extendedView)
         gameRightActionPanel:setImageSource(nil)
         gameLeftActionPanel:setBorderWidthRight(0)
         gameRightActionPanel:setBorderWidthLeft(0)
+        gameRootPanel:getChildById('leftActionPanelFiller'):setImageSource(nil)
+        gameRootPanel:getChildById('rightActionPanelFiller'):setImageSource(nil)
     else
         -- Reset to normal view
         gameMainRightPanel:setHeight(200)
@@ -1989,6 +2056,8 @@ function applyExtendedViewLayout(extendedView)
         gameRightActionPanel:setImageSource('/images/ui/actionbar/actionbar_background-light')
         gameLeftActionPanel:setBorderWidthRight(1)
         gameRightActionPanel:setBorderWidthLeft(1)
+        gameRootPanel:getChildById('leftActionPanelFiller'):setImageSource('/images/ui/actionbar/actionbar_background-light')
+        gameRootPanel:getChildById('rightActionPanelFiller'):setImageSource('/images/ui/actionbar/actionbar_background-light')
         for _, btn in ipairs(buttons) do
             btn:setMarginTop(0)
             btn:show()

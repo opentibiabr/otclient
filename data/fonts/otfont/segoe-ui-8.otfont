@@ -1,0 +1,7 @@
+Font
+  name: segoe-ui-8
+  texture: segoe-ui-8
+  height: 11
+  glyph-size: 12 11
+  space-width: 2
+  spacing: -2 -3

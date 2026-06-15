@@ -123,11 +123,11 @@ function UICreatureButton:updateSkull(skullId)
         skullWidget:setWidth(skullWidget:getHeight())
         local imagePath = getSkullImagePath(skullId)
         skullWidget:setImageSource(imagePath)
-        labelWidget:setMarginLeft(5)
+        labelWidget:setMarginLeft(6)
     else
         skullWidget:setWidth(0)
         if self.creature:getEmblem() == EmblemNone then
-            labelWidget:setMarginLeft(2)
+            labelWidget:setMarginLeft(3)
         end
     end
 end
@@ -145,12 +145,12 @@ function UICreatureButton:updateEmblem(emblemId)
         local imagePath = getEmblemImagePath(emblemId)
         emblemWidget:setImageSource(imagePath)
         emblemWidget:setMarginLeft(5)
-        labelWidget:setMarginLeft(5)
+        labelWidget:setMarginLeft(6)
     else
         emblemWidget:setWidth(0)
         emblemWidget:setMarginLeft(0)
         if self.creature:getSkull() == SkullNone then
-            labelWidget:setMarginLeft(2)
+            labelWidget:setMarginLeft(3)
         end
     end
 end

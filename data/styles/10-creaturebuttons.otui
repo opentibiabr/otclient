@@ -1,33 +1,36 @@
 CreatureButton < UICreatureButton
   height: 20
-  margin-bottom: 5
+  margin-bottom: 2
 
   UICreature
     id: creature
-    size: 20 20
+    size: 32 32
     anchors.left: parent.left
-    anchors.top: parent.top
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: -2
+    margin-top: 4
     phantom: true
 
   UIWidget
     id: spacer
     width: 5
-    anchors.left: creature.right
-    anchors.top: creature.top
+    anchors.left: parent.left
+    anchors.top: parent.top
+    margin-left: 20
     phantom: true
 
   UIWidget
     id: skull
     height: 11
     anchors.left: spacer.right
-    anchors.top: spacer.top
+    anchors.top: parent.top
     phantom: true
 
   UIWidget
     id: emblem
     height: 11
     anchors.left: skull.right
-    anchors.top: creature.top
+    anchors.top: parent.top
     phantom: true
 
   UIWidget
@@ -63,9 +66,11 @@ CreatureButton < UICreatureButton
   Label
     id: label
     anchors.left: emblem.right
-    anchors.top: creature.top
-    color: #888888
-    margin-left: 2
+    anchors.top: parent.top
+    color: #C0C0C0
+    font: verdana-11px-monochrome
+    margin-left: 7
+    margin-top: 3
     phantom: true
     text-auto-resize: true
 
@@ -74,6 +79,6 @@ CreatureButton < UICreatureButton
     height: 5
     anchors.left: spacer.right
     anchors.right: parent.right
-    anchors.top: label.bottom
-    margin-top: 2
+    anchors.bottom: parent.bottom
+    margin-bottom: -2
     phantom: true

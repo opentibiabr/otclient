@@ -17,7 +17,7 @@ function UIMessageBox.display(title, message, buttons, onEnterCallback, onEscape
     local staticSizes = {
         width = {
             max = math.min(916, math.max(260, rootWidth - 40)),
-            min = 246
+            min = 120
         },
         height = {
             min = 56,

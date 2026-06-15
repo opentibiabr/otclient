@@ -150,7 +150,14 @@ function setupActionBar(n)
                widget = g_ui.createWidget('UIWidget', actionbar.tabBar)
                widget:setId(n .. "." .. i)
                widget:setSize({width = 34, height = 34})
-               widget:setMarginLeft(2)
+               -- Side bars (n >= 4) lay out vertically, so the 2px slot gap must
+               -- be a top margin; a left margin would make the verticalBox shrink
+               -- the slot width from 34 to 32. Bottom bars lay out horizontally.
+               if n < 4 then
+                   widget:setMarginLeft(2)
+               else
+                   widget:setMarginTop(2)
+               end
                widget:setImageSource('/images/game/actionbar/actionbarslot')
                widget:setDraggable(false)
                

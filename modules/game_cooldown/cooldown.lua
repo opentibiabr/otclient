@@ -363,7 +363,7 @@ end
 
 function setSpellGroupCooldownsVisible(visible)
     if visible then
-        cooldownWindow:setHeight(32)
+        cooldownWindow:setHeight(26)
         cooldownWindow:show()
     else
         cooldownWindow:hide()

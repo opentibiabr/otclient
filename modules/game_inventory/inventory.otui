@@ -98,7 +98,7 @@ PhantomMiniWindow
       image-clip: 0 0 20 20
       anchors.right: parent.right
       anchors.top: changeSize.top
-      margin-right: 7
+      margin-right: 8
       size: 20 20
       @onClick: |
         selectPosture('stand')
@@ -144,18 +144,19 @@ PhantomMiniWindow
     UICheckBox
       id: pvp
       image-source: /images/game/combatmodes/onPanel
-      size: 44 21
-      image-clip: 0 0 44 21
+      size: 42 20
+      image-clip: 0 0 44 20
       margin: 2 4
       anchors.right: standPosture.right
       anchors.top: expert.bottom
-      margin-top: 4
+      margin-top: 7
+      margin-left: 1
       margin-right: 0
       phantom: false
-      size: 44 21
+      size: 42 20
 
       $checked:
-        image-clip: 0 20 44 21
+        image-clip: 0 20 44 20
 
 
     WhiteHandBox
@@ -163,19 +164,20 @@ PhantomMiniWindow
       anchors.right: parent.right
       anchors.top: pvp.bottom
       margin-right: 8
-      margin-top: 5
+      margin-top: 8
 
     RedFistBox
       id: redFistBox
       anchors.right: whiteHandBox.right
       anchors.top: whiteHandBox.bottom
-      margin-right: -1
       margin-right: 0
+      margin-top: 4
 
     WhiteDoveBox
       id: whiteDoveBox
       anchors.right: whiteHandBox.left
       anchors.top: whiteHandBox.top
+      margin-right: 3
       margin-top: 0
 
     YellowHandBox
@@ -183,6 +185,7 @@ PhantomMiniWindow
       anchors.right: whiteDoveBox.right
       anchors.top: whiteDoveBox.bottom
       margin-right: 0
+      margin-top: 4
 
     TopToggleButton
       id: attack
@@ -190,7 +193,7 @@ PhantomMiniWindow
       image-clip: 0 40 20 20
       anchors.right: standPosture.left
       anchors.top: standPosture.top
-      margin-right: 4
+      margin-right: 3
       size: 20 20
       @onClick: |
         selectCombat('attack')
@@ -241,9 +244,13 @@ PhantomMiniWindow
       anchors.left: defense.left
       anchors.right: standPosture.right
       anchors.bottom: parent.bottom
-      font: cipsoftFont
+      margin-left: -1
+      margin-right: -1
+      margin-bottom: -1
+      font: verdana-bold-8
       color: #c0c0c0ff
-      size: 44 13
+      size: 45 15   
+      text-offset: 0 0
       @onClick: |
         g_game.stop()
         g_game.getLocalPlayer():stopAutoWalk()
@@ -253,12 +260,13 @@ PhantomMiniWindow
       size: 108 18
       padding: 2
 
-      image-source: /images/ui/containerslot
+      image-source: /images/ui/buffbar_cip
       image-border: 3
       anchors.left: changeSize.left
       anchors.right: backpack.right
       anchors.bottom: parent.bottom
       anchors.top: stop.top
+      margin-top: 1
       layout:
         type: horizontalBox
 
@@ -273,14 +281,14 @@ PhantomMiniWindow
       id: helmet
       anchors.top: changeSize.top
       anchors.left: amulet.right
-      margin-left: 3
+      margin-left: 4
       &slotPosition: {x = 65535, y = 1, z = 0}
 
     MainInventoryItem
       id: backpack
       anchors.top: amulet.top
       anchors.left: helmet.right
-      margin-left: 3
+      margin-left: 4
       &slotPosition: {x = 65535, y = 3, z = 0}
 
     MainInventoryItem
@@ -344,18 +352,18 @@ PhantomMiniWindow
       margin-top: 3
 
       Label
-        !text: tr('Soul')
+        !text: tr('Soul:')
         text.align: center
-        font: cipsoftFont
+        font: segoe-ui-8
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.top: parent.top
         color: #c0c0c0ff
-        margin-top: 1
+        margin-top: 0
 
       Label
         id: soul
         !text: '100000'
-        font: cipsoftFont
+        font: segoe-ui-regular-12
         text-align: center
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
@@ -373,18 +381,18 @@ PhantomMiniWindow
       margin-top: 3
 
       Label
-        !text: tr('Cap')
+        !text: tr('Cap:')
         text.align: center
-        font: cipsoftFont
+        font: segoe-ui-8
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.top: parent.top
         color: #c0c0c0ff
-        margin-top: 1
+        margin-top: 0
 
       Label
         id: capacity
         !text: '10000'
-        font: cipsoftFont
+        font: segoe-ui-regular-12
         text-align: center
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
@@ -421,7 +429,7 @@ PhantomMiniWindow
       size: 30 44
 
       Label
-        !text: tr('Cap')
+        !text: tr('Cap:')
         text.align: center
         font: cipsoftFont
         anchors.horizontalCenter: parent.horizontalCenter
@@ -433,7 +441,7 @@ PhantomMiniWindow
       Label
         id: capacity
         !text: '10000'
-        font: cipsoftFont
+        font: segoe-ui-regular-12
         text-align: center
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.top: parent.top
@@ -441,9 +449,9 @@ PhantomMiniWindow
         color: #c0c0c0ff
 
       Label
-        !text: tr('Soul')
+        !text: tr('Soul:')
         text.align: center
-        font: cipsoftFont
+        font: segoe-ui-8
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
         color: #c0c0c0ff
@@ -453,7 +461,7 @@ PhantomMiniWindow
       Label
         id: soul
         !text: '100000'
-        font: cipsoftFont
+        font: segoe-ui-regular-12
         text-align: center
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
@@ -557,6 +565,7 @@ PhantomMiniWindow
       image-source: /data/images/inventory/button-expert-up
       anchors.left: changeSize.left
       anchors.bottom: soulAndCapacity.bottom
+      padding-left: -1
       phantom: false
       size: 12 12
       @onClick: |
@@ -587,7 +596,7 @@ PhantomMiniWindow
       anchors.bottom: parent.bottom
       anchors.top: blessings.top
       phantom: false
-      image-source: /images/ui/containerslot
+      image-source: /images/ui/buffbar_cip
       image-border: 3
       layout:
         type: horizontalBox
@@ -596,11 +605,11 @@ PhantomMiniWindow
       id: stop
       !text: tr('Stop')
       anchors.right: parent.right
-      margin-right: 7
+      margin-right: 8
       anchors.bottom: icons.bottom
-      font: cipsoftFont
+      font: verdana-bold-8
       color: #c0c0c0ff
-      size: 44 13
+      size: 45 15
       @onClick: |
         g_game.stop()
         g_game.getLocalPlayer():stopAutoWalk()

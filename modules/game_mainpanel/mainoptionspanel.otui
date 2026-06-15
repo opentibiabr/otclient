@@ -1,13 +1,13 @@
 PhantomMiniWindow
   id: mainoptionspanel
-  height: 28
-  &panelHeight: 28
+  height: 17
+  &panelHeight: 17
   on: true
 
   UIWidget
     id: offPanel
     anchors.fill: parent
-    margin-top: 8
+    margin-top: 2
     phantom: true
 
     Button
@@ -25,7 +25,7 @@ PhantomMiniWindow
   UIWidget
     id: onPanel
     anchors.fill: parent
-    margin-top: 8
+    margin-top: 2
     phantom: true
 
     UIWidget
@@ -47,7 +47,7 @@ PhantomMiniWindow
 
     Button
       id: resizer
-      size: 44 20
+      size: 42 20
       image-source: /images/options/button_enlarge
       image-clip: 0 0 44 20
       anchors.top: parent.top
@@ -76,8 +76,8 @@ PhantomMiniWindow
         flow: true
 
     VerticalSeparator
+      id: optionsSeparator
       anchors.top: options.top
-      anchors.bottom: options.bottom
       anchors.left: store.right
       margin-left: 5
       phantom: true
@@ -90,7 +90,7 @@ PhantomMiniWindow
       anchors.bottom: parent.bottom
       margin-top: 0
       margin-left: 0
-      margin-right: 0
+      margin-right: -3
       margin-bottom: 0
       phantom: true
       layout:

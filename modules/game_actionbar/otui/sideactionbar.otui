@@ -11,7 +11,7 @@ SideActionButton < UIButton
     draggable: true
     &selectable: true
     &editable: false
-    font: verdana-8px-rounded
+    font: verdana-bold-8-bordered
     always-show-count: true
     $!on:
       image-source: /images/game/actionbar/actionbarslot
@@ -53,12 +53,12 @@ SideActionButton < UIButton
     anchors.top: parent.top
     anchors.right: parent.right
     margin-right: 2
-    text-offset: 0 2
+    text-offset: 1 0
     text-allign: right
     text-auto-resize: true
     text-wrap: false
     phantom: true
-    font: verdana-8px-rounded
+    font: verdana-bold-8-bordered
 
   Label
     id: parameterText
@@ -78,7 +78,12 @@ SideActionButton < UIButton
     percent: 100
     focusable: false
     phantom: true
-    anchors.fill: parent
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    margin-top: 1
+    margin-left: 1
     font: verdana-11px-rounded
     color: white
     border-color: #9fa0a0
@@ -230,4 +235,4 @@ Panel
     id: nextPanel
     anchors.bottom: parent.bottom
     anchors.horizontalCenter: parent.horizontalCenter
-    margin-bottom: 2
+    margin-bottom: 1

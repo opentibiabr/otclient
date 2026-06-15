@@ -556,6 +556,39 @@ return {
             end
         end
     },
+    showLeftThirdPanel                = {
+        value = false,
+        action = function(value, options, controller, panels, extraWidgets)
+            modules.game_interface.getLeftThirdPanel():setOn(value)
+            if modules.game_actionbar and modules.game_actionbar.updateVisibleWidgetsExternal then
+                addEvent(function()
+                    modules.game_actionbar.updateVisibleWidgetsExternal()
+                end)
+            end
+        end
+    },
+    showRightThirdPanel               = {
+        value = false,
+        action = function(value, options, controller, panels, extraWidgets)
+            modules.game_interface.getRightThirdPanel():setOn(value)
+            if modules.game_actionbar and modules.game_actionbar.updateVisibleWidgetsExternal then
+                addEvent(function()
+                    modules.game_actionbar.updateVisibleWidgetsExternal()
+                end)
+            end
+        end
+    },
+    showRightFourthPanel              = {
+        value = false,
+        action = function(value, options, controller, panels, extraWidgets)
+            modules.game_interface.getRightFourthPanel():setOn(value)
+            if modules.game_actionbar and modules.game_actionbar.updateVisibleWidgetsExternal then
+                addEvent(function()
+                    modules.game_actionbar.updateVisibleWidgetsExternal()
+                end)
+            end
+        end
+    },
     showSpellGroupCooldowns           = {
         value = true,
         action = function(value, options, controller, panels, extraWidgets)

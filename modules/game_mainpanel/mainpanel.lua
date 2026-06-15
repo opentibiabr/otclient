@@ -58,6 +58,13 @@ function reloadMainPanelSizes()
                         local options_panel = optionsController.ui.onPanel.options
                         local options_height, options_count =
                             calculatePanelHeight(options_panel, PANEL_CONSTANTS.MAX_ICONS_PER_ROW.OPTIONS)
+                        if options_count > 0 then
+                            local options_rows = math.ceil(options_count / PANEL_CONSTANTS.MAX_ICONS_PER_ROW.OPTIONS)
+                            local sep = panel.onPanel:getChildById('optionsSeparator')
+                            if sep then
+                                sep:setHeight(22 * options_rows - 2)
+                            end
+                        end
                         local specials_panel = optionsController.ui.onPanel.specials
                         local specials_height, specials_count =
                             calculatePanelHeight(specials_panel, PANEL_CONSTANTS.MAX_ICONS_PER_ROW.SPECIALS)

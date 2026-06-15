@@ -115,15 +115,15 @@ SpeakTypes = {
 SayModes = {
     [1] = {
         speakTypeDesc = 'whisper',
-        image = '/images/ui/console_whisper'
+        icon = '/images/game/console/icon-speech-whisper'
     },
     [2] = {
         speakTypeDesc = 'say',
-        image = '/images/ui/console_say'
+        icon = '/images/game/console/icon-speech-say'
     },
     [3] = {
         speakTypeDesc = 'yell',
-        image = '/images/ui/console_yell'
+        icon = '/images/game/console/icon-speech-yell'
     }
 }
 
@@ -1704,7 +1704,7 @@ function sayModeChange(sayMode)
         sayMode = 1
     end
 
-    buttom:setImageSource(SayModes[sayMode].image)
+    buttom:setIcon(SayModes[sayMode].icon)
     buttom.sayMode = sayMode
 end
 

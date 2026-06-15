@@ -1,0 +1,7 @@
+Font
+  name: verdana-bold-8-bordered
+  texture: verdana-bold-8-bordered
+  height: 11
+  glyph-size: 12 11
+  space-width: 3
+  spacing: -1 -3

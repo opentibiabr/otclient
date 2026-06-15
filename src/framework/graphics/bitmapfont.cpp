@@ -178,7 +178,8 @@ std::vector<std::pair<Rect, Rect>> BitmapFont::getDrawTextCoords(const std::stri
 
 void BitmapFont::fillTextCoords(const CoordsBufferPtr& coords, const std::string_view text,
                                 const Size& textBoxSize, const Fw::AlignmentFlag align, const Rect& screenCoords,
-                                const std::vector<Point>& glyphsPositions) const noexcept
+                                const std::vector<Point>& glyphsPositions,
+                                const bool rtl) const noexcept
 {
     coords->clear();
     if (!screenCoords.isValid() || !m_texture)
@@ -203,12 +204,13 @@ void BitmapFont::fillTextCoords(const CoordsBufferPtr& coords, const std::string
 
     const AtlasRegion* region = m_texture->getAtlasRegion();
 
-    for (int i = 0; i < textLength; ++i) {
+    for (int j = 0; j < textLength; ++j) {
+        const int i = rtl ? (textLength - 1 - j) : j;
         const int glyph = static_cast<uint8_t>(text[i]);
         if (glyph < 32) continue;
-		
+
         if (m_glyphsSize[glyph].width() == 0 || m_glyphsSize[glyph].height() == 0)
-            continue;		
+            continue;
 
         Rect glyphScreenCoords(glyphsPositions[i] + Point(dx, dy) + m_glyphsOffset[glyph], m_glyphsSize[glyph]);
         Rect glyphTextureCoords = m_glyphsTextureCoords[glyph];
@@ -226,7 +228,8 @@ void BitmapFont::fillTextCoords(const CoordsBufferPtr& coords, const std::string
 void BitmapFont::fillTextColorCoords(std::vector<std::pair<Color, CoordsBufferPtr>>& colorCoords, const std::string_view text,
                                      const std::vector<std::pair<int, Color>> textColors,
                                      const Size& textBoxSize, const Fw::AlignmentFlag align,
-                                     const Rect& screenCoords, const std::vector<Point>& glyphsPositions) const noexcept
+                                     const Rect& screenCoords, const std::vector<Point>& glyphsPositions,
+                                     const bool /*rtl*/) const noexcept
 {
     colorCoords.clear();
     if (!screenCoords.isValid() || !m_texture)

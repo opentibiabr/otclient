@@ -127,19 +127,19 @@ function UIStatsBar:setValue(value, total)
     -- Bar color
     local percent = (value * 100) / total
     if self.statsType == 'health' then
-        if percent >= 100 then
+        if percent > 92 then
             self.bar:setImageSource('/images/bars/' ..
                 self.statsOrientation .. '_health_progressbar_' .. self.statsSize .. '_100')
-        elseif percent >= 95 then
+        elseif percent > 60 then
             self.bar:setImageSource('/images/bars/' ..
                 self.statsOrientation .. '_health_progressbar_' .. self.statsSize .. '_95')
-        elseif percent >= 60 then
+        elseif percent > 30 then
             self.bar:setImageSource('/images/bars/' ..
                 self.statsOrientation .. '_health_progressbar_' .. self.statsSize .. '_60')
-        elseif percent >= 30 then
+        elseif percent > 8 then
             self.bar:setImageSource('/images/bars/' ..
                 self.statsOrientation .. '_health_progressbar_' .. self.statsSize .. '_30')
-        elseif percent >= 10 then
+        elseif percent > 3 then
             self.bar:setImageSource('/images/bars/' ..
                 self.statsOrientation .. '_health_progressbar_' .. self.statsSize .. '_10')
         else

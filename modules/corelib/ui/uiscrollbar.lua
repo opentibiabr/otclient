@@ -1,6 +1,11 @@
 -- @docclass
 UIScrollBar = extends(UIWidget, 'UIScrollBar')
 
+-- Tunable slider length offset (in pixels) added to the deterministic slider
+-- size. Brute-force this: a given value always produces the same slider length,
+-- so increase/decrease it until the slider reaches the south square exactly.
+UIScrollBar.sliderSizeOffset = 1
+
 -- private functions
 local function calcValues(self)
     local slider = self:getChildById('sliderButton')
@@ -38,7 +43,9 @@ local function calcValues(self)
     local minSize = (self.orientation == 'horizontal') and 40 or 12
     local px = math.max(proportion * pxrange, minSize)
 
-    px = px - (px % 2) + 1
+    -- Deterministic length: floor first so a fixed geometry always yields the
+    -- same px, then apply the tunable offset (see UIScrollBar.sliderSizeOffset).
+    px = math.floor(px) + UIScrollBar.sliderSizeOffset
 
     if self.defaultSlider then
         px = 13

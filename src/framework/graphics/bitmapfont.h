@@ -55,12 +55,14 @@ public:
 
     void fillTextCoords(const CoordsBufferPtr& coords, std::string_view text,
                         const Size& textBoxSize, Fw::AlignmentFlag align,
-                        const Rect& screenCoords, const std::vector<Point>& glyphsPositions) const noexcept;
+                        const Rect& screenCoords, const std::vector<Point>& glyphsPositions,
+                        bool rtl = false) const noexcept;
 
     void fillTextColorCoords(std::vector<std::pair<Color, CoordsBufferPtr>>& colorCoords, std::string_view text,
                              std::vector<std::pair<int, Color>> textColors,
                              const Size& textBoxSize, Fw::AlignmentFlag align,
-                             const Rect& screenCoords, const std::vector<Point>& glyphsPositions) const noexcept;
+                             const Rect& screenCoords, const std::vector<Point>& glyphsPositions,
+                             bool rtl = false) const noexcept;
 
     /// Calculate glyphs positions to use on render, also calculates textBoxSize if wanted
     void calculateGlyphsPositions(std::string_view text,

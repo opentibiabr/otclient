@@ -73,6 +73,8 @@ void UIWidget::parseImageStyle(const OTMLNodePtr& styleNode)
             setImageFixedRatio(node->value<bool>());
         else if (node->tag() == "image-repeated")
             setImageRepeated(node->value<bool>());
+        else if (node->tag() == "image-repeat-from-bottom")
+            setImageRepeatedFromBottom(node->value<bool>());
         else if (node->tag() == "image-color")
             setImageColor(node->value<Color>());
         else if (node->tag() == "image-border-top")
@@ -92,13 +94,16 @@ void UIWidget::parseImageStyle(const OTMLNodePtr& styleNode)
     }
 }
 
-void addImageRect(const AtlasRegion* region, const CoordsBufferPtr& coords, bool useRepeated, const Rect& dest, Rect src) {
+void addImageRect(const AtlasRegion* region, const CoordsBufferPtr& coords, bool useRepeated, const Rect& dest, Rect src, bool fromBottom = false) {
     if (region)
         src.translate(region->x, region->y);
 
-    if (useRepeated)
-        coords->addRepeatedRects(dest, src);
-    else
+    if (useRepeated) {
+        if (fromBottom)
+            coords->addBottomRepeatedRects(dest, src);
+        else
+            coords->addRepeatedRects(dest, src);
+    } else
         coords->addRect(dest, src);
 };
 
@@ -149,7 +154,7 @@ void UIWidget::drawImage(const Rect& screenCoords)
             // first the center
             if (centerSize.area() > 0) {
                 rectCoords = Rect(drawRect.left() + leftBorder.width(), drawRect.top() + topBorder.height(), centerSize);
-                addImageRect(m_atlasRegion, m_imageCoordsCache, useRepeated, rectCoords, center);
+                addImageRect(m_atlasRegion, m_imageCoordsCache, useRepeated, rectCoords, center, isImageRepeatedFromBottom());
             }
             // top left corner
             rectCoords = Rect(drawRect.topLeft(), topLeftCorner.size());
@@ -162,10 +167,10 @@ void UIWidget::drawImage(const Rect& screenCoords)
             addImageRect(m_atlasRegion, m_imageCoordsCache, useRepeated, rectCoords, topRightCorner);
             // left
             rectCoords = Rect(drawRect.left(), drawRect.top() + topLeftCorner.height(), leftBorder.width(), centerSize.height());
-            addImageRect(m_atlasRegion, m_imageCoordsCache, useRepeated, rectCoords, leftBorder);
+            addImageRect(m_atlasRegion, m_imageCoordsCache, useRepeated, rectCoords, leftBorder, isImageRepeatedFromBottom());
             // right
             rectCoords = Rect(drawRect.left() + leftBorder.width() + centerSize.width(), drawRect.top() + topRightCorner.height(), rightBorder.width(), centerSize.height());
-            addImageRect(m_atlasRegion, m_imageCoordsCache, useRepeated, rectCoords, rightBorder);
+            addImageRect(m_atlasRegion, m_imageCoordsCache, useRepeated, rectCoords, rightBorder, isImageRepeatedFromBottom());
             // bottom left corner
             rectCoords = Rect(drawRect.left(), drawRect.top() + topLeftCorner.height() + centerSize.height(), bottomLeftCorner.size());
             addImageRect(m_atlasRegion, m_imageCoordsCache, useRepeated, rectCoords, bottomLeftCorner);

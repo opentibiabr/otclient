@@ -65,3 +65,40 @@ void CoordsBuffer::addRepeatedRects(const Rect& dest, const Rect& src)
         }
     }
 }
+
+void CoordsBuffer::addBottomRepeatedRects(const Rect& dest, const Rect& src)
+{
+    if (dest.isEmpty() || src.isEmpty())
+        return;
+
+    const Rect virtualDest(0, 0, dest.size());
+    const int srcHeight = src.height();
+    // Height of the partial tile pushed to the top, so every full tile below it
+    // is phase-aligned to the bottom edge.
+    const int topPartial = virtualDest.height() % srcHeight;
+
+    for (int y = 0; y < virtualDest.height();) {
+        int rowHeight = srcHeight;
+        int srcTopOffset = 0;
+        if (y == 0 && topPartial > 0) {
+            rowHeight = topPartial;
+            srcTopOffset = srcHeight - topPartial; // show the bottom of src
+        }
+
+        for (int x = 0; x <= virtualDest.width(); x += src.width()) {
+            Rect partialDest(x, y, src.width(), rowHeight);
+            Rect partialSrc(src.left(), src.top() + srcTopOffset, src.width(), rowHeight);
+
+            if (partialDest.right() > virtualDest.right()) {
+                partialSrc.setRight(partialSrc.right() + (virtualDest.right() - partialDest.right()));
+                partialDest.setRight(virtualDest.right());
+            }
+
+            partialDest.translate(dest.topLeft());
+            m_vertexArray.addRect(partialDest);
+            m_textureCoordArray.addRect(partialSrc);
+        }
+
+        y += rowHeight;
+    }
+}

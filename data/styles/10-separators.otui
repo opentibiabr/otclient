@@ -2,6 +2,7 @@ HorizontalSeparator < UIWidget
   image-source: /images/ui/separator_horizontal
   image-border: 1
   height: 2
+  margin-left: 3
   phantom: true
   focusable: false
 

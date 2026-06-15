@@ -234,10 +234,10 @@ void UIProgressRect::updateProgressText(const uint32_t remainingTimeMs)
     }
 
     const float seconds = std::round(static_cast<float>(remainingTimeMs)) / 1000.f;
-    if (seconds >= 10.f)
-        setText(fmt::format("{:.0f}s", seconds));
-    else if (seconds >= 1.f)
-        setText(fmt::format("{:.1f}s", seconds));
+    if (seconds > 999.f)
+        setText(fmt::format("{}m", static_cast<int>(seconds / 60.f)));
+    else if (seconds >= 10.f)
+        setText(fmt::format("{:.0f}", seconds));
     else
-        setText(fmt::format("{:.2f}s", seconds));
+        setText(fmt::format("{:.1f}", seconds));
 }

@@ -29,7 +29,7 @@ InviteNameWindow < NewMainWindow
       anchors.top: prev.bottom
       anchors.left: parent.left
       anchors.right: parent.right
-      margin-top: 10
+      margin-top: 1
 
     Button
       id: cancel
@@ -95,10 +95,12 @@ ExcludeNameWindow < NewMainWindow
       margin-right: 10
 
 ConsoleLabel < UITextEdit
-  font: verdana-11px-antialised
-  height: 14
+  font: verdana-11px-monochrome
+  height: 16
   color: yellow
-  margin-left: 2
+  margin-left: 12
+  margin-top: 0
+  margin-bottom: -3
   text-wrap: true
   text-auto-resize: true
   selection-color: #f4f4f4ff
@@ -111,8 +113,8 @@ ConsoleLabel < UITextEdit
   focusable: false
 
 ConsolePhantomLabel < UILabel
-  font: verdana-11px-antialised
-  height: 14
+  font: verdana-11px-monochrome
+  height: 16
   color: yellow
   text-wrap: true
   text-auto-resize: true
@@ -133,9 +135,9 @@ ConsoleTabBarPanel < MoveableTabBarPanel
     image-border: 4
     padding: 1
     padding-right: 12
-    padding-left: 4
+    padding-left: -2
     padding-top: 4
-    padding-bottom: 4
+    padding-bottom: 2
     vertical-scrollbar: consoleScrollBar
     layout:
       type: verticalBox
@@ -149,9 +151,9 @@ ConsoleTabBarPanel < MoveableTabBarPanel
     anchors.right: parent.right
     step: 14
     pixels-scroll: true
-    margin-top: 4
+    margin-top: 3
     margin-right: 4
-    margin-bottom: 4
+    margin-bottom: 3
 
 ConsoleTabBarButton < UIButton
   size: 96 18
@@ -184,7 +186,7 @@ Panel
     image-source: /images/ui/2pixel_up_frame_borderimage
     image-border: 3
     anchors.fill: parent
-    margin-top: 16
+    margin-top: 18
     focusable: false
   Panel
     id: consoleContentPanel
@@ -193,9 +195,9 @@ Panel
     anchors.right: parent.horizontalCenter
     anchors.bottom: consoleTextEdit.top
     margin-left: 3
-    margin-right: 2
-    margin-bottom: 4
-    margin-top: 20
+    margin-right: 3
+    margin-bottom: 2
+    margin-top: 21
     padding: 1
     focusable: false
 
@@ -207,8 +209,8 @@ Panel
     anchors.bottom: consoleTextEdit.top
     margin-left: 2
     margin-right: 6
-    margin-bottom: 4
-    margin-top: 20
+    margin-bottom: 2
+    margin-top: 21
     padding: 1
     focusable: false
     ScrollablePanel
@@ -242,10 +244,11 @@ Panel
     anchors.left: parent.left
     anchors.bottom: consoleContentPanel.top
     anchors.right: closeChannelButton.left
-    margin-right: 20
-    margin-left: 18
-    margin-bottom: -7
-    tab-spacing: 2
+    margin-right: 22
+    margin-left: 21
+    margin-bottom: -8
+    padding-bottom: -5
+    tab-spacing: 0
     movable: true
 
   TabButton
@@ -296,7 +299,7 @@ Panel
     image-clip: 0 64 16 16
     anchors.right: extendedViewHide.left
     anchors.bottom: consoleContentPanel.top
-    margin-bottom: 5
+    margin-bottom: 4
     margin-right: 1
     size: 16 16
     visible: false
@@ -320,7 +323,7 @@ Panel
     image-clip: 0 80 16 16
     anchors.right: closeChannelButton.left
     anchors.bottom: consoleContentPanel.top
-    margin-bottom: 5
+    margin-bottom: 4
     margin-right: 1
     visible: false
     size: 16 16
@@ -342,7 +345,7 @@ Panel
     image-clip: 0 48 16 16
     anchors.right: channelsButton.left
     anchors.bottom: consoleContentPanel.top
-    margin-bottom: 5
+    margin-bottom: 4
     margin-right: 1
     size: 16 16
     @onClick: removeCurrentTab()
@@ -360,7 +363,7 @@ Panel
     image-clip: 0 0 16 16
     anchors.right: ignoreButton.left
     anchors.bottom: consoleContentPanel.top
-    margin-bottom: 5
+    margin-bottom: 4
     margin-right: 1
     size: 16 16
     @onClick: g_game.requestChannels()
@@ -378,7 +381,7 @@ Panel
     image-clip: 0 32 16 16
     anchors.right: exivaOption.left
     anchors.bottom: consoleContentPanel.top
-    margin-bottom: 5
+    margin-bottom: 4
     margin-right: 1
     size: 16 16
     @onClick: onClickIgnoreButton()
@@ -395,8 +398,8 @@ Panel
     image-source: /images/ui/console_buttons
     anchors.right: readOnlyButton.left
     anchors.bottom: consoleContentPanel.top
-    margin-bottom: 5
-    margin-right: 5
+    margin-bottom: 4
+    margin-right: 3
     size: 16 16
     @onClick: |
       if self:isOn() then
@@ -419,7 +422,8 @@ Panel
     text: ""
     anchors.right: parent.right
     anchors.top: parent.top
-    margin-right: 5
+    margin-right: 2
+    margin-top: 1
     size: 96 18
     image-clip: 0 0 96 18
     icon: /images/game/console/readOnly
@@ -443,19 +447,16 @@ Panel
     anchors.left: parent.left
     anchors.bottom: parent.bottom
     margin-bottom: 4
-    margin-left: 5
-    size: 18 18
-    image-source: /images/ui/console_say
-    image-clip: 0 0 18 18
+    margin-left: 4
+    size: 16 16
+    image-source: /images/game/console/button-textured-up
+    icon: /images/game/console/icon-speech-say
     !tooltip: tr('Set talk type')
     &sayMode: 2
     @onClick: sayModeChange()
 
     $pressed:
-      image-clip: 18 0 18 18
-
-    $hover !disabled:
-      image-clip: 0 0 18 18
+      image-source: /images/game/console/button-textured-down
 
   TextEdit
     id: consoleTextEdit
@@ -463,11 +464,12 @@ Panel
     anchors.right: toggleChat.left
     anchors.bottom: parent.bottom
     margin-right: 5
-    margin-left: 5
-    margin-bottom: 3
+    margin-left: 3
+    padding-left: 4
+    margin-bottom: 4
     shift-navigation: true
     max-length: 255
-    height: 18
+    height: 16
     placeholder:  "Type here to chat"
     placeholder-color: #707070
     @onTextChange: onTextChange(self:getText())
@@ -479,8 +481,9 @@ Panel
     margin-bottom: 3
     margin-right: 3
     size: 64 18
-    color: #c0c0c0ff
-    font: cipsoftFont
+    color: #dfdfdfff
+    font: verdana-bold-8
+    text-offset: 0 1
     !text: tr('Chat Off')
     &isChecked: false
     @onClick: toggleChat()

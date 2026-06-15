@@ -6,12 +6,12 @@ ActionButton < UIButton
   Item
     id: item
     anchors.fill: parent
-    padding: 1
+    padding: 0
     virtual: true
     draggable: true
     &selectable: true
     &editable: false
-    font: verdana-8px-rounded
+    font: verdana-bold-8-bordered
     always-show-count: true
     $!on:
       image-source: /images/game/actionbar/actionbarslot
@@ -32,6 +32,7 @@ ActionButton < UIButton
       id: gray
       anchors.fill: parent
       image-source: /images/ui/ditherpattern
+      image-repeated: true
       visible: false
     Label
       id: text
@@ -46,19 +47,24 @@ ActionButton < UIButton
         id: gray
         anchors.fill: parent
         image-source: /images/ui/ditherpattern
+        image-repeated: true
         visible: false
 
   Label
     id: hotkeyLabel
     anchors.top: parent.top
     anchors.right: parent.right
-    margin-right: 2
-    text-offset: 0 2
-    text-allign: right
-    text-auto-resize: true
+    margin-top: 0
+    margin-right: 1
+    text-offset: 0 0
+    text-align: right
+    text-horizontal-auto-resize: true
+    text-rtl: true
+    height: 14
     text-wrap: false
     phantom: true
-    font: verdana-8px-rounded
+    font: verdana-bold-8-bordered
+    color: #ffffffff
 
   Label
     id: parameterText
@@ -74,13 +80,19 @@ ActionButton < UIButton
 
   UIProgressRect
     id: cooldown
-    background: #101010aa
+    background: #000000b4
     percent: 100
     focusable: false
     phantom: true
-    anchors.fill: parent
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    margin-top: 1
+    margin-left: 1
     font: verdana-11px-rounded
-    color: white
+    color: #dfdfe9
+    text-offset: 0 -1
     border-color: #9fa0a0
   
   Panel
@@ -151,6 +163,7 @@ RightSliders < Panel
     anchors.top: parent.top
     anchors.right: parent.right
     margin-right: -1
+    margin-top: 1
     @onClick: modules.game_actionbar.moveActionButtons(self)
     image-source: /images/game/actionbar/arrow-right
     image-clip: 0 0 17 17
@@ -172,7 +185,7 @@ RightSliders < Panel
     anchors.top: parent.top
     anchors.right: parent.right
     margin-right: -1
-    margin-top: 17
+    margin-top: 18
     @onClick: modules.game_actionbar.moveActionButtons(self)
     on: true
     image-source: /images/game/actionbar/double-arrow-right
@@ -191,11 +204,8 @@ RightSliders < Panel
 Panel
   id: actionBar
   focusable: false
-  image-source: /images/ui/actionbar/actionbar_background-light
-  image-border: 1
-  //margin-top: 2
-  padding-top: 3
-  padding-bottom: 1
+  padding-top: 2
+  padding-bottom: 0
 
   $on:
     height: 36
@@ -210,7 +220,7 @@ Panel
     anchors.left: parent.left
     anchors.verticalCenter: parent.verticalCenter
     margin-left: 1
-    margin-top: -1
+    margin-top: 0
 
   ScrollablePanel
     id: tabBar
@@ -220,7 +230,7 @@ Panel
     anchors.right: nextPanel.left
     //margin-left: 1
     margin-right: 4
-    margin-top: -2
+    margin-top: 0
     horizontal-scrollbar: actionScroll
     layout: horizontalBox
     @onGeometryChange: modules.game_actionbar.updateVisibleWidgets()
@@ -230,7 +240,7 @@ Panel
     anchors.top: parent.top
     anchors.bottom: parent.bottom
     anchors.right: parent.right
-    step: 37
+    step: 36
     pixels-scroll: true
     visible: false
 

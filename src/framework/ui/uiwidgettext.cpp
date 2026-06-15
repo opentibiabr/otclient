@@ -285,6 +285,8 @@ void UIWidget::parseTextStyle(const OTMLNodePtr& styleNode)
             setTextVerticalAutoResize(node->value<bool>());
         else if (tag == "text-only-upper-case")
             setTextOnlyUpperCase(node->value<bool>());
+        else if (tag == "text-rtl")
+            setTextRTL(node->value<bool>());
         else if (node->tag() == "font") {
             if (ttfFontName.empty())
                 setFont(node->value());
@@ -334,10 +336,11 @@ void UIWidget::drawText(const Rect& screenCoords)
         if (hasEventListener(EVENT_TEXT_CLICK) || hasEventListener(EVENT_TEXT_HOVER))
             cacheRectToWord();
 
+        const bool rtl = isTextRTL();
         if (m_drawTextColors.empty())
-            m_font->fillTextCoords(m_coordsBuffer, m_drawText, m_textSize, m_textAlign, coords, m_glyphsPositionsCache);
+            m_font->fillTextCoords(m_coordsBuffer, m_drawText, m_textSize, m_textAlign, coords, m_glyphsPositionsCache, rtl);
         else
-            m_font->fillTextColorCoords(m_colorCoordsBuffer, m_drawText, m_drawTextColors, m_textSize, m_textAlign, coords, m_glyphsPositionsCache);
+            m_font->fillTextColorCoords(m_colorCoordsBuffer, m_drawText, m_drawTextColors, m_textSize, m_textAlign, coords, m_glyphsPositionsCache, rtl);
     }
 
     g_drawPool.scale(m_fontScale);
