@@ -1,0 +1,430 @@
+Slot < Button
+  width: 66
+  height: 66
+  anchors.verticalCenter: parent.verticalCenter
+  enabled: false
+  text-wrap: true
+  !tooltip: tr('Items can have up to three imbuements slots. This slot is not available for this item.')
+
+  UIWidget
+    id: icon
+    size: 64 64
+    anchors.centerIn: parent
+    phantom: true
+    visible: false
+
+RequiredItem < Panel
+  width: 66
+  height: 90
+
+  UIItem
+    id: item
+    height: 66
+    width: 66
+    anchors.left: parent.left
+    anchors.top: parent.top
+    image-source: /images/ui/item66
+
+  FlatLabel
+    id: count
+    margin-top: 5
+    text-align: center
+    anchors.left: prev.left
+    anchors.right: prev.right
+    anchors.top: prev.bottom
+    text-offset: 0 0
+    image-source: /images/ui/infoPanel
+
+ItemInformation < Panel
+  height: 100
+  padding: 3
+  image-source: /images/ui/t2pixel-up-frame-borderimage
+  image-border: 5
+
+  Label
+    id: title
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    text-align: center
+    !text: tr("Item Information")
+
+  UIItem
+    id: item
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.VerticalCenter: parent.VerticalCenter
+    margin-left: 10
+    margin-top: 5
+    height: 64
+    width: 64
+
+  Panel
+    id: slots
+    width: 240
+    height: 66
+    margin-top: 5
+    anchors.VerticalCenter: parent.VerticalCenter
+    anchors.top: prev.top
+    anchors.right: parent.right
+
+    Slot
+      id: slot0
+      !text: tr("Slot 1")
+      text-align: center
+      anchors.left: parent.left
+      image-source: /game_imbuing/old_design/images/slot_inactive
+      image-clip: 0 0 66 66
+      $hover !pressed:
+        image-clip: 0 0 66 66
+      $pressed:
+        image-source: /game_imbuing/old_design/images/slot
+        image-clip: 0 0 66 66
+
+    Slot
+      id: slot1
+      !text: tr("Slot 2")
+      anchors.left: prev.right
+      margin-left: 10
+      image-source: /game_imbuing/old_design/images/slot_inactive
+      image-clip: 0 0 66 66
+      $hover !pressed:
+        image-clip: 0 0 66 66
+      $pressed:
+        image-source: /game_imbuing/old_design/images/slot
+        image-clip: 0 0 66 66
+
+    Slot
+      id: slot2
+      !text: tr("Slot 3")
+      text-align: center
+      margin-left: 10
+      anchors.left: prev.right
+      image-source: /game_imbuing/old_design/images/slot_inactive
+      image-clip: 0 0 66 66
+      $hover !pressed:
+        image-clip: 0 0 66 66
+      $pressed:
+        image-source: /game_imbuing/old_design/images/slot
+        image-clip: 0 0 66 66
+
+  Label
+    id: selectSlot
+    margin-right: 15
+    anchors.right: slots.left
+    anchors.VerticalCenter: parent.VerticalCenter
+    !text: tr("Select Slot:")
+
+EmptyImbue < Panel
+  height: 240
+  padding: 3 15 15 15
+  image-source: /images/ui/t2pixel-up-frame-borderimage_2
+  image-border: 5
+
+  Label
+    id: title
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    text-align: center
+    !text: tr("Imbue Empty Slot")
+
+  ComboBox
+    id: groups
+    anchors.top: title.bottom
+    anchors.left: parent.left
+    anchors.right: parent.HorizontalCenter
+    margin-right: 3
+    margin-top: 5
+    isdisabled: true
+
+  ComboBox
+    id: imbuement
+    anchors.top: prev.top
+    anchors.left: groups.right
+    anchors.right: parent.right
+    margin-left: 3
+
+  Label
+    id: description
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 10
+    height: 85
+
+  Label
+    id: info
+    anchors.bottom: prev.bottom
+    anchors.left: parent.left
+    !text: tr('Requires the following astral sources:')
+    margin-bottom: 10
+
+  Label
+    id: successRate
+    anchors.top: info.top
+    anchors.right: parent.right
+    width: 35
+    text-align: right
+
+  Label
+    id: successRateTitle
+    anchors.top: info.top
+    anchors.right: successRate.left
+    margin-right: 15
+    !text: tr('Success Rate:')
+
+  Panel
+    id: requiredItems
+    width: 210
+    height: 90
+    anchors.left: parent.left
+    anchors.bottom: parent.bottom
+
+    RequiredItem
+      id: item1
+      anchors.left: parent.left
+
+    RequiredItem
+      id: item2
+      margin-left: 10
+      anchors.left: prev.right
+
+    RequiredItem
+      id: item3
+      margin-left: 10
+      anchors.left: prev.right
+
+  UIButton
+    id: protection
+    width: 66
+    height: 66
+    anchors.top: prev.top
+    anchors.left: prev.right
+    image-source: /game_imbuing/old_design/images/100percent
+    image-clip: 0 0 66 66
+    margin-left: 15
+    !tooltip: ("Bribe the fates! Click here to raise your chance to 100%. For guaranteed success use gold.")
+
+  FlatLabel
+    id: protectionCost
+    margin-top: 5
+    text-align: center
+    anchors.left: prev.left
+    anchors.right: prev.right
+    anchors.top: prev.bottom
+    image-source: /images/ui/infoPanel
+
+  UIWidget
+    id: horizontalArrow
+    anchors.left: prev.right
+    anchors.verticalCenter: requiredItems.verticalCenter
+    margin-left: 45
+    width: 12
+    height: 21
+    image-source: /images/ui/arrow_horizontal
+    image-rect: 0 0 12 21
+    image-clip: 12 0 12 21
+    phantom: false
+
+  UIButton
+    id: imbue
+    width: 128
+    height: 66
+    anchors.top: requiredItems.top
+    anchors.right: parent.right
+    image-source: /game_imbuing/images/imbue_empty
+    image-clip: 0 0 128 66
+    margin-left: 15
+    !tooltip: tr("Click here to carry out the selected imbuement. This will consume the required astral sources and gold.")
+
+    $pressed:
+      image-clip: 0 66 128 66
+
+  FlatLabel
+    id: cost
+    margin-top: 5
+    text-align: center
+    anchors.left: prev.left
+    anchors.right: prev.right
+    anchors.top: prev.bottom
+    image-source: /images/game/prey/balanceBg
+
+ClearImbue < Panel
+  height: 240
+  padding: 3 15 15 15
+  image-source: /images/ui/t2pixel-up-frame-borderimage_2
+  image-border: 5
+
+  Label
+    id: title
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    text-align: center
+    !text: tr("Clear Imbuement")
+
+  ComboBox
+    id: groups
+    anchors.top: title.bottom
+    anchors.left: parent.left
+    anchors.right: parent.HorizontalCenter
+    margin-right: 3
+    margin-top: 5
+    enabled: false
+
+  ComboBox
+    id: imbuement
+    anchors.top: prev.top
+    anchors.left: groups.right
+    anchors.right: parent.right
+    margin-left: 3
+    enabled: false
+
+  Label
+    id: description
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 10
+    height: 85
+
+  Label
+    id: info
+    anchors.bottom: prev.bottom
+    anchors.left: parent.left
+    !text: tr('Time remaining:')
+
+  Label
+    id: clearImbuementTitle
+    anchors.top: info.top
+    anchors.right: parent.right
+    !text: tr('Clear imbuement:')
+
+  Panel
+    id: time
+    width: 277
+    height: 90
+    anchors.left: parent.left
+    anchors.bottom: parent.bottom
+    
+    Panel
+      id: timerContainer
+      size: 277 18
+      anchors.centerIn: parent
+      image-source: /game_imbuing/images/imbui-timer-bg
+      
+      ProgressBarSD
+        id: timeRemaining
+        size: 277 18
+        anchors.fill: parent
+        image-source: /game_imbuing/images/imbui-progress
+        margin: 1
+        phantom: true
+        percent: 1
+
+        Label
+          id: text
+          anchors.centerIn: parent
+          text-align: center
+          text-auto-resize: true
+          color: white
+          font: verdana-11px-rounded
+          margin-top: 1
+          phantom: true
+
+  UIButton
+    id: clear
+    width: 128
+    height: 66
+    anchors.top: time.top
+    anchors.right: parent.right
+    image-source: /game_imbuing/images/clear
+    image-clip: 0 0 128 66
+    margin-left: 15
+    !tooltip: tr("Your needs have changed? Click here to clear the imbuement from your item for a fee.")
+
+    $pressed:
+      image-clip: 0 66 128 66
+
+  FlatLabel
+    id: cost
+    margin-top: 5
+    text-align: center
+    anchors.left: prev.left
+    anchors.right: prev.right
+    anchors.top: prev.bottom
+    image-source: /images/game/prey/balanceBg
+
+infoPanelTolltip < Panel
+  height: 75
+  padding: 10
+  image-source: /images/ui/2pixel_up_frame_borderimage
+  image-border: 5
+
+  Label
+    id: tooltipContent
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    text-align: left
+    color: white
+    font: verdana-11px-rounded
+    text-wrap: true
+
+MainWindow
+  id: imbuingWindow
+  !text: tr('Imbue Item')
+  size: 572 520
+  background-color: #AAAAAA
+  @onEscape: modules.game_imbuing.hide()
+
+  ItemInformation
+    id: itemInfo
+    anchors.left: parent.left
+    anchors.top: parent.top
+    anchors.right: parent.right
+
+  EmptyImbue
+    id: emptyImbue
+    anchors.left: parent.left
+    anchors.top: prev.bottom
+    anchors.right: parent.right
+    margin-top: 5
+
+  ClearImbue
+    id: clearImbue
+    anchors.left: parent.left
+    anchors.top: emptyImbue.top
+    anchors.right: parent.right
+
+  infoPanelTolltip
+    id: infoPanel
+    anchors.left: parent.left
+    anchors.top: emptyImbue.bottom
+    anchors.right: parent.right
+    margin-top: 5
+    
+  Button
+    id: close
+    !text: tr('Close')
+    width: 50
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    @onClick: modules.game_imbuing.hide()
+
+  Label
+    id: balance
+    height: 25
+    anchors.left: parent.left
+    anchors.bottom: parent.bottom
+    text-align: right
+    text-offset: -20 0
+    image-source: /images/game/prey/balanceBg
+    UIWidget
+      id: Icon
+      anchors.right: parent.right
+      anchors.verticalCenter: parent.verticalCenter
+      margin-right: 4
+      image-source: /game_cyclopedia/images/icon-goldcoin

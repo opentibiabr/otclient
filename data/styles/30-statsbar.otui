@@ -506,6 +506,13 @@ TopStatsBarParallelOnTop < UIWidget
     margin-right: 18
     height: 0
 
+  ProficiencyTopBarWidget
+    id: proficiencyTopBar
+    anchors.top: skills.bottom
+    anchors.right: icons.left
+    margin-right: 4
+    size: 113 13
+
   Panel
     id: icons
     image-border: 3
@@ -574,6 +581,13 @@ TopStatsBarDefaultOnTop < UIWidget
     margin-left: 12
     margin-right: 18
     height: 0
+
+  ProficiencyTopBarWidget
+    id: proficiencyTopBar
+    anchors.top: skills.bottom
+    anchors.right: icons.left
+    margin-right: 4
+    size: 113 13
 
   Panel
     id: icons
@@ -1282,3 +1296,77 @@ TopStatsBarCompactOnBottom < UIWidget
     margin-top: 6
     margin-right: 6
     height: 0
+
+// Proficiency XP Bar Widget for TopBar
+// Structure: [Button+Highlight] [Progress Bar with % label] [Tree Icon]
+ProficiencyTopBarWidget < UIWidget
+  id: proficiencyTopBar
+  size: 113 13
+  visible: false
+
+  UIButton
+    id: proficiencyButton
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    size: 13 13
+    image-source: /images/game/topbar/proficiency-button
+    image-clip: 0 0 13 13
+    !tooltip: tr('Open Weapon Proficiency')
+    @onClick: |
+      if modules.game_proficiency and modules.game_proficiency.toggle then
+        modules.game_proficiency.toggle()
+      end
+    $pressed:
+      image-clip: 0 13 13 13
+
+  UIWidget
+    id: highlightProficiencyButton
+    size: 15 15
+    anchors.top: proficiencyButton.top
+    anchors.left: proficiencyButton.left
+    margin-top: -1
+    margin-left: -1
+    visible: false
+    phantom: true
+    image-source: /images/game/topbar/highlight-proficiency-button
+
+  UIWidget
+    id: proficiencyBg
+    anchors.left: proficiencyButton.right
+    anchors.right: parent.right
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    margin-left: 3
+    image-source: /images/game/topbar/proficiency-bg
+    image-border: 2
+    !tooltip: tr('Proficiency Progress')
+
+  ProgressBar
+    id: proficiencyProgress
+    anchors.left: proficiencyBg.left
+    anchors.right: proficiencyBg.right
+    anchors.top: proficiencyBg.top
+    anchors.bottom: proficiencyBg.bottom
+    margin: 1 1 1 1
+    background-color: #1abc9c
+    percent: 0
+
+  Label
+    id: proficiencyLabel
+    anchors.left: proficiencyBg.left
+    anchors.right: proficiencyBg.right
+    anchors.verticalCenter: proficiencyBg.verticalCenter
+    text-align: center
+    font: verdana-11px-rounded
+    color: #ffffff
+    text: 0%
+    phantom: true
+
+  UIWidget
+    id: proficiencyIcon
+    anchors.right: proficiencyBg.right
+    anchors.verticalCenter: proficiencyBg.verticalCenter
+    margin-right: 1
+    size: 9 11
+    phantom: true
+    image-source: /images/game/topbar/icon-proficiencytree-on

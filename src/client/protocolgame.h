@@ -99,7 +99,7 @@ public:
     void sendCancelAttackAndFollow();
     void sendRefreshContainer(uint8_t containerId);
     void sendRequestBless();
-    void sendRequestTrackerQuestLog(const std::map<uint16_t, std::string>& quests);
+    void sendRequestTrackerQuestLog(const std::vector<uint16_t>& missionIds, bool autoTrackNewQuests, bool autoUntrackCompletedQuests, uint8_t extra);
     void sendRequestOutfit();
     void sendTyping(bool typing);
     void sendChangeOutfit(const Outfit& outfit);
@@ -148,15 +148,18 @@ public:
     void sendApplyImbuement(uint8_t slot, uint32_t imbuementId, bool protectionCharm);
     void sendClearImbuement(uint8_t slot);
     void sendCloseImbuingWindow();
+    void sendImbuementWindowAction(uint8_t type, uint16_t itemId = 0, const Position& pos = Position(), uint8_t stackpos = 0);
     void sendOpenRewardWall();
     void sendOpenRewardHistory();
     void sendGetRewardDaily(const uint8_t bonusShrine, const std::map<uint16_t, uint8_t>& items);
     void sendStashWithdraw(uint16_t itemId, uint32_t count, uint8_t stackpos);
     void sendStashStow(const Position& position, const uint16_t itemId, const uint32_t count, const uint8_t stackpos, const uint8_t action);
     void sendHighscoreInfo(uint8_t action, uint8_t category, uint32_t vocation, std::string_view world, uint8_t worldType, uint8_t battlEye, uint16_t page, uint8_t totalPages);
+    void sendTaskBoardAction(const uint8_t option, const uint16_t value = 0, const uint16_t extraValue = 0);
     void sendImbuementDurations(bool isOpen = false);
-    void sendOpenWheelOfDestiny(uint32_t playerId);
-    void sendApplyWheelOfDestiny(const std::vector<uint16_t>& wheelPointsVec, const std::vector<uint16_t>& activeGemsVec);
+    void sendStartOfflineTraining(const uint8_t skillType);
+    void sendTutorialChangeVocation(uint8_t vocationClientId);
+    void sendSoulSealsAction(const uint16_t raceId);
     void sendRequestBestiary();
     void sendRequestBestiaryOverview(std::string_view catName, bool search = false, std::vector<uint16_t> raceIds = {});
     void sendRequestBestiarySearch(uint16_t raceId);
@@ -167,17 +170,26 @@ public:
     void sendRequestBossSlootInfo();
     void sendRequestBossSlotAction(uint8_t action, uint32_t raceId);
     void sendStatusTrackerBestiary(uint16_t raceId, bool status);
+
+    // Quick Loot
     void sendQuickLoot(const uint8_t variant, const Position& pos, const uint16_t itemId, const uint8_t stackpos);
     void requestQuickLootBlackWhiteList(uint8_t filter, uint16_t size, const std::vector<uint16_t>& listedItems);
     void openContainerQuickLoot(uint8_t action, uint8_t category, const Position& pos, uint16_t itemId, uint8_t stackpos, bool useMainAsFallback);
+
+    // inspection item / character
     void sendInspectionNormalObject(const Position& position);
     void sendInspectionObject(Otc::InspectObjectTypes inspectionType, uint16_t itemId, uint8_t itemCount);
+    void sendInspectCharacter(uint32_t creatureId, uint8_t tab);
 
     // Wheel of Destiny
     void sendOpenWheel(uint32_t playerId);
     void sendApplyWheelPoints(const std::vector<uint16_t>& slotPoints,uint16_t greenGem,uint16_t redGem,uint16_t acquaGem,uint16_t purpleGem);
     void sendWheelGemAction(const uint8_t actionType, const uint8_t param, const uint8_t pos);
 
+    // Weapon Proficiency
+    void sendWeaponProficiencyAction(uint8_t actionType, uint16_t itemId = 0);
+    void sendWeaponProficiencyApply(uint16_t itemId, const std::vector<uint8_t>& levels, const std::vector<uint8_t>& perkPositions);
+    
     // otclient only
     void sendChangeMapAwareRange(uint8_t xrange, uint8_t yrange);
 
@@ -248,8 +260,9 @@ private:
     void parseContainerUpdateItem(const InputMessagePtr& msg);
     void parseContainerRemoveItem(const InputMessagePtr& msg);
     void parseBosstiaryInfo(const InputMessagePtr& msg);
-    void parseTakeScreenshot(const InputMessagePtr& msg);
+    void parseClientEvent(const InputMessagePtr& msg);
     void parseCyclopediaItemDetail(const InputMessagePtr& msg);
+    void parseInspectionState(const InputMessagePtr& msg);
     void parseAddInventoryItem(const InputMessagePtr& msg);
     void parseRemoveInventoryItem(const InputMessagePtr& msg);
     void parseOpenNpcTrade(const InputMessagePtr& msg);
@@ -325,7 +338,42 @@ private:
     void parseModalDialog(const InputMessagePtr& msg);
     void parseExtendedOpcode(const InputMessagePtr& msg);
     void parseChangeMapAwareRange(const InputMessagePtr& msg);
+
+    /**
+     * @brief Parses and applies the creature mark (square) received from the server.
+     *
+     * The server sends a mark for a creature identified by its ID. The mark is represented
+     * by a square drawn around the creature and can be:
+     * - Removed
+     * - Temporary (flashing / timed)
+     * - Permanent (static)
+     *
+     * @param msg Input message containing:
+     * - uint32 creatureId: Target creature identifier.
+     * - For clientVersion >= 1076:
+     *   - uint8  squareType: Square behavior type:
+     *     - 0 = SQUARE_REMOVE: remove any square (static and timed)
+     *     - 1 = SQUARE_FLASH: temporary (timed/flashing)
+     *     - 2 = SQUARE_STAY : permanent (static)
+     *   - uint8 squareColor: 8-bit color used by the square.
+     * - For clientVersion < 1076:
+     *   - uint8 markType: Legacy timed square color.
+     *
+     * @note If the creature cannot be found in the map, the function logs a debug trace
+     *       and returns without doing anything.
+     *
+     * Behavior rules:
+     * - If @c squareType == 0:
+     *   Removes any square (static and timed).
+     * - If @c squareType == 2:
+     *   Shows a permanent/static square using @c squareColor (where 0 maps to the default color).
+     * - Otherwise:
+     *   Adds a timed square using @c squareColor.
+     * - For clientVersion < 1076, any single byte value is treated as legacy
+     *   timed-square color; @c markType == 0 uses the default color.
+     */
     void parseCreaturesMark(const InputMessagePtr& msg);
+
     // 12x
     void parseShowDescription(const InputMessagePtr& msg);
     void parseBestiaryTracker(const InputMessagePtr& msg);
@@ -345,6 +393,7 @@ private:
     void parsePassiveCooldown(const InputMessagePtr& msg);
     void parseClientCheck(const InputMessagePtr& msg);
     void parseGameNews(const InputMessagePtr& msg);
+    void parseCloseDepotSearch(const InputMessagePtr& /*msg*/);
     void parseBlessDialog(const InputMessagePtr& msg);
     void parseRestingAreaState(const InputMessagePtr& msg);
     void parseUpdateImpactTracker(const InputMessagePtr& msg);
@@ -383,6 +432,14 @@ private:
     void parseWeaponProficiencyExperience(const InputMessagePtr& msg);
     void parseWeaponProficiencyInfo(const InputMessagePtr& msg);
 
+    // 15.2x
+    void parseTaskBoardData(const InputMessagePtr& msg);
+    void parseTaskBoardBountyData(const InputMessagePtr& msg);
+    void parseTaskBoardWeeklyData(const InputMessagePtr& msg);
+    void parseTaskBoardShopData(const InputMessagePtr& msg);
+    void parseMultiOfflineTrainingDialog(const InputMessagePtr& msg);
+    void parseNpcChatWindow(const InputMessagePtr& msg);
+    
     void parseHighscores(const InputMessagePtr& msg);
     void parseAttachedEffect(const InputMessagePtr& msg);
     void parseDetachEffect(const InputMessagePtr& msg);

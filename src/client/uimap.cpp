@@ -22,6 +22,7 @@
 
 #include "uimap.h"
 
+#include "gameconfig.h"
 #include "lightview.h"
 #include "map.h"
 #include "mapview.h"
@@ -56,7 +57,8 @@ void UIMap::draw(const DrawPoolType drawPane) {
             m_mapView->drawFloor();
         }, [this] {
             m_mapView->registerEvents();
-        }, m_mapView->m_posInfo.rect, m_mapView->m_posInfo.srcRect, Color::black);
+        }, m_mapView->m_posInfo.rect, m_mapView->m_posInfo.srcRect,
+           m_mapView->getCameraPosition().z == g_gameConfig.getMapSeaFloor() ? Color(0xFFA54C27U) : Color::black);
     } else if (drawPane == DrawPoolType::LIGHT) {
         g_drawPool.preDraw(drawPane, [this] {
             m_mapView->m_lightView->clear();
@@ -254,21 +256,34 @@ void UIMap::onGeometryChange(const Rect& oldRect, const Rect& newRect)
     updateMapSize();
 }
 
+void UIMap::resetCursorToDefault()
+{
+    if (m_mapView->hasCursorAnimations() && !g_mouse.isCursorChanged()) {
+        const int defaultId = g_mouse.getCursorId("default");
+        if (defaultId != -1)
+            g_window.setMouseCursor(defaultId);
+        else
+            g_window.restoreMouseCursor();
+    }
+}
+
 void UIMap::onHoverChange(bool hovered)
 {
     UIWidget::onHoverChange(hovered);
-    if (!hovered && m_mapView->hasCursorAnimations() && !g_mouse.isCursorChanged()) {
-        g_window.restoreMouseCursor();
-    }
+    if (!hovered)
+        resetCursorToDefault();
 }
 
 bool UIMap::onMouseMove(const Point& mousePos, const Point& mouseMoved)
 {
     const auto& pos = getPosition(mousePos);
-    if (!pos.isValid())
+    if (!pos.isValid()) {
+        if (isHovered())
+            resetCursorToDefault();
         return false;
+    }
 
-    if (m_mapView->getLastMousePosition() != pos) {
+    if (isHovered() && m_mapView->getLastMousePosition() != pos) {
         m_mapView->onMouseMove(pos);
         m_mapView->setLastMousePosition(pos);
     }

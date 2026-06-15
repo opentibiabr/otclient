@@ -91,6 +91,17 @@ ActionButton < UIButton
     phantom: true
     visible: false
 
+  UIWidget
+    id: multiIcon
+    image-source: /images/game/actionbar/marker-multiactionbutton
+    size: 5 11
+    anchors.left: parent.left
+    anchors.top: parent.top
+    margin-left: 1
+    margin-top: 1
+    phantom: true
+    visible: false
+
 LeftSliders < Panel
   size: 17 34
   UIButton

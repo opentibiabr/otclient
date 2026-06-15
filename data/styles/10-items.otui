@@ -9,21 +9,6 @@ Item < UIItem
   $disabled:
     color: #646464
 
-  Label
-    id: duration
-    anchors.bottom: parent.bottom
-    anchors.left: parent.left
-    phantom: true
-    font: "verdana-11px-rounded"
-
-  Label
-    id: charges
-    anchors.top: parent.top
-    anchors.left: parent.left
-    phantom: true
-    text-auto-resize: true
-    font: "verdana-11px-rounded"
-
   UIWidget
     id: tier
     size: 10 9

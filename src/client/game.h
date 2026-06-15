@@ -132,7 +132,7 @@ protected:
                                    & choiceList, bool priority);
 
     // cyclopedia
-    static void processItemDetail(uint32_t itemId, const std::vector<std::tuple<std::string, std::string>>& descriptions);
+    static void processItemDetail(const ItemInspectionData& data);
     static void processCyclopediaCharacterGeneralStats(const CyclopediaCharacterGeneralStats& stats, const std::vector<std::vector<uint16_t>>& skills,
                                                     const std::vector<std::tuple<uint8_t, uint16_t>>& combats);
     static void processCyclopediaCharacterCombatStats(const CyclopediaCharacterCombatStats& data, double mitigation,
@@ -143,6 +143,8 @@ protected:
     static void processCyclopediaCharacterGeneralStatsBadge(uint8_t showAccountInformation, uint8_t playerOnline, uint8_t playerPremium,
                                                             std::string_view loyaltyTitle,
                                                             const std::vector<std::tuple<uint32_t, std::string>>& badgesVector);
+    static void processCyclopediaCharacterInspection(const CyclopediaCharacterInspection& data);
+    static void processInspectionState(uint32_t creatureId, uint8_t state);
     static void processCyclopediaCharacterItemSummary(const CyclopediaCharacterItemSummary& data);
     static void processCyclopediaCharacterAppearances(const OutfitColorStruct& currentOutfit, const std::vector<CharacterInfoOutfits>& outfits,
                                                     const std::vector<CharacterInfoMounts>& mounts, const std::vector<CharacterInfoFamiliar>& familiars);
@@ -388,6 +390,17 @@ public:
     void preyAction(uint8_t slot, uint8_t actionType, uint16_t index);
     void preyRequest();
 
+    // Task Board / SoulSeals / Offline Training related
+    void bountyTaskAction(uint8_t actionType, uint16_t value = 0);
+    void weeklyTaskAction(uint8_t actionType, uint16_t value = 0);
+    void taskHuntingShopRequest();
+    void taskHuntingShopPurchase(uint8_t offerIndex);
+    void bountyTalismanUpgrade(uint8_t pathIndex);
+    void bountyPreferredAction(uint8_t actionType, uint16_t slot, uint16_t raceId);
+    void soulsealFightAction(uint16_t raceId);
+    void sendStartOfflineTraining(const uint8_t skillType);
+    void sendTutorialChangeVocation(uint8_t vocationClientId);
+
     // exiva related
     void sendExivaOptions(bool allowAll, bool allowOwnGuild, bool allowOwnParty, bool allowVipList,
                           bool allowPlayerWhitelist, bool allowGuildWhitelist,
@@ -406,8 +419,12 @@ public:
     void clearImbuement(uint8_t slot);
     void closeImbuingWindow();
     void imbuementDurations(bool isOpen = false);
-    void openWheelOfDestiny(uint32_t playerId);
-    void applyWheelOfDestiny(const std::vector<uint16_t>& wheelPointsVec, const std::vector<uint16_t>& activeGemsVec);
+    void selectImbuementItem(uint16_t itemId, const Position& pos, uint8_t stackpos);
+    void selectImbuementScroll();
+
+    // weapon proficiency related
+    void sendWeaponProficiencyAction(uint8_t actionType, uint16_t itemId = 0);
+    void sendWeaponProficiencyApply(uint16_t itemId, const std::vector<uint8_t>& levels, const std::vector<uint8_t>& perkPositions);
 
     void enableTileThingLuaCallback(const bool value) { m_tileThingsLuaCallback = value; }
     bool isTileThingLuaCallbackEnabled() { return m_tileThingsLuaCallback; }
@@ -436,6 +453,7 @@ public:
     // cyclopedia related
     void inspectionNormalObject(const Position& position);
     void inspectionObject(Otc::InspectObjectTypes inspectionType, uint16_t itemId, uint8_t itemCount);
+    void inspectCharacter(const uint32_t creatureId, const uint8_t tab);
     void requestBestiary();
     void requestBestiaryOverview(std::string_view catName, bool search = false, std::vector<uint16_t> raceIds = {});
     void requestBestiarySearch(uint16_t raceId);
@@ -449,7 +467,7 @@ public:
     void sendOpenRewardWall();
     void requestOpenRewardHistory();
     void requestGetRewardDaily(const uint8_t bonusShrine, const std::map<uint16_t, uint8_t>& items);
-    void sendRequestTrackerQuestLog(const std::map<uint16_t, std::string>& quests);
+    void sendRequestTrackerQuestLog(const std::vector<uint16_t>& missionIds, bool autoTrackNewQuests, bool autoUntrackCompletedQuests, uint8_t extra = 0x2A);
     void processCyclopediaCharacterOffenceStats(const CyclopediaCharacterOffenceStats& data);
     void processCyclopediaCharacterDefenceStats(const CyclopediaCharacterDefenceStats& data);
     void processCyclopediaCharacterMiscStats(const CyclopediaCharacterMiscStats& data);

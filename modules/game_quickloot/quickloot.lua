@@ -61,7 +61,8 @@ function quickLootController:onGameStart()
     QuickLoot.lastSelectBag = nil
     QuickLoot.ErrorWindow = nil
 
-    quickLootController.ui.information.vipPanel.premium:setOn(not g_game.getLocalPlayer():isPremium())
+    local player = g_game.getLocalPlayer()
+    quickLootController.ui.information.vipPanel.premium:setOn(not (player and player:isPremium()))
     QuickLoot.load()
 
     g_game.requestQuickLootBlackWhiteList(getFilter(QuickLoot.data.filter),
@@ -160,8 +161,12 @@ function QuickLoot.Define()
     end
 
     function QuickLoot.load()
+        local player = g_game.getLocalPlayer()
+        if not player then
+            return
+        end
         local file = string.format("/settings/%s_containers.json",
-            g_game.getLocalPlayer():getName():lower():gsub("%s+", "_"))
+            player:getName():lower():gsub("%s+", "_"))
 
         if g_resources.fileExists(file) then
             local status, result = pcall(function()
@@ -303,12 +308,12 @@ function QuickLoot.Define()
         local color = "#484848"
 
         for _, itemId in ipairs(QuickLoot.data.loots[QuickLoot.data.filter]) do
-            local internalData = g_things.getThingType(itemId, ThingCategoryItem):getMarketData()
+            local name = g_things.getThingType(itemId, ThingCategoryItem):getName()
             local widget = g_ui.createWidget("QuicLootIgnoreItem", quickLootController.ui.ignoreList)
 
             widget:setId(itemId)
             widget:setBackgroundColor(color)
-            widget.label:setText(internalData.name)
+            widget.label:setText(name ~= "" and name or "Unknown")
             widget.item:setItemId(itemId)
 
             color = color == "#484848" and "#414141" or "#484848"

@@ -164,6 +164,12 @@ public:
 
     PLAYER_ACTION getDefaultAction();
     uint16_t getClassification();
+    uint32_t getCyclopediaType() const;
+    uint32_t getProficiencyId() const;
+    uint32_t getWeaponType() const;
+    uint32_t getMinimumLevel() const;
+    uint32_t getImbueSlots() const;
+    std::vector<uint32_t> getRestrictVocation() const;
 
     bool canDraw(const Color& color = Color::white) const;
 

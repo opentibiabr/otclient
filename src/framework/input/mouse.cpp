@@ -55,7 +55,7 @@ void Mouse::loadCursors(const std::string& filename)
         }
 
     } catch (stdext::exception& e) {
-        g_logger.error("unable to load cursors file: {}", e.what());
+        g_logger.error("Unable to load cursors file: {}", e.what());
     }
 }
 
@@ -66,7 +66,7 @@ void Mouse::addCursor(const std::string& name, const std::string& file, const Po
     if (cursorId >= 0) {
         m_cursors[name] = cursorId;
     } else
-        g_logger.error("unable to load cursor {}", name);
+        g_logger.error("Unable to load cursor {}", name);
 }
 
 bool Mouse::pushCursor(const std::string& name)
@@ -134,7 +134,7 @@ int Mouse::getCursorId(const std::string& name)
 void Mouse::checkStackSize()
 {
     if (m_cursorStack.size() > 5) {
-        g_logger.error("mouse cursor stack is too long");
+        g_logger.error("Mouse cursor stack is too long");
         m_cursorStack.pop_front();
     }
 }

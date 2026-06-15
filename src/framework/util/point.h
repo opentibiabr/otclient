@@ -22,6 +22,15 @@
 
 #pragma once
 
+#ifndef USE_PRECOMPILED_HEADERS
+#include <cmath>
+#include <cstddef>
+#include <istream>
+#include <ostream>
+
+#include <fmt/format.h>
+#endif
+
 template<class T>
 class TSize;
 
@@ -106,5 +115,10 @@ struct fmt::formatter<TPoint<T>, char> {
     }
 };
 
-using Point = TPoint<int>;
-using PointF = TPoint<float>;
+namespace Fw {
+    using Point = TPoint<int>;
+    using PointF = TPoint<float>;
+}
+
+using Fw::Point;
+using Fw::PointF;

@@ -1,0 +1,257 @@
+<html>
+<style>
+  window {
+    font-family: Arial, sans-serif;
+    margin: 24px;
+    background-color: #ffffff;
+    color: #222222;
+    height: 100%;
+    margin-top: 0;
+    margin-left: 0;
+    margin-right: 0;
+    display: block !important;
+    --image-source: none;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 100% !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  .workspace {
+    display: flex;
+    flex-flow: row nowrap;
+    gap: 12px;
+    align-items: stretch;
+    min-height: 470px;
+  }
+
+  .master {
+    display: flex;
+    flex-direction: column;
+    flex: 0 0 250px;
+    min-width: 200px;
+    max-width: 320px;
+    background-color: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .master .head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .master .head .count {
+    margin-left: auto;
+    background-color: #e5e7eb;
+    border-radius: 999px;
+    padding: 2px 8px;
+    color: #4b5563;
+  }
+
+  .master .list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    overflow: auto;
+    min-height: 0;
+  }
+
+  .item1 {
+    display: block;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    background-color: #f9fafb;
+    line-height: 1.35;
+    min-height: 44px;
+  }
+
+  .item1 span {
+    display: block;
+    margin-top: 2px;
+  }
+
+  .item1.active {
+    border-color: #93c5fd;
+    background-color: #eff6ff;
+    order: -1;
+  }
+
+  .detail {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-width: 0;
+    background-color: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    row-gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .toolbar .title {
+    font-weight: bold;
+  }
+
+  .toolbar .actions {
+    margin-left: auto;
+    display: flex;
+    gap: 6px;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .btn {
+    background-color: #111827;
+    color: #ffffff;
+    border-radius: 6px;
+    padding: 5px 10px;
+    flex-shrink: 0;
+  }
+
+  .btn.secondary {
+    background-color: #4b5563;
+  }
+
+  .detail-body {
+    display: flex;
+    flex: 1;
+    gap: 10px;
+    min-height: 0;
+    min-width: 0;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    align-content: flex-start;
+  }
+
+  .preview {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 380px;
+    min-width: 300px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .preview .hero {
+    height: 140px;
+    width: 100%;
+    border-radius: 8px;
+    background-color: #dbeafe;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #1d4ed8;
+    font-weight: bold;
+    flex-shrink: 0;
+  }
+
+  .preview .hero .hero-label {
+    display: block;
+    text-align: center;
+  }
+
+  .meta {
+    display: flex;
+    flex-direction: column;
+    flex: 0 0 260px;
+    min-width: 240px;
+    gap: 8px;
+    align-self: flex-start;
+  }
+
+  .meta-card {
+    display: block;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 8px;
+    background-color: #f9fafb;
+    flex: 0 0 auto;
+    line-height: 1.35;
+  }
+
+  .meta-card b {
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .meta-card span {
+    display: block;
+    margin-top: 4px;
+  }
+
+  .meta-card.critical {
+    border-color: #fca5a5;
+    background-color: #fef2f2;
+  }
+</style>
+
+<window>
+  <div class="workspace">
+    <div class="master">
+      <div class="head"><b>Tickets</b><span class="count">42</span></div>
+      <div class="list">
+        <div class="item1 active"><b>#1842</b><span>Layout flicker on drag</span></div>
+        <div class="item1"><b>#1836</b><span>Overflow in side panel</span></div>
+        <div class="item1"><b>#1829</b><span>Inconsistent text-wrap</span></div>
+        <div class="item1"><b>#1811</b><span>Costly reflow on resize</span></div>
+      </div>
+    </div>
+
+    <div class="detail">
+      <div class="toolbar">
+        <div class="title">Ticket Detail #1842</div>
+        <div class="actions">
+          <div class="btn secondary">Assign</div>
+          <div class="btn">Resolve</div>
+        </div>
+      </div>
+
+      <div class="detail-body">
+        <div class="preview">
+          <div class="hero"><span class="hero-label">Layout preview</span></div>
+          <div>
+            Reproducible case in nested flex container with wrap and
+            align-content: space-between.
+          </div>
+        </div>
+
+        <div class="meta">
+          <div class="meta-card critical">
+            <b>Impact</b>
+            <span>Affects production and visual editing.</span>
+          </div>
+          <div class="meta-card">
+            <b>Checklist</b>
+            <span>- Stable repro</span>
+            <span>- Validated fix</span>
+            <span>- Benchmark OK</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</window>
+
+</html>

@@ -27,9 +27,186 @@
 #include <framework/core/eventdispatcher.h>
 #include <framework/util/stats.h>
 #include <framework/graphics/image.h>
+#include <X11/Xresource.h>
+#include <X11/cursorfont.h>
+#include <algorithm>
+#include <cmath>
+#include <cstdlib>
 #include <unistd.h>
 
-#define LSB_BIT_SET(p, n) (p[(n)/8] |= (1 <<((n)%8)))
+namespace {
+    void setCursorBitmapBit(std::vector<uint8_t>& bits, const int bytesPerRow, const int x, const int y)
+    {
+        const int index = y * bytesPerRow + (x / 8);
+        bits[index] |= static_cast<uint8_t>(1u << (x % 8));
+    }
+
+    void ascii_tolower_inplace(std::string& s)
+    {
+        for (char& c : s) {
+            if (c >= 'A' && c <= 'Z')
+                c = static_cast<char>(c - 'A' + 'a');
+        }
+    }
+
+    enum class DensitySource
+    {
+        EnvOverride,
+        XftDpi,
+        PhysicalDpi,
+        Fallback
+    };
+
+    float parsePositiveFloat(const char* text)
+    {
+        if (!text || !*text)
+            return 0.f;
+
+        const char* p = text;
+        while (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r' || *p == '\f' || *p == '\v')
+            ++p;
+
+        double value = 0.0;
+        bool hasDigit = false;
+        while (*p >= '0' && *p <= '9') {
+            value = value * 10.0 + static_cast<double>(*p - '0');
+            hasDigit = true;
+            ++p;
+        }
+
+        if (*p == '.') {
+            ++p;
+            double frac = 0.0;
+            double base = 1.0;
+            while (*p >= '0' && *p <= '9') {
+                frac = frac * 10.0 + static_cast<double>(*p - '0');
+                base *= 10.0;
+                hasDigit = true;
+                ++p;
+            }
+            value += frac / base;
+        }
+
+        while (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r' || *p == '\f' || *p == '\v')
+            ++p;
+
+        if (!hasDigit || *p != '\0' || !std::isfinite(value) || value <= 0.0)
+            return 0.f;
+
+        return static_cast<float>(value);
+    }
+
+    float getEnvDensityScale()
+    {
+        const float scale = parsePositiveFloat(std::getenv("OTCLIENT_DPI_SCALE"));
+        if (scale <= 0.f)
+            return 0.f;
+
+        return std::clamp(scale, 0.75f, 4.0f);
+    }
+
+    float getXftDpi(Display* display)
+    {
+        XrmInitialize();
+
+        const char* resourceString = XResourceManagerString(display);
+        if (!resourceString)
+            return 0.f;
+
+        XrmDatabase db = XrmGetStringDatabase(resourceString);
+        if (!db)
+            return 0.f;
+
+        XrmValue value;
+        char* type = nullptr;
+        const bool found = XrmGetResource(db, "Xft.dpi", "Xft.Dpi", &type, &value) && value.addr;
+
+        float dpi = 0.f;
+        if (found)
+            dpi = parsePositiveFloat(value.addr);
+
+        XrmDestroyDatabase(db);
+        return dpi;
+    }
+
+    float getPhysicalDpi(Display* display, const int screen)
+    {
+        const int pxW = DisplayWidth(display, screen);
+        const int pxH = DisplayHeight(display, screen);
+        const int mmW = DisplayWidthMM(display, screen);
+        const int mmH = DisplayHeightMM(display, screen);
+
+        if (pxW <= 0 || pxH <= 0 || mmW <= 0 || mmH <= 0)
+            return 0.f;
+
+        const float dpiX = static_cast<float>(pxW) * 25.4f / static_cast<float>(mmW);
+        const float dpiY = static_cast<float>(pxH) * 25.4f / static_cast<float>(mmH);
+        const float avg = (dpiX + dpiY) * 0.5f;
+        if (!std::isfinite(avg) || avg < 72.f || avg > 600.f)
+            return 0.f;
+
+        return avg;
+    }
+
+    float resolveDisplayDensity(Display* display, const int screen, DensitySource& source)
+    {
+        source = DensitySource::Fallback;
+
+        const float envScale = getEnvDensityScale();
+        if (envScale > 0.f) {
+            source = DensitySource::EnvOverride;
+            return envScale;
+        }
+
+        const float xftDpi = getXftDpi(display);
+        if (xftDpi > 0.f) {
+            source = DensitySource::XftDpi;
+            return std::clamp(xftDpi / 96.f, 0.75f, 4.0f);
+        }
+
+        const float physicalDpi = getPhysicalDpi(display, screen);
+        if (physicalDpi > 0.f) {
+            source = DensitySource::PhysicalDpi;
+            return std::clamp(physicalDpi / 96.f, 0.75f, 4.0f);
+        }
+
+        return 1.0f;
+    }
+
+    unsigned int getSystemCursorShape(std::string cursorName)
+    {
+        ascii_tolower_inplace(cursorName);
+
+        if (cursorName == "arrow" || cursorName == "default")
+            return XC_left_ptr;
+        if (cursorName == "horizontal" || cursorName == "sizewe")
+            return XC_sb_h_double_arrow;
+        if (cursorName == "vertical" || cursorName == "sizens")
+            return XC_sb_v_double_arrow;
+        if (cursorName == "diagonal1" || cursorName == "sizenwse")
+            return XC_bottom_right_corner;
+        if (cursorName == "diagonal2" || cursorName == "sizenesw")
+            return XC_bottom_left_corner;
+        if (cursorName == "move" || cursorName == "sizeall")
+            return XC_fleur;
+        if (cursorName == "text" || cursorName == "ibeam" || cursorName == "textselect")
+            return XC_xterm;
+        if (cursorName == "hand" || cursorName == "pointer" || cursorName == "link" || cursorName == "linkselect")
+            return XC_hand2;
+        if (cursorName == "cross" || cursorName == "precision" || cursorName == "precisionselect")
+            return XC_crosshair;
+        if (cursorName == "wait" || cursorName == "hourglass" || cursorName == "appstarting")
+            return XC_watch;
+        if (cursorName == "no" || cursorName == "forbidden" || cursorName == "unavailable")
+            return XC_X_cursor;
+        if (cursorName == "help")
+            return XC_question_arrow;
+        if (cursorName == "uparrow")
+            return XC_sb_up_arrow;
+
+        return XC_left_ptr;
+    }
+}
 
 X11Window::X11Window()
 {
@@ -218,6 +395,9 @@ X11Window::X11Window()
 void X11Window::init()
 {
     internalOpenDisplay();
+    DensitySource densitySource = DensitySource::Fallback;
+    setDisplayDensity(resolveDisplayDensity(m_display, m_screen, densitySource));
+
     internalCheckGL();
     internalChooseGLVisual();
     internalCreateGLContext();
@@ -236,9 +416,17 @@ void X11Window::terminate()
         m_hiddenCursor = 0;
     }
 
-    for (Cursor cursor : m_cursors)
-        XFreeCursor(m_display, cursor);
+    for (const auto& cursorState : m_cursors) {
+        for (const Cursor cursor : cursorState.cursors)
+            XFreeCursor(m_display, cursor);
+    }
     m_cursors.clear();
+
+    for (const auto& [shape, cursor] : m_systemCursors) {
+        if (cursor != X11None)
+            XFreeCursor(m_display, cursor);
+    }
+    m_systemCursors.clear();
 
     if (m_window) {
         XDestroyWindow(m_display, m_window);
@@ -363,6 +551,32 @@ bool X11Window::internalSetupWindowInput()
     }
 
     return true;
+}
+
+void X11Window::restoreMouseCursorNow()
+{
+    XUndefineCursor(m_display, m_window);
+    m_cursor = X11None;
+    m_currentCursorId = -1;
+    m_cursorFrame = 0;
+}
+
+void X11Window::updateCursor()
+{
+    if (m_currentCursorId < 0 || m_currentCursorId >= static_cast<int>(m_cursors.size()))
+        return;
+
+    const auto& state = m_cursors[m_currentCursorId];
+    if (state.cursors.size() <= 1)
+        return;
+
+    const int delay = state.delays[m_cursorFrame];
+    if (m_cursorTimer.ticksElapsed() >= delay) {
+        m_cursorTimer.restart();
+        m_cursorFrame = (m_cursorFrame + 1) % state.cursors.size();
+        m_cursor = state.cursors[m_cursorFrame];
+        XDefineCursor(m_display, m_window, m_cursor);
+    }
 }
 
 void X11Window::internalCheckGL()
@@ -536,7 +750,7 @@ void X11Window::move(const Point& pos)
             XMoveWindow(m_display, m_window, m_position.x, m_position.y);
             XFlush(m_display);
         }
-        });
+    });
 }
 
 void X11Window::resize(const Size& size)
@@ -546,7 +760,7 @@ void X11Window::resize(const Size& size)
             return;
         XResizeWindow(m_display, m_window, size.width(), size.height());
         XFlush(m_display);
-        });
+    });
 }
 
 void X11Window::show()
@@ -560,7 +774,7 @@ void X11Window::show()
             maximize();
         if (m_fullscreen)
             setFullscreen(true);
-        });
+    });
 }
 
 void X11Window::hide()
@@ -569,7 +783,7 @@ void X11Window::hide()
         m_visible = false;
         XUnmapWindow(m_display, m_window);
         XFlush(m_display);
-        });
+    });
 }
 
 void X11Window::maximize()
@@ -595,7 +809,7 @@ void X11Window::maximize()
             XFlush(m_display);
         }
         m_maximized = true;
-        });
+    });
 }
 
 void X11Window::poll()
@@ -767,7 +981,7 @@ void X11Window::poll()
                     break;
                 std::string text = buf;
 
-                //g_logger.debug("char: ", buf[0], " code: ", (int)((uint8_t)buf[0]));
+                //g_logger.debug("Char: ", buf[0], " code: ", (int)((uint8_t)buf[0]));
 
                 if (m_onInputEvent && text.length() > 0) {
                     m_inputEvent.reset(Fw::KeyTextInputEvent);
@@ -784,18 +998,15 @@ void X11Window::poll()
                     switch (event.xbutton.button) {
                         case Button1:
                             m_inputEvent.mouseButton = Fw::MouseLeftButton;
-                            if (event.type == ButtonPress) { m_mouseButtonStates |= 1 << Fw::MouseLeftButton; }
-							else { g_dispatcher.addEvent([this] { m_mouseButtonStates &= ~(1 << Fw::MouseLeftButton); }); }
+                            if (event.type == ButtonPress) { m_mouseButtonStates |= 1 << Fw::MouseLeftButton; } else { g_dispatcher.addEvent([this] { m_mouseButtonStates &= ~(1 << Fw::MouseLeftButton); }); }
                             break;
                         case Button3:
                             m_inputEvent.mouseButton = Fw::MouseRightButton;
-                            if (event.type == ButtonPress) { m_mouseButtonStates |= 1 << Fw::MouseRightButton; }
-							else { g_dispatcher.addEvent([this] { m_mouseButtonStates &= ~(1 << Fw::MouseRightButton); }); }
+                            if (event.type == ButtonPress) { m_mouseButtonStates |= 1 << Fw::MouseRightButton; } else { g_dispatcher.addEvent([this] { m_mouseButtonStates &= ~(1 << Fw::MouseRightButton); }); }
                             break;
                         case Button2:
                             m_inputEvent.mouseButton = Fw::MouseMidButton;
-                            if (event.type == ButtonPress) { m_mouseButtonStates |= 1 << Fw::MouseMidButton; }
-							else { g_dispatcher.addEvent([this] { m_mouseButtonStates &= ~(1 << Fw::MouseMidButton); }); }
+                            if (event.type == ButtonPress) { m_mouseButtonStates |= 1 << Fw::MouseMidButton; } else { g_dispatcher.addEvent([this] { m_mouseButtonStates &= ~(1 << Fw::MouseMidButton); }); }
                             break;
                         case Button4:
                             if (event.type == ButtonPress) {
@@ -819,7 +1030,7 @@ void X11Window::poll()
                     }
                     if (m_inputEvent.type != Fw::NoInputEvent && m_onInputEvent)
                         m_onInputEvent(m_inputEvent);
-                    });
+                });
                 break;
             }
 
@@ -859,6 +1070,7 @@ void X11Window::poll()
         m_onResize(m_size);
 
     fireKeysPress();
+    updateCursor();
 }
 
 void X11Window::swapBuffers()
@@ -879,7 +1091,7 @@ void X11Window::hideMouse()
 {
     g_mainDispatcher.addEvent([&] {
         if (m_cursor != X11None)
-            restoreMouseCursor();
+            restoreMouseCursorNow();
 
         if (m_hiddenCursor == X11None) {
             char bm[] = { 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -892,8 +1104,10 @@ void X11Window::hideMouse()
         }
 
         m_cursor = m_hiddenCursor;
+        m_currentCursorId = -1;
+        m_cursorFrame = 0;
         XDefineCursor(m_display, m_window, m_cursor);
-        });
+    });
 }
 
 void X11Window::setMouseCursor(int cursorId)
@@ -903,56 +1117,175 @@ void X11Window::setMouseCursor(int cursorId)
             return;
 
         if (m_cursor != X11None)
-            restoreMouseCursor();
+            restoreMouseCursorNow();
 
-        m_cursor = m_cursors[cursorId];
+        const auto& state = m_cursors[cursorId];
+        if (state.cursors.empty())
+            return;
+
+        m_currentCursorId = cursorId;
+        m_cursorFrame = 0;
+        m_cursor = state.cursors[0];
+        if (state.cursors.size() > 1) {
+            m_cursorTimer.restart();
+        }
         XDefineCursor(m_display, m_window, m_cursor);
-        });
+    });
+}
+
+void X11Window::setSystemCursor(const std::string& cursorName)
+{
+    g_mainDispatcher.addEvent([this, cursorName] {
+        if (m_display == nullptr || m_window == 0)
+            return;
+
+        if (m_cursor != X11None)
+            restoreMouseCursorNow();
+
+        const unsigned int shape = getSystemCursorShape(cursorName);
+        Cursor cursor = X11None;
+
+        const auto it = m_systemCursors.find(shape);
+        if (it != m_systemCursors.end()) {
+            cursor = it->second;
+        } else {
+            cursor = XCreateFontCursor(m_display, shape);
+            if (cursor != X11None)
+                m_systemCursors[shape] = cursor;
+        }
+
+        if (cursor == X11None) {
+            g_logger.debug("X11 system cursor failed for name='{}' shape={}", cursorName, shape);
+            return;
+        }
+
+        m_cursor = cursor;
+        m_currentCursorId = -1;
+        m_cursorFrame = 0;
+        XDefineCursor(m_display, m_window, m_cursor);
+    });
 }
 
 void X11Window::restoreMouseCursor()
 {
     g_mainDispatcher.addEvent([&] {
-        XUndefineCursor(m_display, m_window);
-        m_cursor = X11None;
-        });
+        restoreMouseCursorNow();
+    });
 }
 
 int X11Window::internalLoadMouseCursor(const ImagePtr& image, const Point& hotSpot)
 {
-    int width = image->getWidth();
-    int height = image->getHeight();
-    int numbits = width * height;
-    int numbytes = (width * height) / 8;
+    static constexpr uint8_t kCursorAlphaThreshold = 32;
+    static constexpr int kCursorLumaThreshold = 128;
 
-    XColor bg, fg;
-    bg.red = 255 << 8;
-    bg.green = 255 << 8;
-    bg.blue = 255 << 8;
-    fg.red = 0;
-    fg.green = 0;
-    fg.blue = 0;
+    CursorState cursorState;
+    std::vector<Image::AnimationFrame> frames;
 
-    std::vector<uint8_t> mapBits(numbytes, 0);
-    std::vector<uint8_t> maskBits(numbytes, 0);
-
-    for (int i = 0; i < numbits; ++i) {
-        uint32_t rgba = stdext::readULE32(image->getPixelData() + i * 4);
-        if (rgba == 0xffffffff) { //white, background
-            LSB_BIT_SET(maskBits, i);
-        } else if (rgba == 0xff000000) { //black, foreground
-            LSB_BIT_SET(mapBits, i);
-            LSB_BIT_SET(maskBits, i);
-        } //otherwise 0x00000000 => alpha
+    if (image->isAnimated()) {
+        frames = image->getAnimation();
+    } else {
+        frames.push_back({ image, 0 });
     }
 
-    Pixmap cp = XCreateBitmapFromData(m_display, m_window, (char*)&mapBits[0], width, height);
-    Pixmap mp = XCreateBitmapFromData(m_display, m_window, (char*)&maskBits[0], width, height);
-    Cursor cursor = XCreatePixmapCursor(m_display, cp, mp, &fg, &bg, hotSpot.x, hotSpot.y);
-    XFreePixmap(m_display, cp);
-    XFreePixmap(m_display, mp);
+    for (const auto& frame : frames) {
+        const auto& img = frame.image;
+        if (!img || img->getBpp() != 4) {
+            for (const Cursor createdCursor : cursorState.cursors)
+                XFreeCursor(m_display, createdCursor);
+            g_logger.error("X11 cursor image must have 4 channels");
+            return -1;
+        }
 
-    m_cursors.push_back(cursor);
+        const int width = img->getWidth();
+        const int height = img->getHeight();
+        if (width <= 0 || height <= 0) {
+            for (const Cursor createdCursor : cursorState.cursors)
+                XFreeCursor(m_display, createdCursor);
+            g_logger.error("X11 cursor image has invalid size={}x{}", width, height);
+            return -1;
+        }
+
+        const int bytesPerRow = (width + 7) / 8;
+        const int numbytes = bytesPerRow * height;
+        const int numbits = width * height;
+
+        XColor bg, fg;
+        bg.red = 255 << 8;
+        bg.green = 255 << 8;
+        bg.blue = 255 << 8;
+        fg.red = 0;
+        fg.green = 0;
+        fg.blue = 0;
+
+        std::vector<uint8_t> mapBits(numbytes, 0);
+        std::vector<uint8_t> maskBits(numbytes, 0);
+        int opaqueWhitePixels = 0;
+        int opaqueBlackPixels = 0;
+
+        for (int i = 0; i < numbits; ++i) {
+            const int x = i % width;
+            const int y = i / width;
+            const uint8_t* pixel = img->getPixelData() + i * 4;
+            const int r = pixel[0];
+            const int g = pixel[1];
+            const int b = pixel[2];
+            const int a = pixel[3];
+
+            if (a <= kCursorAlphaThreshold) {
+                continue;
+            }
+
+            const int luma = (r * 299 + g * 587 + b * 114) / 1000;
+            if (luma >= kCursorLumaThreshold) {
+                setCursorBitmapBit(maskBits, bytesPerRow, x, y);
+                ++opaqueWhitePixels;
+            } else {
+                setCursorBitmapBit(mapBits, bytesPerRow, x, y);
+                setCursorBitmapBit(maskBits, bytesPerRow, x, y);
+                ++opaqueBlackPixels;
+            }
+        }
+
+        Pixmap cp = XCreateBitmapFromData(m_display, m_window, (char*)&mapBits[0], width, height);
+        Pixmap mp = XCreateBitmapFromData(m_display, m_window, (char*)&maskBits[0], width, height);
+        Cursor cursor = XCreatePixmapCursor(m_display, cp, mp, &fg, &bg, hotSpot.x, hotSpot.y);
+        XFreePixmap(m_display, cp);
+        XFreePixmap(m_display, mp);
+
+        const int maskPixels = opaqueWhitePixels + opaqueBlackPixels;
+        const auto createFallbackCursor = [&]() -> Cursor {
+            const Cursor fallbackCursor = XCreateFontCursor(m_display, XC_left_ptr);
+            if (fallbackCursor != X11None) {
+                g_logger.debug(
+                    "X11 cursor fallback: using XC_left_ptr size={}x{} hotspot=({}, {}) handle={}",
+                    width, height, hotSpot.x, hotSpot.y, static_cast<unsigned long>(fallbackCursor));
+            } else {
+                g_logger.error(
+                    "X11 cursor fallback failed: unable to create XC_left_ptr size={}x{} hotspot=({}, {})",
+                    width, height, hotSpot.x, hotSpot.y);
+            }
+            return fallbackCursor;
+        };
+
+        if (maskPixels == 0 || cursor == X11None) {
+            if (cursor != X11None)
+                XFreeCursor(m_display, cursor);
+            cursor = createFallbackCursor();
+            if (cursor == X11None) {
+                for (const Cursor createdCursor : cursorState.cursors)
+                    XFreeCursor(m_display, createdCursor);
+                return -1;
+            }
+        }
+
+        cursorState.cursors.push_back(cursor);
+        cursorState.delays.push_back(frame.delay);
+    }
+
+    if (cursorState.cursors.empty())
+        return -1;
+
+    m_cursors.push_back(std::move(cursorState));
     return m_cursors.size() - 1;
 }
 
@@ -961,7 +1294,7 @@ void X11Window::setTitle(const std::string_view title)
     g_mainDispatcher.addEvent([&, title = std::string{ title }] {
         XStoreName(m_display, m_window, title.data());
         XSetIconName(m_display, m_window, title.data());
-        });
+    });
 }
 
 void X11Window::setMinimumSize(const Size& minimumSize)
@@ -973,7 +1306,7 @@ void X11Window::setMinimumSize(const Size& minimumSize)
         sizeHints.min_width = minimumSize.width();
         sizeHints.min_height = minimumSize.height();
         XSetWMSizeHints(m_display, m_window, &sizeHints, XA_WM_NORMAL_HINTS);
-        });
+    });
 }
 
 void X11Window::setFullscreen(bool fullscreen)
@@ -998,7 +1331,7 @@ void X11Window::setFullscreen(bool fullscreen)
             XFlush(m_display);
         }
         m_fullscreen = fullscreen;
-        });
+    });
 }
 
 void X11Window::setVerticalSync(bool enable)
@@ -1019,7 +1352,7 @@ void X11Window::setVerticalSync(bool enable)
         if (glSwapInterval)
             glSwapInterval(enable ? 1 : 0);
 #endif
-        });
+    });
 }
 
 void X11Window::setIcon(const std::string& file)
@@ -1033,7 +1366,7 @@ void X11Window::setIcon(const std::string& file)
         }
 
         if (image->getBpp() != 4) {
-            g_logger.error("the app icon must have 4 channels");
+            g_logger.error("The app icon must have 4 channels");
             return;
         }
 
@@ -1052,7 +1385,7 @@ void X11Window::setIcon(const std::string& file)
         Atom property = XInternAtom(m_display, "_NET_WM_ICON", 0);
         if (!XChangeProperty(m_display, m_window, property, XA_CARDINAL, 32, PropModeReplace, (const unsigned char*)&iconData[0], iconData.size()))
             g_logger.error("Couldn't set app icon");
-        });
+    });
 }
 
 void X11Window::setClipboardText(const std::string_view text)

@@ -1,0 +1,90 @@
+<link href="template/css/modal_soulseal.css" />
+
+<html>
+<window id="soulsealWindow" class="soulsealWindow" placement="center" title="Soulseals" onescape="self:hideSoulseal()">
+
+    <div class="soulsealBody">
+        <div class="soulsealMainPanel">
+            <div class="soulsealFilterRow">
+
+                <div class="tradeSearchRow" >
+                    <input class="tradeSearchInput" *value="self.soulsealSearchText"
+                    onchange="self:filterSoulseals(event.value)"/>
+                    <uibutton class="tradeSearchClear" onclick="self:clearSoulsealSearch()"></uibutton>
+                </div>
+                <select id="soulsealCategorySelect" class="soulsealCategorySelect"
+                    onchange="self:changeSoulsealCategory(event)">
+                    <option value="1">All</option>
+                    <option value="2">Harmless</option>
+                    <option value="3">Trivial</option>
+                    <option value="4">Easy</option>
+                    <option value="5">Medium</option>
+                    <option value="6">Hard</option>
+                    <option value="7">Challenging</option>
+                </select>
+            </div>
+
+            <div class="soulsealListFrame">
+                <div class="soulsealListHeaderRow">
+                    <label class="soulsealListHeaderLeft">Creatures</label>
+                    <label class="soulsealListHeaderCategory">Difficulty</label>
+                    <label class="soulsealListHeaderRight">Soulseals</label>
+                    <div class="soulsealHeaderSep VerticalSeparator"></div>
+                </div>
+                <div id="soulsealListScroll" class="soulsealListScroll UIScrollArea" layout="type: verticalBox">
+                    <div class="soulsealListSpacer" *height="self.soulsealTopSpacerPxA"></div>
+                    <div class="soulsealListSpacer" *height="self.soulsealTopSpacerPxB"></div>
+                    <div class="soulsealListSpacer" *height="self.soulsealTopSpacerPxC"></div>
+                    <div *for="local entry in self.soulsealEntries; trackBy: entry.listIndex"
+                        class="soulsealRow"
+                        onclick="self:selectSoulseal(entry.listIndex)">
+                        <uicreature class="soulsealRowCreature" *outfit="entry.outfit" idle-animate="true"></uicreature>
+                        <label class="soulsealRowName">{{entry.name}}</label>
+                        <label class="soulsealRowCategory">{{entry.categoryLabel}}</label>
+                        <img class="soulsealRowDoneIcon" *visible="entry.done" src="/game_cyclopedia/images/indicator_beast" />
+                        <div class="soulsealRowSep VerticalSeparator"></div>
+                        <div class="soulsealRowCostBox">
+                            <label class="soulsealRowCost">{{entry.soulsealPoints}}</label>
+                            <img class="soulsealRowCostIcon" src="/game_taskboard/assets/images/icon-currency-soulseals" />
+                        </div>
+                    </div>
+                    <div class="soulsealListSpacer" *height="self.soulsealBottomSpacerPxA"></div>
+                    <div class="soulsealListSpacer" *height="self.soulsealBottomSpacerPxB"></div>
+                    <div class="soulsealListSpacer" *height="self.soulsealBottomSpacerPxC"></div>
+                    <label class="soulsealEmptyLabel" *visible="not self.soulsealHasEntries">{{self.soulsealEmptyText}}</label>
+                </div>
+            </div>
+
+            <div class="soulsealSelectedArea">
+                <div class="soulsealSelectedPreview">
+                    <uicreature class="soulsealSelectedCreature"
+                        *visible="self.soulsealHasSelection and self.soulsealSelectedRaceId > 0"
+                        *outfit="self.soulsealSelectedOutfit"
+                        idle-animate="true"></uicreature>
+                </div>
+
+                <div class="soulsealSelectedControls">
+                    <label class="soulsealSelectedName" *visible="self.soulsealHasSelection">{{self.soulsealSelectedName}}</label>
+                    <label class="soulsealSelectedCategory" *visible="self.soulsealHasSelection">{{self.soulsealSelectedCategoryLabel}}</label>
+                    <button class="soulsealFightBtn" *enabled="self.soulsealSelectedCanFight"
+                        onclick="self:fightSoulseal()">Fight</button>
+                    <div class="soulsealCostPanel">
+                        <img class="soulsealBalanceIcon" src="/game_taskboard/assets/images/icon-currency-soulseals" />
+                        <label class="soulsealBalanceLabel">{{self.soulsealSelectedPoints}}</label>
+                    </div>
+                    <img class="soulsealHelpIcon" src="/images/skin/show-gui-help-grey" *tooltip="self.soulsealSelectedHint" />
+                </div>
+            </div>
+        </div>
+        <hr style="height: 2px; width: 100%; " />
+        <div class="soulsealFooter">
+            <div class="soulsealBalancePanel">
+                <img class="soulsealBalanceIcon" src="/game_taskboard/assets/images/icon-currency-soulseals" />
+                <label class="soulsealBalanceLabel">{{self.soulpitPoints}}</label>
+            </div>
+            <button class="soulsealCloseBtn" onclick="self:hideSoulseal()" text="Cancel"></button>
+        </div>
+    </div>
+
+</window>
+</html>
