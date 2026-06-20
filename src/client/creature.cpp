@@ -240,8 +240,10 @@ void Creature::drawInformation(const MapPosInfo& mapRect, const Point& dest, con
     Rect barsRect = backgroundRect;
 
     if ((drawFlags & Otc::DrawBars) && (g_game.getClientVersion() >= 1100 ? !isNpc() : true)) {
-        g_drawPool.addFilledRect(backgroundRect, Color::black);
-        g_drawPool.addFilledRect(healthRect, fillColor);
+        if (!isLocalPlayer() || (drawFlags & Otc::DrawSelfHealthBar)) {
+            g_drawPool.addFilledRect(backgroundRect, Color::black);
+            g_drawPool.addFilledRect(healthRect, fillColor);
+        }
 
         if (drawFlags & Otc::DrawManaBar && isLocalPlayer()) {
             if (const auto& player = g_game.getLocalPlayer()) {

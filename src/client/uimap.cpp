@@ -118,6 +118,8 @@ void UIMap::setDrawNames(const bool enable) { m_mapView->setDrawNames(enable); }
 
 void UIMap::setDrawHealthBars(const bool enable) { m_mapView->setDrawHealthBars(enable); }
 
+void UIMap::setDrawSelfHealthBar(const bool enable) { m_mapView->setDrawSelfHealthBar(enable); }
+
 void UIMap::setDrawLights(const bool enable) { m_mapView->setDrawLights(enable); }
 
 void UIMap::setLimitVisibleDimension(const bool enable) { m_mapView->setLimitVisibleDimension(enable); updateVisibleDimension(); }
@@ -135,6 +137,8 @@ void UIMap::setDrawViewportEdge(const bool force) { m_mapView->m_forceDrawViewpo
 bool UIMap::isDrawingNames() { return m_mapView->isDrawingNames(); }
 
 bool UIMap::isDrawingHealthBars() { return m_mapView->isDrawingHealthBars(); }
+
+bool UIMap::isDrawingSelfHealthBar() { return m_mapView->isDrawingSelfHealthBar(); }
 
 bool UIMap::isDrawingLights() { return m_mapView->isDrawingLights(); }
 

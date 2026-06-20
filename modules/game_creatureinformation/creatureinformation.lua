@@ -49,7 +49,8 @@ local function onHealthPercentChange(creature, healthPercent, oldHealthPercent)
     widget.name:setColor(color)
     widget.lifeBar:setPercent(healthPercent)
     widget.lifeBar:setBackgroundColor(color)
-    widget.lifeBar:setVisible(gameMapPanel:isDrawingHealthBars())
+    widget.lifeBar:setVisible(gameMapPanel:isDrawingHealthBars()
+        and not (creature:isLocalPlayer() and not gameMapPanel:isDrawingSelfHealthBar()))
 end
 
 local function onManaChange(player, mana, maxMana, oldMana, oldMaxMana)

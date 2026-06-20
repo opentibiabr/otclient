@@ -77,6 +77,9 @@ public:
     void setDrawHealthBars(const bool enable) { m_drawHealthBars = enable; }
     bool isDrawingHealthBars() const { return m_drawHealthBars; }
 
+    void setDrawSelfHealthBar(const bool enable) { m_drawSelfHealthBar = enable; }
+    bool isDrawingSelfHealthBar() const { return m_drawSelfHealthBar; }
+
     void setDrawLights(bool enable);
     bool isDrawingLights() const;
 
@@ -260,6 +263,7 @@ private:
     bool m_resetCoveredCache{ true };
     bool m_shaderSwitchDone{ true };
     bool m_drawHealthBars{ true };
+    bool m_drawSelfHealthBar{ true };
     bool m_drawManaBar{ true };
     bool m_drawNames{ true };
     bool m_smooth{ true };

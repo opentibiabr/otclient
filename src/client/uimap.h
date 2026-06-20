@@ -45,6 +45,7 @@ public:
     void setFloorViewMode(Otc::FloorViewMode viewMode);
     void setDrawNames(bool enable);
     void setDrawHealthBars(bool enable);
+    void setDrawSelfHealthBar(bool enable);
     void setDrawLights(bool enable);
     void setLimitVisibleDimension(bool enable);
     void setDrawManaBar(bool enable);
@@ -54,6 +55,7 @@ public:
     void setDrawViewportEdge(bool force);
     bool isDrawingNames();
     bool isDrawingHealthBars();
+    bool isDrawingSelfHealthBar();
     bool isDrawingLights();
     bool isLimitedVisibleDimension();
     bool isDrawingManaBar();

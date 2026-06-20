@@ -276,6 +276,16 @@ return {
             end
         end
     },
+    displayOwnHealth                  = {
+        value = true,
+        action = function(value, options, controller, panels, extraWidgets)
+            panels.gameMapPanel:setDrawSelfHealthBar(value)
+
+            if g_gameConfig.isDrawingInformationByWidget() then
+                modules.game_creatureinformation.toggleInformation()
+            end
+        end
+    },
     displayMana                       = {
         value = true,
         action = function(value, options, controller, panels, extraWidgets)

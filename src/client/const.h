@@ -45,6 +45,7 @@ namespace Otc
         DrawNames = 1 << 3,
         DrawManaBar = 1 << 4,
         DrawHarmony = 1 << 5,
+        DrawSelfHealthBar = 1 << 6,
         DrawThingsAndLights = DrawThings | DrawLights,
         DrawCreatureInfo = DrawBars | DrawNames | DrawManaBar | DrawHarmony,
     };

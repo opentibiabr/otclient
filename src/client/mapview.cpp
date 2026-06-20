@@ -220,6 +220,7 @@ void MapView::drawCreatureInformation() {
     if (m_drawHealthBars) { flags |= Otc::DrawBars; }
     if (m_drawManaBar) { flags |= Otc::DrawManaBar; }
     if (m_drawHarmony) { flags |= Otc::DrawHarmony; }
+    if (m_drawSelfHealthBar) { flags |= Otc::DrawSelfHealthBar; }
 
     Position _camera = m_posInfo.camera;
     const bool alwaysTransparent = m_floorViewMode == Otc::ALWAYS_WITH_TRANSPARENCY && _camera.coveredUp(m_posInfo.camera.z - m_floorMin);
