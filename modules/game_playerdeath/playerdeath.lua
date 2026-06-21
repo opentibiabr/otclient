@@ -41,7 +41,6 @@ end
 function display(deathType, penalty)
     displayDeadMessage()
     openWindow(deathType, penalty)
-    scheduleReconnect()
 end
 
 function displayDeadMessage()
@@ -91,15 +90,4 @@ function openWindow(deathType, penalty)
 
     okButton.onClick = okFunc
     cancelButton.onClick = cancelFunc
-end
-
-function scheduleReconnect()
-    if not g_settings.getBoolean('autoReconnect') then
-        return
-    end
-    deathController:scheduleEvent(function()
-        deathController.ui = destroyWindows()
-        g_game.cancelLogin()
-        CharacterList.doLogin()
-    end, 2000, 'scheduleAutoReconnect')
 end

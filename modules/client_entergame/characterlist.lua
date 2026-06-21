@@ -53,17 +53,6 @@ local PINNED_CHARACTERS_SETTING = 'characterlist-pinned-characters'
 ]]
 local SHOW_PREMIUM_WIDGETS = true
 
--- autoReconnect Button
-local autoReconnectButton
-local autoReconnectEvent
-local lastLogout = 0
-local function removeAutoReconnectEvent() --prevent
-    if autoReconnectEvent then
-        removeEvent(autoReconnectEvent)
-        autoReconnectEvent = nil
-    end
-end
-
 local function resetUIReferences()
     characterList = nil
     panelSort = nil
@@ -405,7 +394,6 @@ local function tryLogin(charInfo, tries)
     -- save last used character
     g_settings.set('last-used-character', charInfo.characterName)
     g_settings.set('last-used-world', charInfo.worldName)
-    removeAutoReconnectEvent()
 end
 
 local function updateWait(timeStart, timeEnd)
@@ -605,9 +593,6 @@ function CharacterList.init()
     connect(g_game, {
         onGameEnd = CharacterList.showAgain
     })
-    connect(g_game, {
-        onLogout = onLogout
-    })
 
     if G.characters then
         CharacterList.create(G.characters, G.characterAccount)
@@ -635,9 +620,6 @@ function CharacterList.terminate()
     })
     disconnect(g_game, {
         onGameEnd = CharacterList.showAgain
-    })
-    disconnect(g_game, {
-        onLogout = onLogout
     })
 
     if charactersWindow then
@@ -672,7 +654,6 @@ function CharacterList.terminate()
         loginEvent = nil
     end
 
-    removeAutoReconnectEvent()
     destroyCreateAccount()
 
     CharacterList = nil
@@ -690,14 +671,12 @@ function CharacterList.create(characters, account, otui)
     charactersWindow = g_ui.displayUI(otui)
     characterList = charactersWindow:getChildById('characters')
     panelSort = charactersWindow:getChildById('characterTable')
-    autoReconnectButton = charactersWindow:getChildById('autoReconnect')
     showHiddenCheckbox = charactersWindow:recursiveGetChildById('checkBoxHidden')
     showOutfitsCheckbox = charactersWindow:recursiveGetChildById('checkBoxOutfit')
     premiumBenefitsPanel = charactersWindow:getChildById('premiumBenefitsPanel')
     premiumButton = charactersWindow:getChildById('premiumButton')
 
     characterList.onChildFocusChange = function(self, focusedChild, oldFocusedChild)
-        removeAutoReconnectEvent()
         if oldFocusedChild then oldFocusedChild:updateOnStates() end
         if focusedChild then
             focusedChild:updateOnStates()
@@ -756,18 +735,6 @@ function CharacterList.create(characters, account, otui)
     updatePremiumBenefitsVisibility(account)
 
     CharacterList.rebuildCharactersList()
-
-    autoReconnectButton.onClick = function(widget)
-        local autoReconnect = not g_settings.getBoolean('autoReconnect', false)
-        autoReconnectButton:setOn(autoReconnect)
-        g_settings.set('autoReconnect', autoReconnect)
-        local statusText = autoReconnect and 'Auto reconnect: On' or 'Auto reconnect: off'
-        if not shouldShowAppearance() then
-            statusText = autoReconnect and 'Auto reconnect:\n On' or 'Auto reconnect:\n off'
-        end
-
-        autoReconnectButton:setText(statusText)
-    end
 end
 
 function CharacterList.rebuildCharactersList()
@@ -886,19 +853,9 @@ function CharacterList.show()
 
     updatePremiumBenefitsVisibility(G.characterAccount)
     updateSortButtons()
-
-    local autoReconnect = g_settings.getBoolean('autoReconnect', false)
-    autoReconnectButton:setOn(autoReconnect)
-    local reconnectStatus = autoReconnect and 'On' or 'Off'
-    if not shouldShowAppearance() then
-        autoReconnectButton:setText('Auto reconnect:\n ' .. reconnectStatus)
-    else
-        autoReconnectButton:setText('Auto reconnect: ' .. reconnectStatus)
-    end
 end
 
 function CharacterList.hide(showLogin)
-    removeAutoReconnectEvent()
     charactersWindow:hide()
 
     if showLogin and EnterGame and not g_game.isOnline() then
@@ -909,7 +866,6 @@ end
 function CharacterList.showAgain()
     if characterList and characterList:hasChildren() then
         CharacterList.show()
-        scheduleAutoReconnect()
     end
 end
 
@@ -921,7 +877,6 @@ function CharacterList.isVisible()
 end
 
 function CharacterList.doLogin()
-    removeAutoReconnectEvent()
     local selected = characterList:getFocusedChild()
     if selected then
         local charInfo = {
@@ -1053,27 +1008,3 @@ function CharacterList.updateCharactersAppearances(showOutfits)
     end
 end
 
-function onLogout()
-    lastLogout = g_clock.millis()
-end
-
-function scheduleAutoReconnect()
-    if not g_settings.getBoolean('autoReconnect') or lastLogout + 2000 > g_clock.millis() then
-        return
-    end
-
-    removeAutoReconnectEvent()
-    autoReconnectEvent = scheduleEvent(executeAutoReconnect, 2500)
-end
-
-function executeAutoReconnect()
-    if not g_settings.getBoolean('autoReconnect') then
-        return
-    end
-
-    if errorBox then
-        errorBox:destroy()
-        errorBox = nil
-    end
-    CharacterList.doLogin()
-end

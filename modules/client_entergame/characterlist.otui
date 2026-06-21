@@ -631,7 +631,7 @@ MainWindow
   Panel
     id: buttonHidden
     anchors.left: parent.left
-    anchors.bottom: autoReconnect.top
+    anchors.bottom: parent.bottom
     margin-bottom: 6
     size: 165 22
     border-width-top: 1
@@ -694,22 +694,6 @@ MainWindow
       text-auto-resize: true
       color: #c0c0c0
       @onCheckChange: onShowOutfits(self, self:isChecked())
-
-  Button
-    id: autoReconnect
-    anchors.left: parent.left
-    anchors.bottom: parent.bottom
-    @onSetup: |
-      if g_game.getFeature(GameEnterGameShowAppearance) then
-        self:setWidth(140)
-      else
-        self:setWidth(75)
-        self:setFont('small-9px')
-      end
-    $!on:
-      image-color: red
-    $on:
-      image-color: green
 
   Button
     id: buttonOk
