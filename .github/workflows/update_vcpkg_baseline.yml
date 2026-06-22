@@ -1,8 +1,7 @@
 name: Update vcpkg Baseline
 
 on:
-  schedule:
-    - cron: "0 2 * * *"
+  # schedule removido: bump de baseline manual p/ nao esfriar o cache vcpkg
   workflow_dispatch:
 
 concurrency:
