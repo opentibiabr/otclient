@@ -94,7 +94,12 @@ function ItemsDatabase.setRarityItem(widget, item, style)
 
     local clip, imagePath = ItemsDatabase.getClipAndImagePath(item)
 
-    if not imagePath then
+    if not item or not imagePath then
+        widget:setImageSource('/images/ui/item')
+        widget:setImageClip(nil)
+        if style then
+            widget:setStyle(style)
+        end
         return
     end
 
