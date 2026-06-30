@@ -1,0 +1,127 @@
+ButtonTibia14 < UIButton
+  id: MajorCharms
+  font: verdana-11px-antialised
+  margin: -1
+  text-offset: 0 0
+  image-source: /images/ui/button
+  image-clip: 0 0 22 23
+  image-border: 3
+  padding: 5 10 5 10
+  opacity: 1.0
+  color: #b9b9b9ff
+
+  $on:
+    margin-top: -1
+  $checked:
+    image-clip: 0 46 22 23
+  $pressed:
+    image-clip: 0 46 22 23
+  UIWidget
+    id: icon
+    anchors.verticalCenter: parent.verticalCenter
+    anchors.left: parent.left
+    phantom: true
+TreeCategory < UIWidget
+  size: 115 22
+  border-width-top: 1
+  border-color-top: black
+  border-width-left: 1
+  border-color-left: black
+  border-width-bottom: 1
+  border-color-bottom: #747474
+  border-width-right: 1
+  border-color-right: #747474
+  phantom: true
+
+  UIWidget
+    id: Button
+    size: 115 20
+    anchors.fill: parent
+    margin-left: 1
+    margin-top: 1
+    image-source: /images/ui/button-grey-up
+    image-border: 5
+    
+    opacity: 1.0
+    $pressed:
+      image-source: /images/ui/button-grey-down
+    $checked:
+      image-source: /images/ui/button-grey-down
+    UIWidget
+      id: Icon
+      size: 13 13
+      anchors.left: parent.left
+      anchors.verticalCenter: parent.verticalCenter
+      margin-left: 10
+      phantom: true
+      $checked:
+        margin-left: 11
+        margin-top: 1
+      $!checked:
+        margin-left: 10
+        margin-top: 0
+    Label
+      id: Title
+      anchors.left: Icon.right
+      anchors.verticalCenter: Icon.verticalCenter
+      margin-left: 5
+      text-align: left
+      !text: tr('General Stats')
+      color: #ffffff
+      phantom: true
+
+      font: cipsoftFont
+      $checked:
+        text-offset: 12 10
+      $!checked:
+        text-offset: 0 0
+    UIWidget
+      id: Arrow
+      size: 7 7
+      anchors.right: parent.right
+      anchors.verticalCenter: parent.verticalCenter
+      margin-right: 5
+      phantom: true
+      image-source: /images/ui/icon-arrow7x7-down
+      visible: false
+
+  UIWidget
+    id: Arrow
+    size: 7 7
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    phantom: true
+    image-source: /images/ui/icon-arrow7x7-right
+    visible: false
+    margin-left: -6
+    phantom: true
+
+TreeSubCategory < TreeCategory
+  phantom: true
+  border-width-top: 1
+  border-color-top: black
+  border-width-left: 1
+  border-color-left: black
+  border-width-bottom: 1
+  border-color-bottom: #747474
+  border-width-right: 1
+  border-color-right: #747474
+
+
+
+SubCategoryContainer < UIWidget
+  border-width-top: 1
+  border-color-top: black
+  border-width-left: 1
+  border-color-left: black
+  border-width-bottom: 1
+  border-color-bottom: #747474
+  border-width-right: 1
+  border-color-right: #747474
+  margin-top: -8
+  phantom: true
+  visible: false
+  layout:
+    type: verticalBox
+    fit-children: true
+    spacing: -1

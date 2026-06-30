@@ -1,0 +1,9 @@
+Module
+  name: game_compendium
+  description: game_compendium
+  author: kokekanon, libergod
+  website: https://github.com/opentibiabr/otclient
+  sandboxed: true
+  scripts: [ game_compendium ]
+  @onLoad: compendiumController:init()
+  @onUnload: compendiumController:terminate()

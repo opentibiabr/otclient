@@ -62,23 +62,33 @@ function UITable:onStyleApply(styleName, styleNode)
         if value ~= false then
             if name == 'table-data' then
                 addEvent(function()
-                    self:setTableData(self:getParent():getChildById(value))
+                    if self.setTableData then
+                        self:setTableData(self:getParent():getChildById(value))
+                    end
                 end)
             elseif name == 'column-style' then
                 addEvent(function()
-                    self:setColumnStyle(value)
+                    if self.setColumnStyle then
+                        self:setColumnStyle(value)
+                    end
                 end)
             elseif name == 'row-style' then
                 addEvent(function()
-                    self:setRowStyle(value)
+                    if self.setRowStyle then
+                        self:setRowStyle(value)
+                    end
                 end)
             elseif name == 'header-column-style' then
                 addEvent(function()
-                    self:setHeaderColumnStyle(value)
+                    if self.setHeaderColumnStyle then
+                        self:setHeaderColumnStyle(value)
+                    end
                 end)
             elseif name == 'header-row-style' then
                 addEvent(function()
-                    self:setHeaderRowStyle(value)
+                    if self.setHeaderRowStyle then
+                        self:setHeaderRowStyle(value)
+                    end
                 end)
             end
         end

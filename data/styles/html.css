@@ -72,8 +72,13 @@ br {
   height: 15;
 }
 
-div {
+div,
+center {
   display: block;
+}
+
+center {
+  text-align: center;
 }
 
 pre {
@@ -256,6 +261,17 @@ legend {
 }
 summary {
   display: list-item;
+}
+
+/* === Inline semantic / phrasing content === */
+em,
+i {
+  font-style: italic;
+}
+
+strong,
+b {
+  font-weight: bold;
 }
 
 /* === Hidden elements === */
