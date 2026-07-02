@@ -739,6 +739,7 @@ void CocoaWindow::handleMouseButton(Fw::MouseButton button, bool pressed, const 
 void CocoaWindow::handleMouseMove(const Point& position)
 {
     m_inputEvent.reset(Fw::MouseMoveInputEvent);
+    m_inputEvent.mouseMoved = position - m_inputEvent.mousePos;
     m_inputEvent.mousePos = position;
 
     if (m_onInputEvent)
