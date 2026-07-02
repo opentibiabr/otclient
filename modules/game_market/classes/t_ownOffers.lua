@@ -52,10 +52,17 @@ function MarketOwnOffers.onParseMyOffers(buyOffers, sellOffers)
         local updateOffer = buyOffers[1]
         for i, data in pairs(MarketOwnOffers.myBuyOffers) do
             if data.counter == updateOffer.counter and data.timestamp == updateOffer.timestamp then
-                table.remove(MarketOwnOffers.myBuyOffers, i)
+                if updateOffer.amount == 0 then
+                    table.remove(MarketOwnOffers.myBuyOffers, i)
+                else
+                    MarketOwnOffers.myBuyOffers[i] = updateOffer
+                end
                 updatedBuy = true
                 break
             end
+        end
+        if not updatedBuy and updateOffer.amount == 0 then
+            updatedBuy = true
         end
     end
 
@@ -63,10 +70,17 @@ function MarketOwnOffers.onParseMyOffers(buyOffers, sellOffers)
         local updateOffer = sellOffers[1]
         for i, data in pairs(MarketOwnOffers.mySellOffers) do
             if data.counter == updateOffer.counter and data.timestamp == updateOffer.timestamp then
-                table.remove(MarketOwnOffers.mySellOffers, i)
+                if updateOffer.amount == 0 then
+                    table.remove(MarketOwnOffers.mySellOffers, i)
+                else
+                    MarketOwnOffers.mySellOffers[i] = updateOffer
+                end
                 updatedSell = true
                 break
             end
+        end
+        if not updatedSell and updateOffer.amount == 0 then
+            updatedSell = true
         end
     end
 
