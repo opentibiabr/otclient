@@ -671,7 +671,12 @@ void ProtocolGame::parseMessage(const InputMessagePtr& msg)
                     g_logger.warning(
                         "[{}] Unhandled opcode 0x{:02X} ({}) with {} unread bytes; previous opcode: 0x{:02X} ({}); next bytes: {}",
                         g_game.getClientVersion(), opcode, opcode, unreadSize, prevOpcode, prevOpcode, hexDump.str());
-                    msg->setReadPos(msg->getMessageSize());
+                    // getMessageSize() is the message body length, not an absolute read position.
+                    // Passing it to setReadPos() leaves eof() permanently false (readPos - headerPos
+                    // stays below messageSize because headerPos > 0), so the enclosing while (!eof())
+                    // loop keeps parsing past the end of the message -> busy loop / OOM on any unknown
+                    // opcode. Skip the remaining bytes instead so eof() is reached and parsing stops.
+                    msg->skipBytes(static_cast<uint16_t>(unreadSize));
                     break;
                 }
             }
