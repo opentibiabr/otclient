@@ -585,15 +585,23 @@ int LuaInterface::lua_dofile(lua_State* L)
     ScopedState scopedState(g_lua, L);
     const auto& file = g_lua.popString();
 
+    bool failed = false;
     try {
         g_lua.loadScript(file);
         g_lua.call(0, LUA_MULTRET);
-        return g_lua.stackSize();
     } catch (stdext::exception& e) {
         g_lua.pushString(e.what());
+        failed = true;
+    }
+
+    // see luaCppFunctionCallback: defer the lua_error() non-local jump
+    // until after the catch block has exited normally.
+    if (failed) {
         scopedState.restore();
         return lua_error(L);
     }
+
+    return g_lua.stackSize();
 }
 
 int LuaInterface::lua_dofiles(lua_State* L)
@@ -621,15 +629,23 @@ int LuaInterface::lua_loadfile(lua_State* L)
     ScopedState scopedState(g_lua, L);
     const auto& fileName = g_lua.popString();
 
+    bool failed = false;
     try {
         g_lua.loadScript(fileName);
-        return 1;
     } catch (stdext::exception& e) {
         g_lua.pushNil();
         g_lua.pushString(e.what());
+        failed = true;
+    }
+
+    // see luaCppFunctionCallback: defer the lua_error() non-local jump
+    // until after the catch block has exited normally.
+    if (failed) {
         scopedState.restore();
         return lua_error(L);
     }
+
+    return 1;
 }
 
 int LuaInterface::luaErrorHandler(lua_State* L)
@@ -657,6 +673,7 @@ int LuaInterface::luaCppFunctionCallback(lua_State* L)
     assert(funcPtr);
 
     int numRets = 0;
+    bool failed = false;
 
     // do the call
     try {
@@ -670,23 +687,33 @@ int LuaInterface::luaCppFunctionCallback(lua_State* L)
         while (g_lua.stackSize() > 0)
             g_lua.pop();
         numRets = 0;
+        failed = true;
         g_lua.pushString(fmt::format("C++ call failed: {}", g_lua.traceback(e.what())));
-        scopedState.restore();
-        return lua_error(L);
     } catch (const std::exception& e) {
         --g_lua.m_cppCallbackDepth;
         while (g_lua.stackSize() > 0)
             g_lua.pop();
         numRets = 0;
+        failed = true;
         g_lua.pushString(fmt::format("C++ std::exception: {}", g_lua.traceback(e.what())));
-        scopedState.restore();
-        return lua_error(L);
     } catch (...) {
         --g_lua.m_cppCallbackDepth;
         while (g_lua.stackSize() > 0)
             g_lua.pop();
         numRets = 0;
+        failed = true;
         g_lua.pushString(g_lua.traceback("Unknown C++ exception"));
+    }
+
+    // lua_error() performs a non-local jump (SEH-based unwind in LuaJIT on
+    // Windows x64) back to the nearest lua_pcall boundary. Raising it from
+    // *inside* a live catch block races with that same exception's own
+    // still-in-flight C++ unwind bookkeeping and corrupts the heap
+    // (STATUS_HEAP_CORRUPTION when the caught exception's std::string
+    // member is later destroyed). Deferring the jump until after the
+    // catch block has exited normally lets the C++ exception fully
+    // unwind first.
+    if (failed) {
         scopedState.restore();
         return lua_error(L);
     }
@@ -1413,12 +1440,18 @@ void LuaInterface::loadFiles(const std::string& directory, const bool recursive,
         if (!contains.empty() && fileName.find(contains) == std::string::npos)
             continue;
 
+        bool failed = false;
         try {
             g_lua.loadScript(fullPath);
             g_lua.call(0, 0);
         } catch (stdext::exception& e) {
             g_lua.pushString(e.what());
-            g_lua.error();
+            failed = true;
         }
+
+        // see luaCppFunctionCallback: defer the lua_error() non-local jump
+        // until after the catch block has exited normally.
+        if (failed)
+            g_lua.error();
     }
 }
