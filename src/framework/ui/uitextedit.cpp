@@ -172,8 +172,13 @@ void UITextEdit::drawSelf(const DrawPoolType drawPane)
                     }
                 }
 
-                if (width > 0)
-                    m_glyphsSelectBgRectCache.emplace_back(Rect(pos.x, pos.y, width, lineHeight));
+                if (width > 0) {
+                    // clip to the widget's visible area, like glyph coords do; otherwise
+                    // selection rects for scrolled-out lines are drawn outside the widget
+                    const Rect bgRect = Rect(pos.x, pos.y, width, lineHeight).intersection(getPaddingRect());
+                    if (bgRect.isValid())
+                        m_glyphsSelectBgRectCache.emplace_back(bgRect);
+                }
             }
         }
 
