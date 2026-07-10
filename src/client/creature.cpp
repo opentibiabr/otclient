@@ -1205,6 +1205,10 @@ uint16_t Creature::getCurrentAnimationPhase(const bool mount)
     }
 
     if (thingType->isAnimateAlways()) {
+        if (const auto animator = thingType->getAnimator()) {
+            return static_cast<uint16_t>(thingType->getIdleAnimationPhases() + animator->getPhase());
+        }
+
         const int animationPhases = thingType->getAnimationPhases();
         if (animationPhases <= 0) return 0;
 
