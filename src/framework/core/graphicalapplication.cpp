@@ -213,6 +213,11 @@ void GraphicalApplication::run()
             const bool canDrawForeground = !g_drawPool.isDrawing(DrawPoolType::FOREGROUND) && m_drawEvents->canDraw(DrawPoolType::FOREGROUND);
 
             if (canDrawMap()) {
+                {
+                    AutoStat s(STATS_RENDER, "DrawPreload");
+                    m_drawEvents->preLoad();
+                }
+
                 if (canDrawForeground) {
                     tasks.emplace_back(g_asyncDispatcher->submit_task([] {
                         AutoStat s(STATS_RENDER, "DrawForegroundUI");
@@ -220,10 +225,6 @@ void GraphicalApplication::run()
                     }));
                 }
 
-                {
-                    AutoStat s(STATS_RENDER, "DrawPreload");
-                    m_drawEvents->preLoad();
-                }
                 static constexpr std::array<DrawPoolType, 2> types{ DrawPoolType::LIGHT, DrawPoolType::FOREGROUND_MAP };
                 for (const auto type : types) {
                     if (m_drawEvents->canDraw(type)) {
