@@ -3623,6 +3623,16 @@ void ProtocolGame::parseTutorialHint(const InputMessagePtr& msg)
 
 void ProtocolGame::parseAutomapFlag(const InputMessagePtr& msg)
 {
+    if (g_game.getClientVersion() >= 1200) {
+        // Tibia 12+: 0xDD is the "Cyclopedia Map Data" packet family and carries a
+        // subtype byte before the payload (Canary: CyclopediaMapData_t). The classic
+        // minimap marker is subtype 0 (MinimapMarker) — the only one Canary sends.
+        const uint8_t subtype = msg->getU8();
+        if (subtype != 0) {
+            throw Exception("ProtocolGame::parseAutomapFlag: unhandled cyclopedia map data subtype {}", subtype);
+        }
+    }
+
     const auto& pos = getPosition(msg);
     const uint8_t icon = msg->getU8();
     const auto& description = msg->getString();
