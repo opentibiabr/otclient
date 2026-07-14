@@ -127,7 +127,7 @@ private:
     int destroyedThings = 0;
     int createdCreatures = 0;
     int destroyedCreatures = 0;
-    bool paused = false;
+    std::atomic_bool paused { false };
     std::mutex m_mutex;
 };
 
