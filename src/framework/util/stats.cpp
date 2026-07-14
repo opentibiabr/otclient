@@ -36,7 +36,7 @@
 Stats g_stats;
 
 void Stats::add(int type, Stat* stat) {
-    if (type < 0 || type > STATS_LAST)
+    if (type < 0 || type > STATS_LAST || paused)
         return;
     std::lock_guard<std::mutex> lock(m_mutex);
 
