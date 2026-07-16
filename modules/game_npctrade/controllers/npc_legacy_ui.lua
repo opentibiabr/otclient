@@ -278,8 +278,10 @@ function getSellQuantityLegacy(item)
                 removeAmount = removeAmount + inventoryItem:getCount()
             end
         end
+        -- equipped items with an active imbuement are not part of the server goods count
+        removeAmount = math.max(0, removeAmount - controllerNpcTrader:getEquippedImbuedCount(item:getId()))
     end
-    return playerItems[item:getId()] - removeAmount
+    return math.max(0, playerItems[item:getId()] - removeAmount)
 end
 
 function canTradeItemLegacy(item)

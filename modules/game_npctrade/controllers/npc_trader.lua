@@ -329,6 +329,57 @@ function controllerNpcTrader:getPlayerMoney()
     return player:getTotalMoney()
 end
 
+-- Equipped items with an active imbuement are already excluded from the goods
+-- count the server sends (Item::hasMarketAttributes), so subtracting them again
+-- here would hide sellable copies the player carries in containers.
+function controllerNpcTrader:onUpdateEquippedImbuements(items)
+    local counts = {}
+    for _, entry in ipairs(items or {}) do
+        local ptr = entry.item
+        if ptr then
+            local hasActiveImbuement = false
+            for _, slot in pairs(entry.slots or {}) do
+                if slot.duration and slot.duration > 0 then
+                    hasActiveImbuement = true
+                    break
+                end
+            end
+            if hasActiveImbuement then
+                local id = ptr:getId()
+                counts[id] = (counts[id] or 0) + ptr:getCount()
+            end
+        end
+    end
+    self.equippedImbuedCounts = counts
+
+    if self:isLegacyMode() then
+        refreshPlayerGoods()
+    elseif self.isTradeOpen then
+        self:refreshPlayerGoods()
+    end
+end
+
+function controllerNpcTrader:getEquippedImbuedCount(itemId)
+    return (self.equippedImbuedCounts and self.equippedImbuedCounts[itemId]) or 0
+end
+
+function controllerNpcTrader:startEquippedImbuementsTracking()
+    self.equippedImbuedCounts = {}
+    if g_game.getClientVersion() >= 1100 then
+        g_game.imbuementDurations(true)
+    end
+end
+
+function controllerNpcTrader:stopEquippedImbuementsTracking()
+    self.equippedImbuedCounts = {}
+    if g_game.getClientVersion() < 1100 or not g_game.isOnline() then
+        return
+    end
+    local tracker = modules.game_imbuementtracker
+    local trackerOn = tracker and tracker.imbuementTrackerButton and tracker.imbuementTrackerButton:isOn() or false
+    g_game.imbuementDurations(trackerOn)
+end
+
 function controllerNpcTrader:getSellQuantity(itemPtr)
     if not itemPtr then
         return 0
@@ -347,6 +398,7 @@ function controllerNpcTrader:getSellQuantity(itemPtr)
                 equippedCount = equippedCount + item:getCount()
             end
         end
+        equippedCount = math.max(0, equippedCount - self:getEquippedImbuedCount(id))
         return math.max(0, inventoryTotal - equippedCount)
     end
 

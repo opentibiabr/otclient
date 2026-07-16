@@ -26,6 +26,7 @@ function controllerNpcTrader:onGameStart()
             onNpcChatWindow(data)
         end,
         onOpenNpcTrade = function(...)
+            self:startEquippedImbuementsTracking()
             if self:isLegacyMode() then
                 onOpenNpcTrade(...)
             else
@@ -39,7 +40,11 @@ function controllerNpcTrader:onGameStart()
                 self:onPlayerGoods(money, items)
             end
         end,
+        onUpdateImbuementTracker = function(items)
+            self:onUpdateEquippedImbuements(items)
+        end,
         onNpcChatWindowClose = function()
+            self:stopEquippedImbuementsTracking()
             if self:isLegacyMode() then
                 self:legacy_hide()
             else
@@ -47,6 +52,7 @@ function controllerNpcTrader:onGameStart()
             end
         end,
         onCloseNpcTrade = function()
+            self:stopEquippedImbuementsTracking()
             if self:isLegacyMode() then
                 self:legacy_hide()
             else
