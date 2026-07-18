@@ -513,24 +513,46 @@ local function normalizeDescriptor(config, version, descriptor)
   return descriptor
 end
 
-local function findReleaseArchive(release)
+local function findReleaseArchive(release, version)
   if type(release.assets) ~= 'table' then
     return nil
   end
 
-  local fallback
+  local tag = tostring(release.tag_name or ''):lower()
+  local label = versionLabel(version):lower()
+  local bestUrl
+  local bestScore = 0
+
   for _, asset in ipairs(release.assets) do
     local name = tostring(asset.name or ''):lower()
     local url = asset.browser_download_url
-    if url and isArchivePath(name) then
-      fallback = fallback or url
-      if not name:find('mac', 1, true) and not name:find('.app.zip', 1, true) then
-        return url
+    if url and isArchivePath(name) and not name:find('mac', 1, true) and not name:find('.app.zip', 1, true) then
+      local score = 0
+      if tag ~= '' and name:find(tag, 1, true) then
+        score = score + 4
+      end
+      if label ~= '' and name:find(label, 1, true) then
+        score = score + 2
+      end
+
+      -- Releases may contain unrelated legacy client archives. Only accept
+      -- an archive that identifies the requested tag or client version.
+      if score > 0 then
+        if name:find('client', 1, true) then
+          score = score + 1
+        end
+        if name:find('original', 1, true) or name:find('linux', 1, true) then
+          score = score - 1
+        end
+        if score > bestScore then
+          bestUrl = url
+          bestScore = score
+        end
       end
     end
   end
 
-  return fallback
+  return bestUrl
 end
 
 local function codeloadZipUrl(repository, tag)
@@ -553,7 +575,7 @@ local function descriptorFromRelease(config, version, release)
     manifestUrl = baseUrl .. 'assets.json',
     manifestSha256Url = baseUrl .. 'assets.json.sha256',
     treeUrl = string.format('https://api.github.com/repos/%s/git/trees/%s?recursive=1', config.repository, tag),
-    archiveUrl = findReleaseArchive(release) or codeloadZipUrl(config.repository, tag)
+    archiveUrl = findReleaseArchive(release, version) or codeloadZipUrl(config.repository, tag)
   })
 end
 
