@@ -69,6 +69,13 @@ local function isLzmaPath(path)
   return endsWith(tostring(path or ''):lower(), '.lzma')
 end
 
+local function isMacArchivePath(path)
+  path = tostring(path or ''):lower()
+  return endsWith(path, '.app.zip') or
+         path:find('macos', 1, true) or
+         path:find('%f[%a]mac%f[^%a]')
+end
+
 local function isNotFoundError(message)
   message = tostring(message or ''):lower()
   return message:find('404', 1, true) or message:find('not found', 1, true)
@@ -519,14 +526,14 @@ local function findReleaseArchive(release, version)
   end
 
   local tag = tostring(release.tag_name or ''):lower()
-  local label = versionLabel(version):lower()
+  local label = version and versionLabel(version):lower() or ''
   local bestUrl
   local bestScore = 0
 
   for _, asset in ipairs(release.assets) do
     local name = tostring(asset.name or ''):lower()
     local url = asset.browser_download_url
-    if url and isArchivePath(name) and not name:find('mac', 1, true) and not name:find('.app.zip', 1, true) then
+    if url and isArchivePath(name) and not isMacArchivePath(name) then
       local score = 0
       if tag ~= '' and name:find(tag, 1, true) then
         score = score + 4
