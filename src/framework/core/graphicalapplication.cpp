@@ -25,6 +25,7 @@
 #include "asyncdispatcher.h"
 #include "clock.h"
 #include "eventdispatcher.h"
+#include "framework/graphics/declarations.h"
 #include "garbagecollection.h"
 #include "client/game.h"
 #include "framework/graphics/drawpoolmanager.h"
@@ -168,7 +169,7 @@ bool GraphicalApplication::canDrawMap() const {
     if (!m_drawEvents->canDraw(MAP))
         return false;
 
-    static constexpr std::array<DrawPoolType, 3> types{ MAP, LIGHT, FOREGROUND_MAP };
+    static constexpr std::array<DrawPoolType, 4> types{ MAP, LIGHT, FOREGROUND_MAP, CREATURE_INFORMATION };
 
     for (DrawPoolType type : types) {
         if (g_drawPool.isDrawing(type))

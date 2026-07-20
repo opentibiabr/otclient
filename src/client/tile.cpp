@@ -23,6 +23,7 @@
 #include "tile.h"
 
 #include "client.h"
+#include "client/const.h"
 #include "localplayer.h"
 #include "effect.h"
 #include "game.h"
@@ -66,7 +67,7 @@ void drawThing(const ThingPtr& thing, const Point& dest, const int flags, uint8_
     }
 }
 
-void Tile::draw(const Point& dest, const int flags, LightView* lightView)
+void Tile::draw(const MapPosInfo& mapRect, const Point& dest, const int flags, LightView* lightView)
 {
     m_lastDrawDest = dest;
 
@@ -96,18 +97,18 @@ void Tile::draw(const Point& dest, const int flags, LightView* lightView)
     // after we render 2x2 lying corpses, we must redraw previous creatures/ontop above them
     if (m_tilesRedraw) {
         for (const auto& tile : *m_tilesRedraw) {
-            tile->drawCreature(tile->m_lastDrawDest, flags, true, drawElevation);
+            tile->drawCreature(mapRect, tile->m_lastDrawDest, flags, true, drawElevation);
             tile->drawTop(tile->m_lastDrawDest, flags, true, drawElevation);
         }
     }
 
-    drawCreature(dest, flags, false, drawElevation);
+    drawCreature(mapRect, dest, flags, false, drawElevation);
     drawTop(dest, flags, false, drawElevation);
     drawAttachedEffect(dest, dest, lightView, true);
     drawAttachedParticlesEffect(dest);
 }
 
-void Tile::drawLight(const Point& dest, LightView* lightView) {
+void Tile::drawLight(const MapPosInfo& mapRect, const Point& dest, LightView* lightView) {
     uint8_t drawElevation = 0;
 
     for (const auto& thing : m_things) {
@@ -117,7 +118,7 @@ void Tile::drawLight(const Point& dest, LightView* lightView) {
         updateElevation(thing, drawElevation);
     }
 
-    drawCreature(dest, Otc::DrawLights, true, drawElevation, lightView);
+    drawCreature(mapRect, dest, Otc::DrawLights, true, drawElevation, lightView);
 
     if (m_effects) {
         for (const auto& effect : *m_effects)
@@ -127,7 +128,7 @@ void Tile::drawLight(const Point& dest, LightView* lightView) {
     drawAttachedLightEffect(dest, lightView);
 }
 
-void Tile::drawCreature(const Point& dest, const int flags, const bool forceDraw, uint8_t drawElevation, LightView* lightView)
+void Tile::drawCreature(const MapPosInfo& mapRect, const Point& dest, const int flags, const bool forceDraw, uint8_t drawElevation, LightView* lightView)
 {
     if (!forceDraw && !m_drawTopAndCreature)
         return;
@@ -143,6 +144,7 @@ void Tile::drawCreature(const Point& dest, const int flags, const bool forceDraw
             }
 
             drawThing(thing, dest, flags, drawElevation, lightView);
+            static_cast<Creature*>(thing.get())->drawInformation(mapRect, dest - m_drawElevation * g_drawPool.getScaleFactor(), flags);
         }
     }
 
@@ -155,8 +157,10 @@ void Tile::drawCreature(const Point& dest, const int flags, const bool forceDraw
 
         if (flags == Otc::DrawLights)
             creature->drawLight(cDest, lightView);
-        else
+        else {
             creature->draw(cDest, flags & Otc::DrawThings);
+            creature->drawInformation(mapRect, cDest, flags);
+        }
     }
     g_drawPool.resetDrawOrder();
 

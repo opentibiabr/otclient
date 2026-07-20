@@ -125,7 +125,11 @@ void MapView::drawFloor()
 {
     const auto& cameraPosition = m_posInfo.camera;
 
-    const uint32_t flags = Otc::DrawThings;
+    uint32_t flags = Otc::DrawThings;
+    if (m_drawNames) { flags |= Otc::DrawNames; }
+    if (m_drawHealthBars) { flags |= Otc::DrawBars; }
+    if (m_drawManaBar) { flags |= Otc::DrawManaBar; }
+    if (m_drawHarmony) { flags |= Otc::DrawHarmony; }
 
     for (int_fast8_t z = m_floorMax; z >= m_floorMin; --z) {
         const float fadeLevel = getFadeLevel(z);
@@ -149,7 +153,7 @@ void MapView::drawFloor()
                 g_drawPool.setOpacity(inRange ? .16 : .7);
             }
 
-            tile->draw(transformPositionTo2D(tile->getPosition()), tileFlags);
+            tile->draw(m_posInfo, transformPositionTo2D(tile->getPosition()), tileFlags);
 
             if (alwaysTransparent)
                 g_drawPool.resetOpacity();
@@ -205,7 +209,7 @@ void MapView::drawLights() {
         }
 
         for (const auto& tile : map.tiles)
-            tile->drawLight(transformPositionTo2D(tile->getPosition()), m_lightView.get());
+            tile->drawLight(m_posInfo, transformPositionTo2D(tile->getPosition()), m_lightView.get());
 
         for (const auto& missile : g_map.getFloorMissiles(z))
             missile->draw(transformPositionTo2D(missile->getPosition()), false, m_lightView.get());

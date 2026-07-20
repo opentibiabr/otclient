@@ -22,6 +22,7 @@
 
 #include "uimap.h"
 
+#include "framework/graphics/declarations.h"
 #include "gameconfig.h"
 #include "lightview.h"
 #include "map.h"
@@ -59,6 +60,8 @@ void UIMap::draw(const DrawPoolType drawPane) {
             m_mapView->registerEvents();
         }, m_mapView->m_posInfo.rect, m_mapView->m_posInfo.srcRect,
            m_mapView->getCameraPosition().z == g_gameConfig.getMapSeaFloor() ? Color(0xFFA54C27U) : Color::black);
+
+        g_drawPool.preDraw(DrawPoolType::CREATURE_INFORMATION, [] {});
     } else if (drawPane == DrawPoolType::LIGHT) {
         g_drawPool.preDraw(drawPane, [this] {
             m_mapView->m_lightView->clear();
@@ -66,9 +69,12 @@ void UIMap::draw(const DrawPoolType drawPane) {
             m_mapView->m_lightView->draw(m_mapView->m_posInfo.rect, m_mapView->m_posInfo.srcRect);
         });
     } else if (drawPane == DrawPoolType::CREATURE_INFORMATION) {
-        g_drawPool.preDraw(drawPane, [this] {
-            m_mapView->drawCreatureInformation();
-        });
+        // FIXME: disabled multithreading of creature information drawing (instead draw it at the same time as MAP)
+        // due to an unknown reason creature information of other creatures are noticeably flickering when player is moving
+        //
+        // g_drawPool.preDraw(drawPane, [this] {
+        //     m_mapView->drawCreatureInformation();
+        // });
     } else if (drawPane == DrawPoolType::FOREGROUND_MAP) {
         g_drawPool.preDraw(drawPane, [this] {
             m_mapView->drawForeground(m_mapviewRect);

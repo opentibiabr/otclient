@@ -239,6 +239,10 @@ void Creature::drawInformation(const MapPosInfo& mapRect, const Point& dest, con
 
     Rect barsRect = backgroundRect;
 
+    g_drawPool.select(DrawPoolType::CREATURE_INFORMATION);
+    if (isScaled)
+        g_drawPool.scale(g_app.getCreatureInformationScale());
+
     if ((drawFlags & Otc::DrawBars) && (g_game.getClientVersion() >= 1100 ? !isNpc() : true)) {
         g_drawPool.addFilledRect(backgroundRect, Color::black);
         g_drawPool.addFilledRect(healthRect, fillColor);
@@ -359,6 +363,7 @@ void Creature::drawInformation(const MapPosInfo& mapRect, const Point& dest, con
     }
 
     g_drawPool.resetDrawOrder();
+    g_drawPool.select(DrawPoolType::MAP);
 }
 
 void Creature::internalDraw(Point dest, const Color& color)

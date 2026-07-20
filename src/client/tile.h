@@ -38,8 +38,8 @@ public:
     bool isTile() override { return true; }
 
     void onAddInMapView();
-    void draw(const Point& dest, int flags, LightView* lightView = nullptr);
-    void drawLight(const Point& dest, LightView* lightView);
+    void draw(const MapPosInfo& mapRect, const Point& dest, int flags, LightView* lightView = nullptr);
+    void drawLight(const MapPosInfo& mapRect, const Point& dest, LightView* lightView);
 
     void clean();
 
@@ -162,7 +162,7 @@ public:
 private:
     void updateThingStackPos();
     void drawTop(const Point& dest, int flags, bool forceDraw, uint8_t drawElevation);
-    void drawCreature(const Point& dest, int flags, bool forceDraw, uint8_t drawElevation, LightView* lightView = nullptr);
+    void drawCreature(const MapPosInfo& mapRect, const Point& dest, int flags, bool forceDraw, uint8_t drawElevation, LightView* lightView = nullptr);
 
     void updateCreatureRangeForInsert(int16_t stackPos, const ThingPtr& thing);
     void rebuildCreatureRange();
