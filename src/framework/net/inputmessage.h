@@ -92,7 +92,9 @@ public:
         if (available <= 0)
             return {};
 
-        bytes = std::min<uint8_t>(bytes, available);
+        // std::min<uint8_t> would narrow both operands to uint8_t, so any value
+        // above 255 wraps: an `available` of 256 yields 0 bytes (empty result).
+        bytes = std::min<int>(bytes, available);
         std::vector<uint8_t> data(bytes);
         std::memcpy(data.data(), m_buffer + m_readPos, bytes);
         return data;
