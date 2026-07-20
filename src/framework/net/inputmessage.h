@@ -24,6 +24,7 @@
 
 #include "declarations.h"
 #include <framework/luaengine/luaobject.h>
+#include <algorithm>
 
  // @bindclass
 class InputMessage final : public LuaObject
@@ -94,7 +95,9 @@ public:
 
         // std::min<uint8_t> would narrow both operands to uint8_t, so any value
         // above 255 wraps: an `available` of 256 yields 0 bytes (empty result).
-        bytes = std::min<int>(bytes, available);
+        // Clamp instead of min so a negative `bytes` cannot reach the vector
+        // constructor, where it would convert to a huge size_t.
+        bytes = std::clamp(bytes, 0, available);
         std::vector<uint8_t> data(bytes);
         std::memcpy(data.data(), m_buffer + m_readPos, bytes);
         return data;
