@@ -248,7 +248,9 @@ function GemAtelier.showGems(selectFirst, lastIndex)
 			gemList:focusChild(gemList:getFirstChild())
 		elseif lastIndex then
 			gemList:focusChild(children[lastIndex])
-		elseif lastSelectedGem and lastSelectedGem:isVisible() and lastSelectedGem.gemID then
+		-- No llamar métodos sobre lastSelectedGem: puede ser un widget ya destruido por el
+		-- propio redraw (destroyChildren) y el método lanza error; leer .gemID sí es seguro.
+		elseif lastSelectedGem and lastSelectedGem.gemID then
 			local targetIndex = 0
 			for i, widget in ipairs(children) do
 				if widget.gemID == lastSelectedGem.gemID then
@@ -968,7 +970,7 @@ function GemAtelier.onDestroyGem(button)
 	if not button or not button:isOn() or not lastSelectedGem or destroyGemWindow ~= nil then
 	  return true
 	end
-  
+
 	local gemData = GemAtelier.getGemDataById(lastSelectedGem.gemID)
 	if not gemData then
 	  g_logger.debug("[GemAtelier] Failed to destroy: gemData not found.")

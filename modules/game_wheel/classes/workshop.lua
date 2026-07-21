@@ -343,37 +343,17 @@ end
 
 
 -- Sends gem actions (reveal, destroy, toggleLock, improve)
+-- OJO: esta función es GLOBAL y este archivo carga DESPUÉS de gematelier.lua (wheel.otmod),
+-- así que ESTA copia es la que ejecuta todo el módulo. Sin toggle optimista para ToggleLock:
+-- el server responde SIEMPRE con el refresh completo de la ventana y ese estado es el real;
+-- el flip local a +300ms llegaba DESPUÉS del refresh y lo invertía — la UI quedaba al revés
+-- del server en cada click.
 function sendgemAction(actionType, param, pos)
 	param = param or 0
 	pos = pos or 0
 
 	g_logger.debug(string.format("[GemAtelier] Sending action -> type=%d param=%d pos=%d", actionType, param, pos))
 	g_game.gemAction(actionType, param, pos)
-
-	if actionType == 3 then
-		-- Toggle Lock locally after brief delay (until server returns)
-		scheduleEvent(function()
-			local gem = GemAtelier.getGemDataById(param)
-			if not gem then
-				g_logger.debug(string.format("[GemAtelier] Failed to toggle lock: gem id=%d not found.", param))
-				return
-			end
-
-			-- Inverts correctly (0 = unlocked, 1 = locked)
-			gem.locked = gem.locked == 1 and 0 or 1
-			g_logger.debug(string.format("[GemAtelier] Toggled local lock of gem id=%d -> %s", 
-				param, gem.locked == 1 and "locked" or "unlocked"))
-
-			-- Updates button visual if visible
-			if lastSelectedGem and lastSelectedGem.locker then
-				lastSelectedGem.locker:setChecked(gem.locked == 1)
-			end
-
-			-- Reloads list maintaining current focus
-			local lastIndex = lastSelectedGem and lastSelectedGem.gemIndex or 1
-			GemAtelier.showGems(false, lastIndex)
-		end, 300)
-	end
 end
 
 
