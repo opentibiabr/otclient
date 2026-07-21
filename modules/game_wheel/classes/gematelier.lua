@@ -936,27 +936,9 @@ function sendgemAction(actionType, param, pos)
 
 	g_logger.debug(string.format("[GemAtelier] Sending action -> type=%d param=%d pos=%d", actionType, param, pos))
 	g_game.gemAction(actionType, param, pos)
-
-	if actionType == 3 then
-		scheduleEvent(function()
-			local gem = GemAtelier.getGemDataById(param)
-			if not gem then
-				g_logger.debug(string.format("[GemAtelier] Failed to toggle lock: gem id=%d not found.", param))
-				return
-			end
-
-			gem.locked = gem.locked == 1 and 0 or 1
-			g_logger.debug(string.format("[GemAtelier] Toggled local lock of gem id=%d -> %s", 
-				param, gem.locked == 1 and "locked" or "unlocked"))
-
-			if lastSelectedGem and lastSelectedGem.locker then
-				lastSelectedGem.locker:setChecked(gem.locked == 1)
-			end
-
-			local lastIndex = lastSelectedGem and lastSelectedGem.gemIndex or 1
-			GemAtelier.showGems(false, lastIndex)
-		end, 300)
-	end
+	-- Sin toggle optimista para ToggleLock: el server responde SIEMPRE con el refresh completo
+	-- de la ventana (sendOpenWheelWindow) y ese estado es el real; el flip local a +300ms
+	-- llegaba DESPUÉS del refresh y lo invertía — la UI quedaba al revés del server en cada click.
 end
 
 
