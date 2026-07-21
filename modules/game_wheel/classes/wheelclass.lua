@@ -726,6 +726,12 @@ function WheelOfDestiny.onDestinyWheel(playerId, canView, changeState, vocationI
     if GemAtelier.setupVesselPanel then
       GemAtelier.setupVesselPanel()
     end
+    -- Re-dibujar la lista de gemas con los datos frescos: el server re-manda la ventana tras
+    -- cada acción del atelier (toggle/destroy/switch) y sin esto los candados y la lista quedan
+    -- pintados con el estado anterior hasta cerrar/reabrir la ventana.
+    if GemAtelier.showGems then
+      GemAtelier.showGems(false)
+    end
   end
 
   wheelPanel.onMouseRelease = WheelOfDestiny.onMouseRelease
