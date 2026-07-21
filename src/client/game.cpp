@@ -2338,7 +2338,7 @@ void Game::openWheel(uint32_t playerId)
     m_protocolGame->sendOpenWheel(playerId);
 }
 
-void Game::gemAction(const uint8_t actionType, const uint8_t param, const uint8_t pos)
+void Game::gemAction(const uint8_t actionType, const uint16_t param, const uint8_t pos)
 {
     if (!canPerformGameAction())
         return;

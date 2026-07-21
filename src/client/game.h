@@ -476,7 +476,7 @@ public:
     //whell of destiny 
     void openWheel(uint32_t playerId);
     void sendApplyWheelPoints(const std::vector<uint16_t>& slotPoints,uint16_t greenGem,uint16_t redGem,uint16_t acquaGem,uint16_t purpleGem);
-    void gemAction(uint8_t actionType, uint8_t param, uint8_t pos);
+    void gemAction(uint8_t actionType, uint16_t param, uint8_t pos);
 
     void updateMapLatency() {
         if (!m_mapUpdateTimer.first) {
