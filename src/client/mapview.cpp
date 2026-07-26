@@ -155,7 +155,6 @@ void MapView::drawFloor()
             // -> draw it and all walking_tiles depending on it (if there are any queued up)
             TilePtr upper_right_tile = g_map.getTile(tile->getPosition().translated(1, -1, 0));
             if (!upper_right_tile || !upper_right_tile->hasWalkingCreature()) {
-                walking_tiles.emplace_back(tile);
                 for (int i = walking_tiles.size() - 1; i >= 0; i--) {
                     auto const &tile = walking_tiles[i];
 

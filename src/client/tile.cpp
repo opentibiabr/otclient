@@ -80,15 +80,24 @@ void Tile::draw(const MapPosInfo& mapRect, const Point& dest, const int flags, L
 
     // when walking diagonally over a tile that has a object on it like a tree the creature should be rendered behind it
     // i.e. render creature first then the tree
-    bool creature_drawn = false;
     if (hasWalkingCreature()) {
+        g_drawPool.setDrawOrder(DrawOrder::THIRD);
         for (const auto& creature : m_walkingCreatures) {
             if (creature->getDirection() == Otc::Direction::NorthEast || creature->getDirection() == Otc::Direction::SouthWest) {
-                drawCreature(mapRect, dest, flags, false, drawElevation);
-                creature_drawn = true;
-                break;
+                const auto& cDest = Point(
+                    dest.x + ((creature->getPosition().x - m_position.x) * g_gameConfig.getSpriteSize() - creature->getDrawElevation()) * g_drawPool.getScaleFactor(),
+                    dest.y + ((creature->getPosition().y - m_position.y) * g_gameConfig.getSpriteSize() - creature->getDrawElevation()) * g_drawPool.getScaleFactor()
+                );
+
+                if (flags == Otc::DrawLights)
+                    creature->drawLight(cDest, lightView);
+                else {
+                    creature->draw(cDest, flags & Otc::DrawThings);
+                    creature->drawInformation(mapRect, cDest, flags);
+                }
             }
         }
+        g_drawPool.resetDrawOrder();
     }
 
     for (const auto& thing : m_things) {
@@ -115,8 +124,7 @@ void Tile::draw(const MapPosInfo& mapRect, const Point& dest, const int flags, L
         }
     }
 
-    if (!creature_drawn)
-        drawCreature(mapRect, dest, flags, false, drawElevation);
+    drawCreature(mapRect, dest, flags, false, drawElevation);
     drawTop(dest, flags, false, drawElevation);
     drawAttachedEffect(dest, dest, lightView, true);
     drawAttachedParticlesEffect(dest);
@@ -149,6 +157,10 @@ void Tile::drawCreature(const MapPosInfo& mapRect, const Point& dest, const int 
 
     g_drawPool.setDrawOrder(DrawOrder::THIRD);
     for (const auto& creature : m_walkingCreatures) {
+        // already drawn by this point
+        if (creature->getDirection() == Otc::Direction::NorthEast || creature->getDirection() == Otc::Direction::SouthWest)
+            continue;
+
         const auto& cDest = Point(
             dest.x + ((creature->getPosition().x - m_position.x) * g_gameConfig.getSpriteSize() - creature->getDrawElevation()) * g_drawPool.getScaleFactor(),
             dest.y + ((creature->getPosition().y - m_position.y) * g_gameConfig.getSpriteSize() - creature->getDrawElevation()) * g_drawPool.getScaleFactor()
