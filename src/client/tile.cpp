@@ -78,6 +78,19 @@ void Tile::draw(const MapPosInfo& mapRect, const Point& dest, const int flags, L
         return;
     }
 
+    // when walking diagonally over a tile that has a object on it like a tree the creature should be rendered behind it
+    // i.e. render creature first then the tree
+    bool creature_drawn = false;
+    if (hasWalkingCreature()) {
+        for (const auto& creature : m_walkingCreatures) {
+            if (creature->getDirection() == Otc::Direction::NorthEast || creature->getDirection() == Otc::Direction::SouthWest) {
+                drawCreature(mapRect, dest, flags, false, drawElevation);
+                creature_drawn = true;
+                break;
+            }
+        }
+    }
+
     for (const auto& thing : m_things) {
         if (!thing->isGround() && !thing->isGroundBorder() && !thing->isOnBottom())
             break;
@@ -102,7 +115,8 @@ void Tile::draw(const MapPosInfo& mapRect, const Point& dest, const int flags, L
         }
     }
 
-    drawCreature(mapRect, dest, flags, false, drawElevation);
+    if (!creature_drawn)
+        drawCreature(mapRect, dest, flags, false, drawElevation);
     drawTop(dest, flags, false, drawElevation);
     drawAttachedEffect(dest, dest, lightView, true);
     drawAttachedParticlesEffect(dest);
@@ -133,21 +147,6 @@ void Tile::drawCreature(const MapPosInfo& mapRect, const Point& dest, const int 
     if (!forceDraw && !m_drawTopAndCreature)
         return;
 
-    bool localPlayerDrawed = false;
-    if (hasCreatures()) {
-        for (const auto& thing : m_things) {
-            if (!thing->isCreature() || thing->static_self_cast<Creature>()->isWalking()) continue;
-
-            if (thing->isLocalPlayer()) {
-                if (thing->getPosition() != m_position) continue;
-                localPlayerDrawed = true;
-            }
-
-            drawThing(thing, dest, flags, drawElevation, lightView);
-            static_cast<Creature*>(thing.get())->drawInformation(mapRect, dest - m_drawElevation * g_drawPool.getScaleFactor(), flags);
-        }
-    }
-
     g_drawPool.setDrawOrder(DrawOrder::THIRD);
     for (const auto& creature : m_walkingCreatures) {
         const auto& cDest = Point(
@@ -163,6 +162,21 @@ void Tile::drawCreature(const MapPosInfo& mapRect, const Point& dest, const int 
         }
     }
     g_drawPool.resetDrawOrder();
+
+    bool localPlayerDrawed = false;
+    if (hasCreatures()) {
+        for (const auto& thing : m_things) {
+            if (!thing->isCreature() || thing->static_self_cast<Creature>()->isWalking()) continue;
+
+            if (thing->isLocalPlayer()) {
+                if (thing->getPosition() != m_position) continue;
+                localPlayerDrawed = true;
+            }
+
+            drawThing(thing, dest, flags, drawElevation, lightView);
+            static_cast<Creature*>(thing.get())->drawInformation(mapRect, dest - m_drawElevation * g_drawPool.getScaleFactor(), flags);
+        }
+    }
 
     // draw the local character if he is on a virtual tile, that is, his visual position is not the same as the server.
     if (!localPlayerDrawed && g_game.getLocalPlayer() && !g_game.getLocalPlayer()->isWalking() && g_game.getLocalPlayer()->getPosition() == m_position) {

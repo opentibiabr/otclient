@@ -93,6 +93,7 @@ public:
 
     bool hasCreatures() const { return (m_thingTypeFlag & HAS_CREATURE) != 0; }
     bool hasCreatures() { return static_cast<const Tile&>(*this).hasCreatures(); }
+    bool hasWalkingCreature() { return !m_walkingCreatures.empty(); }
 
     void appendSpectators(std::vector<CreaturePtr>& out) const;
 
