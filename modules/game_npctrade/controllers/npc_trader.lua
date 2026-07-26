@@ -159,6 +159,15 @@ function controllerNpcTrader:onTradeScroll(widget, offset)
     end
 end
 
+-- The reactive *for engine repaints each row's data in place via __for_values on
+-- reorder but never physically moves widgets (watchlist.lua: "no move callbacks"),
+-- and the one-shot *trade-item attribute is not re-evaluated. So child.tradeItem
+-- goes stale once the sell list re-sorts and the row shown no longer matches the
+-- one clicked. The live item is always __for_values[1]; child.tradeItem is a fallback.
+function controllerNpcTrader:getRowItem(child)
+    return (child.__for_values and child.__for_values[1]) or child.tradeItem
+end
+
 function controllerNpcTrader:onTradeListRendered()
     local list = self:findWidget("#tradeListScroll")
     if list then
@@ -170,7 +179,7 @@ function controllerNpcTrader:onTradeListRendered()
         end
         for i = 1, list:getChildCount() do
             local child = list:getChildByIndex(i)
-            local item = child.tradeItem
+            local item = self:getRowItem(child)
             if item then
                 local canTrade = self:canTradeItem(item)
                 local color = canTrade and '#c0c0c0' or '#707070'
@@ -187,7 +196,9 @@ function controllerNpcTrader:onTradeListRendered()
                 end
 
                 child.onMouseRelease = function(widget, mousePos, mouseButton)
-                    self:onTradeItemMouseRelease(item, widget, mousePos, mouseButton)
+                    -- resolve live at click time: the row may have been repainted
+                    -- to a different item since this handler was bound.
+                    self:onTradeItemMouseRelease(self:getRowItem(widget), widget, mousePos, mouseButton)
                 end
             end
         end
@@ -200,7 +211,7 @@ function controllerNpcTrader:onTradeListRendered()
         elseif self.selectedItem then
             for i = 1, list:getChildCount() do
                 local child = list:getChildByIndex(i)
-                if child.tradeItem == self.selectedItem then
+                if self:getRowItem(child) == self.selectedItem then
                     child:focus()
                     break
                 end
@@ -233,12 +244,19 @@ function controllerNpcTrader:selectTradeItem(item, widget)
     if widget then
         widget:focus()
     end
-    self:updateAmount(1)
+
+    -- When selling, default the amount to the full sellable stack (mirrors the
+    -- legacy NPC window) so a single Sell dumps everything. Buying stays at 1.
+    local defaultAmount = 1
+    if item and self.tradeMode == controllerNpcTrader.SELL then
+        defaultAmount = math.max(1, self:getSellQuantity(item.ptr))
+    end
+    self:updateAmount(defaultAmount)
 
     local scroll = self:findWidget("#amountScrollBar")
     if scroll then
         scroll:enable()
-        scroll:setValue(1)
+        scroll:setValue(self.amount)
     end
 end
 
@@ -517,6 +535,13 @@ function controllerNpcTrader:filterTradeList(searchText)
                     break
                 end
             end
+        end
+        -- When selling, don't keep a selection that has nothing left to sell:
+        -- advance to the top of the re-sorted list (highest remaining stock) so
+        -- spamming Sell drains each stack and moves on to the next sellable item.
+        if found and self.tradeMode == controllerNpcTrader.SELL and self.selectedItem
+                and self:getSellQuantity(self.selectedItem.ptr) <= 0 then
+            found = false
         end
         if not found then
             self:selectTradeItem(self.tradeItems[1])
