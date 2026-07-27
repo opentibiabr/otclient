@@ -212,7 +212,7 @@ void GraphicalApplication::run()
                 continue;
             }
 
-            {
+            if (g_game.isOnline()) {
                 AutoStat s(STATS_RENDER, "DrawPreload");
                 m_drawEvents->preLoad();
             }
