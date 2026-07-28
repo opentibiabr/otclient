@@ -331,6 +331,10 @@ local function readDocument(path)
   local readOk, text = pcall(function() return g_resources.readFileContents(path) end)
   if not readOk or not text then
     doc = nil
+    -- callers only see false; without this the user is left with the vaguer
+    -- "file was not read" that the next selection produces
+    status('Could not read the file: ' .. tostring(path) ..
+      (readOk and '' or (' (' .. tostring(text) .. ')')), true)
     return false
   end
 
@@ -2199,6 +2203,18 @@ function selfTest()
   local d8 = Otml.parse(Otml.skeleton('MainWindow', 'minhaTela', 'Minha Tela'))
   check(d8.root and d8.root.tag == 'MainWindow', 'skeleton has no main widget')
   check(Otml.findProperty(d8.root, 'id') ~= nil, 'skeleton has no id')
+
+  -- A read failure must reach the user. readDocument writes the module's `doc`,
+  -- so the current one is put back before returning.
+  local savedDoc = doc
+  check(readDocument('/dev_otui/__no_such_file__.otui') == false,
+    'readDocument should return false for a missing file')
+  check(doc == nil, 'readDocument should clear the document when it fails')
+  local said = editorWindow
+    and editorWindow:recursiveGetChildById('statusLabel'):getText() or ''
+  check(said:find('__no_such_file__', 1, true) ~= nil,
+    'a read failure must be reported, status said: ' .. said)
+  doc = savedDoc
 
   if #failures == 0 then
     print('[dev_otui] selfTest: OK (all checks passed)')
