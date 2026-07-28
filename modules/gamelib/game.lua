@@ -39,6 +39,20 @@ function g_game.chooseRsa(host)
     if g_game.getClientVersion() <= 760 then
         g_game.setCustomOs(2)
     end
+
+    -- The browser build reports its OS as "browser", which Game::getOs falls
+    -- back to CLIENTOS_OTCLIENT_LINUX for. server-core only flags a connection
+    -- as a Mehah client when the login packet carries CLIENTOS_OTCLIENT_WINDOWS
+    -- (src/protocolgame.cpp), and ProtocolGame::sendFeatures returns early for
+    -- anything that is neither Mehah, OTCv8 nor Astra -- so the browser client
+    -- never received the 0x43 feature handshake at all.
+    --
+    -- Kept last in this function so it is not undone by the OTServ branch
+    -- above, and restricted to non-official servers: this only makes sense for
+    -- a server that reads the field to detect OTClient.
+    if g_app.getOs() == 'browser' and not g_game.isOfficialTibia() then
+        g_game.setCustomOs(OsTypes.OtclientWindows)
+    end
 end
 
 function g_game.setRsa(rsa, e)

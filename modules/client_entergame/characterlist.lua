@@ -828,7 +828,19 @@ function CharacterList.rebuildCharactersList()
         -- these are used by login
         widget.characterName = characterInfo.name
         widget.worldName = characterInfo.worldName
-        widget.worldHost = characterInfo.worldIp
+        -- Reconnect to the host used for login rather than the address the
+        -- server advertised.
+        --
+        -- 8.60 servers must advertise a numeric IPv4 or the client rejects the
+        -- character list outright, but the browser build opens
+        -- wss://<host>:<port> -- and a TLS certificate is issued for a domain,
+        -- never for a bare IP. Obeying the advertised address makes the world
+        -- connection fail the certificate check right after character
+        -- selection, while login itself works fine.
+        widget.worldHost = (g_app.getOs() == 'browser' and G.host ~= nil and G.host ~= '')
+            and G.host or characterInfo.worldIp
+        -- Must not be 7172: ProtocolGame::login rewrites that port to 443 on
+        -- __EMSCRIPTEN__ builds, so the server announces the world on 7175.
         widget.worldPort = characterInfo.worldPort
 
         local pinButton = widget:getChildById('pin')
