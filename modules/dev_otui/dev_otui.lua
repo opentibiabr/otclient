@@ -1743,6 +1743,16 @@ function confirmRemoveElement()
   deleteSelectedNode()
 end
 
+-- The id of a new screen comes from its file name. Everything that is not a
+-- letter or a digit is dropped, which can leave nothing at all ("__.otui"), and
+-- a widget written with an empty id cannot be looked up by name afterwards.
+local function screenIdFromPath(path)
+  local name = (path or ''):match('([^/]+)%.otui$') or ''
+  name = name:gsub('[^%w]', '')
+  if name == '' then return 'newScreen' end
+  return name
+end
+
 function newScreen()
   local path = normalizePath(editorWindow:recursiveGetChildById('pathEdit'):getText())
   if not path then
@@ -1755,8 +1765,7 @@ function newScreen()
     return
   end
 
-  local id = path:match('([^/]+)%.otui$') or 'minhaJanela'
-  id = id:gsub('[^%w]', '')
+  local id = screenIdFromPath(path)
   local text = Otml.skeleton('MainWindow', id, id)
 
   local ok, result = persistText(path, text, nil)
@@ -2247,9 +2256,20 @@ function selfTest()
   end
 
   -- the new-screen skeleton must be parseable
-  local d8 = Otml.parse(Otml.skeleton('MainWindow', 'minhaTela', 'Minha Tela'))
+  local d8 = Otml.parse(Otml.skeleton('MainWindow', 'myScreen', 'My Screen'))
   check(d8.root and d8.root.tag == 'MainWindow', 'skeleton has no main widget')
   check(Otml.findProperty(d8.root, 'id') ~= nil, 'skeleton has no id')
+
+  -- the id of a new screen comes from the file name and must stay usable
+  check(screenIdFromPath('/game_idle/idle_panel.otui') == 'idlepanel',
+    'punctuation should be stripped out of the id')
+  check(screenIdFromPath('/x/MyWindow.otui') == 'MyWindow',
+    'an already valid name should pass through unchanged')
+  check(screenIdFromPath('/x/__.otui') == 'newScreen',
+    'a name with no letters or digits needs a fallback id')
+  check(screenIdFromPath('') == 'newScreen', 'an empty path needs a fallback id')
+  check(Otml.parse(Otml.skeleton('MainWindow', screenIdFromPath('/x/__.otui'), 'x')).root ~= nil,
+    'the skeleton built from a fallback id must still parse')
 
   -- A file reference is a path of child indices: it always resolves, even after
   -- someone reorders the file. Identity is what keeps a save off the wrong node.
