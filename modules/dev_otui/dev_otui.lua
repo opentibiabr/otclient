@@ -1065,6 +1065,10 @@ local function anchorFlags()
 end
 
 local function beginDrag(mode, mousePos)
+  -- the click handler calls this right after selectWidget, which returns early
+  -- (leaving no selection) when it is re-entered or the widget is already gone
+  if not selectedWidget or selectedWidget:isDestroyed() then return false end
+
   local rect = selectedWidget:getRect()
   drag = {
     mode = mode,
@@ -1078,6 +1082,7 @@ local function beginDrag(mode, mousePos)
     anchors = anchorFlags(),
     moved = false,
   }
+  return true
 end
 
 local function updateDrag(mousePos)
@@ -2272,6 +2277,16 @@ function selfTest()
   check(not sameNodeIdentity(nodeBefore, resolveRef(renamed, firstChild)),
     'a widget with another id must not be treated as the same node')
   check(not sameNodeIdentity(nodeBefore, nil), 'an unresolved reference is never the same node')
+
+  -- A click selects and then starts a drag; when the selection does not happen
+  -- the drag must decline instead of indexing a nil widget.
+  local keepSelected, keepDrag = selectedWidget, drag
+  selectedWidget, drag = nil, nil
+  local dragOk, dragStarted = pcall(beginDrag, 'move', { x = 0, y = 0 })
+  check(dragOk, 'beginDrag must not error without a selected widget')
+  check(dragStarted == false, 'beginDrag must refuse without a selected widget')
+  check(drag == nil, 'beginDrag must not leave a drag in progress')
+  selectedWidget, drag = keepSelected, keepDrag
 
   -- Closing the preview must not leave a stale reason behind: a later save
   -- would report why the *previous* widget could not be mapped.
