@@ -35,6 +35,7 @@ your text editor.
 | `Debug boxes` | toggle `g_ui.setDebugBoxesDrawing`, outlining every widget |
 | `Edit` | click to select on screen, drag to move, green corner to resize |
 | `$on` / `$checked` / `$disabled` | force widget states to inspect their styling |
+| `hidden` | hide the selected widget, to see what is underneath it |
 | `Apply (preview)` | apply the panel to the live widget; the file is untouched |
 | `Save to file` | write the changes to the `.otui` |
 
@@ -112,7 +113,7 @@ Writing is the only destructive operation, so it is guarded:
 
 ## Tests
 
-The parser is the part capable of corrupting files, so it has a self test.
+The parser is the part capable of corrupting files, so it has a self-test.
 In the client terminal (`Ctrl+T`):
 
 ```lua
