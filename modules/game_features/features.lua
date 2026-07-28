@@ -61,6 +61,74 @@ controller:registerEvents(g_game, {
             g_game.enableFeature(GameAttackSeq)
         end
 
+        -- 8.60 profile required by server-core (docs/client-configuration.md).
+        --
+        -- Scoped to == 860 on purpose. The document writes this block as
+        -- >= 860, but that server runs a single fixed protocol while this
+        -- client supports everything from 7.40 up. Enabling GameSpritesU32 for
+        -- every version at or above 860 would make the client read a u32 sprite
+        -- count from the .spr files of 8.7/9.x/10.x servers, which store it as
+        -- u16.
+        --
+        -- Two features from the recommended list are missing here because this
+        -- client does not define them: GameBot and GameExtendedOpcode.
+        -- GameLeechAmount exists (id 109) but stays off, as the document
+        -- requires: the server never sends that feature, and enabling it would
+        -- make the client expect bytes that never arrive.
+        if version == 860 then
+            g_game.enableFeature(GameSkillsBase)
+            g_game.enableFeature(GamePlayerMounts)
+            g_game.enableFeature(GameMagicEffectU16)
+            g_game.enableFeature(GameDistanceEffectU16)
+            g_game.enableFeature(GameDoubleHealth)
+            g_game.enableFeature(GameDoubleSkills)
+            g_game.enableFeature(GameOfflineTrainingTime)
+            g_game.enableFeature(GameBaseSkillU16)
+            g_game.enableFeature(GameAdditionalSkills)
+            g_game.enableFeature(GameExtendedClientPing)
+            g_game.enableFeature(GameDoublePlayerGoodsMoney)
+            g_game.enableFeature(GameCreatureIcons)
+            g_game.enableFeature(GamePurseSlot)
+            g_game.enableFeature(GamePrey)
+            g_game.enableFeature(GameSpellList)
+
+            -- The 8.60 sprite pack in data/things/860 is extended: 592337
+            -- sprites, with the count stored as u32. SpriteManager::load reads
+            -- that field as u16 unless this feature is on, which yields 2641
+            -- sprites and a sprite address table that is off by everything.
+            g_game.enableFeature(GameSpritesU32)
+
+            -- Four features decide how data/things/860 is parsed, and they must
+            -- match the pack. Tibia.otfi shipped with it states the format:
+            --
+            --   extended: true         -> GameSpritesU32          (enabled above)
+            --   transparency: false    -> GameSpritesAlphaChannel (off)
+            --   frame-durations: false -> GameEnhancedAnimations  (off)
+            --   frame-groups: false    -> GameIdleAnimations      (off)
+            --
+            -- The client never reads .otfi -- that is an OTCv8 file -- but it
+            -- is still the pack author's description of the format, and it maps
+            -- one to one onto thingtype.cpp:632, :664 and :681 plus
+            -- spritemanager.cpp:280.
+            --
+            -- The 8.60 block recommended by the server's client-configuration.md
+            -- lists GameIdleAnimations and GameEnhancedAnimations. Enabling them
+            -- here makes the parser read frame group and duration bytes this
+            -- .dat does not carry, so loading fails, game_things calls
+            -- setClientVersion(0), and the client then reports the missing file
+            -- as '/data/things/0/Tibia.dat'. Keep them off for this pack.
+            --
+            -- Independently measured for the sprites: parsing 700 sprites
+            -- sampled across the file, the stream closes exactly on its declared
+            -- pixelDataSize with 3 channels in 100% of them, none with 4.
+
+            -- Packet-layout flag: leave it to the server's 0x43 handshake
+            -- instead of forcing it here. The other two the document lists,
+            -- GameQuickLootFlags and GameItemTierByte, do not exist in this
+            -- client, so there is nothing to disable for them.
+            g_game.disableFeature(GameThingUpgradeClassification)
+        end
+
         if version >= 862 then
             g_game.enableFeature(GamePenalityOnDeath)
         end
