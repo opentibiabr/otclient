@@ -278,6 +278,20 @@ local function resolveRef(document, ref)
   return resolveNodeByPath(document, ref.path)
 end
 
+-- A reference into the file is a path of child indices, so it survives a
+-- reparse but says nothing about *which* widget sits there now: a file edited
+-- in a text editor between load and save can resolve the same path onto a
+-- different widget, and the edit would land on it. Two nodes count as the same
+-- one when the style name and the id both match.
+local function sameNodeIdentity(a, b)
+  if not a or not b then return false end
+  if a.tag ~= b.tag then return false end
+
+  local idA = Otml.findProperty(a, 'id')
+  local idB = Otml.findProperty(b, 'id')
+  return (idA and idA.value or nil) == (idB and idB.value or nil)
+end
+
 -- Resolves while validating file-tag against widget-style at every level.
 -- A mismatch means the on-screen tree did not come from the file alone (a widget
 -- created by an inherited style, say) and writing there would corrupt the file.
@@ -747,6 +761,14 @@ function saveFile()
 
   local originalText = Otml.serialize(doc)
   local ref = currentRef
+
+  -- the re-read above may have brought in someone else's changes: the path
+  -- still resolves, but possibly onto another widget
+  if not sameNodeIdentity(resolveRef(doc, ref), currentNode) then
+    status('The file changed since it was loaded and the selection no longer ' ..
+      'matches. Nothing was written - reload and pick the widget again.', true)
+    return
+  end
 
   local edits = {}
   for _, row in ipairs(propRows) do
@@ -1525,8 +1547,21 @@ local function insertElement(styleName)
 
   local originalText = Otml.serialize(doc)
 
-  -- with no selection, the new element goes to the screen root
-  local parentNode = parentRef and resolveRef(doc, parentRef) or doc.root
+  -- With no selection the new element goes to the screen root. With one, a
+  -- reference that no longer resolves means the file moved under us; falling
+  -- back to the root here would quietly insert somewhere else entirely.
+  local parentNode
+  if parentRef then
+    parentNode = resolveRef(doc, parentRef)
+    if not parentNode then
+      status('The selected widget is no longer at the same place in the file. ' ..
+        'Nothing was written - reload and pick it again.', true)
+      return
+    end
+  else
+    parentNode = doc.root
+  end
+
   if not parentNode then
     status('Could not find the parent widget in the file.', true)
     return
@@ -2203,6 +2238,33 @@ function selfTest()
   local d8 = Otml.parse(Otml.skeleton('MainWindow', 'minhaTela', 'Minha Tela'))
   check(d8.root and d8.root.tag == 'MainWindow', 'skeleton has no main widget')
   check(Otml.findProperty(d8.root, 'id') ~= nil, 'skeleton has no id')
+
+  -- A file reference is a path of child indices: it always resolves, even after
+  -- someone reorders the file. Identity is what keeps a save off the wrong node.
+  local beforeEdit = Otml.parse(table.concat({
+    'Window', '  Button', '    id: ok', '  Label', '    id: cancel', '',
+  }, '\n'))
+  local afterEdit = Otml.parse(table.concat({
+    'Window', '  Label', '    id: cancel', '  Button', '    id: ok', '',
+  }, '\n'))
+  local firstChild = { kind = 'widget', path = { 1, 1 } }
+
+  local nodeBefore = resolveRef(beforeEdit, firstChild)
+  local nodeAfter = resolveRef(afterEdit, firstChild)
+  check(nodeBefore and nodeBefore.tag == 'Button', 'the reference should resolve to the Button')
+  check(nodeAfter and nodeAfter.tag == 'Label', 'the same path should now land on the Label')
+  check(not sameNodeIdentity(nodeBefore, nodeAfter),
+    'a reordered file must not be treated as the same node')
+  check(sameNodeIdentity(nodeBefore, resolveRef(Otml.parse(Otml.serialize(beforeEdit)), firstChild)),
+    'an unchanged file must still resolve to the same node')
+
+  -- same style name, different id: still a different widget
+  local renamed = Otml.parse(table.concat({
+    'Window', '  Button', '    id: other', '',
+  }, '\n'))
+  check(not sameNodeIdentity(nodeBefore, resolveRef(renamed, firstChild)),
+    'a widget with another id must not be treated as the same node')
+  check(not sameNodeIdentity(nodeBefore, nil), 'an unresolved reference is never the same node')
 
   -- A read failure must reach the user. readDocument writes the module's `doc`,
   -- so the current one is put back before returning.
