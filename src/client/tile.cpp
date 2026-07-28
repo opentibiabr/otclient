@@ -93,7 +93,7 @@ void Tile::draw(const MapPosInfo& mapRect, const Point& dest, const int flags, L
                     creature->drawLight(cDest, lightView);
                 else {
                     creature->draw(cDest, flags & Otc::DrawThings);
-                    creature->drawInformation(mapRect, cDest, flags);
+                    creature->drawInformation(mapRect, cDest + creature->getDrawElevation() * g_drawPool.getScaleFactor(), flags);
                 }
             }
         }
@@ -170,7 +170,7 @@ void Tile::drawCreature(const MapPosInfo& mapRect, const Point& dest, const int 
             creature->drawLight(cDest, lightView);
         else {
             creature->draw(cDest, flags & Otc::DrawThings);
-            creature->drawInformation(mapRect, cDest, flags);
+            creature->drawInformation(mapRect, cDest + creature->getDrawElevation() * g_drawPool.getScaleFactor(), flags);
         }
     }
     g_drawPool.resetDrawOrder();
@@ -186,7 +186,7 @@ void Tile::drawCreature(const MapPosInfo& mapRect, const Point& dest, const int 
             }
 
             drawThing(thing, dest, flags, drawElevation, lightView);
-            static_cast<Creature*>(thing.get())->drawInformation(mapRect, dest - m_drawElevation * g_drawPool.getScaleFactor(), flags);
+            static_cast<Creature*>(thing.get())->drawInformation(mapRect, dest, flags);
         }
     }
 
