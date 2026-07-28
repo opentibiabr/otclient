@@ -63,33 +63,24 @@ if ENABLE_SERVERS then
     --
     Servers_init = {
 
-        -- Local login server
         ---
-        -- Configuration for local login server.
-        -- @class table
-        -- @name local_login
-        -- @field port Port used for HTTP connection
-        -- @field protocol Protocol identifier used by the application
-        -- @field httpLogin Enables HTTP-based login on the server
-        -- @field useAuthenticator Enables additional authentication layer
+        -- The only server this build talks to.
         --
-        ["http://127.0.0.1/login.php"] = {
-            port = 80,
-            protocol = 1511,
-            httpLogin = true,
-            useAuthenticator = false
-        },
-
-        -- External server
-        ---
-        -- Configuration for external server ip.net.
-        -- @class table
-        -- @name ip_net
+        -- Kept as a single entry on purpose: with exactly one, entergame.lua
+        -- calls EnterGame.setUniqueServer() and the player only fills in
+        -- account and password, instead of typing host, port and version.
+        --
+        -- The host must be the DNS name, not the IP: the browser build opens
+        -- wss://<host>:<port>, and the Let's Encrypt certificate is issued for
+        -- ots.devcodeking.tech. Port 7171 is the WebSocket bridge to the login
+        -- protocol, and 860 is the only version server-core accepts
+        -- (CLIENT_VERSION_MIN/MAX in src/definitions.h).
+        --
         -- @field port TCP port used for connection
         -- @field protocol Protocol identifier used by the server
         -- @field httpLogin Indicates if the server allows HTTP login
         --
-        ["ip.net"] = {
+        ["ots.devcodeking.tech"] = {
             port = 7171,
             protocol = 860,
             httpLogin = false
