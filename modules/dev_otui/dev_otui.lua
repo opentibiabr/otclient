@@ -292,6 +292,14 @@ local function sameNodeIdentity(a, b)
   return (idA and idA.value or nil) == (idB and idB.value or nil)
 end
 
+-- The three go together: nodeError is the reason currentNode is missing, so
+-- leaving it behind makes a later failure report the wrong cause.
+local function clearNodeSelection()
+  currentNode = nil
+  nodeError = nil
+  currentRef = nil
+end
+
 -- Resolves while validating file-tag against widget-style at every level.
 -- A mismatch means the on-screen tree did not come from the file alone (a widget
 -- created by an inherited style, say) and writing there would corrupt the file.
@@ -838,8 +846,7 @@ function closeStage()
   if stage and not stage:isDestroyed() then stage:destroy() end
   stage = nil
   selectedWidget = nil
-  currentNode = nil
-  currentRef = nil
+  clearNodeSelection()
   showcaseMode = false
   showcaseStyleIndex = {}
   treeItems = {}
@@ -2265,6 +2272,15 @@ function selfTest()
   check(not sameNodeIdentity(nodeBefore, resolveRef(renamed, firstChild)),
     'a widget with another id must not be treated as the same node')
   check(not sameNodeIdentity(nodeBefore, nil), 'an unresolved reference is never the same node')
+
+  -- Closing the preview must not leave a stale reason behind: a later save
+  -- would report why the *previous* widget could not be mapped.
+  local keepNode, keepError, keepRef = currentNode, nodeError, currentRef
+  currentNode, nodeError, currentRef = {}, 'stale reason', {}
+  clearNodeSelection()
+  check(currentNode == nil and nodeError == nil and currentRef == nil,
+    'clearNodeSelection must reset all three, nodeError included')
+  currentNode, nodeError, currentRef = keepNode, keepError, keepRef
 
   -- A read failure must reach the user. readDocument writes the module's `doc`,
   -- so the current one is put back before returning.
