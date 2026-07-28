@@ -38,6 +38,11 @@
 #endif
 
 #include <lzma.h>
+
+#ifdef __EMSCRIPTEN__
+#include "httprangereader.h"
+#include <nlohmann/json.hpp>
+#endif
 #ifdef FRAMEWORK_HAVE_LIBARCHIVE
 #include <archive.h>
 #include <archive_entry.h>
@@ -50,6 +55,66 @@
 ResourceManager g_resources;
 
 namespace {
+
+#ifdef __EMSCRIPTEN__
+// Remote asset registry for WASM builds
+struct RemoteAsset {
+    std::string path;  // Virtual path (e.g., /data/things/860/Tibia.spr)
+    std::string url;   // URL to fetch from
+    uint64_t size;     // File size
+};
+
+std::unordered_map<std::string, RemoteAsset> g_remoteAssets;
+
+bool loadRemoteAssetsJson()
+{
+    // Try to read /remote-assets.json from the virtual filesystem
+    PHYSFS_File* file = PHYSFS_openRead("/remote-assets.json");
+    if (!file) {
+        // Not an error - remote assets are optional
+        return false;
+    }
+    
+    PHYSFS_sint64 size = PHYSFS_fileLength(file);
+    if (size <= 0) {
+        PHYSFS_close(file);
+        return false;
+    }
+    
+    std::string jsonStr(size, '\0');
+    if (PHYSFS_readBytes(file, jsonStr.data(), size) != size) {
+        PHYSFS_close(file);
+        return false;
+    }
+    PHYSFS_close(file);
+    
+    try {
+        auto json = nlohmann::json::parse(jsonStr);
+        if (json.contains("files") && json["files"].is_array()) {
+            for (const auto& entry : json["files"]) {
+                if (entry.contains("path") && entry.contains("url") && entry.contains("size")) {
+                    RemoteAsset asset;
+                    asset.path = entry["path"].get<std::string>();
+                    asset.url = entry["url"].get<std::string>();
+                    asset.size = entry["size"].get<uint64_t>();
+                    
+                    // Normalize path for lookup
+                    std::string lookupPath = asset.path;
+                    if (!lookupPath.empty() && lookupPath.front() != '/') {
+                        lookupPath = "/" + lookupPath;
+                    }
+                    g_remoteAssets[lookupPath] = std::move(asset);
+                }
+            }
+        }
+        g_logger.info("Loaded {} remote asset(s) from remote-assets.json", g_remoteAssets.size());
+        return true;
+    } catch (const std::exception& e) {
+        g_logger.error("Failed to parse remote-assets.json: {}", e.what());
+        return false;
+    }
+}
+#endif // __EMSCRIPTEN__
 
 std::string normalizeVirtualPath(std::string path)
 {
@@ -346,6 +411,13 @@ bool ResourceManager::discoverWorkDir(const std::string& existentFile)
         PHYSFS_unmount(dir.c_str());
     }
 
+#ifdef __EMSCRIPTEN__
+    // Load remote assets registry after work dir is discovered
+    if (found) {
+        loadRemoteAssetsJson();
+    }
+#endif
+
     return found;
 }
 
@@ -477,7 +549,16 @@ bool ResourceManager::fileExists(const std::string& fileName)
     if (fileName.find("/downloads") != std::string::npos)
         return g_http.getFile(fileName.substr(10)) != nullptr;
 
-    return (PHYSFS_exists(resolvePath(fileName).c_str()) && !directoryExists(fileName));
+    std::string resolved = resolvePath(fileName);
+    
+#ifdef __EMSCRIPTEN__
+    // Check if this is a remote asset
+    if (g_remoteAssets.find(resolved) != g_remoteAssets.end()) {
+        return true;
+    }
+#endif
+
+    return (PHYSFS_exists(resolved.c_str()) && !directoryExists(fileName));
 }
 
 bool ResourceManager::fileExistsInWorkDir(const std::string& fileName)
@@ -606,6 +687,19 @@ bool ResourceManager::writeFileContents(const std::string& fileName, const std::
 FileStreamPtr ResourceManager::openFile(const std::string& fileName)
 {
     const std::string fullPath = resolvePath(fileName);
+
+#ifdef __EMSCRIPTEN__
+    // Check if this is a remote asset
+    auto it = g_remoteAssets.find(fullPath);
+    if (it != g_remoteAssets.end()) {
+        HttpRangeReader::RemoteFileInfo info;
+        info.path = it->second.path;
+        info.url = it->second.url;
+        info.size = it->second.size;
+        auto reader = std::make_shared<HttpRangeReader>(info);
+        return { std::make_shared<FileStream>(fullPath, reader) };
+    }
+#endif
 
     PHYSFS_File* file = PHYSFS_openRead(fullPath.c_str());
     if (!file)

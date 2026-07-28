@@ -27,6 +27,7 @@ Platform g_platform;
 std::unordered_map<DeviceType, std::string> Platform::m_deviceShortNames = {
     {Desktop, "desktop"},
     {Mobile,  "mobile"},
+    {Browser, "browser"},
     {Console, "console"},
 };
 

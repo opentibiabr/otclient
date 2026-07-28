@@ -24,6 +24,7 @@
 
 #include "application.h"
 
+#include <atomic>
 #include <framework/core/inputevent.h>
 #include <framework/graphics/declarations.h>
 
@@ -76,14 +77,14 @@ public:
     void mainPoll();
     void close() override;
 
-    void setMaxFps(const uint16_t maxFps) { m_graphicFrameCounter.setMaxFps(maxFps); }
+    void setMaxFps(const uint16_t maxFps);
     void setTargetFps(const uint16_t targetFps) { m_graphicFrameCounter.setTargetFps(targetFps); }
 
     uint16_t getFps() { return m_graphicFrameCounter.getFps(); }
     uint16_t getGraphicsFps() { return m_graphicFrameCounter.getFps(); }
     uint16_t getProcessingFps() { return m_mapProcessFrameCounter.getFps(); }
-    uint8_t getMaxFps() { return m_graphicFrameCounter.getMaxFps(); }
-    uint8_t getTargetFps() { return m_graphicFrameCounter.getTargetFps(); }
+    uint16_t getMaxFps() { return m_graphicFrameCounter.getMaxFps(); }
+    uint16_t getTargetFps() { return m_graphicFrameCounter.getTargetFps(); }
 
     void resetTargetFps() { m_graphicFrameCounter.resetTargetFps(); }
 
@@ -158,6 +159,17 @@ private:
     AdaptativeFrameCounter m_graphicFrameCounter;
 
     ApplicationDrawEventsPtr m_drawEvents;
+
+#ifdef __EMSCRIPTEN__
+    // Both start at 0 so no timing call happens until setMaxFps() asks for one.
+    // 0 means "unlimited", which is what the base emscripten_set_main_loop()
+    // registration already does (requestAnimationFrame), so the startup state is
+    // consistent. The browser default lives in ONE place only -- the
+    // backgroundFrameRate option in data_options.lua. Do not seed a default here:
+    // it would silently override that option until the config finishes loading.
+    std::atomic<uint16_t> m_requestedEmscriptenFps{ 0 };
+    std::atomic<uint16_t> m_appliedEmscriptenFps{ 0 };
+#endif
 };
 
 extern GraphicalApplication g_app;

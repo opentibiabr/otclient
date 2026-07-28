@@ -18,6 +18,13 @@ option(ASAN_ENABLED "Build this target with AddressSanitizer" OFF)
 option(BUILD_STATIC_LIBRARY "Build using static libraries" OFF)
 option(TOGGLE_PRE_COMPILED_HEADER "Use precompiled header (speed up compile)" ON)
 option(SPEED_UP_BUILD_UNITY "Compile using build unity for speed up build" ON)
+# WASM_PROFILING_FUNCS: Keep function names in the wasm name section for profiling.
+# This increases the size of the .wasm file significantly. Keep OFF for production builds.
+option(WASM_PROFILING_FUNCS "Keep function names in the wasm name section for profiling" OFF)
+
+# DRAWPOOL_STATS: Count draw calls per pool per frame and log them once per second.
+# Keep OFF for production builds.
+option(DRAWPOOL_STATS "Count draw calls per pool per frame and log them once per second" OFF)
 
 if (TOGGLE_FRAMEWORK_PROTOBUF)
   # Protobuf
@@ -335,6 +342,7 @@ set(SOURCE_FILES
         framework/core/event.cpp
         framework/core/eventdispatcher.cpp
         framework/core/filestream.cpp
+        framework/core/httprangereader.cpp
         framework/core/logger.cpp
         framework/core/module.cpp
         framework/core/modulemanager.cpp
@@ -940,7 +948,7 @@ elseif(WASM)
           # Chrome 149+ refuses to accept as a source for WebGL uploads
           # ("ArrayBuffer value must not be resizable"). Use a fixed heap.
           -sALLOW_MEMORY_GROWTH=0
-          -sINITIAL_MEMORY=1073741824
+          -sINITIAL_MEMORY=805306368
           --preload-file=../otclientrc.lua@otclientrc.lua
           --preload-file=../init.lua@init.lua
           # ConfigManager::init() always calls loadPublicConfig("config.ini"),
@@ -952,7 +960,28 @@ elseif(WASM)
           --preload-file=../modules@modules
           --shell-file=../browser/shell.html
           --use-preload-cache
+          --exclude-file=*/things/*/Tibia.spr
   )
+
+  # Generate remote-assets.json for HTTP range request loading of large files
+  set(SPRITE_PACK_PATH "${CMAKE_SOURCE_DIR}/data/things/860/Tibia.spr")
+  if(EXISTS "${SPRITE_PACK_PATH}")
+    file(SIZE "${SPRITE_PACK_PATH}" SPRITE_PACK_SIZE)
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${SPRITE_PACK_PATH}")
+    message(STATUS "Detected Tibia.spr size: ${SPRITE_PACK_SIZE}")
+  else()
+    message(WARNING "Tibia.spr not found at ${SPRITE_PACK_PATH}, skipping remote-assets.json generation")
+    set(SPRITE_PACK_SIZE 0)
+  endif()
+  
+  if(SPRITE_PACK_SIZE GREATER 0)
+    set(REMOTE_ASSETS_JSON "{\"files\":[{\"path\":\"/data/things/860/Tibia.spr\",\"url\":\"/assets/things/860/Tibia.spr\",\"size\":${SPRITE_PACK_SIZE}}]}")
+    file(WRITE "${CMAKE_BINARY_DIR}/remote-assets.json" "${REMOTE_ASSETS_JSON}")
+    message(STATUS "Generated remote-assets.json with Tibia.spr size: ${SPRITE_PACK_SIZE}")
+    
+    # Preload the remote-assets.json using absolute path to binary dir
+    list(APPEND WASM_LINK_OPTIONS --preload-file=${CMAKE_BINARY_DIR}/remote-assets.json@/remote-assets.json)
+  endif()
 
   if(WASM_USE_WASM_EXCEPTIONS)
     list(APPEND WASM_LINK_OPTIONS "-sDEFAULT_LIBRARY_FUNCS_TO_INCLUDE=['emscripten_longjmp']")
@@ -962,10 +991,30 @@ elseif(WASM)
     list(APPEND WASM_LINK_OPTIONS -sASSERTIONS=1)
   endif()
 
+  # Add --profiling-funcs to keep function names in the wasm name section for profiling.
+  # This is useful for Chrome DevTools performance profiling but increases binary size.
+  if(WASM_PROFILING_FUNCS)
+    list(APPEND WASM_LINK_OPTIONS --profiling-funcs)
+  endif()
+
+  # DRAWPOOL_STATS: Count draw calls per pool per frame and log them once per second.
+  if(DRAWPOOL_STATS)
+    target_compile_definitions(otclient_core PRIVATE DRAWPOOL_STATS=1)
+  endif()
+
   target_link_options(${PROJECT_NAME} PRIVATE ${WASM_LINK_OPTIONS})
   string(REPLACE ";" " " _WASM_LINK_LOG "${WASM_LINK_OPTIONS}")
   message(STATUS "WASM link options: ${_WASM_LINK_LOG}")
   set(CMAKE_EXECUTABLE_SUFFIX ".html")
+  
+  # POST_BUILD: Verify preload data file size (catches silent --exclude-file failures)
+  add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} 
+      -D DATA_FILE=$<TARGET_FILE_DIR:${PROJECT_NAME}>/otclient.data
+      -P ${CMAKE_SOURCE_DIR}/browser/verify-preload-size.cmake
+    COMMENT "Verifying preload data file size..."
+    VERBATIM
+  )
   set(VCPKG_TARGET_TRIPLET "wasm32-emscripten" CACHE STRING "")
 
 else() # Linux

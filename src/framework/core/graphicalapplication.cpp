@@ -138,6 +138,22 @@ void GraphicalApplication::mainLoop() {
         MAIN_THREAD_EM_ASM({ window.location.reload(); });
         return;
     }
+
+    // Apply the requested frame rate timing on the main loop thread.
+    // This must be done here because emscripten_set_main_loop_timing() affects
+    // the loop of the calling thread, and setMaxFps() is called from Lua which
+    // runs on a different thread (g_luaThreadId is set inside the map thread).
+    // Calling it from setMaxFps() would be a silent no-op.
+    const auto requestedFps = m_requestedEmscriptenFps.load();
+    if (requestedFps != m_appliedEmscriptenFps) {
+        if (requestedFps == 0) {
+            emscripten_set_main_loop_timing(EM_TIMING_RAF, 1);
+        } else {
+            emscripten_set_main_loop_timing(EM_TIMING_SETTIMEOUT, 1000 / requestedFps);
+        }
+        m_appliedEmscriptenFps = requestedFps;
+    }
+
     mainPoll();
 
     if (!g_window.isVisible()) {
@@ -146,7 +162,13 @@ void GraphicalApplication::mainLoop() {
     }
 
     const auto FPS = [this] {
-        m_mapProcessFrameCounter.setTargetFps(g_window.vsyncEnabled() || getMaxFps() || getTargetFps() ? 500u : 0u);
+        // The presentation rate is whatever the backgroundFrameRate option asks
+        // for -- 30fps by default in the browser, up to unlimited on rAF.
+        // Targeting 120fps for the map thread keeps spare cycles per presented
+        // frame at any of those rates, avoiding phase drift that would cause
+        // duplicate frames. The previous 500fps target caused the thread to
+        // spin at ~1ms cycles, processing the map ~8x more than necessary.
+        m_mapProcessFrameCounter.setTargetFps(g_window.vsyncEnabled() || getMaxFps() || getTargetFps() ? 120u : 0u);
         return m_graphicFrameCounter.getFps();
     };
 
@@ -162,6 +184,18 @@ void GraphicalApplication::mainLoop() {
     }
 }
 #endif
+
+void GraphicalApplication::setMaxFps(const uint16_t maxFps)
+{
+    m_graphicFrameCounter.setMaxFps(maxFps);
+
+#ifdef __EMSCRIPTEN__
+    // Store the requested FPS so mainLoop() (running on the correct thread)
+    // can apply it via emscripten_set_main_loop_timing().
+    // maxFps == 0 means "unlimited" (use requestAnimationFrame).
+    m_requestedEmscriptenFps.store(maxFps == 0 ? 0 : maxFps);
+#endif
+}
 
 bool GraphicalApplication::canDrawMap() const {
     using enum DrawPoolType;
@@ -253,6 +287,10 @@ void GraphicalApplication::run()
 
 #ifdef __EMSCRIPTEN__
     m_running = true;
+    // FPS 0 = register using requestAnimationFrame (browser decides rate).
+    // The actual frame rate is controlled at runtime via emscripten_set_main_loop_timing()
+    // inside mainLoop(), driven by the user's backgroundFrameRate option (default 30).
+    // This allows the user to change the limit in Options -> Graphics.
     emscripten_set_main_loop(([] { g_app.mainLoop(); }), 0, 1);
 #else
     m_running = true;

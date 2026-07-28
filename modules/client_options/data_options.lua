@@ -185,7 +185,7 @@ return {
     },
     openMaximized                     = false,
     backgroundFrameRate               = {
-        value = 501,
+        value = g_platform.isBrowser() and 30 or 501,
         action = function(value, options, controller, panels, extraWidgets)
             local text, v = value, value
             if value <= 0 or value >= 501 then

@@ -28,12 +28,19 @@
 
 struct PHYSFS_File;
 
+#ifdef __EMSCRIPTEN__
+class HttpRangeReader;
+#endif
+
 // @bindclass
 class FileStream : public std::enable_shared_from_this<FileStream>
 {
 public:
     FileStream(std::string name, PHYSFS_File* fileHandle, bool writeable);
     FileStream(std::string name, std::string_view buffer);
+#ifdef __EMSCRIPTEN__
+    FileStream(std::string name, std::shared_ptr<HttpRangeReader> remoteReader);
+#endif
     ~FileStream();
 
     void cache(bool useEnc = false);
@@ -83,4 +90,8 @@ private:
     uint32_t m_pos;
     bool m_writeable;
     bool m_caching;
+    
+#ifdef __EMSCRIPTEN__
+    std::shared_ptr<HttpRangeReader> m_remoteReader;
+#endif
 };

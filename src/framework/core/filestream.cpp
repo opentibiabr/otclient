@@ -30,6 +30,10 @@
 #include "resourcemanager.h"
 #endif
 
+#ifdef __EMSCRIPTEN__
+#include "httprangereader.h"
+#endif
+
 inline void grow(std::vector<uint8_t>& data, const size_t size) {
     if (size > data.size())
         data.resize(size);
@@ -55,6 +59,18 @@ FileStream::FileStream(std::string name, const std::string_view buffer) :
     memcpy(&m_data[0], &buffer[0], buffer.length());
 }
 
+#ifdef __EMSCRIPTEN__
+FileStream::FileStream(std::string name, std::shared_ptr<HttpRangeReader> remoteReader) :
+    m_name(std::move(name)),
+    m_fileHandle(nullptr),
+    m_pos(0),
+    m_writeable(false),
+    m_caching(false),
+    m_remoteReader(std::move(remoteReader))
+{
+}
+#endif
+
 FileStream::~FileStream()
 {
 #ifndef NDEBUG
@@ -70,6 +86,12 @@ void FileStream::cache(bool
 #endif
 )
 {
+#ifdef __EMSCRIPTEN__
+    // No-op in remote mode - we don't want to cache the entire file
+    if (m_remoteReader)
+        return;
+#endif
+
     m_caching = true;
 
     if (!m_writeable) {
@@ -133,6 +155,16 @@ void FileStream::flush()
 
 int FileStream::read(void* buffer, const uint32_t size, const uint32_t nmemb)
 {
+#ifdef __EMSCRIPTEN__
+    if (m_remoteReader) {
+        uint32_t totalBytes = size * nmemb;
+        uint32_t bytesRead = m_remoteReader->read(buffer, m_pos, totalBytes);
+        m_pos += bytesRead;
+        // Return number of "members" read (floor division)
+        return bytesRead / size;
+    }
+#endif
+
     if (!m_caching) {
         const int res = PHYSFS_readBytes(m_fileHandle, buffer, static_cast<PHYSFS_uint64>(size) * nmemb);
         if (res == -1)
@@ -165,6 +197,14 @@ void FileStream::write(const void* buffer, const uint32_t count)
 
 void FileStream::seek(const uint32_t pos)
 {
+#ifdef __EMSCRIPTEN__
+    if (m_remoteReader) {
+        m_remoteReader->seek(pos);
+        m_pos = static_cast<uint32_t>(m_remoteReader->tell());
+        return;
+    }
+#endif
+
     if (!m_caching) {
         if (!PHYSFS_seek(m_fileHandle, pos))
             throwError("seek failed", true);
@@ -180,8 +220,24 @@ void FileStream::skip(const uint32_t len)
     seek(tell() + len);
 }
 
+#ifdef __EMSCRIPTEN__
+namespace {
+    // Helper to read bytes from remote reader
+    bool readRemoteBytes(HttpRangeReader* reader, uint32_t pos, uint8_t* out, uint32_t len)
+    {
+        uint32_t bytesRead = reader->read(out, pos, len);
+        return bytesRead == len;
+    }
+}
+#endif
+
 uint32_t FileStream::size() const
 {
+#ifdef __EMSCRIPTEN__
+    if (m_remoteReader)
+        return static_cast<uint32_t>(m_remoteReader->size());
+#endif
+
     if (!m_caching)
         return PHYSFS_fileLength(m_fileHandle);
     return m_data.size();
@@ -189,6 +245,11 @@ uint32_t FileStream::size() const
 
 uint32_t FileStream::tell() const
 {
+#ifdef __EMSCRIPTEN__
+    if (m_remoteReader)
+        return static_cast<uint32_t>(m_remoteReader->tell());
+#endif
+
     if (!m_caching)
         return PHYSFS_tell(m_fileHandle);
     return m_pos;
@@ -196,6 +257,11 @@ uint32_t FileStream::tell() const
 
 bool FileStream::eof() const
 {
+#ifdef __EMSCRIPTEN__
+    if (m_remoteReader)
+        return m_remoteReader->eof();
+#endif
+
     if (!m_caching)
         return PHYSFS_eof(m_fileHandle);
     return m_pos >= m_data.size();
@@ -204,6 +270,15 @@ bool FileStream::eof() const
 uint8_t FileStream::getU8()
 {
     uint8_t v = 0;
+#ifdef __EMSCRIPTEN__
+    if (m_remoteReader) {
+        if (!readRemoteBytes(m_remoteReader.get(), m_pos, &v, 1))
+            throwError("read failed");
+        m_pos += 1;
+        return v;
+    }
+#endif
+
     if (!m_caching) {
         if (PHYSFS_readBytes(m_fileHandle, &v, 1) != 1)
             throwError("read failed", true);
@@ -220,6 +295,17 @@ uint8_t FileStream::getU8()
 uint16_t FileStream::getU16()
 {
     uint16_t v = 0;
+#ifdef __EMSCRIPTEN__
+    if (m_remoteReader) {
+        uint8_t buf[2];
+        if (!readRemoteBytes(m_remoteReader.get(), m_pos, buf, 2))
+            throwError("read failed");
+        v = stdext::readULE16(buf);
+        m_pos += 2;
+        return v;
+    }
+#endif
+
     if (!m_caching) {
         if (PHYSFS_readULE16(m_fileHandle, &v) == 0)
             throwError("read failed", true);
@@ -236,6 +322,17 @@ uint16_t FileStream::getU16()
 uint32_t FileStream::getU32()
 {
     uint32_t v = 0;
+#ifdef __EMSCRIPTEN__
+    if (m_remoteReader) {
+        uint8_t buf[4];
+        if (!readRemoteBytes(m_remoteReader.get(), m_pos, buf, 4))
+            throwError("read failed");
+        v = stdext::readULE32(buf);
+        m_pos += 4;
+        return v;
+    }
+#endif
+
     if (!m_caching) {
         if (PHYSFS_readULE32(m_fileHandle, &v) == 0)
             throwError("read failed", true);
@@ -252,6 +349,17 @@ uint32_t FileStream::getU32()
 uint64_t FileStream::getU64()
 {
     uint64_t v = 0;
+#ifdef __EMSCRIPTEN__
+    if (m_remoteReader) {
+        uint8_t buf[8];
+        if (!readRemoteBytes(m_remoteReader.get(), m_pos, buf, 8))
+            throwError("read failed");
+        v = stdext::readULE64(buf);
+        m_pos += 8;
+        return v;
+    }
+#endif
+
     if (!m_caching) {
         if (PHYSFS_readULE64(m_fileHandle, (PHYSFS_uint64*)&v) == 0)
             throwError("read failed", true);
@@ -267,6 +375,15 @@ uint64_t FileStream::getU64()
 int8_t FileStream::get8()
 {
     int8_t v = 0;
+#ifdef __EMSCRIPTEN__
+    if (m_remoteReader) {
+        if (!readRemoteBytes(m_remoteReader.get(), m_pos, reinterpret_cast<uint8_t*>(&v), 1))
+            throwError("read failed");
+        m_pos += 1;
+        return v;
+    }
+#endif
+
     if (!m_caching) {
         if (PHYSFS_readBytes(m_fileHandle, &v, 1) != 1)
             throwError("read failed", true);
@@ -283,6 +400,17 @@ int8_t FileStream::get8()
 int16_t FileStream::get16()
 {
     int16_t v = 0;
+#ifdef __EMSCRIPTEN__
+    if (m_remoteReader) {
+        uint8_t buf[2];
+        if (!readRemoteBytes(m_remoteReader.get(), m_pos, buf, 2))
+            throwError("read failed");
+        v = stdext::readSLE16(buf);
+        m_pos += 2;
+        return v;
+    }
+#endif
+
     if (!m_caching) {
         if (PHYSFS_readSLE16(m_fileHandle, &v) == 0)
             throwError("read failed", true);
@@ -299,6 +427,17 @@ int16_t FileStream::get16()
 int32_t FileStream::get32()
 {
     int32_t v = 0;
+#ifdef __EMSCRIPTEN__
+    if (m_remoteReader) {
+        uint8_t buf[4];
+        if (!readRemoteBytes(m_remoteReader.get(), m_pos, buf, 4))
+            throwError("read failed");
+        v = stdext::readSLE32(buf);
+        m_pos += 4;
+        return v;
+    }
+#endif
+
     if (!m_caching) {
         if (PHYSFS_readSLE32(m_fileHandle, &v) == 0)
             throwError("read failed", true);
@@ -315,6 +454,17 @@ int32_t FileStream::get32()
 int64_t FileStream::get64()
 {
     int64_t v = 0;
+#ifdef __EMSCRIPTEN__
+    if (m_remoteReader) {
+        uint8_t buf[8];
+        if (!readRemoteBytes(m_remoteReader.get(), m_pos, buf, 8))
+            throwError("read failed");
+        v = stdext::readSLE64(buf);
+        m_pos += 8;
+        return v;
+    }
+#endif
+
     if (!m_caching) {
         if (PHYSFS_readSLE64(m_fileHandle, (PHYSFS_sint64*)&v) == 0)
             throwError("read failed", true);
@@ -332,6 +482,17 @@ std::string FileStream::getString()
     std::string str;
     if (const uint16_t len = getU16(); len > 0 && len < 8192) {
         char buffer[8192];
+        
+#ifdef __EMSCRIPTEN__
+        if (m_remoteReader) {
+            if (!readRemoteBytes(m_remoteReader.get(), m_pos, reinterpret_cast<uint8_t*>(buffer), len))
+                throwError("read failed");
+            str = { buffer, len };
+            m_pos += len;
+            return str;
+        }
+#endif
+        
         if (m_fileHandle) {
             if (PHYSFS_readBytes(m_fileHandle, buffer, len) == 0)
                 throwError("read failed", true);

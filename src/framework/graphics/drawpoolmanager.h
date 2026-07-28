@@ -139,6 +139,19 @@ private:
 
     uint16_t m_spriteSize{ 32 };
 
+#if DRAWPOOL_STATS
+    struct PoolStats {
+        uint64_t drawCalls{ 0 };
+        uint64_t repaints{ 0 };
+    };
+    std::array<PoolStats, static_cast<uint8_t>(DrawPoolType::LAST)> m_poolStats{};
+    uint64_t m_frameCount{ 0 };
+    uint64_t m_lastLogTime{ 0 };
+
+    void logStats();
+    const char* getPoolTypeName(DrawPoolType type) const;
+#endif
+
     friend class GraphicalApplication;
 };
 
