@@ -26,7 +26,13 @@ game
     diagonal-walk-speed: 3
 
   player
-    diagonal-walk-speed: 3
+    # 2, not 3: server-core charges a diagonal step as lastStepCost 3 for
+    # creatures but subtracts one for players (src/creature.cpp:478-481), so the
+    # local player pays 2. Leaving this at 3 makes the client predict a step 50%
+    # longer than the server enforces, and the server releases the next step
+    # mid-animation -- diagonal movement rubber-bands while straight movement
+    # looks fine.
+    diagonal-walk-speed: 2
 
   render
     invisible-ticks-per-frame: 75
