@@ -169,7 +169,8 @@ bool GraphicalApplication::canDrawMap() const {
     if (!m_drawEvents->canDraw(MAP))
         return false;
 
-    static constexpr std::array<DrawPoolType, 4> types{ MAP, LIGHT, FOREGROUND_MAP, CREATURE_INFORMATION };
+    // FOREGROUND is here only because of attached widgets on the map (like tile widgets)
+    static constexpr std::array<DrawPoolType, 5> types{ MAP, LIGHT, FOREGROUND_MAP, CREATURE_INFORMATION, FOREGROUND };
 
     for (DrawPoolType type : types) {
         if (g_drawPool.isDrawing(type))
@@ -212,7 +213,7 @@ void GraphicalApplication::run()
                 continue;
             }
 
-            {
+            if (g_game.isOnline()) {
                 AutoStat s(STATS_RENDER, "DrawPreload");
                 m_drawEvents->preLoad();
             }
@@ -222,11 +223,13 @@ void GraphicalApplication::run()
             if (!g_game.isOnline() && canDrawForeground) {
                 AutoStat s(STATS_RENDER, "DrawForegroundUI");
                 g_ui.render(DrawPoolType::FOREGROUND);
-            } else if (canDrawMap() && canDrawForeground) {
-                tasks.emplace_back(g_asyncDispatcher->submit_task([] {
-                    AutoStat s(STATS_RENDER, "DrawForegroundUI");
-                    g_ui.render(DrawPoolType::FOREGROUND);
-                }));
+            } else if (canDrawMap()) {
+                if (canDrawForeground) {
+                    tasks.emplace_back(g_asyncDispatcher->submit_task([] {
+                        AutoStat s(STATS_RENDER, "DrawForegroundUI");
+                        g_ui.render(DrawPoolType::FOREGROUND);
+                    }));
+                }
 
                 static constexpr std::array<DrawPoolType, 2> types{ DrawPoolType::LIGHT, DrawPoolType::FOREGROUND_MAP };
                 for (const auto type : types) {

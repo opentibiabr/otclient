@@ -24,6 +24,7 @@
 
 #include "animator.h"
 #include "attachedeffect.h"
+#include "client/const.h"
 #include "game.h"
 #include "gameconfig.h"
 #include "lightview.h"
@@ -741,12 +742,22 @@ void Creature::updateWalkingTile()
         g_gameConfig.getSpriteSize() + (m_walkOffset.y - displacementY),
         g_gameConfig.getSpriteSize(), g_gameConfig.getSpriteSize());
 
+    if (m_walkedPixels < g_gameConfig.getSpriteSize() / 2) {
+        if (m_direction == Otc::Direction::NorthWest)
+            newWalkingTile = m_walkingTile ? m_walkingTile : getTile();
+        else if (m_direction == Otc::Direction::SouthEast)
+            newWalkingTile = g_map.getTile(getPosition().translated(-1, -1, 0));
+    }
+
     for (int xi = -1; xi <= 1 && !newWalkingTile; ++xi) {
         for (int yi = -1; yi <= 1 && !newWalkingTile; ++yi) {
             Rect virtualTileRect((xi + 1) * g_gameConfig.getSpriteSize(), (yi + 1) * g_gameConfig.getSpriteSize(), g_gameConfig.getSpriteSize(), g_gameConfig.getSpriteSize());
 
-            // only render creatures where bottom right is inside tile rect
-            if (virtualTileRect.contains(virtualCreatureRect.bottomRight())) {
+            // when creature is moving to the upper left tile, because of drawing order (we want creature to be behind the object to the left if its a tree for example)
+            if (m_direction == Otc::Direction::NorthWest && virtualTileRect.contains(virtualCreatureRect.topLeft())) {
+                newWalkingTile = g_map.getOrCreateTile(getPosition().translated(xi, yi, 0));
+            } else if (virtualTileRect.contains(virtualCreatureRect.bottomRight())) {
+                // only render creatures where bottom right is inside tile rect
                 newWalkingTile = g_map.getOrCreateTile(getPosition().translated(xi, yi, 0));
             }
         }
