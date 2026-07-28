@@ -1,0 +1,116 @@
+# A category heading inside the gallery scroll.
+OtuiGalleryHeader < UILabel
+  height: 20
+  font: verdana-11px-rounded
+  color: #9fc6e0
+  background-color: #2a2a2a
+  text-offset: 4 3
+  phantom: true
+  focusable: false
+
+# One style: its name on the left, the live sample on the right.
+OtuiGalleryRow < UIWidget
+  height: 26
+  focusable: false
+
+  UILabel
+    id: styleName
+    width: 200
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 6
+    font: verdana-11px-monochrome
+    color: #c0c0c0
+    phantom: true
+
+  # the sample is instantiated in here; clipping stops an oversized widget
+  # (MainWindow is 200x200) from pushing the row out of shape
+  UIWidget
+    id: sampleSlot
+    anchors.left: prev.right
+    anchors.right: parent.right
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    margin-left: 8
+    margin-right: 6
+    clipping: true
+    focusable: false
+
+MainWindow
+  id: otuiGalleryWindow
+  size: 720 620
+  !text: 'Style gallery'
+
+  @onEscape: modules.dev_otui.closeGallery()
+
+  OtuiSectionLabel
+    id: galleryHint
+    height: 12
+    margin-top: 0
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    !text: 'Every style in data/styles, grouped by file, rendered by the client itself.'
+
+  TextList
+    id: galleryList
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: galleryScroll.left
+    anchors.bottom: closeGalleryBtn.top
+    margin-top: 4
+    margin-bottom: 6
+    padding: 1
+    focusable: true
+    vertical-scrollbar: galleryScroll
+
+  # anchored to the same neighbours the list uses, never to the list itself
+  VerticalScrollBar
+    id: galleryScroll
+    anchors.top: galleryHint.bottom
+    anchors.bottom: closeGalleryBtn.top
+    anchors.right: parent.right
+    margin-top: 4
+    margin-bottom: 6
+    step: 26
+    pixels-scroll: true
+
+  Label
+    id: galleryCount
+    height: 16
+    font: verdana-11px-monochrome
+    color: #8f8f8f
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    anchors.right: closeGalleryBtn.left
+    margin-right: 6
+    !text: ''
+
+  Button
+    id: closeGalleryBtn
+    !text: 'Close'
+    width: 90
+    height: 20
+    anchors.bottom: parent.bottom
+    anchors.right: parent.right
+    @onClick: modules.dev_otui.closeGallery()
+
+  ResizeBorder
+    id: galleryBottomResize
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-bottom: -10
+    height: 4
+    minimum: 380
+    maximum: 1400
+
+  ResizeBorder
+    id: galleryRightResize
+    anchors.right: parent.right
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    margin-right: -10
+    width: 4
+    minimum: 420
+    maximum: 1600
