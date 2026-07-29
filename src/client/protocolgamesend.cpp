@@ -651,6 +651,15 @@ void ProtocolGame::sendChangeFightModes(const Otc::FightModes fightMode, const O
 {
     const auto& msg = std::make_shared<OutputMessage>();
     msg->addU8(Proto::ClientChangeFightModes);
+
+    if (g_game.getFeature(Otc::GameTacticsWithoutFightMode)) {
+        msg->addU8(chaseMode);
+        msg->addU8(safeFight);
+        msg->addU8(pvpMode);
+        send(msg);
+        return;
+    }
+
     msg->addU8(fightMode);
     msg->addU8(chaseMode);
     msg->addU8(safeFight);

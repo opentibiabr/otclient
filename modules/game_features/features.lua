@@ -287,6 +287,10 @@ controller:registerEvents(g_game, {
             g_game.enableFeature(GameLevelPercentU16)
             g_game.enableFeature(GameTaskboard)
         end
+
+        if version >= 1525 then
+            g_game.enableFeature(GameTacticsWithoutFightMode)
+        end
         
     end
 })
