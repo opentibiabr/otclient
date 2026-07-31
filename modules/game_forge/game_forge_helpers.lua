@@ -36,6 +36,19 @@ function Helpers.cloneValue(value)
     return value
 end
 
+-- prices above 2^31 arrive wrapped to a negative 32-bit value
+-- (C++ pushInteger uses 'long', which is 32-bit on Windows); un-wrap them
+function Helpers.unwrapPrice(price)
+    price = tonumber(price)
+    if not price then
+        return nil
+    end
+    if price < 0 then
+        price = price + 4294967296
+    end
+    return price
+end
+
 function Helpers.normalizeTierPriceEntries(entries)
     local prices = {}
     if type(entries) ~= 'table' then
@@ -45,7 +58,7 @@ function Helpers.normalizeTierPriceEntries(entries)
     for _, entry in ipairs(entries) do
         if type(entry) == 'table' then
             local tierId = tonumber(entry.tier) or tonumber(entry.tierId) or tonumber(entry.id)
-            local price = tonumber(entry.price) or tonumber(entry.cost) or tonumber(entry.value)
+            local price = Helpers.unwrapPrice(entry.price) or Helpers.unwrapPrice(entry.cost) or Helpers.unwrapPrice(entry.value)
             if tierId then
                 prices[tierId + 1] = price or 0
             end

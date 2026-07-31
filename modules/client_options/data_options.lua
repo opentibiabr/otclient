@@ -604,6 +604,12 @@ return {
     },
     profile                           = {
         value = 1,
+        action = function(value, options, controller, panels, extraWidgets)
+            -- notify client_profiles so per-profile modules (bot, actionbar) reload their configs
+            if modules.client_profiles and modules.client_profiles.onProfileChange then
+                modules.client_profiles.onProfileChange()
+            end
+        end
     },
     rightJoystick                     = {
         value = false,

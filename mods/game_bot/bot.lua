@@ -340,6 +340,14 @@ function online()
   botWindow:setupOnStart()
   if not (modules.client_profiles and modules.client_profiles.ChangedProfile) then
     scheduleEvent(refresh, 20)
+  else
+    -- profile changed at login: client_profiles.collectiveReload() should call refresh().
+    -- Fallback in case that chain fails, so the bot never stays unloaded after relog.
+    scheduleEvent(function()
+      if g_game.isOnline() and not botExecutor then
+        refresh()
+      end
+    end, 500)
   end
 end
 

@@ -1884,7 +1884,8 @@ int push_luavalue(const ForgeTierPrice& data) {
     g_lua.createTable(0, 2);
     g_lua.pushInteger(data.tier);
     g_lua.setField("tier");
-    g_lua.pushInteger(data.price);
+    // pushInteger takes 'long' (32-bit on Windows) and would wrap prices > 2^31
+    g_lua.pushNumber(static_cast<double>(data.price));
     g_lua.setField("price");
     return 1;
 }
