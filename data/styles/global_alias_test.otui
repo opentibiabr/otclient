@@ -1,0 +1,19 @@
+&primaryColor: #33AAFF
+&secondaryColor: $primaryColor
+&lightText: '#FFFFFF'
+
+TestGlobalStyle < UIWidget
+  color: $lightText
+  background-color: $secondaryColor
+  border-color: $primaryColor
+
+DerivedPanel < UIWidget
+  &panelAccent: $secondaryColor
+  color: $primaryColor
+  background-color: $lightText
+  text-color: $secondaryColor
+  padding: $panelAccent
+  PanelHeader < UIWidget
+    &headerAccent: $panelAccent
+    background-color: $headerAccent
+    padding: $headerAccent

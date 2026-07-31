@@ -20,6 +20,16 @@
  * THE SOFTWARE.
  */
 
+#include "math.h"
+
+#ifndef USE_PRECOMPILED_HEADERS
+#include <cmath>
+#include <stdexcept>
+#include <utility>
+#endif
+
+#include <zlib.h>
+
 #ifdef _MSC_VER
 #pragma warning(disable:4267) // '?' : conversion from 'A' to 'B', possible loss of data
 #endif

@@ -42,6 +42,11 @@
 
 Client g_client;
 
+Client::Client()
+{
+    m_effectAlphas.fill(1.0f);
+}
+
 void Client::init(std::vector<std::string>& /*args*/)
 {
     // register needed lua functions

@@ -89,8 +89,11 @@ void Effect::draw(const Point& dest, const bool drawThings, LightView* lightView
         return;
 
     if (g_drawPool.getCurrentType() == DrawPoolType::MAP) {
-        if (drawThings && g_client.getEffectAlpha() < 1.f)
-            g_drawPool.setOpacity(g_client.getEffectAlpha(), true);
+        if (drawThings) {
+            float alpha = g_client.getEffectAlpha(m_source);
+            if (alpha < 1.f)
+                g_drawPool.setOpacity(alpha, true);
+        }
     }
 
     if (drawThings && hasShader())
@@ -107,6 +110,9 @@ void Effect::onAppear()
             return;
 
         m_duration = animator->getTotalDuration();
+        if (animator->isInfiniteLoop()) {
+            m_permanent = true;
+        }
     } else {
         m_duration = g_gameConfig.getEffectTicksPerFrame();
 
@@ -120,8 +126,10 @@ void Effect::onAppear()
 
     m_animationTimer.restart();
 
-    // schedule removal
-    g_dispatcher.scheduleEvent([self = asEffect()] { g_map.removeThing(self); }, m_duration);
+    if (!m_permanent) {
+        // schedule removal
+        g_dispatcher.scheduleEvent([self = asEffect()] { g_map.removeThing(self); }, m_duration);
+    }
 }
 
 bool Effect::waitFor(const EffectPtr& effect)

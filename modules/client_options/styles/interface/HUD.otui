@@ -1,120 +1,274 @@
 UIWidget
   anchors.fill: parent
   visible: false
-  SmallReversedQtPanel
-    anchors.left: parent.left
-    anchors.right: parent.right
+
+  UIScrollArea
+    id: hudScrollArea
     anchors.top: parent.top
-
-    height: 22
-  
-    OptionCheckBox
-      id: displayNames
-      !text: tr('Display creature names')
-
-  SmallReversedQtPanel
     anchors.left: parent.left
     anchors.right: parent.right
-    anchors.top: prev.bottom
-    margin-top: 7
-    height: 22
+    anchors.bottom: parent.bottom
+    margin-right: 14
+    vertical-scrollbar: hudScrollBar
+
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: parent.top
   
-    OptionCheckBox
-      id: displayHealth
-      !text: tr('Display creature health bars')
-
-  SmallReversedQtPanel
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.top: prev.bottom
-    margin-top: 7
-    height: 22
+      height: 22
+    
+      OptionCheckBox
+        id: displayNames
+        !text: tr('Display creature names')
   
-    OptionCheckBox
-      id: displayMana
-      !text: tr('Display player mana bar')
-
-  SmallReversedQtPanel
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.top: prev.bottom
-    margin-top: 7
-    height: 22
-
-    OptionCheckBoxMarked
-      id: displayHarmony
-      !text: tr('Display player Harmony bar')
-      !tooltip: tr('Can be enabled only in version 15.00 or higher')
-
-  SmallReversedQtPanel
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.top: prev.bottom
-    margin-top: 7
-    height: 22
-
-    $!mobile:
-      height: 0
-      margin-top: 0
-      visible: false
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 7
+      height: 22
+    
+      OptionCheckBox
+        id: displayHealth
+        !text: tr('Display creature health bars')
   
-    OptionCheckBox
-      id: rightJoystick
-      !text: tr('Joystick in RightPanel')
-
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 7
+      height: 22
+    
+      OptionCheckBox
+        id: displayMana
+        !text: tr('Display player mana bar')
+  
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 7
+      height: 22
+  
+      OptionCheckBoxMarked
+        id: displayHarmony
+        !text: tr('Display player Harmony bar')
+        !tooltip: tr('Can be enabled only in version 15.00 or higher')
+  
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 7
+      height: 22
+  
       $!mobile:
+        height: 0
+        margin-top: 0
         visible: false
-      
-  SmallReversedQtPanel
-    anchors.left: parent.left
+    
+      OptionCheckBox
+        id: rightJoystick
+        !text: tr('Joystick in RightPanel')
+  
+        $!mobile:
+          visible: false
+        
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      height: 22
+      margin-top: 7
+      OptionScaleScroll
+        id: hudScale
+        anchors.fill: parent
+        &minimumScrollValue: 1
+        &maximumScrollValue: 5
+        &scrollSize: 21
+  
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      height: 22
+      margin-top: 7
+      OptionScaleScroll
+        id: creatureInformationScale
+        anchors.fill: parent
+        &minimumScrollValue: 1
+        &maximumScrollValue: 9
+        &scrollSize: 21
+  
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 7
+      height: 22
+  
+      OptionScaleScroll
+        id: staticTextScale
+        anchors.fill: parent
+        &minimumScrollValue: 1
+        &maximumScrollValue: 9
+        &scrollSize: 21
+  
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 7
+      height: 22
+  
+      OptionScaleScroll
+        id: animatedTextScale
+        anchors.fill: parent
+        &minimumScrollValue: 1
+        &maximumScrollValue: 9
+        &scrollSize: 21
+  
+  
+    HorizontalSeparator
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 11
+      margin-left: 5
+      margin-right: 5
+
+
+
+    Label
+      id: specialConditionLabel
+      !text: tr('Special Conditions')
+      text-auto-resize: true
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 5
+      margin-left: 4
+
+
+
+    Label
+      id: showInHudLabel
+      anchors.top: prev.top
+      anchors.left: specialConditionLabel.right
+      margin-left: 123
+      !text: tr('Show in HUD')
+      text-auto-resize: true
+      $mobile:
+        margin-left: -5
+
+  
+    CheckBox
+      id: hudMasterCheckBox
+      size: 12 12
+      anchors.bottom: prev.bottom
+      anchors.left: prev.right
+      margin-left: 8
+      margin-bottom: 2
+      image-source: /images/ui/checkbox
+      image-clip: 0 0 12 12
+
+
+
+    Label
+      id: showInBarLabel
+      anchors.top: showInHudLabel.top
+      anchors.left: prev.right
+      margin-left: 16
+      !text: tr('Show in Bar')
+      text-auto-resize: true
+
+
+    CheckBox
+      id: barMasterCheckBox
+      size: 12 12
+      anchors.bottom: prev.bottom
+      anchors.left: prev.right
+      margin-left: 8
+      margin-bottom: 2
+      image-source: /images/ui/checkbox
+      image-clip: 0 0 12 12
+
+
+    TextList
+      id: conditionsList
+      size: 455 100
+      anchors.left: parent.left
+      anchors.top: specialConditionLabel.bottom
+      margin-top: 5
+      margin-left: 5
+      vertical-scrollbar: conditionsListScrollBar
+
+      $mobile:
+        size: 270 100
+
+    VerticalScrollBar
+      id: conditionsListScrollBar
+      anchors.top: prev.top
+      anchors.right: prev.right
+      anchors.bottom: prev.bottom
+      margin-top: 1
+      margin-bottom: 1
+      margin-right: 1
+      step: 16
+      pixels-scroll: true
+
+
+    UIButton
+      id: upButton
+      size: 20 20
+      anchors.top: conditionsList.top
+      anchors.right: parent.right
+      margin-right: -2
+      tooltip: Click to move the selected button up.
+      image-source: /images/ui/buttons/automap-button-moveup-up
+      $pressed:
+        image-source: /images/ui/buttons/automap-button-moveup-down
+
+
+    UIButton
+      id: downButton
+      size: 20 20
+      anchors.top: prev.bottom
+      anchors.right: parent.right
+      margin-right: -2
+      margin-top: 5
+      tooltip: Click to move the selected button down.
+      image-source: /images/ui/buttons/automap-button-movedown-up
+      $pressed:
+        image-source: /images/ui/buttons/automap-button-movedown-down
+
+ 
+  
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: conditionsList.bottom
+      margin-top: 7
+      height: 22
+      OptionCheckBox
+        !text: tr('Show Customisable Status Bars')
+        !tooltip: tr('Check this box to show the status bars for your character\'s most \nimportant attributes: their health and their mana. \nIf you have enabled this option and you right-click on the status \nbars field, a menu will open up which allows you to individualise \nyour status bars even further: \n* You can switch your status bars to one of the four sides \naround your game window. \n* You can display your status bars in different styles. \n* Additionally, you can decide to show the progress bars for \none, several or all of your skills or your experience level. If \nyou place your mouse pointer on one of the bars, a tooltip \nwill open up which shows your progress to the next skill or \nlevel in percent.')
+  
+  
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 7
+      height: 22
+      OptionCheckBox
+        !text: tr('Show Status Bars')
+        !tooltip: tr('Check this box to show your character\'s status bars for mana and \nhealth in the sidebar.')
+
+  VerticalScrollBar
+    id: hudScrollBar
+    anchors.top: parent.top
     anchors.right: parent.right
-    anchors.top: prev.bottom
-    height: 22
-    margin-top: 7
-    OptionScaleScroll
-      id: hudScale
-      anchors.fill: parent
-      &minimumScrollValue: 1
-      &maximumScrollValue: 5
-      &scrollSize: 21
-
-  SmallReversedQtPanel
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.top: prev.bottom
-    height: 22
-    margin-top: 7
-    OptionScaleScroll
-      id: creatureInformationScale
-      anchors.fill: parent
-      &minimumScrollValue: 1
-      &maximumScrollValue: 9
-      &scrollSize: 21
-
-  SmallReversedQtPanel
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.top: prev.bottom
-    margin-top: 7
-    height: 22
-
-    OptionScaleScroll
-      id: staticTextScale
-      anchors.fill: parent
-      &minimumScrollValue: 1
-      &maximumScrollValue: 9
-      &scrollSize: 21
-
-  SmallReversedQtPanel
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.top: prev.bottom
-    margin-top: 7
-    height: 22
-
-    OptionScaleScroll
-      id: animatedTextScale
-      anchors.fill: parent
-      &minimumScrollValue: 1
-      &maximumScrollValue: 9
-      &scrollSize: 21
+    anchors.bottom: parent.bottom
+    step: 16
+    pixels-scroll: true

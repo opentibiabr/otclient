@@ -39,6 +39,8 @@ bool luavalue_cast(int index, MarketData& data);
 // NPC
 int push_luavalue(const std::vector<NPCData>& data);
 bool luavalue_cast(int index, std::vector<NPCData>& data);
+int push_luavalue(const NpcButton& button);
+int push_luavalue(const NpcChatWindowData& data);
 
 // light
 int push_luavalue(const Light& light);
@@ -64,6 +66,11 @@ int push_luavalue(const StoreOffer& offer);
 int push_luavalue(const HomeOffer& homeOffer);
 int push_luavalue(const Banner& banner);
 int push_luavalue(const StoreData& storeData);
+
+// item inspection
+int push_luavalue(const ItemInspectionData& data);
+int push_luavalue(const InspectionInventoryItem& entry);
+int push_luavalue(const CyclopediaCharacterInspection& data);
 
 // cyclopedia
 int push_luavalue(const CyclopediaBestiaryRace& race);
@@ -94,6 +101,9 @@ int push_luavalue(const CyclopediaCharacterMiscStats& data);
 
 // bestiary
 int push_luavalue(const RaceType& raceData);
+
+// task board
+int push_luavalue(const TaskBoardSoulsealEntryData& entry);
 
 // rewardWall
 int push_luavalue(const DailyRewardItem& item);

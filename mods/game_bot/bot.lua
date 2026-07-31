@@ -83,6 +83,8 @@ function init()
   editWindow = g_ui.displayUI('edit')
   editWindow:hide()
 
+  loadConfigsList()
+
   if g_game.isOnline() then
     clear()
     online()
@@ -114,6 +116,7 @@ function clear()
 
   botTabs:clearTabs()
   botTabs:setOn(false)
+  botTabs:setHeight(0)
 
   botMessages:destroyChildren()
   botMessages:updateLayout()
@@ -151,27 +154,68 @@ function clear()
   end
 end
 
+local function updateBotTabsHeight()
+  botTabs:updateLayout()
+  local layout = botTabs:getLayout()
+  if not botTabs:isOn() or not (layout and layout:isUIGridLayout()) then
+    botTabs:setHeight(0)
+    return
+  end
+
+  local lines = layout:getNumLines()
+  if lines <= 0 then
+    botTabs:setHeight(0)
+    return
+  end
+
+  botTabs:setHeight(lines * layout:getCellSize().height)
+end
+
+function loadConfigsList()
+  if not g_resources.directoryExists("/bot") then
+    g_resources.makeDir("/bot")
+    if not g_resources.directoryExists("/bot") then return end
+  end
+  createDefaultConfigs()
+  local configs = g_resources.listDirectoryFiles("/bot", false, false)
+  configList.onOptionChange = nil
+  configList:clearOptions()
+  for i=1,#configs do
+    configList:addOption(configs[i])
+  end
+  local settings = g_settings.getNode('bot') or {}
+  if g_game.isOnline() then
+    local index = g_game.getCharacterName() .. "_" .. g_game.getClientVersion()
+    local saved = settings[index]
+    if saved then
+      configList:setCurrentOption(saved.config)
+    end
+  end
+
+  enableButton.onClick = function(widget)
+    if g_game.isOnline() then
+      refresh()
+    else
+      statusLabel:setOn(true)
+      statusLabel:setText("Status: login to enable bot")
+    end
+  end
+  configList.onOptionChange = function(widget)
+    if g_game.isOnline() then refresh() end
+  end
+end
+
 function refresh()
   if not g_game.isOnline() then return end
   save()
   clear()
 
-  -- create bot dir
-  if not g_resources.directoryExists("/bot") then
-    g_resources.makeDir("/bot")
-    if not g_resources.directoryExists("/bot") then
-      return onError("Can't create bot directory in " .. g_resources.getWriteDir())
-    end
+  loadConfigsList()
+  if not configList.options or #configList.options == 0 then
+    statusLabel:setOn(true)
+    statusLabel:setText("No configs found in " .. g_resources.getWriteDir() .. "bot/")
+    return
   end
-
-  -- get list of configs
-  createDefaultConfigs()
-  local configs = g_resources.listDirectoryFiles("/bot", false, false)
-
-  -- clean
-  configList.onOptionChange = nil
-  enableButton.onClick = nil
-  configList:clearOptions()
 
   -- select active config based on settings
   local settings = g_settings.getNode('bot') or {}
@@ -183,13 +227,10 @@ function refresh()
     }
   end
 
-  -- init list and buttons
-  for i=1,#configs do
-    configList:addOption(configs[i])
-  end
   configList:setCurrentOption(settings[index].config)
-  if configList:getCurrentOption().text ~= settings[index].config then
-    settings[index].config = configList:getCurrentOption().text
+  local currentOpt = configList:getCurrentOption()
+  if currentOpt and currentOpt.text ~= settings[index].config then
+    settings[index].config = currentOpt.text
     settings[index].enabled = false
   end
 
@@ -248,6 +289,7 @@ function refresh()
     return onError(result)
   end
 
+  updateBotTabsHeight()
   statusLabel:setOn(false)
   botExecutor = result
   check()
@@ -296,7 +338,7 @@ end
 
 function online()
   botWindow:setupOnStart()
-  if not modules.client_profiles.ChangedProfile then
+  if not (modules.client_profiles and modules.client_profiles.ChangedProfile) then
     scheduleEvent(refresh, 20)
   end
 end

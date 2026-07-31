@@ -5,5 +5,5 @@ Module
   website: https://github.com/mehah/otclient
   sandboxed: false
   scripts: [ game_stash ]
-  @onLoad: init()
-  @onUnload: terminate()
+  @onLoad: stashController:init()
+  @onUnload: stashController:terminate()

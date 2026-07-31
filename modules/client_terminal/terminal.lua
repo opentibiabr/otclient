@@ -298,12 +298,17 @@ function show()
     terminalWindow:show()
     terminalWindow:raise()
     terminalWindow:focus()
-
+    if terminalButton then
+        terminalButton:setOn(true)
+    end
     flushLines()
 end
 
 function hide()
     terminalWindow:hide()
+    if terminalButton then
+        terminalButton:setOn(false)
+    end
 end
 
 function disable()

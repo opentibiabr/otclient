@@ -1,0 +1,37 @@
+StatusIconPanel < UIWidget
+  id: statusIconPanel
+  size: 20 20
+  phantom: true
+  focusable: false
+
+StatusIconTop < UIWidget
+  size: 20 10
+  image-source: images/bar_top.png
+  anchors.left: parent.left
+  anchors.top: parent.top
+  opacity: 0.85
+
+StatusIconBottom < UIWidget
+  size: 20 10
+  margin-top: 1
+  image-source: images/bar_bottom.png
+  anchors.left: parent.left
+  anchors.top: prev.bottom
+  opacity: 0.85
+
+StatusIconContainer < UIWidget
+  size: 20 20
+  margin-top: 1
+  phantom: false
+  image-source: images/bar_box.png
+  anchors.left: parent.left
+  anchors.top: prev.bottom
+  opacity: 0.85
+
+  UIWidget
+    id: icon
+    size: 16 16
+    anchors.centerIn: parent
+    image-source: /images/game/states/player-state-flags
+    image-size: 16 16
+    phantom: true

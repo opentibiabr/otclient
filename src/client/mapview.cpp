@@ -26,11 +26,14 @@
 
 #include "animatedtext.h"
 #include "creature.h"
+#include "game.h"
 #include "gameconfig.h"
 #include "lightview.h"
 #include "map.h"
 #include "missile.h"
 #include "tile.h"
+#include "item.h"
+#include <framework/input/mouse.h>
 #include "framework/core/asyncdispatcher.h"
 #include "framework/core/eventdispatcher.h"
 #include <framework/core/graphicalapplication.h>
@@ -43,7 +46,7 @@
 MapView::MapView() : m_lightView(std::make_unique<LightView>(Size())), m_pool(g_drawPool.get(DrawPoolType::MAP))
 {
     m_floors.resize(g_gameConfig.getMapMaxZ() + 1);
-    m_floorThreads.resize(g_asyncDispatcher.get_thread_count());
+    m_floorThreads.resize(g_asyncDispatcher->get_thread_count());
     for (auto& thread : m_floorThreads)
         thread.resize(m_floors.size());
 
@@ -122,7 +125,11 @@ void MapView::drawFloor()
 {
     const auto& cameraPosition = m_posInfo.camera;
 
-    const uint32_t flags = Otc::DrawThings;
+    uint32_t flags = Otc::DrawThings;
+    if (m_drawNames) { flags |= Otc::DrawNames; }
+    if (m_drawHealthBars) { flags |= Otc::DrawBars; }
+    if (m_drawManaBar) { flags |= Otc::DrawManaBar; }
+    if (m_drawHarmony) { flags |= Otc::DrawHarmony; }
 
     for (int_fast8_t z = m_floorMax; z >= m_floorMin; --z) {
         const float fadeLevel = getFadeLevel(z);
@@ -134,6 +141,7 @@ void MapView::drawFloor()
         const bool alwaysTransparent = m_floorViewMode == Otc::ALWAYS_WITH_TRANSPARENCY && z < m_cachedFirstVisibleFloor && _camera.coveredUp(cameraPosition.z - z);
 
         const auto& map = m_floors[z].cachedVisibleTiles;
+        std::vector<TilePtr> walking_tiles;
 
         for (const auto& tile : map.tiles) {
             uint32_t tileFlags = flags;
@@ -141,15 +149,27 @@ void MapView::drawFloor()
             if (!m_drawViewportEdge && !tile->canRender(tileFlags, cameraPosition, m_viewport))
                 continue;
 
-            if (alwaysTransparent) {
-                const bool inRange = tile->getPosition().isInRange(_camera, g_gameConfig.getTileTransparentFloorViewRange(), g_gameConfig.getTileTransparentFloorViewRange(), true);
-                g_drawPool.setOpacity(inRange ? .16 : .7);
+            walking_tiles.emplace_back(tile);
+
+            // if this tile is the edge or if upper right tile doesn't have walking creatures
+            // -> draw it and all walking_tiles depending on it (if there are any queued up)
+            TilePtr upper_right_tile = g_map.getTile(tile->getPosition().translated(1, -1, 0));
+            if (!upper_right_tile || !upper_right_tile->hasWalkingCreature()) {
+                for (int i = walking_tiles.size() - 1; i >= 0; i--) {
+                    auto const &tile = walking_tiles[i];
+
+                    if (alwaysTransparent) {
+                        const bool inRange = tile->getPosition().isInRange(_camera, g_gameConfig.getTileTransparentFloorViewRange(), g_gameConfig.getTileTransparentFloorViewRange(), true);
+                        g_drawPool.setOpacity(inRange ? .16 : .7);
+                    }
+
+                    tile->draw(m_posInfo, transformPositionTo2D(tile->getPosition()), tileFlags);
+
+                    if (alwaysTransparent)
+                        g_drawPool.resetOpacity();
+                }
+                walking_tiles.clear();
             }
-
-            tile->draw(transformPositionTo2D(tile->getPosition()), tileFlags);
-
-            if (alwaysTransparent)
-                g_drawPool.resetOpacity();
         }
 
         for (const auto& missile : g_map.getFloorMissiles(z))
@@ -202,7 +222,7 @@ void MapView::drawLights() {
         }
 
         for (const auto& tile : map.tiles)
-            tile->drawLight(transformPositionTo2D(tile->getPosition()), m_lightView.get());
+            tile->drawLight(m_posInfo, transformPositionTo2D(tile->getPosition()), m_lightView.get());
 
         for (const auto& missile : g_map.getFloorMissiles(z))
             missile->draw(transformPositionTo2D(missile->getPosition()), false, m_lightView.get());
@@ -388,7 +408,7 @@ void MapView::updateVisibleTiles()
     };
 
     if (m_multithreading) {
-        static const int numThreads = g_asyncDispatcher.get_thread_count();
+        static const int numThreads = g_asyncDispatcher->get_thread_count();
         static BS::multi_future<void> tasks(numThreads);
         tasks.clear();
 
@@ -401,7 +421,7 @@ void MapView::updateVisibleTiles()
             for (auto& floor : m_floorThreads[i])
                 floor.cachedVisibleTiles.clear();
 
-            tasks.emplace_back(g_asyncDispatcher.submit_task([=, this] {
+            tasks.emplace_back(g_asyncDispatcher->submit_task([=, this] {
                 processDiagonalRange(m_floorThreads[i], start, end);
             }));
         }
@@ -566,6 +586,75 @@ void MapView::onMouseMove(const Position& mousePos, const bool /*isVirtualMove*/
     { // Highlight Target System
         destroyHighlightTile();
         updateHighlightTile(mousePos);
+    }
+
+    if (!g_mouse.isCursorChanged()) {
+        bool cursorSet = false;
+        if (m_cursorAnimations) {
+            if (const auto& tile = getTopTile(mousePos)) {
+                if (const auto& creature = tile->getTopCreature()) {
+                    if (creature->isMonster()) {
+                        int id = g_mouse.getCursorId("attack");
+                        if (id != -1) {
+                            g_window.setMouseCursor(id);
+                            cursorSet = true;
+                        }
+                    } else if (creature->isNpc()) {
+                        int id = g_mouse.getCursorId("talk");
+                        if (id != -1) {
+                            g_window.setMouseCursor(id);
+                            cursorSet = true;
+                        }
+                    }
+                }
+                
+                if (!cursorSet) {
+                    if (const auto& thing = tile->getTopUseThing()) {
+                        // Check for both containers and corpses (corpses might not always be containers)
+                        if (thing->isContainer() || thing->isLyingCorpse()) {
+                            // Use quicklootcursor for dead creatures when quickloot is active
+                            const bool isDeadCreature = thing->isLyingCorpse();
+                            const bool quickLootActive = g_game.getFeature(Otc::GameThingQuickLoot);
+                            const char* cursorName = (isDeadCreature && quickLootActive) ? "quicklootcursor" : "containercursor";
+                            
+                            int id = g_mouse.getCursorId(cursorName);
+                            if (id != -1) {
+                                g_window.setMouseCursor(id);
+                                cursorSet = true;
+                            }
+                        }
+                    }
+                }
+
+                if (!cursorSet) {
+                    if (const auto& thing = tile->getTopUseThing()) {
+                        if (thing->isUsable()) {
+                            int id = g_mouse.getCursorId("pointinghand");
+                            if (id != -1) {
+                                g_window.setMouseCursor(id);
+                                cursorSet = true;
+                            }
+                        }
+                    }
+                }
+
+                if (!cursorSet && tile->isWalkable()) {
+                    int id = g_mouse.getCursorId("walk");
+                    if (id != -1) {
+                        g_window.setMouseCursor(id);
+                        cursorSet = true;
+                    }
+                }
+            }
+        }
+
+        if (!cursorSet) {
+            int id = g_mouse.getCursorId("default");
+            if (id != -1)
+                g_window.setMouseCursor(id);
+            else
+                g_window.restoreMouseCursor();
+        }
     }
 }
 

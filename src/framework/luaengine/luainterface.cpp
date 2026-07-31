@@ -418,7 +418,7 @@ std::string LuaInterface::getCurrentSourcePath(int level)
         return path;
 
     if (g_luaThreadId > -1 && g_luaThreadId != stdext::getThreadId()) {
-        g_logger.warning("getCurrentSourcePath is being called outside the context of the lua call.");
+        g_logger.warning("GetCurrentSourcePath is being called outside the context of the lua call.");
         return path;
     }
 
@@ -538,7 +538,7 @@ int LuaInterface::signalCall(const int numArgs, const int numRets)
             throw LuaException("attempt to call a non function value", 0);
         }
     } catch (stdext::exception& e) {
-        g_logger.error("protected lua call failed: {}", e.what());
+        g_logger.error("Protected lua call failed: {}", e.what());
     }
 
     // pushes nil values if needed
@@ -564,8 +564,10 @@ int LuaInterface::newSandboxEnv()
 ///////////////////////////////////////////////////////////////////////////////
 // lua C functions
 
-int LuaInterface::luaScriptLoader(lua_State*)
+int LuaInterface::luaScriptLoader(lua_State* L)
 {
+    ScopedState scopedState(g_lua, L);
+
     // loads the script as a function
     const auto& fileName = g_lua.popString();
 
@@ -578,8 +580,9 @@ int LuaInterface::luaScriptLoader(lua_State*)
     }
 }
 
-int LuaInterface::lua_dofile(lua_State*)
+int LuaInterface::lua_dofile(lua_State* L)
 {
+    ScopedState scopedState(g_lua, L);
     const auto& file = g_lua.popString();
 
     try {
@@ -588,13 +591,15 @@ int LuaInterface::lua_dofile(lua_State*)
         return g_lua.stackSize();
     } catch (stdext::exception& e) {
         g_lua.pushString(e.what());
-        g_lua.error();
-        return 0;
+        scopedState.restore();
+        return lua_error(L);
     }
 }
 
-int LuaInterface::lua_dofiles(lua_State*)
+int LuaInterface::lua_dofiles(lua_State* L)
 {
+    ScopedState scopedState(g_lua, L);
+
     std::string contains;
     if (g_lua.getTop() > 2) {
         contains = g_lua.popString();
@@ -611,8 +616,9 @@ int LuaInterface::lua_dofiles(lua_State*)
     return 0;
 }
 
-int LuaInterface::lua_loadfile(lua_State*)
+int LuaInterface::lua_loadfile(lua_State* L)
 {
+    ScopedState scopedState(g_lua, L);
     const auto& fileName = g_lua.popString();
 
     try {
@@ -621,13 +627,15 @@ int LuaInterface::lua_loadfile(lua_State*)
     } catch (stdext::exception& e) {
         g_lua.pushNil();
         g_lua.pushString(e.what());
-        g_lua.error();
-        return 2;
+        scopedState.restore();
+        return lua_error(L);
     }
 }
 
-int LuaInterface::luaErrorHandler(lua_State*)
+int LuaInterface::luaErrorHandler(lua_State* L)
 {
+    ScopedState scopedState(g_lua, L);
+
     // pops the error message
     auto error = g_lua.popString();
 
@@ -640,8 +648,10 @@ int LuaInterface::luaErrorHandler(lua_State*)
     return 1;
 }
 
-int LuaInterface::luaCppFunctionCallback(lua_State*)
+int LuaInterface::luaCppFunctionCallback(lua_State* L)
 {
+    ScopedState scopedState(g_lua, L);
+
     // retrieves function pointer from userdata
     const auto* const funcPtr = static_cast<LuaCppFunctionPtr*>(g_lua.popUpvalueUserdata());
     assert(funcPtr);
@@ -661,28 +671,33 @@ int LuaInterface::luaCppFunctionCallback(lua_State*)
             g_lua.pop();
         numRets = 0;
         g_lua.pushString(fmt::format("C++ call failed: {}", g_lua.traceback(e.what())));
-        g_lua.error();
+        scopedState.restore();
+        return lua_error(L);
     } catch (const std::exception& e) {
         --g_lua.m_cppCallbackDepth;
         while (g_lua.stackSize() > 0)
             g_lua.pop();
         numRets = 0;
         g_lua.pushString(fmt::format("C++ std::exception: {}", g_lua.traceback(e.what())));
-        g_lua.error();
+        scopedState.restore();
+        return lua_error(L);
     } catch (...) {
         --g_lua.m_cppCallbackDepth;
         while (g_lua.stackSize() > 0)
             g_lua.pop();
         numRets = 0;
         g_lua.pushString(g_lua.traceback("Unknown C++ exception"));
-        g_lua.error();
+        scopedState.restore();
+        return lua_error(L);
     }
 
     return numRets;
 }
 
-int LuaInterface::luaCollectCppFunction(lua_State*)
+int LuaInterface::luaCollectCppFunction(lua_State* L)
 {
+    ScopedState scopedState(g_lua, L);
+
     auto* const funcPtr = static_cast<LuaCppFunctionPtr*>(g_lua.popUserdata());
     assert(funcPtr);
     funcPtr->reset();
@@ -1232,7 +1247,7 @@ void LuaInterface::pushObject(const LuaObjectPtr& obj)
 
     obj->luaGetMetatable();
     if (isNil())
-        g_logger.fatal("metatable for class '{}' not found, did you bind the C++ class?", obj->getClassName());
+        g_logger.fatal("Metatable for class '{}' not found, did you bind the C++ class?", obj->getClassName());
     setMetatable();
 }
 

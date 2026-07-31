@@ -82,6 +82,8 @@ local UseTypeEquip = 4
 local UseTypeUse = 5
 local UseTypeChatText = 6
 local UseTypePassiveAbility = 7
+local UseTypeSpecialAction = 8
+local UseTypeUseAtCursorPosition = 9
 
 UseTypes = {
     ["UseOnYourself"] = UseTypeUseOnYourself,
@@ -91,12 +93,15 @@ UseTypes = {
     ["Use"] = UseTypeUse,
     ["chatText"] = UseTypeChatText,
     ["passiveAbility"] = UseTypePassiveAbility,
+    ["specialAction"] = UseTypeSpecialAction,
+    ["UseAtCursorPosition"] = UseTypeUseAtCursorPosition,
 }
 
 UseTypesTip = {
     [UseTypeUseOnYourself] = "Use %s on Yourself",
     [UseTypeUseOnTarget] = "Use %s on Attack Target",
     [UseTypeSelectUseTarget] = "Use %s with Crosshair",
+    [UseTypeUseAtCursorPosition] = "Use %s at Cursor Position",
     [UseTypeEquip] = "%s %s",
     [UseTypeUse] = "Use %s"
 }
@@ -109,4 +114,28 @@ PassiveAbilities = {
         icon = '/images/game/spells/passiveability-icons-32x32'
     }
 }
+
+ActionBarSpecialActions = {{
+    id = "toggleWasdChatMode",
+    text = tr("Toggle WASD chat mode")
+}, {
+    id = "attackNext",
+    text = tr("Attack next creature in battle list")
+}, {
+    id = "attackPrevious",
+    text = tr("Attack previous creature in battle list")
+}, {
+    id = "toggleChase",
+    text = tr("Toggle chase mode")
+}}
+
+function getActionBarSpecialAction(actionId)
+    for _, specialAction in ipairs(ActionBarSpecialActions) do
+        if specialAction.id == actionId then
+            return specialAction
+        end
+    end
+
+    return nil
+end
 -- LuaFormatter on

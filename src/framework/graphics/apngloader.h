@@ -22,13 +22,18 @@
 
 #pragma once
 
+#ifndef USE_PRECOMPILED_HEADERS
+#include <cstdint>
+#include <sstream>
+#endif
+
 struct apng_data
 {
     uint8_t* pdata;
     uint32_t width;
     uint32_t height;
-    uint32_t first_frame;
-    uint32_t last_frame;
+    uint32_t first_frame; // first visible frame index in pdata
+    uint32_t last_frame; // one past the last decoded frame in pdata
     uint8_t bpp;
     uint8_t coltype;
     uint32_t num_frames;

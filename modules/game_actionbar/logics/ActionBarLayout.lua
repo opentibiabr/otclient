@@ -1,3 +1,4 @@
+--- Creates the action bar UI logic
 local function createActionBars()
     local bottomPanel = modules.game_interface.getBottomActionPanel()
     local leftPanel = modules.game_interface.getLeftActionPanel()
@@ -32,6 +33,7 @@ local function createActionBars()
     end
 end
 
+--- Initializes action bars on creation
 function onCreateActionBars()
     if #actionBars ~= 0 then
         return true
@@ -86,6 +88,7 @@ local function getPrevInvisibleButton(actionBar)
     return nil
 end
 
+--- Gets the last visible button in a bar
 local function getLastVisibleButton(actionBar)
     for _, button in ipairs(actionBar.tabBar:getReverseChildren()) do
         if button:isVisible() then
@@ -95,6 +98,7 @@ local function getLastVisibleButton(actionBar)
     return nil
 end
 
+--- Gets the next invisible child button
 local function getNextInvisibleChild(actionBar, firstIndex)
     for i, button in ipairs(actionBar.tabBar:getChildren()) do
         if i >= firstIndex and not button:isVisible() then
@@ -104,6 +108,7 @@ local function getNextInvisibleChild(actionBar, firstIndex)
     return nil
 end
 
+--- Resizes lock buttons based on active bars
 function resizeLockButtons()
     local rightLockPanel = modules.game_interface.getRightLockPanel()
     local rightCount = getActiveRightBars()
@@ -141,6 +146,7 @@ function resizeLockButtons()
     end
 end
 
+--- Updates visibility of widgets in action bars
 function updateVisibleWidgets()
     for _, actionBar in pairs(actionBars) do
         if actionBar:isVisible() then
@@ -176,7 +182,7 @@ function updateVisibleWidgets()
                         firstIndex = newFirstIndex
                     end
                 end
-                
+
                 -- Final bounds check
                 firstIndex = math.max(1, math.min(firstIndex, totalChildren - visibleCount + 1))
             end
@@ -209,6 +215,7 @@ function updateVisibleWidgets()
     end
 end
 
+--- Handles action button scrolling movement
 function moveActionButtons(widget)
     local dir = widget:getId()
     local actionBar = widget:getParent():getParent()
@@ -270,6 +277,7 @@ function moveActionButtons(widget)
     buttons[4]:setOn(nextEnabled)
 end
 
+--- Toggles the lock status of action bars
 function changeLockStatus(button, barType)
     local barData = {
         ["Bottom"] = {
@@ -304,7 +312,7 @@ function unbindActionBarEvent(actionbar)
         if button.cache and button.cache.hotkey then
             unbindHotkey(button.cache.hotkey)
         end
-        if button.cache.cooldownEvent then
+        if button.cache and button.cache.cooldownEvent then
             removeEvent(button.cache.cooldownEvent)
         end
         resetButtonCache(button)

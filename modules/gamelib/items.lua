@@ -95,6 +95,13 @@ function ItemsDatabase.setRarityItem(widget, item, style)
     local clip, imagePath = ItemsDatabase.getClipAndImagePath(item)
 
     if not imagePath then
+        -- no frame applies (empty slot or frames disabled): clear a frame left by a previous item,
+        -- but only if this widget is currently showing one, to avoid clobbering custom backgrounds
+        local currentSource = widget:getImageSource()
+        if currentSource == "/images/ui/rarity_frames" or currentSource == "/images/ui/containerslot-coloredges" then
+            widget:setImageClip(nil)
+            widget:setImageSource('/images/ui/item')
+        end
         return
     end
 
@@ -194,35 +201,4 @@ function ItemsDatabase.setTier(widget, item, isSmall)
     widget.tier:setVisible(true)
 end
 
-function ItemsDatabase.setCharges(widget, item, style)
-    if not g_game.getFeature(GameThingCounter) or not widget then
-        return
-    end
 
-    if item and item:getCharges() > 0 then
-        widget.charges:setText(item:getCharges())
-    else
-        widget.charges:setText("")
-    end
-
-    if style then
-        widget:setStyle(style)
-    end
-end
-
-function ItemsDatabase.setDuration(widget, item, style)
-    if not g_game.getFeature(GameThingClock) or not widget then
-        return
-    end
-
-    if item and item:getDurationTime() > 0 then
-        local durationTimeLeft = item:getDurationTime()
-        widget.duration:setText(string.format("%dm%02d", durationTimeLeft / 60, durationTimeLeft % 60))
-    else
-        widget.duration:setText("")
-    end
-
-    if style then
-        widget:setStyle(style)
-    end
-end

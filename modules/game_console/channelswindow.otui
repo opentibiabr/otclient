@@ -1,52 +1,64 @@
 ChannelListLabel < Label
-  font: verdana-11px-monochrome
+  text-auto-resize: true
   background-color: alpha
-  text-offset: 2 0
   focusable: true
-
-  $focus:
-    background-color: #ffffff22
-    color: #ffffff
+  height: 16
+  color: #c0c0c0
 
 MainWindow
   id: channelsWindow
-  !text: tr('Channels')
-  size: 250 238
+  !text: tr('Open Channel')
+  size: 250 285
+  focus-child: openPrivateChannelWith
   @onEscape: self:destroy()
+  color: #c0c0c0
+
+  Label
+    anchors.top: parent.top
+    anchors.left: parent.left
+    !text: tr('Select a channel:')
+    text-auto-resize: true
 
   TextList
     id: channelList
-    vertical-scrollbar: channelsScrollBar
-    anchors.fill: parent
-    anchors.bottom: next.top
-    margin-bottom: 10
-    padding: 1
+    size: 218 146
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    margin-top: 5
     focusable: false
+    vertical-scrollbar: channelsScrollBar
+    background-color: #404040
+
+  VerticalScrollBar
+    id: channelsScrollBar
+    anchors.top: prev.top
+    anchors.bottom: prev.bottom
+    anchors.right: prev.right
+    margin: 1 1 1 0
+    step: 14
+    pixels-scroll: true
 
   Label
     id: openPrivateChannelWithLabel
-    !text: tr('Open a private message channel') .. ':'
+    !text: tr('Open a private message channel:')
+    anchors.top: prev.bottom
     anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.bottom: next.top
-    text-align: center
-    margin-bottom: 2
+    margin-top: 11
+    text-auto-resize: true
 
   TextEdit
     id: openPrivateChannelWith
+    size: 218 16
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    margin-top: 5
+
+  HorizontalSeparator
+    id: separator
+    anchors.top: prev.bottom
     anchors.left: parent.left
     anchors.right: parent.right
-    anchors.bottom: next.top
-    margin-bottom: 10
-
-  Button
-    id: buttonOpen
-    !text: tr('Open')
-    width: 64
-    anchors.right: next.left
-    anchors.bottom: parent.bottom
-    margin-right: 10
-    @onClick: self:getParent():onEnter()
+    margin-top: 6
 
   Button
     id: buttonCancel
@@ -54,12 +66,15 @@ MainWindow
     width: 64
     anchors.right: parent.right
     anchors.bottom: parent.bottom
+    margin-bottom: -6
     @onClick: self:getParent():destroy()
 
-  VerticalScrollBar
-    id: channelsScrollBar
-    anchors.top: channelList.top
-    anchors.bottom: channelList.bottom
-    anchors.right: channelList.right
-    step: 14
-    pixels-scroll: true
+  Button
+    id: buttonOpen
+    anchors.right: prev.left
+    anchors.bottom: parent.bottom
+    margin-right: 6
+    margin-bottom: -6
+    !text: tr('Open')
+    width: 64
+    @onClick: self:getParent():onEnter()

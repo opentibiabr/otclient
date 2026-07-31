@@ -1,0 +1,301 @@
+<html>
+<style>
+  window {
+    font-family: Arial, sans-serif;
+    margin: 24px;
+    background-color: #ffffff;
+    color: #222222;
+    height: 100%;
+    margin-top: 0;
+    margin-left: 0;
+    margin-right: 0;
+    display: block !important;
+    --image-source: none;
+    display: block !important;
+    width: 100% !important;
+  }
+
+  .chat {
+    display: flex;
+    min-height: 470px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    overflow: hidden;
+    background-color: #ffffff;
+  }
+
+  .rooms {
+    display: flex;
+    flex-direction: column;
+    flex: 0 0 260px;
+    --border-width-right: 1px;
+    --border-color-right: #e2e8f0;
+    background-color: #f8fafc;
+    min-width: 220px;
+  }
+
+  .rooms-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
+    --border-width-bottom: 1px;
+    --border-color-bottom: #e2e8f0;
+    flex-shrink: 0;
+  }
+
+  .rooms-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+    overflow: auto;
+    flex: 1;
+  }
+
+  .room {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    border-radius: 8px;
+    background-color: #e2e8f0;
+  }
+
+  .room.active {
+    background-color: #cbd5e1;
+    order: -1;
+  }
+
+  .room .avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background-color: #64748b;
+    flex-shrink: 0;
+  }
+
+  .room .meta {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .room .badge {
+    margin-left: auto;
+    background-color: #0f172a;
+    color: #ffffff;
+    border-radius: 999px;
+    padding: 1px 7px;
+    flex-shrink: 0;
+  }
+
+  .thread {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .thread-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    --border-width-bottom: 1px;
+    --border-color-bottom: #e2e8f0;
+    flex-shrink: 0;
+  }
+
+  .thread-head .status {
+    margin-left: auto;
+    color: #64748b;
+  }
+
+  .messages {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    flex: 1;
+    overflow: auto;
+    min-height: 0;
+    background-color: #f8fafc;
+  }
+
+  .date {
+    align-self: center;
+    background-color: #e2e8f0;
+    color: #334155;
+    border-radius: 999px;
+    padding: 2px 10px;
+    margin: 4px 0;
+  }
+
+  .msg-row {
+    display: flex;
+    width: 100%;
+  }
+
+  .msg-row.in {
+    justify-content: flex-start;
+  }
+
+  .msg-row.out {
+    justify-content: flex-end;
+  }
+
+  .msg {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 500px;
+    min-width: 320px;
+    max-width: 500px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    background-color: #ffffff;
+  }
+
+  .msg-row.in .msg {
+    border-top-left-radius: 2px;
+  }
+
+  .msg-row.out .msg {
+    border-top-right-radius: 2px;
+    background-color: #e0f2fe;
+    border-color: #bae6fd;
+  }
+
+  .msg .time {
+    align-self: flex-end;
+    color: #64748b;
+  }
+
+  .composer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
+    --border-width-top: 1px;
+    --border-color-top: #e2e8f0;
+    flex-shrink: 0;
+  }
+
+  .input {
+    flex: 1 0 360px;
+    width: 360px;
+    min-width: 300px;
+    background-color: #f1f5f9;
+    color: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 7px 10px;
+    height: 100%;
+    --placeholder: "Type to search";
+  }
+
+  .tools {
+    display: flex;
+    gap: 6px;
+    margin-left: auto;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .btn {
+    background-color: #0f172a;
+    color: #ffffff;
+    border-radius: 7px;
+    padding: 6px 10px;
+    flex-shrink: 0;
+  }
+
+  .btn.secondary {
+    background-color: #334155;
+  }
+</style>
+
+<window>
+  <div class="chat">
+    <div class="rooms">
+      <div class="rooms-head"><b>Channels</b></div>
+      <div class="rooms-list">
+        <div class="room active">
+          <img class="avatar" src="/data/images/clienticon.png" />
+
+          <div class="meta"><b># frontend</b><span>4 active</span></div>
+          <div class="badge">8</div>
+        </div>
+        <div class="room">
+          <img class="avatar" src="/data/images/clienticon.png" />
+
+          <div class="meta"><b># backend</b><span>2 active</span></div>
+        </div>
+        <div class="room">
+          <img class="avatar" src="/data/images/clienticon.png" />
+
+          <div class="meta"><b># infra</b><span>1 active</span></div>
+        </div>
+        <div class="room">
+          <img class="avatar" src="/data/images/clienticon.png" />
+
+          <div class="meta"><b># qa</b><span>3 active</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="thread">
+      <div class="thread-head">
+        <b># frontend</b>
+        <span class="status">synchronized</span>
+      </div>
+
+      <div class="messages">
+        <div class="date">Today</div>
+
+        <div class="msg-row in">
+          <div class="msg">
+            <div>Have we validated wrap + gap in nested cards?</div>
+            <span class="time">10:21</span>
+          </div>
+        </div>
+
+        <div class="msg-row out">
+          <div class="msg">
+            <div>Yes, but still need to test align-content with multiple rows.</div>
+            <span class="time">10:23</span>
+          </div>
+        </div>
+
+        <div class="msg-row in">
+          <div class="msg">
+            <div>Perfect. Let's also review order for visual accessibility.</div>
+            <span class="time">10:24</span>
+          </div>
+        </div>
+
+        <div class="msg-row out">
+          <div class="msg">
+            <div>Agreed. I'll leave a set of cases in the htmlsample.</div>
+            <span class="time">10:26</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="composer">
+        <input class="input" type="text" placeholder="Type to search"/>
+        <div class="tools">
+          <div class="btn secondary">Attach</div>
+          <div class="btn">Send</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</window>
+
+</html>

@@ -23,6 +23,8 @@
 #include "soundeffect.h"
 #include "soundmanager.h"
 
+#include <framework/core/logger.h>
+
 #include <AL/al.h>
 #include <AL/alc.h>
 #include <AL/efx-presets.h>
@@ -223,10 +225,10 @@ SoundEffect::SoundEffect(ALCdevice* device) : m_device(device) {
     init(device);
     /* Query for Effect Extension */
     if (alcIsExtensionPresent(m_device, "ALC_EXT_EFX") == AL_FALSE) {
-        g_logger.error("unable to locate OpenAl EFX extension");
+        g_logger.error("Unable to locate OpenAl EFX extension");
     } else {
         if (!alGenEffects) {
-            g_logger.error("unable to load OpenAl EFX extension");
+            g_logger.error("Unable to load OpenAl EFX extension");
             return;
         }
         const auto effects = std::make_unique<ALuint[]>(1);
@@ -251,14 +253,14 @@ SoundEffect::~SoundEffect()
         //alDeleteAuxiliaryEffectSlots(1, &m_effectSlot);
         const auto err = alGetError();
         if (err != AL_NO_ERROR) {
-            g_logger.error("error while deleting sound effect: {}", alGetString(err));
+            g_logger.error("Error while deleting sound effect: {}", alGetString(err));
         }
     }
     if (m_effectSlot != 0) {
         alDeleteAuxiliaryEffectSlots(1, &m_effectSlot);
         const auto err = alGetError();
         if (err != AL_NO_ERROR) {
-            g_logger.error("error while deleting sound aux effect slot: {}", alGetString(err));
+            g_logger.error("Error while deleting sound aux effect slot: {}", alGetString(err));
         }
     }
 }
@@ -266,7 +268,7 @@ SoundEffect::~SoundEffect()
 void SoundEffect::loadPreset(const EFXEAXREVERBPROPERTIES& preset)
 {
     if (g_sounds.isEaxEnabled()) {
-        std::cout << "Using EAX Reverb!\n";
+        g_logger.debug("Using EAX Reverb");
 
         /* EAX Reverb is available. Set the EAX effect type then load the
         * reverb properties. */
@@ -296,7 +298,7 @@ void SoundEffect::loadPreset(const EFXEAXREVERBPROPERTIES& preset)
         alEffectf(m_effectId, AL_EAXREVERB_ROOM_ROLLOFF_FACTOR, preset.flRoomRolloffFactor);
         alEffecti(m_effectId, AL_EAXREVERB_DECAY_HFLIMIT, preset.iDecayHFLimit);
     } else {
-        std::cout << "Using Standard Reverb!\n";
+        g_logger.debug("Using Standard Reverb");
 
         /* No EAX Reverb. Set the standard reverb effect type then load the
          * available reverb properties. */

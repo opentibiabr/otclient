@@ -43,6 +43,8 @@ KeyboardShiftModifier        = 4
 KeyboardCtrlShiftModifier    = 5
 KeyboardAltShiftModifier     = 6
 KeyboardCtrlAltShiftModifier = 7
+KeyboardMetaModifier         = 8
+KeyboardPrimaryModifier      = 16
 
 MouseNoButton                = 0
 MouseLeftButton              = 1
@@ -90,9 +92,10 @@ KeyRight                     = 17
 KeyNumLock                   = 18
 KeyScrollLock                = 19
 KeyCapsLock                  = 20
-KeyCtrl                      = 21
+KeyCtrlCmd                   = 21
 KeyShift                     = 22
-KeyAlt                       = 23
+KeyAltOpt                    = 23
+KeyControl                   = 24
 KeyMeta                      = 25
 KeyMenu                      = 26
 KeySpace                     = 32 -- ' '
@@ -217,9 +220,10 @@ KeyCodeDescs                 = {
     [KeyNumLock] = 'NumLock',
     [KeyScrollLock] = 'ScrollLock',
     [KeyCapsLock] = 'CapsLock',
-    [KeyCtrl] = 'Ctrl',
+    [KeyCtrlCmd] = 'Ctrl',
     [KeyShift] = 'Shift',
-    [KeyAlt] = 'Alt',
+    [KeyAltOpt] = 'Alt',
+    [KeyControl] = 'Control',
     [KeyMeta] = 'Meta',
     [KeyMenu] = 'Menu',
     [KeySpace] = 'Space',
@@ -358,3 +362,23 @@ DisplayInherit               = 21
 EVENT_TEXT_NONE = 0
 EVENT_TEXT_CLICK = 1
 EVENT_TEXT_HOVER = 2
+
+function initPlatformKeyDescs()
+    local platformType = g_window.getPlatformType()
+    local isMacOS = platformType:find("MACOS") ~= nil
+    local isWindows = platformType:find("WIN32") ~= nil
+    local isX11 = platformType:find("X11") ~= nil
+
+    if isMacOS then
+        KeyCodeDescs[KeyCtrlCmd] = 'Cmd'
+        KeyCodeDescs[KeyAltOpt] = 'Option'
+        KeyCodeDescs[KeyControl] = 'Ctrl'
+        KeyCodeDescs[KeyMeta] = 'Cmd'
+    elseif isWindows then
+        KeyCodeDescs[KeyControl] = 'Ctrl'
+        KeyCodeDescs[KeyMeta] = 'Win'
+    elseif isX11 then
+        KeyCodeDescs[KeyControl] = 'Ctrl'
+        KeyCodeDescs[KeyMeta] = 'Super'
+    end
+end

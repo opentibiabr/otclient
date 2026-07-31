@@ -2,7 +2,7 @@ VocationPanel < Panel
   padding: 3
   image-source: /images/ui/panel_flat
   image-border: 6
-  size: 190 55
+  size: 190 75
 
   Label
     anchors.top: parent.top
@@ -38,6 +38,13 @@ VocationPanel < Panel
     anchors.left: parent.horizontalCenter
     anchors.right: parent.right
     text: Paladins
+
+  BotSwitch
+    id: EM
+    anchors.bottom: EK.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    text: Monks
 
 SioListWindow < MainWindow
   !text: tr('Healer Options')

@@ -1,0 +1,61 @@
+<html>
+<style>
+  window {
+    font-family: Arial, sans-serif;
+    background-color: #ffffff;
+    color: #222222;
+    height: 100%;
+    margin-top: 0;
+    margin-left: 0;
+    margin-right: 0;
+    display: block !important;
+    --image-source: none;
+    width: 99% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  .example {
+    border: 2px solid #00796b;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 16px;
+  }
+
+  /* Centering both axes */
+  .center-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 220px;
+    background-color: #e0f7fa;
+    border-radius: 6px;
+  }
+
+  .card {
+    background-color: #00acc1;
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    width: 260px;
+  }
+</style>
+
+<window>
+  <h1>Flex: Center both axes</h1>
+  <p>Use a flex container with align-items and justify-content set to center to place content perfectly in the middle.
+  </p>
+
+  <div class="example">
+    <div class="center-box">
+      <div class="card">
+        <h3>Centered</h3>
+        <p>Centered both horizontally and vertically.</p>
+      </div>
+    </div>
+  </div>
+</window>
+
+</html>

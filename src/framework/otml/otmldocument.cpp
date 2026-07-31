@@ -56,3 +56,13 @@ bool OTMLDocument::save(const std::string_view fileName)
 {
     return g_resources.writeFileContents((m_source = fileName).data(), emit());
 }
+
+void OTMLDocument::addGlobalAlias(const std::string& name, const std::string& value)
+{
+    m_globalAliases[name] = value;
+}
+
+const std::unordered_map<std::string, std::string>& OTMLDocument::globalAliases() const
+{
+    return m_globalAliases;
+}

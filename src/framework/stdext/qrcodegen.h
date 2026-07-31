@@ -23,6 +23,14 @@
 
 #pragma once
 
+#ifndef USE_PRECOMPILED_HEADERS
+#include <array>
+#include <cstdint>
+#include <stdexcept>
+#include <string>
+#include <vector>
+#endif
+
 namespace qrcodegen {
     /*
      * A segment of character/binary/control data in a QR Code symbol.

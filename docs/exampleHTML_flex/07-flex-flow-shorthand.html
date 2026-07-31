@@ -1,0 +1,205 @@
+<html>
+<style>
+  window {
+    font-family: Arial, sans-serif;
+    margin: 24px;
+    background-color: #ffffff;
+    color: #222222;
+    height: 100%;
+    margin-top: 0;
+    margin-left: 0;
+    margin-right: 0;
+    display: block !important;
+    --image-source: none;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 100% !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  h1 {
+    margin-bottom: 4px;
+  }
+
+  p {
+    margin-top: 0;
+    color: #555;
+  }
+
+  .example {
+    border: 2px solid #e65100;
+    border-radius: 10px;
+    background-color: #fff;
+    padding: 12px;
+    width: 94%;
+    margin-bottom: 18px;
+  }
+
+  h3 {
+    margin: 0 0 6px;
+    color: #333;
+  }
+
+
+
+  .container {
+    display: flex;
+    border: 2px dashed #9aa5b1;
+    background-color: #eceff1;
+    gap: 8px;
+    padding: 8px;
+    min-height: 80px;
+  }
+
+  .item1 {
+    border: 2px solid #e65100;
+    background-color: #ffe0b2;
+    padding: 8px 14px;
+    text-align: center;
+  }
+
+  /* flex-flow = flex-direction + flex-wrap */
+  .ff-row-wrap {
+    flex-flow: row wrap;
+    width: 320px;
+  }
+
+  .ff-row-rev-wrap {
+    flex-flow: row-reverse wrap;
+    width: 320px;
+  }
+
+  .ff-col-nowrap {
+    flex-flow: column nowrap;
+    height: 180px;
+  }
+
+  .ff-col-rev-wrap {
+    flex-flow: column-reverse wrap;
+    height: 160px;
+  }
+
+  /* flex shorthand */
+  .f-auto {
+    flex: auto;
+  }
+
+  /* 1 1 auto */
+  .f-none {
+    flex: none;
+  }
+
+  /* 0 0 auto */
+  .f-1 {
+    flex: 1;
+  }
+
+  /* 1 1 0 */
+  .f-2 {
+    flex: 2;
+  }
+
+  /* 2 1 0 */
+  .f-3 {
+    flex: 3;
+  }
+
+  /* 3 1 0 */
+  .f-0-200 {
+    flex: 0 0 200px;
+  }
+
+  /* no grow, no shrink, 200px */
+
+  /* Visual variants per example */
+  .purple .item1 {
+    background-color: #9c27b0;
+  }
+
+  .blue .item1 {
+    background-color: #2196f3;
+  }
+
+  .green .item1 {
+    background-color: #4caf50;
+  }
+
+  .orange .item1 {
+    background-color: #ff9800;
+  }
+
+  .red .item1 {
+    background-color: #f44336;
+  }
+
+  .steel .item1 {
+    background-color: #607d8b;
+  }
+</style>
+<window>
+  <h1>flex-flow shorthand flex shorthand</h1>
+  <p>flex-flow combinesflex-direction + flex-wrap. flex combines grow + shrink + basis.</p>
+
+  <div class="example purple">
+    <h3>flex-flow: row wrap</h3>
+    <div class="container ff-row-wrap">
+      <div class="item1">A</div>
+      <div class="item1">B</div>
+      <div class="item1">C</div>
+      <div class="item1">D</div>
+      <div class="item1">E</div>
+    </div>
+  </div>
+
+  <div class="example blue">
+    <h3>flex-flow: row-reverse wrap</h3>
+    <div class="container ff-row-rev-wrap">
+      <div class="item1">A</div>
+      <div class="item1">B</div>
+      <div class="item1">C</div>
+      <div class="item1">D</div>
+      <div class="item1">E</div>
+    </div>
+  </div>
+
+  <div class="example green">
+    <h3>flex-flow: column nowrap</h3>
+    <div class="container ff-col-nowrap">
+      <div class="item1">A</div>
+      <div class="item1">B</div>
+      <div class="item1">C</div>
+    </div>
+  </div>
+
+  <div class="example orange">
+    <h3>flex-flow: column-reverse wrap</h3>
+    <div class="container ff-col-rev-wrap">
+      <div class="item1">A</div>
+      <div class="item1">B</div>
+      <div class="item1">C</div>
+      <div class="item1">D</div>
+    </div>
+  </div>
+
+  <div class="example red">
+    <h3>flex: 1 / flex: 2 / flex: 3 &mdash; proportional</h3>
+    <div class="container">
+      <div class="item1 f-1">flex:1</div>
+      <div class="item1 f-2">flex:2</div>
+      <div class="item1 f-3">flex:3</div>
+    </div>
+  </div>
+
+  <div class="example steel">
+    <h3>flex: auto vs flex: none vs flex: 0 0 200px</h3>
+    <div class="container">
+      <div class="item1 f-auto">auto (grows)</div>
+      <div class="item1 f-none">none (fixed)</div>
+      <div class="item1 f-0-200">0 0 200px</div>
+    </div>
+  </div>
+</window>
+
+</html>

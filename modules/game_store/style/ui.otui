@@ -1,3 +1,25 @@
+DescriptionLine < UIWidget
+  height: 14
+
+  UIWidget
+    id: icon
+    size: 13 13
+    anchors.left: parent.left
+    anchors.top: parent.top
+    phantom: true
+    visible: false
+    image-smooth: true
+
+  Label
+    id: text
+    font: verdana-11px-antialised
+    color: #dfdfdf
+    text-wrap: true
+    text-auto-resize: true
+    anchors.left: parent.left
+    anchors.right: parent.right
+    phantom: true
+
 historyData2 < UIWidget
   height: 15
   Label

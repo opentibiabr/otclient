@@ -12,7 +12,7 @@ end
 context.NPC.say = context.NPC.talk
 
 context.NPC.isTrading = function()
-  return modules.game_npctrade.npcWindow and modules.game_npctrade.npcWindow:isVisible()
+  return modules.game_npctrade.isTrading()
 end
 context.NPC.hasTrade = context.NPC.isTrading
 context.NPC.hasTradeWindow = context.NPC.isTrading
@@ -21,7 +21,7 @@ context.NPC.isTradeOpen = context.NPC.isTrading
 context.NPC.getSellItems = function()
   if not context.NPC.isTrading() then return {} end
   local items = {}
-  for i, item in ipairs(modules.game_npctrade.tradeItems[modules.game_npctrade.SELL]) do
+  for i, item in ipairs(modules.game_npctrade.getSellItems()) do
     table.insert(items, {
       item = item.ptr,
       id = item.ptr:getId(),
@@ -38,7 +38,7 @@ end
 context.NPC.getBuyItems = function()
   if not context.NPC.isTrading() then return {} end
   local items = {}
-  for i, item in ipairs(modules.game_npctrade.tradeItems[modules.game_npctrade.BUY]) do
+  for i, item in ipairs(modules.game_npctrade.getBuyItems()) do
     table.insert(items, {
       item = item.ptr,
       id = item.ptr:getId(),
@@ -122,7 +122,7 @@ context.NPC.sellAll = function()
 end
 
 context.NPC.closeTrade = function()
-  modules.game_npctrade.closeNpcTrade()
+  return modules.game_npctrade.closeNpcTrade()
 end
 context.NPC.close = context.NPC.closeTrade
 context.NPC.finish = context.NPC.closeTrade

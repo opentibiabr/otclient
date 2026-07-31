@@ -1,5 +1,25 @@
 Helpers = {}
 
+-- Replaces table contents in-place to preserve the reference for reactive UI bindings.
+-- Recursively preserves sub-table references (e.g. transfer.currentList.donors)
+-- when both target and source have a table at the same key.
+function Helpers.replaceTableContents(target, source)
+    local sourceKeys = {}
+    for k in pairs(source) do sourceKeys[k] = true end
+
+    for k in pairs(target) do
+        if not sourceKeys[k] then target[k] = nil end
+    end
+
+    for k, v in pairs(source) do
+        if type(v) == 'table' and type(target[k]) == 'table' then
+            Helpers.replaceTableContents(target[k], v)
+        else
+            target[k] = Helpers.cloneValue(v)
+        end
+    end
+end
+
 function Helpers.cloneValue(value)
     if type(value) == 'table' then
         if table and type(table.recursivecopy) == 'function' then

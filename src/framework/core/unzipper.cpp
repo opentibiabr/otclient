@@ -26,9 +26,9 @@
 #include "logger.h"
 #include "resourcemanager.h"
 #include <filesystem>
-#include <ioapi.h>
-#include <ioapi_mem.h>
-#include <unzip.h>
+#include "minizip/ioapi.h"
+#include "minizip/ioapi_mem.h"
+#include "minizip/unzip.h"
 
 const int MAX_FILENAME = 512;
 const int READ_SIZE = 8192;
@@ -37,7 +37,7 @@ const char dir_delimiter = '/';
 void unzipper::extract(const char* fileBuffer, uint fileLength, std::string& destinationPath) {
     const std::filesystem::path destinationFolder { destinationPath };
     if (!std::filesystem::exists(destinationFolder)) {
-        std::filesystem::create_directory(destinationFolder);
+        std::filesystem::create_directories(destinationFolder);
     }
 
     zlib_filefunc_def filefunc32 = { nullptr };
@@ -54,7 +54,7 @@ void unzipper::extract(const char* fileBuffer, uint fileLength, std::string& des
     if ( unzGetGlobalInfo( zipfile, &global_info ) != UNZ_OK )
     {
         unzClose( zipfile );
-        g_logger.fatal("could not read file global info");
+        g_logger.fatal("Could not read file global info");
     }
 
     uint readSize = 8192;
@@ -76,14 +76,25 @@ void unzipper::extract(const char* fileBuffer, uint fileLength, std::string& des
                 nullptr, 0, nullptr, 0 ) != UNZ_OK )
         {
             unzClose( zipfile );
-            g_logger.fatal("could not read file info");
+            g_logger.fatal("Could not read file info");
         }
 
         // Check if this entry is a directory or file.
         const size_t filename_length = strlen( filename );
+
+        // Guard against zip-slip: reject entries that escape the destination folder
+        const auto entryPath = std::filesystem::path(filename).lexically_normal();
+        if (entryPath.is_absolute() || entryPath.string().starts_with("..")) {
+            g_logger.warning("Skipping zip entry with unsafe path: {}", filename);
+            if ( ( i+1 ) < global_info.number_entry )
+                unzGoToNextFile( zipfile );
+            continue;
+        }
+        const auto outputPath = destinationFolder / entryPath;
+
         if (filename[ filename_length-1 ] == dir_delimiter )
         {
-            std::filesystem::create_directory({ destinationPath + filename });
+            std::filesystem::create_directories(outputPath);
         }
         else
         {
@@ -91,17 +102,22 @@ void unzipper::extract(const char* fileBuffer, uint fileLength, std::string& des
             if ( unzOpenCurrentFile( zipfile ) != UNZ_OK )
             {
                 unzClose( zipfile );
-                g_logger.fatal("could not open file");
+                g_logger.fatal("Could not open file");
             }
 
             // Open a file to write out the data.
-            std::string destFilePath = destinationPath + filename;
+            const std::string destFilePath = outputPath.string();
+            // Ensure parent directory exists (zip may not have explicit directory entries)
+            const std::filesystem::path parentDir = outputPath.parent_path();
+            if (!std::filesystem::exists(parentDir)) {
+                std::filesystem::create_directories(parentDir);
+            }
             FILE *out = fopen(destFilePath.c_str(), "wb");
             if ( out == nullptr )
             {
                 unzCloseCurrentFile( zipfile );
                 unzClose( zipfile );
-                g_logger.fatal("could not open destination file");
+                g_logger.fatal("Could not open destination file");
             }
 
             int error = UNZ_OK;
@@ -133,7 +149,7 @@ void unzipper::extract(const char* fileBuffer, uint fileLength, std::string& des
             if ( unzGoToNextFile( zipfile ) != UNZ_OK )
             {
                 unzClose( zipfile );
-                g_logger.fatal("cound not read next file");
+                g_logger.fatal("Cound not read next file");
             }
         }
     }

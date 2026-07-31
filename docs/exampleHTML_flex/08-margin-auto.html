@@ -1,0 +1,161 @@
+<html>
+<style>
+  window {
+    font-family: Arial, sans-serif;
+    margin: 24px;
+    background-color: #ffffff;
+    color: #222222;
+    height: 100%;
+    margin-top: 0;
+    margin-left: 0;
+    margin-right: 0;
+    display: block !important;
+    --image-source: none;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 100% !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  h1 {
+    margin-bottom: 4px;
+  }
+
+  p {
+    margin-top: 0;
+    color: #555;
+  }
+
+  .example {
+    border: 2px solid #2e7d32;
+    border-radius: 10px;
+    background-color: #fff;
+    padding: 12px;
+    width: 94%;
+    margin-bottom: 18px;
+  }
+
+  h3 {
+    margin: 0 0 8px;
+    color: #333;
+  }
+
+  .container {
+    display: flex;
+    border: 2px dashed #9aa5b1;
+    background-color: #eceff1;
+    padding: 8px;
+    min-height: 60px;
+    gap: 8px;
+  }
+
+  .item1 {
+    border: 2px solid #2e7d32;
+    background-color: #c8e6c9;
+    border-radius: 6px;
+    padding: 8px 14px;
+    text-align: center;
+  }
+
+  /* margin: auto absorbs free space */
+  .ml-auto {
+    margin-left: auto;
+  }
+
+  .mr-auto {
+    margin-right: auto;
+  }
+
+  .m-auto {
+    margin: auto;
+  }
+
+  .mt-auto {
+    margin-top: auto;
+  }
+
+  .col {
+    flex-direction: column;
+    height: 180px;
+  }
+
+  /* Visual variants per example */
+  .purple .item1 {
+    background-color: #9c27b0;
+  }
+
+  .blue .item1 {
+    background-color: #2196f3;
+  }
+
+  .green .item1 {
+    background-color: #4caf50;
+  }
+
+  .orange .item1 {
+    background-color: #ff9800;
+  }
+
+  .red .item1 {
+    background-color: #f44336;
+  }
+
+  .steel .item1 {
+    background-color: #607d8b;
+  }
+</style>
+<window>
+  <h1>Flexbox: margin: auto</h1>
+  <p><b>margin: auto</b> on a flex item absorbs all available free space in that direction.</p>
+
+  <div class="example purple">
+    <h3>Last item pushed to the right (margin-left: auto)</h3>
+    <div class="container">
+      <div class="item1">Logo</div>
+      <div class="item1">Nav 1</div>
+      <div class="item1">Nav 2</div>
+      <div class="item1 ml-auto">Login</div>
+    </div>
+  </div>
+
+  <div class="example blue">
+    <h3>First item pushed to the right (margin-right: auto)</h3>
+    <div class="container">
+      <div class="item1 mr-auto">Home</div>
+      <div class="item1">Profile</div>
+      <div class="item1">Logout</div>
+    </div>
+  </div>
+
+  <div class="example green">
+    <h3>Item centered with margin: auto</h3>
+    <div class="container">
+      <div class="item1">Left</div>
+      <div class="item1 m-auto">Centrado</div>
+      <div class="item1">Right</div>
+    </div>
+  </div>
+
+  <div class="example orange">
+    <h3>In column: margin-top: auto pushes to the bottom</h3>
+    <div class="container col">
+      <div class="item1">Top</div>
+      <div class="item1">Middle</div>
+      <div class="item1 mt-auto">Bottom</div>
+    </div>
+  </div>
+
+  <div class="example red">
+    <h3>Separate groups with margin-left: auto</h3>
+    <div class="container">
+      <div class="item1">A</div>
+      <div class="item1">B</div>
+      <div class="item1 ml-auto">X</div>
+      <div class="item1">Y</div>
+    </div>
+  </div>
+</window>
+
+</html>

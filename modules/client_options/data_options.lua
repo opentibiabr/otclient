@@ -155,6 +155,7 @@ return {
     returnDisablesChat                = false,
     smartWalk                         = false,
     autoChaseOverride                 = true,
+    talkOnRightClick                  = false,
     moveStack                         = false,
     showStatusMessagesInConsole       = true,
     showEventMessagesInConsole        = true,
@@ -340,10 +341,56 @@ return {
             panels.interface:recursiveGetChildById('crosshair'):setCurrentOptionByData(newValue, true)
         end
     },
+    nativeCursor = {
+        value = false,
+        action = function(value, options, controller, panels, extraWidgets)
+            if value then
+                -- Disable animated cursor when native cursor is enabled
+                if options.showAnimatedCursor.value then
+                    options.showAnimatedCursor.value = false
+                    g_settings.set('showAnimatedCursor', false)
+                    panels.gameMapPanel:setCursorAnimations(false)
+                    -- Update the UI checkbox
+                    local widget = panels.interface:recursiveGetChildById('showAnimatedCursor')
+                    if widget then
+                        widget:setChecked(false)
+                    end
+                end
+                -- Set native cursor mode flag
+                g_mouse.setUseNativeCursor(true)
+                -- Push cursor to mark as changed (prevents game from overriding)
+                g_mouse.pushCursor('window')
+                -- Then restore to native Windows cursor
+                g_window.restoreMouseCursor()
+            else
+                g_mouse.setUseNativeCursor(false)
+                g_mouse.popCursor('window')
+            end
+        end
+    },
     enableHighlightMouseTarget        = {
         value = true,
         action = function(value, options, controller, panels, extraWidgets)
             panels.gameMapPanel:setDrawHighlightTarget(value)
+        end
+    },
+    showAnimatedCursor = {
+        value = true,
+        action = function(value, options, controller, panels, extraWidgets)
+            if value then
+                -- Disable native cursor when animated cursor is enabled
+                if options.nativeCursor.value then
+                    options.nativeCursor.value = false
+                    g_settings.set('nativeCursor', false)
+                    g_mouse.popCursor('window')
+                    -- Update the UI checkbox
+                    local widget = panels.interface:recursiveGetChildById('nativeCursor')
+                    if widget then
+                        widget:setChecked(false)
+                    end
+                end
+            end
+            panels.gameMapPanel:setCursorAnimations(value)
         end
     },
     showDragIcon        = {
@@ -779,5 +826,38 @@ return {
     },
     actionBarBottomLocked = false,
     actionBarLeftLocked = false,
-    actionBarRightLocked = false    
+    actionBarRightLocked = false,
+    setOwnSpellEffectAlphaScroll = {
+        value = 100,
+        action = function(value, options, controller, panels, extraWidgets)
+            panels.graphicsEffectsPanel:recursiveGetChildById('setOwnSpellEffectAlphaScroll'):setText(string.format('Own Spells Effect: %s %%',
+                value))
+            g_client.setOwnSpellEffectAlpha(value / 100)
+        end
+    },
+    setOtherPlayerSpellEffectAlphaScroll = {
+        value = 100,
+        action = function(value, options, controller, panels, extraWidgets)
+            panels.graphicsEffectsPanel:recursiveGetChildById('setOtherPlayerSpellEffectAlphaScroll'):setText(string.format('Other Player Spells Effect: %s %%',
+                value))
+           g_client.setOtherPlayerSpellEffectAlpha(value / 100)
+        end
+    },
+    setCreatureSpellEffectAlphaScroll = {
+        value = 100,
+        action = function(value, options, controller, panels, extraWidgets)
+            panels.graphicsEffectsPanel:recursiveGetChildById('setCreatureSpellEffectAlphaScroll'):setText(string.format('Creature Spells Effect: %s %%',
+                value))
+            g_client.setCreatureSpellEffectAlpha(value / 100)
+        end
+    },
+    setBossAreaCreatureEffectAlphaScroll = {
+        value = 100,
+        action = function(value, options, controller, panels, extraWidgets)
+            panels.graphicsEffectsPanel:recursiveGetChildById('setBossAreaCreatureEffectAlphaScroll'):setText(string.format('Boss Area Creature Effect: %s %%',
+                value))
+           g_client.setBossAreaCreatureEffectAlpha(value / 100)
+        end
+    },
+    showInfoBanner = true,
 }

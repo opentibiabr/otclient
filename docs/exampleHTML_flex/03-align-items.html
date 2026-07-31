@@ -1,0 +1,166 @@
+<html>
+<style>
+  window {
+    font-family: Arial, sans-serif;
+    margin: 24px;
+    background-color: #ffffff;
+    color: #222222;
+    height: 100%;
+    margin-top: 0;
+    margin-left: 0;
+    margin-right: 0;
+    display: block !important;
+    --image-source: none;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 100% !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  .example {
+    border: 2px solid #6a1b9a;
+    border-radius: 10px;
+    background-color: #ffffff;
+    padding: 12px;
+    margin-bottom: 18px;
+  }
+
+  .container {
+    display: flex;
+    align-items: stretch;
+    border: 2px dashed #9aa5b1;
+    min-height: 140px;
+    padding: 10px;
+    gap: 10px;
+    background-color: #eceff1;
+  }
+
+  .item1 {
+    width: 110px;
+    border: 2px solid #6a1b9a;
+    background-color: #3a3a3a;
+    border-radius: 8px;
+    text-align: center;
+    padding: 8px;
+  }
+
+  .small {
+    height: 40px;
+  }
+
+  .medium {
+    height: 70px;
+  }
+
+  .large {
+    height: 100px;
+  }
+
+  .start {
+    align-items: flex-start;
+  }
+
+  .center {
+    align-items: center;
+  }
+
+  .end {
+    align-items: flex-end;
+  }
+
+  .stretch {
+    align-items: stretch;
+  }
+
+  .baseline {
+    align-items: baseline;
+  }
+
+  button {
+    margin-top: 4px;
+    border: 1px solid #6a1b9a;
+    background-color: #6a1b9a;
+    color: #fff;
+    border-radius: 6px;
+    padding: 4px 8px;
+  }
+
+  /* Visual variants per example */
+  .purple .item1 {
+    background-color: #9c27b0;
+  }
+
+  .blue .item1 {
+    background-color: #2196f3;
+  }
+
+  .green .item1 {
+    background-color: #4caf50;
+  }
+
+  .orange .item1 {
+    background-color: #ff9800;
+  }
+
+  .red .item1 {
+    background-color: #f44336;
+  }
+
+  .steel .item1 {
+    background-color: #607d8b;
+  }
+</style>
+<window>
+  <h1>Flexbox: align-items</h1>
+  <p>Viewtical alignment inside the flex container (row direction).</p>
+
+  <div class="example purple">
+    <h3>flex-start</h3>
+    <div class="container start">
+      <div class="item1 small">Text</div>
+      <div class="item1 medium">Text</div>
+      <div class="item1 large"><label>Text</label><button>Button</button></div>
+    </div>
+  </div>
+
+  <div class="example blue">
+    <h3>center</h3>
+    <div class="container center">
+      <div class="item1 small">A</div>
+      <div class="item1 medium">B</div>
+      <div class="item1 large">C</div>
+    </div>
+  </div>
+
+  <div class="example green">
+    <h3>flex-end</h3>
+    <div class="container end">
+      <div class="item1 small">A</div>
+      <div class="item1 medium">B</div>
+      <div class="item1 large">C</div>
+    </div>
+  </div>
+
+  <div class="example orange">
+    <h3>stretch</h3>
+    <div class="container stretch">
+      <div class="item1">A</div>
+      <div class="item1">B</div>
+      <div class="item1">C</div>
+    </div>
+  </div>
+
+  <div class="example red">
+    <h3>baseline</h3>
+    <div class="container baseline">
+      <div class="item1"><span>Small text</span></div>
+      <div class="item1"><span>Large text</span></div>
+      <div class="item1"><img src="/data/images/clienticon.png" alt="img"
+          style="border:1px solid #777; border-radius:4px;" /></div>
+    </div>
+  </div>
+</window>
+
+</html>

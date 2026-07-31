@@ -132,7 +132,7 @@ protected:
                                    & choiceList, bool priority);
 
     // cyclopedia
-    static void processItemDetail(uint32_t itemId, const std::vector<std::tuple<std::string, std::string>>& descriptions);
+    static void processItemDetail(const ItemInspectionData& data);
     static void processCyclopediaCharacterGeneralStats(const CyclopediaCharacterGeneralStats& stats, const std::vector<std::vector<uint16_t>>& skills,
                                                     const std::vector<std::tuple<uint8_t, uint16_t>>& combats);
     static void processCyclopediaCharacterCombatStats(const CyclopediaCharacterCombatStats& data, double mitigation,
@@ -143,6 +143,8 @@ protected:
     static void processCyclopediaCharacterGeneralStatsBadge(uint8_t showAccountInformation, uint8_t playerOnline, uint8_t playerPremium,
                                                             std::string_view loyaltyTitle,
                                                             const std::vector<std::tuple<uint32_t, std::string>>& badgesVector);
+    static void processCyclopediaCharacterInspection(const CyclopediaCharacterInspection& data);
+    static void processInspectionState(uint32_t creatureId, uint8_t state);
     static void processCyclopediaCharacterItemSummary(const CyclopediaCharacterItemSummary& data);
     static void processCyclopediaCharacterAppearances(const OutfitColorStruct& currentOutfit, const std::vector<CharacterInfoOutfits>& outfits,
                                                     const std::vector<CharacterInfoMounts>& mounts, const std::vector<CharacterInfoFamiliar>& familiars);
@@ -184,6 +186,7 @@ public:
     void useInventoryItem(uint16_t itemId);
     void useInventoryItemWith(uint16_t itemId, const ThingPtr& toThing);
     ItemPtr findItemInContainers(uint32_t itemId, int subType, uint8_t tier);
+    ItemPtr findPlayerItem(uint32_t itemId, int subType);
 
     // container related
     int open(const ItemPtr& item, const ContainerPtr& previousContainer);
@@ -326,7 +329,13 @@ public:
     void setProtocolVersion(uint16_t version);
     int getProtocolVersion() { return m_protocolVersion; }
 
-    bool isUsingProtobuf() { return getProtocolVersion() >= 1281 && !getFeature(Otc::GameLoadSprInsteadProtobuf); }
+    bool isUsingProtobuf() {
+#ifdef FRAMEWORK_PROTOBUF
+        return getProtocolVersion() >= 1281 && !getFeature(Otc::GameLoadSprInsteadProtobuf);
+#else
+        return false;
+#endif
+    }
 
     void setClientVersion(uint16_t version);
     int getClientVersion() { return m_clientVersion; }
@@ -356,7 +365,9 @@ public:
     void setServerBeat(const int beat) { m_serverBeat = beat; }
     int getServerBeat() { return m_serverBeat; }
     void setCanReportBugs(const bool enable) { m_canReportBugs = enable; }
+    void setCanExivaOptions(const bool enable) { m_CanExivaOptions = enable; }
     bool canReportBugs() { return m_canReportBugs; }
+    bool canExivaOptions() { return m_CanExivaOptions; }
     void setExpertPvpMode(const bool enable) { m_expertPvpMode = enable; }
     bool getExpertPvpMode() { return m_expertPvpMode; }
     LocalPlayerPtr getLocalPlayer() { return m_localPlayer; }
@@ -380,6 +391,25 @@ public:
     void preyAction(uint8_t slot, uint8_t actionType, uint16_t index);
     void preyRequest();
 
+    // Task Board / SoulSeals / Offline Training related
+    void bountyTaskAction(uint8_t actionType, uint16_t value = 0);
+    void weeklyTaskAction(uint8_t actionType, uint16_t value = 0);
+    void taskHuntingShopRequest();
+    void taskHuntingShopPurchase(uint8_t offerIndex);
+    void bountyTalismanUpgrade(uint8_t pathIndex);
+    void bountyPreferredAction(uint8_t actionType, uint16_t slot, uint16_t raceId);
+    void soulsealFightAction(uint16_t raceId);
+    void sendStartOfflineTraining(const uint8_t skillType);
+    void sendTutorialChangeVocation(uint8_t vocationClientId);
+
+    // exiva related
+    void sendExivaOptions(bool allowAll, bool allowOwnGuild, bool allowOwnParty, bool allowVipList,
+                          bool allowPlayerWhitelist, bool allowGuildWhitelist,
+                          const std::vector<std::string>& characterWhiteList,
+                          const std::vector<std::string>& removeCharacter,
+                          const std::vector<std::string>& guildWhiteList,
+                          const std::vector<std::string>& removeGuild);
+
     // forge related
     void openPortableForgeRequest();
     void forgeRequest(Otc::ForgeAction_t actionType, bool convergence = false, uint16_t firstItemid = 0, uint8_t firstItemTier = 0, uint16_t secondItemId = 0, bool improveChance = false, bool tierLoss = false);
@@ -390,8 +420,12 @@ public:
     void clearImbuement(uint8_t slot);
     void closeImbuingWindow();
     void imbuementDurations(bool isOpen = false);
-    void openWheelOfDestiny(uint32_t playerId);
-    void applyWheelOfDestiny(const std::vector<uint16_t>& wheelPointsVec, const std::vector<uint16_t>& activeGemsVec);
+    void selectImbuementItem(uint16_t itemId, const Position& pos, uint8_t stackpos);
+    void selectImbuementScroll();
+
+    // weapon proficiency related
+    void sendWeaponProficiencyAction(uint8_t actionType, uint16_t itemId = 0);
+    void sendWeaponProficiencyApply(uint16_t itemId, const std::vector<uint8_t>& levels, const std::vector<uint8_t>& perkPositions);
 
     void enableTileThingLuaCallback(const bool value) { m_tileThingsLuaCallback = value; }
     bool isTileThingLuaCallbackEnabled() { return m_tileThingsLuaCallback; }
@@ -420,6 +454,7 @@ public:
     // cyclopedia related
     void inspectionNormalObject(const Position& position);
     void inspectionObject(Otc::InspectObjectTypes inspectionType, uint16_t itemId, uint8_t itemCount);
+    void inspectCharacter(const uint32_t creatureId, const uint8_t tab);
     void requestBestiary();
     void requestBestiaryOverview(std::string_view catName, bool search = false, std::vector<uint16_t> raceIds = {});
     void requestBestiarySearch(uint16_t raceId);
@@ -433,7 +468,7 @@ public:
     void sendOpenRewardWall();
     void requestOpenRewardHistory();
     void requestGetRewardDaily(const uint8_t bonusShrine, const std::map<uint16_t, uint8_t>& items);
-    void sendRequestTrackerQuestLog(const std::map<uint16_t, std::string>& quests);
+    void sendRequestTrackerQuestLog(const std::vector<uint16_t>& missionIds, bool autoTrackNewQuests, bool autoUntrackCompletedQuests, uint8_t extra = 0x2A);
     void processCyclopediaCharacterOffenceStats(const CyclopediaCharacterOffenceStats& data);
     void processCyclopediaCharacterDefenceStats(const CyclopediaCharacterDefenceStats& data);
     void processCyclopediaCharacterMiscStats(const CyclopediaCharacterMiscStats& data);
@@ -441,7 +476,7 @@ public:
     //whell of destiny 
     void openWheel(uint32_t playerId);
     void sendApplyWheelPoints(const std::vector<uint16_t>& slotPoints,uint16_t greenGem,uint16_t redGem,uint16_t acquaGem,uint16_t purpleGem);
-    void gemAction(uint8_t actionType, uint8_t param, uint8_t pos);
+    void gemAction(uint8_t actionType, uint16_t param, uint8_t pos);
 
     void updateMapLatency() {
         if (!m_mapUpdateTimer.first) {
@@ -478,6 +513,7 @@ private:
     bool m_scheduleLastWalk{ false };
     bool m_safeFight{ true };
     bool m_canReportBugs{ false };
+    bool m_CanExivaOptions{ false };
 
     uint16_t m_mapUpdatedAt{ 0 };
     std::pair<uint16_t, Timer> m_mapUpdateTimer = { true, Timer{} };

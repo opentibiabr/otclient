@@ -1,148 +1,168 @@
 UIWidget
   anchors.fill: parent
   visible: false
-  QtButton
-    id: reset
-    text: "Reset"
-    anchors.right: parent.right
-    anchors.bottom: parent.bottom
-    @onClick: reset()
 
-  Panel
-    id: panelDisplayedButtons
+  UIScrollArea
+    id: optionControlButtonsScrollArea
     anchors.left: parent.left
-    anchors.right: parent.right
+    anchors.right: optionControlButtonsScrollBar.left
     anchors.top: parent.top
-    size: 502 248
-    border-width-top: 1
-    border-color-top: black
-    border-width-left: 1
-    border-color-left: black
-    border-width-bottom: 1
-    border-color-bottom: #747474
-    border-width-right: 1
-    border-color-right: #747474
-    
-    Label
-      id: displayedButtonsLabel
-      !text: tr('Displayed Buttons')
-      anchors.top: parent.top
-      anchors.left: parent.left
-      margin-top: 5
-      margin-left: 10
-      color: #C0C0C0
-      
-    TextList
-      id: displayedButtonsList
-      anchors.top: displayedButtonsLabel.bottom
-      anchors.left: parent.left
-      anchors.right: parent.right
-      height: 200
-      margin-top: 5
-      margin-left: 10
-      margin-right: 35
-      vertical-scrollbar: displayedButtonsScrollBar
-      background-color: #404040
-    VerticalQtScrollBar
-      id: displayedButtonsScrollBar
-      anchors.top: displayedButtonsList.top
-      anchors.bottom: displayedButtonsList.bottom
-      anchors.right: displayedButtonsList.right
-      step: 14
-      pixels-scroll: true
-      
-    UIButton
-      id: moveToDisplayedAvailableButtonsList
-      anchors.top: displayedButtonsList.top
-      anchors.right: parent.right
-      margin-right: 10
-      image-source: /images/ui/buttons/button-clear-18x18-up
-      image-clip: 0 0 20 20
-      width: 20
-      @onClick: moveToAvailable()
-      $pressed:
-        image-source: /images/ui/buttons/button-clear-18x18-down
-      
-    UIButton
-      id: reordenUp
-      anchors.top: prev.bottom
-      anchors.right: parent.right
-      margin-right: 10
-      margin-top: 5
-      image-source: /images/ui/buttons/automap-button-moveup-up
-      image-clip: 0 0 20 20
-      width: 20
-      @onClick: moveButtonUp()
-      $pressed:
-        image-source: /images/ui/buttons/automap-button-moveup-down
-      
-    UIButton
-      id: reordenDown
-      anchors.top: prev.bottom
-      anchors.right: parent.right
-      margin-right: 10
-      margin-top: 5
-      image-source: /images/ui/buttons/automap-button-movedown-up
-      image-clip: 0 0 20 20
-      width: 20
-      @onClick: moveButtonDown()
-      $pressed:
-        image-source: /images/ui/buttons/automap-button-movedown-down
-      
-  Panel
-    id: panelAvailableButtons
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.top: prev.bottom
-    size: 508 100
-    margin-top: 10
-    border-width-top: 1
-    border-color-top: black
-    border-width-left: 1
-    border-color-left: black
-    border-width-bottom: 1
-    border-color-bottom: #747474
-    border-width-right: 1
-    border-color-right: #747474
-    Label
-      id: displayedButtonsLabel
-      !text: tr('Available Buttons')
-      anchors.top: parent.top
-      anchors.left: parent.left
-      margin-top: 5
-      margin-left: 10
-      color: #C0C0C0
-      
-    TextList
-      id: displayedAvailableButtonsList
-      anchors.top: displayedButtonsLabel.bottom
-      anchors.left: parent.left
-      anchors.right: parent.right
-      height: 74
-      margin-top: 5
-      margin-left: 10
-      margin-right: 35
-      vertical-scrollbar: displayedButtonsScrollBar
-      background-color: #404040
-    VerticalQtScrollBar
-      id: displayedButtonsScrollBar
-      anchors.top: prev.top
-      anchors.bottom: prev.bottom
-      anchors.right: prev.right
-      step: 14
-      pixels-scroll: true
-    UIButton
-      id: moveToDisplayedButtonsList
-      anchors.top: prev.top
-      anchors.right: parent.right
-      margin-right: 10
-      image-source: /images/options/button_control
-      width: 20      
-      @onClick: moveToDisplayed()
-      image-clip: 0 0 20 20
-      image-border: 3
-      $pressed:
-        image-clip: 20 0 20 20
+    anchors.bottom: parent.bottom
+    vertical-scrollbar: optionControlButtonsScrollBar
 
-      $on:
-        image-clip: 20 0 20 20
+    Panel
+      id: panelDisplayedButtons
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: parent.top
+      size: 502 248
+      border-width-top: 1
+      border-color-top: black
+      border-width-left: 1
+      border-color-left: black
+      border-width-bottom: 1
+      border-color-bottom: #747474
+      border-width-right: 1
+      border-color-right: #747474
+
+      Label
+        id: displayedButtonsLabel
+        !text: tr('Displayed Buttons')
+        anchors.top: parent.top
+        anchors.left: parent.left
+        margin-top: 5
+        margin-left: 10
+        color: #C0C0C0
+
+      TextList
+        id: displayedButtonsList
+        anchors.top: displayedButtonsLabel.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: 200
+        margin-top: 5
+        margin-left: 10
+        margin-right: 35
+        vertical-scrollbar: displayedButtonsScrollBar
+        background-color: #404040
+      VerticalQtScrollBar
+        id: displayedButtonsScrollBar
+        anchors.top: displayedButtonsList.top
+        anchors.bottom: displayedButtonsList.bottom
+        anchors.right: displayedButtonsList.right
+        step: 14
+        pixels-scroll: true
+
+      UIButton
+        id: moveToDisplayedAvailableButtonsList
+        anchors.top: displayedButtonsList.top
+        anchors.right: parent.right
+        margin-right: 10
+        image-source: /images/ui/buttons/button-clear-18x18-up
+        image-clip: 0 0 20 20
+        width: 20
+        @onClick: moveToAvailable()
+        $pressed:
+          image-source: /images/ui/buttons/button-clear-18x18-down
+
+      UIButton
+        id: reordenUp
+        anchors.top: prev.bottom
+        anchors.right: parent.right
+        margin-right: 10
+        margin-top: 5
+        image-source: /images/ui/buttons/automap-button-moveup-up
+        image-clip: 0 0 20 20
+        width: 20
+        @onClick: moveButtonUp()
+        $pressed:
+          image-source: /images/ui/buttons/automap-button-moveup-down
+
+      UIButton
+        id: reordenDown
+        anchors.top: prev.bottom
+        anchors.right: parent.right
+        margin-right: 10
+        margin-top: 5
+        image-source: /images/ui/buttons/automap-button-movedown-up
+        image-clip: 0 0 20 20
+        width: 20
+        @onClick: moveButtonDown()
+        $pressed:
+          image-source: /images/ui/buttons/automap-button-movedown-down
+
+    Panel
+      id: panelAvailableButtons
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      size: 508 100
+      margin-top: 10
+      border-width-top: 1
+      border-color-top: black
+      border-width-left: 1
+      border-color-left: black
+      border-width-bottom: 1
+      border-color-bottom: #747474
+      border-width-right: 1
+      border-color-right: #747474
+      Label
+        id: displayedButtonsLabel
+        !text: tr('Available Buttons')
+        anchors.top: parent.top
+        anchors.left: parent.left
+        margin-top: 5
+        margin-left: 10
+        color: #C0C0C0
+
+      TextList
+        id: displayedAvailableButtonsList
+        anchors.top: displayedButtonsLabel.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: 74
+        margin-top: 5
+        margin-left: 10
+        margin-right: 35
+        vertical-scrollbar: displayedButtonsScrollBar
+        background-color: #404040
+      VerticalQtScrollBar
+        id: displayedButtonsScrollBar
+        anchors.top: prev.top
+        anchors.bottom: prev.bottom
+        anchors.right: prev.right
+        step: 14
+        pixels-scroll: true
+      UIButton
+        id: moveToDisplayedButtonsList
+        anchors.top: prev.top
+        anchors.right: parent.right
+        margin-right: 10
+        image-source: /images/options/button_control
+        width: 20
+        @onClick: moveToDisplayed()
+        image-clip: 0 0 20 20
+        image-border: 3
+        $pressed:
+          image-clip: 20 0 20 20
+
+        $on:
+          image-clip: 20 0 20 20
+
+    QtButton
+      id: reset
+      text: "Reset"
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 10
+      @onClick: reset()
+
+  VerticalScrollBar
+    id: optionControlButtonsScrollBar
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    anchors.right: parent.right
+    step: 14
+    pixels-scroll: true
+    $!mobile:
+      visible: false

@@ -155,6 +155,8 @@ if true then
     vocText = "- MS"
   elseif voc() == 4 or voc() == 14 then
     vocText = "- ED"
+  elseif voc() == 5 or voc() == 15 then
+    vocText = "- EM"
   end
 
   macro(5000, function()
@@ -596,6 +598,8 @@ if true then
         voc = "EK"
       elseif text:lower():find("paladin") then
         voc = "RP"
+      elseif text:lower():find("monk") then
+        voc = "EM"
       end
       local creature = getCreatureByName(name)
       if creature then

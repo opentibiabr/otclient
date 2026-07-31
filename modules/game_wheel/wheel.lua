@@ -17,6 +17,19 @@ if not SkillwheelStringsLibrary then
   SkillwheelStringsLibrary = {}
 end
 
+local function onGameStart()
+  if g_game.getClientVersion() >= 1310 then 
+    local ret = WheelOfDestiny.loadWheelPresets()
+    if not ret then
+      print("[wheel] Error loading wheel presets")
+    end
+  else
+    scheduleEvent(function()
+      g_modules.getModule("game_wheel"):unload()
+    end, 100)
+  end
+end
+
 function init()
   wheelWindow = g_ui.displayUI('wheel')
   mainPanel = wheelWindow:getChildById('mainPanel')
@@ -80,10 +93,10 @@ function init()
   hide()
   connect(g_game, {
     onGameEnd = onGameEnd,
-    onGameStart = WheelOfDestiny.loadWheelPresets,
+    onGameStart = onGameStart,
     onDestinyWheel = WheelOfDestiny.onDestinyWheel,
     --onUnlockGem = GemAtelier.onUnlockGem, --disabled because it's in TODO
-    onResourceBalance = onResourceBalance,
+    onResourcesBalanceChange = onResourceBalance,
   })
   
   if modules.game_mainpanel then
@@ -96,15 +109,19 @@ end
 function terminate()
   disconnect(g_game, {
     onGameEnd = onGameEnd,
-    onGameStart = WheelOfDestiny.loadWheelPresets,
+    onGameStart = onGameStart,
     onDestinyWheel = WheelOfDestiny.onDestinyWheel,
     --onUnlockGem = GemAtelier.onUnlockGem, --disabled because it's in TODO
-    onResourceBalance = onResourceBalance
+    onResourcesBalanceChange = onResourceBalance
   })
 
   if wheelWindow then
     wheelWindow:destroy()
     wheelWindow = nil
+  end
+  if wheelButton then
+    wheelButton:destroy()
+    wheelButton = nil
   end
 end
 
@@ -113,6 +130,9 @@ function toggle()
     wheelWindow:hide()
     wheelWindow:ungrabMouse()
     wheelWindow:ungrabKeyboard()
+    if wheelButton then
+      wheelButton:setOn(false)
+    end
   else
     wheelWindow:focus()
     loadMenu('wheelMenu')
@@ -126,6 +146,9 @@ function toggle()
     g_game.openWheel(g_game.getLocalPlayer():getId())
     wheelWindow:recursiveGetChildById('tabContent'):setVisible(false)
     WheelOfDestiny.onRemoveClick()
+    if wheelButton then
+      wheelButton:setOn(true)
+    end
   end
 end
 
@@ -133,6 +156,9 @@ function hide()
   wheelWindow:ungrabMouse()
   wheelWindow:ungrabKeyboard()
   wheelWindow:hide()
+  if wheelButton then
+    wheelButton:setOn(false)
+  end
 end
 
 function onGameEnd()

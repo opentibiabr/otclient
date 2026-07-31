@@ -36,6 +36,7 @@ public:
 
     uint8_t getSpriteSize() { return m_spriteSize; }
     uint16_t getLastSupportedVersion() const { return m_lastSupportedVersion; }
+    void setLastSupportedVersion(uint16_t version) { m_lastSupportedVersion = version; }
     bool drawTyping() const { return m_drawTyping; }
     std::string getTypingIcon() const { return m_typingIcon; }
 
@@ -44,6 +45,7 @@ public:
     uint8_t getMapSeaFloor() const { return m_mapSeaFloor; }
     uint8_t getMapUndergroundFloorRange() const { return m_mapUndergroundFloorRange; }
     uint8_t getMapAwareUndergroundFloorRange() const { return m_mapAwareUndergroundFloorRange; }
+    bool isExtendedViewUI() const { return m_extendedViewUI; }
 
     uint8_t getTileMaxElevation() const { return m_tileMaxElevation; }
     uint8_t getTileMaxThings() const { return m_tileMaxThings; }
@@ -71,6 +73,7 @@ public:
     BitmapFontPtr getAnimatedTextFont()  const { return m_animatedTextFont; }
     BitmapFontPtr getStaticTextFont()  const { return m_staticTextFont; }
     BitmapFontPtr getWidgetTextFont()  const { return m_widgetTextFont; }
+    BitmapFontPtr getItemCountFont()  const { return m_itemCountFont; }
 
     std::string getCreatureNameFontName() { return m_creatureNameFont->getName(); }
     std::string getAnimatedTextFontName() { return m_animatedTextFont->getName(); }
@@ -80,6 +83,8 @@ public:
     void loadFonts();
 
 private:
+    static constexpr uint16_t kSafeProtocolFallbackVersion = 740;
+
     void loadGameNode(const OTMLNodePtr& node);
     void loadFontNode(const OTMLNodePtr& node);
     void loadMapNode(const OTMLNodePtr& node);
@@ -90,7 +95,7 @@ private:
 
     // Game
     uint8_t m_spriteSize{ 32 };
-    uint16_t m_lastSupportedVersion{ 1511 };
+    uint16_t m_lastSupportedVersion{ kSafeProtocolFallbackVersion };
     bool m_drawTyping{ false };
     std::string m_typingIcon{ "/images/game/console/typing" };
 
@@ -100,6 +105,7 @@ private:
     uint8_t m_mapSeaFloor{ 7 };
     uint8_t m_mapUndergroundFloorRange{ 2 };
     uint8_t m_mapAwareUndergroundFloorRange{ 2 };
+    bool m_extendedViewUI{ false };
 
     // Tile
     uint8_t m_tileMaxElevation{ 24 };
@@ -131,11 +137,13 @@ private:
     std::string m_animatedTextFontName{ "verdana-11px-rounded" };
     std::string m_staticTextFontName{ "verdana-11px-rounded" };
     std::string m_widgetTextFontName{ "verdana-11px-antialised" };
+    std::string m_itemCountFontName{ "verdana-8px-rounded" };
 
     BitmapFontPtr m_creatureNameFont;
     BitmapFontPtr m_animatedTextFont;
     BitmapFontPtr m_staticTextFont;
     BitmapFontPtr m_widgetTextFont;
+    BitmapFontPtr m_itemCountFont;
 
     friend class FontManager;
 };

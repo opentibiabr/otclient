@@ -136,6 +136,9 @@ public:
     void addForegroundTile(const TilePtr& tile);
     void removeForegroundTile(const TilePtr& tile);
 
+    void setCursorAnimations(const bool enable) { m_cursorAnimations = enable; }
+    bool hasCursorAnimations() const { return m_cursorAnimations; }
+
 protected:
     void onGlobalLightChange(const Light& light);
     void onFloorChange(uint8_t floor, uint8_t previousFloor);
@@ -272,6 +275,7 @@ private:
     bool m_shiftPressed{ false };
     bool m_multithreading{ false };
     bool m_drawCoveredThings{ false };
+    bool m_cursorAnimations{ true };
 
     FadeType m_fadeType{ FadeType::NONE };
 

@@ -3,9 +3,25 @@ CharacterWidget < UIWidget
   background-color: alpha
   &updateOnStates: |
     function(self)
+      local focused = self:isFocused()
       local children = self:getChildren()
       for i=1,#children do
-        children[i]:setOn(self:isFocused())
+        children[i]:setOn(focused)
+      end
+      if self.rowColor then
+        if focused then
+          self:setBackgroundColor("#696767")
+          self:setBorderWidth(1)
+          self:setBorderColor("#696767")
+        else
+          self:setBackgroundColor(self.rowColor)
+          self:setBorderWidth(0)
+          self:setBorderColor("alpha")
+        end
+      end
+      local pin = self:getChildById('pin')
+      if pin then
+        pin:setVisible(focused and g_game.getFeature(GameEnterGameShowAppearance))
       end
     end
   @onFocusChange: self:updateOnStates()
@@ -15,17 +31,13 @@ CharacterWidget < UIWidget
       self:setHeight(64)
     end
 
-  $focus:
-    background-color: #ffffff22
-
-  Creature
+  UICreature
     id: outfitCreatureBox
     size: 64 64
     anchors.top: parent.top
     anchors.left: parent.left
     padding-left: 10
     padding-bottom: 5
-    creatureDisplay:setCreature(creature)
     fixed-creature-size: true
     @onSetup: |
       if not(g_game.getFeature(GameEnterGameShowAppearance)) then
@@ -62,6 +74,25 @@ CharacterWidget < UIWidget
       if not(g_game.getFeature(GameEnterGameShowAppearance)) then
         self:hide()
       end
+
+  CheckBoxButton
+    id: pin
+    size: 12 12
+    anchors.top: parent.top
+    anchors.left: parent.left
+    margin-left: 236
+    margin-top: 2
+    visible: false
+    tooltip: Pin this character to have it always shown at the top of the list.
+    icon-source: /game_questlog/images/icon-pin
+    @onSetup: |
+      if not(g_game.getFeature(GameEnterGameShowAppearance)) then
+        self:hide()
+      end
+    @onCheckChange: onPinCharacter(self, self:isChecked())
+    $checked:
+      tooltip: Remove pin from this character.
+      image-color: red
 
   Label
     id: statusDailyReward
@@ -133,12 +164,15 @@ CharacterWidget < UIWidget
     anchors.top: parent.top
     font: verdana-11px-monochrome
     text-auto-resize: true
+    text-wrap: true
     background-color: alpha
     &baseText: '(%s)'
     @onSetup: |
       if g_game.getFeature(GameEnterGameShowAppearance) then
         self:addAnchor(AnchorLeft, 'parent', AnchorLeft)
         self:setMarginLeft(502)
+        self:setWidth(225)
+        self:setHeight(26)
         self.baseText = '%s'
       else
         self:addAnchor(AnchorRight, 'parent', AnchorRight)
@@ -160,8 +194,11 @@ MainWindow
     if g_game.getFeature(GamePreviewState) then
       if g_game.getFeature(GameEnterGameShowAppearance) then
         self:setSize({width = 745, height = 430})
+        self:setText(tr('Select Character'))
+        self:setColor("#c0c0c0")
       else
         self:setSize({width = 350, height = 400})
+        self:setText(tr('Character List'))
       end
     else
       self:setSize({width = 250, height = 248})
@@ -170,6 +207,15 @@ MainWindow
   TextList
     id: characters
     background-color: #404040
+    border-width-top: 1
+    border-color-top: black
+    border-width-left: 1
+    border-color-left: black
+    border-width-bottom: 1
+    border-color-bottom: #747474
+    border-width-right: 1
+    border-color-right: #747474
+    padding: 1 1 1 1
     anchors.top: parent.top
     anchors.left: parent.left
     anchors.right: characterListScrollBar.left
@@ -187,60 +233,151 @@ MainWindow
         self:setBackgroundColor("#565656")
       end
 
-
-  FlatLabel
-    width: 250
+  UIWidget
+    id: characterTable
     anchors.left: parent.left
+    anchors.right: characterListScrollBar.left
     anchors.top: characters.top
-    !text: tr('Character') .. ''
+    height: 19
+    border-width: 1
+    border-color-top: #1B1B1A
+    border-color-left: #1B1B1A
+    border-color-right: #6b6b6b
+    border-color-bottom: #6b6b6b
+    background-color: #363636
     @onSetup: |
       if not(g_game.getFeature(GameEnterGameShowAppearance)) then
         self:hide()
       end
 
-  FlatLabel
-    width: 100
-    anchors.left: parent.left
-    anchors.top: characters.top
-    margin-left: 250
-    !text: tr('Status') .. ''
-    @onSetup: |
-      if not(g_game.getFeature(GameEnterGameShowAppearance)) then
-        self:hide()
-      end
+    UIButton
+      id: characterSort
+      size: 250 14
+      anchors.top: parent.top
+      anchors.left: parent.left
+      margin-top: 2
+      !text: tr('Character')
+      text-offset: -30 0
+      font: verdana-11px-monochrome
+      color: #c0c0c0
+      image-source: /images/game/entergame/sort-button
+      image-clip: 0 0 7 4
+      image-size: 7 4
+      image-offset: 242 5
+      @onClick: onSortButtonClick(self, 1)
+      $pressed:
+        color: #9d9d9d
+        image-clip: 0 4 7 4
+      $checked:
+        image-clip: 0 4 7 4
+      $!on:
+        image-source:
+      $on:
+        image-source: /images/game/entergame/sort-button
 
-  FlatLabel
-    width: 60
-    anchors.left: parent.left
-    anchors.top: characters.top
-    margin-left: 350
-    !text: tr('Level') .. ''
-    @onSetup: |
-      if not(g_game.getFeature(GameEnterGameShowAppearance)) then
-        self:hide()
-      end
+    UIButton
+      id: statusSort
+      size: 100 14
+      anchors.top: parent.top
+      anchors.left: parent.left
+      margin-left: 250
+      margin-top: 2
+      !text: tr('Status')
+      text-offset: -20 0
+      font: verdana-11px-monochrome
+      color: #c0c0c0
+      image-source: /images/game/entergame/sort-button
+      image-clip: 0 0 7 4
+      image-size: 7 4
+      image-offset: 92 5
+      @onClick: onSortButtonClick(self, 2)
+      $pressed:
+        color: #9d9d9d
+        image-clip: 0 4 7 4
+      $checked:
+        image-clip: 0 4 7 4
+      $!on:
+        image-source:
+      $on:
+        image-source: /images/game/entergame/sort-button
 
-  FlatLabel
-    width: 150
-    anchors.left: parent.left
-    anchors.top: characters.top
-    margin-left: 410
-    !text: tr('Vocation') .. ''
-    @onSetup: |
-      if not(g_game.getFeature(GameEnterGameShowAppearance)) then
-        self:hide()
-      end
+    UIButton
+      id: levelSort
+      size: 60 14
+      anchors.top: parent.top
+      anchors.left: parent.left
+      margin-left: 350
+      margin-top: 2
+      !text: tr('Level')
+      text-offset: -8 0
+      font: verdana-11px-monochrome
+      color: #c0c0c0
+      image-source: /images/game/entergame/sort-button
+      image-clip: 0 0 7 4
+      image-size: 7 4
+      image-offset: 52 5
+      @onClick: onSortButtonClick(self, 3)
+      $pressed:
+        color: #9d9d9d
+        image-clip: 0 4 7 4
+      $checked:
+        image-clip: 0 4 7 4
+      $!on:
+        image-source:
+      $on:
+        image-source: /images/game/entergame/sort-button
 
-  FlatLabel
-    width: 200
-    anchors.right: characters.right
-    anchors.top: characters.top
-    margin-left: 550
-    !text: tr('World') .. ''
-    @onSetup: |
-      if not(g_game.getFeature(GameEnterGameShowAppearance)) then
-        self:hide()
-      end
+    UIButton
+      id: vocationSort
+      size: 90 14
+      anchors.top: parent.top
+      anchors.left: parent.left
+      margin-left: 410
+      margin-top: 2
+      !text: tr('Vocation')
+      text-offset: -10 0
+      font: verdana-11px-monochrome
+      color: #c0c0c0
+      image-source: /images/game/entergame/sort-button
+      image-clip: 0 0 7 4
+      image-size: 7 4
+      image-offset: 82 5
+      @onClick: onSortButtonClick(self, 4)
+      $pressed:
+        color: #9d9d9d
+        image-clip: 0 4 7 4
+      $checked:
+        image-clip: 0 4 7 4
+      $!on:
+        image-source:
+      $on:
+        image-source: /images/game/entergame/sort-button
+
+    UIButton
+      id: worldSort
+      size: 230 14
+      anchors.top: parent.top
+      anchors.left: parent.left
+      margin-left: 500
+      margin-top: 2
+      !text: tr('World')
+      text-offset: -85 0
+      font: verdana-11px-monochrome
+      color: #c0c0c0
+      image-source: /images/game/entergame/sort-button
+      image-clip: 0 0 7 4
+      image-size: 7 4
+      image-offset: 212 5
+      @onClick: onSortButtonClick(self, 5)
+      $pressed:
+        color: #9d9d9d
+        image-clip: 0 4 7 4
+      $checked:
+        image-clip: 0 4 7 4
+      $!on:
+        image-source:
+      $on:
+        image-source: /images/game/entergame/sort-button
 
   VerticalScrollBar
     id: characterListScrollBar
@@ -326,7 +463,7 @@ MainWindow
         self:setMarginBottom(15)
         self:setPaddingBottom(2)
         self:setTextOffset({x = 25, y = 0})
-        self:addAnchor(AnchorBottom, 'next', AnchorBottom)
+        self:addAnchor(AnchorBottom, 'separator', AnchorBottom)
       else
         self:setMarginBottom(5)
         self:addAnchor(AnchorRight, 'parent', AnchorRight)
@@ -336,12 +473,227 @@ MainWindow
     $on:
       color: #FF0000
 
+  Button
+    id: premiumButton
+    !text: tr('Get Premium')
+    anchors.right: parent.right
+    text-auto-resize: true
+    image-color: green
+    @onClick: onPremiumButtonClick(self)
+    @onSetup: |
+      if g_game.getFeature(GameEnterGameShowAppearance) then
+        self:setMarginBottom(15)
+        self:setPaddingBottom(2)
+        self:addAnchor(AnchorBottom, 'separator', AnchorBottom)
+      end
+
+
   HorizontalSeparator
     id: separator
     anchors.left: parent.left
     anchors.right: parent.right
-    anchors.bottom: next.top
-    margin-bottom: 10
+    anchors.bottom: premiumBenefitsPanel.top
+    height: 2
+    @onSetup: |
+      if g_game.getFeature(GameEnterGameShowAppearance) then
+        self:setMarginBottom(6)
+      else
+        self:setMarginBottom(10)
+      end
+
+  Panel
+    id: premiumBenefitsPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: buttonHidden.top
+
+    @onSetup: |
+      if not(g_game.getFeature(GameEnterGameShowAppearance)) then
+        self:setHeight(0)
+        self:setMarginBottom(0)
+        self:hide()
+      end
+
+
+    Label
+      id: premiumBenefitsTitle
+      !text: tr('Premium Benefits include:')
+      anchors.top: parent.top
+      anchors.horizontalCenter: parent.horizontalCenter
+      margin-top: 2
+      padding-left: 6
+      padding-right: 6
+      color: #cfcfcf
+      font: verdana-11px-monochrome
+      text-auto-resize: true
+
+    UIWidget
+      id: premiumBenefitSpells
+      size: 210 52
+      anchors.left: parent.left
+      anchors.top: parent.top
+      margin-top: 22
+      margin-left: 12
+
+      UIWidget
+        id: premiumBenefitSpellsIcon
+        size: 32 32
+        anchors.top: parent.top
+        anchors.horizontalCenter: parent.horizontalCenter
+        image-source: /images/game/entergame/premium-icons-32x32
+        image-clip: 32 0 32 32
+
+      Label
+        id: premiumBenefitSpellsText
+        !text: tr('No level cap while training your skills offline')
+        anchors.top: premiumBenefitSpellsIcon.bottom
+        anchors.horizontalCenter: parent.horizontalCenter
+        margin-top: 2
+        font: verdana-11px-monochrome
+        color: #d7d7d7
+        width: 160
+        text-wrap: true
+        text-align: center
+        text-vertical-auto-resize: true
+
+    UIWidget
+      id: premiumBenefitMounts
+      size: 210 52
+      anchors.horizontalCenter: parent.horizontalCenter
+      anchors.top: parent.top
+      margin-top: 22
+
+      UIWidget
+        id: premiumBenefitMountsIcon
+        size: 32 32
+        anchors.top: parent.top
+        anchors.horizontalCenter: parent.horizontalCenter
+        image-source: /images/game/entergame/premium-icons-32x32
+        image-clip: 96 0 32 32
+
+      Label
+        id: premiumBenefitMountsText
+        !text: tr('Tame mounts to travel faster')
+        anchors.top: premiumBenefitMountsIcon.bottom
+        anchors.horizontalCenter: parent.horizontalCenter
+        margin-top: 2
+        text-auto-resize: true
+        font: verdana-11px-monochrome
+        color: #d7d7d7
+
+    UIWidget
+      id: premiumBenefitVip
+      size: 210 52
+      anchors.right: parent.right
+      anchors.top: parent.top
+      margin-top: 22
+      margin-right: 12
+
+      UIWidget
+        id: premiumBenefitVipIcon
+        size: 32 32
+        anchors.top: parent.top
+        anchors.horizontalCenter: parent.horizontalCenter
+        image-source: /images/game/entergame/premium-icons-32x32
+        image-clip: 512 0 32 32
+
+      Label
+        id: premiumBenefitVipText
+        !text: tr('Imbue items with stronger effect')
+        anchors.top: premiumBenefitVipIcon.bottom
+        anchors.horizontalCenter: parent.horizontalCenter
+        margin-top: 2
+        width: 190
+        text-wrap: true
+        text-align: center
+        text-vertical-auto-resize: true
+        font: verdana-11px-monochrome
+        color: #d7d7d7
+
+    Label
+      id: premiumBenefitsFooter
+      !text: tr('... and many more!')
+      anchors.left: parent.left
+      anchors.bottom: parent.bottom
+      margin-left: 8
+      text-auto-resize: true
+      font: verdana-11px-monochrome
+      color: #d7d7d7
+
+    HorizontalSeparator
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
+      margin-left: 8
+      margin-right: 8
+      height: 2
+
+  Panel
+    id: buttonHidden
+    anchors.left: parent.left
+    anchors.bottom: autoReconnect.top
+    margin-bottom: 6
+    size: 165 22
+    border-width-top: 1
+    border-color-top: black
+    border-width-left: 1
+    border-color-left: black
+    border-width-bottom: 1
+    border-color-bottom: #747474
+    border-width-right: 1
+    border-color-right: #747474
+    @onSetup: |
+      if not(g_game.getFeature(GameEnterGameShowAppearance)) then
+        self:setHeight(0)
+        self:setMarginBottom(0)
+        self:hide()
+      else
+        self:setHeight(22)
+        self:setMarginBottom(6)
+      end
+    CheckBox
+      id: checkBoxHidden
+      anchors.left: parent.left
+      anchors.verticalCenter: parent.verticalCenter
+      margin-left: 6
+      checked: true
+      !text: tr('Show Hidden Characters')
+      text-auto-resize: true
+      color: #c0c0c0
+      @onCheckChange: onShowHiddenCharacters(self, self:isChecked())
+
+
+  Panel
+    id: buttonOutfit
+    anchors.left: buttonHidden.right
+    anchors.verticalCenter: buttonHidden.verticalCenter
+    margin-left: 10
+    size: 100 22
+    border-width-top: 1
+    border-color-top: black
+    border-width-left: 1
+    border-color-left: black
+    border-width-bottom: 1
+    border-color-bottom: #747474
+    border-width-right: 1
+    border-color-right: #747474
+    padding: 1 1 1 1
+    @onSetup: |
+      if not(g_game.getFeature(GameEnterGameShowAppearance)) then
+        self:setHeight(0)
+        self:hide()
+      else
+        self:setHeight(22)
+      end
+    CheckBox
+      id: checkBoxOutfit
+      anchors.left: parent.left
+      anchors.verticalCenter: parent.verticalCenter
+      margin-left: 6      
+      !text: tr('Show Outfit')
+      text-auto-resize: true
+      color: #c0c0c0
+      @onCheckChange: onShowOutfits(self, self:isChecked())
 
   Button
     id: autoReconnect
@@ -355,7 +707,7 @@ MainWindow
         self:setFont('small-9px')
       end
     $!on:
-      image-color: red    
+      image-color: red
     $on:
       image-color: green
 

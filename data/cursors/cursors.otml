@@ -1,4 +1,28 @@
 Cursors
+  default:
+    image: default_tibia
+    hot-spot: 0 0
+  window:
+    image: default_window
+    hot-spot: 0 0
+  walk:
+    image: walkcursor
+    hot-spot: 0 0
+  talk:
+    image: talkcursor
+    hot-spot: 0 0
+  attack:
+    image: attackcursor
+    hot-spot: 0 0	  
+  quicklootcursor:
+    image: quicklootcursor
+    hot-spot: 0 0  
+  containercursor:
+    image: containercursor
+    hot-spot: 0 0
+  lookcursor:
+    image: lookcursor
+    hot-spot: 0 0	
   target:
     image: targetcursor
     hot-spot: 9 9
@@ -11,6 +35,9 @@ Cursors
   text:
     image: textcursor
     hot-spot: 4 9
-  pointer:
-    image: pointer
+  pointerbutton:
+    image: pointerbutton
     hot-spot: 5 0
+  pointinghand:
+    image: pointinghand
+    hot-spot: 5 0           

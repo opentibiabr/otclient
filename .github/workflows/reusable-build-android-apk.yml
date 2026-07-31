@@ -1,0 +1,231 @@
+name: Reusable Android APK Build
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+env:
+  JAVA_VERSION: "17"
+  NDK_VERSION: "29.0.13599879"
+  CMAKE_VERSION: "3.22.1"
+  COMPILE_SDK: "36"
+  BUILD_TOOLS_VERSION: "36.0.0"
+  CI_ANDROID_ABIS: "arm64-v8a"
+  CI_VCPKG_TRIPLET: "arm64-android"
+  LUAJIT_COMMIT: "d0e88930ddde28ff662503f9f20facf34f7265aa"
+  VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+  VCPKG_FEATURE_FLAGS: versions,binarycaching
+
+concurrency:
+  group: otclient-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    name: Android release APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+          cache-dependency-path: |
+            android/**/*.gradle
+            android/**/*.gradle.kts
+            android/gradle/wrapper/gradle-wrapper.properties
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install host build packages
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            curl \
+            g++-multilib \
+            gcc-multilib \
+            git \
+            make \
+            ninja-build \
+            pkg-config \
+            python3 \
+            unzip \
+            zip
+
+      - name: Install Android SDK packages
+        run: |
+          set -euo pipefail
+          sdk_root="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
+          if [[ -z "${sdk_root}" ]]; then
+            echo "::error title=Missing Android SDK::ANDROID_SDK_ROOT or ANDROID_HOME must be set."
+            exit 1
+          fi
+
+          sdkmanager --install \
+            "platform-tools" \
+            "platforms;android-${COMPILE_SDK}" \
+            "build-tools;${BUILD_TOOLS_VERSION}" \
+            "cmake;${CMAKE_VERSION}" \
+            "ndk;${NDK_VERSION}"
+
+          ndk_dir="${sdk_root}/ndk/${NDK_VERSION}"
+          if [[ ! -d "${ndk_dir}" ]]; then
+            ndk_dir="$(find "${sdk_root}/ndk" -maxdepth 1 -type d -name "${NDK_VERSION}*" | sort | head -n 1)"
+          fi
+          if [[ -z "${ndk_dir}" || ! -d "${ndk_dir}" ]]; then
+            echo "::error title=Missing Android NDK::NDK ${NDK_VERSION} was not installed."
+            exit 1
+          fi
+
+          echo "ANDROID_HOME=${sdk_root}" >> "${GITHUB_ENV}"
+          echo "ANDROID_SDK_ROOT=${sdk_root}" >> "${GITHUB_ENV}"
+          echo "ANDROID_NDK_HOME=${ndk_dir}" >> "${GITHUB_ENV}"
+          echo "ANDROID_NDK_ROOT=${ndk_dir}" >> "${GITHUB_ENV}"
+
+      - name: Read vcpkg baseline
+        id: vcpkg
+        run: |
+          set -euo pipefail
+          baseline="$(python3 -c 'import json; print(json.load(open("vcpkg.json"))["builtin-baseline"])')"
+          if [[ ! "${baseline}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error title=Invalid vcpkg baseline::vcpkg.json must contain a full 40-character builtin-baseline SHA."
+            exit 1
+          fi
+          echo "baseline=${baseline}" >> "${GITHUB_OUTPUT}"
+
+      - name: Cache vcpkg checkout
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.VCPKG_ROOT }}
+          key: vcpkg-${{ runner.os }}-${{ steps.vcpkg.outputs.baseline }}
+
+      - name: Bootstrap vcpkg
+        run: |
+          set -euo pipefail
+          if [[ ! -d "${VCPKG_ROOT}/.git" ]]; then
+            git clone https://github.com/microsoft/vcpkg.git "${VCPKG_ROOT}"
+          fi
+          git -C "${VCPKG_ROOT}" fetch --depth 1 origin "${{ steps.vcpkg.outputs.baseline }}"
+          git -C "${VCPKG_ROOT}" checkout "${{ steps.vcpkg.outputs.baseline }}"
+          "${VCPKG_ROOT}/bootstrap-vcpkg.sh" -disableMetrics
+
+      - name: Export vcpkg GitHub Actions cache variables
+        uses: actions/github-script@v9
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+            core.exportVariable('VCPKG_BINARY_SOURCES', 'clear;x-gha,readwrite');
+
+      - name: Cache LuaJIT Android libraries
+        id: luajit-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            luajit-src
+            android/app/libs
+          key: luajit-android-${{ runner.os }}-${{ env.CI_ANDROID_ABIS }}-ndk-${{ env.NDK_VERSION }}-${{ env.LUAJIT_COMMIT }}-${{ hashFiles('build_luajit_android.sh') }}
+
+      - name: Fetch LuaJIT source
+        if: steps.luajit-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          git clone https://github.com/LuaJIT/LuaJIT.git luajit-src
+          git -C luajit-src checkout "${LUAJIT_COMMIT}"
+
+      - name: Build LuaJIT for Android
+        if: steps.luajit-cache.outputs.cache-hit != 'true'
+        env:
+          OTCLIENT_ANDROID_ABIS: ${{ env.CI_ANDROID_ABIS }}
+        run: |
+          set -euo pipefail
+          chmod +x build_luajit_android.sh
+          ./build_luajit_android.sh
+
+      - name: Pack game assets into data.zip
+        run: |
+          set -euo pipefail
+          mkdir -p android/app/src/main/assets
+          python3 - <<'PY'
+          from pathlib import Path
+          import zipfile
+
+          output = Path("android/app/src/main/assets/data.zip")
+          roots = [Path("data"), Path("mods"), Path("modules")]
+          files = [Path("init.lua"), Path("otclientrc.lua"), Path("cacert.pem"), Path("config.ini")]
+
+          with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED) as archive:
+              for root in roots:
+                  if not root.exists():
+                      raise SystemExit(f"Missing asset directory: {root}")
+                  for path in sorted(root.rglob("*")):
+                      if path.is_file():
+                          archive.write(path, path.as_posix())
+
+              for path in files:
+                  if path.exists():
+                      archive.write(path, path.as_posix())
+
+          print(f"Wrote {output} ({output.stat().st_size} bytes)")
+          PY
+
+      - name: Create fallback release keystore
+        run: |
+          set -euo pipefail
+          mkdir -p "${HOME}/.android"
+          if [[ ! -f "${HOME}/.android/debug.keystore" ]]; then
+            keytool -genkeypair \
+              -keystore "${HOME}/.android/debug.keystore" \
+              -storepass android \
+              -keypass android \
+              -alias androiddebugkey \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -dname "CN=Android Debug,O=Android,C=US"
+          fi
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x android/gradlew
+
+      - name: Build APK
+        working-directory: android
+        env:
+          OTCLIENT_ANDROID_ABIS: ${{ env.CI_ANDROID_ABIS }}
+          VCPKG_ROOT: ${{ env.VCPKG_ROOT }}
+        run: ./gradlew :app:assembleRelease --no-daemon --stacktrace --info
+
+      - name: List APK outputs
+        run: find android/app/build/outputs/apk/release -maxdepth 1 -type f -name "*.apk" -print
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: otclient-android-release-${{ github.sha }}
+          path: android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Write download summary
+        run: |
+          {
+            echo "## Android APK"
+            echo ""
+            echo "The APK was uploaded as the workflow artifact:"
+            echo ""
+            echo "- otclient-android-release-${GITHUB_SHA}"
+          } >> "${GITHUB_STEP_SUMMARY}"

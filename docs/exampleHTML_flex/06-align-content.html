@@ -1,0 +1,201 @@
+<html>
+<style>
+  window {
+    font-family: Arial, sans-serif;
+    margin: 24px;
+    background-color: #ffffff;
+    color: #222222;
+    height: 100%;
+    margin-top: 0;
+    margin-left: 0;
+    margin-right: 0;
+    display: block !important;
+    --image-source: none;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 100% !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  h1 {
+    margin-bottom: 4px;
+  }
+
+  p {
+    margin-top: 0;
+    color: #555;
+  }
+
+  .example {
+    border: 2px solid #3949ab;
+    border-radius: 10px;
+    background-color: #fff;
+    padding: 12px;
+    width: 94%;
+    margin-bottom: 18px;
+  }
+
+  h3 {
+    margin: 0 0 8px;
+    color: #333;
+  }
+
+  .container {
+    display: flex;
+    flex-wrap: wrap;
+    width: 360px;
+    height: 200px;
+    border: 2px dashed #9aa5b1;
+    background-color: #eceff1;
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .item1 {
+    width: 100px;
+    border: 2px solid #3949ab;
+    background-color: #c5cae9;
+    border-radius: 6px;
+    text-align: center;
+    padding: 6px;
+    font-size: 13px;
+  }
+
+  .ac-start {
+    align-content: flex-start;
+  }
+
+  .ac-end {
+    align-content: flex-end;
+  }
+
+  .ac-center {
+    align-content: center;
+  }
+
+  .ac-between {
+    align-content: space-between;
+  }
+
+  .ac-around {
+    align-content: space-around;
+  }
+
+  .ac-evenly {
+    align-content: space-evenly;
+  }
+
+  .ac-stretch {
+    align-content: stretch;
+  }
+
+  /* Visual variants per example */
+  .purple .item1 {
+    background-color: #9c27b0;
+  }
+
+  .blue .item1 {
+    background-color: #2196f3;
+  }
+
+  .green .item1 {
+    background-color: #4caf50;
+  }
+
+  .orange .item1 {
+    background-color: #ff9800;
+  }
+
+  .red .item1 {
+    background-color: #f44336;
+  }
+
+  .steel .item1 {
+    background-color: #607d8b;
+  }
+</style>
+<window>
+  <h1>Flexbox: align-content</h1>
+  <p>Controls how <b>lines</b> are distributed when flex-wrap leaves extra space.</p>
+
+  <div class="example purple">
+    <h3>flex-start</h3>
+    <div class="container ac-start">
+      <div class="item1">A</div>
+      <div class="item1">B</div>
+      <div class="item1">C</div>
+      <div class="item1">D</div>
+      <div class="item1">E</div>
+    </div>
+  </div>
+
+  <div class="example blue">
+    <h3>flex-end</h3>
+    <div class="container ac-end">
+      <div class="item1">A</div>
+      <div class="item1">B</div>
+      <div class="item1">C</div>
+      <div class="item1">D</div>
+      <div class="item1">E</div>
+    </div>
+  </div>
+
+  <div class="example green">
+    <h3>center</h3>
+    <div class="container ac-center">
+      <div class="item1">A</div>
+      <div class="item1">B</div>
+      <div class="item1">C</div>
+      <div class="item1">D</div>
+      <div class="item1">E</div>
+    </div>
+  </div>
+
+  <div class="example orange">
+    <h3>space-between</h3>
+    <div class="container ac-between">
+      <div class="item1">A</div>
+      <div class="item1">B</div>
+      <div class="item1">C</div>
+      <div class="item1">D</div>
+      <div class="item1">E</div>
+    </div>
+  </div>
+
+  <div class="example red">
+    <h3>space-around</h3>
+    <div class="container ac-around">
+      <div class="item1">A</div>
+      <div class="item1">B</div>
+      <div class="item1">C</div>
+      <div class="item1">D</div>
+      <div class="item1">E</div>
+    </div>
+  </div>
+
+  <div class="example steel">
+    <h3>space-evenly</h3>
+    <div class="container ac-evenly">
+      <div class="item1">A</div>
+      <div class="item1">B</div>
+      <div class="item1">C</div>
+      <div class="item1">D</div>
+      <div class="item1">E</div>
+    </div>
+  </div>
+
+  <div class="example purple">
+    <h3>stretch (default)</h3>
+    <div class="container ac-stretch">
+      <div class="item1">A</div>
+      <div class="item1">B</div>
+      <div class="item1">C</div>
+      <div class="item1">D</div>
+      <div class="item1">E</div>
+    </div>
+  </div>
+</window>
+
+</html>

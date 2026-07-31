@@ -23,6 +23,219 @@
 #include "otmldocument.h"
 #include "otmlparser.h"
 
+#include "framework/core/logger.h"
+
+#include <optional>
+#include <unordered_map>
+#include <unordered_set>
+
+namespace {
+    using AliasMap = std::unordered_map<std::string, std::string>;
+
+    struct AliasResolveResult {
+        bool aliasReferenced{ false };
+        std::optional<std::string> resolvedValue;
+    };
+
+    std::string stripQuotes(std::string value)
+    {
+        if (value.size() >= 2) {
+            const char first = value.front();
+            const char last = value.back();
+            if ((first == '"' && last == '"') || (first == '\'' && last == '\'')) {
+                value = value.substr(1, value.size() - 2);
+            }
+        }
+        return value;
+    }
+
+    std::string normalizeValue(std::string value)
+    {
+        stdext::trim(value);
+        return stripQuotes(value);
+    }
+
+    bool isAliasTag(const std::string_view tag)
+    {
+        return !tag.empty() && tag.front() == '&';
+    }
+
+    std::string normalizeAliasName(std::string alias)
+    {
+        if (!alias.empty() && alias.front() == '&') {
+            alias.erase(alias.begin());
+        }
+        stdext::trim(alias);
+        return alias;
+    }
+
+    std::optional<std::string> resolveAliasName(const std::string& name, const AliasMap& aliases, std::unordered_set<std::string>& visited)
+    {
+        if (name.empty()) {
+            g_logger.error("Undefined OTML variable: {}", name);
+            return std::nullopt;
+        }
+        if (!visited.insert(name).second) {
+            g_logger.error("Circular OTML variable reference: {}", name);
+            return std::nullopt;
+        }
+
+        const auto it = aliases.find(name);
+        if (it == aliases.end()) {
+            g_logger.error("Undefined OTML variable: {}", name);
+            visited.erase(name);
+            return std::nullopt;
+        }
+
+        std::string value = normalizeValue(it->second);
+        if (!value.empty() && value.front() == '$') {
+            std::string nestedName = value.substr(1);
+            if (!nestedName.empty() && nestedName.front() == '&') {
+                nestedName.erase(nestedName.begin());
+            }
+            stdext::trim(nestedName);
+            const auto nested = resolveAliasName(nestedName, aliases, visited);
+            visited.erase(name);
+            return nested;
+        }
+
+        visited.erase(name);
+        return value;
+    }
+
+    AliasResolveResult resolveAliasValue(const std::string& value, const AliasMap& aliases)
+    {
+        auto trimmedValue = value;
+        stdext::trim(trimmedValue);
+        if (trimmedValue.empty() || trimmedValue.front() != '$') {
+            return { false, std::nullopt };
+        }
+
+        std::string aliasName = trimmedValue.substr(1);
+        if (!aliasName.empty() && aliasName.front() == '&') {
+            aliasName.erase(aliasName.begin());
+        }
+        stdext::trim(aliasName);
+
+        if (aliasName.empty()) {
+            return { false, std::nullopt };
+        }
+
+        if (aliases.find(aliasName) == aliases.end()) {
+            g_logger.error("Undefined OTML variable: {}", aliasName);
+            return { true, std::nullopt };
+        }
+
+        std::unordered_set<std::string> visited;
+        return { true, resolveAliasName(aliasName, aliases, visited) };
+    }
+
+    void resolveVariablesRecursive(const OTMLNodePtr& node, const AliasMap& parentAliases, OTMLDocument* doc)
+    {
+        std::optional<AliasMap> localAliases;
+
+        const auto getAliases = [&]() -> const AliasMap& {
+            if (localAliases) {
+                return *localAliases;
+            }
+            return parentAliases;
+        };
+
+        const auto getMutableAliases = [&]() -> AliasMap& {
+            if (!localAliases) {
+                localAliases.emplace(parentAliases);
+            }
+            return *localAliases;
+        };
+
+        std::vector<OTMLNodePtr> aliasNodes;
+        aliasNodes.reserve(node->children().size());
+
+        for (const auto& child : node->children()) {
+            if (isAliasTag(child->tag())) {
+                aliasNodes.emplace_back(child);
+            }
+        }
+
+        // Process all &-prefixed nodes (ampersand alias nodes) at this level
+        // 
+        // IMPORTANT: The & prefix has DUAL PURPOSE in OTUI files:
+        //   1. OTML Variable Definition: Values are stored in alias maps for $variable references
+        //   2. Lua Field Assignment: These same nodes are later processed by UIWidget::parseBaseStyle
+        //                            to set Lua fields on widget objects
+        //
+        // SCOPE BEHAVIOR:
+        //   - Root-level & nodes (doc != nullptr): Registered as GLOBAL variables in doc->m_globalAliases
+        //   - Nested & nodes (doc == nullptr): Only in LOCAL alias map, accessible to descendants
+        //
+        // CONSEQUENCE: Nested & nodes (like &minimizedHeight, &save, &onClick in widget definitions)
+        //              are simultaneously Lua fields AND local OTML variables. While this doesn't break
+        //              functionality since alias nodes are still passed to parseBaseStyle(), it creates
+        //              semantic ambiguity - these Lua field values can be referenced with $ syntax.
+        //
+        // See docs/otml-variables.md for detailed explanation and best practices.
+        for (const auto& aliasNode : aliasNodes) {
+            const auto aliasName = normalizeAliasName(aliasNode->tag());
+            if (aliasName.empty()) {
+                g_logger.error("Malformed OTML variable: {}", aliasNode->tag());
+                aliasNode->setUnique(true);
+                continue;
+            }
+
+            const std::string aliasValueLiteral = aliasNode->rawValue();
+            std::string aliasValue = normalizeValue(aliasValueLiteral);
+
+            const auto result = resolveAliasValue(aliasValue, getAliases());
+            if (result.aliasReferenced) {
+                if (!result.resolvedValue) {
+                    // referenced $var but failed to resolve -> keep for later error
+                    aliasNode->setUnique(true);
+                    // Keep unresolved reference in map so it's available (even if unresolved)
+                    getMutableAliases()[aliasName] = aliasValue;
+                    continue;
+                }
+                aliasValue = *result.resolvedValue;
+            }
+
+            aliasNode->setUnique(true);
+
+            // Register in local alias map - available to all descendant nodes
+            getMutableAliases()[aliasName] = aliasValue;
+
+            // If at document root (doc != nullptr), also register as global variable
+            // This distinction prevents nested &-nodes (like &save, &minimizedHeight in widget
+            // definitions) from polluting the global namespace, though they are still
+            // available as local variables and will be processed as Lua fields separately.
+            if (doc) {
+                if (doc->globalAliases().contains(aliasName)) {
+                    g_logger.warning("Overriding global OTML variable: {}", aliasName);
+                }
+                doc->addGlobalAlias(aliasName, aliasValue);
+            }
+        }
+
+        // Resolve $variable references in child values and recurse down the tree
+        const auto children = node->children();
+        for (const auto& child : children) {
+            if (!isAliasTag(child->tag())) {
+                const auto result = resolveAliasValue(child->rawValue(), getAliases());
+                if (result.aliasReferenced) {
+                    if (result.resolvedValue) {
+                        child->setValue(normalizeValue(*result.resolvedValue));
+                    } else {
+                        // Variable referenced but resolution failed - error already logged
+                    }
+                }
+            }
+
+            // Recurse with nullptr for doc - only root level registers global variables
+            // Nested &-nodes will be in local scope only, preventing Lua fields from
+            // becoming global OTML variables (though they remain in local alias map)
+            resolveVariablesRecursive(child, getAliases(), nullptr);
+        }
+    }
+} // namespace
+
 OTMLParser::OTMLParser(const OTMLDocumentPtr& doc, std::istream& in) :
     currentDepth(0), currentLine(0),
     doc(doc), currentParent(doc), previousNode(nullptr),
@@ -37,6 +250,8 @@ void OTMLParser::parse()
 
     while (!in.eof())
         parseLine(getNextLine());
+
+    resolveVariablesRecursive(doc->asOTMLNode(), {}, doc.get());
 }
 
 std::string OTMLParser::getNextLine()
@@ -236,7 +451,11 @@ void OTMLParser::parseNode(const std::string_view data)
             node->setValue(value);
     }
 
-    currentParent->addChild(node);
-    parentMap[node] = currentParent;
+    if (currentParent) {
+        currentParent->addChild(node);
+        parentMap[node] = currentParent;
+    } else {
+        throw OTMLException(doc, fmt::format("orphaned node detected (indentation error?): '{}'", tag), currentLine);
+    }
     previousNode = node;
 }

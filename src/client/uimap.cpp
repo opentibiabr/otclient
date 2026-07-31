@@ -22,12 +22,15 @@
 
 #include "uimap.h"
 
+#include "framework/graphics/declarations.h"
+#include "gameconfig.h"
 #include "lightview.h"
 #include "map.h"
 #include "mapview.h"
 #include "framework/graphics/drawpoolmanager.h"
 #include "framework/otml/otmlnode.h"
 #include <framework/platform/platformwindow.h>
+#include <framework/input/mouse.h>
 
 UIMap::UIMap()
 {
@@ -55,7 +58,10 @@ void UIMap::draw(const DrawPoolType drawPane) {
             m_mapView->drawFloor();
         }, [this] {
             m_mapView->registerEvents();
-        }, m_mapView->m_posInfo.rect, m_mapView->m_posInfo.srcRect, Color::black);
+        }, m_mapView->m_posInfo.rect, m_mapView->m_posInfo.srcRect,
+           m_mapView->getCameraPosition().z == g_gameConfig.getMapSeaFloor() ? Color(0xFFA54C27U) : Color::black);
+
+        g_drawPool.preDraw(DrawPoolType::CREATURE_INFORMATION, [] {});
     } else if (drawPane == DrawPoolType::LIGHT) {
         g_drawPool.preDraw(drawPane, [this] {
             m_mapView->m_lightView->clear();
@@ -63,9 +69,12 @@ void UIMap::draw(const DrawPoolType drawPane) {
             m_mapView->m_lightView->draw(m_mapView->m_posInfo.rect, m_mapView->m_posInfo.srcRect);
         });
     } else if (drawPane == DrawPoolType::CREATURE_INFORMATION) {
-        g_drawPool.preDraw(drawPane, [this] {
-            m_mapView->drawCreatureInformation();
-        });
+        // FIXME: disabled multithreading of creature information drawing (instead draw it at the same time as MAP)
+        // due to an unknown reason creature information of other creatures are noticeably flickering when player is moving
+        //
+        // g_drawPool.preDraw(drawPane, [this] {
+        //     m_mapView->drawCreatureInformation();
+        // });
     } else if (drawPane == DrawPoolType::FOREGROUND_MAP) {
         g_drawPool.preDraw(drawPane, [this] {
             m_mapView->drawForeground(m_mapviewRect);
@@ -163,6 +172,8 @@ void UIMap::setCrosshairTexture(const std::string& texturePath) { m_mapView->set
 
 void UIMap::setDrawHighlightTarget(const bool enable) { m_mapView->setDrawHighlightTarget(enable); }
 
+void UIMap::setCursorAnimations(const bool enable) { m_mapView->setCursorAnimations(enable); }
+
 void UIMap::setAntiAliasingMode(const Otc::AntialiasingMode mode) { m_mapView->setAntiAliasingMode(mode); }
 
 void UIMap::setFloorFading(const uint16_t v) { m_mapView->setFloorFading(v); }
@@ -251,13 +262,34 @@ void UIMap::onGeometryChange(const Rect& oldRect, const Rect& newRect)
     updateMapSize();
 }
 
+void UIMap::resetCursorToDefault()
+{
+    if (m_mapView->hasCursorAnimations() && !g_mouse.isCursorChanged()) {
+        const int defaultId = g_mouse.getCursorId("default");
+        if (defaultId != -1)
+            g_window.setMouseCursor(defaultId);
+        else
+            g_window.restoreMouseCursor();
+    }
+}
+
+void UIMap::onHoverChange(bool hovered)
+{
+    UIWidget::onHoverChange(hovered);
+    if (!hovered)
+        resetCursorToDefault();
+}
+
 bool UIMap::onMouseMove(const Point& mousePos, const Point& mouseMoved)
 {
     const auto& pos = getPosition(mousePos);
-    if (!pos.isValid())
+    if (!pos.isValid()) {
+        if (isHovered())
+            resetCursorToDefault();
         return false;
+    }
 
-    if (m_mapView->getLastMousePosition() != pos) {
+    if (isHovered() && m_mapView->getLastMousePosition() != pos) {
         m_mapView->onMouseMove(pos);
         m_mapView->setLastMousePosition(pos);
     }

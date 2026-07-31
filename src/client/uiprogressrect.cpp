@@ -152,7 +152,7 @@ void UIProgressRect::showTime(const bool showTime)
     if (!m_showTime)
         setText("");
     else if (m_running)
-        updateText(std::max<int32_t>(static_cast<int32_t>(m_duration) - static_cast<int32_t>(m_timeElapsed), 0));
+        updateProgressText(std::max<int32_t>(static_cast<int32_t>(m_duration) - static_cast<int32_t>(m_timeElapsed), 0));
 }
 
 void UIProgressRect::showProgress(const bool showProgress)
@@ -210,7 +210,7 @@ void UIProgressRect::updateProgress()
 
     const int32_t remainingMs = std::max<int32_t>(static_cast<int32_t>(m_duration) - static_cast<int32_t>(m_timeElapsed), 0);
     if (m_showTime)
-        updateText(static_cast<uint32_t>(remainingMs));
+        updateProgressText(static_cast<uint32_t>(remainingMs));
 
     callLuaField("onProgressUpdate", m_percent, (std::max)(remainingMs, 0), m_timeElapsed);
 
@@ -223,7 +223,7 @@ void UIProgressRect::updateProgress()
     scheduleNextUpdate();
 }
 
-void UIProgressRect::updateText(const uint32_t remainingTimeMs)
+void UIProgressRect::updateProgressText(const uint32_t remainingTimeMs)
 {
     if (!m_showTime)
         return;

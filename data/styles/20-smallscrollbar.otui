@@ -3,56 +3,41 @@ SmallScrollBar < UIScrollBar
   margin-bottom: 1
   step: 20
   width: 8
-  image-source: /images/ui/scrollbar
-  image-clip: 39 0 13 65
-  image-border: 1
+  image-source: /images/ui/scrollbar_new_vertical
+  image-clip: 0 0 10 78
+  image-border: 2
   pixels-scroll: true
+  parent-scroll: true
 
   UIButton
     id: decrementButton
+    anchors.horizontalCenter: parent.horizontalCenter
     anchors.top: parent.top
-    anchors.left: parent.left
-    image-source: /images/ui/scrollbar
-    image-clip: 0 0 13 13
-    image-color: #ffffffff
+    image-source: /images/ui/scrollbar_new_vertical
+    image-clip: 10 0 12 12
     size: 8 8
-    $hover:
-      image-clip: 13 0 13 13
     $pressed:
-      image-clip: 26 0 13 13
-    $disabled:
-      image-color: #ffffff66
+      image-clip: 10 12 12 12
 
   UIButton
     id: incrementButton
+    anchors.horizontalCenter: parent.horizontalCenter
     anchors.bottom: parent.bottom
-    anchors.right: parent.right
     size: 8 8
-    image-source: /images/ui/scrollbar
-    image-clip: 0 13 13 13
-    image-color: #ffffffff
-    $hover:
-      image-clip: 13 13 13 13
+    image-source: /images/ui/scrollbar_new_vertical
+    image-clip: 10 24 12 12
     $pressed:
-      image-clip: 26 13 13 13
-    $disabled:
-      image-color: #ffffff66
+      image-clip: 10 36 12 12
 
   UIButton
     id: sliderButton
     anchors.centerIn: parent
-    size: 8 11
-    image-source: /images/ui/scrollbar
-    image-clip: 0 26 13 13
-    image-border: 2
-    image-color: #ffffffff
-    $hover:
-      image-clip: 13 26 13 13
-    $pressed:
-      image-clip: 26 26 13 13
-    $disabled:
-      image-color: #ffffff66
-        
+    size: 8 44
+    image-source: /images/ui/scrollbar_new_vertical
+    image-clip: 22 0 12 44
+    image-border-top: 7
+    image-border-bottom: 7
+
   Label
     id: valueLabel
     anchors.fill: parent

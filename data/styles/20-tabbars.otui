@@ -2,32 +2,23 @@ MoveableTabBar < UIMoveableTabBar
   size: 80 21
 MoveableTabBarPanel < Panel
 MoveableTabBarButton < UIButton
-  size: 20 21
+  size: 96 18
   image-source: /images/ui/tabbutton_square
-  image-color: #dfdfdf
-  image-clip: 0 0 20 21
+  image-clip: 0 0 96 22
   image-border: 3
   image-border-bottom: 0
-  icon-color: #dfdfdf
-  color: #dfdfdf
+  color: #7F7F7F
   anchors.top: parent.top
   anchors.left: parent.left
-  padding: 5
-
-  $hover !checked:
-    image-clip: 0 21 20 21
-    color: #dfdfdf
-
-  $disabled:
-    image-color: #dfdfdf88
-    icon-color: #dfdfdf
+  margin-top: 2
+  padding: 3
 
   $checked:
-    image-clip: 0 42 20 21
+    image-clip: 0 36 96 22
     color: #dfdfdf
 
   $on !checked:
-    color: #de6f6f
+    color: #F75F5F
 
 TabBar < UITabBar
   size: 80 21
@@ -36,13 +27,11 @@ TabBar < UITabBar
     anchors.fill: parent
 TabBarPanel < Panel
 TabBarButton < UIButton
-  size: 20 21
-  image-source: /images/ui/tabbutton_square
+  size: 17 18
   image-source: /images/ui/tabbutton_square
   image-color: #dfdfdf
-  image-clip: 0 0 20 21
+  image-clip: 0 0 98 18
   image-border: 3
-  image-border-bottom: 0
   icon-color: #dfdfdf
   color: #dfdfdf
   anchors.top: parent.top
@@ -56,7 +45,7 @@ TabBarButton < UIButton
     margin-left: 5
 
   $hover !checked:
-    image-clip: 0 21 20 21
+    image-clip: 0 18 98 18
     color: #dfdfdf
 
   $disabled:
@@ -64,11 +53,11 @@ TabBarButton < UIButton
     icon-color: #dfdfdf
 
   $checked:
-    image-clip: 0 42 20 21
+    image-clip: 0 36 98 18
     color: #dfdfdf
 
   $on !checked:
-    color: #dfdfdf
+    color: #de6f6f
 
 TabBarRounded < TabBar
 TabBarRoundedPanel < TabBarPanel
@@ -92,6 +81,9 @@ TabBarVertical < UITabBar
     anchors.right: scrollBar.left
     anchors.bottom: parent.bottom
     vertical-scrollbar: scrollBar
+    margin-right: 1
+    padding-top: 10
+    
   VerticalScrollBar
     id: scrollBar
     anchors.top: parent.top

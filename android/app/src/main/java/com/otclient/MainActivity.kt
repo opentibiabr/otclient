@@ -23,20 +23,24 @@ class MainActivity : GameActivity() {
             editText = binding.editText,
             previewContainer = binding.keyboardPreviewContainer,
             previewText = binding.inputPreviewText,
+            pasteButton = binding.pasteButton,
+            copyButton = binding.copyButton,
         ).apply {
             nativeInit()
             nativeSetAudioEnabled(true)
         }
 
+        // Track keyboard visibility and height for toolbar positioning
         var lastImeVisible = false
-        ViewCompat.setOnApplyWindowInsetsListener(binding.keyboardPreviewContainer) { view, insets ->
+        var lastImeBottom = 0
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
             val imeInsets = insets.getInsets(WindowInsetsCompat.Type.ime())
             val imeVisible = imeInsets.bottom > 0
-            if (imeVisible != lastImeVisible) {
+            if (imeVisible != lastImeVisible || imeInsets.bottom != lastImeBottom) {
                 lastImeVisible = imeVisible
-                androidManager.onImeVisibilityChanged(imeVisible)
+                lastImeBottom = imeInsets.bottom
+                androidManager.onImeVisibilityChanged(imeVisible, imeInsets.bottom)
             }
-            view.translationY = -imeInsets.bottom.toFloat()
             insets
         }
 

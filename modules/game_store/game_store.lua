@@ -147,6 +147,105 @@ local function setImagenHttp(widget, url, isIcon)
     end
 end
 
+local STORE_ICON_PATH = "/game_store/images/store-icons-inline"
+local STORE_ICON_TAGS = {
+    ["{info}"]                    = {clip = "0 0 13 13",   text = ""},
+    ["{character}"]               = {clip = "13 0 13 13",  text = "only usable by purchasing character"},
+    ["{charactericon}"]           = {clip = "13 0 13 13",  text = ""},
+    ["{usablebyall}"]             = {clip = "26 0 13 13",  text = "can be used by all characters that have access to the house"},
+    ["{usablebyallicon}"]         = {clip = "26 0 13 13",  text = ""},
+    ["{box}"]                     = {clip = "39 0 13 13",  text = "comes in a box which can only be unwrapped by purchasing character"},
+    ["{boxicon}"]                 = {clip = "39 0 13 13",  text = ""},
+    ["{storeinbox}"]              = {clip = "52 0 13 13",  text = "will be sent to your Store inbox and can only be stored there and in depot box"},
+    ["{storeinboxicon}"]          = {clip = "52 0 13 13",  text = ""},
+    ["{house}"]                   = {clip = "65 0 13 13",  text = "can only be unwrapped in a house owned by the purchasing character"},
+    ["{houseicon}"]               = {clip = "65 0 13 13",  text = ""},
+    ["{once}"]                    = {clip = "78 0 13 13",  text = "can only be purchased once"},
+    ["{onceicon}"]                = {clip = "78 0 13 13",  text = ""},
+    ["{backtoinbox}"]             = {clip = "91 0 13 13",  text = "will be wrapped back and sent to inbox if the purchasing character is no longer the house owner"},
+    ["{backtoinboxicon}"]         = {clip = "91 0 13 13",  text = ""},
+    ["{vocationlevelcheck}"]      = {clip = "104 0 13 13", text = "only buyable if fitting vocation and level of purchasing character"},
+    ["{vocationlevelcheckicon}"]  = {clip = "104 0 13 13", text = ""},
+    ["{speedboost}"]              = {clip = "117 0 13 13", text = "provides character with a speed boost"},
+    ["{speedboosticon}"]          = {clip = "117 0 13 13", text = ""},
+    ["{activated}"]               = {clip = "130 0 13 13", text = "activated at purchase"},
+    ["{activatedicon}"]           = {clip = "130 0 13 13", text = ""},
+    ["{battlesign}"]              = {clip = "143 0 13 13", text = "cannot be purchased by characters with protection zone block or battle sign"},
+    ["{battlesignicon}"]          = {clip = "143 0 13 13", text = ""},
+    ["{capacity}"]                = {clip = "156 0 13 13", text = "cannot be purchased if capacity is exceeded"},
+    ["{capacityicon}"]            = {clip = "156 0 13 13", text = ""},
+    ["{use}"]                     = {clip = "169 0 13 13", text = "can be used"},
+    ["{useicon}"]                 = {clip = "169 0 13 13", text = ""},
+    ["{transferableprice}"]       = {clip = "182 0 13 13", text = "can be purchased with transferable Tibia Coins"},
+    ["{transferablepriceicon}"]   = {clip = "182 0 13 13", text = ""},
+    ["{star}"]                    = {localImg = "/game_store/images/icon-star-gold", text = ""},
+}
+
+local function matchIconTag(line)
+    if line:byte(1) ~= 123 then return nil end -- fast bail if not '{'
+    local s, e, cap = line:find("^{limit|(%d+)}")
+    if s then
+        return {clip = "78 0 13 13", text = "maximum amount that can be owned by character: %s"}, e, cap
+    end
+    local close = line:find("}", 1, true)
+    if close then
+        local info = STORE_ICON_TAGS[line:sub(1, close)]
+        if info then return info, close, nil end
+    end
+end
+
+local function addDescriptionLine(container, lineText, color)
+    if not lineText:match("%S") then return end
+    lineText = lineText:gsub("<[^>]+>", ""):gsub("&nbsp;", " "):gsub("&#8226;", "- ")
+
+    local widget = g_ui.createWidget('DescriptionLine', container)
+    if not widget then return end
+
+    local iconWidget = widget:getChildById('icon')
+    local textWidget = widget:getChildById('text')
+    if not iconWidget or not textWidget then return end
+    if color then textWidget:setColor(color) end
+
+    local info, tagEnd, cap = matchIconTag(lineText)
+    if info then
+        iconWidget:setVisible(true)
+        if info.localImg then
+            iconWidget:setImageSource(info.localImg)
+        else
+            iconWidget:setImageSource(STORE_ICON_PATH)
+            iconWidget:setImageClip(info.clip)
+        end
+        local tagText = (cap and info.text:format(cap)) or info.text
+        local rest    = lineText:sub(tagEnd + 1):match("^%s*(.-)%s*$")
+        textWidget:setMarginLeft(16)
+        textWidget:setText(tagText ~= "" and (tagText .. " " .. rest) or rest)
+    else
+        textWidget:setMarginLeft(0)
+        textWidget:setText(lineText:match("^%s*(.-)%s*$"))
+    end
+
+    widget:setHeight(math.max(14, textWidget:getTextSize().height + 2))
+end
+
+local function renderDescription(panel, text, errorText)
+    local descPanel = panel:getChildById('descriptionPanel')
+    local container = descPanel and descPanel:getChildById('descriptionScrollArea')
+    if not container or container:isDestroyed() then return end
+    container:destroyChildren()
+
+    if errorText then
+        for line in errorText:gmatch("[^\r\n]+") do
+            addDescriptionLine(container, line, "#d33c3c")
+        end
+    end
+
+    if text and text ~= "" then
+        for line in text:gmatch("[^\r\n]+") do
+            addDescriptionLine(container, line, nil)
+        end
+    end
+end
+
 local function formatNumberWithCommas(value)
     local sign = value < 0 and "-" or ""
     value = math.abs(value)
@@ -888,7 +987,7 @@ function chooseOffert(self, focusedChild)
         description = descriptionInfo.description
     end
 
-    panel:getChildById('lblDescription'):setText(description)
+    renderDescription(panel, description)
 
     local data = getProductData(product)
     local imagePanel = panel:getChildById('image')
@@ -940,11 +1039,8 @@ function chooseOffert(self, focusedChild)
             local btnBuy = offerPanel:getChildById('btnBuy')
             btnBuy:disable()
             btnBuy:setOpacity(0.8)
-            local lblDescription = panel:getChildById('lblDescription')
-            lblDescription:parseColoredText(string.format(
-                "[color=#ff0000]The product is currently not available for this character. See the buy button tooltip for details.[/color]\n\n-%s",
-                description
-            ))
+            renderDescription(panel, description,
+                "The product is currently not available for this character. See the buy button tooltip for details.")
             if offer.reasonIdDisable then
                 local tooltipOverlay = g_ui.createWidget('UIWidget', offerPanel)
                 tooltipOverlay:setId('tooltipOverlay')
@@ -1186,4 +1282,3 @@ function search()
     end
     g_game.sendRequestStoreSearch(controllerShop.ui.SearchEdit:getText(), 0, 1)
 end
-

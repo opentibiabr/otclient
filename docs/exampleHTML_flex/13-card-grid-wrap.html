@@ -1,0 +1,191 @@
+<html>
+<style>
+  window {
+    font-family: Arial, sans-serif;
+    margin: 24px;
+    background-color: #ffffff;
+    color: #222222;
+    margin-top: 0;
+    margin-left: 0;
+    margin-right: 0;
+    display: block !important;
+    --image-source: none;
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  h1 {
+    margin-bottom: 4px;
+  }
+
+  p {
+    margin-top: 0;
+    color: #555;
+  }
+
+  /* Card Grid with flex-wrap */
+  .grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    background-color: #eceff1;
+    border-radius: 10px;
+    padding: 10px;
+  }
+
+  .card {
+    flex: 1 1 180px;
+    /* grow, shrink, 180px base */
+    max-width: 240px;
+    border: 2px solid #8e24aa;
+    border-radius: 10px;
+    background-color: #fff;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .card-img {
+    height: 80px;
+    background-color: #ce93d8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4a148c;
+  }
+
+  .card-body {
+    padding: 10px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .card-title {
+    font-weight: bold;
+    color: #4a148c;
+  }
+
+  .card-text {
+    color: #555;
+    flex: 1;
+    text-wrap: true;
+  }
+
+  .card-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 6px;
+  }
+
+  .tag {
+    background-color: #f3e5f5;
+    color: #8e24aa;
+    border-radius: 12px;
+    padding: 2px 8px;
+  }
+
+  .card-btn {
+    background-color: #8e24aa;
+    color: #fff;
+    border-radius: 6px;
+    padding: 4px 10px;
+  }
+</style>
+<window>
+  <h1>Card Grid with flex-wrap</h1>
+  <p>The cards use flex: 1 1 180px — they grow, shrink and have a 180px base.</p>
+
+  <div class="grid">
+    <div class="card">
+      <div class="card-img">
+        <img src="/data/images/clienticon.png" style="height: 32; width: 32;" />
+      </div>
+      <div class="card-body">
+        <div class="card-title">UI Design</div>
+        <div class="card-text">Learn the fundamentals of modern interface design.</div>
+        <div class="card-foot">
+          <div class="tag">Basic</div>
+          <div class="card-btn">View</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-img">
+        <img src="/data/images/clienticon.png" style="height: 32; width: 32;" />
+      </div>
+      <div class="card-body">
+        <div class="card-title">Advanced CSS</div>
+        <div class="card-text">Flexbox, Grid and CSS animations explained with examples.</div>
+        <div class="card-foot">
+          <div class="tag">Intermediate</div>
+          <div class="card-btn">View</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-img">
+        <img src="/data/images/clienticon.png" style="height: 32; width: 32;" />
+      </div>
+      <div class="card-body">
+        <div class="card-title">Performance</div>
+        <div class="card-text">Optimization of renders and layout shift.</div>
+        <div class="card-foot">
+          <div class="tag">Advanced</div>
+          <div class="card-btn">View</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-img">
+        <img src="/data/images/clienticon.png" style="height: 32; width: 32;" />
+      </div>
+      <div class="card-body">
+        <div class="card-title">Responsive</div>
+        <div class="card-text">Designs that adapt to any screen size.</div>
+        <div class="card-foot">
+          <div class="tag">Basic</div>
+          <div class="card-btn">View</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-img">
+        <img src="/data/images/clienticon.png" style="height: 32; width: 32;" />
+      </div>
+      <div class="card-body">
+        <div class="card-title">DevTools</div>
+        <div class="card-text">Inspect and debug flex layouts in the browser.</div>
+        <div class="card-foot">
+          <div class="tag">Tools</div>
+          <div class="card-btn">View</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-img">
+        <img src="/data/images/clienticon.png" style="height: 32; width: 32;" />
+      </div>
+      <div class="card-body">
+        <div class="card-title">Accessibility</div>
+        <div class="card-text">Visual order vs. DOM order with flex order.</div>
+        <div class="card-foot">
+          <div class="tag">Advanced</div>
+          <div class="card-btn">View</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</window>
+
+</html>

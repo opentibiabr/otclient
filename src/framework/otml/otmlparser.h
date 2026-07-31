@@ -24,6 +24,17 @@
 
 #include "declarations.h"
 
+// OTML Variable System (& and $ syntax)
+// =====================================
+// The parser supports variables using ampersand (&) for definitions and dollar ($) for references.
+//
+// IMPORTANT: The & prefix has dual purpose in OTUI files:
+//   1. OTML variable definition - values stored for $variable substitution
+//   2. Lua field assignment - nodes processed by UIWidget::parseBaseStyle for Lua access
+//
+// Root-level & nodes are global variables. Nested & nodes are local to their scope.
+// See docs/otml-variables.md for comprehensive documentation and best practices.
+
 class OTMLParser
 {
 public:

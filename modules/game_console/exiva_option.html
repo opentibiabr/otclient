@@ -1,0 +1,94 @@
+<style>
+  .exiva-window { width: 420px; height: 480px; }
+  .exiva-radio { display: block; width: 100%; height: 14px; --text-offset: 16 -1; color: #c0c0c0; }
+  .sunkenBorder { --border-width-top: 1; --border-color-top: #141414; --border-width-left: 1; --border-color-left: #141414; --border-width-bottom: 1; --border-color-bottom: #747474; --border-width-right: 1; --border-color-right: #747474; }
+  .exiva-radio + .exiva-radio { margin-top: 5px; }
+  .exiva-groups { margin-top: 5px; margin-left: 17px; display: block; height: 411px;}
+  .exiva-row { height: 22px; width: 401px; display: block; margin-top: 6px; }
+  .exiva-row:first-child { margin-top: 0; }
+  .exiva-checkbox {
+    display: block;
+    width: 100%;
+    margin-left: 4px;
+    margin-top: 5px;
+    --text-offset: 16 -2;
+    --text-auto-resize: false;
+  }
+  .exiva-label {
+    display: block;
+    margin-top: 5px;
+    margin-left: 18px;
+    --text-auto-resize: true;
+  }
+  /* === MULTILINE TEXT AREAS === */
+  .exiva-textarea {
+    display: block;
+    width: 384px;
+    height: 100px;
+    margin-top: 5px;
+    margin-left: 17px;
+    overflow: scroll;
+    text-align: left;
+  }
+
+  /* === SEPARATOR === */
+  .exiva-sep { height: 2px; margin-top: 7px; }
+
+  /* === FOOTER BUTTONS === */
+  .exiva-footer { display: block; height: 22px; }
+  .exiva-footer button {
+    margin-right: 5px; width: 25px; display: block; 
+    float: right; --font: cipsoftFont;
+  }
+</style>
+
+<html>
+<Window id="exivaOptionsWindow" class="exiva-window" title="Exiva Options" placement="center" onescape="self:closeWindowExiva()">
+
+  <input id="allowAllCheckBox" class="exiva-radio CheckBoxCircle" type="checkbox"
+    text="Allow all characters to use Exiva on me" />
+  <input id="allowOnlyCheckBox" class="exiva-radio CheckBoxCircle" type="checkbox"
+    text="Allow only groups selected below to use Exiva on me" />
+
+  <div class="exiva-groups">
+
+    <div class="exiva-row sunkenBorder">
+      <input id="membersOfGuildCheckBox" class="exiva-checkbox" type="checkbox" text="Members of my guild" />
+    </div>
+    <div class="exiva-row sunkenBorder">
+      <input id="membersOfPartyCheckBox" class="exiva-checkbox" type="checkbox" text="Members of my party" />
+    </div>
+    <div class="exiva-row sunkenBorder">
+      <input id="allVipCheckBox" class="exiva-checkbox" type="checkbox" text="All characters on my VIP list" />
+    </div>
+    <div class="exiva-row sunkenBorder">
+      <input id="charWhiteListCheckBox" class="exiva-checkbox" type="checkbox"
+        text="All characters on the Exiva Character Whitelist below" />
+    </div>
+
+    <label id="charWhiteListLabel" class="exiva-label">Exiva Character Whitelist: Enter one name per line.</label>
+    <MultilineTextEdit id="charWhiteListTextEdit" class="exiva-textarea"></MultilineTextEdit>
+
+    <div class="exiva-row sunkenBorder" style="margin-top: 7px;">
+      <input id="guildWhiteListCheckBox" class="exiva-checkbox" type="checkbox"
+        text="All members of guilds on the Exiva Guild Whitelist below" />
+    </div>
+
+    <label id="guildWhiteListLabel" class="exiva-label">Exiva Guild Whitelist: Enter one name per line.</label>
+    <MultilineTextEdit id="guildWhiteListTextEdit" class="exiva-textarea "></MultilineTextEdit>
+
+    <label id="noteLabel" class="exiva-label" style="width: 85%">Note! During a guild war, all members of the participating&#10;guilds can
+      use Exiva on each other.</label>
+
+  </div>
+
+  <hr class="exiva-sep" />
+
+  <div class="exiva-footer" >
+    <button id="btnClose" onclick="self:closeWindowExiva()">Close</button>
+    <button id="btnApply" onclick="self:onApply()">Apply</button>
+    <button id="btnOk" onclick="self:onOkay()">Ok</button>
+  </div>
+</Window>
+
+</html>

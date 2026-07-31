@@ -202,7 +202,7 @@ function UIMinimap:onZoomChange(zoom)
         self.zoomMinimap = zoom
     end
 
-    for _, widget in pairs(self.alternatives) do
+    for _, widget in pairs(self.alternatives or {}) do
         if (not widget.minZoom or widget.minZoom >= zoom) and widget.maxZoom <= zoom then
             widget:show()
         else
@@ -256,9 +256,9 @@ function UIMinimap:onMouseWheel(mousePos, direction)
         self:zoomIn()
     elseif direction == MouseWheelDown and keyboardModifiers == KeyboardNoModifier then
         self:zoomOut()
-    elseif direction == MouseWheelDown and keyboardModifiers == KeyboardCtrlModifier then
+    elseif direction == MouseWheelDown and g_keyboard.isPrimaryModifierOnly(keyboardModifiers) then
         self:floorUp(1)
-    elseif direction == MouseWheelUp and keyboardModifiers == KeyboardCtrlModifier then
+    elseif direction == MouseWheelUp and g_keyboard.isPrimaryModifierOnly(keyboardModifiers) then
         self:floorDown(1)
     end
 end

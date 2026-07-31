@@ -252,7 +252,7 @@ Panel
 
   macro(50, function()
     if not config.enabled then return end
-    if (not config.ignoreInPz or not isInPz()) and config.holdUtamo and mana() >= config.utamoCost and not hasManaShield() then say("utamo vita")
+    if (not config.ignoreInPz or not isInPz()) and config.holdUtamo and mana() >= config.utamoCost and not (hasManaShield() or hasNewManaShield()) then say("utamo vita")
     elseif ((not config.ignoreInPz or not isInPz()) and standTime() < 5000 and config.holdHaste and mana() >= config.hasteCost and not hasHaste() and not getSpellCoolDown(config.hasteSpell) and (not target() or not config.stopHaste or TargetBot.isCaveBotActionAllowed())) and standTime() < 3000 then say(config.hasteSpell)
     elseif config.cureParalyse and mana() >= config.paralyseCost and isParalyzed() and not getSpellCoolDown(config.paralyseSpell) then say(config.paralyseSpell)
     end

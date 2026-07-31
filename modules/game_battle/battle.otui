@@ -113,7 +113,7 @@ BattleSorcerers < BattleIcon
 
 BattleMonks < BattleIcon
   @onSetup: |
-    if g_game.getClientVersion() >= 1500 then
+    if g_game.getFeature(GameVocationMonk) then
       self:setVisible(true)
     else
       self:setVisible(false)

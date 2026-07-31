@@ -107,6 +107,9 @@ public:
     inline void addCreature() { createdCreatures += 1; }
     inline void removeCreature() { destroyedCreatures += 1; }
 
+    inline void pause() { paused = true; }
+    inline void resume() { paused = false; }
+
 private:
     struct
     {
@@ -124,6 +127,7 @@ private:
     int destroyedThings = 0;
     int createdCreatures = 0;
     int destroyedCreatures = 0;
+    std::atomic_bool paused { false };
     std::mutex m_mutex;
 };
 

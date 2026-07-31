@@ -45,12 +45,16 @@ local function load(version)
     local errorList = {}
 
     if version >= 1281 and not g_game.getFeature(GameLoadSprInsteadProtobuf) then
-        local filePath = resolvepath(string.format('/things/%d/', version))
+        local filePath = resolvepath(string.format('/data/things/%d/', version))
         if not g_things.loadAppearances(filePath) then
             errorList[#errorList + 1] = "Couldn't load assets"
         end
         if not g_things.loadStaticData(filePath) then
             errorList[#errorList + 1] = "Couldn't load staticdata"
+        end
+        if g_game.getFeature(GameProficiency) and not g_things.resolveProficienciesFile(filePath) then
+            g_logger.warning(string.format(
+                    "[game_things.load()] Couldn't load /data/things/%d/proficiencies-<hash>.json", version))
         end
     else
         local datPath, sprPath
@@ -72,10 +76,10 @@ local function load(version)
             errorList[#errorList + 1] = tr('Unable to load spr file, please place a valid spr in \'%s.spr\'', sprPath)
         end
         if g_game.getFeature(GameLoadSprInsteadProtobuf) and version >= 1281 then
-            local staticPath = resolvepath(string.format('/things/%d/appearances', version))
+            local staticPath = resolvepath(string.format('/data/things/%d/appearances', version))
             if not g_things.loadAppearances(staticPath) then
                 g_logger.warning(string.format(
-                    "[game_things.load()] Couldn't load /things/%d/appearances.dat, possible packets error.", version))
+                    "[game_things.load()] Couldn't load /data/things/%d/appearances.dat, possible packets error.", version))
             end
         end
     end
@@ -85,7 +89,7 @@ local function load(version)
         -- loading client files was successful, try to load sounds now
         -- sound files are optional, this means that failing to load them
         -- will not block logging into game
-        g_sounds.loadClientFiles(resolvepath(string.format('/sounds/%d/', version)))
+        g_sounds.loadClientFiles(resolvepath(string.format('/data/sounds/%d/', version)))
         return
     end
 

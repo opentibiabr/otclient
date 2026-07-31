@@ -22,15 +22,32 @@
 
 #pragma once
 
+#ifndef USE_PRECOMPILED_HEADERS
+#include <cstddef>
+#include <cstdint>
+#include <functional>
+#endif
+
 namespace stdext
 {
     // Robin Hood lib
     constexpr size_t hash_int(size_t x) noexcept
     {
-        x ^= x >> 33U;
-        x *= UINT64_C(0xff51afd7ed558ccd);
-        x ^= x >> 33U;
-        return x;
+        if constexpr (sizeof(size_t) >= sizeof(uint64_t)) {
+            uint64_t value = static_cast<uint64_t>(x);
+            value ^= value >> 33U;
+            value *= UINT64_C(0xff51afd7ed558ccd);
+            value ^= value >> 33U;
+            return static_cast<size_t>(value);
+        } else {
+            uint32_t value = static_cast<uint32_t>(x);
+            value ^= value >> 16U;
+            value *= UINT32_C(0x7feb352d);
+            value ^= value >> 15U;
+            value *= UINT32_C(0x846ca68b);
+            value ^= value >> 16U;
+            return static_cast<size_t>(value);
+        }
     }
 
     // Boost Lib

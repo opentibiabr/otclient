@@ -1,0 +1,207 @@
+<html>
+<style>
+  window {
+    font-family: Arial, sans-serif;
+    margin: 24px;
+    background-color: #ffffff;
+    color: #222222;
+    height: 100%;
+    margin-top: 0;
+    margin-left: 0;
+    margin-right: 0;
+    display: block !important;
+    --image-source: none;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 100% !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  h1 {
+    margin-bottom: 4px;
+  }
+
+  p {
+    margin-top: 0;
+    color: #555;
+  }
+
+  .example {
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+    width: 94%;
+    background: #ffffff;
+  }
+
+  h3 {
+    margin-bottom: 10px;
+  }
+
+  .container {
+    display: flex;
+    flex-wrap: wrap;
+    width: 360px;
+    padding: 10px;
+    border-radius: 10px;
+    background-color: #eceff1;
+    transition: 0.3s;
+  }
+
+
+  .item1 {
+    width: 90px;
+    padding: 12px;
+    text-align: center;
+    border-radius: 8px;
+    color: white;
+    font-weight: bold;
+  }
+
+  /* Visual variations per example */
+  .purple .item1 {
+    background-color: #9c27b0;
+  }
+
+  .blue .item1 {
+    background-color: #2196f3;
+  }
+
+  .green .item1 {
+    background-color: #4caf50;
+  }
+
+  .orange .item1 {
+    background-color: #ff9800;
+  }
+
+  .red .item1 {
+    background-color: #f44336;
+  }
+
+  .steel .item1 {
+    background-color: #607d8b;
+  }
+
+  /* GAPS */
+  .g-equal {
+    gap: 16px;
+  }
+
+  .g-diff {
+    row-gap: 24px;
+    column-gap: 6px;
+  }
+
+  .g-row {
+    row-gap: 30px;
+    column-gap: 4px;
+  }
+
+  .g-col {
+    row-gap: 4px;
+    column-gap: 30px;
+  }
+
+  .g-zero {
+    gap: 0;
+  }
+
+  /* EXTRA: different direction */
+  .column-direction {
+    flex-direction: column;
+    height: 300px;
+    flex-wrap: nowrap;
+  }
+
+  .label {
+    font-size: 12px;
+    color: #777;
+    margin-bottom: 6px;
+  }
+</style>
+
+<window>
+  <h1>Flexbox: gap, row-gap, column-gap</h1>
+  <p>Now each example visually highlights what is changing 👇</p>
+
+  <div class="example purple">
+    <h3>Uniform gap (16px)</h3>
+    <div class="label">Same space in all directions</div>
+    <div class="container g-equal">
+      <div class="item1">1</div>
+      <div class="item1">2</div>
+      <div class="item1">3</div>
+      <div class="item1">4</div>
+      <div class="item1">5</div>
+      <div class="item1">6</div>
+    </div>
+  </div>
+
+  <div class="example blue">
+    <h3>More space between rows than columns</h3>
+    <div class="label">row-gap 24px | column-gap 6px</div>
+    <div class="container g-diff">
+      <div class="item1">1</div>
+      <div class="item1">2</div>
+      <div class="item1">3</div>
+      <div class="item1">4</div>
+      <div class="item1">5</div>
+      <div class="item1">6</div>
+    </div>
+  </div>
+
+  <div class="example green">
+    <h3>Widely separated rows</h3>
+    <div class="label">Vertical space is emphasized</div>
+    <div class="container g-row">
+      <div class="item1">1</div>
+      <div class="item1">2</div>
+      <div class="item1">3</div>
+      <div class="item1">4</div>
+      <div class="item1">5</div>
+      <div class="item1">6</div>
+    </div>
+  </div>
+
+  <div class="example orange">
+    <h3>Widely separated columns</h3>
+    <div class="label">Horizontal space is emphasized</div>
+    <div class="container g-col">
+      <div class="item1">1</div>
+      <div class="item1">2</div>
+      <div class="item1">3</div>
+      <div class="item1">4</div>
+      <div class="item1">5</div>
+      <div class="item1">6</div>
+    </div>
+  </div>
+
+  <div class="example red">
+    <h3>No separation</h3>
+    <div class="label">gap: 0</div>
+    <div class="container g-zero">
+      <div class="item1">1</div>
+      <div class="item1">2</div>
+      <div class="item1">3</div>
+      <div class="item1">4</div>
+      <div class="item1">5</div>
+      <div class="item1">6</div>
+    </div>
+  </div>
+
+  <div class="example steel">
+    <h3>Column direction + gap</h3>
+    <div class="label">Now the gap acts vertically</div>
+    <div class="container column-direction g-equal">
+      <div class="item1">A</div>
+      <div class="item1">B</div>
+      <div class="item1">C</div>
+    </div>
+  </div>
+
+</window>
+
+</html>

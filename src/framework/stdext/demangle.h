@@ -22,6 +22,11 @@
 
 #pragma once
 
+#ifndef USE_PRECOMPILED_HEADERS
+#include <string>
+#include <typeinfo>
+#endif
+
 namespace stdext
 {
     /// Demangle names for GNU g++ compiler

@@ -1,0 +1,33 @@
+# Test demonstrating ampersand prefix behavior
+# This file tests the dual-purpose nature of & prefix:
+# 1. As OTML variable definitions (usable with $ references)
+# 2. As Lua field values (in actual OTUI context)
+
+# Root-level: Registered as global OTML variable
+&rootLevelVar: 100
+&globalColor: #FF0000
+
+TestStyle < UIWidget
+  # References root-level variable
+  width: $rootLevelVar
+  background-color: $globalColor
+  
+  # Local variable: NOT global, but IS in local alias map
+  # Also becomes a Lua field when processed by UIWidget::parseBaseStyle
+  &luaField: 20
+  &minimizedHeight: 30
+  
+  # These will resolve to the local variables above
+  height: $luaField
+  margin: $minimizedHeight
+  
+  # Nested widget can access parent's local variables
+  ChildWidget < UIWidget
+    padding: $luaField
+    border-width: $minimizedHeight
+    color: $globalColor
+
+SecondStyle < UIWidget
+  # Can access global variables
+  color: $globalColor
+  # Cannot access luaField (out of scope)

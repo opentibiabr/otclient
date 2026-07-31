@@ -20,6 +20,9 @@ local monsterImage
 local bossOutfit
 local bossImage
 
+local CREATURE_BONUS_TEXT = "Today's boosted creature: %s\n\n\tBoosted creatures yield more experience\n points, carry more loot than usual\n and respawn at a faster rate."
+local BOSS_BONUS_TEXT = "Today's boosted boss: %s\n\n\tBoosted boss contain more loot and\n count more kills for your bosstiary."
+
 local default_info = {
     -- hint 1
     {
@@ -510,7 +513,7 @@ end
 
 -- (internal)
 -- set creature/boss to boosted slot
-local function applyToBoostedSlot(raceId, outfitWidget, imageWidget, fileName)
+local function applyToBoostedSlot(raceId, outfitWidget, imageWidget, fileName, tooltipText)
     -- check if raceId was provided in the JSON response
     if not raceId then
         return
@@ -521,7 +524,7 @@ local function applyToBoostedSlot(raceId, outfitWidget, imageWidget, fileName)
 
     -- check if race id is present in the staticdata
     if raceData.raceId == 0 then
-        local msg = string.format("[%s] Creature with race id %s was not found.", fileName, data.creatureraceid)
+        local msg = string.format("[%s] Creature with race id %s was not found.", fileName,tostring(raceId))
         g_logger.warning(msg)
         return
     end
@@ -531,6 +534,7 @@ local function applyToBoostedSlot(raceId, outfitWidget, imageWidget, fileName)
     outfitWidget:getCreature():setStaticWalking(1000)
     outfitWidget:setVisible(true)
     imageWidget:setVisible(false)
+    outfitWidget:setTooltip(tr(tooltipText, raceData.name or "Unknown"))
 end
 
 function setBoostedCreatureAndBoss(data)
@@ -545,8 +549,8 @@ function setBoostedCreatureAndBoss(data)
     -- before bosstiary was introduced, the webservice was sending creature race in 'raceid' field
     -- after bosstiary was added, it was changed to 'creatureraceid'
     -- this 'or' statement ensures backwards compatibility
-    applyToBoostedSlot(data.creatureraceid or data.raceid, monsterOutfit, monsterImage, fileName)
+    applyToBoostedSlot(data.creatureraceid or data.raceid, monsterOutfit, monsterImage, fileName, CREATURE_BONUS_TEXT)
 
     -- boosted boss
-    applyToBoostedSlot(data.bossraceid, bossOutfit, bossImage, fileName)
+    applyToBoostedSlot(data.bossraceid, bossOutfit, bossImage, fileName, BOSS_BONUS_TEXT)
 end

@@ -24,6 +24,13 @@
 
 #include "cast.h"
 
+#ifndef USE_PRECOMPILED_HEADERS
+#include <cstdint>
+#include <string>
+#include <string_view>
+#include <vector>
+#endif
+
 namespace stdext
 {
     template<typename T> std::string to_string(const T& t) { return unsafe_cast<std::string, T>(t); }

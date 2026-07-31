@@ -86,15 +86,18 @@ public:
     void setColor(const Color& c) { if (m_color != c) m_color = c; }
     void setPosition(const Position& position, uint8_t stackPos = 0) override;
     void setTooltip(const std::string& str) { m_tooltip = str; }
-    void setDurationTime(const uint32_t durationTime) { m_durationTime = durationTime; }
+    void setDurationTime(uint32_t duration);
+    void setDecaying(bool decaying);
     void setCharges(const uint32_t charges) { m_charges = charges; }
     void setTier(const uint8_t tier) { m_tier = tier; }
 
     int getCountOrSubType() { return m_countOrSubType; }
     int getSubType();
     int getCount() { return isStackable() ? m_countOrSubType : 1; }
+    int getClothSlot();
     std::string getTooltip() { return m_tooltip; }
-    uint32_t getDurationTime() { return m_durationTime; }
+    uint32_t getDurationTime() const;
+    bool isDecaying() const { return m_decaying; }
     uint32_t getCharges() { return m_charges; }
     uint8_t getTier() { return m_tier; }
 
@@ -104,6 +107,12 @@ public:
     bool hasClockExpire() { return Thing::hasClockExpire(); }
     bool hasExpire() { return Thing::hasExpire(); }
     bool hasExpireStop() { return Thing::hasExpireStop(); }
+    uint32_t getCyclopediaType() const { return Thing::getCyclopediaType(); }
+    uint32_t getProficiencyId() const { return Thing::getProficiencyId(); }
+    uint32_t getWeaponType() const { return Thing::getWeaponType(); }
+    uint32_t getMinimumLevel() const { return Thing::getMinimumLevel(); }
+    uint32_t getImbueSlots() const { return Thing::getImbueSlots(); }
+    std::vector<uint32_t> getRestrictVocation() const { return Thing::getRestrictVocation(); }
 
     void setAsync(const bool enable) { m_async = enable; }
 
@@ -166,7 +175,9 @@ private:
     void internalDraw(int animationPhase, const Point& dest, const Color& color, bool drawThings, bool replaceColorShader, LightView* lightView = nullptr);
 
     uint16_t m_countOrSubType{ 0 };
-    uint32_t m_durationTime{ 0 };
+    uint32_t m_duration{ 0 };
+    int64_t m_durationEnd{ 0 };
+    bool m_decaying{ false };
     uint32_t m_charges{ 0 };
     uint8_t m_tier{ 0 };
     uint8_t m_phase{ 0 };

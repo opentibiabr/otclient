@@ -1,5 +1,6 @@
 -- Missing utility functions
 local function formatMoney(value, separator)
+    if not value then return "0" end
     return comma_value(tostring(value))
 end
 
@@ -45,17 +46,6 @@ if not string.capitalize then
             return first:upper() .. rest
         end)
     end
-end
-
--- Function to truncate text to a maximum length
-local function short_text(text, maxLength)
-    if not text then
-        return ""
-    end
-    if string.len(text) > maxLength then
-        return text:sub(1, maxLength - 3) .. "..."
-    end
-    return text
 end
 
 if not InputAnalyser then
@@ -150,7 +140,9 @@ local valueInSeconds = function(t)
 			table.remove(t, 1)
 		end
     end
-    return math.ceil(d/((now-time)/1000))
+    local deltaTime = (now - time) / 1000
+    if deltaTime <= 0 then return 0 end
+    return math.ceil(d / deltaTime)
 end
 
 -- Function to handle session data for 60 minutes
@@ -180,7 +172,9 @@ local valueInSessionMode = function(t)
     end
     
     if time > 0 then
-        return math.ceil(d/((now-time)/1000))
+        local deltaTime = (now - time) / 1000
+        if deltaTime <= 0 then return 0 end
+        return math.ceil(d / deltaTime)
     else
         return 0
     end

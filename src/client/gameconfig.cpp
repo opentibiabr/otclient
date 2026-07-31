@@ -61,6 +61,7 @@ void GameConfig::init()
     if (!publicFont.staticText.empty()) m_staticTextFontName = publicFont.staticText;
     if (!publicFont.animatedText.empty()) m_animatedTextFontName = publicFont.animatedText;
     if (!publicFont.creatureText.empty()) m_creatureNameFontName = publicFont.creatureText;
+    if (!publicFont.itemCount.empty()) m_itemCountFontName = publicFont.itemCount;
 }
 
 void GameConfig::terminate() {
@@ -68,6 +69,7 @@ void GameConfig::terminate() {
     m_animatedTextFont = nullptr;
     m_staticTextFont = nullptr;
     m_widgetTextFont = nullptr;
+    m_itemCountFont = nullptr;
 }
 
 void GameConfig::loadFonts() {
@@ -118,11 +120,13 @@ void GameConfig::loadFonts() {
     resolveFont(m_animatedTextFontName);
     resolveFont(m_staticTextFontName);
     resolveFont(m_widgetTextFontName);
+    resolveFont(m_itemCountFontName);
 
     m_creatureNameFont = g_fonts.getFont(m_creatureNameFontName);
     m_animatedTextFont = g_fonts.getFont(m_animatedTextFontName);
     m_staticTextFont = g_fonts.getFont(m_staticTextFontName);
     m_widgetTextFont = g_fonts.getFont(m_widgetTextFontName);
+    m_itemCountFont = g_fonts.getFont(m_itemCountFontName);
 
     if (m_widgetTextFont)
         g_fonts.setDefaultWidgetFont(m_widgetTextFont);
@@ -132,8 +136,6 @@ void GameConfig::loadGameNode(const OTMLNodePtr& mainNode) {
     for (const auto& node : mainNode->children()) {
         if (node->tag() == "sprite-size")
             m_spriteSize = node->value<int>();
-        else if (node->tag() == "last-supported-version")
-            m_lastSupportedVersion = node->value<int>();
         else if (node->tag() == "map")
             loadMapNode(node);
         else if (node->tag() == "tile")
@@ -161,6 +163,8 @@ void GameConfig::loadFontNode(const OTMLNodePtr& mainNode) {
             m_animatedTextFontName = node->value();
         else if (node->tag() == "creature-text")
             m_creatureNameFontName = node->value();
+        else if (node->tag() == "item-count")
+            m_itemCountFontName = node->value();
     }
 }
 
@@ -176,6 +180,8 @@ void GameConfig::loadMapNode(const OTMLNodePtr& mainNode) {
             m_mapUndergroundFloorRange = node->value<int>();
         else if (node->tag() == "aware-underground-floor-range")
             m_mapAwareUndergroundFloorRange = node->value<int>();
+        else if (node->tag() == "extended-view-ui")
+            m_extendedViewUI = node->value<bool>();
     }
 }
 

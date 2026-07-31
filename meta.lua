@@ -1200,11 +1200,14 @@ function g_game.imbuementDurations(isOpen) end
 function g_game.imbuementDurations(isOpen) end
 
 ---@param playerId integer
-function g_game.openWheelOfDestiny(playerId) end
+function g_game.openWheel(playerId) end
 
 ---@param wheelPoints table<integer, integer>
----@param activeGems table<integer, integer>
-function g_game.applyWheelOfDestiny(wheelPoints, activeGems) end
+---@param greenGem integer
+---@param redGem integer
+---@param acquaGem integer
+---@param purpleGem integer
+function g_game.sendApplyWheelPoints(wheelPoints, greenGem, redGem, acquaGem, purpleGem) end
 
 ---@param variant integer
 ---@param item ItemPtr
@@ -2853,6 +2856,9 @@ function UIItem:setVirtual(virtual) end
 
 ---@param show boolean
 function UIItem:setShowCount(show) end
+
+---@param count integer
+function UIItem:setDisplayCount(count) end
 
 function UIItem:clearItem() end
 

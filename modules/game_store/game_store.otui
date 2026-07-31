@@ -347,16 +347,35 @@ StoreWindow
         flow: true
         fit-children: true
 
-    StoreFlatLabel
-      id: lblDescription
+    UIWidget
+      id: descriptionPanel
+      image-source: /game_store/images/panel_flat
+      image-border: 1
+      clipping: true
       anchors.top: image.bottom
       anchors.left: scrollList.right
       anchors.right: parent.right
       anchors.bottom: scrollList.bottom
       margin-left: 8
       margin-top: 7
-      text-auto-resize: true
-      text-wrap: true
+
+      VerticalScrollBar
+        id: descriptionScrollbar
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        anchors.right: parent.right
+        step: 14
+        pixels-scroll: true
+
+      UIScrollArea
+        id: descriptionScrollArea
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        anchors.left: parent.left
+        anchors.right: descriptionScrollbar.left
+        vertical-scrollbar: descriptionScrollbar
+        padding: 3
+        layout: verticalBox
 
   QtPanel
     id: transferHistory

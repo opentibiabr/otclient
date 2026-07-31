@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -24,6 +24,7 @@
 
 #include "animator.h"
 #include "attachedeffect.h"
+#include "client/const.h"
 #include "game.h"
 #include "gameconfig.h"
 #include "lightview.h"
@@ -64,13 +65,20 @@ Creature::~Creature() {
     g_stats.removeCreature();
 }
 
+bool Creature::isHidden() const {
+    if (m_type == Proto::CreatureTypeHidden)
+        return true;
+    // Old protocol (< 1273): healthPercent=0 means health is hidden, not that the creature is dead
+    return g_game.getClientVersion() < 1273 && m_healthPercent == 0;
+}
+
 void Creature::onCreate() {
     callLuaField("onCreate");
 }
 
 void Creature::draw(const Point& dest, const bool drawThings, LightView* /*lightView*/)
 {
-    if (!canBeSeen() || !canDraw() || isDead())
+    if (!canBeSeen() || !canDraw() || (isDead() && !isHidden()))
         return;
 
     if (drawThings) {
@@ -161,7 +169,7 @@ void Creature::drawInformation(const MapPosInfo& mapRect, const Point& dest, con
         DEFAULT_COLOR(96, 96, 96),
         NPC_COLOR(0x66, 0xcc, 0xff);
 
-    if (isDead() || !canBeSeen() || !(drawFlags & Otc::DrawCreatureInfo) || !mapRect.isInRange(getPosition()))
+    if (isHidden() || isDead() || !canBeSeen() || !(drawFlags & Otc::DrawCreatureInfo) || !mapRect.isInRange(getPosition()))
         return;
 
     if (g_gameConfig.isDrawingInformationByWidget()) {
@@ -231,6 +239,10 @@ void Creature::drawInformation(const MapPosInfo& mapRect, const Point& dest, con
     healthRect.setWidth((m_healthPercent / 100.0) * 29);
 
     Rect barsRect = backgroundRect;
+
+    g_drawPool.select(DrawPoolType::CREATURE_INFORMATION);
+    if (isScaled)
+        g_drawPool.scale(g_app.getCreatureInformationScale());
 
     if ((drawFlags & Otc::DrawBars) && (g_game.getClientVersion() >= 1100 ? !isNpc() : true)) {
         g_drawPool.addFilledRect(backgroundRect, Color::black);
@@ -352,6 +364,7 @@ void Creature::drawInformation(const MapPosInfo& mapRect, const Point& dest, con
     }
 
     g_drawPool.resetDrawOrder();
+    g_drawPool.select(DrawPoolType::MAP);
 }
 
 void Creature::internalDraw(Point dest, const Color& color)
@@ -729,12 +742,22 @@ void Creature::updateWalkingTile()
         g_gameConfig.getSpriteSize() + (m_walkOffset.y - displacementY),
         g_gameConfig.getSpriteSize(), g_gameConfig.getSpriteSize());
 
+    if (m_walkedPixels < g_gameConfig.getSpriteSize() / 2) {
+        if (m_direction == Otc::Direction::NorthWest)
+            newWalkingTile = m_walkingTile ? m_walkingTile : getTile();
+        else if (m_direction == Otc::Direction::SouthEast)
+            newWalkingTile = g_map.getTile(getPosition().translated(-1, -1, 0));
+    }
+
     for (int xi = -1; xi <= 1 && !newWalkingTile; ++xi) {
         for (int yi = -1; yi <= 1 && !newWalkingTile; ++yi) {
             Rect virtualTileRect((xi + 1) * g_gameConfig.getSpriteSize(), (yi + 1) * g_gameConfig.getSpriteSize(), g_gameConfig.getSpriteSize(), g_gameConfig.getSpriteSize());
 
-            // only render creatures where bottom right is inside tile rect
-            if (virtualTileRect.contains(virtualCreatureRect.bottomRight())) {
+            // when creature is moving to the upper left tile, because of drawing order (we want creature to be behind the object to the left if its a tree for example)
+            if (m_direction == Otc::Direction::NorthWest && virtualTileRect.contains(virtualCreatureRect.topLeft())) {
+                newWalkingTile = g_map.getOrCreateTile(getPosition().translated(xi, yi, 0));
+            } else if (virtualTileRect.contains(virtualCreatureRect.bottomRight())) {
+                // only render creatures where bottom right is inside tile rect
                 newWalkingTile = g_map.getOrCreateTile(getPosition().translated(xi, yi, 0));
             }
         }
@@ -1190,6 +1213,7 @@ uint16_t Creature::getCurrentAnimationPhase(const bool mount)
     if (!canAnimate()) return 0;
 
     const auto thingType = mount ? getMountThingType() : getThingType();
+    if (!thingType) return 0;
 
     if (const auto idleAnimator = thingType->getIdleAnimator()) {
         if (m_walkAnimationPhase == 0) return idleAnimator->getPhase();
@@ -1197,8 +1221,21 @@ uint16_t Creature::getCurrentAnimationPhase(const bool mount)
     }
 
     if (thingType->isAnimateAlways()) {
-        const int ticksPerFrame = std::round(1000 / thingType->getAnimationPhases());
-        return (g_clock.millis() % (static_cast<long long>(ticksPerFrame) * thingType->getAnimationPhases())) / ticksPerFrame;
+        if (const auto animator = thingType->getAnimator()) {
+            return static_cast<uint16_t>(thingType->getIdleAnimationPhases() + animator->getPhase());
+        }
+
+        const int animationPhases = thingType->getAnimationPhases();
+        if (animationPhases <= 0) return 0;
+
+        const int ticksPerFrame = std::max<int>(1, static_cast<int>(std::round(1000.0 / animationPhases)));
+        const long long animationPeriod = static_cast<long long>(ticksPerFrame) * animationPhases;
+        if (animationPeriod <= 0) return 0;
+
+        // When a static idle frame group exists (no idleAnimator but idle sprites are present),
+        // skip over the idle phase(s) so animateAlways only cycles through the moving frames.
+        const int idlePhases = thingType->getIdleAnimationPhases();
+        return static_cast<uint16_t>(idlePhases + (g_clock.millis() % animationPeriod) / ticksPerFrame);
     }
 
     return isDisabledWalkAnimation() ? 0 : m_walkAnimationPhase;

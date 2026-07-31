@@ -97,8 +97,9 @@ function GemAtelier.redirectToGem(gemData)
 	local foundIndex = 1
 
 	for i, data in pairs(WheelOfDestiny.atelierGems) do
+		repeat
 		if (sortQuality > 1 and data.gemType ~= sortQuality - 2) or (sortAffinity > 1 and data.gemDomain ~= sortAffinity - 2) then
-		 	goto continue
+		 	break
 	 	end
 
 		if gemData.gemID == data.gemID then
@@ -108,7 +109,7 @@ function GemAtelier.redirectToGem(gemData)
 
 		index = index + 1
 		table.insert(totalGemList, data)
-		:: continue ::
+		until true
 	end
 
 	local gemCount = 0
@@ -116,17 +117,19 @@ function GemAtelier.redirectToGem(gemData)
 	local focusedGem = nil
 
 	for i, data in pairs(totalGemList) do
+		local __brk = false
+		repeat
 		if gemCount == 15 then
-			break
+			do __brk = true break end
 		end
 
 		if i < beginList then
-			goto continue
+			break
 		end
 
 		local widget = g_ui.createWidget('GemPanel', gemList)
 		local success = GemAtelier.setupGemWidget(widget, data)
-		
+			
 		if success then
 			currentGemList[#currentGemList + 1] = data
 			if widget then
@@ -140,8 +143,9 @@ function GemAtelier.redirectToGem(gemData)
 		else
 			widget:destroy()
 		end
-
-		:: continue ::
+		
+		until true
+		if __brk then break end
 	end
 
 	GemAtelier.showGemRevelation()
@@ -173,24 +177,25 @@ function GemAtelier.showGems(selectFirst, lastIndex)
 	
 	
 	for i, data in pairs(WheelOfDestiny.atelierGems) do
+		repeat
 		if not data.gemID or data.gemID < 0 then
 			g_logger.debug(string.format("[GemAtelier] Skipping gem with invalid ID: %s", tostring(data.gemID)))
-			goto continue
+			break
 		end
-		
+
 		local isLocked = data.locked == 1 or data.locked == true
 		if lockedOnly and not isLocked then
-			goto continue
+			break
 		elseif sortQuality > 1 and data.gemType ~= sortQuality - 2 then
-			goto continue
+			break
 		elseif sortAffinity > 1 and data.gemDomain ~= sortAffinity - 2 then
-			goto continue
+			break
 		elseif #currentSearchText > 0 and not GemAtelier.matchGemText(data) then
-			goto continue
+			break
 		end
 
 		table.insert(totalGemList, data)
-		:: continue ::
+		until true
 	end
 
 	gemList:destroyChildren()
@@ -200,17 +205,19 @@ function GemAtelier.showGems(selectFirst, lastIndex)
 	local beginList = (currentPage - 1) * 15 + 1
 
 	for i, data in pairs(totalGemList) do
+		local __brk = false
+		repeat
 		if gemCount == 15 then
-			break
+			do __brk = true break end
 		end
 
 		if i < beginList then
-			goto continue
+			break
 		end
 
 		local widget = g_ui.createWidget('GemPanel', gemList)
 		local success = GemAtelier.setupGemWidget(widget, data)
-		
+
 		if success then
 			currentGemList[#currentGemList + 1] = data
 			if widget then
@@ -221,7 +228,8 @@ function GemAtelier.showGems(selectFirst, lastIndex)
 			widget:destroy()
 		end
 
-		:: continue ::
+		until true
+		if __brk then break end
 	end
 
 	GemAtelier.showGemRevelation()
@@ -240,7 +248,9 @@ function GemAtelier.showGems(selectFirst, lastIndex)
 			gemList:focusChild(gemList:getFirstChild())
 		elseif lastIndex then
 			gemList:focusChild(children[lastIndex])
-		elseif lastSelectedGem and lastSelectedGem:isVisible() and lastSelectedGem.gemID then
+		-- No llamar métodos sobre lastSelectedGem: puede ser un widget ya destruido por el
+		-- propio redraw (destroyChildren) y el método lanza error; leer .gemID sí es seguro.
+		elseif lastSelectedGem and lastSelectedGem.gemID then
 			local targetIndex = 0
 			for i, widget in ipairs(children) do
 				if widget.gemID == lastSelectedGem.gemID then
@@ -928,27 +938,9 @@ function sendgemAction(actionType, param, pos)
 
 	g_logger.debug(string.format("[GemAtelier] Sending action -> type=%d param=%d pos=%d", actionType, param, pos))
 	g_game.gemAction(actionType, param, pos)
-
-	if actionType == 3 then
-		scheduleEvent(function()
-			local gem = GemAtelier.getGemDataById(param)
-			if not gem then
-				g_logger.debug(string.format("[GemAtelier] Failed to toggle lock: gem id=%d not found.", param))
-				return
-			end
-
-			gem.locked = gem.locked == 1 and 0 or 1
-			g_logger.debug(string.format("[GemAtelier] Toggled local lock of gem id=%d -> %s", 
-				param, gem.locked == 1 and "locked" or "unlocked"))
-
-			if lastSelectedGem and lastSelectedGem.locker then
-				lastSelectedGem.locker:setChecked(gem.locked == 1)
-			end
-
-			local lastIndex = lastSelectedGem and lastSelectedGem.gemIndex or 1
-			GemAtelier.showGems(false, lastIndex)
-		end, 300)
-	end
+	-- Sin toggle optimista para ToggleLock: el server responde SIEMPRE con el refresh completo
+	-- de la ventana (sendOpenWheelWindow) y ese estado es el real; el flip local a +300ms
+	-- llegaba DESPUÉS del refresh y lo invertía — la UI quedaba al revés del server en cada click.
 end
 
 
@@ -978,7 +970,7 @@ function GemAtelier.onDestroyGem(button)
 	if not button or not button:isOn() or not lastSelectedGem or destroyGemWindow ~= nil then
 	  return true
 	end
-  
+
 	local gemData = GemAtelier.getGemDataById(lastSelectedGem.gemID)
 	if not gemData then
 	  g_logger.debug("[GemAtelier] Failed to destroy: gemData not found.")
@@ -1158,8 +1150,9 @@ function GemAtelier.setupVesselPanel()
     end
 
     for _, id in pairs(WheelOfDestiny.equipedGems) do
+        repeat
         if type(id) ~= "number" or id < 0 then
-            goto skipGem
+            break
         end
         
         local data = GemAtelier.getGemDataById(id)
@@ -1199,7 +1192,7 @@ function GemAtelier.setupVesselPanel()
                 ))
             end
         end
-        ::skipGem::
+        until true
     end
 
     g_logger.debug("[GemAtelier] setupVesselPanel completed with 4 vessels.")

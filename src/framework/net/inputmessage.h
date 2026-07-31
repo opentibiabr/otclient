@@ -24,6 +24,7 @@
 
 #include "declarations.h"
 #include <framework/luaengine/luaobject.h>
+#include <algorithm>
 
  // @bindclass
 class InputMessage final : public LuaObject
@@ -92,10 +93,35 @@ public:
         if (available <= 0)
             return {};
 
-        bytes = std::min<uint8_t>(bytes, available);
+        // std::min<uint8_t> would narrow both operands to uint8_t, so any value
+        // above 255 wraps: an `available` of 256 yields 0 bytes (empty result).
+        // Clamp instead of min so a negative `bytes` cannot reach the vector
+        // constructor, where it would convert to a huge size_t.
+        bytes = std::clamp(bytes, 0, available);
         std::vector<uint8_t> data(bytes);
         std::memcpy(data.data(), m_buffer + m_readPos, bytes);
         return data;
+    }
+
+    void addCompressionFooter()
+    {
+        // Optional: check if already equal to footer (avoid duplicating)
+        if (m_messageSize >= 4) {
+            // Pointer to last 4 bytes of current buffer
+            const uint8_t* src = m_buffer + m_messageSize - 4;
+            if (src[0] == 0x00 && src[1] == 0x00 && src[2] == 0xFF && src[3] == 0xFF)
+                return;
+        }
+
+        checkWrite(4);
+
+        static const uint8_t footer[] = { 0x00, 0x00, 0xFF, 0xFF };
+        uint8_t* dest = m_buffer + m_messageSize;
+
+        // Copy last 4 bytes
+        std::memcpy(dest, footer, 4);
+
+        m_messageSize += 4;
     }
 
 protected:

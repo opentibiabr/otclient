@@ -1,0 +1,8 @@
+Module
+  name: game_inspect
+  description: game_inspect
+  sandboxed: true
+  minClientVersion: 1281
+  scripts: [ const/inspect_const, inspect ]
+  @onLoad: InspectController:init()
+  @onUnload: InspectController:terminate()
