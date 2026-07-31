@@ -1,0 +1,409 @@
+OtuiTreeItem < UILabel
+  height: 14
+  font: verdana-11px-monochrome
+  color: #c0c0c0
+  background-color: alpha
+  text-offset: 2 0
+  focusable: true
+  phantom: false
+
+  $focus:
+    background-color: #585858
+    color: #ffffff
+
+OtuiSectionLabel < UILabel
+  height: 12
+  font: verdana-11px-monochrome
+  color: #8f8f8f
+  margin-top: 5
+
+OtuiStateCheck < CheckBox
+  width: 90
+  height: 14
+  font: verdana-11px-monochrome
+  color: #c0c0c0
+
+# One row of the property panel: name, editable value and a remove button.
+#
+# focusable MUST be true here and on propList: recursiveFocus() only focuses
+# the focusable levels of the hierarchy (uiwidget.cpp:876) and
+# propagateOnKeyText() only descends into focused children (uiwidget.cpp:2082).
+# With a non-focusable link in the chain, the row's TextEdit never receives
+# what you type.
+OtuiPropRow < UIWidget
+  height: 18
+  focusable: true
+
+  UILabel
+    id: keyLabel
+    width: 118
+    height: 16
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    font: verdana-11px-monochrome
+    color: #9fc6e0
+    text-offset: 2 1
+
+  Button
+    id: removeBtn
+    !text: 'x'
+    width: 16
+    height: 16
+    anchors.right: parent.right
+    anchors.verticalCenter: parent.verticalCenter
+
+  TextEdit
+    id: valueEdit
+    height: 18
+    anchors.left: keyLabel.right
+    anchors.right: removeBtn.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 2
+    margin-right: 3
+
+Window
+  id: otuiEditorWindow
+  size: 360 660
+  !text: 'OTUI Editor'
+  anchors.left: parent.left
+  anchors.top: parent.top
+  margin-left: 12
+  margin-top: 40
+
+  OtuiSectionLabel
+    id: pathTitle
+    !text: '.otui file'
+    margin-top: 0
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+
+  TextEdit
+    id: pathEdit
+    height: 20
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 2
+    !text: '/game_idle/game_idle.otui'
+
+  Button
+    id: loadBtn
+    !text: 'Load'
+    height: 20
+    width: 100
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    margin-top: 4
+    @onClick: modules.dev_otui.loadTarget()
+
+  Button
+    id: browseBtn
+    !text: 'Open...'
+    height: 20
+    width: 100
+    anchors.top: prev.top
+    anchors.left: prev.right
+    margin-left: 4
+    @onClick: modules.dev_otui.browseFiles()
+
+  Button
+    id: newScreenBtn
+    !text: 'New screen'
+    height: 20
+    anchors.top: prev.top
+    anchors.left: prev.right
+    anchors.right: parent.right
+    margin-left: 4
+    @onClick: modules.dev_otui.newScreen()
+
+  Button
+    id: reloadBtn
+    !text: 'Reload'
+    height: 20
+    width: 85
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    margin-top: 4
+    @onClick: modules.dev_otui.reloadTarget()
+
+  Button
+    id: addElementBtn
+    !text: '+ Element'
+    height: 20
+    width: 80
+    anchors.top: prev.top
+    anchors.left: prev.right
+    margin-left: 4
+    @onClick: modules.dev_otui.addElement()
+
+  Button
+    id: removeElementBtn
+    !text: '- Element'
+    height: 20
+    width: 80
+    anchors.top: prev.top
+    anchors.left: prev.right
+    margin-left: 4
+    @onClick: modules.dev_otui.removeElement()
+
+  Button
+    id: closeStageBtn
+    !text: 'Close'
+    height: 20
+    anchors.top: prev.top
+    anchors.left: prev.right
+    anchors.right: parent.right
+    margin-left: 4
+    @onClick: modules.dev_otui.closeStage()
+
+  Button
+    id: galleryBtn
+    !text: 'Style gallery'
+    height: 20
+    width: 120
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    margin-top: 4
+    @onClick: modules.dev_otui.openGallery()
+
+  OtuiStateCheck
+    id: autoReloadCheck
+    !text: 'Auto-reload'
+    width: 88
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    margin-top: 6
+    @onCheckChange: modules.dev_otui.setAutoReload(self:isChecked())
+
+  OtuiStateCheck
+    id: debugBoxesCheck
+    !text: 'Boxes'
+    width: 62
+    anchors.top: prev.top
+    anchors.left: prev.right
+    margin-left: 6
+    @onCheckChange: modules.dev_otui.setDebugBoxes(self:isChecked())
+
+  OtuiStateCheck
+    id: guidesCheck
+    !text: 'Guides'
+    width: 68
+    anchors.top: prev.top
+    anchors.left: prev.right
+    margin-left: 6
+    @onCheckChange: modules.dev_otui.setGuides(self:isChecked())
+
+  OtuiStateCheck
+    id: pickCheck
+    !text: 'Edit'
+    width: 52
+    anchors.top: prev.top
+    anchors.left: prev.right
+    margin-left: 6
+    @onCheckChange: modules.dev_otui.setPickMode(self:isChecked())
+
+  HorizontalSeparator
+    id: sep1
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 6
+
+  OtuiSectionLabel
+    id: treeTitle
+    !text: 'Widget tree'
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+
+  TextList
+    id: treeList
+    height: 150
+    anchors.top: treeTitle.bottom
+    anchors.left: parent.left
+    anchors.right: treeScroll.left
+    margin-top: 2
+    padding: 1
+    focusable: false
+    vertical-scrollbar: treeScroll
+
+  # anchored to treeTitle, not to treeList: anchoring the two to each other
+  # creates a circular dependency and the layout is aborted
+  VerticalScrollBar
+    id: treeScroll
+    height: 150
+    anchors.top: treeTitle.bottom
+    anchors.right: parent.right
+    margin-top: 2
+    step: 14
+    pixels-scroll: true
+
+  Label
+    id: infoLabel
+    height: 58
+    font: verdana-11px-monochrome
+    color: #a0d0a0
+    text-wrap: true
+    text-align: topLeft
+    phantom: false
+    anchors.top: treeList.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 4
+    !text: 'No widget selected.'
+
+  OtuiStateCheck
+    id: stateOn
+    !text: '$on'
+    width: 68
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    margin-top: 2
+    @onCheckChange: modules.dev_otui.applyState('on', self:isChecked())
+
+  OtuiStateCheck
+    id: stateChecked
+    !text: '$checked'
+    width: 78
+    anchors.top: prev.top
+    anchors.left: prev.right
+    margin-left: 4
+    @onCheckChange: modules.dev_otui.applyState('checked', self:isChecked())
+
+  OtuiStateCheck
+    id: stateDisabled
+    !text: '$disabled'
+    width: 78
+    anchors.top: prev.top
+    anchors.left: prev.right
+    margin-left: 4
+    @onCheckChange: modules.dev_otui.applyState('disabled', self:isChecked())
+
+  OtuiStateCheck
+    id: stateHidden
+    !text: 'hidden'
+    width: 68
+    anchors.top: prev.top
+    anchors.left: prev.right
+    margin-left: 4
+    @onCheckChange: modules.dev_otui.applyState('hidden', self:isChecked())
+
+  OtuiSectionLabel
+    id: propTitle
+    !text: 'Properties in the file'
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+
+  # From propTitle down the layout is elastic: the property list anchors both
+  # top AND bottom, so every pixel gained by resizing the window goes to it.
+  # Without this, growing the window would only create empty space.
+  TextList
+    id: propList
+    anchors.top: propTitle.bottom
+    anchors.left: parent.left
+    anchors.right: propScroll.left
+    anchors.bottom: newPropEdit.top
+    margin-top: 2
+    margin-bottom: 4
+    padding: 1
+    focusable: true
+    vertical-scrollbar: propScroll
+
+  VerticalScrollBar
+    id: propScroll
+    anchors.top: propTitle.bottom
+    anchors.bottom: newPropEdit.top
+    anchors.right: parent.right
+    margin-top: 2
+    margin-bottom: 4
+    step: 18
+    pixels-scroll: true
+
+  TextEdit
+    id: newPropEdit
+    height: 20
+    anchors.bottom: applyAllBtn.top
+    anchors.left: parent.left
+    anchors.right: addPropBtn.left
+    margin-bottom: 4
+    margin-right: 4
+    !text: ''
+
+  Button
+    id: addPropBtn
+    !text: 'Add'
+    height: 20
+    width: 55
+    anchors.bottom: applyAllBtn.top
+    anchors.right: anchorBtn.left
+    margin-bottom: 4
+    margin-right: 4
+    @onClick: modules.dev_otui.addPropertyFromInput()
+
+  Button
+    id: anchorBtn
+    !text: 'Anchor...'
+    height: 20
+    width: 85
+    anchors.bottom: applyAllBtn.top
+    anchors.right: parent.right
+    margin-bottom: 4
+    @onClick: modules.dev_otui.editAnchors()
+
+  Button
+    id: applyAllBtn
+    !text: 'Apply (preview)'
+    height: 20
+    width: 160
+    anchors.bottom: statusLabel.top
+    anchors.left: parent.left
+    margin-bottom: 4
+    @onClick: modules.dev_otui.applyAll()
+
+  Button
+    id: saveBtn
+    !text: 'Save to file'
+    height: 20
+    anchors.bottom: statusLabel.top
+    anchors.left: applyAllBtn.right
+    anchors.right: parent.right
+    margin-left: 4
+    margin-bottom: 4
+    @onClick: modules.dev_otui.saveFile()
+
+  Label
+    id: statusLabel
+    font: verdana-11px-monochrome
+    color: #dfdf7f
+    text-align: topLeft
+    text-wrap: true
+    phantom: false
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    height: 34
+    !text: 'Ready.'
+
+  # negative margins push the borders onto the window frame, outside the
+  # padding; otherwise they would steal clicks from the scrollbars on the right
+  ResizeBorder
+    id: bottomResize
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-bottom: -10
+    height: 4
+    minimum: 420
+    maximum: 1400
+
+  ResizeBorder
+    id: rightResize
+    anchors.right: parent.right
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    margin-right: -10
+    width: 4
+    minimum: 330
+    maximum: 1000

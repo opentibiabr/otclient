@@ -885,6 +885,18 @@ void Game::useInventoryItemWith(const uint16_t itemId, const ThingPtr& toThing)
     if (!canPerformGameAction() || !toThing)
         return;
 
+    // pre-780 protocols resolve the source item by its real inventory slot and
+    // stackpos, so the synthetic Position(0xFFFF, 0, 0) below (source stackpos 0)
+    // addresses the wrong slot and the use silently fails (e.g. rope on 7.6).
+    // resolve the real item and go through useWith, the same gate the hotkey and
+    // keybind code already apply. see #1541
+    if (getClientVersion() < 780) {
+        if (const auto& item = findPlayerItem(itemId, -1)) {
+            useWith(item, toThing);
+            return;
+        }
+    }
+
     const auto& pos = Position(0xFFFF, 0, 0); // means that is a item in inventory
     if (toThing->isCreature())
         m_protocolGame->sendUseOnCreature(pos, itemId, 0, toThing->getId());
@@ -892,6 +904,19 @@ void Game::useInventoryItemWith(const uint16_t itemId, const ThingPtr& toThing)
         m_protocolGame->sendUseItemWith(pos, itemId, 0, toThing->getPosition(), toThing->getId(), toThing->getStackPos());
 
     g_lua.callGlobalField("g_game", "onUseWith", pos, itemId, toThing, 0);
+}
+
+ItemPtr Game::findPlayerItem(const uint32_t itemId, const int subType)
+{
+    if (m_localPlayer) {
+        for (int slot = Otc::InventorySlotHead; slot < Otc::LastInventorySlot; ++slot) {
+            const auto& item = m_localPlayer->getInventoryItem(static_cast<Otc::InventorySlot>(slot));
+            if (item && item->getId() == itemId && (subType == -1 || item->getSubType() == subType))
+                return item;
+        }
+    }
+
+    return findItemInContainers(itemId, subType, 0);
 }
 
 ItemPtr Game::findItemInContainers(const uint32_t itemId, const int subType, const uint8_t tier)
@@ -2313,7 +2338,7 @@ void Game::openWheel(uint32_t playerId)
     m_protocolGame->sendOpenWheel(playerId);
 }
 
-void Game::gemAction(const uint8_t actionType, const uint8_t param, const uint8_t pos)
+void Game::gemAction(const uint8_t actionType, const uint16_t param, const uint8_t pos)
 {
     if (!canPerformGameAction())
         return;

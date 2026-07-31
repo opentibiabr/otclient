@@ -55,9 +55,9 @@
     .creature-display { width: 64px; height: 64px; margin-left: 10px; margin-top: 10px; }
 
     /* Chat & Console */
-    .panelConsole { margin-top: 30px; --image-border: 4; padding: 1; padding-right: 12; padding-left: 4; padding-top: 4; padding-bottom: 4; height: 288px; --image-source: /images/ui/3pixel_frame_borderimage; }
+    .panelConsole { margin-top: 80px; --image-border: 4; padding: 1; padding-right: 12; padding-left: 4; padding-top: 4; padding-bottom: 4; height: 238px; --image-source: /images/ui/3pixel_frame_borderimage; }
     .inputConsole { margin-bottom: 10px; display: inline-block; width: 288px; margin-left: 15px; margin-top: 5px; --placeholder: "Type here to chat"; --placeholder-color: #6E706F}
-    .bottonChat { display: inline; margin-left: 2px; font: cipsoftFont; }
+    .bottonChat { display: inline; margin-left: 308px; margin-bottom: 10px; font: cipsoftFont; }
     
     /* Buttons Panel */
     .panelBotons {height: 35px;  margin-bottom: 39px; --focusable: false; width: 100%; margin-left: 15px;}
@@ -119,7 +119,7 @@
 </script>
 
 <html>
-<uiwindow id="windowTrader" placement="bottom-left" *width="self.widthConsole" class="modal-message"
+<uiwindow id="windowTrader" placement="center" *width="self.widthConsole" class="modal-message"
     src="images/ui/miniwindow" onescape="self:onCloseNpcTrade()" onkeydown="self:onConsoleKeyPress(event)">
 
     <!-- Left Panel -->
@@ -140,7 +140,7 @@
             </button>
         </div>
         <input id="chatInput" class="inputConsole" placement="bottom-left" />
-        <button id="chatModeButton" class="bottonChat" onclick="self:toggleChatMode()">{{self.chatMode}}</button>
+        <button id="chatModeButton" class="bottonChat" placement="bottom-left" onclick="self:toggleChatMode()">{{self.chatMode}}</button>
     </div>
 
     <div class="verticalSep VerticalSeparator" *visible="self.isTradeOpen"></div>

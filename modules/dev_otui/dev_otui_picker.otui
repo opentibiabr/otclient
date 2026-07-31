@@ -1,0 +1,151 @@
+OtuiPickerItem < UILabel
+  height: 14
+  font: verdana-11px-monochrome
+  color: #c0c0c0
+  background-color: alpha
+  text-offset: 2 0
+  focusable: true
+  phantom: false
+
+  $focus:
+    background-color: #585858
+    color: #ffffff
+
+MainWindow
+  id: otuiPickerWindow
+  size: 620 460
+  !text: 'Select'
+
+  @onEscape: modules.dev_otui.closePicker()
+  @onEnter: modules.dev_otui.acceptPicker()
+
+  OtuiSectionLabel
+    id: hintLabel
+    height: 12
+    margin-top: 0
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    !text: ''
+
+  TextEdit
+    id: filterEdit
+    height: 20
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 2
+    !text: ''
+
+  # focusable must be true along the whole chain, otherwise the row's TextEdit
+  # receives no keyboard input
+  TextList
+    id: itemList
+    anchors.top: filterEdit.bottom
+    anchors.left: parent.left
+    anchors.right: itemScroll.left
+    anchors.bottom: acceptBtn.top
+    margin-top: 4
+    margin-bottom: 6
+    padding: 1
+    focusable: true
+    vertical-scrollbar: itemScroll
+
+  # every anchor here points at neighbours the list also uses, never at the list
+  # itself: mutual anchors become a circular dependency and the layout is aborted
+  VerticalScrollBar
+    id: itemScroll
+    anchors.top: filterEdit.bottom
+    anchors.bottom: acceptBtn.top
+    anchors.right: previewBox.left
+    margin-top: 4
+    margin-bottom: 6
+    margin-right: 8
+    step: 14
+    pixels-scroll: true
+
+  UIWidget
+    id: previewBox
+    width: 250
+    anchors.top: filterEdit.bottom
+    anchors.bottom: acceptBtn.top
+    anchors.right: parent.right
+    margin-top: 4
+    margin-bottom: 6
+    border-width: 1
+    border-color: #272727
+    background-color: #3a3a3a
+    focusable: false
+
+    UILabel
+      id: previewName
+      height: 14
+      anchors.top: parent.top
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin: 3
+      font: verdana-11px-monochrome
+      color: #9fc6e0
+      text-align: center
+      !text: ''
+
+    UILabel
+      id: previewOrigin
+      height: 12
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-left: 3
+      margin-right: 3
+      font: verdana-11px-monochrome
+      color: #8f8f8f
+      text-align: center
+      text-wrap: true
+      !text: ''
+
+    HorizontalSeparator
+      id: previewSep
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin: 4 3 0 3
+
+    # the live sample goes in here; clipping keeps an oversized widget from
+    # spilling over the rest of the window
+    UIWidget
+      id: previewSlot
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
+      margin: 4 3 3 3
+      clipping: true
+      focusable: false
+
+  Button
+    id: acceptBtn
+    !text: 'Use'
+    width: 90
+    height: 20
+    anchors.bottom: parent.bottom
+    anchors.right: cancelBtn.left
+    margin-right: 6
+
+  Button
+    id: cancelBtn
+    !text: 'Close'
+    width: 90
+    height: 20
+    anchors.bottom: parent.bottom
+    anchors.right: parent.right
+
+  Label
+    id: countLabel
+    height: 16
+    font: verdana-11px-monochrome
+    color: #8f8f8f
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    anchors.right: acceptBtn.left
+    margin-right: 6
+    !text: ''

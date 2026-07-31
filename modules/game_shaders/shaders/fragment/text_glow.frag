@@ -19,11 +19,13 @@ void main() {
     
     // Multi-sample for soft glow
     float glow = 0.0;
-    float maxDist = 2.0; // Reduced glow radius
-    
-    for (float dist = 1.0; dist <= maxDist; dist += 1.0) {
+    const int MAX_STEPS = 2; // constant loop bound (WebGL2/GLSL ES rejects non-const)
+    float maxDist = float(MAX_STEPS); // Reduced glow radius
+
+    for (int i = 1; i <= MAX_STEPS; i++) {
+        float dist = float(i);
         float weight = (maxDist - dist + 1.0) / maxDist;
-        
+
         glow += texture2D(u_Tex0, v_TexCoord + vec2(-texelSize.x * dist, 0.0)).a * weight;
         glow += texture2D(u_Tex0, v_TexCoord + vec2(texelSize.x * dist, 0.0)).a * weight;
         glow += texture2D(u_Tex0, v_TexCoord + vec2(0.0, -texelSize.y * dist)).a * weight;

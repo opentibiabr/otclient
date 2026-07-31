@@ -795,9 +795,10 @@ function getConvictionPerks()
 	}
   
 	for id, bonus in pairs(WheelBonus) do
+	  repeat
 	  local index = id + 1
 	  if not WheelOfDestiny.isLit(index) then
-		goto label
+		break
 	  end
   
 	  local t = order[bonus.conviction] or table.size(order) + 1
@@ -805,7 +806,7 @@ function getConvictionPerks()
 	  local pointsInvested = WheelOfDestiny.pointInvested[index] or 0	
   
 	  if pointsInvested ~= bonus.maxPoints then
-		  goto label
+		  break
 	  end
   
 	  if bonus.conviction ==  "special_1" then
@@ -1514,7 +1515,7 @@ function getConvictionPerks()
 		end
     end
 
-    ::label::
+	  until true
   end
 
   return convictions
@@ -1835,8 +1836,9 @@ function getVesselBonus()
 	end
 
 	for _, k in pairs(WheelOfDestiny.equipedGemBonuses) do
+		repeat
 		if k.bonusID == -1 then
-			goto continue
+			break
 		end
 
 		local bonus = k.supreme and SupremeGemDescription[k.bonusID] or RegularGemDescription[k.bonusID]
@@ -1861,7 +1863,7 @@ function getVesselBonus()
 					else
 						bonuses[#bonuses + 1] = {bonusType = bonus.type1, text = "Mitigation Mult.", value = number, tooltip = bonus.tooltip}
 					end
-					goto continue
+					break
 				end
 
 				local number = getBonusValueUpgrade(k.bonusID, k.gemID, k.supreme, true)
@@ -1957,7 +1959,7 @@ function getVesselBonus()
 			end
 		end
 
-		:: continue ::
+		until true
 	end
 
 	if #defenses > 0 then
@@ -1965,13 +1967,14 @@ function getVesselBonus()
 	end
 
 	for _, v in pairs(defenses) do
+		repeat
 		if v.value == 0 then
-			goto continue
+			break
 		end
 
 		local valueString = tonumber(v.value) > 0 and "+" .. v.value or v.value
 		bonuses[#bonuses + 1] = {bonusType = v.bonusType, text = ("  " .. v.text:gsub(" Resistance", "")), value = (valueString .. "%")}
-		:: continue ::
+		until true
 	end
 
 	-- Damage and healing

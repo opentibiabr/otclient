@@ -35,6 +35,7 @@ public:
 
     bool discoverWorkDir(const std::string& existentFile);
     bool setupUserWriteDir(const std::string& appWriteDirName);
+    void setUserDirOverride(const std::string& path) { m_userDirOverride = path; }
     bool setWriteDir(const std::string& writeDir, bool create = false);
 
     bool addSearchPath(const std::string& path, bool pushFront = false);
@@ -110,6 +111,7 @@ protected:
 private:
     std::string m_workDir;
     std::string m_writeDir;
+    std::string m_userDirOverride;
     std::filesystem::path m_binaryPath;
     std::deque<std::string> m_searchPaths;
 };

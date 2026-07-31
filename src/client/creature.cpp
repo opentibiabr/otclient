@@ -24,6 +24,7 @@
 
 #include "animator.h"
 #include "attachedeffect.h"
+#include "client/const.h"
 #include "game.h"
 #include "gameconfig.h"
 #include "lightview.h"
@@ -239,6 +240,10 @@ void Creature::drawInformation(const MapPosInfo& mapRect, const Point& dest, con
 
     Rect barsRect = backgroundRect;
 
+    g_drawPool.select(DrawPoolType::CREATURE_INFORMATION);
+    if (isScaled)
+        g_drawPool.scale(g_app.getCreatureInformationScale());
+
     if ((drawFlags & Otc::DrawBars) && (g_game.getClientVersion() >= 1100 ? !isNpc() : true)) {
         g_drawPool.addFilledRect(backgroundRect, Color::black);
         g_drawPool.addFilledRect(healthRect, fillColor);
@@ -359,6 +364,7 @@ void Creature::drawInformation(const MapPosInfo& mapRect, const Point& dest, con
     }
 
     g_drawPool.resetDrawOrder();
+    g_drawPool.select(DrawPoolType::MAP);
 }
 
 void Creature::internalDraw(Point dest, const Color& color)
@@ -736,12 +742,22 @@ void Creature::updateWalkingTile()
         g_gameConfig.getSpriteSize() + (m_walkOffset.y - displacementY),
         g_gameConfig.getSpriteSize(), g_gameConfig.getSpriteSize());
 
+    if (m_walkedPixels < g_gameConfig.getSpriteSize() / 2) {
+        if (m_direction == Otc::Direction::NorthWest)
+            newWalkingTile = m_walkingTile ? m_walkingTile : getTile();
+        else if (m_direction == Otc::Direction::SouthEast)
+            newWalkingTile = g_map.getTile(getPosition().translated(-1, -1, 0));
+    }
+
     for (int xi = -1; xi <= 1 && !newWalkingTile; ++xi) {
         for (int yi = -1; yi <= 1 && !newWalkingTile; ++yi) {
             Rect virtualTileRect((xi + 1) * g_gameConfig.getSpriteSize(), (yi + 1) * g_gameConfig.getSpriteSize(), g_gameConfig.getSpriteSize(), g_gameConfig.getSpriteSize());
 
-            // only render creatures where bottom right is inside tile rect
-            if (virtualTileRect.contains(virtualCreatureRect.bottomRight())) {
+            // when creature is moving to the upper left tile, because of drawing order (we want creature to be behind the object to the left if its a tree for example)
+            if (m_direction == Otc::Direction::NorthWest && virtualTileRect.contains(virtualCreatureRect.topLeft())) {
+                newWalkingTile = g_map.getOrCreateTile(getPosition().translated(xi, yi, 0));
+            } else if (virtualTileRect.contains(virtualCreatureRect.bottomRight())) {
+                // only render creatures where bottom right is inside tile rect
                 newWalkingTile = g_map.getOrCreateTile(getPosition().translated(xi, yi, 0));
             }
         }
@@ -1205,6 +1221,10 @@ uint16_t Creature::getCurrentAnimationPhase(const bool mount)
     }
 
     if (thingType->isAnimateAlways()) {
+        if (const auto animator = thingType->getAnimator()) {
+            return static_cast<uint16_t>(thingType->getIdleAnimationPhases() + animator->getPhase());
+        }
+
         const int animationPhases = thingType->getAnimationPhases();
         if (animationPhases <= 0) return 0;
 

@@ -1,0 +1,11 @@
+Module
+  name: dev_otui
+  description: Editor/inspector de telas .otui com preview fiel dentro do proprio cliente
+  author: Renan
+  website: none
+  sandboxed: true
+  scripts: [ otml, dev_otui ]
+  autoload: true
+  dependencies: [ client_topmenu ]
+  @onLoad: init()
+  @onUnload: terminate()

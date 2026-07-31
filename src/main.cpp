@@ -65,11 +65,22 @@ bool shouldShowHelp(const std::vector<std::string>& args)
     return false;
 }
 
+std::string parseUserDir(const std::vector<std::string>& args)
+{
+    static const std::string prefix = "--user-dir=";
+    for (const auto& arg : args) {
+        if (arg.starts_with(prefix))
+            return arg.substr(prefix.size());
+    }
+    return {};
+}
+
 void printHelp(const std::string& executableName)
 {
     std::cout << "Usage: " << executableName << " [options]\n\n"
                  "General options:\n"
                  "  --help, -h, /?              Show this help message and exit\n"
+                 "  --user-dir=<path>           Use <path> for configs/profiles instead of the default user dir\n"
                  "  --encrypt <password>        Encrypt assets (requires ENABLE_ENCRYPTION == 1 && ENABLE_ENCRYPTION_BUILDER == 1 build)\n\n"
                  "DAT debugging:\n"
                  "  --dump-dat-to-json=<path|ver> Dump the specified Tibia DAT file or version as JSON (requires FRAMEWORK_EDITOR build)\n"
@@ -117,6 +128,13 @@ int main(const int argc, const char* argv[])
 #else
     g_resources.init(args[0].data());
 #endif
+
+    // a --user-dir override isolates all persisted state (configs, remember
+    // password, bot profiles) under a caller-chosen dir; set before init.lua
+    // resolves the write dir via setupUserWriteDir. see #1540
+    if (const auto userDir = parseUserDir(args); !userDir.empty()) {
+        g_resources.setUserDirOverride(userDir);
+    }
 
 #if ENABLE_ENCRYPTION == 1 && ENABLE_ENCRYPTION_BUILDER == 1
     if (std::find(args.begin(), args.end(), "--encrypt") != args.end()) {

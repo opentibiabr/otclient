@@ -295,6 +295,8 @@ void Application::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_stats", "get", &Stats::get, &g_stats);
     g_lua.bindSingletonFunction("g_stats", "clear", &Stats::clear, &g_stats);
     g_lua.bindSingletonFunction("g_stats", "clearAll", &Stats::clearAll, &g_stats);
+    g_lua.bindSingletonFunction("g_stats", "pause", &Stats::pause, &g_stats);
+    g_lua.bindSingletonFunction("g_stats", "resume", &Stats::resume, &g_stats);
     g_lua.bindSingletonFunction("g_stats", "getSlow", &Stats::getSlow, &g_stats);
     g_lua.bindSingletonFunction("g_stats", "clearSlow", &Stats::clearSlow, &g_stats);
     g_lua.bindSingletonFunction("g_stats", "getSleepTime", &Stats::getSleepTime, &g_stats);

@@ -150,8 +150,9 @@ local function findNextAvailableAction(multiActions)
     local spellCount = 0
 
     for i, data in ipairs(multiActions) do
+        repeat
         if not data or table.empty(data) then
-            goto continue
+            break
         end
 
         if data["chatText"] then
@@ -167,11 +168,11 @@ local function findNextAvailableAction(multiActions)
                 local canUse = playerCanUseSpellLocal(spellData)
                 if not canUse and onlyOneSpell and spellCount == 1 then
                     firstValidAction = firstValidAction or data
-                    goto continue
+                    break
                 end
 
                 if not canUse then
-                    goto continue
+                    break
                 end
 
                 firstValidAction = firstValidAction or data
@@ -212,7 +213,7 @@ local function findNextAvailableAction(multiActions)
             end
         end
 
-        ::continue::
+        until true
     end
 
     return bestAction or closestCooldownAction or firstValidAction

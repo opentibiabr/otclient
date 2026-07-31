@@ -651,6 +651,15 @@ void ProtocolGame::sendChangeFightModes(const Otc::FightModes fightMode, const O
 {
     const auto& msg = std::make_shared<OutputMessage>();
     msg->addU8(Proto::ClientChangeFightModes);
+
+    if (g_game.getFeature(Otc::GameTacticsWithoutFightMode)) {
+        msg->addU8(chaseMode);
+        msg->addU8(safeFight);
+        msg->addU8(pvpMode);
+        send(msg);
+        return;
+    }
+
     msg->addU8(fightMode);
     msg->addU8(chaseMode);
     msg->addU8(safeFight);
@@ -987,12 +996,18 @@ void ProtocolGame::sendRuleViolation(const std::string_view target, const uint8_
     send(msg);
 }
 
-void ProtocolGame::sendWheelGemAction(uint8_t actionType, uint8_t param, uint8_t pos)
+void ProtocolGame::sendWheelGemAction(uint8_t actionType, uint16_t param, uint8_t pos)
 {
     const auto& msg = std::make_shared<OutputMessage>();
     msg->addU8(Proto::ClientWheelGemAction); // 0xE7
     msg->addU8(actionType);
-    msg->addU8(param);
+
+    // Canary lê o índice da gema como U16 em Destroy(0)/SwitchDomain(2)/ToggleLock(3);
+    // Reveal(1) e ImproveGrade(4) usam U8
+    if (actionType == 0 || actionType == 2 || actionType == 3)
+        msg->addU16(param);
+    else
+        msg->addU8(static_cast<uint8_t>(param));
 
     // Apenas "ImproveGrade" (actionType == 4) envia o byte extra
     if (actionType == 4)

@@ -671,7 +671,12 @@ void ProtocolGame::parseMessage(const InputMessagePtr& msg)
                     g_logger.warning(
                         "[{}] Unhandled opcode 0x{:02X} ({}) with {} unread bytes; previous opcode: 0x{:02X} ({}); next bytes: {}",
                         g_game.getClientVersion(), opcode, opcode, unreadSize, prevOpcode, prevOpcode, hexDump.str());
-                    msg->setReadPos(msg->getMessageSize());
+                    // getMessageSize() is the message body length, not an absolute read position.
+                    // Passing it to setReadPos() leaves eof() permanently false (readPos - headerPos
+                    // stays below messageSize because headerPos > 0), so the enclosing while (!eof())
+                    // loop keeps parsing past the end of the message -> busy loop / OOM on any unknown
+                    // opcode. Skip the remaining bytes instead so eof() is reached and parsing stops.
+                    msg->skipBytes(static_cast<uint16_t>(unreadSize));
                     break;
                 }
             }
@@ -2812,6 +2817,15 @@ void ProtocolGame::parsePlayerCancelAttack(const InputMessagePtr& msg)
 
 void ProtocolGame::parsePlayerModes(const InputMessagePtr& msg)
 {
+    if (g_game.getFeature(Otc::GameTacticsWithoutFightMode)) {
+        const auto chaseMode = static_cast<Otc::ChaseModes>(msg->getU8());
+        const bool safeMode = static_cast<bool>(msg->getU8());
+        const auto pvpMode = static_cast<Otc::PVPModes>(msg->getU8());
+
+        g_game.processPlayerModes(g_game.getFightMode(), chaseMode, safeMode, pvpMode);
+        return;
+    }
+
     const auto fightMode = static_cast<Otc::FightModes>(msg->getU8());
     const auto chaseMode = static_cast<Otc::ChaseModes>(msg->getU8());
     const bool safeMode = static_cast<bool>(msg->getU8());
@@ -3618,6 +3632,16 @@ void ProtocolGame::parseTutorialHint(const InputMessagePtr& msg)
 
 void ProtocolGame::parseAutomapFlag(const InputMessagePtr& msg)
 {
+    if (g_game.getClientVersion() >= 1200) {
+        // Tibia 12+: 0xDD is the "Cyclopedia Map Data" packet family and carries a
+        // subtype byte before the payload (Canary: CyclopediaMapData_t). The classic
+        // minimap marker is subtype 0 (MinimapMarker) — the only one Canary sends.
+        const uint8_t subtype = msg->getU8();
+        if (subtype != 0) {
+            throw Exception("ProtocolGame::parseAutomapFlag: unhandled cyclopedia map data subtype {}", subtype);
+        }
+    }
+
     const auto& pos = getPosition(msg);
     const uint8_t icon = msg->getU8();
     const auto& description = msg->getString();
@@ -5125,8 +5149,14 @@ void ProtocolGame::parseMonkData(const InputMessagePtr& msg) {
             break;
         }
         case Otc::TYPES_MONK_VIRTUE: {
-            const uint8_t virtueValue = msg->getU8();
-            g_logger.debug("Unused {} TO-DO L4381", virtueValue);
+            // official format: count (u8) followed by one u16 virtue id per entry.
+            // Reading only the count desynced the stream and dropped the rest of
+            // the login bundle (VIP groups/list) for monk characters.
+            const uint8_t virtueCount = msg->getU8();
+            for (uint8_t i = 0; i < virtueCount; ++i) {
+                const uint16_t virtueId = msg->getU16();
+                g_logger.debug("Unused virtue {} TO-DO L4381", virtueId);
+            }
             break;
         }
         default:

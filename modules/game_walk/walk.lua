@@ -120,6 +120,7 @@ local function walk(dir)
         end
     end
 
+    modules.game_interface.lastManualWalk = g_clock.millis()
     g_game.walk(dir)
     return true
 end

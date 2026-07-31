@@ -324,6 +324,7 @@ void LoginHttp::httpLogin(const std::string& host, const std::string& path,
 
             HttpResponse response;
             if (fetch) {
+                response.connected = true;
                 response.status = static_cast<int>(fetch->status);
                 response.body.assign(fetch->data, fetch->numBytes);
                 emscripten_fetch_close(fetch);

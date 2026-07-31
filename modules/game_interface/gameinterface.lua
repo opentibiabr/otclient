@@ -19,6 +19,10 @@ countWindow = nil
 logoutWindow = nil
 exitWindow = nil
 bottomSplitter = nil
+-- timestamp of the last manual keyboard walk, refreshed by game_walk and read
+-- by consumers (e.g. game_bot) to pause automation while the player walks;
+-- defined here so it is always present whenever this module is loaded
+lastManualWalk = 0
 limitedZoom = false
 currentViewMode = 0
 leftIncreaseSidePanels = nil

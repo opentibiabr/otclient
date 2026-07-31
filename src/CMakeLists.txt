@@ -936,7 +936,11 @@ elseif(WASM)
           -sUSE_PTHREADS=1
           -sFETCH=1
           -sPTHREAD_POOL_SIZE=navigator.hardwareConcurrency
-          -sALLOW_MEMORY_GROWTH=1
+          # Growable WASM memory becomes a resizable SharedArrayBuffer, which
+          # Chrome 149+ refuses to accept as a source for WebGL uploads
+          # ("ArrayBuffer value must not be resizable"). Use a fixed heap.
+          -sALLOW_MEMORY_GROWTH=0
+          -sINITIAL_MEMORY=1073741824
           --preload-file=../otclientrc.lua@otclientrc.lua
           --preload-file=../init.lua@init.lua
           --preload-file=../data@data
