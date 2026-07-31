@@ -102,8 +102,6 @@ end
 
 function offline()
   onProfileChange(true)
-  -- reset flag so a stale 'true' doesn't make game_bot skip its refresh on next login
-  ChangedProfile = false
 end
 
 -- profile change callback (called in options), saves settings & reloads given module configs
@@ -125,17 +123,9 @@ end
 
 -- collection of refresh functions from different modules
 function collectiveReload()
-  -- guard each module: a missing one (e.g. game_topbar) must not abort the whole reload
-  if modules.game_topbar and modules.game_topbar.refresh then
-    pcall(function() modules.game_topbar.refresh(true) end)
-  end
-  if modules.game_actionbar and modules.game_actionbar.refresh then
-    pcall(function() modules.game_actionbar.refresh(true) end)
-  end
-  if modules.game_bot and modules.game_bot.refresh then
-    pcall(function() modules.game_bot.refresh() end)
-  end
-  ChangedProfile = false
+  modules.game_topbar.refresh(true)
+  modules.game_actionbar.refresh(true)
+  modules.game_bot.refresh()
 end
 
 -- json handlers
