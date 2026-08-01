@@ -248,7 +248,8 @@ int LuaInterface::luaObjectSetEvent(LuaInterface* lua)
     assert(obj);
 
     if (key.starts_with("on")) {
-        obj->m_events[key] = true;
+        // The handler now exists on this instance, so any cached "absent" verdict is stale.
+        obj->m_missingEvents.erase(key);
     }
 
     lua->remove(-2); // removes key

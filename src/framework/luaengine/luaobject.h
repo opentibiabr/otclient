@@ -91,9 +91,21 @@ public:
     template<typename T>
     std::shared_ptr<T> dynamic_self_cast() { return std::dynamic_pointer_cast<T>(shared_from_this()); }
 
+    /// Invalidates every negative entry of the callLuaField cache.
+    /// Must be called whenever a handler may have been attached to a class
+    /// table (`connect(LocalPlayer, {onFoo = f})`), because such an assignment
+    /// bypasses the object's __newindex and is therefore invisible to us.
+    static void invalidateEventCache() { ++s_eventCacheGeneration; }
+
 private:
     int m_fieldsTableRef;
-    std::unordered_map<std::string, bool> m_events;
+
+    /// Fields that were looked up and did not exist, stamped with the
+    /// generation in which the lookup happened. A stamp older than the current
+    /// generation means "recheck", not "absent".
+    std::unordered_map<std::string, uint32_t> m_missingEvents;
+
+    inline static uint32_t s_eventCacheGeneration = 1;
 
     friend class LuaInterface;
 };
@@ -222,16 +234,21 @@ void LuaObject::callLuaField(const std::string_view field, const T&... args)
     const std::string fieldStr = field.data();
 
     // Avoids unnecessary overhead by checking if the field is registered before invoking the Lua event.
-    auto it = m_events.find(fieldStr);
-    if (it != m_events.end() && !it->second)
+    // The generation stamp is what keeps this cache honest: a handler connected
+    // AFTER a failed lookup would otherwise never be reached again.
+    if (const auto it = m_missingEvents.find(fieldStr);
+        it != m_missingEvents.end() && it->second == s_eventCacheGeneration)
         return;
 
     const int rets = luaCallLuaField(field, args...);
     if (rets > 0)
         g_lua.pop(rets);
 
-    if (it == m_events.end())
-        m_events[fieldStr] = rets > -1;
+    // -1 means the field did not exist; 0 or more means a handler ran.
+    if (rets == -1)
+        m_missingEvents[fieldStr] = s_eventCacheGeneration;
+    else
+        m_missingEvents.erase(fieldStr);
 }
 
 template<typename... T>
