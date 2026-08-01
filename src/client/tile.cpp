@@ -78,12 +78,37 @@ void Tile::draw(const MapPosInfo& mapRect, const Point& dest, const int flags, L
         return;
     }
 
-    // when walking diagonally over a tile that has a object on it like a tree the creature should be rendered behind it
-    // i.e. render creature first then the tree
+    std::vector<ThingPtr> skipped_non_walkable;
+    for (const auto& thing : m_things) {
+        if (!thing->isGround() && !thing->isGroundBorder() && !thing->isOnBottom())
+            break;
+        // delay drawing after NE/SW walking creature
+        if (thing->isNotWalkable()) {
+            skipped_non_walkable.push_back(thing);
+            continue;
+        }
+
+        drawThing(thing, dest, flags, drawElevation);
+    }
+
+    drawAttachedEffect(dest, dest, lightView, false);
+
+    if (hasCommonItem()) {
+        for (auto& item : std::ranges::reverse_view(m_things)) {
+            if (!item->isCommon()) continue;
+            drawThing(item, dest, flags, drawElevation);
+        }
+    }
+
+    // when walking diagonally over a tile that has a non-walkable object on it (for example - a tree) the creature should be drawn behind it
     if (hasWalkingCreature()) {
         g_drawPool.setDrawOrder(DrawOrder::THIRD);
         for (const auto& creature : m_walkingCreatures) {
             if (creature->getDirection() == Otc::Direction::NorthEast || creature->getDirection() == Otc::Direction::SouthWest) {
+                // if creature is stepping into this tile then draw it later
+                if (creature->getLastStepToPosition() == getPosition())
+                    continue;
+
                 const auto& cDest = Point(
                     dest.x + ((creature->getPosition().x - m_position.x) * g_gameConfig.getSpriteSize() - creature->getDrawElevation()) * g_drawPool.getScaleFactor(),
                     dest.y + ((creature->getPosition().y - m_position.y) * g_gameConfig.getSpriteSize() - creature->getDrawElevation()) * g_drawPool.getScaleFactor()
@@ -100,21 +125,8 @@ void Tile::draw(const MapPosInfo& mapRect, const Point& dest, const int flags, L
         g_drawPool.resetDrawOrder();
     }
 
-    for (const auto& thing : m_things) {
-        if (!thing->isGround() && !thing->isGroundBorder() && !thing->isOnBottom())
-            break;
-
+    for (const auto& thing : skipped_non_walkable) 
         drawThing(thing, dest, flags, drawElevation);
-    }
-
-    drawAttachedEffect(dest, dest, lightView, false);
-
-    if (hasCommonItem()) {
-        for (auto& item : std::ranges::reverse_view(m_things)) {
-            if (!item->isCommon()) continue;
-            drawThing(item, dest, flags, drawElevation);
-        }
-    }
 
     // after we render 2x2 lying corpses, we must redraw previous creatures/ontop above them
     if (m_tilesRedraw) {
@@ -155,26 +167,6 @@ void Tile::drawCreature(const MapPosInfo& mapRect, const Point& dest, const int 
     if (!forceDraw && !m_drawTopAndCreature)
         return;
 
-    g_drawPool.setDrawOrder(DrawOrder::THIRD);
-    for (const auto& creature : m_walkingCreatures) {
-        // already drawn by this point
-        if (creature->getDirection() == Otc::Direction::NorthEast || creature->getDirection() == Otc::Direction::SouthWest)
-            continue;
-
-        const auto& cDest = Point(
-            dest.x + ((creature->getPosition().x - m_position.x) * g_gameConfig.getSpriteSize() - creature->getDrawElevation()) * g_drawPool.getScaleFactor(),
-            dest.y + ((creature->getPosition().y - m_position.y) * g_gameConfig.getSpriteSize() - creature->getDrawElevation()) * g_drawPool.getScaleFactor()
-        );
-
-        if (flags == Otc::DrawLights)
-            creature->drawLight(cDest, lightView);
-        else {
-            creature->draw(cDest, flags & Otc::DrawThings);
-            creature->drawInformation(mapRect, cDest + creature->getDrawElevation() * g_drawPool.getScaleFactor(), flags);
-        }
-    }
-    g_drawPool.resetDrawOrder();
-
     bool localPlayerDrawed = false;
     if (hasCreatures()) {
         for (const auto& thing : m_things) {
@@ -189,6 +181,27 @@ void Tile::drawCreature(const MapPosInfo& mapRect, const Point& dest, const int 
             static_cast<Creature*>(thing.get())->drawInformation(mapRect, dest, flags);
         }
     }
+
+    g_drawPool.setDrawOrder(DrawOrder::THIRD);
+    for (const auto& creature : m_walkingCreatures) {
+        // already drawn by this point
+        if (creature->getDirection() == Otc::Direction::NorthEast || creature->getDirection() == Otc::Direction::SouthWest)
+            if (creature->getLastStepToPosition() != getPosition())
+                continue;
+
+        const auto& cDest = Point(
+            dest.x + ((creature->getPosition().x - m_position.x) * g_gameConfig.getSpriteSize() - creature->getDrawElevation()) * g_drawPool.getScaleFactor(),
+            dest.y + ((creature->getPosition().y - m_position.y) * g_gameConfig.getSpriteSize() - creature->getDrawElevation()) * g_drawPool.getScaleFactor()
+        );
+
+        if (flags == Otc::DrawLights)
+            creature->drawLight(cDest, lightView);
+        else {
+            creature->draw(cDest, flags & Otc::DrawThings);
+            creature->drawInformation(mapRect, cDest + creature->getDrawElevation() * g_drawPool.getScaleFactor(), flags);
+        }
+    }
+    g_drawPool.resetDrawOrder();
 
     // draw the local character if he is on a virtual tile, that is, his visual position is not the same as the server.
     if (!localPlayerDrawed && g_game.getLocalPlayer() && !g_game.getLocalPlayer()->isWalking() && g_game.getLocalPlayer()->getPosition() == m_position) {
