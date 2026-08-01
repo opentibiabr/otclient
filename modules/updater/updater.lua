@@ -80,7 +80,19 @@ local function updateFiles(data, keepCurrentFiles)
   if data.keepFiles then
     keepCurrentFiles = true
   end
-
+  
+  -- Restrict local scan to the same roots as the server.
+  -- Basically gets the root folder of each directory. E.g.: "/data/things" ---> "data"
+  local seen = {}
+  local scopeList = {}
+  for file in pairs(data.files) do
+      local root = file:match("^/?([^/]+)")
+      if root and not seen[root] then
+      seen[root] = true
+      table.insert(scopeList, root)
+      end
+  end
+  
   local newFiles = false
   local finalFiles = {}
   local localFiles = g_resources.filesChecksums()
