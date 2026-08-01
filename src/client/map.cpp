@@ -1101,7 +1101,7 @@ PathFindResult_ptr Map::newFindPath(const Position& start, const Position& goal,
                 if (it->second->unseen > 50)
                     continue;
 
-                const float diagonal = ((i == 0 || j == 0) ? 1.0f : 3.0f);
+                float diagonal = ((i == 0 || j == 0) ? 1.0f : g_gameConfig.getPlayerDiagonalWalkSpeed());
                 float cost = it->second->cost * diagonal;
                 cost += diagonal * (50.0f * std::max<float>(5.0f, it->second->pos.distance(goal))); // heuristic
                 if (node->totalCost + cost + 50 < it->second->totalCost) {
@@ -1444,7 +1444,7 @@ std::map<std::string, std::tuple<int, int, int, std::string>> Map::findEveryPath
                     continue;
                 }
 
-                float diagonal = ((i == 0 || j == 0) ? 1.0f : 3.0f);
+                float diagonal = ((i == 0 || j == 0) ? 1.0f : g_gameConfig.getPlayerDiagonalWalkSpeed());
                 float cost = it->second->cost * diagonal;
                 if (ignoreCost)
                     cost = 1;
