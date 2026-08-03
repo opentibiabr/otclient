@@ -169,7 +169,10 @@ function onNpcChatWindow(data)
     if type(data) ~= "table" or type(data.npcIds) ~= "table" or #data.npcIds == 0 then
         return
     end
-    local creature = g_map.getCreatureById(data.npcIds[1])
+    -- The server appends every greeting NPC to the list and builds the buttons from the
+    -- LAST id (the active conversation); npcIds[1] is the oldest, e.g. a bystander that
+    -- happened to be in talk range. Showing npcIds[1] paints the wrong name and outfit.
+    local creature = g_map.getCreatureById(data.npcIds[#data.npcIds])
     if creature then
         controllerNpcTrader:initNpcWindow(creature, data.buttons)
     end
