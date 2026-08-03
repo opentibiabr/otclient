@@ -1105,7 +1105,11 @@ function onLevelChange(localPlayer, value, percent)
     if not localPlayer then
         return
     end
-    percent = percent or localPlayer:getLevelPercent()
+    -- The C++ onLevelChange callback passes m_levelPercent raw, which is centipercent
+    -- (0-10000) once GameLevelPercentU16 is enabled (protocol >= 1520), not the 0-100 the
+    -- UI expects. getLevelPercent() normalizes it, so always use the getter: otherwise the
+    -- bar renders full and the tooltip reads "-5500 percent to go" at high levels.
+    percent = localPlayer:getLevelPercent()
     setSkillValue('level', comma_value(value))
     local text = tr('You have %s percent to go', 100 - percent)
     setSkillPercent('level', percent, text)
