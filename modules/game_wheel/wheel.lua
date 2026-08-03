@@ -317,8 +317,8 @@ function onResourceBalance()
   
   local bankMoney = player:getResourceBalance(ResourceTypes.BANK_BALANCE)
   local characterMoney = player:getResourceBalance(ResourceTypes.GOLD_EQUIPPED)
-  local lesserFragment = player:getResourceBalance(ResourceTypes.LESSER_FRAGMENTS)
-  local greaterFragment = player:getResourceBalance(ResourceTypes.GREATER_FRAGMENTS)
+  local lesserFragment = player:getResourceBalance(ResourceTypes.LESSER_FRAGMENT)
+  local greaterFragment = player:getResourceBalance(ResourceTypes.GREATER_FRAGMENT)
 
   local value = bankMoney + characterMoney
 
