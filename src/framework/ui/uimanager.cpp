@@ -450,18 +450,32 @@ bool UIManager::importStyle(const std::string& fl, const bool checkDeviceStyles)
 
     if (checkDeviceStyles) {
         // check for device styles
-        const auto fileName = fl.substr(0, fl.find("."));
-
         const auto deviceName = g_platform.getDeviceShortName();
         if (!deviceName.empty())
-            importStyle(deviceName + "." + fileName, false);
+            importStyle(getDeviceStyleName(fl, deviceName), false);
 
         const auto osName = g_platform.getOsShortName();
         if (!osName.empty())
-            importStyle(osName + "." + fileName, false);
+            importStyle(getDeviceStyleName(fl, osName), false);
     }
 
     return true;
+}
+
+std::string UIManager::getDeviceStyleName(const std::string_view stylePath, const std::string_view deviceName)
+{
+    // Device styles live next to the base style, so the directory part of the
+    // path must survive the rename: '/modules/example/foo' becomes
+    // '/modules/example/windows.foo', not 'windows./modules/example/foo'.
+    const auto slashPos = stylePath.rfind('/');
+    const auto dir = slashPos == std::string_view::npos ? std::string_view{} : stylePath.substr(0, slashPos + 1);
+    auto base = slashPos == std::string_view::npos ? stylePath : stylePath.substr(slashPos + 1);
+    base = base.substr(0, base.find('.'));
+
+    std::string result;
+    result.reserve(dir.size() + deviceName.size() + 1 + base.size());
+    result.append(dir).append(deviceName).append(".").append(base);
+    return result;
 }
 
 void UIManager::importStyleFromOTML(const OTMLNodePtr& styleNode)

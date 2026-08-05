@@ -46,6 +46,7 @@ public:
 
     void clearStyles();
     bool importStyle(const std::string& fl, bool checkDeviceStyles = true);
+    static std::string getDeviceStyleName(std::string_view stylePath, std::string_view deviceName);
     void importStyleFromOTML(const OTMLNodePtr& styleNode);
     void importStyleFromOTML(const OTMLDocumentPtr& doc);
     OTMLNodePtr getStyle(std::string_view sn);
