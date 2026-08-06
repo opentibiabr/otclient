@@ -470,7 +470,7 @@ std::string UIManager::getDeviceStyleName(const std::string_view stylePath, cons
     const auto slashPos = stylePath.rfind('/');
     const auto dir = slashPos == std::string_view::npos ? std::string_view{} : stylePath.substr(0, slashPos + 1);
     auto base = slashPos == std::string_view::npos ? stylePath : stylePath.substr(slashPos + 1);
-    base = base.substr(0, base.find('.'));
+    base = base.substr(0, base.rfind('.'));
 
     std::string result;
     result.reserve(dir.size() + deviceName.size() + 1 + base.size());

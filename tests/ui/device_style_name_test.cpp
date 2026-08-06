@@ -42,3 +42,9 @@ TEST(DeviceStyleName, IgnoresDotsInDirectoryNames)
     EXPECT_EQ("/mods/v1.2/windows.foo",
               UIManager::getDeviceStyleName("/mods/v1.2/foo.otui", "windows"));
 }
+
+TEST(DeviceStyleName, StripsOnlyFinalExtensionFromDottedBasename)
+{
+    EXPECT_EQ("styles/windows.foo.dark",
+              UIManager::getDeviceStyleName("styles/foo.dark.otui", "windows"));
+}
