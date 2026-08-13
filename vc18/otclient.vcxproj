@@ -71,6 +71,12 @@
     <EnableUnitySupport>true</EnableUnitySupport>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <PropertyGroup Label="VcpkgBootstrap">
+    <VcpkgRoot Condition="'$(VcpkgRoot)'=='' and '$(VCPKG_ROOT)'!=''">$(VCPKG_ROOT)</VcpkgRoot>
+    <VcpkgRoot Condition="'$(VcpkgRoot)'=='' and Exists('$(MSBuildThisFileDirectory)..\vcpkg\scripts\buildsystems\msbuild\vcpkg.props')">$(MSBuildThisFileDirectory)..\vcpkg</VcpkgRoot>
+    <VcpkgRoot Condition="'$(VcpkgRoot)'=='' and Exists('$(MSBuildThisFileDirectory)..\..\..\vcpkg\scripts\buildsystems\msbuild\vcpkg.props')">$(MSBuildThisFileDirectory)..\..\..\vcpkg</VcpkgRoot>
+  </PropertyGroup>
+  <Import Project="$(VcpkgRoot)\scripts\buildsystems\msbuild\vcpkg.props" Condition="'$(VcpkgPropsImported)'!='true' and '$(VcpkgRoot)'!='' and Exists('$(VcpkgRoot)\scripts\buildsystems\msbuild\vcpkg.props')" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <Import Project="settings.props" />
@@ -168,6 +174,8 @@
     <VcpkgTriplet>x64-windows-static</VcpkgTriplet>
     <VcpkgInstalledDir>$(MSBuildProjectDirectory)\..\vcpkg_installed\msbuild-x64-debug</VcpkgInstalledDir>
   </PropertyGroup>
+  <Import Project="$(MSBuildProjectDirectory)\.canary-shared-cache\SharedVcpkgCache.props"
+          Condition="'$(CanarySharedVcpkgDisable)'!='true' and Exists('$(MSBuildProjectDirectory)\.canary-shared-cache\SharedVcpkgCache.props')" />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <PreprocessorDefinitions>$(PREPROCESSOR_DEFS);_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -750,11 +758,11 @@
     <Message Text="RunProtoCompile value: $(RunProtoCompile)" Importance="high" />
   </Target>
   <PropertyGroup Condition="'$(RunProtoCompile)'=='true'">
-    <ProtocPath>$(VcpkgInstalledDir)\$(VcpkgTriplet)\tools\protobuf\protoc.exe</ProtocPath>
+    <ProtocPath>$(VcpkgInstalledDir)\$(VcpkgHostTriplet)\tools\protobuf\protoc.exe</ProtocPath>
     <ProtoPath>$(SourcePath)protobuf</ProtoPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(RunProtoCompile)'=='false'">
-    <ProtocPath>$(VcpkgInstalledDir)\$(VcpkgTriplet)\tools\protobuf\protoc.exe</ProtocPath>
+    <ProtocPath>$(VcpkgInstalledDir)\$(VcpkgHostTriplet)\tools\protobuf\protoc.exe</ProtocPath>
     <ProtoPath>$(SourcePath)protobuf</ProtoPath>
   </PropertyGroup>
   <ItemGroup>
@@ -776,5 +784,6 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(VcpkgRoot)\scripts\buildsystems\msbuild\vcpkg.targets" Condition="'$(_ZVcpkgRoot)'=='' and '$(VcpkgRoot)'!='' and Exists('$(VcpkgRoot)\scripts\buildsystems\msbuild\vcpkg.targets')" />
+    <Import Project="SharedVcpkgCache.targets" />
   </ImportGroup>
 </Project>
