@@ -19,6 +19,8 @@ Never junction, symlink, or otherwise share an entire `build` or `vcpkg_installe
 
 ## Windows setup
 
+The setup and Solution helpers require PowerShell 7.2 or newer. Invoke them with `pwsh`, not Windows PowerShell 5.1.
+
 From a worktree in each independent Git repository that should participate, run:
 
 ```powershell
@@ -257,7 +259,7 @@ CANARY_VCPKG_CONSUMER_FINGERPRINT:INTERNAL=<full-consumer-fingerprint>
 VCPKG_INSTALLED_DIR:PATH=<cache-root>/vcpkg-installed/v3/<dependency-fingerprint>
 ```
 
-Also confirm that `CMakeCache.txt` and `build.ninja` contain neither a legacy local installed path nor another global fingerprint. Complete a build against the refreshed preset before deleting the old local tree, then build again after deletion. The final invocation must not recreate the local installation.
+Also confirm that `CMakeCache.txt` and the generated native build files contain neither a legacy local installed path nor another global fingerprint. Inspect `build.ninja` for a Ninja preset; inspect the generated `.sln` and `.vcxproj` files for a Visual Studio preset. Complete a build against the refreshed preset before deleting the old local tree, then build again after deletion. The final invocation must not recreate the local installation.
 
 For a Solution migration, generate the `.props`, reload the project, build every migrated configuration successfully, and confirm a no-op rebuild. Only then remove that worktree's exact legacy `vcpkg_installed` directory and repeat the build. If multiple configurations used the same local installed directory, all of them must be migrated and validated before deletion.
 
@@ -267,7 +269,7 @@ Before pruning a fingerprint:
 
 1. Confirm no configure or build process is active.
 2. Run the audit from any registered repository.
-3. Inspect every reported `CMakeCache.txt`, generated Ninja file, and generated Solution contract.
+3. Inspect every reported `CMakeCache.txt` and generator-specific build file: `build.ninja` for Ninja, or the generated `.sln` and `.vcxproj` files for Visual Studio. Inspect every generated Solution cache contract as well.
 4. Preserve every installed root referenced by any registered CMake or MSBuild consumer.
 5. Remove only an unreferenced fingerprint and its matching transient and metadata entries.
 
