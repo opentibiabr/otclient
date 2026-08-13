@@ -332,3 +332,4 @@ android/app/.cxx/
 android/.gradle/
 android/build/
 luajit-src/
+CMakeUserPresets.json
