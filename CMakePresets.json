@@ -18,7 +18,7 @@
         },
         "CMAKE_COLOR_DIAGNOSTICS": "ON",
         "SPEED_UP_BUILD_UNITY": "ON",
-        "VCPKG_INSTALL_OPTIONS": "--binarysource=clear;--binarysource=files,$env{VCPKG_ROOT}/binary-cache,readwrite;--clean-packages-after-build;--clean-buildtrees-after-build"
+        "VCPKG_INSTALL_OPTIONS": "--clean-packages-after-build;--clean-buildtrees-after-build"
       }
     },
     {
@@ -108,7 +108,9 @@
       "binaryDir": "${sourceDir}/build/${presetName}",
       "cacheVariables": {
         "ASAN_ENABLED": "ON",
-        "TOGGLE_PRE_COMPILED_HEADER": "OFF"
+        "TOGGLE_PRE_COMPILED_HEADER": "OFF",
+        "CMAKE_C_COMPILER": null,
+        "CMAKE_CXX_COMPILER": null
       }
     },
     {

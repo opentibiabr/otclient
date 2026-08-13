@@ -333,4 +333,4 @@ android/.gradle/
 android/build/
 luajit-src/
 CMakeUserPresets.json
-vc18/.canary-shared-cache/
+**/.canary-shared-cache/

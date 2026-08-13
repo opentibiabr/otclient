@@ -1,3 +1,5 @@
+#Requires -Version 7.2
+
 [CmdletBinding(SupportsShouldProcess = $true)]
 param(
     [Parameter()]
@@ -1335,7 +1337,7 @@ $solutionTrees = foreach ($worktreeRoot in $worktreeRoots) {
     }
 
     $activePropertyGroups = @(
-        $solutionProps.Project.PropertyGroup |
+        $solutionProps.SelectNodes("/*[local-name()='Project']/*[local-name()='PropertyGroup']") |
             Where-Object { $_.CanarySharedVcpkgActive -eq "true" }
     )
     if ($activePropertyGroups.Count -eq 0) {

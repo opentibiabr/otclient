@@ -1,3 +1,5 @@
+#Requires -Version 7.2
+
 [CmdletBinding(SupportsShouldProcess = $true)]
 param(
     [ValidateNotNullOrEmpty()]
@@ -552,7 +554,7 @@ if ($AuditOnly) {
         throw "Generated Solution cache props are malformed: $OutputProps. Regenerate the file and reload the project. $($_.Exception.Message)"
     }
     $activePropertyGroups = @(
-        $existingProps.Project.PropertyGroup |
+        $existingProps.SelectNodes("/*[local-name()='Project']/*[local-name()='PropertyGroup']") |
             Where-Object { $_.CanarySharedVcpkgActive -eq "true" }
     )
     foreach ($expectedConfiguration in $configurations) {
