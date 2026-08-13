@@ -28,6 +28,8 @@
       "description": "Windows release build with Ninja and vcpkg",
       "cacheVariables": {
         "BUILD_STATIC_LIBRARY": "ON",
+        "CMAKE_C_COMPILER": "cl.exe",
+        "CMAKE_CXX_COMPILER": "cl.exe",
         "VCPKG_TARGET_TRIPLET": "x64-windows-static-release",
         "VCPKG_HOST_TRIPLET": "x64-windows",
         "VCPKG_OVERLAY_TRIPLETS": "${sourceDir}/cmake/triplets",
