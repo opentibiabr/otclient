@@ -162,7 +162,10 @@
   <PropertyGroup Label="Vcpkg">
     <VcpkgEnableManifest>true</VcpkgEnableManifest>
     <VcpkgAutoLink>true</VcpkgAutoLink>
-    <VcpkgAdditionalInstallOptions>--overlay-triplets="$(MSBuildProjectDirectory)\..\cmake\triplets" --binarysource=clear --binarysource=files,$(VcpkgRoot)\binary-cache,readwrite</VcpkgAdditionalInstallOptions>
+    <CanaryVcpkgFeatureFlags>versions</CanaryVcpkgFeatureFlags>
+    <CanaryVcpkgBuildType>release</CanaryVcpkgBuildType>
+    <CanaryVcpkgOverlayTriplets>$(MSBuildProjectDirectory)\..\cmake\triplets</CanaryVcpkgOverlayTriplets>
+    <CanaryVcpkgInstallOptions>--binarysource=clear;--binarysource=files,$(VcpkgRoot)/binary-cache,readwrite;--clean-packages-after-build;--clean-buildtrees-after-build</CanaryVcpkgInstallOptions>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <VcpkgHostTriplet>x64-windows</VcpkgHostTriplet>
