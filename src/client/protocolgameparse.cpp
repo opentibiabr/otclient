@@ -7141,8 +7141,24 @@ void ProtocolGame::parseClientEvent(const InputMessagePtr& msg)
             g_lua.callGlobalField("g_game", "onClientEvent", type, itemId, message);
             break;
         }
+        case Otc::CLIENT_EVENT_TYPE_BOUNTY_TASK: {
+            const auto taskId = msg->getU16();
+            g_lua.callGlobalField("g_game", "onClientEvent", type, taskId);
+            break;
+        }
+        case Otc::CLIENT_EVENT_TYPE_WEEKLY_TASK: {
+            const auto raceId = msg->getU16();
+            g_lua.callGlobalField("g_game", "onClientEvent", type, raceId);
+            break;
+        }
+        case Otc::CLIENT_EVENT_TYPE_SPELL_UNLOCKED: {
+            const auto spellId = msg->getU32();
+            g_lua.callGlobalField("g_game", "onClientEvent", type, spellId);
+            break;
+        }
         default:
-            throw stdext::exception("[ProtocolGame::parseClientEvent] Unknown event type {}", static_cast<uint8_t>(type));
+            g_logger.warning(std::format("[ProtocolGame::parseClientEvent] Unknown event type {}", static_cast<uint8_t>(type)));
+            break;
     }
 }
 
