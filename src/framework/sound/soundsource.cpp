@@ -34,7 +34,7 @@ SoundSource::SoundSource()
 
 SoundSource::~SoundSource()
 {
-    if (m_effectId != 0) {
+    if (m_effectSlot != 0) {
         removeEffect();
     }
     if (m_sourceId != 0) {
@@ -169,8 +169,11 @@ void SoundSource::update()
 
 void SoundSource::setEffect(const SoundEffectPtr soundEffect)
 {
-    m_effectId = soundEffect->m_effectId;
-    alSource3i(m_sourceId, AL_AUXILIARY_SEND_FILTER, static_cast<ALint>(soundEffect->m_effectId), 0, AL_FILTER_NULL);
+    if (!soundEffect || m_sourceId == 0)
+        return;
+
+    m_effectSlot = soundEffect->m_effectSlot;
+    alSource3i(m_sourceId, AL_AUXILIARY_SEND_FILTER, static_cast<ALint>(soundEffect->m_effectSlot), 0, AL_FILTER_NULL);
     const ALenum err = alGetError();
     if (err != AL_NO_ERROR) {
         g_logger.error("Failed to set effect on source: {}", alGetString(err));
@@ -179,12 +182,14 @@ void SoundSource::setEffect(const SoundEffectPtr soundEffect)
 
 void SoundSource::removeEffect()
 {
-    if (m_effectId != 0) {
-        m_effectId = 0;
-        alSource3i(m_sourceId, AL_AUXILIARY_SEND_FILTER, AL_EFFECTSLOT_NULL, 0, AL_FILTER_NULL);
-        const ALenum err = alGetError();
-        if (err != AL_NO_ERROR) {
-            g_logger.error("Failed to remove effect on source: {}", alGetString(err));
+    if (m_effectSlot != 0) {
+        m_effectSlot = 0;
+        if (m_sourceId != 0) {
+            alSource3i(m_sourceId, AL_AUXILIARY_SEND_FILTER, AL_EFFECTSLOT_NULL, 0, AL_FILTER_NULL);
+            const ALenum err = alGetError();
+            if (err != AL_NO_ERROR) {
+                g_logger.error("Failed to remove effect on source: {}", alGetString(err));
+            }
         }
     }
 }
