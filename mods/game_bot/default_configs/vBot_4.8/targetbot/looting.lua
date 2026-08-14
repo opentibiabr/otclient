@@ -318,6 +318,7 @@ onCreatureDisappear(function(creature)
   local pos = player:getPosition()
   local mpos = creature:getPosition()
   local name = creature:getName()
+  if not pos or not mpos then return end
   if pos.z ~= mpos.z or math.max(math.abs(pos.x-mpos.x), math.abs(pos.y-mpos.y)) > 6 then return end
   schedule(20, function() -- check in 20ms if there's container (dead body) on that tile
     if not containers[1] then return end
