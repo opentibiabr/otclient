@@ -913,25 +913,26 @@ onTextMessage(function(mode, text)
 
                 --drop tracker
                 for _, child in ipairs(dropTrackerWindow.contentsPanel:getChildren()) do
-              local childName = child.name
-              childName = childName and childName:getText()
+                  local childName = child.name
+                  childName = childName and childName:getText()
 
 
-              if childName and formattedLoot:find(childName) then
-                trackedLoot[tostring(child.item:getItemId())] = trackedLoot[tostring(child.item:getItemId())] + (amount or 1)
-                child.drops:setText("Loot Drops: "..trackedLoot[tostring(child.item:getItemId())])
+                  if childName and formattedLoot:find(childName) then
+                    trackedLoot[tostring(child.item:getItemId())] = trackedLoot[tostring(child.item:getItemId())] + (amount or 1)
+                    child.drops:setText("Loot Drops: "..trackedLoot[tostring(child.item:getItemId())])
 
-                hightlightText(child.name,"#f0b400", 8)
-                modules.game_textmessage.messagesPanel.statusLabel:setVisible(true)
-                modules.game_textmessage.messagesPanel.statusLabel:setColoredText({
-                  "Valuable loot: ", "#f0b400",
-                  childName.."", messageColor,
-                  " dropped by "..name.."!", "#f0b400"
-                })
-                schedule(3000, function()
-                  modules.game_textmessage.messagesPanel.statusLabel:setVisible(false)
-                end)
-              end
+                    hightlightText(child.name,"#f0b400", 8)
+                    modules.game_textmessage.messagesPanel.statusLabel:setVisible(true)
+                    modules.game_textmessage.messagesPanel.statusLabel:setColoredText({
+                      "Valuable loot: ", "#f0b400",
+                      childName.."", messageColor,
+                      " dropped by "..name.."!", "#f0b400"
+                    })
+                    schedule(3000, function()
+                      modules.game_textmessage.messagesPanel.statusLabel:setVisible(false)
+                    end)
+                  end
+                end
             end
         end
     end
