@@ -171,5 +171,9 @@ jobs:
 
             trigger_ci
             new_pr="${pr_url##*/}"
-            queue_auto_merge "${new_pr}"
+            if [[ "${new_pr}" =~ ^[0-9]+$ ]]; then
+              queue_auto_merge "${new_pr}"
+            else
+              echo "::warning::Created a baseline PR, but could not parse its number for auto-merge."
+            fi
           fi
