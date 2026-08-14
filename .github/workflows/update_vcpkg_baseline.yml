@@ -25,6 +25,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
+          fetch-depth: 0
           ref: main
 
       - name: Get latest vcpkg release
@@ -75,6 +76,34 @@ jobs:
             gh workflow run ci.yml --ref "${branch_name}"
           }
 
+          queue_auto_merge() {
+            local pr_number="$1"
+
+            if [[ -z "${pr_number}" ]]; then
+              echo "::error::Could not determine the baseline pull request number"
+              return 1
+            fi
+
+            if gh pr merge "${pr_number}" --auto --squash; then
+              echo "Queued native GitHub auto-merge for PR #${pr_number}"
+            else
+              echo "::warning::Could not queue auto-merge for PR #${pr_number}. Repository auto-merge may be disabled or branch protection may require a review."
+            fi
+          }
+
+          sync_update_branch() {
+            git fetch --prune origin main
+
+            if git ls-remote --exit-code --heads origin "${branch_name}" >/dev/null 2>&1; then
+              git fetch origin "${branch_name}"
+              git checkout -B "${branch_name}" "origin/${branch_name}"
+              git rebase origin/main
+              git push --force-with-lease origin "${branch_name}"
+            else
+              git checkout -B "${branch_name}" origin/main
+            fi
+          }
+
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
@@ -82,13 +111,13 @@ jobs:
 
           if [[ -n "${existing_pr}" ]]; then
             echo "Found existing baseline PR #${existing_pr}, updating it"
-            git fetch origin "${branch_name}"
-            git checkout "${branch_name}"
+            sync_update_branch
 
             current_in_branch="$(jq -r '."builtin-baseline"' vcpkg.json)"
             if [[ "${current_in_branch}" == "${NEW_BASELINE}" ]]; then
               echo "PR #${existing_pr} already has baseline ${NEW_BASELINE}"
               trigger_ci
+              queue_auto_merge "${existing_pr}"
               exit 0
             fi
 
@@ -100,7 +129,7 @@ jobs:
             else
               git add vcpkg.json
               git commit -m "chore: update vcpkg baseline to ${RELEASE_TAG}"
-              git push origin "${branch_name}"
+              git push --force-with-lease origin "${branch_name}"
             fi
 
             gh pr edit "${existing_pr}" --title "chore: Update vcpkg baseline to ${RELEASE_TAG}"
@@ -110,15 +139,11 @@ jobs:
 
             gh pr comment "${existing_pr}" --body "${comment_body}"
             trigger_ci
+            queue_auto_merge "${existing_pr}"
           else
             echo "No existing baseline PR found, creating new one"
 
-            if git ls-remote --heads origin "${branch_name}" | grep -q "${branch_name}"; then
-              git fetch origin "${branch_name}"
-              git checkout "${branch_name}"
-            else
-              git checkout -b "${branch_name}"
-            fi
+            sync_update_branch
 
             jq --arg baseline "${NEW_BASELINE}" '."builtin-baseline" = $baseline' vcpkg.json > vcpkg.json.tmp
             mv vcpkg.json.tmp vcpkg.json
@@ -141,4 +166,6 @@ jobs:
               --head "${branch_name}"
 
             trigger_ci
+            new_pr="$(gh pr list --state open --head "${branch_name}" --json number --jq '.[0].number')"
+            queue_auto_merge "${new_pr}"
           fi
