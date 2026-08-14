@@ -62,7 +62,9 @@ if (!$cache) { // update cache
             }
             if (!$cache) {
                 // Wait for the lock if cache still not available
-                flock($lock, LOCK_EX);
+                if (!flock($lock, LOCK_EX)) {
+                    sendError("Server error: could not acquire cache lock");
+                }
                 // Re-check cache after acquiring lock
                 if (file_exists($cache_file)) {
                     $cache = json_decode(file_get_contents($cache_file), true);
