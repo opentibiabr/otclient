@@ -635,7 +635,7 @@ function createThingMenu(menuPosition, lookThing, useThing, creatureThing)
                     g_game.inspectCharacter(lookThing:getId(), InspectCreaturesTypes.INSPECT_CREATURE)
                 elseif canInspect then
                     local pos = lookThing:getPosition()
-                    if pos and pos:isValid() then
+                    if pos and pos.x and pos.y and pos.z then
                         g_game.inspectionNormalObject(pos)
                     else
                         g_game.inspectionObject(InspectObjectTypes.INSPECT_CYCLOPEDIA, lookThing:getId())
