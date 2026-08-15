@@ -78,6 +78,10 @@
 
 void Application::registerLuaFunctions()
 {
+    // Lets corelib's connect() tell the engine that a handler may have appeared
+    // on a class table, which no metamethod can observe.
+    g_lua.bindGlobalFunction("invalidateEventCache", [] { LuaObject::invalidateEventCache(); });
+
     // conversion globals
     g_lua.bindGlobalFunction("torect", [](const std::string_view v) { return stdext::from_string<Rect>(v); });
     g_lua.bindGlobalFunction("topoint", [](const std::string_view v) { return stdext::from_string<Point>(v); });
