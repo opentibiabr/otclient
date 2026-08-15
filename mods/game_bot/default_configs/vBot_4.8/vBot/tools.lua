@@ -36,6 +36,8 @@ macro(1000, "Exchange money", function()
                 else
                   return g_game.useWith(converter, item)
                 end
+              elseif item:isMultiUse() then
+                return g_game.useWith(item, item)
               else
                 return g_game.use(item)
               end
