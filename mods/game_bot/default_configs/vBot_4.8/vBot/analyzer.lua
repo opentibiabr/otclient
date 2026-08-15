@@ -896,6 +896,13 @@ onTextMessage(function(mode, text)
 
     -- main part
     if re and #re > 0 then
+        local lastValid = 0
+        for j = 1, #re do
+            if re[j] and re[j][2] then
+                lastValid = j
+            end
+        end
+
         for i=1,#re do
             local data = re[i] and re[i][2] -- each looted item
             if data then
@@ -908,8 +915,8 @@ onTextMessage(function(mode, text)
 
                 combinedWorth = combinedWorth + price -- add all prices to calculate total worth
 
-                add(t, data, color, i==#re)
-                add(messageT, data, color, i==#re)
+                add(t, data, color, i == lastValid)
+                add(messageT, data, color, i == lastValid)
 
                 --drop tracker
                 for _, child in ipairs(dropTrackerWindow.contentsPanel:getChildren()) do
