@@ -112,6 +112,7 @@ jobs:
               - ".github/workflows/reusable-build-windows.yml"
               - ".github/workflows/reusable-checks.yml"
               - ".github/workflows/reusable-tests-lua.yml"
+              - ".github/workflows/update_vcpkg_baseline.yml"
             macos:
               - "src/**"
               - "cmake/**"
@@ -122,6 +123,7 @@ jobs:
               - "CMakePresets.json"
               - ".github/workflows/ci.yml"
               - ".github/workflows/reusable-build-macos.yml"
+              - ".github/workflows/update_vcpkg_baseline.yml"
             android:
               - "src/**"
               - "android/**"
@@ -134,6 +136,7 @@ jobs:
               - "setup_android_deps.sh"
               - ".github/workflows/ci.yml"
               - ".github/workflows/reusable-build-android-apk.yml"
+              - ".github/workflows/update_vcpkg_baseline.yml"
             docker:
               - "Dockerfile"
               - ".dockerignore"
@@ -147,6 +150,7 @@ jobs:
               - ".yamllint.yaml"
               - ".github/workflows/ci.yml"
               - ".github/workflows/reusable-build-docker.yml"
+              - ".github/workflows/update_vcpkg_baseline.yml"
             browser:
               - "Dockerfile.browser"
               - "Dockerfile.browser.sh"
@@ -160,6 +164,7 @@ jobs:
               - ".yamllint.yaml"
               - ".github/workflows/ci.yml"
               - ".github/workflows/reusable-build-browser.yml"
+              - ".github/workflows/update_vcpkg_baseline.yml"
 
   checks:
     name: Fast Checks

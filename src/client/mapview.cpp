@@ -310,9 +310,13 @@ void MapView::updateVisibleTiles()
         return;
 
     // clear current visible tiles cache
-    do {
-        m_floors[m_floorMin].cachedVisibleTiles.clear();
-    } while (++m_floorMin <= m_floorMax);
+    for (uint8_t z = m_floorMin; z <= m_floorMax; ++z)
+        m_floors[z].cachedVisibleTiles.clear();
+
+    // empty range, recomputed below. m_floorMin must never be used as the loop
+    // counter itself: when no tile is added and the camera does not move, nothing
+    // restores it and it walks past the end of m_floors.
+    m_floorMin = m_floorMax + 1;
 
     m_lockedFirstVisibleFloor = m_floorViewMode == Otc::LOCKED ? m_posInfo.camera.z : -1;
 

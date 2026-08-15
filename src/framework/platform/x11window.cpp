@@ -540,6 +540,11 @@ bool X11Window::internalSetupWindowInput()
     XSetLocaleModifiers("");
     m_xim = XOpenIM(m_display, nullptr, nullptr, nullptr);
     if (!m_xim) {
+        // Fallback to internal XIM if ibus/fcitx daemon is unavailable or incompatible
+        XSetLocaleModifiers("@im=none");
+        m_xim = XOpenIM(m_display, nullptr, nullptr, nullptr);
+    }
+    if (!m_xim) {
         g_logger.error("XOpenIM failed");
         return false;
     }
