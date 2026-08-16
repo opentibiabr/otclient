@@ -56,6 +56,7 @@ public:
 
     UIWidgetPtr loadUI(const std::string& file, const UIWidgetPtr& parent);
     UIWidgetPtr loadUIFromString(const std::string& data, const UIWidgetPtr& parent);
+    static std::string getDeviceUIName(std::string_view file, std::string_view deviceName);
     OTMLNodePtr loadDeviceUI(const std::string& file, OperatingSystem os);
     OTMLNodePtr loadDeviceUI(const std::string& file, DeviceType deviceType);
     UIWidgetPtr displayUI(const std::string& file) { return loadUI(file, m_rootWidget); }

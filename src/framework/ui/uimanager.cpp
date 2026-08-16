@@ -595,14 +595,31 @@ OTMLNodePtr UIManager::findMainWidgetNode(const OTMLDocumentPtr& doc)
     return mainNode;
 }
 
+std::string UIManager::getDeviceUIName(const std::string_view file, const std::string_view deviceName)
+{
+    // The device/OS suffix goes after the complete base name: only a final
+    // extension is dropped, and a dot elsewhere in the path is part of the
+    // name — '/modules/foo.v2/window' becomes '/modules/foo.v2/window.windows',
+    // never '/modules/foo.windows'.
+    const auto slashPos = file.rfind('/');
+    const auto dotPos = file.rfind('.');
+    const auto rawName = dotPos != std::string_view::npos && (slashPos == std::string_view::npos || dotPos > slashPos)
+        ? file.substr(0, dotPos)
+        : file;
+
+    std::string result;
+    result.reserve(rawName.size() + 1 + deviceName.size());
+    result.append(rawName).append(".").append(deviceName);
+    return result;
+}
+
 OTMLNodePtr UIManager::loadDeviceUI(const std::string& file, const OperatingSystem os)
 {
-    const auto rawName = file.substr(0, file.find("."));
     const auto osName = g_platform.getOsShortName(os);
 
-    const auto& doc = OTMLDocument::parse(g_resources.guessFilePath(rawName + "." + osName, "otui"));
+    const auto& doc = OTMLDocument::parse(g_resources.guessFilePath(getDeviceUIName(file, osName), "otui"));
     if (doc) {
-        g_logger.info("Found os style '{}' for '{}'", osName, rawName);
+        g_logger.info("Found os style '{}' for '{}'", osName, file);
         importStyleFromOTML(doc);
         return findMainWidgetNode(doc);
     }
@@ -611,12 +628,11 @@ OTMLNodePtr UIManager::loadDeviceUI(const std::string& file, const OperatingSyst
 
 OTMLNodePtr UIManager::loadDeviceUI(const std::string& file, const DeviceType deviceType)
 {
-    const auto rawName = file.substr(0, file.find("."));
     const auto deviceName = g_platform.getDeviceShortName(deviceType);
 
-    const auto& doc = OTMLDocument::parse(g_resources.guessFilePath(rawName + "." + deviceName, "otui"));
+    const auto& doc = OTMLDocument::parse(g_resources.guessFilePath(getDeviceUIName(file, deviceName), "otui"));
     if (doc) {
-        g_logger.info("Found device style '{}' for '{}'", deviceName, rawName);
+        g_logger.info("Found device style '{}' for '{}'", deviceName, file);
         importStyleFromOTML(doc);
         return findMainWidgetNode(doc);
     }
