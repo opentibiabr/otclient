@@ -46,6 +46,7 @@ public:
 
     void clearStyles();
     bool importStyle(const std::string& fl, bool checkDeviceStyles = true);
+    static std::string getDeviceStyleName(std::string_view stylePath, std::string_view deviceName);
     void importStyleFromOTML(const OTMLNodePtr& styleNode);
     void importStyleFromOTML(const OTMLDocumentPtr& doc);
     OTMLNodePtr getStyle(std::string_view sn);
@@ -55,6 +56,7 @@ public:
 
     UIWidgetPtr loadUI(const std::string& file, const UIWidgetPtr& parent);
     UIWidgetPtr loadUIFromString(const std::string& data, const UIWidgetPtr& parent);
+    static std::string getDeviceUIName(std::string_view file, std::string_view deviceName);
     OTMLNodePtr loadDeviceUI(const std::string& file, OperatingSystem os);
     OTMLNodePtr loadDeviceUI(const std::string& file, DeviceType deviceType);
     UIWidgetPtr displayUI(const std::string& file) { return loadUI(file, m_rootWidget); }
