@@ -182,8 +182,10 @@ MainWindow
 
   $on:
     image-border-bottom: 2
-  @onEnter: modules.client_options.hide()
-  @onEscape: modules.client_options.hide()
+  @onEnter: |
+    modules.client_options.saveOptions()
+    modules.client_options.hide()
+  @onEscape: modules.client_options.cancelOptions()
   $mobile:
     size: 500 380
 
@@ -193,7 +195,7 @@ MainWindow
     anchors.right: parent.right
     anchors.bottom: parent.bottom
     height: 2
-    margin-bottom: 15
+    margin-bottom: 25
 
   Label
     !text: tr('Options')
@@ -227,12 +229,62 @@ MainWindow
     margin-left: 10
     margin-bottom: 10
 
+  Panel
+    id: buttonShowAdvancedOptions
+    anchors.left: parent.left
+    anchors.bottom: parent.bottom
+    margin-left: 2
+    margin-bottom: -4
+    size: 165 20
+    border-width-top: 1
+    border-color-top: black
+    border-width-left: 1
+    border-color-left: black
+    border-width-bottom: 1
+    border-color-bottom: #747474
+    border-width-right: 1
+    border-color-right: #747474
+    padding: 1 1 1 1
+
+    CheckBox
+      id: checkBoxShowAdvancedOptions
+      anchors.left: parent.left
+      anchors.verticalCenter: parent.verticalCenter
+      margin-left: 3  
+      !text: tr('Show Advanced Options')
+      text-auto-resize: true
+      color: #c0c0c0
+      @onCheckChange: onShowAdvancedOptions(self, self:isChecked())
+
   QtButton
     !text: tr('Ok')
-    size: 64 20
-    anchors.right: parent.right
+    size: 42 20
+    color: #c0c0c0ff
+    anchors.right: next.left
     anchors.bottom: parent.bottom
-    margin-bottom: -8
+    margin-right: 8
+    margin-bottom: -4
     @onClick: |
       modules.client_options.saveOptions()
       modules.client_options.hide()
+  
+  QtButton
+    !text: tr('Apply')
+    size: 42 20
+    color: #c0c0c0ff
+    anchors.right: next.left
+    anchors.bottom: parent.bottom
+    margin-right: 8
+    margin-bottom: -4
+    @onClick: |
+      modules.client_options.saveOptions()
+
+  QtButton
+    !text: tr('Cancel')
+    size: 42 20
+    color: #c0c0c0ff
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    margin-bottom: -4
+    @onClick: |
+      modules.client_options.cancelOptions()

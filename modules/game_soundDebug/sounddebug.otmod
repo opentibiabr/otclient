@@ -1,0 +1,9 @@
+Module
+  name: game_soundDebug
+  description: Live visual debug tools for the sound system
+  author: OTClient team
+  sandboxed: true
+  scripts: [ sounddebug ]
+  dependencies: [ client_topmenu, game_interface ]
+  @onLoad: init()
+  @onUnload: terminate()

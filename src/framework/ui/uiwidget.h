@@ -305,6 +305,13 @@ struct UIWidgetStyle
     bool marginRightAuto{ false };
 };
 
+enum UISoundType : int
+{
+    UISoundTypeNone = 0,
+    UISoundTypeClick = 1,
+    UISoundTypeShow = 2
+};
+
 // @bindclass
 class UIWidget : public LuaObject
 {
@@ -444,6 +451,9 @@ public:
     void setAutoFocusPolicy(Fw::AutoFocusPolicy policy);
     void setAutoRepeatDelay(const int delay) { m_autoRepeatDelay = delay; }
     void setVirtualOffset(const Point& offset);
+    void setClickSound(int soundId);
+    void addSound(int soundType, int soundId);
+    void removeSound(int soundType);
     void setDisplay(DisplayType type);
     void setFloat(FloatType type) { m_floatType = type;  scheduleHtmlTask(PropApplyAnchorAlignment); }
     void setClear(ClearType type) { m_clearType = type;  scheduleHtmlTask(PropApplyAnchorAlignment); }
@@ -769,6 +779,7 @@ protected:
     bool m_isRootChild{ false }; // for stats
 
     DrawOrder m_textDrawOrder{ DrawOrder::FIRST };
+    std::unordered_map<int, int> m_uiSounds;
 
 public:
     void setX(const int x) { move(x, getY()); }
@@ -981,6 +992,7 @@ private:
     Rect m_textCachedScreenCoords;
     Size m_textSize;
     Size m_realTextSize;
+    void playUiSound(int soundType);
 
 protected:
     virtual void updateText();

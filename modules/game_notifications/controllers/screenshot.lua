@@ -58,6 +58,8 @@ function screenshot_onGameStart()
     if g_game.getClientVersion() < 1180 then
         return
     end
+
+    if optionPanel then return end
     optionPanel = g_ui.loadUI('/modules/game_notifications/templates/screenshot', modules.client_options:getPanel())
 
     if not optionPanel then

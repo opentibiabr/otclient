@@ -67,6 +67,8 @@ public:
     Otc::FloorViewMode getFloorViewMode();
     CreaturePtr getFollowingCreature();
     Position getCameraPosition();
+    Point getTilePoint(const Position& pos);
+    Rect getTileRect(const Position& pos);
     Position getPosition(const Point& mousePos);
     TilePtr getTile(const Point& mousePos);
     Size getVisibleDimension();

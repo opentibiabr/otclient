@@ -1,0 +1,739 @@
+SoundDebugWindow < MainWindow
+  id: soundDebugWindow
+  size: 960 620
+  !text: tr('Sound Debug')
+  @onClose: modules.game_soundDebug.onMiniWindowClose()
+  margin: 0
+  padding: 25 6 6 6
+  opacity: 0.96
+  $mobile:
+    size: 760 420
+  @onEnter: modules.game_soundDebug.toggle()
+  @onEscape: modules.game_soundDebug.toggle()
+
+SoundDebugSection < Panel
+  background-color: #0d141ddd
+  border-width: 1
+  border-color: #2d3c4c
+  padding: 6
+
+SoundDebugTitle < Label
+  height: 16
+  font: verdana-11px-rounded
+  color: #f5efc7
+  text-align: center
+  text-auto-resize: false
+  anchors.left: parent.left
+  anchors.right: parent.right
+  anchors.top: parent.top
+
+SoundDebugText < Label
+  height: 14
+  font: terminus-10px
+  color: #c9d4df
+  text-wrap: false
+  text-auto-resize: false
+
+SoundDebugMeter < Panel
+  size: 42 160
+  margin-right: 2
+  background-color: #111821
+  border-width: 1
+  border-color: #23303d
+  padding: 3
+
+  Label
+    id: caption
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: parent.top
+    height: 14
+    font: verdana-11px-rounded
+    color: #f2f4f8
+    text-align: center
+    text-auto-resize: false
+
+  Panel
+    id: meterBody
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: caption.bottom
+    margin-top: 3
+    height: 108
+    background-color: #04080d
+    border-width: 1
+    border-color: #1c2733
+
+    Panel
+      id: baseline
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
+      height: 0
+      background-color: #3f596f44
+
+    Panel
+      id: fill
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
+      height: 0
+      background-color: #80cbff
+
+    Panel
+      id: peak
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
+      margin-bottom: 0
+      height: 2
+      background-color: #fff7cb
+
+  Label
+    id: footer
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: meterBody.bottom
+    margin-top: 3
+    height: 14
+    font: terminus-10px
+    color: #f0f3f7
+    text-align: center
+    text-auto-resize: false
+
+  Label
+    id: meta
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: footer.bottom
+    height: 14
+    font: terminus-10px
+    color: #8b98a6
+    text-align: center
+    text-auto-resize: false
+
+  Panel
+    id: toolTipWidget
+    anchors.fill: parent
+    background-color: alpha
+    phantom: false
+
+SoundDebugSourceRow < Panel
+  height: 34
+  margin-bottom: 2
+  background-color: #0f1620
+  border-width: 1
+  border-color: #243140
+
+  Panel
+    id: badge
+    anchors.left: parent.left
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    width: 62
+    background-color: #2d3e52
+
+    Label
+      id: badgeText
+      anchors.centerIn: parent
+      height: 14
+      font: verdana-11px-rounded
+      color: #f6f8fb
+      text-align: center
+      text-auto-resize: true
+
+  Label
+    id: title
+    anchors.left: badge.right
+    anchors.right: parent.right
+    anchors.top: parent.top
+    margin-left: 6
+    margin-right: 16
+    margin-top: 3
+    height: 14
+    font: verdana-11px-rounded
+    color: #f0f2f5
+    text-wrap: false
+    text-auto-resize: false
+
+  Label
+    id: meta
+    anchors.left: badge.right
+    anchors.right: parent.right
+    anchors.top: title.bottom
+    margin-left: 6
+    margin-right: 16
+    height: 14
+    font: terminus-10px
+    color: #92a2b2
+    text-wrap: false
+    text-auto-resize: false
+
+  Panel
+    id: levelTrack
+    anchors.right: parent.right
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    width: 10
+    background-color: #05090d
+
+    Panel
+      id: levelFill
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
+      height: 0
+      background-color: #80cbff
+
+SoundDebugItemCard < Panel
+  size: 92 102
+  margin-right: 4
+  background-color: #111821
+  border-width: 1
+  border-color: #253341
+  padding: 4
+
+  UIItem
+    id: item
+    size: 38 38
+    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.top: parent.top
+    item-visible: true
+
+  Label
+    id: title
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: item.bottom
+    margin-top: 4
+    height: 14
+    font: terminus-10px
+    color: #f0f2f4
+    text-align: center
+    text-wrap: false
+    text-auto-resize: false
+
+  Label
+    id: meta
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: title.bottom
+    height: 14
+    font: terminus-10px
+    color: #d9c47c
+    text-align: center
+    text-wrap: false
+    text-auto-resize: false
+
+  Label
+    id: effect
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: meta.bottom
+    height: 14
+    font: terminus-10px
+    color: #8d9aa8
+    text-align: center
+    text-wrap: false
+    text-auto-resize: false
+
+SoundDebugEventRow < Panel
+  height: 38
+  margin-bottom: 2
+  background-color: #0f1620
+  border-width: 1
+  border-color: #243140
+
+  Panel
+    id: badge
+    anchors.left: parent.left
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    width: 46
+    background-color: #39526d
+
+    Label
+      id: badgeText
+      anchors.centerIn: parent
+      height: 14
+      font: verdana-11px-rounded
+      color: #f6f8fb
+      text-align: center
+      text-auto-resize: true
+
+  Label
+    id: title
+    anchors.left: badge.right
+    anchors.right: parent.right
+    anchors.top: parent.top
+    margin-left: 6
+    margin-right: 6
+    margin-top: 4
+    height: 14
+    font: verdana-11px-rounded
+    color: #f0f2f5
+    text-wrap: false
+    text-auto-resize: false
+
+  Label
+    id: meta
+    anchors.left: badge.right
+    anchors.right: parent.right
+    anchors.top: title.bottom
+    margin-left: 6
+    margin-right: 6
+    height: 14
+    font: terminus-10px
+    color: #92a2b2
+    text-wrap: false
+    text-auto-resize: false
+
+SoundDebugOverlay < Panel
+  anchors.fill: parent
+  background-color: alpha
+  phantom: true
+  focusable: false
+  visible: false
+
+SoundDebugMarker < Panel
+  size: 24 24
+  background-color: alpha
+  phantom: true
+  focusable: false
+  visible: false
+
+  Panel
+    id: ring
+    anchors.fill: parent
+    background-color: #67dfff1f
+    border-width: 2
+    border-color: #67dfff
+    phantom: true
+
+  Panel
+    id: core
+    size: 6 6
+    anchors.centerIn: parent
+    background-color: #f3fbff
+    phantom: true
+
+  Label
+    id: tag
+    anchors.centerIn: parent
+    height: 14
+    font: terminus-10px
+    color: #03131d
+    text-align: center
+    text-auto-resize: true
+    phantom: true
+
+SoundDebugFieldTile < UIWidget
+  image-source: /images/ui/outfits/floor
+  size: 32 32
+  anchors.left: parent.left
+  anchors.top: parent.top
+  phantom: true
+  focusable: false
+  visible: false
+
+SoundDebugFieldItemMarker < Panel
+  size: 40 52
+  anchors.left: parent.left
+  anchors.top: parent.top
+  background-color: #111821ee
+  border-width: 1
+  border-color: #d4ba6c
+  padding: 3
+  visible: false
+
+  UIItem
+    id: item
+    size: 30 30
+    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.top: parent.top
+    item-visible: true
+
+  Label
+    id: count
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: item.bottom
+    height: 12
+    font: terminus-10px
+    color: #fff1c7
+    text-align: center
+    text-wrap: false
+    text-auto-resize: false
+
+  Label
+    id: meta
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: count.bottom
+    height: 12
+    font: terminus-10px
+    color: #98a9b9
+    text-align: center
+    text-wrap: false
+    text-auto-resize: false
+
+SoundDebugFieldEventBurst < Panel
+  size: 30 30
+  anchors.left: parent.left
+  anchors.top: parent.top
+  background-color: #67dfff24
+  border-width: 2
+  border-color: #67dfff
+  visible: false
+
+  UIItem
+    id: item
+    size: 22 22
+    anchors.centerIn: parent
+    item-visible: false
+    visible: false
+
+  UICreature
+    id: creature
+    size: 30 30
+    anchors.centerIn: parent
+    phantom: true
+    focusable: false
+    visible: false
+
+  Panel
+    id: core
+    size: 6 6
+    anchors.centerIn: parent
+    background-color: #effcff
+    phantom: true
+
+  Label
+    id: tag
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    margin-right: 1
+    margin-bottom: -1
+    height: 12
+    font: verdana-11px-rounded
+    color: #04131d
+    text-align: center
+    text-auto-resize: true
+    phantom: true
+
+SoundDebugWindow
+  Label
+    id: headerLabel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: parent.top
+    height: 16
+    font: verdana-11px-rounded
+    color: #faf2ca
+    text-align: center
+    text-auto-resize: false
+    text: "Sound debug is idle."
+
+  SoundDebugSection
+    id: metersSection
+    anchors.left: parent.left
+    anchors.top: headerLabel.bottom
+    anchors.right: parent.right
+    height: 224
+    margin-top: 6
+    margin-right: 350
+
+    SoundDebugTitle
+      text: "Sound Bars"
+
+    SoundDebugText
+      id: mixSummaryLabel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 4
+      text: "Waiting for active sources."
+
+    Panel
+      id: metersPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: mixSummaryLabel.bottom
+      anchors.bottom: parent.bottom
+      margin-top: 6
+      layout: horizontalBox
+
+  SoundDebugSection
+    id: spatialSection
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: metersSection.bottom
+    anchors.bottom: parent.bottom
+    margin-top: 6
+    margin-right: 350
+
+    SoundDebugTitle
+      text: "Sound Field"
+
+    SoundDebugText
+      id: spatialSummaryLabel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 4
+      text: "Map and radar markers follow positional audio."
+
+    Panel
+      id: soundField
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: spatialSummaryLabel.bottom
+      anchors.bottom: parent.bottom
+      margin-top: 8
+      background-color: #050b12
+      border-width: 1
+      border-color: #233241
+      padding: 6
+
+      Panel
+        anchors.fill: parent
+        background-color: #071018
+        border-width: 1
+        border-color: #141f2b
+        phantom: true
+
+      Panel
+        id: soundFieldStage
+        anchors.fill: parent
+        margin: 14
+        background-color: #09131d
+        border-width: 1
+        border-color: #2b4052
+        padding: 10
+
+        Label
+          anchors.horizontalCenter: parent.horizontalCenter
+          anchors.top: parent.top
+          margin-top: 4
+          height: 14
+          font: terminus-10px
+          color: #8fa3b8
+          text: "N"
+          phantom: true
+
+        Label
+          anchors.horizontalCenter: parent.horizontalCenter
+          anchors.bottom: parent.bottom
+          margin-bottom: 4
+          height: 14
+          font: terminus-10px
+          color: #8fa3b8
+          text: "S"
+          phantom: true
+
+        Label
+          anchors.left: parent.left
+          anchors.verticalCenter: parent.verticalCenter
+          margin-left: 6
+          height: 14
+          font: terminus-10px
+          color: #8fa3b8
+          text: "W"
+          phantom: true
+
+        Label
+          anchors.right: parent.right
+          anchors.verticalCenter: parent.verticalCenter
+          margin-right: 6
+          height: 14
+          font: terminus-10px
+          color: #8fa3b8
+          text: "E"
+          phantom: true
+
+        Label
+          anchors.left: parent.left
+          anchors.top: parent.top
+          margin-left: 8
+          margin-top: 6
+          height: 14
+          font: terminus-10px
+          color: #63778b
+          text: "preview"
+          phantom: true
+
+        Label
+          anchors.left: parent.left
+          anchors.verticalCenter: parent.verticalCenter
+          margin-left: 8
+          height: 14
+          font: terminus-10px
+          color: #63778b
+          text: "+/-5"
+          phantom: true
+
+        Panel
+          id: soundFieldGrid
+          anchors.centerIn: parent
+          size: 308 308
+          background-color: alpha
+          border-width: 1
+          border-color: #214054
+          clipping: true
+
+          Panel
+            id: soundFieldFloorLayer
+            anchors.fill: parent
+            background-color: alpha
+            phantom: true
+
+          Panel
+            id: soundFieldPulseLayer
+            anchors.fill: parent
+            background-color: alpha
+            phantom: true
+
+            Panel
+              id: listenerPulse
+              size: 18 18
+              anchors.centerIn: parent
+              background-color: #f3d67c14
+              border-width: 1
+              border-color: #f3d67c
+              phantom: true
+
+            Panel
+              id: listenerCore
+              size: 8 8
+              anchors.centerIn: parent
+              background-color: #f8e6a2
+              border-width: 1
+              border-color: #fff6d8
+              phantom: true
+
+            UICreature
+              id: fieldPlayer
+              size: 64 64
+              anchors.centerIn: parent
+              phantom: true
+              focusable: false
+
+          Panel
+            id: soundFieldMarkerLayer
+            anchors.fill: parent
+            background-color: alpha
+            phantom: true
+
+  SoundDebugSection
+    id: sourcesSection
+    anchors.top: headerLabel.bottom
+    anchors.right: parent.right
+    width: 344
+    height: 260
+    margin-top: 6
+
+    SoundDebugTitle
+      text: "Active Sources"
+
+    SoundDebugText
+      id: sourceSummaryLabel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 4
+      text: "No sources."
+
+    ScrollablePanel
+      id: sourceList
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: sourceSummaryLabel.bottom
+      anchors.bottom: parent.bottom
+      margin-top: 6
+      margin-right: 14
+      layout: verticalBox
+      vertical-scrollbar: sourceScroll
+
+    VerticalScrollBar
+      id: sourceScroll
+      anchors.top: sourceList.top
+      anchors.bottom: sourceList.bottom
+      anchors.right: parent.right
+      step: 24
+      pixels-scroll: true
+
+  SoundDebugSection
+    id: itemsSection
+    anchors.top: sourcesSection.bottom
+    anchors.right: parent.right
+    width: 344
+    height: 134
+    margin-top: 6
+
+    SoundDebugTitle
+      text: "Ambient Items"
+
+    SoundDebugText
+      id: itemSummaryLabel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 4
+      text: "No ambient items active."
+
+    Panel
+      id: itemsPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: itemSummaryLabel.bottom
+      anchors.bottom: parent.bottom
+      margin-top: 6
+      layout: horizontalBox
+
+  SoundDebugSection
+    id: eventsSection
+    anchors.top: itemsSection.bottom
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    width: 344
+    margin-top: 6
+
+    SoundDebugTitle
+      text: "Recent Positional Events"
+
+    SoundDebugText
+      id: eventSummaryLabel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 4
+      text: "No positional sound events yet."
+
+    ScrollablePanel
+      id: eventList
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: eventSummaryLabel.bottom
+      anchors.bottom: parent.bottom
+      margin-top: 6
+      margin-right: 14
+      layout: verticalBox
+      vertical-scrollbar: eventScroll
+
+    VerticalScrollBar
+      id: eventScroll
+      anchors.top: eventList.top
+      anchors.bottom: eventList.bottom
+      anchors.right: parent.right
+      step: 24
+      pixels-scroll: true
+
+  ResizeBorder
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+
+  ResizeBorder
+    anchors.right: parent.right
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom

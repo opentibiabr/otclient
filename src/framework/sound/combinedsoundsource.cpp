@@ -22,7 +22,7 @@
 
 #include "combinedsoundsource.h"
 
-CombinedSoundSource::CombinedSoundSource() : SoundSource(0) {}
+CombinedSoundSource::CombinedSoundSource() : SoundSource(0) { m_sourceKind = KindCombined; }
 
 void CombinedSoundSource::addSource(const SoundSourcePtr& source)
 {
@@ -61,12 +61,14 @@ bool CombinedSoundSource::isPlaying()
 
 void CombinedSoundSource::setLooping(const bool looping)
 {
+    m_looping = looping;
     for (const auto& source : m_sources)
         source->setLooping(looping);
 }
 
 void CombinedSoundSource::setRelative(const bool relative)
 {
+    m_relative = relative;
     for (const auto& source : m_sources)
         source->setRelative(relative);
 }
@@ -79,24 +81,28 @@ void CombinedSoundSource::setReferenceDistance(const float distance)
 
 void CombinedSoundSource::setGain(const float gain)
 {
+    m_gain = gain;
     for (const auto& source : m_sources)
         source->setGain(gain);
 }
 
 void CombinedSoundSource::setPitch(const float pitch)
 {
+    m_pitch = pitch;
     for (const auto& source : m_sources)
         source->setPitch(pitch);
 }
 
 void CombinedSoundSource::setPosition(const Point& pos)
 {
+    m_position = pos;
     for (const auto& source : m_sources)
         source->setPosition(pos);
 }
 
 void CombinedSoundSource::setVelocity(const Point& velocity)
 {
+    m_velocity = velocity;
     for (const auto& source : m_sources)
         source->setVelocity(velocity);
 }
