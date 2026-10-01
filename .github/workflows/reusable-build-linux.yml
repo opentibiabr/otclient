@@ -69,6 +69,9 @@ jobs:
           sudo ln -sf /usr/bin/ninja /usr/bin/ninja-build
           ninja --version
 
+      - name: Install CMake and Ninja
+        uses: lukka/get-cmake@v4.4.2
+
       - name: CCache
         uses: hendrikmuhs/ccache-action@v1.2.23
         with:
