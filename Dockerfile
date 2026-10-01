@@ -60,6 +60,8 @@ RUN vcpkgCommitId="$(jq -r '."builtin-baseline"' vcpkg.json)" \
 
 WORKDIR /opt/vcpkg_manifest
 COPY vcpkg.json /opt/vcpkg_manifest/
+COPY vcpkg-configuration.json /opt/vcpkg_manifest/
+COPY overlay-ports /opt/vcpkg_manifest/overlay-ports/
 
 RUN --mount=type=secret,id=github_token,required=false \
 	--mount=type=cache,target=/opt/vcpkg/downloads \
