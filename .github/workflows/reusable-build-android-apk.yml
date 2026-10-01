@@ -197,6 +197,7 @@ jobs:
         env:
           ANDROID_HOME: ${{ env.ANDROID_HOME }}
           ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_HOME }}
+          OTCLIENT_ANDROID_ABIS: ${{ env.CI_ANDROID_ABIS }}
           VCPKG_ROOT: ${{ env.VCPKG_ROOT }}
         run: ./gradlew :app:assembleRelease --no-daemon --stacktrace --info
 
