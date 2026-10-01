@@ -142,6 +142,15 @@ void Client::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_spriteAppearances", "saveSpriteToFile", &SpriteAppearances::saveSpriteToFile, &g_spriteAppearances);
     g_lua.bindSingletonFunction("g_spriteAppearances", "saveSheetToFileBySprite", &SpriteAppearances::saveSheetToFileBySprite, &g_spriteAppearances);
 
+    g_lua.bindGlobalFunction("setDrawViewportEdge", [](const bool force) {
+        if (const auto& mapWidget = g_client.getMapWidget())
+            mapWidget->setDrawViewportEdge(force);
+    });
+    g_lua.bindGlobalFunction("isDrawingViewportEdge", [] {
+        const auto& mapWidget = g_client.getMapWidget();
+        return mapWidget && mapWidget->isDrawingViewportEdge();
+    });
+
     g_lua.registerSingletonClass("g_map");
     g_lua.bindSingletonFunction("g_map", "isLookPossible", &Map::isLookPossible, &g_map);
     g_lua.bindSingletonFunction("g_map", "addThing", &Map::addThing, &g_map);

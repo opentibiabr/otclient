@@ -130,6 +130,8 @@ void UIMap::setMinimumAmbientLight(const float intensity) { m_mapView->setMinimu
 
 void UIMap::setDrawViewportEdge(const bool force) { m_mapView->m_forceDrawViewportEdge = force; m_mapView->m_visibleDimension = {}; updateVisibleDimension(); }
 
+bool UIMap::isDrawingViewportEdge() { return m_mapView->isDrawingViewportEdge(); }
+
 bool UIMap::isDrawingNames() { return m_mapView->isDrawingNames(); }
 
 bool UIMap::isDrawingHealthBars() { return m_mapView->isDrawingHealthBars(); }

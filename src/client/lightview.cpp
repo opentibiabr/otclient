@@ -28,9 +28,13 @@
 #include "framework/graphics/painter.h"
 
 LightView::LightView(const Size& size) : m_pool(g_drawPool.get(DrawPoolType::LIGHT)) {
-    g_mainDispatcher.addEvent([this, size] {
-        m_texture = std::make_shared<Texture>(size);
+    m_mapSize = size;
+
+    g_mainDispatcher.addEvent([this] {
+        m_texture = std::make_shared<Texture>(m_mapSize);
         m_texture->setSmooth(true);
+        if (m_texture->getSize() != m_mapSize)
+            m_texture->setupSize(m_mapSize);
     });
 }
 
@@ -38,7 +42,7 @@ bool LightView::isEnabled() const { return m_pool->isEnabled(); }
 void LightView::setEnabled(const bool v) { m_pool->setEnable(v); }
 
 void LightView::resize(const Size& size, const uint16_t tileSize) {
-    if (!m_texture || (m_mapSize == size && m_tileSize == tileSize))
+    if (m_mapSize == size && m_tileSize == tileSize)
         return;
 
     m_mapSize = size;
@@ -89,8 +93,6 @@ void LightView::resetShade(const Point& pos)
 
 void LightView::draw(const Rect& dest, const Rect& src)
 {
-    static std::atomic_bool updatePixel;
-
     m_pool->getHashController().put(src.hash());
     m_pool->getHashController().put(m_globalLightColor.hash());
     if (m_pool->getHashController().wasModified()) {
@@ -98,15 +100,15 @@ void LightView::draw(const Rect& dest, const Rect& src)
 
         SpinLock::Guard guard(m_pool->getThreadLock());
         m_pixels[0].swap(m_pixels[1]);
-        updatePixel.store(true, std::memory_order_relaxed);
+        m_updatePixel.store(true, std::memory_order_relaxed);
     }
     m_pool->getHashController().reset();
 
     g_drawPool.addAction([=, this] {
-        if (updatePixel.load(std::memory_order_relaxed)) {
+        if (m_updatePixel.load(std::memory_order_relaxed)) {
             SpinLock::Guard guard(m_pool->getThreadLock());
             m_texture->updatePixels(m_pixels[1].data());
-            updatePixel.store(false, std::memory_order_relaxed);
+            m_updatePixel.store(false, std::memory_order_relaxed);
         }
 
         updateCoords(dest, src);

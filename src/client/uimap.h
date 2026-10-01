@@ -52,6 +52,7 @@ public:
     void setShader(std::string_view name, float fadein, float fadeout);
     void setMinimumAmbientLight(float intensity);
     void setDrawViewportEdge(bool force);
+    bool isDrawingViewportEdge();
     bool isDrawingNames();
     bool isDrawingHealthBars();
     bool isDrawingLights();

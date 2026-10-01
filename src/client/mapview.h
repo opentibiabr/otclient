@@ -73,6 +73,7 @@ public:
 
     void setDrawNames(const bool enable) { m_drawNames = enable; }
     bool isDrawingNames() const { return m_drawNames; }
+    bool isDrawingViewportEdge() const { return m_drawViewportEdge; }
 
     void setDrawHealthBars(const bool enable) { m_drawHealthBars = enable; }
     bool isDrawingHealthBars() const { return m_drawHealthBars; }
