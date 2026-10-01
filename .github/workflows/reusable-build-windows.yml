@@ -190,7 +190,12 @@ jobs:
           if (-not (Test-Path -LiteralPath $patchPath)) {
             $downloadUrls = @($url)
             if ($url -like "https://downloads.sourceforge.net/project/*") {
-              $downloadUrls += $url -replace '^https://downloads\.sourceforge\.net/', 'https://master.dl.sourceforge.net/'
+              $sourceforgePath = $url -replace '^https://downloads\.sourceforge\.net/', ''
+              $downloadUrls += @(
+                "https://netix.dl.sourceforge.net/$sourceforgePath"
+                "https://versaweb.dl.sourceforge.net/$sourceforgePath"
+                "https://master.dl.sourceforge.net/$sourceforgePath"
+              )
             }
             foreach ($downloadUrl in $downloadUrls) {
               & curl.exe --fail --location --retry 5 --retry-all-errors --retry-delay 5 --retry-max-time 120 --output $patchPath $downloadUrl

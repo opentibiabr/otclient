@@ -130,7 +130,12 @@ jobs:
           if [[ ! -f "$patch_path" ]]; then
             download_urls=("$url")
             if [[ "$url" == https://downloads.sourceforge.net/project/* ]]; then
-              download_urls+=("${url/https:\/\/downloads.sourceforge.net\//https:\/\/master.dl.sourceforge.net/}")
+              sourceforge_path="${url#https://downloads.sourceforge.net/}"
+              download_urls+=(
+                "https://netix.dl.sourceforge.net/$sourceforge_path"
+                "https://versaweb.dl.sourceforge.net/$sourceforge_path"
+                "https://master.dl.sourceforge.net/$sourceforge_path"
+              )
             fi
             for download_url in "${download_urls[@]}"; do
               if curl --fail --location --retry 5 --retry-all-errors --retry-delay 5 --retry-max-time 120 --output "$patch_path" "$download_url" &&
