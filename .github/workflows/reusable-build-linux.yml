@@ -86,6 +86,58 @@ jobs:
           vcpkgGitURL: "https://github.com/microsoft/vcpkg.git"
           vcpkgGitCommitId: ${{ env.VCPKG_GIT_COMMIT_ID }}
 
+      - name: Prefetch libpng APNG patch
+        shell: bash
+        env:
+          VCPKG_DOWNLOADS: ${{ github.workspace }}/vcpkg-downloads
+        run: |
+          set -euo pipefail
+          metadata="$(python3 - "$VCPKG_ROOT/ports/libpng/portfile.cmake" <<'PY'
+          import pathlib
+          import re
+          import sys
+
+          portfile = pathlib.Path(sys.argv[1]).read_text()
+          patch = re.search(
+              r"vcpkg_download_distfile\(LIBPNG_APNG_PATCH_ARCHIVE(?P<args>.*?)\)",
+              portfile,
+              re.DOTALL,
+          )
+          if not patch:
+              raise SystemExit("Could not find the libpng APNG patch download metadata")
+
+          args = patch.group("args")
+          fields = (
+              re.search(r'URLS\s+"([^"]+)"', args),
+              re.search(r'FILENAME\s+"([^"]+)"', args),
+              re.search(r"SHA512\s+([0-9a-fA-F]{128})", args),
+          )
+          if not all(fields):
+              raise SystemExit("Could not parse the libpng APNG patch download metadata")
+          print("\n".join(field.group(1) for field in fields))
+          PY
+          )"
+          mapfile -t patch_metadata <<< "$metadata"
+          url="${patch_metadata[0]}"
+          filename="${patch_metadata[1]}"
+          expected_hash="${patch_metadata[2],,}"
+
+          mkdir -p "$VCPKG_DOWNLOADS"
+          patch_path="$VCPKG_DOWNLOADS/$filename"
+          if [[ -f "$patch_path" ]] && [[ "$(sha512sum "$patch_path" | awk '{print $1}')" != "$expected_hash" ]]; then
+            rm -f "$patch_path"
+          fi
+          if [[ ! -f "$patch_path" ]]; then
+            curl --fail --location --retry 5 --retry-all-errors --retry-delay 5 --retry-max-time 120 --output "$patch_path" "$url"
+          fi
+
+          actual_hash="$(sha512sum "$patch_path" | awk '{print $1}')"
+          if [[ "$actual_hash" != "$expected_hash" ]]; then
+            rm -f "$patch_path"
+            echo "The libpng APNG patch SHA-512 does not match vcpkg metadata." >&2
+            exit 1
+          fi
+
       - name: Setup NuGet for vcpkg
         env:
           NUGET_AUTH_TOKEN: ${{ env.VCPKG_NUGET_API_KEY }}
@@ -110,6 +162,8 @@ jobs:
 
       - name: Run CMake
         uses: lukka/run-cmake@v10
+        env:
+          VCPKG_DOWNLOADS: ${{ github.workspace }}/vcpkg-downloads
         with:
           configurePreset: ${{ matrix.buildtype }}
           buildPreset: ${{ matrix.buildtype }}
