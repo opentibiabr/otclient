@@ -46,8 +46,14 @@ jobs:
             android/**/*.gradle.kts
             android/gradle/wrapper/gradle-wrapper.properties
 
+      # setup-android@v3 installs "tools platform-tools" by default.
+      # The legacy "tools" package no longer exists in the SDK repository,
+      # which makes sdkmanager exit 1 ("Failed to find package 'tools'").
+      # Only install platform-tools here; the rest is installed explicitly below.
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
 
       - name: Install host build packages
         run: |
@@ -76,7 +82,6 @@ jobs:
           fi
 
           sdkmanager --sdk_root="$sdk_root" --install \
-            "platform-tools" \
             "platforms;android-${COMPILE_SDK}" \
             "build-tools;${BUILD_TOOLS_VERSION}" \
             "ndk;${NDK_VERSION}" \
