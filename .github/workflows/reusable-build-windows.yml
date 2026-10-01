@@ -161,63 +161,9 @@ jobs:
           vcpkgGitURL: "https://github.com/microsoft/vcpkg.git"
           vcpkgGitCommitId: ${{ env.VCPKG_GIT_COMMIT_ID }}
 
-      - name: Prefetch libpng APNG patch
-        if: matrix.type == 'CMake'
-        shell: pwsh
-        env:
-          VCPKG_DOWNLOADS: ${{ github.workspace }}\vcpkg-downloads
-        run: |
-          $portfile = Get-Content (Join-Path $env:VCPKG_ROOT "ports/libpng/portfile.cmake") -Raw
-          $patchMatch = [regex]::Match($portfile, '(?s)vcpkg_download_distfile\(LIBPNG_APNG_PATCH_ARCHIVE(?<args>.*?)\)')
-          if (-not $patchMatch.Success) {
-            throw "Could not find the libpng APNG patch download metadata"
-          }
-
-          $patchMetadata = $patchMatch.Groups["args"].Value
-          $url = [regex]::Match($patchMetadata, 'URLS\s+"([^"]+)"').Groups[1].Value
-          $filename = [regex]::Match($patchMetadata, 'FILENAME\s+"([^"]+)"').Groups[1].Value
-          $expectedHash = [regex]::Match($patchMetadata, 'SHA512\s+([0-9a-fA-F]{128})').Groups[1].Value
-          if (-not $url -or -not $filename -or -not $expectedHash) {
-            throw "Could not parse the libpng APNG patch download metadata"
-          }
-
-          New-Item -ItemType Directory -Force -Path $env:VCPKG_DOWNLOADS | Out-Null
-          $patchPath = Join-Path $env:VCPKG_DOWNLOADS $filename
-          if ((Test-Path -LiteralPath $patchPath) -and
-              (Get-FileHash -LiteralPath $patchPath -Algorithm SHA512).Hash -ne $expectedHash) {
-            Remove-Item -LiteralPath $patchPath -Force
-          }
-          if (-not (Test-Path -LiteralPath $patchPath)) {
-            $downloadUrls = @($url)
-            if ($url -like "https://downloads.sourceforge.net/project/*") {
-              $sourceforgePath = $url -replace '^https://downloads\.sourceforge\.net/', ''
-              $downloadUrls += @(
-                "https://netix.dl.sourceforge.net/$sourceforgePath"
-                "https://versaweb.dl.sourceforge.net/$sourceforgePath"
-                "https://master.dl.sourceforge.net/$sourceforgePath"
-              )
-            }
-            foreach ($downloadUrl in $downloadUrls) {
-              & curl.exe --fail --location --retry 5 --retry-all-errors --retry-delay 5 --retry-max-time 120 --output $patchPath $downloadUrl
-              if ($LASTEXITCODE -eq 0 -and
-                  (Get-FileHash -LiteralPath $patchPath -Algorithm SHA512).Hash -eq $expectedHash) {
-                break
-              }
-              Remove-Item -LiteralPath $patchPath -Force -ErrorAction SilentlyContinue
-            }
-          }
-
-          $actualHash = (Get-FileHash -LiteralPath $patchPath -Algorithm SHA512).Hash
-          if ($actualHash -ne $expectedHash) {
-            Remove-Item -LiteralPath $patchPath -Force
-            throw "The libpng APNG patch SHA-512 does not match vcpkg metadata"
-          }
-
       - name: Run CMake
         if: matrix.type == 'CMake'
         uses: lukka/run-cmake@v10
-        env:
-          VCPKG_DOWNLOADS: ${{ github.workspace }}\vcpkg-downloads
         with:
           configurePreset: windows-release
           buildPreset: windows-release
