@@ -59,7 +59,8 @@ RUN vcpkgCommitId="$(jq -r '."builtin-baseline"' vcpkg.json)" \
 	&& ./bootstrap-vcpkg.sh
 
 WORKDIR /opt/vcpkg_manifest
-COPY vcpkg.json /opt/vcpkg_manifest/
+COPY vcpkg.json vcpkg-configuration.json /opt/vcpkg_manifest/
+COPY overlay-ports /opt/vcpkg_manifest/overlay-ports
 
 RUN --mount=type=secret,id=github_token,required=false \
 	--mount=type=cache,target=/opt/vcpkg/downloads \
@@ -107,7 +108,8 @@ RUN --mount=type=secret,id=github_token,required=false \
 FROM dependencies AS build
 
 WORKDIR /srv
-COPY CMakeLists.txt CMakePresets.json vcpkg.json /srv/
+COPY CMakeLists.txt CMakePresets.json vcpkg.json vcpkg-configuration.json /srv/
+COPY overlay-ports /srv/overlay-ports
 COPY cmake /srv/cmake
 COPY src /srv/src
 COPY --from=dependencies /opt/vcpkg_installed /srv/vcpkg_installed
