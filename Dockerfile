@@ -59,7 +59,9 @@ RUN vcpkgCommitId="$(jq -r '."builtin-baseline"' vcpkg.json)" \
 	&& ./bootstrap-vcpkg.sh
 
 WORKDIR /opt/vcpkg_manifest
-COPY vcpkg.json /opt/vcpkg_manifest/
+COPY vcpkg.json vcpkg-configuration.json /opt/vcpkg_manifest/
+# Keep the manifest's overlay port available to both published and CI-only Docker builds.
+COPY overlay-ports /opt/vcpkg_manifest/overlay-ports/
 
 RUN --mount=type=secret,id=github_token,required=false \
 	--mount=type=cache,target=/opt/vcpkg/downloads \
