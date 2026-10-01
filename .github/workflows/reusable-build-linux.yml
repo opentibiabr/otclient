@@ -128,7 +128,17 @@ jobs:
             rm -f "$patch_path"
           fi
           if [[ ! -f "$patch_path" ]]; then
-            curl --fail --location --retry 5 --retry-all-errors --retry-delay 5 --retry-max-time 120 --output "$patch_path" "$url"
+            download_urls=("$url")
+            if [[ "$url" == https://downloads.sourceforge.net/project/* ]]; then
+              download_urls+=("${url/https:\/\/downloads.sourceforge.net\//https:\/\/master.dl.sourceforge.net/}")
+            fi
+            for download_url in "${download_urls[@]}"; do
+              if curl --fail --location --retry 5 --retry-all-errors --retry-delay 5 --retry-max-time 120 --output "$patch_path" "$download_url" &&
+                  [[ "$(sha512sum "$patch_path" | awk '{print $1}')" == "$expected_hash" ]]; then
+                break
+              fi
+              rm -f "$patch_path"
+            done
           fi
 
           actual_hash="$(sha512sum "$patch_path" | awk '{print $1}')"

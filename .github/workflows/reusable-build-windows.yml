@@ -188,9 +188,17 @@ jobs:
             Remove-Item -LiteralPath $patchPath -Force
           }
           if (-not (Test-Path -LiteralPath $patchPath)) {
-            & curl.exe --fail --location --retry 5 --retry-all-errors --retry-delay 5 --retry-max-time 120 --output $patchPath $url
-            if ($LASTEXITCODE -ne 0) {
-              throw "Failed to download the libpng APNG patch"
+            $downloadUrls = @($url)
+            if ($url -like "https://downloads.sourceforge.net/project/*") {
+              $downloadUrls += $url -replace '^https://downloads\.sourceforge\.net/', 'https://master.dl.sourceforge.net/'
+            }
+            foreach ($downloadUrl in $downloadUrls) {
+              & curl.exe --fail --location --retry 5 --retry-all-errors --retry-delay 5 --retry-max-time 120 --output $patchPath $downloadUrl
+              if ($LASTEXITCODE -eq 0 -and
+                  (Get-FileHash -LiteralPath $patchPath -Algorithm SHA512).Hash -eq $expectedHash) {
+                break
+              }
+              Remove-Item -LiteralPath $patchPath -Force -ErrorAction SilentlyContinue
             }
           }
 
