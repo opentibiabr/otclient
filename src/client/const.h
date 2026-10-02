@@ -666,6 +666,7 @@ namespace Otc
         GameTaskboard = 134,
         GameProficiency = 135,
         GameTacticsWithoutFightMode = 136,
+        GameManaShield = 137,
         LastGameFeature
     };
 

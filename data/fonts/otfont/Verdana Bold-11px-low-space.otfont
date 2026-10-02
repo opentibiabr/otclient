@@ -1,7 +1,7 @@
 Font
   name: Verdana Bold-11-px-lowspace
   texture: Verdana Bold-11px
-  height: 15
+  height: 14
   glyph-size: 22 15
   y-offset: -2
   spacing: 0 -1
