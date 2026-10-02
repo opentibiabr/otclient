@@ -1104,22 +1104,50 @@ bool ResourceManager::writeFileContentsToWorkDir(const std::string& fileName, co
     return ok;
 }
 
-std::unordered_map<std::string, std::string> ResourceManager::filesChecksums()
+std::unordered_map<std::string, std::string> ResourceManager::filesChecksums(const std::vector<std::string>& scopePaths)
 {
     std::unordered_map<std::string, std::string> ret;
-    auto files = listDirectoryFiles("/", true, false, true);
-    for (auto& filePath : std::ranges::reverse_view(files)) {
-        PHYSFS_File* file = PHYSFS_openRead(filePath.c_str());
-        if (!file)
+
+    /** 
+     * Compatibility: if no scope is passed, keep the
+     * old behavior (full scan from "/"). This is
+     * costly and SHOULD NOT be used by the updater — performance-sensitive
+     * callers must always provide an explicit scope.
+     **/
+    std::vector<std::string> roots = scopePaths;
+    if (roots.empty())
+        roots.emplace_back("/");
+
+    for (const auto& scope : roots) {
+        if (scope.empty())
             continue;
 
-        const int fileSize = PHYSFS_fileLength(file);
-        std::string buffer(fileSize, 0);
-        PHYSFS_readBytes(file, &buffer[0], fileSize);
-        PHYSFS_close(file);
+        const std::string root = scope.front() == '/' ? scope : "/" + scope;
 
-        const auto checksum = g_crypt.crc32(buffer, false);
-        ret[filePath] = checksum;
+        if (!PHYSFS_exists(root.c_str()))
+            continue; // File does not exist in any search path, skip it.
+
+        std::list<std::string> files;
+        if (directoryExists(root))
+            files = listDirectoryFiles(root, true, false, true);
+        else
+            files.push_back(root);
+
+        for (auto& filePath : files) {
+            if (ret.contains(filePath))
+				continue; // Already processed this file (it may exist in multiple search paths).
+
+            PHYSFS_File* file = PHYSFS_openRead(filePath.c_str());
+            if (!file)
+                continue;
+
+            const int fileSize = PHYSFS_fileLength(file);
+            std::string buffer(fileSize, 0);
+            PHYSFS_readBytes(file, &buffer[0], fileSize);
+            PHYSFS_close(file);
+
+            ret[filePath] = g_crypt.crc32(buffer, false);
+        }
     }
 
     return ret;
