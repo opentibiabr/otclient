@@ -1,9 +1,9 @@
 Label < UILabel
-  font: verdana-11px-antialised
-  color: #dfdfdf
+  font: $var-font
+  color: $var-text-color
 
   $disabled:
-    color: #dfdfdf88
+    color: $var-text-color-disabled
 
 FlatLabel < UILabel
   font: verdana-11px-antialised

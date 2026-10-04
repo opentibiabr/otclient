@@ -89,6 +89,8 @@ protected:
     friend class GraphicalApplication;
 
 private:
+    void registerGlobalAliases(const OTMLDocumentPtr& doc);
+
     UIWidgetPtr m_rootWidget;
     UIWidgetPtr m_mouseReceiver;
     UIWidgetPtr m_keyboardReceiver;
@@ -101,6 +103,7 @@ private:
     bool m_drawDebugBoxes{ false };
     bool m_hoverTextUpdateScheduled{ false };
     stdext::map<std::string, OTMLNodePtr> m_styles;
+    std::unordered_map<std::string, std::string> m_globalAliases;
     std::string m_hoveredText;
     UIWidgetList m_destroyedWidgets;
     ScheduledEventPtr m_checkEvent;

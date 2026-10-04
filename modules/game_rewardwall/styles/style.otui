@@ -1,48 +1,195 @@
+historyData2 < UIWidget
+  height: 15
+
+  Label
+    id: date
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.bottom: parent.bottom
+    width: 148
+    text-align: left
+    font: $var-cip-font-new
+    color: #c0c0c0
+    phantom: false
+    margin-top: -3
+    margin-left: 1
+
+  VerticalSeparator
+    anchors.top: parent.top
+    anchors.left: prev.right
+    anchors.bottom: parent.bottom
+
+  Label
+    id: Balance
+    anchors.top: parent.top
+    anchors.left: prev.right
+    anchors.bottom: parent.bottom
+    width: 50
+    font: $var-cip-font-new
+    color: #c0c0c0
+    text-align: right
+    text-offset: -3 -2
+    phantom: true
+
+  VerticalSeparator
+    anchors.top: parent.top
+    anchors.left: prev.right
+    anchors.bottom: parent.bottom
+
+  Label
+    anchors.top: parent.top
+    anchors.left: prev.right
+    anchors.bottom: parent.bottom
+    font: $var-cip-font-new
+    color: #c0c0c0
+    id: Description
+    width: 259
+    text-align: left
+    phantom: true
+    margin-top: -3
+    margin-left: 2
+
+PickRewardQtyButton < UIButton
+  size: 16 16
+  image-source: /game_rewardwall/images/buttons_pick_rewards
+  image-size: 16 16
+  image-auto-resize: false
+  focusable: false
+
+PickRewardQtyButtonBackAll < PickRewardQtyButton
+  image-clip: 0 32 16 16
+  $disabled:
+    image-clip: 0 0 16 16
+  $hover !disabled:
+    image-clip: 0 32 16 16
+  $pressed:
+    image-clip: 0 64 16 16
+
+PickRewardQtyButtonBackOne < PickRewardQtyButton
+  image-clip: 0 48 16 16
+  $disabled:
+    image-clip: 0 16 16 16
+  $hover !disabled:
+    image-clip: 0 48 16 16
+  $pressed:
+    image-clip: 0 80 16 16
+
+PickRewardQtyButtonForwardOne < PickRewardQtyButton
+  image-clip: 16 48 16 16
+  $disabled:
+    image-clip: 16 16 16 16
+  $hover !disabled:
+    image-clip: 16 48 16 16
+  $pressed:
+    image-clip: 16 80 16 16
+
+PickRewardQtyButtonForwardAll < PickRewardQtyButton
+  image-clip: 16 32 16 16
+  $disabled:
+    image-clip: 16 0 16 16
+  $hover !disabled:
+    image-clip: 16 32 16 16
+  $pressed:
+    image-clip: 16 64 16 16
+
 ItemReward < UIWidget
   padding-top: 4
   padding-bottom: 4
   padding-left: 8
   padding-right: 8
-  height: 40
+  height: 36
 
   Item
     id: item
-    size: 32 32
+    size: 34 34
     anchors.top: parent.top
     anchors.left: parent.left
+    margin-top: -3
+    margin-left: -7
     text-align: center
     phantom: true
+    virtual: true
 
   Label
     id: title
     anchors.verticalCenter: parent.verticalCenter
     anchors.left: prev.right
     text-align: left
-    width: 190
-    margin-left: 10
+    width: 160
+    margin-top: 1
+    margin-left: 5
+    font: $var-cip-font-new
+    color: #c0c0c0
 
-  SpinBox
-    id: number
+  UIWidget
+    id: quantity
+    size: 104 16
     anchors.verticalCenter: parent.verticalCenter
     anchors.left: prev.right
-    width: 38
-    height: 23
-    text: 0
-    minimum: 0
-    maximum: 10
-    focusable: true
-    @onTextChange:  modules.game_rewardwall.onTextChangeChangeNumber(self:getParent())
-    $disabled:
-      color: #aaaaaa44
+    margin-left: 27
+
+    PickRewardQtyButtonBackAll
+      id: btnMin
+      anchors.left: parent.left
+      anchors.verticalCenter: parent.verticalCenter
+      @onClick: modules.game_rewardwall.onPickRewardQtyClick(self, 'min')
+
+    PickRewardQtyButtonBackOne
+      id: btnDec
+      anchors.left: prev.right
+      anchors.verticalCenter: parent.verticalCenter
+      margin-left: 3
+      @onClick: modules.game_rewardwall.onPickRewardQtyClick(self, 'dec')
+
+    UIWidget
+      id: numberBox
+      size: 24 16
+      anchors.left: prev.right
+      anchors.verticalCenter: parent.verticalCenter
+      margin-left: 3
+      background-color: #2a2a2aff
+      border-width-top: 1
+      border-width-left: 1
+      border-width-right: 1
+      border-width-bottom: 1
+      border-color-bottom: #808080
+      border-color-right: #808080
+      border-color-left: #131313
+      border-color-top: #131313
+
+      Label
+        id: numberValue
+        anchors.fill: parent
+        font: $var-cip-font-new
+        color: #c0c0c0
+        text-align: center
+        text: 0
+
+    PickRewardQtyButtonForwardOne
+      id: btnInc
+      anchors.left: prev.right
+      anchors.verticalCenter: parent.verticalCenter
+      margin-left: 3
+      @onClick: modules.game_rewardwall.onPickRewardQtyClick(self, 'inc')
+
+    PickRewardQtyButtonForwardAll
+      id: btnMax
+      anchors.left: prev.right
+      anchors.verticalCenter: parent.verticalCenter
+      margin-left: 3
+      @onClick: modules.game_rewardwall.onPickRewardQtyClick(self, 'max')
 
   Label
     id: weight
     anchors.verticalCenter: parent.verticalCenter
     anchors.right: parent.right
+    font: $var-cip-font-new
+    color: #c0c0c0
+    margin-top: 1
+    margin-right: 6
     width: 81
     text-align: right
     text-auto-resize: true
-    text: 12
     text: 0.00 oz
 
 RewardButton < UIWidget
@@ -53,82 +200,58 @@ RewardButton < UIWidget
     image-source: /game_rewardwall/images/rewardButton
     image-clip: 0 0 66 20
 
-RewardButton3 < UIButton
-  font: verdana-11px-antialised
-  color: #dfdfdfff
-  size: 106 23
-  text-offset: 0 0
-  image-source: /images/ui/button
-  image-color: #dfdfdf
-  image-clip: 0 0 22 23
-  image-border: 3
-  opacity: 1.0
-
-  $pressed:
-    image-clip: 0 46 22 23
-    text-offset: 1 1
-
-  $on:
-    border-width-top: 1
-    border-color-top: black
-    border-width-left: 1
-    border-color-left: black
-    border-width-bottom: 1
-    border-color-bottom: #747474
-    border-width-right: 1
-    border-color-right: #747474
-	
-  $!on:
-    border-width-top: 0
-    border-width-left: 0
-    border-width-bottom: 0
-    border-width-right: 0
-	
-  UIWidget
-    id:ditherpattern
-    image-source: /game_rewardwall/images/ditherpattern
-    image-border: 3
-    anchors.fill: parent
-    phantom: true
-    visible:false
-    size: 106 23
-    margin-top: 1
-    margin-left: 2
-    margin-right:2
-    margin-bottom:2
-
-
-imgBonuses < UIWidget
-  border-width-top: 1
-  border-color-top: black
-  border-width-left: 1
-  border-color-left: black
-  border-width-bottom: 1
-  border-color-bottom: #747474
-  border-width-right: 1
-  border-color-right: #747474
-  image-source: /images/ui/test/button-verydarkgrey-down
-  icon-source: /game_rewardwall/images/icon-restingareabonuseslevels
-  size: 64 70
+RewardButton3 < UIWidget
+  focusable: false
+  size: 66 66
+  image-source: /game_rewardwall/images/container-bonus-inactive
+  image-clip: 0 0 66 66
+  image-border: 0
 
   UIWidget
     id:ditherpattern
     image-source: /game_rewardwall/images/ditherpattern
-    image-border: 3
-    anchors.fill: parent
-    phantom: true
-    margin-top: 1
-    margin-left: 1
-    margin-right: 1
-    margin-bottom: 1
-    visible:false
-  UIWidget
-    id:ditherpattern
-    image-source: /game_rewardwall/images/icon-banner-premium
-    phantom: true
     anchors.top: parent.top
     anchors.left: parent.left
+    phantom: true
     visible:false
+    size: 66 66
+
+imgBonuses < UIWidget
+  image-source: /game_rewardwall/images/container-bonus-inactive
+  icon-source: /game_rewardwall/images/icon-restingareabonuseslevels
+  image-border: 3
+  size: 66 66
+  fixed-size: true
+
+  UIWidget
+    id: ditherpattern
+    image-source: /game_rewardwall/images/ditherpattern
+    anchors.fill: parent
+    phantom: true
+    visible: false
+
+  UIWidget
+    id: dayBanner
+    image-source: /game_rewardwall/images/icon-banner-days
+    anchors.bottom: parent.bottom
+    anchors.right: parent.right
+    margin-bottom: 1
+    margin-right: 1
+    phantom: true
+    visible: false
+
+  Label
+    id: dayBannerText
+    size: 16 14
+    anchors.horizontalCenter: dayBanner.horizontalCenter
+    anchors.verticalCenter: dayBanner.verticalCenter
+    margin-right: -5
+    margin-bottom: -3
+    text-align: center
+    font: $var-cip-font-new
+    color: #ffffff
+    phantom: true
+    visible: false
 
 OfferBuyPrice < FlatPanel
   anchors.top: prev.bottom
@@ -150,25 +273,212 @@ OfferBuyPrice < FlatPanel
   $on:
     icon: /images/store/coin_second
 
-GoldLabel2 < UIWidget
-  image-source: /images/ui/test/button-verydarkgrey-down
-  margin: 1
-  
+RewardResourceIcon < UIWidget
+  anchors.top: parent.top
+  anchors.right: parent.right
+  margin-top: 5
+  margin-right: 3
+  image-size: 11 11
+  phantom: true
+
+RewardResourceIconWide < RewardResourceIcon
+  margin-top: 4
+  margin-right: 23
+
+RewardArrow < UIWidget
+  anchors.top: prev.top
+  anchors.left: prev.right
+  margin-top: 4
+  margin-left: -1
+  image-source: /game_rewardwall/images/icon-rewardarrow
+  image-offset: -2 25
+  image-clip: 0 0 5 7
+  size: 5 7
+  image-auto-resize: false
+  image-size: 5 7
+
+RewardGoldSlot < UIWidget
+  focusable: false
+  size: 66 20
+
+RestingAreaTimeLeft < UIWidget
+  focusable: false
+  fixed-size: true
+  size: 66 20
+
   UIWidget
-    id: gold
-    anchors.right: parent.right
-    anchors.verticalCenter: parent.verticalCenter
-    image-source: /images/game/prey/prey_gold
-    tooltip: Gold Coins
+    id: frame
+    size: 66 20
+    anchors.top: parent.top
+    anchors.left: parent.left
+    image-source: /game_rewardwall/images/rewardButton
+    image-clip: 0 60 66 20
+    image-size: 66 20
+    image-auto-resize: false
     phantom: true
+
+  UIWidget
+    id: content
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin: 1
+    phantom: true
+
+    ProgressBarSD
+      id: progress
+      anchors.fill: parent
+      image-source: /images/bars/progressbar-orange-large
+      phantom: true
+
+  Label
+    id: text
+    anchors.fill: parent
+    text-align: center
+    font: $var-cip-font-new
+    color: #FFFFFF
+    phantom: true
+
+RestingAreaJoker < UIWidget
+  focusable: false
+  fixed-size: true
+  size: 66 20
+
+  UIWidget
+    id: frame
+    size: 66 20
+    anchors.top: parent.top
+    anchors.left: parent.left
+    image-source: /game_rewardwall/images/rewardButton
+    image-clip: 0 60 66 20
+    image-size: 66 20
+    image-auto-resize: false
+    phantom: true
+
+  RewardResourceIconWide
+    id: gold
+    margin-top: 5
+    image-source: /game_rewardwall/images/icon-daily-reward-joker
+
   UIWidget
     id: text
-    anchors.right: prev.left
-    margin-right: 5
+    font: $var-cip-font-new
+    anchors.top: parent.top
     anchors.left: parent.left
     anchors.verticalCenter: parent.verticalCenter
+    margin-top: 1
+    margin-left: 23
     text-align: center
     phantom: true
+
+RewardGoldContent < UIWidget
+  phantom: true
+  focusable: false
+  anchors.centerIn: parent
+  fixed-size: true
+  size: 66 20
+
+  UIWidget
+    id: frame
+    size: 66 20
+    anchors.top: parent.top
+    anchors.left: parent.left
+    image-source: /game_rewardwall/images/rewardButton
+    image-clip: 0 60 66 20
+    image-size: 66 20
+    image-auto-resize: false
+    phantom: true
+
+  UIWidget
+    id: content
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin: 1
+    phantom: true
+
+    ProgressBarSD
+      id: progress
+      anchors.fill: parent
+      image-source: /images/bars/progressbar-orange-large
+      phantom: true
+
+  Label
+    id: text
+    anchors.fill: parent
+    text-align: center
+    font: $var-cip-font-new
+    color: #FFFFFF
+    phantom: true
+
+RewardGoldCollectable < UIWidget
+  phantom: true
+  focusable: false
+  anchors.centerIn: parent
+  size: 66 20
+
+  UIWidget
+    id: frame
+    anchors.fill: parent
+    image-source: /game_rewardwall/images/rewardButton
+    image-clip: 0 60 66 20
+    image-auto-resize: false
+    phantom: true
+
+  Label
+    id: costStrike
+    text: 1
+    font: Verdana-11px-lowspace-strikeout
+    color: #707070
+    anchors.verticalCenter: parent.verticalCenter
+    anchors.right: balance.left
+    margin-right: 5
+    margin-top: 1
+    text-align: right
+    phantom: true
+
+  Label
+    id: balance
+    text: 0
+    font: $var-cip-font-new
+    color: #c0c0c0
+    anchors.verticalCenter: parent.verticalCenter
+    anchors.right: icon.left
+    margin-right: 2
+    margin-top: 1
+    text-align: right
+    phantom: true
+
+  UIWidget
+    id: icon
+    anchors.verticalCenter: parent.verticalCenter
+    anchors.right: parent.right
+    margin-right: 17
+    margin-top: 1
+    size: 11 11
+    image-source: /game_rewardwall/images/instant-reward-access-icon
+    image-size: 11 11
+    phantom: true
+
+RewardGoldCollected < UIWidget
+  phantom: true
+  focusable: false
+  anchors.centerIn: parent
+  size: 66 20
+  image-source: /game_rewardwall/images/rewardButton
+  image-clip: 0 40 66 20
+
+RewardGoldLocked < UIWidget
+  phantom: true
+  focusable: false
+  anchors.centerIn: parent
+  size: 66 20
+  image-source: /game_rewardwall/images/rewardButton
+  image-clip: 0 0 66 20
+  image-auto-resize: false
+
 TESDTSTST < Panel
   id: actions
   size: 68 95
@@ -187,7 +497,8 @@ TESDTSTST < Panel
     margin-top: 10
 
 TextListWithScroll < Panel
-  font: verdana-11px-antialised
+  font: $var-cip-font-new
+  color: #c0c0c0
   width: 192
   text-offset: 24 5
   text-align: topLeft
