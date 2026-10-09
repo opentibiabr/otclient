@@ -30,12 +30,12 @@ public:
     static OTMLDocumentPtr create();
 
     /// Parse OTML from a file
-    static OTMLDocumentPtr parse(const std::string& fileName);
+    static OTMLDocumentPtr parse(const std::string& fileName, const std::unordered_map<std::string, std::string>& aliases = {});
 
     /// Parse OTML from input stream
     /// @param in
     /// @param source is the file name that will be used to show errors messages
-    static OTMLDocumentPtr parse(std::istream& in, std::string_view source);
+    static OTMLDocumentPtr parse(std::istream& in, std::string_view source, const std::unordered_map<std::string, std::string>& aliases = {});
 
     /// Emits this document and all it's children to a std::string
     std::string emit() override;

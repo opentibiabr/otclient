@@ -1,51 +1,71 @@
-// todo change to css/html
-MainWindow
-  !text: tr('Pick reward')
-  size: 451 390
+MainWindowHigh
+  !text: tr('Pick Reward')
+  size: 450 378
+  text-offset: 0 2
+  font: $var-cip-font-new
+  color: #909090
   @onEscape: modules.game_rewardwall.destroyPickReward()
   padding: 20
-  color: #c0c0c0
 
   Label
     id: rewardLabel
+    font: $var-cip-font-new
+    color: #c0c0c0
     anchors.left: parent.left
     anchors.right: parent.right
     anchors.top: parent.top
-    margin-top: 10
+    margin-top: 9
+    margin-left: -5
     text: you have selected 0 of 2 reward items.
 
   TextList
     id: rewardList
-    anchors.left: parent.left
-    anchors.right: parent.right
     anchors.top: prev.bottom
-    margin-bottom: 10
-    margin-right: 10
+    anchors.left: parent.left
     margin-top: 5
-    height: 267
+    margin-left: -4
+    size: 418 265
+    fixed-size: true
     vertical-scrollbar: rewardListScrollBar
     background-color: #404040
+    padding: 1
+    border-width-top: 1
+    border-width-left: 1
+    border-width-right: 1
+    border-width-bottom: 1
+    border-color-bottom: #808080
+    border-color-right: #808080
+    border-color-left: #131313
+    border-color-top: #131313
 
   VerticalQtScrollBar
     id: rewardListScrollBar
     anchors.top: rewardList.top
     anchors.bottom: rewardList.bottom
-    anchors.left: rewardList.right
+    anchors.right: rewardList.right
     step: 14
-    pixels-scroll: true
+    margin-top: 1
+    margin-right: 1
+    margin-bottom: 1
 
   Panel
     id: capacity
+    font: $var-cip-font-new
+    color: #c0c0c0
     anchors.left: parent.left
     anchors.top: rewardList.bottom
-    margin-top: 10
-    text: Free capacity: 737.60 oz
+    margin-top: 6
+    margin-left: -11
+    text: Free Capacity: 737.60 oz
 
   Label
+    font: $var-cip-font-new
+    color: #c0c0c0
     id: weight
     anchors.right: parent.right
     anchors.top: rewardList.bottom
-    margin-top: 10
+    margin-top: 6
+    margin-right: 5
     text: Total weight: 0.00 oz
 
   HorizontalSeparator
@@ -53,27 +73,27 @@ MainWindow
     anchors.left: parent.left
     anchors.right: parent.right 
     anchors.top: prev.bottom
-    margin-top: 10
+    margin-top: 6
+    margin-left: -4
+    margin-right: -4
 
-  QtButton
+  Button
     id: btnClose
+    !text: tr('Close')
+    size: 43 20
     anchors.right: parent.right
-    anchors.top: prev.bottom
-    size: 45 20
-    margin-top: 5
-    text: Close
-    font: cipsoftFont
+    anchors.bottom: parent.bottom
+    margin-right: -4
+    margin-bottom: -4
     @onClick: modules.game_rewardwall.destroyPickReward(true)
 
-  QtButton
+  Button
     id: btnOk
-    anchors.right: prev.left
-    anchors.top: separator.bottom
-    size: 60 20
-    margin-top: 5
-    margin-right: 10
-    text: Ok
-    color: #FFFFFF
-    font: cipsoftFont
+    !text: tr('Ok')
+    size: 43 20
+    anchors.right: btnClose.left
+    anchors.bottom: parent.bottom
+    margin-right: 6
+    margin-bottom: -4
     enabled: false
     @onClick: modules.game_rewardwall.onClickBtnOk()

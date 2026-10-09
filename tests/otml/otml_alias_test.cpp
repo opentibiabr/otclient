@@ -74,6 +74,32 @@ DerivedPanel < UIWidget
     EXPECT_EQ(aliases.end(), aliases.find("headerAccent"));
 }
 
+TEST(OTMLAlias, SharesRootAliasesAcrossDocumentsWithoutExportingInheritedOrNestedAliases)
+{
+    std::istringstream variables("&var-font: Verdana Bold-11px\n&var-color: #dfdfdf\n");
+    const auto globals = OTMLDocument::parse(variables, "0-vars.otui");
+    ASSERT_EQ(2u, globals->globalAliases().size());
+
+    std::istringstream style("Label < UILabel\n  font: $var-font\n  color: $var-color\n  &local: #123456\n  border-color: $local\n");
+    const auto styleDoc = OTMLDocument::parse(style, "10-labels.otui", globals->globalAliases());
+    const auto label = findStyleByTag(styleDoc, "Label < UILabel");
+    ASSERT_NE(nullptr, label);
+    EXPECT_EQ("Verdana Bold-11px", label->valueAt("font"));
+    EXPECT_EQ("#dfdfdf", label->valueAt("color"));
+    EXPECT_EQ("#123456", label->valueAt("border-color"));
+    EXPECT_TRUE(styleDoc->globalAliases().empty());
+
+    std::istringstream moduleUI("ModuleWidget\n  color: $var-color\n");
+    const auto moduleDoc = OTMLDocument::parse(moduleUI, "modules/example/window.otui", globals->globalAliases());
+    EXPECT_EQ("#dfdfdf", moduleDoc->get("ModuleWidget")->valueAt("color"));
+
+    std::istringstream overrideUI("&var-color: #abcdef\nModuleWidget\n  color: $var-color\n");
+    const auto overrideDoc = OTMLDocument::parse(overrideUI, "modules/other/window.otui", globals->globalAliases());
+    EXPECT_EQ("#abcdef", overrideDoc->get("ModuleWidget")->valueAt("color"));
+    EXPECT_EQ("#abcdef", overrideDoc->globalAliases().at("var-color"));
+    EXPECT_EQ("#dfdfdf", globals->globalAliases().at("var-color"));
+}
+
 TEST(OTMLAlias, CircularReferenceDetection)
 {
     // Test direct circular reference: &a: $b and &b: $a

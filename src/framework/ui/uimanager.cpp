@@ -56,6 +56,7 @@ void UIManager::terminate()
     m_hoveredWidget = nullptr;
     m_pressedWidget = nullptr;
     m_styles.clear();
+    m_globalAliases.clear();
     m_destroyedWidgets.clear();
     m_checkEvent = nullptr;
     m_hoveredWidgets.clear();
@@ -427,13 +428,20 @@ void UIManager::onWidgetDestroy(const UIWidgetPtr& widget)
 void UIManager::clearStyles()
 {
     m_styles.clear();
+    m_globalAliases.clear();
+}
+
+void UIManager::registerGlobalAliases(const OTMLDocumentPtr& doc)
+{
+    for (const auto& [name, value] : doc->globalAliases())
+        m_globalAliases[name] = value;
 }
 
 bool UIManager::importStyle(const std::string& fl, const bool checkDeviceStyles)
 {
     const std::string file{ g_resources.guessFilePath(fl, "otui") };
     try {
-        const auto& doc = OTMLDocument::parse(file);
+        const auto& doc = OTMLDocument::parse(file, m_globalAliases);
 
         for (const auto& styleNode : doc->children()) {
             const std::string tag = styleNode->tag();
@@ -443,6 +451,7 @@ bool UIManager::importStyle(const std::string& fl, const bool checkDeviceStyles)
                 continue;
             importStyleFromOTML(styleNode);
         }
+        registerGlobalAliases(doc);
     } catch (stdext::exception& e) {
         g_logger.error("Failed to import UI styles from '{}': {}", file, e.what());
         return false;
@@ -536,6 +545,7 @@ void UIManager::importStyleFromOTML(const OTMLDocumentPtr& doc)
         if (tag.find('<') != std::string::npos)
             importStyleFromOTML(node);
     }
+    registerGlobalAliases(doc);
 }
 
 OTMLNodePtr UIManager::getStyle(const std::string_view sn)
@@ -617,7 +627,7 @@ OTMLNodePtr UIManager::loadDeviceUI(const std::string& file, const OperatingSyst
 {
     const auto osName = g_platform.getOsShortName(os);
 
-    const auto& doc = OTMLDocument::parse(g_resources.guessFilePath(getDeviceUIName(file, osName), "otui"));
+    const auto& doc = OTMLDocument::parse(g_resources.guessFilePath(getDeviceUIName(file, osName), "otui"), m_globalAliases);
     if (doc) {
         g_logger.info("Found os style '{}' for '{}'", osName, file);
         importStyleFromOTML(doc);
@@ -630,7 +640,7 @@ OTMLNodePtr UIManager::loadDeviceUI(const std::string& file, const DeviceType de
 {
     const auto deviceName = g_platform.getDeviceShortName(deviceType);
 
-    const auto& doc = OTMLDocument::parse(g_resources.guessFilePath(getDeviceUIName(file, deviceName), "otui"));
+    const auto& doc = OTMLDocument::parse(g_resources.guessFilePath(getDeviceUIName(file, deviceName), "otui"), m_globalAliases);
     if (doc) {
         g_logger.info("Found device style '{}' for '{}'", deviceName, file);
         importStyleFromOTML(doc);
@@ -643,7 +653,7 @@ UIWidgetPtr UIManager::loadUI(const std::string& file, const UIWidgetPtr& parent
 {
     try {
         OTMLNodePtr widgetNode = nullptr;
-        const auto& doc = OTMLDocument::parse(g_resources.guessFilePath(file, "otui"));
+        const auto& doc = OTMLDocument::parse(g_resources.guessFilePath(file, "otui"), m_globalAliases);
 
         for (const auto& node : doc->children()) {
             std::string tag = node->tag();
@@ -660,6 +670,7 @@ UIWidgetPtr UIManager::loadUI(const std::string& file, const UIWidgetPtr& parent
                 widgetNode = node;
             }
         }
+        registerGlobalAliases(doc);
 
         // load device styles and widget
         const auto device = g_platform.getDevice();
@@ -697,8 +708,8 @@ UIWidgetPtr UIManager::loadUIFromString(const std::string& data, const UIWidgetP
         sstream.clear(std::ios::goodbit);
         sstream.write(&data[0], data.length());
         sstream.seekg(0, std::ios::beg);
-        const OTMLDocumentPtr doc = OTMLDocument::parse(sstream, "(string)");
-        UIWidgetPtr widget;
+        const OTMLDocumentPtr doc = OTMLDocument::parse(sstream, "(string)", m_globalAliases);
+        OTMLNodePtr widgetNode;
         for (const OTMLNodePtr& node : doc->children()) {
             std::string tag = node->tag();
 
@@ -709,12 +720,15 @@ UIWidgetPtr UIManager::loadUIFromString(const std::string& data, const UIWidgetP
             if (tag.find('<') != std::string::npos)
                 importStyleFromOTML(node);
             else {
-                if (widget)
+                if (widgetNode)
                     throw Exception("cannot have multiple main widgets in otui files");
-                widget = createWidgetFromOTML(node, parent);
+                widgetNode = node;
             }
         }
-
+        registerGlobalAliases(doc);
+        UIWidgetPtr widget;
+        if (widgetNode)
+            widget = createWidgetFromOTML(widgetNode, parent);
         return widget;
     } catch (stdext::exception& e) {
         g_logger.error("Failed to load UI from string: {}", e.what());

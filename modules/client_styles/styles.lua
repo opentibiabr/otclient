@@ -8,6 +8,9 @@ local resourceLoaders = {
 
 function init()
     local device = g_platform.getDevice()
+    if not g_ui.importStyle('/styles/0-vars.otui', false) then
+        error('Failed to import global OTUI variables')
+    end
     importResources("styles", "otui", device)
     importResources("fonts/otfont", "otfont", device)
     importResources("fonts//ttf", "ttf", device)
@@ -25,7 +28,7 @@ function importResources(dir, type, device)
     local path = '/' .. dir .. '/'
     local files = g_resources.listDirectoryFiles(path, true, false, true)
     for _, file in pairs(files) do
-        if g_resources.isFileType(file, type) then
+        if g_resources.isFileType(file, type) and file ~= '/styles/0-vars.otui' then
             resourceLoaders[type](file)
         end
     end

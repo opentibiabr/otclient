@@ -34,6 +34,8 @@ WindowStyle < UIWindow
 **Behavior:**
 - Registered in the document's global alias map
 - Accessible throughout the entire document and all nested nodes
+- When imported through `g_ui`, exported to subsequently loaded OTUI files in any module; `client_styles` loads `data/styles/0-vars.otui` before other styles
+- Standalone `OTMLDocument::parse` only uses aliases provided by the caller and does not implicitly share them
 - Warnings are issued if a global variable is redefined
 
 ### Nested Variables (Local Scope)

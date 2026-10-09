@@ -7,7 +7,7 @@ OTML files can now expose lightweight variables that keep palettes, spacing toke
 
 * Declare a variable by prefixing a node tag with `&` and assigning a literal value, for example `&primaryColor: #33AAFF`.
 * Use that variable later in the file by writing `$primaryColor` in fields that expect literals (colors, borders, paddings, etc.). The parser resolves these references before Lua expression evaluation occurs.
-* Variables inherit down the tree. A definition near the root of a `.otui` is also saved into `OTMLDocument::globalAliases`, which allows other files loaded afterward to reuse the same tokens.
+* Variables inherit down the tree. Root-level definitions imported by `g_ui` are shared with styles and UI files loaded afterward, including those in other modules. The `client_styles` module imports `data/styles/0-vars.otui` first. Standalone `OTMLDocument::parse` calls do not share aliases unless supplied with an alias map.
 * A variable can reference another variable (`&accentColor: $primaryColor`). Cycles and undefined references are reported in the console so you can catch mistakes early.
 * Outer quotes are stripped during resolution; the unquoted literal is substituted directly, which keeps the value from being re-evaluated as a Lua expression.
 
@@ -43,5 +43,6 @@ Within `DerivedPanel` we define `&panelAccent` (a node-scoped alias) before any 
 ## Best practices
 
 * Keep palette and spacing variables in dedicated `.otui` files and import them from your screens to ensure consistency.
+* Define shared tokens in `data/styles/0-vars.otui` as `&var-name: value`, then reference them as `$var-name` in any subsequently loaded `.otui`. These are OTUI values, not Lua globals.
 * Avoid overlapping names across scopes when you intend to share tokens globally—reusing the same name in the document root makes the value available to every style file that loads afterward.
 * Since `UIWidget::parseBaseStyle` evaluates expressions in Lua, rely on the resolver to deliver already-evaluated literal tokens for properties that only support strings, colors or file paths.
