@@ -25,8 +25,17 @@ local bonusShrine = 0
 local DAILY_REWARD_CYCLE = 86400
 local dailyRewardSlotTimerEvent, dailyRewardSlotTimerData, restingAreaTimerEvent, restingAreaTimerData
 local claimPending = false
+-- FIFO of outstanding client wall requests; true marks a quiet (store-triggered) refresh.
+-- The server answers requests in send order, so each reply consumes the oldest entry.
+local pendingWallRequests = {}
 local claimCloseResetEvent
 local serverErrorConnected = false
+
+local function requestRewardWall(quiet)
+	table.insert(pendingWallRequests, quiet == true)
+	g_game.sendOpenRewardWall()
+end
+
 local COLORS = {
 	BASE_1 = "#484848",
 	BASE_2 = "#414141"
@@ -325,7 +334,7 @@ local function updateDailyRewardSlotTimerUI()
 			stopDailyRewardSlotTimer()
 
 			if rewardWallController.ui and rewardWallController.ui:isVisible() then
-				g_game.sendOpenRewardWall()
+				requestRewardWall()
 			end
 		end
 	end
@@ -752,6 +761,13 @@ local function checkRewards(data)
 	for index = 1, #rewardType do
 		local reward = rewardType[index]
 		local altReward = altType[index]
+		local freeReward = data.freeRewards[index]
+		local premiumReward = data.premiumRewards[index]
+		local rewardBundle = reward.bundleItems and reward.bundleItems[1]
+		local altBundle = altReward and altReward.bundleItems and altReward.bundleItems[1]
+		local bundle = rewardBundle or altBundle
+		local freeBundle = freeReward and freeReward.bundleItems and freeReward.bundleItems[1]
+		local premiumBundle = premiumReward and premiumReward.bundleItems and premiumReward.bundleItems[1]
 		local rewardWidget = rewardWallController.ui.dailyRewardsPanel:getChildById("reward" .. index)
 
 		if not rewardWidget then
@@ -773,26 +789,32 @@ local function checkRewards(data)
 			rewardButton.bundleType = bundleType.ITEMS
 			rewardButton.rewardItem = reward.selectableItems
 			rewardButton.itemsToSelect = {
-				reward.itemsToSelect or 0,
-				altReward and altReward.itemsToSelect or 0
+				free = freeReward and freeReward.itemsToSelect or 0,
+				premium = premiumReward and premiumReward.itemsToSelect or 0
 			}
-		elseif reward.bundleItems[1] and reward.bundleItems[1].bundleType == bundleType.XPBOOST then
+		elseif bundle and bundle.bundleType == bundleType.XPBOOST then
 			iconWidget:setIcon("game_rewardwall/images/icon-reward-xpboost")
 
 			rewardButton.bundleType = bundleType.XPBOOST
 			rewardButton.itemsToSelect = {
-				reward.bundleItems[1].itemId or 0,
-				altReward and altReward.bundleItems[1].itemId or 0
+				free = freeBundle and freeBundle.itemId or 0,
+				premium = premiumBundle and premiumBundle.itemId or 0
 			}
-		else
+		elseif bundle then
 			iconWidget:setIcon("game_rewardwall/images/icon-reward-fixeditems")
 
 			rewardButton.bundleType = bundleType.PREY
 			rewardButton.itemsToSelect = {
-				reward.bundleItems[1].count or 0,
-				altReward and altReward.bundleItems[1].count or 0
+				free = freeBundle and freeBundle.count or 0,
+				premium = premiumBundle and premiumBundle.count or 0
 			}
-			rewardButton.itemName = reward.bundleItems[1].name or "Prey Wildcard"
+			rewardButton.itemName = bundle.name or "Prey Wildcard"
+		else
+			rewardButton.bundleType = nil
+			rewardButton.rewardItem = nil
+			rewardButton.itemsToSelect = nil
+			rewardButton.itemName = nil
+			print("WARNING: Reward has no selectable items or bundle:", index)
 		end
 	end
 end
@@ -854,6 +876,7 @@ local function onServerError(code, error)
 	local function cancelCallback()
 		generalBox = destroyWindows(generalBox)
 
+		requestRewardWall()
 		rewardWallController.ui:show()
 		rewardWallController.ui:raise()
         rewardWallController.ui:focus()
@@ -893,6 +916,14 @@ local function disconnectOnServerError()
 	serverErrorConnected = false
 end
 
+-- Instant Reward Access purchases don't push a balance update, so re-request the wall data
+-- without pulling the wall in front of the store.
+local function onStorePurchaseComplete()
+	if rewardWallController.ui and rewardWallController.ui:isVisible() and not claimPending then
+		requestRewardWall(true)
+	end
+end
+
 local function onCloseRewardWall()
 	if claimPending then
 		hide(false)
@@ -920,6 +951,14 @@ local function onCloseRewardWall()
 end
 
 local function onOpenRewardWall(bonusShrines, nextRewardTime, dayStreakDay, wasDailyRewardTaken, errorMessage, tokens, timeLeft, dayStreakLevel, canGetReward)
+	local quietRefresh = table.remove(pendingWallRequests, 1) == true
+
+	-- Quiet refreshes are only sent with no claim pending, so a pending claim here was started after
+	-- the store refresh; its own reply follows. Also never reopen a dismissed wall.
+	if quietRefresh and (claimPending or not rewardWallController.ui:isVisible()) then
+		return
+	end
+
 	if claimCloseResetEvent then
 		removeEvent(claimCloseResetEvent)
 
@@ -933,8 +972,12 @@ local function onOpenRewardWall(bonusShrines, nextRewardTime, dayStreakDay, wasD
 	updateDailyRewards(dayStreakDay, wasDailyRewardTaken, nextRewardTime, canGetReward, timeLeft)
 	premiumStatusWindwos(g_game.getLocalPlayer():isPremium())
 	rewardWallController.ui:show()
-	rewardWallController.ui:raise()
-    rewardWallController.ui:focus()
+
+	if not quietRefresh then
+		rewardWallController.ui:raise()
+		rewardWallController.ui:focus()
+	end
+
 	connectOnServerError()
 	rewardWallController.ui.restingAreaPanel.restingAreaInfo.rewardStreakIcon:setText(dayStreakLevel)
 	updateRestingAreaBonusIcons(dayStreakLevel)
@@ -992,7 +1035,7 @@ function show()
 	end
 
 	if not rewardWallController.ui:isVisible() then
-		g_game.sendOpenRewardWall()
+		requestRewardWall()
 	end
 
 	rewardWallController.ui:show()
@@ -1201,7 +1244,8 @@ function rewardWallController:onInit()
 		onDailyReward = onDailyReward,
 		onRewardHistory = onRewardHistory,
 		onRestingAreaState = onRestingAreaState,
-		onDailyRewardCollectionState = onDailyRewardCollectionState
+		onDailyRewardCollectionState = onDailyRewardCollectionState,
+		onParseStoreGetPurchaseStatus = onStorePurchaseComplete
 	})
 	setupRewardWallUi()
 end
@@ -1241,6 +1285,7 @@ function rewardWallController:onGameEnd()
 	end
 
 	claimPending = false
+	pendingWallRequests = {}
 	resetHistoryView()
 
 	if rewardWallController.ui:isVisible() then
@@ -1288,7 +1333,7 @@ function rewardWallController:onClickDisplayWindowsPickRewardWindow(event)
 
 		if not windowsPickWindow then
 			if type(itemsToSelect) == "table" then
-				itemsToSelect = isPremium and itemsToSelect[1] or itemsToSelect[2]
+				itemsToSelect = itemsToSelect[isPremium and "premium" or "free"]
 			else
 				itemsToSelect = itemsToSelect or 1
 			end
@@ -1327,15 +1372,36 @@ function rewardWallController:onClickDisplayWindowsPickRewardWindow(event)
             windowsPickWindow:focus()
 		end
 	elseif event.target.bundleType == bundleType.XPBOOST or event.target.bundleType == bundleType.PREY then
-		if not beginClaim() then
+		local function claimReward()
+			if not beginClaim() then
+				return
+			end
+
+			hide()
+			actualUsed = {}
+			claimInstantDailyReward()
+		end
+
+		if getClaimUsedToken() == 1 then
+			local buttons = {
+				{
+					text = "Cancel",
+					callback = function()
+						generalBox = destroyWindows(generalBox)
+					end
+				},
+				{
+					text = "OK",
+					callback = claimReward
+				}
+			}
+
+			generalBox = displayGeneralBox3("Confirm Daily Reward", "Claiming this reward will use 1 Instant Reward Access. Continue?", buttons)
+
 			return
 		end
 
-		hide()
-
-		actualUsed = {}
-
-		claimInstantDailyReward()
+		claimReward()
 	end
 end
 
@@ -1400,15 +1466,15 @@ function rewardWallController:onhoverRewardType(event)
 	end
 
 	local itemsToSelect = event.target.itemsToSelect or {
-		1,
-		1
+		free = 1,
+		premium = 1
 	}
 	local freeAmount = 0
 	local premiumAmount = 0
 
 	if type(itemsToSelect) == "table" then
-		freeAmount = itemsToSelect[2] or 0
-		premiumAmount = itemsToSelect[1] or 0
+		freeAmount = itemsToSelect.free or 0
+		premiumAmount = itemsToSelect.premium or 0
 	else
 		freeAmount = itemsToSelect
 		premiumAmount = itemsToSelect
@@ -1477,7 +1543,7 @@ function destroyPickReward(bool)
 	windowsPickWindow = destroyWindows(windowsPickWindow)
 
 	if bool then
-		g_game.sendOpenRewardWall()
+		requestRewardWall()
 		rewardWallController.ui:show()
 		rewardWallController.ui:raise()
         rewardWallController.ui:focus()
@@ -1801,6 +1867,7 @@ function managerMessageBoxWindow(id)
 			windowsPickWindow
 		})
 
+		requestRewardWall()
 		rewardWallController.ui:show()
 		rewardWallController.ui:raise()
         rewardWallController.ui:focus()
@@ -1812,6 +1879,7 @@ function managerMessageBoxWindow(id)
 			windowsPickWindow
 		})
 
+		requestRewardWall()
 		rewardWallController.ui:show()
         rewardWallController.ui:raise()
         rewardWallController.ui:focus()
