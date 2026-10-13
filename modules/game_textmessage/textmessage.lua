@@ -176,9 +176,9 @@ MessageTypes = {
     [MessageModes.Heal] = MessageSettings.statusOwn,
     [MessageModes.Exp] = MessageSettings.statusOwn,
 
-    [MessageModes.DamageOthers] = MessageSettings.statusOwn,
-    [MessageModes.HealOthers] = MessageSettings.statusOwn,
-    [MessageModes.ExpOthers] = MessageSettings.statusOwn,
+    [MessageModes.DamageOthers] = MessageSettings.othersStatus,
+    [MessageModes.HealOthers] = MessageSettings.othersStatus,
+    [MessageModes.ExpOthers] = MessageSettings.othersStatus,
     [MessageModes.Potion] = MessageSettings.potion,
 
     [MessageModes.TradeNpc] = MessageSettings.centerGreen,

@@ -43,7 +43,7 @@ android {
 
     signingConfigs {
         create("release") {
-            // Use env vars for CI/production, fallback to debug keystore for local dev
+            // Use env vars for custom release signing; otherwise use Gradle's debug signing config
             storeFile = file(System.getenv("RELEASE_KEYSTORE")
                 ?: System.getProperty("user.home") + "/.android/debug.keystore")
             storePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD") ?: "android"
@@ -63,7 +63,9 @@ android {
         getByName("release") {
             isMinifyEnabled = false
             isShrinkResources = false
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = signingConfigs.getByName(
+                if (System.getenv("RELEASE_KEYSTORE") == null) "debug" else "release"
+            )
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 file("proguard-rules.pro")

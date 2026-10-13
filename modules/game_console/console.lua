@@ -556,10 +556,32 @@ function load()
         end
     end
     loadCommunicationSettings()
+
+    if modules.client_options then
+        setMaxLines(modules.client_options.getOption('consoleMaxLines'))
+    end
 end
 
 function setShowHighlightedUnderline(value)
     showHighlightedUnderline = value
+end
+
+function setMaxLines(value)
+    MAX_LINES = math.max(tonumber(value) or MAX_LINES, 1)
+
+    if not consoleTabBar then
+        return
+    end
+
+    for _, tab in pairs(consoleTabBar.tabs) do
+        local consoleBuffer = tab.tabPanel:getChildById('consoleBuffer')
+        if consoleBuffer and consoleBuffer:getChildCount() > MAX_LINES then
+            clearSelection(consoleBuffer)
+            while consoleBuffer:getChildCount() > MAX_LINES do
+                consoleBuffer:getFirstChild():destroy()
+            end
+        end
+    end
 end
 
 function isEnabledWASD()

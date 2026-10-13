@@ -219,6 +219,7 @@ controller:registerEvents(g_game, {
             g_game.enableFeature(GamePlayerFamiliars)
             g_game.disableFeature(GameEnvironmentEffect)
             g_game.disableFeature(GameItemAnimationPhase)
+            g_game.enableFeature(GameManaShield)
         end
 
         if version >= 1290 then

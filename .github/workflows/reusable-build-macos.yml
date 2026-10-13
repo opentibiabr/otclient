@@ -91,15 +91,8 @@ jobs:
           fi
 
       - name: Install CMake and Ninja
-        uses: lukka/get-cmake@v3.31.6
+        uses: lukka/get-cmake@v4.3.4
 
-      - name: Cache CMake build directory
-        uses: actions/cache@v4
-        with:
-          path: ${{ github.workspace }}/build-${{ matrix.buildtype }}
-          key: cmake-dir-${{ matrix.buildtype }}
-          restore-keys: |
-            cmake-dir-${{ matrix.buildtype }}
 
       - name: Configure and Build
         env:

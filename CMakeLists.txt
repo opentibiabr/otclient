@@ -36,6 +36,12 @@ if (VCPKG_TARGET_ANDROID)
 	include_directories(Android_INCLUDES)
 endif()
 
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.19)
+	include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/SharedBuildCache.cmake")
+elseif(DEFINED ENV{CANARY_SHARED_CACHE_ROOT} OR DEFINED CANARY_SHARED_CACHE_ROOT)
+	message(WARNING "Shared build caching requires CMake 3.19 or newer; using build-local vcpkg storage.")
+endif()
+
 # *****************************************************************************
 # Project otclient
 # *****************************************************************************

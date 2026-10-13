@@ -130,6 +130,8 @@ void UIMap::setMinimumAmbientLight(const float intensity) { m_mapView->setMinimu
 
 void UIMap::setDrawViewportEdge(const bool force) { m_mapView->m_forceDrawViewportEdge = force; m_mapView->m_visibleDimension = {}; updateVisibleDimension(); }
 
+bool UIMap::isDrawingViewportEdge() { return m_mapView->isDrawingViewportEdge(); }
+
 bool UIMap::isDrawingNames() { return m_mapView->isDrawingNames(); }
 
 bool UIMap::isDrawingHealthBars() { return m_mapView->isDrawingHealthBars(); }
@@ -159,6 +161,31 @@ Otc::FloorViewMode UIMap::getFloorViewMode() { return m_mapView->getFloorViewMod
 CreaturePtr UIMap::getFollowingCreature() { return m_mapView->getFollowingCreature(); }
 
 Position UIMap::getCameraPosition() { return m_mapView->getCameraPosition(); }
+
+Point UIMap::getTilePoint(const Position& pos)
+{
+    if (!pos.isMapPosition() || !m_mapView || !m_mapView->isInRange(pos))
+        return {};
+
+    auto point = m_mapView->transformPositionTo2D(pos) - m_mapView->m_posInfo.drawOffset;
+    point.x *= m_mapView->m_posInfo.horizontalStretchFactor;
+    point.y *= m_mapView->m_posInfo.verticalStretchFactor;
+    point += m_mapviewRect.topLeft();
+    point /= g_window.getDisplayDensity();
+    return point;
+}
+
+Rect UIMap::getTileRect(const Position& pos)
+{
+    if (!pos.isMapPosition() || !m_mapView || !m_mapView->isInRange(pos))
+        return {};
+
+    const auto point = getTilePoint(pos);
+    const auto density = g_window.getDisplayDensity();
+    const auto width = std::max<int>(1, std::lround(static_cast<float>(m_mapView->m_tileSize) * m_mapView->m_posInfo.horizontalStretchFactor / density));
+    const auto height = std::max<int>(1, std::lround(static_cast<float>(m_mapView->m_tileSize) * m_mapView->m_posInfo.verticalStretchFactor / density));
+    return { point.x, point.y, width, height };
+}
 
 Position UIMap::getPosition(const Point& mousePos) { return m_mapView->getPosition(mousePos); }
 

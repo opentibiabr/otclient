@@ -41,6 +41,9 @@
 #include "framework/net/inputmessage.h"
 #include "paperdollmanager.h"
 #include "paperdoll.h"
+#ifdef FRAMEWORK_SOUND
+#include <framework/sound/soundmanager.h>
+#endif
 #include <fmt/format.h>
 #include <framework/util/stats.h>
 
@@ -1959,15 +1962,21 @@ void ProtocolGame::parseMagicEffect(const InputMessagePtr& msg)
                 }
 
                 case Otc::MAGIC_EFFECTS_CREATE_SOUND_MAIN_EFFECT: {
-                    msg->getU8(); // Source
-                    msg->getU16(); // Sound ID
+                    const uint8_t soundSource = msg->getU8(); // Source
+                    const uint16_t soundId = msg->getU16(); // Sound ID
+                    #ifdef FRAMEWORK_SOUND
+                    g_sounds.playProtocolSoundMain(soundSource, soundId, pos);
+                    #endif
                     break;
                 }
 
                 case Otc::MAGIC_EFFECTS_CREATE_SOUND_SECONDARY_EFFECT: {
-                    msg->getU8(); // ENUM
-                    msg->getU8(); // Source
-                    msg->getU16(); // Sound ID
+                    const uint8_t soundEnum = msg->getU8(); // ENUM
+                    const uint8_t soundSource = msg->getU8(); // Source
+                    const uint16_t soundId = msg->getU16(); // Sound ID
+                    #ifdef FRAMEWORK_SOUND
+                    g_sounds.playProtocolSoundSecondary(soundEnum, soundSource, soundId, pos);
+                    #endif
                     break;
                 }
                 default:
@@ -7141,8 +7150,24 @@ void ProtocolGame::parseClientEvent(const InputMessagePtr& msg)
             g_lua.callGlobalField("g_game", "onClientEvent", type, itemId, message);
             break;
         }
+        case Otc::CLIENT_EVENT_TYPE_BOUNTY_TASK: {
+            const auto taskId = msg->getU16();
+            g_lua.callGlobalField("g_game", "onClientEvent", type, taskId);
+            break;
+        }
+        case Otc::CLIENT_EVENT_TYPE_WEEKLY_TASK: {
+            const auto raceId = msg->getU16();
+            g_lua.callGlobalField("g_game", "onClientEvent", type, raceId);
+            break;
+        }
+        case Otc::CLIENT_EVENT_TYPE_SPELL_UNLOCKED: {
+            const auto spellId = msg->getU32();
+            g_lua.callGlobalField("g_game", "onClientEvent", type, spellId);
+            break;
+        }
         default:
-            throw stdext::exception("[ProtocolGame::parseClientEvent] Unknown event type {}", static_cast<uint8_t>(type));
+            g_logger.warning(std::format("[ProtocolGame::parseClientEvent] Unknown event type {}", static_cast<uint8_t>(type)));
+            break;
     }
 }
 

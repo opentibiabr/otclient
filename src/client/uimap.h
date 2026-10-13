@@ -52,6 +52,7 @@ public:
     void setShader(std::string_view name, float fadein, float fadeout);
     void setMinimumAmbientLight(float intensity);
     void setDrawViewportEdge(bool force);
+    bool isDrawingViewportEdge();
     bool isDrawingNames();
     bool isDrawingHealthBars();
     bool isDrawingLights();
@@ -67,6 +68,8 @@ public:
     Otc::FloorViewMode getFloorViewMode();
     CreaturePtr getFollowingCreature();
     Position getCameraPosition();
+    Point getTilePoint(const Position& pos);
+    Rect getTileRect(const Position& pos);
     Position getPosition(const Point& mousePos);
     TilePtr getTile(const Point& mousePos);
     Size getVisibleDimension();

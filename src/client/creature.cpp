@@ -45,6 +45,9 @@
 #include "framework/graphics/painter.h"
 #include "framework/graphics/shadermanager.h"
 #include "framework/ui/uiwidget.h"
+#ifdef FRAMEWORK_SOUND
+#include <framework/sound/soundmanager.h>
+#endif
 #include <framework/core/graphicalapplication.h>
 #include <framework/util/stats.h>
 
@@ -401,8 +404,8 @@ void Creature::internalDraw(Point dest, const Color& color)
 
         // outfit is a real creature
         if (m_outfit.isCreature()) {
-            if (m_outfit.hasMount()) {
-                dest -= getMountThingType()->getDisplacement() * g_drawPool.getScaleFactor();
+            if (const auto mountType = getMountThingType(); mountType) {
+                dest -= mountType->getDisplacement() * g_drawPool.getScaleFactor();
 
                 if (!replaceColorShader && hasMountShader()) {
                     g_drawPool.setShaderProgram(g_shaders.getShaderById(m_mountShaderId), true/*, [this]()-> void {
@@ -410,7 +413,7 @@ void Creature::internalDraw(Point dest, const Color& color)
                         m_mountShader->setUniformValue(ShaderManager::MOUNT_ID_UNIFORM, m_outfit.getMount());
                     }*/);
                 }
-                getMountThingType()->draw(dest, 0, m_numPatternX, 0, 0, getCurrentAnimationPhase(true), color);
+                mountType->draw(dest, 0, m_numPatternX, 0, 0, getCurrentAnimationPhase(true), color);
 
                 dest += getDisplacement() * g_drawPool.getScaleFactor();
             }
@@ -605,6 +608,10 @@ void Creature::updateJump()
 
 void Creature::onPositionChange(const Position& newPos, const Position& oldPos)
 {
+    #ifdef FRAMEWORK_SOUND
+    if (isLocalPlayer())
+        g_sounds.onListenerPositionChanged(newPos, oldPos);
+    #endif // FRAMEWORK_SOUND
     callLuaFieldUnchecked("onPositionChange", newPos, oldPos);
 }
 
@@ -680,7 +687,8 @@ void Creature::updateWalkAnimation()
     if (!m_outfit.isCreature())
         return;
 
-    int footAnimPhases = m_outfit.hasMount() ? getMountThingType()->getAnimationPhases() : getAnimationPhases();
+    const auto mountType = getMountThingType();
+    int footAnimPhases = mountType ? mountType->getAnimationPhases() : getAnimationPhases();
     if (!g_game.getFeature(Otc::GameEnhancedAnimations) && footAnimPhases > 2) {
         --footAnimPhases;
     }
@@ -742,25 +750,23 @@ void Creature::updateWalkingTile()
         g_gameConfig.getSpriteSize() + (m_walkOffset.y - displacementY),
         g_gameConfig.getSpriteSize(), g_gameConfig.getSpriteSize());
 
+    for (int xi = -1; xi <= 1 && !newWalkingTile; ++xi) {
+        for (int yi = -1; yi <= 1 && !newWalkingTile; ++yi) {
+            Rect virtualTileRect((xi + 1) * g_gameConfig.getSpriteSize(), (yi + 1) * g_gameConfig.getSpriteSize(), g_gameConfig.getSpriteSize(), g_gameConfig.getSpriteSize());
+
+            // only render creatures where bottom right is inside tile rect
+            if (virtualTileRect.contains(virtualCreatureRect.bottomRight()))
+                newWalkingTile = g_map.getOrCreateTile(getPosition().translated(xi, yi, 0));
+        }
+    }
+
+    // NW - for the effect of going behind the object west of it, walking creature will be drawn in front of the object for the half of the way, and after behind
+    // SE - for the effect of going in front the object south of it, walking creature will be drawn behind the object for the half of the way, and after in front
     if (m_walkedPixels < g_gameConfig.getSpriteSize() / 2) {
         if (m_direction == Otc::Direction::NorthWest)
             newWalkingTile = m_walkingTile ? m_walkingTile : getTile();
         else if (m_direction == Otc::Direction::SouthEast)
             newWalkingTile = g_map.getTile(getPosition().translated(-1, -1, 0));
-    }
-
-    for (int xi = -1; xi <= 1 && !newWalkingTile; ++xi) {
-        for (int yi = -1; yi <= 1 && !newWalkingTile; ++yi) {
-            Rect virtualTileRect((xi + 1) * g_gameConfig.getSpriteSize(), (yi + 1) * g_gameConfig.getSpriteSize(), g_gameConfig.getSpriteSize(), g_gameConfig.getSpriteSize());
-
-            // when creature is moving to the upper left tile, because of drawing order (we want creature to be behind the object to the left if its a tree for example)
-            if (m_direction == Otc::Direction::NorthWest && virtualTileRect.contains(virtualCreatureRect.topLeft())) {
-                newWalkingTile = g_map.getOrCreateTile(getPosition().translated(xi, yi, 0));
-            } else if (virtualTileRect.contains(virtualCreatureRect.bottomRight())) {
-                // only render creatures where bottom right is inside tile rect
-                newWalkingTile = g_map.getOrCreateTile(getPosition().translated(xi, yi, 0));
-            }
-        }
     }
 
     if (newWalkingTile == m_walkingTile) return;
@@ -1174,8 +1180,8 @@ int Creature::getDisplacementX() const
     if (m_outfit.isItem())
         return 0;
 
-    if (m_outfit.hasMount())
-        return getMountThingType()->getDisplacementX();
+    if (const auto mountType = getMountThingType(); mountType)
+        return mountType->getDisplacementX();
 
     return Thing::getDisplacementX();
 }
@@ -1188,8 +1194,8 @@ int Creature::getDisplacementY() const
     if (m_outfit.isItem())
         return 0;
 
-    if (m_outfit.hasMount())
-        return getMountThingType()->getDisplacementY();
+    if (const auto mountType = getMountThingType(); mountType)
+        return mountType->getDisplacementY();
 
     return Thing::getDisplacementY();
 }

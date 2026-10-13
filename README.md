@@ -514,6 +514,9 @@ This is a fork of edubart's OTClient. The objective of this fork is to develop a
 ## <a id="compiling"></a>🔨 Compiling
 If you are interested in compiling this project, visit the **[Wiki](https://github.com/mehah/otclient/wiki)**.
 
+For content-addressed vcpkg reuse across CMake presets, Visual Studio Solutions,
+worktrees, and compatible forks, see the [shared build cache guide](docs/development/shared-build-cache.md).
+
 ---
 
 ## <a id="docker"></a>🐳 Docker

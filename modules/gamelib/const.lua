@@ -230,6 +230,7 @@ GameNpcWindowRedesign = 133
 GameTaskboard = 134
 GameProficiency = 135
 GameTacticsWithoutFightMode = 136
+GameManaShield = 137
 
 TextColors = {
     red = '#f55e5e',    -- '#c83200'

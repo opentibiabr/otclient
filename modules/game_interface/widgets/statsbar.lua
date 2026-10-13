@@ -30,7 +30,48 @@ local statsBarsDimensions = {
     }
 }
 
-local firstCall = true
+-- Geometry of each stats bar layout that depends on the GameProficiency feature.
+-- `on` mirrors 30-statsbar.otui; `off` closes the gap left by the hidden proficiency
+-- Supported properties: right (anchor right edge to <id>.left), marginLeft, marginRight, width.
+local proficiencyLayouts = {
+    largeOnTop = {
+        on  = { health = { right = 'proficiencyIcon' }, icons = { width = 52 } },
+        off = { health = { right = 'icons' },           icons = { width = 75 } }
+    },
+    largeOnBottom = {
+        on  = { health = { right = 'proficiencyIcon' } },
+        off = { health = { right = 'icons' } }
+    },
+    compactOnTop = {
+        on  = { health = { right = 'proficiencyTopBar', marginRight = 6 }, icons = { marginLeft = 57 } },
+        off = { health = { right = 'icons', marginRight = 3 },             icons = { marginLeft = 0 } }
+    },
+    compactOnBottom = {
+        on  = { health = { right = 'proficiencyTopBar', marginRight = 7 }, icons = { marginLeft = 57 } },
+        off = { health = { right = 'icons', marginRight = 7 },             icons = { marginLeft = 0 } }
+    },
+    parallelOnTop = {
+        on  = { icons = { marginLeft = 60 } },
+        off = { icons = { marginLeft = 0 } }
+    },
+    parallelOnBottom = {
+        on  = { icons = { marginLeft = 60 } },
+        off = { icons = { marginLeft = 0 } }
+    },
+    defaultOnTop = {
+        on  = { icons = { marginLeft = 60 } },
+        off = { icons = { marginLeft = 0 } }
+    },
+    defaultOnBottom = {
+        on  = { icons = { marginLeft = 60 } },
+        off = { icons = { marginLeft = 0 } }
+    }
+}
+
+local DEFAULT_DIMENSION = "compact"
+local DEFAULT_PLACEMENT = "top"
+
+local isWarriorVocation = false
 
 local currentStats = {
     dimension = "hide",
@@ -109,6 +150,7 @@ local function reloadSkillsTab(skills, parent)
         widget.level = widget:getChildById('level')
         widget.icon = widget:getChildById('icon')
         widget.bar = widget:getChildById('bar')
+        widget.xpBoostBtn = widget:getChildById('xpBoostBtn')
 
         widget.icon:setImageSource(skillTuple.icon)
         widget.icon:setTooltip(skillTuple.name)
@@ -142,6 +184,12 @@ local function reloadSkillsTab(skills, parent)
         if skillTuple.key == 'experience' then
             widget.level:setText(player:getLevel())
             widget.bar:setValue(player:getLevelPercent(), 100)
+            widget.bar:removeAnchor(AnchorRight)
+            widget.bar:addAnchor(AnchorRight, 'xpBoostBtn', AnchorLeft)
+            widget.bar:setMarginRight(8)
+            widget.xpBoostBtn:addAnchor(AnchorRight, 'parent', AnchorRight)
+            widget.xpBoostBtn:setVisible(true)
+            --Activate xpBoost icon in this line only
         elseif skillTuple.key == 'magic' then
             widget.level:setText(player:getMagicLevel())
             widget.bar:setValue(player:getMagicLevelPercent(), 100)
@@ -195,12 +243,24 @@ function StatsBar.getCurrentStatsBarWithPosition()
     if statsBar[fullPosition] then
         -- Return the stats bar based on the full position.
         -- i.e. statsBarTop.largeOnTop
-        return statsBar[fullPosition]
+        local dimension = currentStats.dimension:gsub("^%l", string.upper)
+        local actualName = dimension .. "On" .. placement
+        statsBar[fullPosition].actualName = actualName
+        return statsBar[fullPosition], actualName
     else
         print("No stats bar with position found for:", statsBar)
     end
 
     return nil
+end
+
+function StatsBar.getCurrentStatsBarWithPositionName()
+    if currentStats.dimension == 'hide' or currentStats.placement == 'hide' then
+        return nil
+    end
+    local dimension = currentStats.dimension:gsub("^%l", string.upper)
+    local placement = currentStats.placement:gsub("^%l", string.upper)
+    return dimension .. "On" .. placement
 end
 
 function StatsBar.getCurrentStatsBar()
@@ -224,6 +284,92 @@ function StatsBar.getCurrentStatsBar()
     end
 
     return nil
+end
+
+local MANA_SHIELD_TEXT_FORMAT = '%d/%d (%d/%d)'
+local MANA_SHIELD_ICON_ID = 'manashieldIcon'
+local MANA_SHIELD_TAIL_ID = 'manashieldTail'
+local MANA_SHIELD_ICON_SOURCE = '/images/game/states/player-state-flags'
+local MANA_SHIELD_ICON_CLIP = '234 0 9 9'
+local MANA_SHIELD_ICON_SIZE = 9
+local MANA_SHIELD_ICON_MARGIN = 5
+local MANA_TEXT_WIDTH = 400
+
+local function getManaShieldIcon(manashieldBar)
+    local icon = manashieldBar:getChildById(MANA_SHIELD_ICON_ID)
+    if not icon then
+        icon = g_ui.createWidget('UIWidget', manashieldBar)
+        icon:setId(MANA_SHIELD_ICON_ID)
+        icon:setImageSource(MANA_SHIELD_ICON_SOURCE)
+        icon:setImageClip(MANA_SHIELD_ICON_CLIP)
+        icon:setSize(tosize(MANA_SHIELD_ICON_SIZE .. ' ' .. MANA_SHIELD_ICON_SIZE))
+        icon:setImageSize(tosize(MANA_SHIELD_ICON_SIZE .. ' ' .. MANA_SHIELD_ICON_SIZE))
+        icon:setFocusable(false)
+        icon:setTooltip(tr('Mana Shield'))
+        icon:hide()
+    end
+    return icon
+end
+
+local function getManaShieldTail(manashieldBar)
+    local tail = manashieldBar:getChildById(MANA_SHIELD_TAIL_ID)
+    if not tail then
+        tail = g_ui.createWidget('Label', manashieldBar)
+        tail:setId(MANA_SHIELD_TAIL_ID)
+        local font = manashieldBar.text:getFont()
+        if font ~= '' then
+            tail:setFont(font)
+        end
+        tail:setColor(manashieldBar.text:getColor())
+        tail:hide()
+    end
+    return tail
+end
+
+local function updateManaShieldText(manashieldBar, manaText, showIcon)
+    local text = manashieldBar and manashieldBar.text
+    if not text then
+        return
+    end
+
+    manaText = manaText or manashieldBar.manaShieldText or text:getText()
+    showIcon = showIcon == nil and manashieldBar.showManaShieldIcon or showIcon
+    manashieldBar.manaShieldText = manaText
+    manashieldBar.showManaShieldIcon = showIcon and true or false
+
+    local icon = getManaShieldIcon(manashieldBar)
+    local tail = getManaShieldTail(manashieldBar)
+    local closeIndex = manaText:find(')', 1, true)
+
+    if not showIcon or not closeIndex then
+        text:setText(manaText)
+        text:setWidth(MANA_TEXT_WIDTH)
+        text:setMarginLeft(0)
+        icon:hide()
+        tail:hide()
+        return
+    end
+
+    text:setText(manaText:sub(1, closeIndex - 1))
+    local textWidth = text:getTextSize().width
+    tail:setText(manaText:sub(closeIndex))
+    local tailWidth = tail:getTextSize().width
+
+    text:setWidth(textWidth)
+    text:setMarginLeft(-math.floor((MANA_SHIELD_ICON_MARGIN + MANA_SHIELD_ICON_SIZE + tailWidth) / 2))
+
+    icon:addAnchor(AnchorLeft, 'text', AnchorLeft)
+    icon:addAnchor(AnchorVerticalCenter, 'text', AnchorVerticalCenter)
+    icon:setMarginLeft(textWidth + MANA_SHIELD_ICON_MARGIN)
+    icon:raise()
+    icon:show()
+
+    tail:setWidth(tailWidth)
+    tail:addAnchor(AnchorLeft, 'text', AnchorLeft)
+    tail:addAnchor(AnchorVerticalCenter, 'text', AnchorVerticalCenter)
+    tail:setMarginLeft(textWidth + MANA_SHIELD_ICON_SIZE + MANA_SHIELD_ICON_MARGIN)
+    tail:raise()
+    tail:show()
 end
 
 function StatsBar.reloadCurrentStatsBarQuickInfo()
@@ -258,8 +404,108 @@ function StatsBar.reloadCurrentStatsBarQuickInfo()
     if player.getMaxManaShield then
         maxManaShield = player:getMaxManaShield()
     end
-    local shouldShowManaShield = manashield > 0 and maxManaShield > 0
-    if shouldShowManaShield then
+
+    local isWarrior = player:isKnight() or player:isPaladin() or
+                      (player:isMonk() and g_game.getFeature(GameVocationMonk))
+    local shouldShowManaShield = manashield > 0 and maxManaShield > 0 and not isWarrior
+    local currentStatsBarName = StatsBar.getCurrentStatsBarWithPositionName()
+
+    if isWarrior or not g_game.getFeature(GameManaShield) then
+        if bar.mana.defaultHeight then
+            bar.mana:setHeight(bar.mana.defaultHeight)
+        end
+        bar.mana.showText = true
+        if bar.mana.text then
+            bar.mana.text:show()
+        end
+
+        bar.manashield:setMarginTop(0)
+        bar.manashield:setHeight(0)
+        bar.manashield:hide()
+        bar.manashield:setValue(0, 0)
+        bar.manashield.bar:hide()
+        bar.manashield.text:hide()
+        bar.manashield.showText = false
+        if bar.manashield.text then
+            bar.manashield.text:hide()
+            bar.manashield.text:setMarginTop(0)
+            bar.manashield.text:setMarginBottom(0)
+        end
+        updateManaShieldText(bar.manashield, '', false)
+        return
+    end
+
+    if shouldShowManaShield and (currentStatsBarName == 'LargeOnTop' or currentStatsBarName == 'LargeOnBottom') then
+        local fullHeight = bar.mana.defaultHeight
+        local manaHeight = math.floor(fullHeight / 2)
+        local shieldHeight = math.max(1, fullHeight - manaHeight)
+
+        bar.mana:setHeight(manaHeight - 2)
+        bar.manashield:show()
+        bar.manashield:setMarginTop(4)
+        bar.manashield:setHeight(shieldHeight - 2)
+        bar.manashield:setValue(manashield, maxManaShield)
+        bar.manashield.text:setWidth(400)
+        local manaText = string.format('%d/%d', manashield, maxManaShield)
+        if not bar.manashield or not bar.manashield.text then
+            return
+        end
+        bar.manashield.text:setMarginBottom(0)
+        bar.manashield.text:show()
+        bar.manashield.text:raise()
+        bar.manashield.bar:show()
+        bar.manashield.showText = true
+        updateManaShieldText(bar.manashield, manaText, false)
+    elseif not shouldShowManaShield and (currentStatsBarName == 'LargeOnTop' or currentStatsBarName == 'LargeOnBottom') then
+        local fullHeight = bar.mana.defaultHeight
+        local manaHeight = math.floor(fullHeight / 2)
+        local shieldHeight = math.max(1, fullHeight - manaHeight)
+
+        bar.mana:setHeight(manaHeight - 2)
+        bar.manashield:show()
+        bar.manashield:setMarginTop(4)
+        bar.manashield:setHeight(shieldHeight - 2)
+        bar.manashield:setValue(0, 0)
+        bar.manashield.text:setWidth(400)
+        local manaText = string.format('%d/%d', 0, 0)
+        if not bar.manashield or not bar.manashield.text then
+            return
+        end
+        --bar.manashield.text:setMarginTop(-textOffset)
+        bar.manashield.text:setMarginBottom(0)
+        bar.manashield.text:show()
+        bar.manashield.text:raise()
+        bar.manashield.bar:hide()
+        bar.manashield.showText = true
+        updateManaShieldText(bar.manashield, manaText, false)
+    elseif shouldShowManaShield and (currentStatsBarName == 'DefaultOnTop' or currentStatsBarName == 'DefaultOnBottom') then
+        local fullHeight = bar.mana.defaultHeight
+        local manaHeight = math.floor(fullHeight / 2)
+        local shieldHeight = math.max(1, fullHeight - manaHeight)
+
+        bar.mana.showText = false
+        if bar.mana.text then
+            bar.mana.text:hide()
+        end
+        bar.mana:setHeight(manaHeight)
+        bar.mana.text:hide()
+        bar.manashield:show()
+        bar.manashield:setHeight(shieldHeight)
+        bar.manashield:setValue(manashield, maxManaShield)
+        bar.manashield.text:setWidth(400)
+        local textOffset = math.floor(manaHeight / 2)
+        local manaText = string.format(MANA_SHIELD_TEXT_FORMAT, mana, maxMana, manashield, maxManaShield)
+        if not bar.manashield or not bar.manashield.text then
+            return
+        end
+        bar.manashield.text:setMarginTop(-textOffset)
+        bar.manashield.text:setMarginBottom(0)
+        bar.manashield.text:show()
+        bar.manashield.text:raise()
+        bar.manashield.bar:show()
+        bar.manashield.showText = true
+        updateManaShieldText(bar.manashield, manaText, true)
+    elseif not shouldShowManaShield and (currentStatsBarName == 'DefaultOnTop' or currentStatsBarName == 'DefaultOnBottom') then
         local fullHeight = bar.mana.defaultHeight
         local manaHeight = math.floor(fullHeight / 2)
         local shieldHeight = math.max(1, fullHeight - manaHeight)
@@ -270,25 +516,138 @@ function StatsBar.reloadCurrentStatsBarQuickInfo()
         end
 
         bar.mana:setHeight(manaHeight)
-
+        bar.mana.text:hide()
+        bar.mana.showText = false
         bar.manashield:show()
-        bar.manashield:setMarginTop(0)
+        bar.manashield:setHeight(shieldHeight)
+        bar.manashield:setValue(0, 0)
+        bar.manashield.text:setWidth(400)
+        local textOffset = math.floor(manaHeight / 2)
+        local manaText = string.format(MANA_SHIELD_TEXT_FORMAT, mana, maxMana, manashield, maxManaShield)
+        if not bar.manashield or not bar.manashield.text then
+            return
+        end
+        bar.manashield.text:setMarginTop(-textOffset)
+        bar.manashield.text:setMarginBottom(0)
+        bar.manashield.text:show()
+        bar.manashield.text:raise()
+        bar.manashield.bar:hide()
+        bar.manashield.showText = true
+        updateManaShieldText(bar.manashield, manaText, true)
+    elseif shouldShowManaShield and (currentStatsBarName == 'ParallelOnTop' or currentStatsBarName == 'ParallelOnBottom') then
+        local fullHeight = bar.mana.defaultHeight
+        local manaHeight = math.floor(fullHeight / 2)
+        local shieldHeight = math.max(1, fullHeight - manaHeight)
+
+        bar.mana.showText = false
+        if bar.mana.text then
+            bar.mana.text:hide()
+        end
+
+        bar.mana:setHeight(manaHeight)
+        bar.mana.text:hide()
+        bar.manashield:show()
         bar.manashield:setHeight(shieldHeight)
         bar.manashield:setValue(manashield, maxManaShield)
-        if bar.manashield.text then
-            bar.manashield.text:setWidth(400)
-            local textOffset = math.floor(manaHeight / 2)
-            local manaText = string.format('%d/%d (%d/%d)', mana, maxMana, manashield, maxManaShield)
-            if not bar.manashield or not bar.manashield.text then
-                return
-            end
-            bar.manashield.text:setMarginTop(-textOffset)
-            bar.manashield.text:setMarginBottom(0)
-            bar.manashield.text:show()
-            bar.manashield.text:raise()
-            bar.manashield.showText = true
-            bar.manashield.manaShieldText = manaText
+        bar.manashield.text:setWidth(400)
+        local textOffset = math.floor(manaHeight / 2)
+        local manaText = string.format(MANA_SHIELD_TEXT_FORMAT, mana, maxMana, manashield, maxManaShield)
+        if not bar.manashield or not bar.manashield.text then
+            return
         end
+        bar.manashield.text:setMarginTop(-textOffset)
+        bar.manashield.text:setMarginBottom(0)
+        bar.manashield.text:show()
+        bar.manashield.text:raise()
+        bar.manashield.bar:show()
+        bar.manashield.showText = true
+        updateManaShieldText(bar.manashield, manaText, true)
+    elseif not shouldShowManaShield and (currentStatsBarName == 'ParallelOnTop' or currentStatsBarName == 'ParallelOnBottom') then
+        local fullHeight = bar.mana.defaultHeight
+        local manaHeight = math.floor(fullHeight / 2)
+        local shieldHeight = math.max(1, fullHeight - manaHeight)
+
+        bar.mana.showText = false
+        if bar.mana.text then
+            bar.mana.text:hide()
+        end
+
+        bar.mana:setHeight(manaHeight)
+        bar.mana.text:hide()
+        bar.mana.showText = false
+        bar.manashield:show()
+        bar.manashield:setHeight(shieldHeight)
+        bar.manashield:setValue(0, 0)
+        bar.manashield.text:setWidth(400)
+        local textOffset = math.floor(manaHeight / 2)
+        local manaText = string.format(MANA_SHIELD_TEXT_FORMAT, mana, maxMana, manashield, maxManaShield)
+        if not bar.manashield or not bar.manashield.text then
+            return
+        end
+        bar.manashield.text:setMarginTop(-textOffset)
+        bar.manashield.text:setMarginBottom(0)
+        bar.manashield.text:show()
+        bar.manashield.text:raise()
+        bar.manashield.bar:hide()
+        bar.manashield.showText = true
+        updateManaShieldText(bar.manashield, manaText, true)
+    elseif shouldShowManaShield and (currentStatsBarName == 'CompactOnTop' or currentStatsBarName == 'CompactOnBottom') then
+        local fullHeight = bar.mana.defaultHeight
+        local manaHeight = math.floor(fullHeight / 2)
+        local shieldHeight = math.max(1, fullHeight - manaHeight)
+
+        bar.mana.showText = false
+        if bar.mana.text then
+            bar.mana.text:hide()
+        end
+
+        bar.mana:setHeight(manaHeight)
+        bar.mana.text:hide()
+        bar.manashield:show()
+        bar.manashield:setHeight(shieldHeight)
+        bar.manashield:setValue(manashield, maxManaShield)
+        bar.manashield.text:setWidth(400)
+        local textOffset = math.floor(manaHeight / 2)
+        local manaText = string.format(MANA_SHIELD_TEXT_FORMAT, mana, maxMana, manashield, maxManaShield)
+        if not bar.manashield or not bar.manashield.text then
+            return
+        end
+        bar.manashield.text:setMarginTop(-textOffset)
+        bar.manashield.text:setMarginBottom(0)
+        bar.manashield.text:show()
+        bar.manashield.text:raise()
+        bar.manashield.bar:show()
+        bar.manashield.showText = true
+        updateManaShieldText(bar.manashield, manaText, true)
+    elseif not shouldShowManaShield and (currentStatsBarName == 'CompactOnTop' or currentStatsBarName == 'CompactOnBottom') then
+        local fullHeight = bar.mana.defaultHeight
+        local manaHeight = math.floor(fullHeight / 2)
+        local shieldHeight = math.max(1, fullHeight - manaHeight)
+
+        bar.mana.showText = false
+        if bar.mana.text then
+            bar.mana.text:hide()
+        end
+
+        bar.mana:setHeight(manaHeight)
+        bar.mana.text:hide()
+        bar.mana.showText = false
+        bar.manashield:show()
+        bar.manashield:setHeight(shieldHeight)
+        bar.manashield:setValue(0, 0)
+        bar.manashield.text:setWidth(400)
+        local textOffset = math.floor(manaHeight / 2)
+        local manaText = string.format(MANA_SHIELD_TEXT_FORMAT, mana, maxMana, manashield, maxManaShield)
+        if not bar.manashield or not bar.manashield.text then
+            return
+        end
+        bar.manashield.text:setMarginTop(-textOffset)
+        bar.manashield.text:setMarginBottom(0)
+        bar.manashield.text:show()
+        bar.manashield.text:raise()
+        bar.manashield.bar:hide()
+        bar.manashield.showText = true
+        updateManaShieldText(bar.manashield, manaText, true)
     else
         bar.mana.showText = true
 
@@ -299,16 +658,14 @@ function StatsBar.reloadCurrentStatsBarQuickInfo()
         bar.manashield:setMarginTop(0)
         bar.manashield:setHeight(0)
         bar.manashield:hide()
-        bar.manashield.showText = true
+        bar.manashield.bar:hide()
+        bar.manashield.text:hide()
+        bar.manashield.showText = false
         if bar.manashield.text then
-            bar.manashield.text:hide()
             bar.manashield.text:setMarginTop(0)
             bar.manashield.text:setMarginBottom(0)
         end
-    end
-
-    if not shouldShowManaShield and bar.mana.text then
-        bar.mana.text:show()
+        updateManaShieldText(bar.manashield, nil, false)
     end
 end
 
@@ -473,6 +830,9 @@ function StatsBar.onSereneChange(localPlayer, serene, oldSerene)
 end
 
 function StatsBar.onVocationChange(localPlayer, vocation, oldVocation)
+    isWarriorVocation = vocation == VocationsClient.Knight or vocation == VocationsClient.EliteKnight or
+                        vocation == VocationsClient.Paladin or vocation == VocationsClient.RoyalPaladin or
+                        vocation == VocationsClient.Monk or vocation == VocationsClient.ExaltedMonk
     modules.game_healthcircle.checkMonkVocation()
     local statsBars = StatsBar.getAllStatsBarWithPosition()
     local isMonk = localPlayer:isMonk() and g_game.getFeature(GameVocationMonk)
@@ -485,6 +845,16 @@ function StatsBar.onVocationChange(localPlayer, vocation, oldVocation)
                 monkStats:disable()
             end
         end
+    end
+    StatsBar.reloadCurrentStatsBarQuickInfo()
+end
+
+-- Keeps the stats bar selectors on the options panel in sync with the state
+-- that is currently applied. Always called with valid values, never with nil,
+-- so the combobox handlers never read an empty selection back.
+local function syncStatsBarSelectors()
+    if modules.game_healthcircle and modules.game_healthcircle.setStatsBarOption then
+        modules.game_healthcircle.setStatsBarOption(currentStats.dimension, currentStats.placement)
     end
 end
 
@@ -505,10 +875,12 @@ function constructStatsBar(dimension, placement)
         statsBar[dimensionOnPlacement].manashield = statsBar[dimensionOnPlacement]:getChildById('manashield')
         statsBar[dimensionOnPlacement].skills = statsBar[dimensionOnPlacement]:getChildById('skills')
 
+        statsBar[dimensionOnPlacement].manashield.onStatsTextUpdate = updateManaShieldText
+
         reloadSkillsTab(statsBar[dimensionOnPlacement].skills, statsBar[dimensionOnPlacement])
         StatsBar.reloadCurrentStatsBarQuickInfo()
 
-        modules.game_healthcircle.setStatsBarOption()
+        syncStatsBarSelectors()
 
         StatsBar.initProficiencyTopBar()
     else
@@ -517,10 +889,17 @@ function constructStatsBar(dimension, placement)
 end
 
 function StatsBar.updateCurrentStats(dimension, placement)
-    currentStats = {
-        dimension = dimension,
-        placement = placement
-    }
+    if dimension then
+        currentStats.dimension = dimension
+    end
+
+    if placement then
+        currentStats.placement = placement
+    end
+
+    -- Persist immediately, the in-memory state is never re-read from the
+    -- settings on a change request, so it can't be rolled back by a later load.
+    StatsBar.saveSettings()
 end
 
 local function openDropMenu(mousePos)
@@ -560,8 +939,7 @@ local function openDropMenu(mousePos)
 
     menu:addSeparator()
     menu:addOption(tr('Hide Customisable Status Bars'), function()
-        StatsBar.hideAll()
-        modules.game_healthcircle.setStatsBarOption("hide")
+        StatsBar.updateStatsBarOption('hide', currentStats.placement)
     end)
 
     menu:display(mousePos)
@@ -615,7 +993,7 @@ local function onStatsMousePress(tab, mousePos, mouseButton)
 end
 
 function StatsBar.reloadCurrentTab()
-    if currentStats.dimension == "hide" then
+    if currentStats.dimension == "hide" or currentStats.placement == "hide" then
         return
     end
 
@@ -629,13 +1007,22 @@ function StatsBar.reloadCurrentTab()
     end
 end
 
-function StatsBar.updateStatsBarOption(dimension)
-    StatsBar.hideAll()
-    StatsBar.firstLoadSettings()
-
-    if currentStats.dimension ~= "hide" and dimension ~= "hide" then
-        StatsBar.reloadCurrentTab()
+-- Applies a dimension/placement request. The in-memory state is the source of
+-- truth, it is persisted right away (same behaviour as client_options setOption)
+-- and never re-read from the settings, so a change request can't be discarded.
+function StatsBar.updateStatsBarOption(dimension, placement)
+    if dimension or placement then
+        StatsBar.updateCurrentStats(dimension, placement)
     end
+
+    StatsBar.hideAll()
+
+    if currentStats.dimension == "hide" or currentStats.placement == "hide" then
+        syncStatsBarSelectors()
+        return
+    end
+
+    StatsBar.reloadCurrentTab()
 end
 
 local function getSettingOrDefault(setting, default)
@@ -647,28 +1034,43 @@ local function setSetting(setting, value)
     g_settings.set(setting, value)
 end
 
+local function isValidDimension(dimension)
+    if dimension == "hide" then
+        return true
+    end
+    return statsBarsDimensions[dimension:gsub("^%l", string.upper)] ~= nil
+end
+
+local function isValidPlacement(placement)
+    for _, knownPlacement in ipairs(statsBarsPlacements) do
+        if placement == knownPlacement:lower() then
+            return true
+        end
+    end
+    return false
+end
+
 function StatsBar.loadSettings()
+    local dimension = getSettingOrDefault('statsbar_dimension', DEFAULT_DIMENSION)
+    local placement = getSettingOrDefault('statsbar_placement', DEFAULT_PLACEMENT)
+
+    -- fall back to the defaults when the stored values are not known anymore
+    if not isValidDimension(dimension) then
+        dimension = DEFAULT_DIMENSION
+    end
+    if not isValidPlacement(placement) then
+        placement = DEFAULT_PLACEMENT
+    end
+
     currentStats = {
-        dimension = getSettingOrDefault('statsbar_dimension', "compact"),
-        placement = getSettingOrDefault('statsbar_placement', "top")
+        dimension = dimension,
+        placement = placement
     }
 end
 
 function StatsBar.saveSettings()
     setSetting('statsbar_dimension', currentStats.dimension)
     setSetting('statsbar_placement', currentStats.placement)
-end
-
-function StatsBar.firstLoadSettings()
-    if firstCall then
-        currentStats.dimension = getSettingOrDefault("statsbar_dimension", "compact")
-        currentStats.placement = getSettingOrDefault("statsbar_placement", "top")
-
-        firstCall = false
-    end
-
-    StatsBar.saveSettings()
-    StatsBar.loadSettings()
 end
 
 function StatsBar.OnGameEnd()
@@ -684,23 +1086,57 @@ end
 function StatsBar.OnGameStart()
     StatsBar.loadSettings()
     StatsBar.reloadCurrentTab()
-    modules.game_healthcircle.setStatsBarOption()
-    
+    syncStatsBarSelectors()
+
     -- Initialize proficiency topbar widget
     StatsBar.initProficiencyTopBar()
 end
 
--- Initialize proficiency top bar widget
-function StatsBar.initProficiencyTopBar()
-    if not g_game.getFeature(GameProficiency) then
+local function applyProficiencyLayout(bar, enabled)
+    local layout = proficiencyLayouts[bar:getId()]
+    if not layout then
         return
     end
-    local statsBar = StatsBar.getCurrentStatsBarWithPosition()
-    if not statsBar then return end
-    
-    local profWidget = statsBar:recursiveGetChildById('proficiencyTopBar')
-    if profWidget then
-        profWidget:setVisible(true)
+
+    for widgetId, props in pairs(enabled and layout.on or layout.off) do
+        local widget = bar:getChildById(widgetId)
+        if widget then
+            if props.right then
+                widget:addAnchor(AnchorRight, props.right, AnchorLeft)
+            end
+            if props.marginLeft then
+                widget:setMarginLeft(props.marginLeft)
+            end
+            if props.marginRight then
+                widget:setMarginRight(props.marginRight)
+            end
+            if props.width then
+                widget:setWidth(props.width)
+            end
+        end
+    end
+end
+
+-- Initialize proficiency top bar widget
+function StatsBar.initProficiencyTopBar()
+    local enabled = g_game.getFeature(GameProficiency)
+    local currentBar = StatsBar.getCurrentStatsBarWithPosition()
+
+    for _, bar in ipairs(StatsBar.getAllStatsBarWithPosition()) do
+        local profWidget = bar:getChildById('proficiencyTopBar')
+        if profWidget then
+            profWidget:setVisible(enabled and bar == currentBar)
+        end
+
+        local proficiencyIcon = bar:getChildById('proficiencyIcon')
+        if proficiencyIcon then
+            proficiencyIcon:setVisible(enabled)
+        end
+
+        applyProficiencyLayout(bar, enabled)
+    end
+
+    if enabled and currentBar and modules.game_proficiency then
         modules.game_proficiency.updateTopBarProficiency()
     end
 end

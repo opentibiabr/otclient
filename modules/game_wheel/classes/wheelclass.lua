@@ -712,8 +712,8 @@ function WheelOfDestiny.onDestinyWheel(playerId, canView, changeState, vocationI
   local player = g_game.getLocalPlayer()
   local bankMoney = player:getResourceBalance(ResourceTypes.BANK_BALANCE)
   local characterMoney = player:getResourceBalance(ResourceTypes.GOLD_EQUIPPED)
-  local lesserFragment = player:getResourceBalance(ResourceTypes.LESSER_FRAGMENTS)
-  local greaterFragment = player:getResourceBalance(ResourceTypes.GREATER_FRAGMENTS)
+  local lesserFragment = player:getResourceBalance(ResourceTypes.LESSER_FRAGMENT)
+  local greaterFragment = player:getResourceBalance(ResourceTypes.GREATER_FRAGMENT)
 
   local value = bankMoney + characterMoney
   wheelWindow.moneyPanel.gold:setText(formatMoney(value, ','))
@@ -1489,7 +1489,7 @@ function WheelOfDestiny.configureSummary()
       widget.info:setTooltip('Increase your mitigation multiplicatively.')
       widget.info:setVisible(true)
     elseif t == "Life Leech" then
-      local lifeleech = convictions[4]
+      local lifeleech = convictions[WheelConvictionOrder["lifeleech"]]
       if not lifeleech or lifeleech.points == 0 then
         widget:destroy()
         break
@@ -1498,7 +1498,7 @@ function WheelOfDestiny.configureSummary()
       widget.value:setText(lifeleech.stringPoint)
       widget.info:setVisible(false)
     elseif t == "Mana Leech" then
-      local manaleech = convictions[5]
+      local manaleech = convictions[WheelConvictionOrder["manaleech"]]
       if not manaleech or manaleech.points == 0 then
         widget:destroy()
         break
@@ -1519,50 +1519,30 @@ function WheelOfDestiny.configureSummary()
   local f_table = {
     [1] = "special_1",
     [2] = "special_2",
-    [3] = "skill",
+    [3] = "special_3",
+    [4] = "special_4",
+    [5] = "skill",
   }
 
   local hasCreated = false
-  for _, t in pairs(f_table) do
+  for _, t in ipairs(f_table) do
     repeat
     local widget = g_ui.createWidget("PerksPanel", wheelOfDestinyWindow.summary.tabContent)
-    if t == "special_1" then
-      local c = convictions[1]
-      if not c then
-        widget:destroy()
-        break
-      end
-
-      widget.perk:setText(c.perk)
-      widget.value:setVisible(false)
-      widget.info:setVisible(true)
-      widget.info:setTooltip(c.tooltip)
-      hasCreated = true
-    elseif t == "special_2" then
-      local c = convictions[2]
-      if not c then
-        widget:destroy()
-        break
-      end
-
-      widget.perk:setText(c.perk)
-      widget.value:setVisible(false)
-      widget.info:setVisible(true)
-      widget.info:setTooltip(c.tooltip)
-      hasCreated = true
-    elseif t == "skill" then
-      local c = convictions[3]
-      if not c then
-        widget:destroy()
-        break
-      end
-
-      widget.perk:setText(c.perk)
-      widget.value:setText(c.stringPoint)
-      widget.info:setVisible(true)
-      widget.info:setTooltip(c.tooltip)
-      hasCreated = true
+    local c = convictions[WheelConvictionOrder[t]]
+    if not c then
+      widget:destroy()
+      break
     end
+
+    widget.perk:setText(c.perk)
+    if t == "skill" then
+      widget.value:setText(c.stringPoint)
+    else
+      widget.value:setVisible(false)
+    end
+    widget.info:setVisible(true)
+    widget.info:setTooltip(c.tooltip)
+    hasCreated = true
     until true
   end
 
@@ -1571,19 +1551,19 @@ function WheelOfDestiny.configureSummary()
   end
 
   local f_table = {
-    [6] = "spell_1",
-    [7] = "spell_2",
-    [8] = "spell_3",
-    [9] = "spell_4",
-    [10] = "spell_5",
+    [1] = "spell_1",
+    [2] = "spell_2",
+    [3] = "spell_3",
+    [4] = "spell_4",
+    [5] = "spell_5",
   }
 
   --- Convictions
   local hasCreated = false
-  for _, t in pairs(f_table) do
+  for _, t in ipairs(f_table) do
     repeat
     local widget = g_ui.createWidget("PerksPanel", wheelOfDestinyWindow.summary.tabContent)
-    local c = convictions[_]
+    local c = convictions[WheelConvictionOrder[t]]
     if not c then
       widget:destroy()
       break
@@ -1812,17 +1792,17 @@ function WheelOfDestiny.configureSummary()
   -----------------------------------------------------------------------------------
 
   local f_table = {
-    [11] = "vessel.1",
-    [12] = "vessel.2",
-    [13] = "vessel.3",
-    [14] = "vessel.4",
+    [1] = "vessel.1",
+    [2] = "vessel.2",
+    [3] = "vessel.3",
+    [4] = "vessel.4",
   }
 
   local hasCreated = false
-  for _, t in pairs(f_table) do
+  for _, t in ipairs(f_table) do
     repeat
     local widget = g_ui.createWidget("PerksPanel", wheelOfDestinyWindow.summary.tabContent)
-    local c = convictions[_]
+    local c = convictions[WheelConvictionOrder[t]]
     if not c then
       widget:destroy()
       break

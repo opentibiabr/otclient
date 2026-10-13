@@ -1805,8 +1805,10 @@ function createMarketOffer()
         return
     end
 
-    local n = mainMarket.createOfferAmount:getText()
-    local amount = tonumber(n:gsub("%D", ""))
+    local amount = mainMarket.amountCreateScrollBar:getValue()
+    if mainMarket.amountCreateScrollBar:getIncrementValue() > 1 then
+        amount = math.cround(amount, mainMarket.amountCreateScrollBar:getIncrementValue())
+    end
     local piecePrice = tonumber(mainMarket.grossAmount.value)
 
     if not amount or not piecePrice then

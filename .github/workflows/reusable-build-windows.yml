@@ -29,7 +29,7 @@ jobs:
             type: Solution
             configuration: DirectX
             artifact: windows-solution-directx
-    runs-on: windows-2025
+    runs-on: windows-2025-vs2026
     env:
       VCPKG_BINARY_CACHE_ACCESS: ${{ secrets.VCPKG_PACKAGES_TOKEN != '' && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch') && 'readwrite' || 'read' }}
       VCPKG_BINARY_SOURCES: "clear;nuget,https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json,${{ secrets.VCPKG_PACKAGES_TOKEN != '' && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch') && 'readwrite' || 'read' }};nugettimeout,600"
@@ -38,48 +38,50 @@ jobs:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       SCCACHE_DIR: ${{ github.workspace }}\.sccache
     steps:
-      - name: Install VS 2026 Build Tools (v145 toolset)
+      - name: Verify VS 2026 v145 toolset
         if: matrix.type == 'Solution'
         shell: pwsh
         run: |
-          $acceptedExitCodes = @(0, 3010)
-          for ($attempt = 1; $attempt -le 3; $attempt++) {
-            choco install visualstudio2026-workload-vctools --yes --ignore-package-exit-codes=3010 --no-progress
-            if ($acceptedExitCodes -contains $LASTEXITCODE) {
-              exit 0
-            }
-
-            Write-Warning "Chocolatey install failed with exit code $LASTEXITCODE on attempt $attempt."
-            if ($attempt -lt 3) {
-              Start-Sleep -Seconds (30 * $attempt)
-            }
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
+          if (-not (Test-Path -LiteralPath $vswhere -PathType Leaf)) {
+            throw "vswhere.exe is not available on the hosted Visual Studio runner"
           }
 
-          Write-Warning "Chocolatey could not install the VS 2026 v145 workload. Continuing so the next step can use any runner-provided toolset."
+          $installationPath = & $vswhere `
+            -latest `
+            -prerelease `
+            -products "*" `
+            -version '[18.0,19.0)' `
+            -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
+            -property installationPath
+          if ([string]::IsNullOrWhiteSpace($installationPath)) {
+            throw "Visual Studio 2026 with the native C++ toolset is required"
+          }
+
+          $toolsetVersionPath = Join-Path $installationPath "VC\Auxiliary\Build\Microsoft.VCToolsVersion.default.txt"
+          if (-not (Test-Path -LiteralPath $toolsetVersionPath -PathType Leaf)) {
+            throw "The Visual Studio C++ toolset version file is missing: $toolsetVersionPath"
+          }
+
+          $toolsetVersion = (Get-Content -LiteralPath $toolsetVersionPath -Raw).Trim()
+          if ($toolsetVersion -notmatch '^14\.5') {
+            throw "Visual Studio 2026 must provide the v145 toolset; found $toolsetVersion"
+          }
 
       - name: Setup MSBuild.exe
         if: matrix.type == 'Solution'
         uses: microsoft/setup-msbuild@v3
         with:
           vs-prerelease: true
-          vs-version: "latest"
+          vs-version: "[18.0,19.0)"
 
       - name: Verify v145 platform toolset
         if: matrix.type == 'Solution'
         shell: pwsh
         run: |
-          $programFilesX86 = [Environment]::GetFolderPath("ProgramFilesX86")
-          $vswhere = Join-Path $programFilesX86 "Microsoft Visual Studio\Installer\vswhere.exe"
-          if (-not (Test-Path $vswhere)) {
-            throw "vswhere.exe not found"
-          }
-
-          $installPath = & $vswhere -latest -prerelease -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
-          if (-not $installPath) {
-            throw "Visual Studio with VC tools was not found"
-          }
-
-          $vcMsbuildRoot = Join-Path $installPath "MSBuild\Microsoft\VC"
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
+          $installationPath = & $vswhere -latest -prerelease -products "*" -version '[18.0,19.0)' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          $vcMsbuildRoot = Join-Path $installationPath "MSBuild\Microsoft\VC"
           $toolset = Get-ChildItem -Path $vcMsbuildRoot -Directory -Recurse -Filter v145 -ErrorAction SilentlyContinue |
             Where-Object { $_.FullName -match "\\PlatformToolsets\\v145$" } |
             Select-Object -First 1

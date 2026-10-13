@@ -304,7 +304,7 @@ function Workshop.onSelectChild(list, selected)
     local player = g_game.getLocalPlayer()
     local goldCost = isSupreme and greaterResources[supremeTier].price or lesserResources[basicTier].price
     local fragmentCost = isSupreme and greaterResources[supremeTier].fragment or lesserResources[basicTier].fragment
-    local resourceCheck = isSupreme and player:getResourceBalance(ResourceTypes.GREATER_FRAGMENTS) or player:getResourceBalance(ResourceTypes.LESSER_FRAGMENTS)
+    local resourceCheck = isSupreme and player:getResourceBalance(ResourceTypes.GREATER_FRAGMENT) or player:getResourceBalance(ResourceTypes.LESSER_FRAGMENT)
     local iconOffset = isSupreme and "0 12 12 12" or "0 0 12 12"
     local iconTooltip = isSupreme and "Greater Fragments" or "Lesser Fragments"
 

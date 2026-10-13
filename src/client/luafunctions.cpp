@@ -60,6 +60,9 @@
 #include "uisprite.h"
 #include "paperdoll.h"
 #include "paperdollmanager.h"
+#ifdef FRAMEWORK_SOUND
+#include <framework/sound/soundmanager.h>
+#endif
 
 #ifdef FRAMEWORK_EDITOR
 #include "houses.h"
@@ -138,6 +141,15 @@ void Client::registerLuaFunctions()
     g_lua.registerSingletonClass("g_spriteAppearances");
     g_lua.bindSingletonFunction("g_spriteAppearances", "saveSpriteToFile", &SpriteAppearances::saveSpriteToFile, &g_spriteAppearances);
     g_lua.bindSingletonFunction("g_spriteAppearances", "saveSheetToFileBySprite", &SpriteAppearances::saveSheetToFileBySprite, &g_spriteAppearances);
+
+    g_lua.bindGlobalFunction("setDrawViewportEdge", [](const bool force) {
+        if (const auto& mapWidget = g_client.getMapWidget())
+            mapWidget->setDrawViewportEdge(force);
+    });
+    g_lua.bindGlobalFunction("isDrawingViewportEdge", [] {
+        const auto& mapWidget = g_client.getMapWidget();
+        return mapWidget && mapWidget->isDrawingViewportEdge();
+    });
 
     g_lua.registerSingletonClass("g_map");
     g_lua.bindSingletonFunction("g_map", "isLookPossible", &Map::isLookPossible, &g_map);
@@ -1206,6 +1218,8 @@ void Client::registerLuaFunctions()
     g_lua.bindClassMemberFunction<UIMap>("getFloorViewMode", &UIMap::getFloorViewMode);
     g_lua.bindClassMemberFunction<UIMap>("getFollowingCreature", &UIMap::getFollowingCreature);
     g_lua.bindClassMemberFunction<UIMap>("getCameraPosition", &UIMap::getCameraPosition);
+    g_lua.bindClassMemberFunction<UIMap>("getTilePoint", &UIMap::getTilePoint);
+    g_lua.bindClassMemberFunction<UIMap>("getTileRect", &UIMap::getTileRect);
     g_lua.bindClassMemberFunction<UIMap>("getPosition", &UIMap::getPosition);
     g_lua.bindClassMemberFunction<UIMap>("getTile", &UIMap::getTile);
     g_lua.bindClassMemberFunction<UIMap>("getMaxZoomIn", &UIMap::getMaxZoomIn);
@@ -1221,6 +1235,10 @@ void Client::registerLuaFunctions()
     g_lua.bindClassMemberFunction<UIMap>("setFloorFading", &UIMap::setFloorFading);
     g_lua.bindClassMemberFunction<UIMap>("clearTiles", &UIMap::clearTiles);
     g_lua.bindClassMemberFunction<UIMap>("setDrawHarmony", &UIMap::setDrawHarmony);
+
+    #ifdef FRAMEWORK_SOUND
+    g_lua.bindSingletonFunction("g_sounds", "getDebugSnapshot", &SoundManager::getDebugSnapshot, &g_sounds);
+    #endif // FRAMEWORK_SOUND
 
     g_lua.registerClass<UIMinimap, UIWidget>();
     g_lua.bindClassStaticFunction<UIMinimap>("create", [] { return std::make_shared<UIMinimap>(); });
@@ -1261,6 +1279,8 @@ void Client::registerLuaFunctions()
     g_lua.bindClassMemberFunction<UIProgressRect>("showProgress", &UIProgressRect::showProgress);
     g_lua.bindClassMemberFunction<UIProgressRect>("getTimeElapsed", &UIProgressRect::getTimeElapsed);
     g_lua.bindClassMemberFunction<UIProgressRect>("getDuration", &UIProgressRect::getDuration);
+    g_lua.bindClassMemberFunction<UIProgressRect>("setPercentReverse", &UIProgressRect::setPercentReverse);
+    g_lua.bindClassMemberFunction<UIProgressRect>("isPercentReverse", &UIProgressRect::isPercentReverse);
 
     g_lua.registerClass<UIGraph, UIWidget>();
     g_lua.bindClassStaticFunction<UIGraph>("create", [] { return std::make_shared<UIGraph>(); });

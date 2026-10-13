@@ -47,7 +47,6 @@ function UIComboBox:setCurrentOption(text, dontSignal)
         if v.text == text and self.currentIndex ~= i then
             self.currentIndex = i
             self:setText(text)
-            self:setTextAlign(AlignCenter)
             if not dontSignal then
                 signalcall(self.onOptionChange, self, text, v.data)
             end

@@ -771,29 +771,31 @@ function getConvictionBonus(index, fullMessage)
 	return ""
 end
 
+WheelConvictionOrder = {
+	["special_1"] = 1,
+	["special_2"] = 2,
+	["special_3"] = 3,
+	["special_4"] = 4,
+	["skill"] = 5,
+	["lifeleech"] = 6,
+	["manaleech"] = 7,
+	["spell_1"] = 8,
+	["spell_2"] = 9,
+	["spell_3"] = 10,
+	["spell_4"] = 11,
+	["spell_5"] = 12,
+	["vessel.1"] = 13,
+	["vessel.2"] = 14,
+	["vessel.3"] = 15,
+	["vessel.4"] = 16,
+}
+
 function getConvictionPerks()
 	local convictions = {}
-  
+
 	local vocation = WheelOfDestiny.vocationId
-	local order = {
-	  ["special_1"] = 1,
-	  ["special_2"] = 2,
-	  ["special_3"] = 3,
-	  ["special_4"] = 4,
-	  ["skill"] = 5,
-	  ["lifeleech"] = 6,
-	  ["manaleech"] = 7,
-	  ["spell_1"] = 8,
-	  ["spell_2"] = 9,
-	  ["spell_3"] = 10,
-	  ["spell_4"] = 11,
-	  ["spell_5"] = 12,
-	  ["vessel.1"] = 13,
-	  ["vessel.2"] = 14,
-	  ["vessel.3"] = 15,
-	  ["vessel.4"] = 16,
-	}
-  
+	local order = WheelConvictionOrder
+
 	for id, bonus in pairs(WheelBonus) do
 	  repeat
 	  local index = id + 1

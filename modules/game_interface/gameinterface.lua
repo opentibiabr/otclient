@@ -48,7 +48,18 @@ local mobileConfig = {
 }
 local isExtendedViewActive = false
 
-local function updateSidePanelButtons()
+-- Default width of the side panels declared on 'GameSidePanel' (gameinterface.otui).
+local SIDE_PANEL_WIDTH = 176
+
+-- Exposed as a module function so modules.client_options can keep the top bar
+-- arrows in sync with the side panel options, both when they are applied from
+-- the saved settings and when they are toggled.
+function updateSidePanelButtons()
+    if not (leftIncreaseSidePanels and leftDecreaseSidePanels and
+        rightIncreaseSidePanels and rightDecreaseSidePanels) then
+        return
+    end
+
     leftIncreaseSidePanels:setEnabled(not modules.client_options.getOption('showLeftExtraPanel'))
     if g_platform.isMobile() then
         leftDecreaseSidePanels:setEnabled(false)
@@ -59,6 +70,41 @@ local function updateSidePanelButtons()
     end
     rightIncreaseSidePanels:setEnabled(not modules.client_options.getOption('showRightExtraPanel'))
     rightDecreaseSidePanels:setEnabled(modules.client_options.getOption('showRightExtraPanel'))
+end
+
+-- Single entry point used by the client_options side panel options and by the
+-- top bar arrows. Keeping it here guarantees that showing/hiding a panel also
+-- relocates its mini windows and refreshes the arrow states.
+function setSidePanelVisible(panel, visible)
+    if not panel then
+        return
+    end
+
+    if not visible then
+        -- windows parked in a hidden panel are unreachable, move them back
+        movePanel(panel)
+    end
+
+    panel:setOn(visible)
+    panel:setVisible(visible)
+    panel:setWidth(visible and SIDE_PANEL_WIDTH or 0)
+
+    updateSidePanelButtons()
+
+    if modules.game_actionbar and modules.game_actionbar.updateVisibleWidgetsExternal then
+        addEvent(function()
+            modules.game_actionbar.updateVisibleWidgetsExternal()
+        end)
+    end
+end
+
+-- Called by client_options once every persisted option has been applied, so the
+-- top bar arrows reflect the saved panel state from the start instead of only
+-- being synced after the first game. updateStretchShrink() is intentionally not
+-- called here: it applies an incremental margin offset and is already run from
+-- init()/onGeometryChange.
+function onOptionsLoaded()
+    updateSidePanelButtons()
 end
 
 local function applyMobileMargins()
@@ -635,7 +681,7 @@ function createThingMenu(menuPosition, lookThing, useThing, creatureThing)
                     g_game.inspectCharacter(lookThing:getId(), InspectCreaturesTypes.INSPECT_CREATURE)
                 elseif canInspect then
                     local pos = lookThing:getPosition()
-                    if pos and pos:isValid() then
+                    if pos and pos.x and pos.y and pos.z then
                         g_game.inspectionNormalObject(pos)
                     else
                         g_game.inspectionObject(InspectObjectTypes.INSPECT_CYCLOPEDIA, lookThing:getId())
@@ -1825,37 +1871,23 @@ function limitZoom()
 end
 
 function updateStatsBar(dimension, placement)
-    StatsBar.updateCurrentStats(dimension, placement)
-    StatsBar.updateStatsBarOption()
+    StatsBar.updateStatsBarOption(dimension, placement)
 end
 
 function onIncreaseLeftPanels()
-    leftDecreaseSidePanels:setEnabled(true)
     if not modules.client_options.getOption('showLeftPanel') then
         modules.client_options.setOption('showLeftPanel', true)
-        -- Update action bars when left panel is shown
-        if modules.game_actionbar and modules.game_actionbar.updateVisibleWidgetsExternal then
-            addEvent(function()
-                modules.game_actionbar.updateVisibleWidgetsExternal()
-            end)
-        end
-        return
+    elseif not modules.client_options.getOption('showLeftExtraPanel') then
+        modules.client_options.setOption('showLeftExtraPanel', true)
     end
 
-    if not modules.client_options.getOption('showLeftExtraPanel') then
-        modules.client_options.setOption('showLeftExtraPanel', true)
-        leftIncreaseSidePanels:setEnabled(false)
-        -- Update action bars when left extra panel is shown
-        if modules.game_actionbar and modules.game_actionbar.updateVisibleWidgetsExternal then
-            addEvent(function()
-                modules.game_actionbar.updateVisibleWidgetsExternal()
-            end)
-        end
-        return
-    end
+    -- setOption is a no-op when the value is unchanged, so resync explicitly
+    updateSidePanelButtons()
 end
 
-local function movePanel(mainpanel)
+-- Exposed as a module function so the side panel options can relocate the mini
+-- windows of a panel that is being hidden.
+function movePanel(mainpanel)
     for _, widget in pairs(mainpanel:getChildren()) do
         if widget then
             local panel = modules.game_interface.findContentPanelAvailable(widget, widget:getMinimumHeight())
@@ -1874,61 +1906,24 @@ local function movePanel(mainpanel)
 end
 
 function onDecreaseLeftPanels()
-    leftIncreaseSidePanels:setEnabled(true)
     if modules.client_options.getOption('showLeftExtraPanel') then
         modules.client_options.setOption('showLeftExtraPanel', false)
-        movePanel(gameLeftExtraPanel)
-        if g_platform.isMobile() then
-            leftDecreaseSidePanels:setEnabled(false)
-        end
-        -- Update action bars when left extra panel is hidden
-        if modules.game_actionbar and modules.game_actionbar.updateVisibleWidgetsExternal then
-            addEvent(function()
-                modules.game_actionbar.updateVisibleWidgetsExternal()
-            end)
-        end
-        return
+    elseif not g_platform.isMobile() and modules.client_options.getOption('showLeftPanel') then
+        modules.client_options.setOption('showLeftPanel', false)
     end
 
-    if not g_platform.isMobile() then
-        if modules.client_options.getOption('showLeftPanel') then
-            modules.client_options.setOption('showLeftPanel', false)
-            movePanel(gameLeftPanel)
-            leftDecreaseSidePanels:setEnabled(false)
-            -- Update action bars when left panel is hidden
-            if modules.game_actionbar and modules.game_actionbar.updateVisibleWidgetsExternal then
-                addEvent(function()
-                    modules.game_actionbar.updateVisibleWidgetsExternal()
-                end)
-            end
-            return
-        end
-    end
+    -- setOption is a no-op when the value is unchanged, so resync explicitly
+    updateSidePanelButtons()
 end
 
 function onIncreaseRightPanels()
-    rightIncreaseSidePanels:setEnabled(false)
-    rightDecreaseSidePanels:setEnabled(true)
     modules.client_options.setOption('showRightExtraPanel', true)
-    -- Update action bars when right extra panel is shown
-    if modules.game_actionbar and modules.game_actionbar.updateVisibleWidgetsExternal then
-        addEvent(function()
-            modules.game_actionbar.updateVisibleWidgetsExternal()
-        end)
-    end
+    updateSidePanelButtons()
 end
 
 function onDecreaseRightPanels()
-    rightIncreaseSidePanels:setEnabled(true)
-    rightDecreaseSidePanels:setEnabled(false)
-    movePanel(gameRightExtraPanel)
     modules.client_options.setOption('showRightExtraPanel', false)
-    -- Update action bars when right extra panel is hidden
-    if modules.game_actionbar and modules.game_actionbar.updateVisibleWidgetsExternal then
-        addEvent(function()
-            modules.game_actionbar.updateVisibleWidgetsExternal()
-        end)
-    end
+    updateSidePanelButtons()
 end
 
 function setupOptionsMainButton()
@@ -1942,10 +1937,8 @@ function setupOptionsMainButton()
 end
 
 function checkAndOpenLeftPanel()
-    leftDecreaseSidePanels:setEnabled(true)
     if not modules.client_options.getOption('showLeftPanel') then
         modules.client_options.setOption('showLeftPanel', true)
-        return
     end
 end
 

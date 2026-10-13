@@ -653,6 +653,7 @@ function EnterGame.tryHttpLogin(clientVersion, httpLogin)
     })
 
     local host, path = G.host, "/"
+    local httpsScheme = G.host:find("^https://") ~= nil
     if G.host:find("https?://") then
         local url = G.host:gsub("https?://", "")
         host, path = url:match("([^/]+)(/.*)")
@@ -675,6 +676,10 @@ function EnterGame.tryHttpLogin(clientVersion, httpLogin)
         else
             G.port = 80
         end
+    end
+
+    if httpsScheme or G.port == 443 then
+        httpLogin = false
     end
 
     math.randomseed(os.time())

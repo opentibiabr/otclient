@@ -1065,7 +1065,7 @@ function chooseOffert(self, focusedChild)
             end
 
             if product.configurable or product.name == "Character Name Change" then
-                return displayChangeName(offer)
+                return displayChangeName(offer, product)
             end
 
             if product.name == "Hireling Apprentice" then
@@ -1172,9 +1172,8 @@ end
 -- =            Behavior  Change Name            =
 -- =============================================*/
 
-function displayChangeName(offer)
+function displayChangeName(offer, product)
     controllerShop.ui:hide()
-    g_game.buyStoreOffer(offer.id, GameStore.ClientOfferTypes.CLIENT_STORE_OFFER_OTHER) -- canary send this packets?
     destroyWindow(changeNameWindow)
     changeNameWindow = g_ui.displayUI('style/changename')
     changeNameWindow:show()
@@ -1186,7 +1185,11 @@ function displayChangeName(offer)
     end
     changeNameWindow.closeButton.onClick = closeWindow
     changeNameWindow.buttonOk.onClick = function()
-        g_game.buyStoreOffer(offer.id, GameStore.ClientOfferTypes.CLIENT_STORE_OFFER_NAMECHANGE,newName:getText() )
+        local offerType = GameStore.ClientOfferTypes.CLIENT_STORE_OFFER_NAMECHANGE
+        if product and (product.name == "Hireling Apprentice" or string.find(string.lower(product.name), "hireling")) then
+            offerType = GameStore.ClientOfferTypes.CLIENT_STORE_OFFER_HIRELING
+        end
+        g_game.buyStoreOffer(offer.id, offerType, newName:getText())
         closeWindow()
     end
     changeNameWindow.onEscape = function()

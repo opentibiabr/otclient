@@ -1479,6 +1479,19 @@ void UIWidget::setOverflow(OverflowType type) {
     }
 }
 
+void UIWidget::setOverflow(std::string type) {
+    stdext::tolower(type);
+
+    OverflowType overflow = OverflowType::Visible;
+    if (type == "hidden") overflow = OverflowType::Hidden;
+    else if (type == "scroll") overflow = OverflowType::Scroll;
+    else if (type == "auto") overflow = OverflowType::Auto;
+    else if (type == "clip") overflow = OverflowType::Clip;
+
+    setOverflow(overflow);
+    setClipping(overflow == OverflowType::Clip || overflow == OverflowType::Scroll || overflow == OverflowType::Hidden);
+}
+
 void UIWidget::setPositions(std::string_view type, std::string_view value) {
     const Unit unit = detectUnit(value);
     int32_t v = stdext::to_number(std::string(numericPart(value)));

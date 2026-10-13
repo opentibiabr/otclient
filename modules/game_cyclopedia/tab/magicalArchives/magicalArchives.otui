@@ -1,3 +1,39 @@
+ArchiveSpellLabel < UIWidget
+  font: verdana-11px-antialised
+  height: 20
+  text-align: left
+  text-offset: 5 3
+  color: #C0C0C0
+  background-color: alpha
+  focusable: true
+  phantom: false
+
+  $focus:
+    background-color: #ffffff22
+    color: #F6F6F6
+
+  $hover !focus:
+    background-color: #ffffff11
+
+ArchiveDetailRow < Panel
+  height: 18
+
+  Label
+    id: caption
+    anchors.left: parent.left
+    anchors.top: parent.top
+    width: 110
+    font: verdana-11px-antialised
+    color: #909090
+
+  Label
+    id: value
+    anchors.left: caption.right
+    anchors.right: parent.right
+    anchors.top: parent.top
+    font: verdana-11px-antialised
+    color: #C0C0C0
+
 UIWidget
   id: Cat5
   anchors.fill: parent
@@ -22,9 +58,12 @@ UIWidget
         spacing: 6
 
       ComboBox
+        id: VocationFilter
       TextListQuestLog
+        id: SpellListBase
         height: 330
       TextEditQuestLog
+        id: SearchBase
 
   MiniPanel
     id: spellAndRune
@@ -37,15 +76,64 @@ UIWidget
     margin-bottom: 25
 
     Label
+      id: PlaceholderLabel
       anchors.centerIn: parent
-      text: select a spell to view detailed information. 
-    Label
-      id: deleteme
-      anchors.centerIn: parent
-      !text: tr("\nis this in the protobuf ?\n in http post ? \nor modify gamelib/spells.lua?")
-      font-scale: 2
-      margin-top: 32
-      text-auto-resize: true
+      text: select a spell to view detailed information.
 
+    Panel
+      id: DetailPanel
+      anchors.fill: parent
+      visible: false
+      padding: 12
 
+      UIWidget
+        id: SpellIcon
+        anchors.top: parent.top
+        anchors.left: parent.left
+        size: 32 32
 
+      Label
+        id: NameLabel
+        anchors.top: parent.top
+        anchors.left: SpellIcon.right
+        anchors.right: parent.right
+        margin-left: 10
+        margin-top: 1
+        font: Verdana Bold-11px
+        color: #F6F6F6
+
+      Label
+        id: FormulaLabel
+        anchors.top: NameLabel.bottom
+        anchors.left: SpellIcon.right
+        anchors.right: parent.right
+        margin-left: 10
+        margin-top: 3
+        font: verdana-11px-antialised
+        color: #C0C0C0
+
+      Panel
+        id: DetailRows
+        anchors.top: SpellIcon.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        margin-top: 16
+        layout:
+          type: verticalBox
+          spacing: 4
+
+        ArchiveDetailRow
+          id: RowVocation
+        ArchiveDetailRow
+          id: RowGroup
+        ArchiveDetailRow
+          id: RowType
+        ArchiveDetailRow
+          id: RowCooldown
+        ArchiveDetailRow
+          id: RowLevel
+        ArchiveDetailRow
+          id: RowMana
+        ArchiveDetailRow
+          id: RowPremium

@@ -48,7 +48,11 @@ macro(1000, "Exchange money", function()
         if item:getCount() == 100 then
           for m, moneyId in ipairs(moneyIds) do
             if item:getId() == moneyId then
-              return g_game.use(item)
+              if item:isMultiUse() then
+                return g_game.useWith(item, item)
+              else
+                return g_game.use(item)
+              end
             end
           end
         end

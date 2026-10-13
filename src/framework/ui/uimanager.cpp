@@ -450,18 +450,32 @@ bool UIManager::importStyle(const std::string& fl, const bool checkDeviceStyles)
 
     if (checkDeviceStyles) {
         // check for device styles
-        const auto fileName = fl.substr(0, fl.find("."));
-
         const auto deviceName = g_platform.getDeviceShortName();
         if (!deviceName.empty())
-            importStyle(deviceName + "." + fileName, false);
+            importStyle(getDeviceStyleName(fl, deviceName), false);
 
         const auto osName = g_platform.getOsShortName();
         if (!osName.empty())
-            importStyle(osName + "." + fileName, false);
+            importStyle(getDeviceStyleName(fl, osName), false);
     }
 
     return true;
+}
+
+std::string UIManager::getDeviceStyleName(const std::string_view stylePath, const std::string_view deviceName)
+{
+    // Device styles live next to the base style, so the directory part of the
+    // path must survive the rename: '/modules/example/foo' becomes
+    // '/modules/example/windows.foo', not 'windows./modules/example/foo'.
+    const auto slashPos = stylePath.rfind('/');
+    const auto dir = slashPos == std::string_view::npos ? std::string_view{} : stylePath.substr(0, slashPos + 1);
+    auto base = slashPos == std::string_view::npos ? stylePath : stylePath.substr(slashPos + 1);
+    base = base.substr(0, base.rfind('.'));
+
+    std::string result;
+    result.reserve(dir.size() + deviceName.size() + 1 + base.size());
+    result.append(dir).append(deviceName).append(".").append(base);
+    return result;
 }
 
 void UIManager::importStyleFromOTML(const OTMLNodePtr& styleNode)
@@ -581,14 +595,31 @@ OTMLNodePtr UIManager::findMainWidgetNode(const OTMLDocumentPtr& doc)
     return mainNode;
 }
 
+std::string UIManager::getDeviceUIName(const std::string_view file, const std::string_view deviceName)
+{
+    // The device/OS suffix goes after the complete base name: only a final
+    // extension is dropped, and a dot elsewhere in the path is part of the
+    // name — '/modules/foo.v2/window' becomes '/modules/foo.v2/window.windows',
+    // never '/modules/foo.windows'.
+    const auto slashPos = file.rfind('/');
+    const auto dotPos = file.rfind('.');
+    const auto rawName = dotPos != std::string_view::npos && (slashPos == std::string_view::npos || dotPos > slashPos)
+        ? file.substr(0, dotPos)
+        : file;
+
+    std::string result;
+    result.reserve(rawName.size() + 1 + deviceName.size());
+    result.append(rawName).append(".").append(deviceName);
+    return result;
+}
+
 OTMLNodePtr UIManager::loadDeviceUI(const std::string& file, const OperatingSystem os)
 {
-    const auto rawName = file.substr(0, file.find("."));
     const auto osName = g_platform.getOsShortName(os);
 
-    const auto& doc = OTMLDocument::parse(g_resources.guessFilePath(rawName + "." + osName, "otui"));
+    const auto& doc = OTMLDocument::parse(g_resources.guessFilePath(getDeviceUIName(file, osName), "otui"));
     if (doc) {
-        g_logger.info("Found os style '{}' for '{}'", osName, rawName);
+        g_logger.info("Found os style '{}' for '{}'", osName, file);
         importStyleFromOTML(doc);
         return findMainWidgetNode(doc);
     }
@@ -597,12 +628,11 @@ OTMLNodePtr UIManager::loadDeviceUI(const std::string& file, const OperatingSyst
 
 OTMLNodePtr UIManager::loadDeviceUI(const std::string& file, const DeviceType deviceType)
 {
-    const auto rawName = file.substr(0, file.find("."));
     const auto deviceName = g_platform.getDeviceShortName(deviceType);
 
-    const auto& doc = OTMLDocument::parse(g_resources.guessFilePath(rawName + "." + deviceName, "otui"));
+    const auto& doc = OTMLDocument::parse(g_resources.guessFilePath(getDeviceUIName(file, deviceName), "otui"));
     if (doc) {
-        g_logger.info("Found device style '{}' for '{}'", deviceName, rawName);
+        g_logger.info("Found device style '{}' for '{}'", deviceName, file);
         importStyleFromOTML(doc);
         return findMainWidgetNode(doc);
     }

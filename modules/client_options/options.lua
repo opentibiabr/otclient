@@ -1,4 +1,10 @@
 local options = dofile("data_options")
+for k, obj in pairs(options) do
+    if type(obj) ~= "table" then
+        options[k] = { value = obj }
+    end
+end
+
 panels = {
     generalPanel = nil,
     graphicsPanel = nil,
@@ -9,7 +15,9 @@ panels = {
     interface = nil,
     misc = nil,
     miscHelp = nil,
-    keybindsPanel = nil
+    keybindsPanel = nil,
+    battleSoundsPanel = nil,
+    iuSoundPanel = nil,
 }
 
 -- Hook into application exit to ensure settings are saved
@@ -55,14 +63,14 @@ local buttons = { {
 }, {
     text = "Sound",
     icon = "/images/icons/icon_sound",
-    open = "soundPanel"
-    --[[     subCategories = {{
+    open = "soundPanel",
+    subCategories = {{
         text = "Battle Sounds",
-        open = "Battle_Sounds"
+        open = "battleSoundsPanel"
     }, {
         text = "UI Sounds",
-        open = "UI_Sounds"
-    }} ]]
+        open = "iuSoundPanel"
+    }} 
 }, {
     text = "Misc.",
     icon = "/images/icons/icon_misc",
@@ -87,6 +95,53 @@ local extraWidgets = {
     optionsButtons = nil
 }
 
+local protocolSoundSettingsKeys = {
+    battleSoundOwnBattle = true,
+    battleSoundOtherPlayers = true,
+    battleSoundCreature = true,
+    battleSoundOwnBattleSubChannelsAttack = true,
+    battleSoundOwnBattleSoundSubChannelsHealing = true,
+    battleSoundOwnBattleSoundSubChannelsSupport = true,
+    battleSoundOwnBattleSoundSubChannelsWeapons = true,
+    battleSoundOtherPlayersSubChannelsAttack = true,
+    battleSoundOtherPlayersSubChannelsHealing = true,
+    battleSoundOtherPlayersSubChannelsSupport = true,
+    battleSoundOtherPlayersSubChannelsWeapons = true,
+    battleSoundCreatureSubChannelsNoises = true,
+    battleSoundCreatureSubChannelsNoisesDeath = true,
+    battleSoundCreatureSubChannelsAttacksAndSpells = true,
+    soundItems = true,
+    soundFoodAndBeverages = true,
+    soundMoveItem = true,
+    soundEventVolume = true,
+    soundAmbience = true,
+    soundUI = true,
+    soundUIsubChannelsInteractions = true,
+    soundUIsubChannelsJoinLeaveParty = true,
+    soundUIsubChannelsVipLoginLogout = true,
+    soundNotificationConsoleMessages = true,
+    soundNotificationUIInteractions = true,
+    soundNotificationsubChannelsParty = true,
+    soundNotificationsubChannelsGuild = true,
+    soundNotificationsubChannelsLocalChat = true,
+    soundNotificationsubChannelsPrivateMessages = true,
+    soundNotificationsubChannelsNPC = true,
+    soundNotificationsubChannelsGlobal = true,
+    soundNotificationsubChannelsTeamFinder = true,
+    soundNotificationsubChannelsRaidAnnouncements = true,
+    soundNotificationsubChannelsSystemAnnouncements = true,
+}
+
+local function syncProtocolSoundSettings(key)
+    if key and not protocolSoundSettingsKeys[key] then
+        return
+    end
+
+    if g_sounds and g_sounds.refreshProtocolSoundSettings then
+        g_sounds.refreshProtocolSoundSettings()
+    end
+end
+
 local function toggleDisplays()
     if options['displayNames'].value and options['displayHealth'].value and options['displayMana'].value and options['displayHarmony'].value then
         setOption('displayNames', false)
@@ -107,6 +162,22 @@ end
 
 local function toggleOption(key)
     setOption(key, not getOption(key))
+end
+
+-- Toggles mute without discarding the user's previously saved master volume
+local function toggleMute()
+    local current = getOption('soundMaster')
+    if current <= 1 then
+        local restoreVolume = options.soundMaster.lastVolume or g_settings.getNumber('soundMasterLastVolume', 25)
+        if not restoreVolume or restoreVolume <= 1 then
+            restoreVolume = 25
+        end
+        setOption('soundMaster', restoreVolume)
+    else
+        options.soundMaster.lastVolume = current
+        g_settings.setNumber('soundMasterLastVolume', current)
+        setOption('soundMaster', 1)
+    end
 end
 
 local function setupComboBox()
@@ -182,6 +253,32 @@ local function setupComboBox()
         setOption('profile', comboBox:getCurrentOption().data)
     end
 
+    local soundDeviceCombobox = panels.soundPanel:recursiveGetChildById('soundDevice')
+    if soundDeviceCombobox then
+        soundDeviceCombobox:clearOptions()
+        soundDeviceCombobox:addOption(tr('(auto-select)'), '(auto-select)')
+        if g_sounds and g_sounds.getAudioDevices then
+            local devices = g_sounds.getAudioDevices()
+            for _, device in ipairs(devices) do
+                local displayName = device:gsub('^OpenAL Soft on%s*', '')
+                soundDeviceCombobox:addOption(displayName, device)
+            end
+        end
+
+        soundDeviceCombobox.onOptionChange = function(comboBox, option)
+            local current = comboBox:getCurrentOption()
+            if current then
+                setOption('soundDevice', current.data)
+            end
+        end
+
+        local currentDevice = '(auto-select)'
+        if options.soundDevice and options.soundDevice.value and options.soundDevice.value ~= '' then
+            currentDevice = options.soundDevice.value
+        end
+        soundDeviceCombobox:setCurrentOptionByData(currentDevice, true)
+    end
+
     for _, preset in ipairs(Keybind.presets) do
         listKeybindsPanel:addOption(preset)
     end
@@ -198,18 +295,33 @@ local function setup()
 
     -- load options
     for k, obj in pairs(options) do
-        local v = obj.value
+        -- an option may either be a bare value or a table with an 'action'
+        -- an "and/or" chain cannot be used here: a default of 'false' would
+        -- fall through to the table and the option would never be loaded
+        local v
+        if type(obj) == 'table' then
+            v = obj.value
+        else
+            v = obj
+        end
 
         if type(v) == 'boolean' then
-            local value = g_settings.getBoolean(k)
+            local value = g_settings.getBoolean(k, v)
             setOption(k, value, true)
         elseif type(v) == 'number' then
-            local value = g_settings.getNumber(k)
+            local value = g_settings.getNumber(k, v)
             setOption(k, value, true)
         elseif type(v) == 'string' then
-            local value = g_settings.getString(k)
+            local value = g_settings.getString(k, v)
             setOption(k, value, true)
         end
+    end
+
+    -- Every persisted option has been applied, so widgets that mirror option
+    -- values outside of the options panels (e.g. the game_interface top bar
+    -- arrows) can now sync themselves with the loaded state.
+    if modules.game_interface and modules.game_interface.onOptionsLoaded then
+        modules.game_interface.onOptionsLoaded()
     end
     
     -- Special handling for mouseControlMode to ensure it's in sync with the underlying options
@@ -254,6 +366,11 @@ local function setup()
                 end
             end
         end
+
+        local soundDeviceCombobox = panels.soundPanel:recursiveGetChildById('soundDevice')
+        if soundDeviceCombobox and options.soundDevice and options.soundDevice.value then
+            soundDeviceCombobox:setCurrentOptionByData(options.soundDevice.value, true)
+        end
         
         -- Update loot control mode visibility
         if lootControlModeCombobox and mouseControlModeCombobox then
@@ -272,6 +389,7 @@ local function setup()
         parent:setHeight(0)
         parent:setMarginTop(0)
     end
+
 end
 
 
@@ -288,7 +406,7 @@ function controller:onInit()
     end
 
     extraWidgets.audioButton = modules.client_topmenu.addTopRightToggleButton('audioButton', tr('Audio'),
-        '/images/topbuttons/button_mute_up', function() toggleOption('enableAudio') end)
+        '/images/topbuttons/button_mute_up', toggleMute)
 
     extraWidgets.optionsButton = modules.client_topmenu.addTopRightToggleButton('optionsButton', tr('Options'),
         '/images/topbuttons/button_options', toggle)
@@ -307,7 +425,9 @@ function controller:onInit()
     panels.interfaceHUD = g_ui.loadUI('styles/interface/HUD', controller.ui.optionsTabContent)
     panels.actionbars = g_ui.loadUI('styles/interface/actionbars', controller.ui.optionsTabContent)
 
-    panels.soundPanel = g_ui.loadUI('styles/sound/audio', controller.ui.optionsTabContent)
+    panels.soundPanel = g_ui.loadUI('styles/sound/sound', controller.ui.optionsTabContent)
+    panels.battleSoundsPanel = g_ui.loadUI('styles/sound/battleSounds', controller.ui.optionsTabContent)
+    panels.iuSoundPanel = g_ui.loadUI('styles/sound/uiSounds', controller.ui.optionsTabContent)
 
     panels.misc = g_ui.loadUI('styles/misc/misc', controller.ui.optionsTabContent)
     panels.miscHelp = g_ui.loadUI('styles/misc/help', controller.ui.optionsTabContent)
@@ -338,6 +458,11 @@ function controller:onInit()
                     break
                 end
             end
+        end
+
+        local soundDeviceCombobox = panels.soundPanel:recursiveGetChildById('soundDevice')
+        if soundDeviceCombobox and options.soundDevice and options.soundDevice.value then
+            soundDeviceCombobox:setCurrentOptionByData(options.soundDevice.value, true)
         end
     end, 1000)  -- 1 second delay to make sure everything is loaded
     
@@ -371,7 +496,7 @@ function controller:onInit()
     Keybind.bind("Sound", "Mute/unmute", {
         {
             type = KEY_DOWN,
-            callback = function() toggleOption('enableAudio') end,
+            callback = toggleMute,
         }
     })
 end
@@ -432,10 +557,17 @@ function setOption(key, value, force)
         g_logger.warning(string.format("[client_options] Attempted to set unknown option: '%s'", key))
         return
     end
-    
+
+    if type(option) ~= 'table' then
+        option = { value = option }
+        options[key] = option
+    end
+
     if not force and option.value == value then
         return
     end
+
+    option.value = value
 
     if option.action then
         option.action(value, options, controller, panels, extraWidgets)
@@ -452,13 +584,15 @@ function setOption(key, value, force)
                 widget:setValue(value)
             elseif widget:recursiveGetChildById('valueBar') then
                 widget:recursiveGetChildById('valueBar'):setValue(value)
+            elseif widget.setCurrentOptionByData then
+                widget:setCurrentOptionByData(value, true)
             end
             break
         end
     end
 
-    option.value = value
     g_settings.set(key, value)
+    syncProtocolSoundSettings(key)
 end
 
 function setupOptionsMainButton()
@@ -476,7 +610,15 @@ function getOption(key)
         g_logger.warning(string.format("[client_options] Attempted to get unknown option: '%s'", key))
         return nil
     end
-    return option.value
+
+    -- an option may either be a bare value or a table with an 'action'
+    -- a plain "and/or" chain cannot be used here: a stored 'false' would fall
+    -- through to 'option' and make every caller see a truthy table
+    if type(option) == 'table' then
+        return option.value
+    end
+
+    return option
 end
 
 function show()
@@ -489,8 +631,6 @@ function show()
 end
 
 function hide()
-    -- Save all settings when closing the options window
-    g_settings.save()
     controller.ui:hide()
     if extraWidgets.optionsButton then
         extraWidgets.optionsButton:setOn(false)
@@ -526,6 +666,10 @@ end
 
 function removeTab(v)
     print("to prevent the error use Ex   modules.client_options.addButton('Interface', 'HP/MP Circle', optionPanel)")
+end
+
+function onShowAdvancedOptions(widget, checked)
+    -- TODO: Implement Show Advanced Options functionality in the near future
 end
 
 local function toggleSubCategories(parent, isOpen)

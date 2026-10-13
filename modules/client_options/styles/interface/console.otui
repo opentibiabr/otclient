@@ -110,3 +110,21 @@ UIWidget
       id: showHighlightedUnderline
       !text: tr('Show highlighted text underline')
 
+  SmallReversedQtPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    margin-top: 7
+    height: 22
+
+    OptionScaleScroll
+      id: consoleMaxLines
+      !text: tr('Chat scrollback: 100 lines')
+      anchors.fill: parent
+      &minimumScrollValue: 50
+      &maximumScrollValue: 10000
+      &scrollSize: 50
+      @onSetup: |
+        local value = modules.client_options.getOption('consoleMaxLines')
+        self:setText(tr('Chat scrollback: %d lines', value))
+

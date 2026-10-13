@@ -868,16 +868,21 @@ onTextMessage(function(mode, text)
 
     -- adding monster to killed list
     if text:find("Loot of") then
-      name = regexMatch(text, nameRegex)[1][2]
-      if not killList[name] then
-        killList[name] = 1
-      else
-        killList[name] = killList[name] + 1
+      local m = regexMatch(text, nameRegex)
+      if m and m[1] and m[1][2] then
+        name = m[1][2]
+        if not killList[name] then
+          killList[name] = 1
+        else
+          killList[name] = killList[name] + 1
+        end
+        refreshKills()
       end
-      refreshKills()
     end
     -- variables
     local split = string.split(text, ":")
+    if not split or not split[1] or not split[2] then return end
+
     local re = regexMatch(split[2], regex)
     local combinedWorth = 0
     local formatted
@@ -890,42 +895,51 @@ onTextMessage(function(mode, text)
     add(messageT, split[1]..": ", "#FFFFFF", true)
 
     -- main part
-    if re ~= 0 then
+    if re and #re > 0 then
+        local lastValid = 0
+        for j = 1, #re do
+            if re[j] and re[j][2] then
+                lastValid = j
+            end
+        end
+
         for i=1,#re do
-            local data = re[i][2] -- each looted item
-            local formattedLoot = regexMatch(data, [[(^[^(]+)]])[1][1]
-            formattedLoot = formattedLoot:trim()
-            local amount = getFirstNumberInText(formattedLoot) -- amount found in data
-            local price = amount and getPrice(formattedLoot) * amount or getPrice(formattedLoot) -- if amount then multity price, else just take price
-            local color = getColor(price) -- generate hex string based off price
-            local messageColor = getColor(getPrice(formattedLoot))
+            local data = re[i] and re[i][2] -- each looted item
+            if data then
+                local match = regexMatch(data, [[(^[^(]+)]])
+                local formattedLoot = (match and match[1] and match[1][1]) and match[1][1]:trim() or data:trim()
+                local amount = getFirstNumberInText(formattedLoot) -- amount found in data
+                local price = amount and getPrice(formattedLoot) * amount or getPrice(formattedLoot) -- if amount then multity price, else just take price
+                local color = getColor(price) -- generate hex string based off price
+                local messageColor = getColor(getPrice(formattedLoot))
 
-            combinedWorth = combinedWorth + price -- add all prices to calculate total worth
+                combinedWorth = combinedWorth + price -- add all prices to calculate total worth
 
-            add(t, data, color, i==#re)
-            add(messageT, data, color, i==#re)
+                add(t, data, color, i == lastValid)
+                add(messageT, data, color, i == lastValid)
 
-            --drop tracker
-            for i, child in ipairs(dropTrackerWindow.contentsPanel:getChildren()) do
-              local childName = child.name
-              childName = childName and childName:getText()
+                --drop tracker
+                for _, child in ipairs(dropTrackerWindow.contentsPanel:getChildren()) do
+                  local childName = child.name
+                  childName = childName and childName:getText()
 
 
-              if childName and formattedLoot:find(childName) then
-                trackedLoot[tostring(child.item:getItemId())] = trackedLoot[tostring(child.item:getItemId())] + (amount or 1)
-                child.drops:setText("Loot Drops: "..trackedLoot[tostring(child.item:getItemId())])
+                  if childName and formattedLoot:find(childName) then
+                    trackedLoot[tostring(child.item:getItemId())] = trackedLoot[tostring(child.item:getItemId())] + (amount or 1)
+                    child.drops:setText("Loot Drops: "..trackedLoot[tostring(child.item:getItemId())])
 
-                hightlightText(child.name,"#f0b400", 8)
-                modules.game_textmessage.messagesPanel.statusLabel:setVisible(true)
-                modules.game_textmessage.messagesPanel.statusLabel:setColoredText({
-                  "Valuable loot: ", "#f0b400",
-                  childName.."", messageColor,
-                  " dropped by "..name.."!", "#f0b400"
-                })
-                schedule(3000, function()
-                  modules.game_textmessage.messagesPanel.statusLabel:setVisible(false)
-                end)
-              end
+                    hightlightText(child.name,"#f0b400", 8)
+                    modules.game_textmessage.messagesPanel.statusLabel:setVisible(true)
+                    modules.game_textmessage.messagesPanel.statusLabel:setColoredText({
+                      "Valuable loot: ", "#f0b400",
+                      childName.."", messageColor,
+                      " dropped by "..name.."!", "#f0b400"
+                    })
+                    schedule(3000, function()
+                      modules.game_textmessage.messagesPanel.statusLabel:setVisible(false)
+                    end)
+                  end
+                end
             end
         end
     end
@@ -1464,7 +1478,8 @@ onTextMessage(function(mode, text)
 
   local amount = getFirstNumberInText(text)
   local re = regexMatch(text, regex3)
-  local name = re[1][2]
+  local name = re and re[1] and re[1][2]
+  if not name then return end
   local id = WasteItems[name]
 
   if not id then

@@ -6,14 +6,41 @@ if type(storage.moneyItems) ~= "table" then
 end
 macro(1000, "Exchange money", function()
   if not storage.moneyItems[1] then return end
+  
+  -- Check for Magic Gold Converter in open containers
+  local converter = nil
+  for _, container in pairs(g_game.getContainers()) do
+    if not container.lootContainer then
+      for _, item in ipairs(container:getItems()) do
+        local id = item:getId()
+        if id == 26378 or id == 31181 or id == 32071 or id == 25719 then
+          converter = item
+          break
+        end
+      end
+      if converter then break end
+    end
+  end
+
   local containers = g_game.getContainers()
   for index, container in pairs(containers) do
-    if not container.lootContainer then -- ignore monster containers
+    if not container.lootContainer then
       for i, item in ipairs(container:getItems()) do
         if item:getCount() == 100 then
           for m, moneyId in ipairs(storage.moneyItems) do
-            if item:getId() == moneyId.id then
-              return g_game.use(item)
+            local targetId = type(moneyId) == "table" and moneyId.id or moneyId
+            if item:getId() == targetId then
+              if converter then
+                if converter:getId() == 31181 then
+                  return g_game.use(converter)
+                else
+                  return g_game.useWith(converter, item)
+                end
+              elseif item:isMultiUse() then
+                return g_game.useWith(item, item)
+              else
+                return g_game.use(item)
+              end
             end
           end
         end

@@ -4912,6 +4912,12 @@ function UIWidget:setOpacity(opacity) end
 ---@param degress number
 function UIWidget:setRotation(degress) end
 
+---@param overflow "visible" | "hidden" | "scroll" | "auto" | "clip"
+function UIWidget:setOverflow(overflow) end
+
+---@return integer
+function UIWidget:getOverflow() end
+
 ---@return integer
 function UIWidget:getX() end
 

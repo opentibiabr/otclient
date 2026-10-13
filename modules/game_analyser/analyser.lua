@@ -544,7 +544,13 @@ function checkNumber(self, text)
 end
 
 function onLevelChange(localPlayer, value, percent)
-  XPAnalyser:setupLevel(value, percent)
+  -- See game_skills/skills.lua onLevelChange: the callback passes the level percent raw
+  -- (centipercent with GameLevelPercentU16, protocol >= 1520). Normalize it with
+  -- getLevelPercent() or the analyser bar renders full.
+  if not localPlayer then
+    return
+  end
+  XPAnalyser:setupLevel(value, localPlayer:getLevelPercent())
 end
 
 function managerDropTracker(itemId, checked)
