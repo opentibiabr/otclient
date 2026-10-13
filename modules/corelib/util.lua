@@ -50,7 +50,9 @@ function connect(object, arg1, arg2, arg3)
     -- that a handler showed up. Without this, a callLuaField that failed before
     -- the connect stays cached as "this event does not exist" and is never
     -- dispatched again.
-    invalidateEventCache()
+    if type(object) ~= 'userdata' then
+        invalidateEventCache()
+    end
 
     local signalsAndSlots
     local pushFront
