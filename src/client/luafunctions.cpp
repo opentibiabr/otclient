@@ -58,6 +58,9 @@
 #include "uiminimap.h"
 #include "uiprogressrect.h"
 #include "uisprite.h"
+#ifdef FRAMEWORK_EDITOR
+#include "uispriteeditorcanvas.h"
+#endif
 #include "paperdoll.h"
 #include "paperdollmanager.h"
 #ifdef FRAMEWORK_SOUND
@@ -141,6 +144,45 @@ void Client::registerLuaFunctions()
     g_lua.registerSingletonClass("g_spriteAppearances");
     g_lua.bindSingletonFunction("g_spriteAppearances", "saveSpriteToFile", &SpriteAppearances::saveSpriteToFile, &g_spriteAppearances);
     g_lua.bindSingletonFunction("g_spriteAppearances", "saveSheetToFileBySprite", &SpriteAppearances::saveSheetToFileBySprite, &g_spriteAppearances);
+#ifdef FRAMEWORK_EDITOR
+    g_lua.bindSingletonFunction("g_spriteAppearances", "createWorkCopy", &SpriteAppearances::createWorkCopy, &g_spriteAppearances);
+    g_lua.bindSingletonFunction("g_spriteAppearances", "workCopyExists", &SpriteAppearances::workCopyExists, &g_spriteAppearances);
+    g_lua.bindSingletonFunction("g_spriteAppearances", "resetWorkCopy", &SpriteAppearances::resetWorkCopy, &g_spriteAppearances);
+    g_lua.bindSingletonFunction("g_spriteAppearances", "getWorkCopyHistoryState", &SpriteAppearances::getWorkCopyHistoryState, &g_spriteAppearances);
+    g_lua.bindSingletonFunction("g_spriteAppearances", "beginWorkCopyEdit", &SpriteAppearances::beginWorkCopyEdit, &g_spriteAppearances);
+    g_lua.bindSingletonFunction("g_spriteAppearances", "commitWorkCopyEdit", &SpriteAppearances::commitWorkCopyEdit, &g_spriteAppearances);
+    g_lua.bindSingletonFunction("g_spriteAppearances", "undoWorkCopyEdit", &SpriteAppearances::undoWorkCopyEdit, &g_spriteAppearances);
+    g_lua.bindSingletonFunction("g_spriteAppearances", "redoWorkCopyEdit", &SpriteAppearances::redoWorkCopyEdit, &g_spriteAppearances);
+    g_lua.bindSingletonFunction("g_spriteAppearances", "getInstalledAssetBackups", &SpriteAppearances::getInstalledAssetBackups, &g_spriteAppearances);
+    g_lua.bindSingletonFunction("g_spriteAppearances", "getInstalledAssetBackupHistory", &SpriteAppearances::getInstalledAssetBackupHistory, &g_spriteAppearances);
+    g_lua.bindSingletonFunction("g_spriteAppearances", "restoreInstalledAssetBackup", &SpriteAppearances::restoreInstalledAssetBackup, &g_spriteAppearances);
+    g_lua.bindSingletonFunction("g_spriteAppearances", "getAssetEditHistory", &SpriteAppearances::getAssetEditHistory, &g_spriteAppearances);
+    g_lua.bindSingletonFunction("g_spriteAppearances", "appendAssetEditHistory", &SpriteAppearances::appendAssetEditHistory, &g_spriteAppearances);
+    g_lua.bindSingletonFunction("g_spriteAppearances", "getSpriteImagePngBase64", &SpriteAppearances::getSpriteImagePngBase64, &g_spriteAppearances);
+    g_lua.bindSingletonFunction("g_spriteAppearances", "restoreSpriteImageFromPngBase64", &SpriteAppearances::restoreSpriteImageFromPngBase64, &g_spriteAppearances);
+    g_lua.bindSingletonFunction("g_spriteAppearances", "exportWorkCopy", &SpriteAppearances::exportWorkCopy, &g_spriteAppearances);
+    g_lua.bindSingletonFunction("g_spriteAppearances", "installWorkCopy", &SpriteAppearances::installWorkCopy, &g_spriteAppearances);
+    g_lua.bindSingletonFunction("g_spriteAppearances", "installWorkCopyAsNewVersion", &SpriteAppearances::installWorkCopyAsNewVersion, &g_spriteAppearances);
+    g_lua.bindSingletonFunction("g_spriteAppearances", "importSpriteFromFile", &SpriteAppearances::importSpriteFromFile, &g_spriteAppearances);
+    g_lua.bindSingletonFunction("g_spriteAppearances", "importSpritesFromDirectory", &SpriteAppearances::importSpritesFromDirectory, &g_spriteAppearances);
+    g_lua.bindSingletonFunction("g_spriteAppearances", "importSpritesFromSheet", &SpriteAppearances::importSpritesFromSheet, &g_spriteAppearances);
+    g_lua.bindSingletonFunction("g_spriteAppearances", "importSpriteForAppearance", &SpriteAppearances::importSpriteForAppearance, &g_spriteAppearances);
+    g_lua.bindSingletonFunction("g_spriteAppearances", "getSpriteRanges", &SpriteAppearances::getSpriteRanges, &g_spriteAppearances);
+    g_lua.bindSingletonFunction("g_spriteAppearances", "releaseDecodedSpriteSheets", &SpriteAppearances::releaseDecodedSpriteSheets, &g_spriteAppearances);
+    g_lua.bindSingletonFunction("g_things", "invalidateTextureCache", &ThingTypeManager::invalidateTextureCache, &g_things);
+    g_lua.bindSingletonFunction("g_things", "getAppearanceEditorData", &ThingTypeManager::getAppearanceEditorData, &g_things);
+    g_lua.bindSingletonFunction("g_things", "getAppearanceEditorSnapshot", &ThingTypeManager::getAppearanceEditorSnapshot, &g_things);
+    g_lua.bindSingletonFunction("g_things", "restoreAppearanceEditorSnapshot", &ThingTypeManager::restoreAppearanceEditorSnapshot, &g_things);
+    g_lua.bindSingletonFunction("g_things", "saveAppearanceEditorData", &ThingTypeManager::saveAppearanceEditorData, &g_things);
+    g_lua.bindSingletonFunction("g_things", "replaceAppearanceSprite", &ThingTypeManager::replaceAppearanceSprite, &g_things);
+    g_lua.bindSingletonFunction("g_things", "createAppearanceFromSprite", &ThingTypeManager::createAppearanceFromSprite, &g_things);
+    g_lua.bindSingletonFunction("g_things", "duplicateAppearance", &ThingTypeManager::duplicateAppearance, &g_things);
+    g_lua.bindSingletonFunction("g_things", "deleteAppearance", &ThingTypeManager::deleteAppearance, &g_things);
+    g_lua.bindSingletonFunction("g_things", "exportAppearanceBundle", &ThingTypeManager::exportAppearanceBundle, &g_things);
+    g_lua.bindSingletonFunction("g_things", "exportAppearanceBundles", &ThingTypeManager::exportAppearanceBundles, &g_things);
+    g_lua.bindSingletonFunction("g_things", "importAppearanceBundle", &ThingTypeManager::importAppearanceBundle, &g_things);
+    g_lua.bindSingletonFunction("g_things", "importAppearanceBundlesFromDirectory", &ThingTypeManager::importAppearanceBundlesFromDirectory, &g_things);
+#endif
 
     g_lua.bindGlobalFunction("setDrawViewportEdge", [](const bool force) {
         if (const auto& mapWidget = g_client.getMapWidget())
@@ -746,6 +788,7 @@ void Client::registerLuaFunctions()
     g_lua.bindClassMemberFunction<ThingType>("getNumPatternY", &ThingType::getNumPatternY);
     g_lua.bindClassMemberFunction<ThingType>("getNumPatternZ", &ThingType::getNumPatternZ);
     g_lua.bindClassMemberFunction<ThingType>("getAnimationPhases", &ThingType::getAnimationPhases);
+    g_lua.bindClassMemberFunction<ThingType>("getThumbnailAnimationSprites", &ThingType::getThumbnailAnimationSprites);
     g_lua.bindClassMemberFunction<ThingType>("getGroundSpeed", &ThingType::getGroundSpeed);
     g_lua.bindClassMemberFunction<ThingType>("getMaxTextLength", &ThingType::getMaxTextLength);
     g_lua.bindClassMemberFunction<ThingType>("getLight", &ThingType::getLight);
@@ -1163,6 +1206,22 @@ void Client::registerLuaFunctions()
     g_lua.bindClassMemberFunction<UISprite>("getSpriteId", &UISprite::getSpriteId);
     g_lua.bindClassMemberFunction<UISprite>("setSpriteColor", &UISprite::setSpriteColor);
     g_lua.bindClassMemberFunction<UISprite>("hasSprite", &UISprite::hasSprite);
+
+#ifdef FRAMEWORK_EDITOR
+    g_lua.registerClass<UISpriteEditorCanvas, UIWidget>();
+    g_lua.bindClassStaticFunction<UISpriteEditorCanvas>("create", [] { return std::make_shared<UISpriteEditorCanvas>(); });
+    g_lua.bindClassMemberFunction<UISpriteEditorCanvas>("setSpriteId", &UISpriteEditorCanvas::setSpriteId);
+    g_lua.bindClassMemberFunction<UISpriteEditorCanvas>("setThumbnailSpriteId", &UISpriteEditorCanvas::setThumbnailSpriteId);
+    g_lua.bindClassMemberFunction<UISpriteEditorCanvas>("setThumbnailSizeBadge", &UISpriteEditorCanvas::setThumbnailSizeBadge);
+    g_lua.bindClassMemberFunction<UISpriteEditorCanvas>("setSpriteAnimationIds", &UISpriteEditorCanvas::setSpriteAnimationIds);
+    g_lua.bindClassMemberFunction<UISpriteEditorCanvas>("getSpriteId", &UISpriteEditorCanvas::getSpriteId);
+    g_lua.bindClassMemberFunction<UISpriteEditorCanvas>("getSpriteWidth", &UISpriteEditorCanvas::getSpriteWidth);
+    g_lua.bindClassMemberFunction<UISpriteEditorCanvas>("getSpriteHeight", &UISpriteEditorCanvas::getSpriteHeight);
+    g_lua.bindClassMemberFunction<UISpriteEditorCanvas>("getSpriteRenderCenter", &UISpriteEditorCanvas::getSpriteRenderCenter);
+    g_lua.bindClassMemberFunction<UISpriteEditorCanvas>("zoomIn", &UISpriteEditorCanvas::zoomIn);
+    g_lua.bindClassMemberFunction<UISpriteEditorCanvas>("zoomOut", &UISpriteEditorCanvas::zoomOut);
+    g_lua.bindClassMemberFunction<UISpriteEditorCanvas>("getZoom", &UISpriteEditorCanvas::getZoom);
+#endif
 
     g_lua.registerClass<UICreature, UIWidget>();
     g_lua.bindClassStaticFunction<UICreature>("create", [] { return std::make_shared<UICreature>(); });

@@ -43,6 +43,7 @@ public:
     bool killProcess(std::string_view name);
     std::string getTempPath();
     std::string getCurrentDir();
+    std::vector<std::string> listDirectoryEntries(std::string path);
     bool copyFile(std::string from, std::string to);
     bool fileExists(std::string file);
     bool removeFile(std::string file);

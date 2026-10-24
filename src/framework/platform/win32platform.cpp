@@ -24,11 +24,13 @@
 
 #include "platform.h"
 
+#include <algorithm>
 #include <framework/core/eventdispatcher.h>
 
 #include <psapi.h>
 #include <windows.h>
 #include <shellapi.h>
+#include <filesystem>
 
 #pragma comment(lib, "psapi.lib")
 
@@ -115,6 +117,33 @@ std::string Platform::getCurrentDir()
     stdext::replace_all(ret, "\\", "/");
     ret += "/";
     return ret;
+}
+
+std::vector<std::string> Platform::listDirectoryEntries(std::string path)
+{
+    std::vector<std::string> entries;
+    std::error_code error;
+    const std::filesystem::directory_iterator end;
+    auto iterator = std::filesystem::directory_iterator(
+        std::filesystem::path(stdext::utf8_to_utf16(path)), error);
+    while (!error && iterator != end) {
+        const auto entryPath = iterator->path();
+        std::error_code statusError;
+        if (iterator->is_directory(statusError)) {
+            auto entry = stdext::utf16_to_utf8(entryPath.wstring());
+            stdext::replace_all(entry, "\\", "/");
+            if (!entry.ends_with('/'))
+                entry.push_back('/');
+            entries.push_back(std::move(entry));
+        } else if (iterator->is_regular_file(statusError)) {
+            auto entry = stdext::utf16_to_utf8(entryPath.wstring());
+            stdext::replace_all(entry, "\\", "/");
+            entries.push_back(std::move(entry));
+        }
+        iterator.increment(error);
+    }
+    std::ranges::sort(entries);
+    return entries;
 }
 
 bool Platform::fileExists(std::string file)

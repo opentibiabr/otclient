@@ -122,6 +122,8 @@ void Application::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_platform", "removeFile", &Platform::removeFile, &g_platform);
     g_lua.bindSingletonFunction("g_platform", "killProcess", &Platform::killProcess, &g_platform);
     g_lua.bindSingletonFunction("g_platform", "getTempPath", &Platform::getTempPath, &g_platform);
+    g_lua.bindSingletonFunction("g_platform", "getCurrentDir", &Platform::getCurrentDir, &g_platform);
+    g_lua.bindSingletonFunction("g_platform", "listDirectoryEntries", &Platform::listDirectoryEntries, &g_platform);
     g_lua.bindSingletonFunction("g_platform", "openUrl", &Platform::openUrl, &g_platform);
     g_lua.bindSingletonFunction("g_platform", "getCPUName", &Platform::getCPUName, &g_platform);
     g_lua.bindSingletonFunction("g_platform", "getTotalSystemMemory", &Platform::getTotalSystemMemory, &g_platform);

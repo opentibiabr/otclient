@@ -34,6 +34,7 @@
 #include "framework/graphics/image.h"
 #include "framework/otml/otmlnode.h"
 #include <framework/core/graphicalapplication.h>
+#include <limits>
 
 const static TexturePtr m_textureNull;
 
@@ -53,6 +54,7 @@ namespace {
 #ifdef FRAMEWORK_PROTOBUF
 void ThingType::unserializeAppearance(const uint16_t clientId, const ThingCategory category, const appearances::Appearance& appearance)
 {
+    m_thumbnailAnimationSprites.clear();
     m_null = false;
     m_id = clientId;
     m_category = category;
@@ -63,6 +65,7 @@ void ThingType::unserializeAppearance(const uint16_t clientId, const ThingCatego
 
     if (!g_game.getFeature(Otc::GameLoadSprInsteadProtobuf)) {
         m_animationPhases = 0;
+        int thumbnailAnimationPriority = std::numeric_limits<int>::max();
         int totalSpritesCount = 0;
 
         struct FrameGroupInfo {
@@ -85,6 +88,32 @@ void ThingType::unserializeAppearance(const uint16_t clientId, const ThingCatego
 
             const int groupPhases = std::max<int>(1, spritesPhases.size());
             m_animationPhases += groupPhases;
+
+            const int thumbnailPriority = frameGroupType == FrameGroupIdle ? 0 :
+                frameGroupType == FrameGroupMoving ? 1 : 2;
+            if (groupPhases > 1 && thumbnailPriority < thumbnailAnimationPriority) {
+                const int patternWidth = std::max<int>(1, spriteInfo.pattern_width());
+                const int patternHeight = std::max<int>(1, spriteInfo.pattern_height());
+                const int patternDepth = std::max<int>(1, spriteInfo.pattern_depth());
+                const int layers = std::max<int>(1, spriteInfo.layers());
+                const int spritesPerPhase = layers * patternWidth * patternHeight * patternDepth;
+                const int direction = category == ThingCategoryCreature && patternWidth >= 4 ? 2 : 0;
+                const int spriteOffset = direction * layers;
+                std::vector<uint32_t> animationSprites;
+                animationSprites.reserve(groupPhases);
+                for (int phase = 0; phase < groupPhases; ++phase) {
+                    const int spriteIndex = phase * spritesPerPhase + spriteOffset;
+                    if (spriteIndex >= spriteInfo.sprite_id_size()) {
+                        animationSprites.clear();
+                        break;
+                    }
+                    animationSprites.push_back(spriteInfo.sprite_id(spriteIndex));
+                }
+                if (animationSprites.size() > 1) {
+                    m_thumbnailAnimationSprites = std::move(animationSprites);
+                    thumbnailAnimationPriority = thumbnailPriority;
+                }
+            }
 
             if (const auto& sheet = g_spriteAppearances.getSheetBySpriteId(spriteInfo.sprite_id(0), false)) {
                 m_size = sheet->getSpriteSize() / g_gameConfig.getSpriteSize();
@@ -185,11 +214,11 @@ void ThingType::applyAppearanceFlags(const appearances::AppearanceFlags& flags)
         m_flags |= ThingFlagAttrGroundBorder;
     }
 
-    if (flags.has_bottom()) {
+    if (flags.has_bottom() && flags.bottom()) {
         m_flags |= ThingFlagAttrOnBottom;
     }
 
-    if (flags.has_top()) {
+    if (flags.has_top() && flags.top()) {
         m_flags |= ThingFlagAttrOnTop;
     }
 
@@ -492,6 +521,7 @@ void ThingType::applyAppearanceFlags(const appearances::AppearanceFlags& flags)
 
 void ThingType::unserialize(const uint16_t clientId, const ThingCategory category, const FileStreamPtr& fin)
 {
+    m_thumbnailAnimationSprites.clear();
     m_null = false;
     m_id = clientId;
     m_category = category;

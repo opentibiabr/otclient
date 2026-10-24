@@ -444,8 +444,11 @@ set(SOURCE_FILES
         client/uiminimap.cpp
         client/uiprogressrect.cpp
         client/uisprite.cpp
+        client/uispriteeditorcanvas.cpp
         tools/datdump.cpp
 )
+
+set_source_files_properties(client/uispriteeditorcanvas.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 
 if (TOGGLE_FRAMEWORK_GRAPHICS)
   set(SOURCE_FILES ${SOURCE_FILES}
