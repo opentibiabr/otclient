@@ -1228,6 +1228,10 @@ bool UIWidget::setRect(const Rect& rect)
 
                 self->callLuaField("onResize", oldRect, rect);
                 self->onGeometryChange(oldRect, rect);
+            } else if (self->isTextWrap() && self->m_textWrapWidth != rect.width()) {
+                // The size changed and returned within one frame, but the text
+                // was wrapped at the intermediate width; re-wrap at the final one.
+                self->updateText();
             }
         });
         setProp(PropUpdateEventScheduled, true);
@@ -1961,7 +1965,7 @@ void UIWidget::onStyleApply(const std::string_view, const OTMLNodePtr& styleNode
 
 void UIWidget::onGeometryChange(const Rect& oldRect, const Rect& newRect)
 {
-    if (isTextWrap() && oldRect.size() != newRect.size())
+    if (isTextWrap() && (oldRect.size() != newRect.size() || m_textWrapWidth != newRect.width()))
         updateText();
 
     // move children that is outside the parent rect to inside again

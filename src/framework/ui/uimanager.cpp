@@ -30,6 +30,7 @@
 #include "framework/otml/otmldocument.h"
 #include "framework/otml/otmlexception.h"
 #include "framework/otml/otmlnode.h"
+#include "framework/otml/otmlparser.h"
 #include <framework/platform/platformwindow.h>
 #include <framework/util/stats.h>
 
@@ -546,6 +547,11 @@ void UIManager::importStyleFromOTML(const OTMLDocumentPtr& doc)
             importStyleFromOTML(node);
     }
     registerGlobalAliases(doc);
+}
+
+void UIManager::resolveStyleAliases(const OTMLNodePtr& styleNode) const
+{
+    OTMLParser::resolveVariables(styleNode, m_globalAliases);
 }
 
 OTMLNodePtr UIManager::getStyle(const std::string_view sn)

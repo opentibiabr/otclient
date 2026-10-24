@@ -917,6 +917,7 @@ private:
     void applyDimension(bool isWidth, std::string valueStr);
     void applyDimension(bool isWidth, Unit unit, int32_t value);
     void refreshHtml(bool siblingsTo = false);
+    void invalidateHtmlAncestorsHeight();
 
     void updateImageCache() { if (!m_imageCachedScreenCoords.isNull()) m_imageCachedScreenCoords = {}; }
     void configureBorderImage() { setProp(PropImageBordered, true); updateImageCache(); }
@@ -992,6 +993,7 @@ private:
     Rect m_textCachedScreenCoords;
     Size m_textSize;
     Size m_realTextSize;
+    int m_textWrapWidth{ -1 };
     void playUiSound(int soundType);
 
 protected:

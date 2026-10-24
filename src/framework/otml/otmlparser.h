@@ -43,6 +43,8 @@ public:
     /// Parse the entire document
     void parse();
 
+    static void resolveVariables(const OTMLNodePtr& node, const std::unordered_map<std::string, std::string>& aliases);
+
 private:
     /// Retrieve next line from the input stream
     std::string getNextLine();
