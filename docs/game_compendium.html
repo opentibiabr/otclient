@@ -1,0 +1,701 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OTClient - Redemption</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { max-width: 1100px; margin: 0 auto; padding: 24px; font: 16px/1.6 system-ui, sans-serif; }
+    img, video { max-width: 100%; height: auto; }
+    h1, h2, h3, h4 { line-height: 1.25; margin-top: 1.6em; }
+    h1 { margin-top: 0; }
+    a { overflow-wrap: anywhere; }
+    pre { overflow-x: auto; padding: 1em; border-radius: 6px; background: rgba(127,127,127,.12); }
+    code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+    :not(pre) > code { padding: .1em .3em; border-radius: 4px; background: rgba(127,127,127,.12); }
+    blockquote, .admonition { margin: 1em 0; padding: .8em 1em; border-left: 4px solid #6a9fb5; background: rgba(127,127,127,.08); }
+    .admonition.warning, .admonition.caution { border-color: #d29922; }
+    .table-wrap { overflow-x: auto; margin: 1em 0; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid rgba(127,127,127,.35); padding: .45em .7em; text-align: left; vertical-align: top; }
+    details { margin: .8em 0; }
+    summary { cursor: pointer; font-weight: 600; }
+    hr { border: 0; border-top: 1px solid rgba(127,127,127,.35); margin: 2em 0; }
+  </style>
+</head>
+<body>
+<h1>
+  <img src="https://github.com/mehah/otclient/blob/main/data/images/clienticon.png?raw=true" width="32" alt="logo"/>
+  OTClient - Redemption
+</h1>
+<p><a href="https://discord.gg/tUjTBZzMCy"><img src="https://discordapp.com/api/guilds/888062548082061433/widget.png?style=shield" alt="Discord Shield"></a> <a href="https://github.com/opentibiabr/otclient/actions/workflows/ci.yml"><img src="https://github.com/opentibiabr/otclient/actions/workflows/ci.yml/badge.svg" alt="CI"></a> <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a></p>
+<hr>
+<h2 id="table-of-contents">📋 Table of Contents</h2>
+<ol>
+<li><img src="https://raw.githubusercontent.com/mehah/otclient/main/src/otcicon.ico" alt="Logo">  <a href="#what-is-otclient">What is OTClient?</a>
+</li>
+<li>🚀 <a href="#features">Features</a>
+</li>
+<li><img height="16" src="https://raw.githubusercontent.com/github/explore/80688e429a7d4ef2fca1e82350fe8e3517d3494d/topics/android/android.png"/> <a href="#the-mobile-project">The Mobile Project</a>
+</li>
+<li>🔨 <a href="#compiling">Compiling</a>
+</li>
+<li>🐳 <a href="#docker">Docker</a>
+</li>
+<li>🩺 <a href="#need-help">Need Help?</a>
+</li>
+<li>📑 <a href="#bugs">Bugs</a>
+</li>
+<li>❤️ <a href="#roadmap">Roadmap</a>
+</li>
+<li>💯 <a href="#support-protocol">Support Protocol</a>
+</li>
+<li>©️ <a href="#license">License</a>
+</li>
+<li>❤️ <a href="#contributors">Contributors</a>
+</li>
+<li>📦 <a href="docs/client-assets-auto-install.md">Client Assets Auto-Install</a>
+</li>
+</ol>
+<hr>
+<h2 id="what-is-otclient"><img src="https://raw.githubusercontent.com/mehah/otclient/main/src/otcicon.ico" alt="Logo"> What is OTClient?</h2>
+<p>OTClient is an alternative Tibia client for usage with OTServ. It aims to be <strong>complete</strong> and <strong>flexible</strong>:</p>
+<ul>
+<li><strong>LUA scripting</strong> for all game interface functionality
+</li>
+<li><strong>CSS-like syntax</strong> for UI design
+</li>
+<li><strong>Modular system</strong>: each functionality is a separate module, allowing easy customization
+</li>
+<li>Users can create new mods and extend the interface
+</li>
+<li>Written in <strong>C++20</strong> and heavily scripted in <strong>LUA</strong>
+</li>
+</ul>
+<p>For a server to connect to, you can build your own with <strong>theforgottenserver</strong> or <strong>canary</strong>.</p>
+<aside class="admonition note"><strong>Note</strong><div>Based on <a href="https://github.com/edubart/otclient">edubart/otclient</a> • Rev: <a href="https://github.com/edubart/otclient/commit/fc39ee4adba8e780a2820bfda66fc942d74cedf4">2.760</a></div></aside>
+<hr>
+<h2 id="features">🚀 Features</h2>
+<p>Beyond its flexibility with scripts, OTClient comes with many features that enable client-side innovation in OTServ: <strong>sound system</strong>, <strong>graphics effects with shaders</strong>, <strong>modules/addons</strong>, <strong>animated textures</strong>, <strong>styleable UI</strong>, <strong>transparency</strong>, <strong>multi-language</strong>, <strong>in-game LUA terminal</strong>, and an <strong>OpenGL 2.0 ES engine</strong> that allows porting to mobile platforms. It is also flexible enough to create Tibia tools like map editors using scripts—OTClient is a <strong>framework + Tibia APIs</strong>.</p>
+<h3 id="performance--engine">⚡ Performance &amp; Engine</h3>
+<details>
+<summary>🖼️ Draw Render (optimization showcase)</summary>
+<p><a href="https://github.com/user-attachments/assets/fe5f1d7f-7195-4d65-bca6-c2b5d62d3890">https://github.com/user-attachments/assets/fe5f1d7f-7195-4d65-bca6-c2b5d62d3890</a></p>
+</details>
+<details>
+<summary>📦 Asynchronous Texture Loading</summary>
+<ul>
+<li><strong>Description</strong>: with this the spr file is not cached, consequently, less RAM is consumed.
+</li>
+<li><strong>Video</strong>:
+</li>
+</ul>
+<p><a href="https://github.com/kokekanon/otclient.readme/assets/114332266/f3b7916a-d6ed-46f5-b516-30421de4616d">https://github.com/kokekanon/otclient.readme/assets/114332266/f3b7916a-d6ed-46f5-b516-30421de4616d</a></p>
+</details>
+<details>
+<summary>🧵 Multi-threading</summary>
+<p><strong>Main Thread</strong></p>
+<ul>
+<li>Sound
+</li>
+<li>Particles
+</li>
+<li>Load Textures (files)
+</li>
+<li>Windows Events (keyboard, mouse, ...)
+</li>
+<li>Draw texture
+</li>
+</ul>
+<p><strong>Thread 2</strong></p>
+<ul>
+<li>Connection
+</li>
+<li>Events (g_dispatcher)
+</li>
+<li>Collect information on what will be drawn on the Map
+</li>
+</ul>
+<p><strong>Thread 3</strong></p>
+<ul>
+<li>Collect information on what will be drawn in the UI
+</li>
+</ul>
+<p><strong>Image:</strong> <img src="https://github.com/kokekanon/otclient.readme/assets/114332266/95fb15ac-553f-4eca-937d-8c8f49990f3e" alt="multinucleo"></p>
+</details>
+<details>
+<summary>🧹 Garbage Collection</summary>
+<p><strong>Description (1):</strong></p>
+<pre><code>Garbage Collection is the feature responsible for automatically managing memory by identifying and releasing objects that are no longer in use. This allows the client to maintain efficient memory usage, avoid unnecessary data accumulation, and improve overall stability.</code></pre>
+<p><strong>Description (2):</strong> Garbage collector is used to check what is no longer being used and remove it from memory. <em>(lua, texture, drawpool, thingtype)</em></p>
+</details>
+<details>
+<summary>🧭 Texture Atlas System</summary>
+<p><em>(coming with engine improvements and draw-call reduction)</em></p>
+</details>
+<ul>
+<li>C++20 ( v17 , Unity build and Manifest Mode <em>(vcpkg.json)</em> ) build in x32 and x64  
+</li>
+<li>Walking System Improvements  
+</li>
+<li>Supports sequenced packages and compression  
+</li>
+<li>Asserts load (Tibia 13)
+</li>
+</ul>
+<hr>
+<h3 id="ui--ux">🎛️ UI &amp; UX</h3>
+<details>
+<summary>🧩 UIWidgets Improvements</summary>
+<ul>
+<li><strong>Description:</strong> Improvements in the UI algorithm; better performance in add/remove/reposition widgets. Visible in the <strong>battle module</strong>.
+</li>
+<li><strong>Video:</strong>  
+</li>
+</ul>
+<p><a href="https://github.com/user-attachments/assets/35c79819-b78b-4578-a4a2-af1235139807">https://github.com/user-attachments/assets/35c79819-b78b-4578-a4a2-af1235139807</a></p>
+</details>
+<details>
+<summary>🔁 Auto Reload Module</summary>
+<p>Activate: <code>g_modules.enableAutoReload()</code> (<a href="https://github.com/mehah/otclient/blob/main/init.lua#L114">init.lua</a>) Video:</p>
+<p><a href="https://github.com/kokekanon/otclient.readme/assets/114332266/0c382d93-6217-4efa-8f22-b51844801df4">https://github.com/kokekanon/otclient.readme/assets/114332266/0c382d93-6217-4efa-8f22-b51844801df4</a></p>
+</details>
+<details>
+<summary>✨ Attached Effects System (aura, wings…)</summary>
+<ul>
+<li>Compatible with <strong>.APNG</strong>
+<ul>
+<li>ThingCategoryEffect
+</li>
+<li>ThingCategoryCreature
+</li>
+<li>ThingExternalTexture: images in <strong>PNG | APNG</strong>
+</li>
+</ul>
+</li>
+<li><strong>Wiki:</strong> <a href="https://github.com/mehah/otclient/wiki/Tutorial-Attached-Effects">https://github.com/mehah/otclient/wiki/Tutorial-Attached-Effects</a>
+</li>
+<li><strong>Example Code:</strong> <a href="https://github.com/mehah/otclient/blob/main/modules/game_attachedeffects/effects.lua">effects.lua</a> • <a href="https://github.com/mehah/otclient/blob/main/modules/game_attachedeffects/attachedeffects.lua#L1">test code</a>  
+</li>
+<li><strong>Specific lookType settings:</strong> <a href="https://github.com/mehah/otclient/blob/main/modules/game_attachedeffects/configs/outfit_618.lua">outfit_618.lua</a>
+</li>
+</ul>
+<aside class="admonition tip"><strong>Tip</strong><div>You can adjust offsets per looktype using <strong>ThingConfig</strong> when a default offset doesn’t align perfectly for a given sprite.</div></aside>
+<p align="center">
+<table>
+<tr>
+<td><img src="https://github.com/kokekanon/OTredemption-Picture-NODELETE/blob/main/Picture/Attached%20Effect/Creature/001_Bone.gif?raw=true" width="200"></td>
+<td><img src="https://github.com/kokekanon/OTredemption-Picture-NODELETE/blob/main/Picture/Attached%20Effect/Creature/002_aura.gif?raw=true" width="200"></td>
+<td><img src="https://github.com/kokekanon/OTredemption-Picture-NODELETE/blob/main/Picture/Attached%20Effect/Creature/003_particula.gif?raw=true" width="250"></td>
+</tr>
+<tr>
+<td align="center">ThingCategory Attached Effect</td>
+<td align="center">Texture (PNG) Attached Effect</td>
+<td align="center">Particule</td>
+</tr>
+</table>
+</p>
+</details>
+<details>
+<summary>🧭 Module Controller System</summary>
+<p>A safer way to create modules, without the need to unbind keys, disconnect events, or destroy widgets. <strong>Example:</strong> (<a href="https://github.com/mehah/otclient/blob/cache-for-all/modules/game_minimap/minimap.lua">modules/game_minimap/minimap.lua</a>)</p>
+</details>
+<details>
+<summary>🖼️ Anti-Aliasing Mode Options</summary>
+<ul>
+<li><em>Note</em>: <strong>Smooth Retro</strong> will consume a little more GPU.
+</li>
+</ul>
+<p><strong>GIF:</strong> <img src="https://github.com/kokekanon/otclient.readme/assets/114332266/5a411525-7d5a-4b16-8bb6-2c6462152d39" alt="aa"></p>
+</details>
+<details>
+<summary>🧩 Creature Information by UIWidget</summary>
+<ul>
+<li>Enable: <a href="https://github.com/mehah/otclient/blob/e2c5199e52bd86f573c9bb582d7548cfe7a8b026/data/setup.otml#L20">setup.otml</a>
+</li>
+<li>Style: <a href="https://github.com/mehah/otclient/tree/main/modules/game_creatureinformation">modules/game_creatureinformation</a>
+</li>
+<li><strong>Note:</strong> There is a performance degradation vs direct Draw Pool, about ~20%, tested with 60 monsters attacking each other.
+</li>
+</ul>
+<p><strong>Video:</strong></p>
+<p><a href="https://github.com/kokekanon/otclient.readme/assets/114332266/c2567f3f-136e-4e11-964f-3ade89c0056b">https://github.com/kokekanon/otclient.readme/assets/114332266/c2567f3f-136e-4e11-964f-3ade89c0056b</a></p>
+</details>
+<details>
+<summary>🧱 Tile Widget</summary>
+<p>Wiki: <a href="https://github.com/mehah/otclient/wiki/Tutorial-Attached-Effects">https://github.com/mehah/otclient/wiki/Tutorial-Attached-Effects</a></p>
+<p align="center">
+<table>
+<tr>
+<td><img src="https://github.com/kokekanon/OTredemption-Picture-NODELETE/blob/main/Picture/Attached%20Effect/Tile/001_attachedeffect.gif?raw=true" width="250"></td>
+<td><img src="https://github.com/kokekanon/OTredemption-Picture-NODELETE/blob/main/Picture/Attached%20Effect/Tile/002_widget.png?raw=true" width="200"></td>
+<td><img src="https://github.com/kokekanon/OTredemption-Picture-NODELETE/raw/main/Picture/Attached%20Effect/Tile/003_particulas.gif?raw=true" width="310"></td>
+</tr>
+<tr>
+<td align="center">Title Attached Effect</td>
+<td align="center">Title Widget</td>
+<td align="center">Title Particule</td>
+</tr>
+</table>
+</p>
+</details>
+<details>
+<summary>🧩 Support HTML/CSS Syntax</summary>
+<p><a href="https://github.com/user-attachments/assets/b16359d3-09a4-4181-bcb8-c76339b64b37">https://github.com/user-attachments/assets/b16359d3-09a4-4181-bcb8-c76339b64b37</a></p>
+<p><a href="https://github.com/user-attachments/assets/d3844223-7e35-45da-a872-3141f1c5860a">https://github.com/user-attachments/assets/d3844223-7e35-45da-a872-3141f1c5860a</a></p>
+<p><a href="https://github.com/user-attachments/assets/9f20814f-0aed-4b70-8852-334ac745ec11">https://github.com/user-attachments/assets/9f20814f-0aed-4b70-8852-334ac745ec11</a></p>
+<p><a href="https://github.com/user-attachments/assets/3ac8473c-8e90-4639-b815-ef183c7e2adf">https://github.com/user-attachments/assets/3ac8473c-8e90-4639-b815-ef183c7e2adf</a></p>
+<p><strong>Module examples:</strong></p>
+<ul>
+<li><a href="https://github.com/mehah/otclient/tree/main/modules/game_shaders">Shader</a>  
+</li>
+<li><a href="https://github.com/mehah/otclient/pull/825">Blessing</a>
+</li>
+</ul>
+</details>
+<details>
+<summary>🎥 Latency-adaptive camera</summary>
+<p>Basically the camera adapts to the server latency to always remain smooth and avoid stuttering while walking. If the ping gets high, the camera moves slower to keep up with the server&#x27;s response time; if the ping drops, the camera moves faster. <em>(Depends on character speed.)</em></p>
+</details>
+<details>
+<summary>🧭 Support Negative Offset (.dat)</summary>
+<ul>
+<li>Compatible with <a href="https://github.com/punkice3407/ObjectBuilder/releases/tag/v0.5.5">ObjectBuilderV0.5.5</a>  
+</li>
+<li>Enable: <code>g_game.enableFeature(GameNegativeOffset)</code>
+</li>
+</ul>
+<p><strong>Video:</strong></p>
+<p><a href="https://github.com/kokekanon/otclient.readme/assets/114332266/16aaa78b-fc55-4c6e-ae63-7c4063c5b032">https://github.com/kokekanon/otclient.readme/assets/114332266/16aaa78b-fc55-4c6e-ae63-7c4063c5b032</a></p>
+</details>
+<ul>
+<li>Floor Shadowing  
+</li>
+<li>Highlight Mouse Target <em>(press <strong>Shift</strong> to select any object)</em>  
+</li>
+<li>Floor View Mode <em>(Normal, Fade, Locked, Always, Always with transparency)</em>  
+</li>
+<li>Floating Effects Option  
+</li>
+<li>Refactored Walk System  
+</li>
+<li>Support for more mouse buttons <em>(e.g., 4 and 5)</em>
+</li>
+<li>Support DirectX  
+</li>
+<li>Hud Scale
+</li>
+</ul>
+<hr>
+<h3 id="compatibility--protocols">🔗 Compatibility &amp; Protocols</h3>
+<ul>
+<li>Client <strong>7.6 ~ 12.85 ~ 12.92</strong>, <strong>13.00 ~ 15.25</strong> support <em>(protobuf)</em>  
+</li>
+<li>Market rewritten (compatible with TFS and Canary)  
+</li>
+<li>Async Texture Loading <em>(engine-level feature)</em>  
+</li>
+<li>Supports sequenced packages and compression  
+</li>
+</ul>
+<aside class="admonition note"><strong>Note</strong><div>See section <strong><a href="#support-protocol">💯 Support Protocol</a></strong> for a full compatibility matrix and required flags.</div></aside>
+<hr>
+<h3 id="community-mods--integrations">🧩 Community Mods &amp; Integrations</h3>
+<h4 id="community-features">🙋 Community (Features)</h4>
+<details>
+<summary>🕹️ Discord RPC — @SkullzOTS</summary>
+<ul>
+<li>by <a href="https://github.com/SkullzOTS">@SkullzOTS</a>, <a href="https://github.com/surfaceflinger">@surfaceflinger</a> and <a href="https://github.com/libergod">@libergod</a>
+</li>
+<li>To enable just go to <a href="https://github.com/mehah/otclient/blob/main/src/framework/config.h#L43">config.h</a>, set <strong>1</strong> in <code>ENABLE_DISCORD_RPC</code> and configure the others definitions
+</li>
+<li>If using CMake execute: 
+<ul>
+<li>Removes Content of Build Folder if needed
+</li>
+<li><code>if (Test-Path -Path build) { Remove-Item -Path build -Recurse -Force; New-Item -Path build -ItemType Directory }</code> 
+</li>
+<li>Configure CMake
+</li>
+<li><code>cmake -B build -G &quot;Ninja&quot; -DENABLE_DISCORD_RPC=ON</code>
+</li>
+<li>Build it
+</li>
+<li><code>cmake --build build</code>
+</li>
+</ul>
+</li>
+<li>Step-by-step on <strong>YouTube</strong>: <a href="https://www.youtube.com/watch?v=zCHYtRlD58g">https://www.youtube.com/watch?v=zCHYtRlD58g</a>
+</li>
+</ul>
+<p align="center">
+<table>
+<tr>
+<td><img src="https://github.com/kokekanon/OTredemption-Picture-NODELETE/blob/main/Picture/Discord/001.png?raw=true" width="200"></td>
+<td><img src="https://github.com/kokekanon/OTredemption-Picture-NODELETE/blob/main/Picture/Discord/002_ingame.png?raw=true" width="200"></td>
+<td><img src="https://github.com/kokekanon/OTredemption-Picture-NODELETE/blob/main/Picture/Discord/003_future.png?raw=true" width="200"></td>
+</tr>
+<tr>
+<td align="center">Example interface</td>
+<td align="center">Example in game</td>
+<td align="center">future discord-game-sdk</td>
+</tr>
+</table>
+</p>
+</details>
+<details>
+<summary>🔐 Encryption System — @Mrpox *(unsafe implementation)*</summary>
+<ul>
+<li>by <a href="https://github.com/Mrpox">@Mrpox</a>  
+</li>
+<li>Enable via <a href="https://github.com/mehah/otclient/blob/main/src/framework/config.h#L33">config.h</a>: set <strong>ENABLE_ENCRYPTION=1</strong> and change <strong>ENCRYPTION_PASSWORD</strong>  
+</li>
+<li>To enable building encryption with <code>--encrypt</code>, set <strong>ENABLE_ENCRYPTION_BUILDER=1</strong> (by <a href="https://github.com/TheMaoci">@TheMaoci</a>) — removes encryption code from production build
+</li>
+<li>Generate encrypted files by running client with: <code>--encrypt SET_YOUR_PASSWORD_HERE</code> (or omit to use the password from <a href="https://github.com/mehah/otclient/blob/main/src/framework/config.h#L38">config.h</a>)
+</li>
+</ul>
+<aside class="admonition warning"><strong>Warning</strong><div>This encryption implementation is considered <strong>unsafe</strong>. Use at your own risk.</div></aside>
+</details>
+<details>
+<summary>⬆️ Client Updater — @conde2</summary>
+<ul>
+<li>by <a href="https://github.com/conde2">@conde2</a>  
+</li>
+<li>Paste the <strong>API</strong> folder in your www folder: <a href="https://github.com/mehah/otclient/tree/main/tools/api">https://github.com/mehah/otclient/tree/main/tools/api</a>  
+</li>
+<li>Create a folder called <code>files</code> in your www and paste <code>init.lua</code>, <code>modules</code>, <code>data</code>, and <code>exe</code>  
+</li>
+<li>Uncomment and change this line: <a href="https://github.com/mehah/otclient/blob/main/init.lua#L6">https://github.com/mehah/otclient/blob/main/init.lua#L6</a>
+</li>
+</ul>
+</details>
+<details>
+<summary>🌈 Colored Text — @conde2</summary>
+<ul>
+<li>by <a href="https://github.com/conde2">@conde2</a>  
+</li>
+<li>Usage: <code>widget:setColoredText(&quot;{Colored text, #ff00ff} normal text&quot;)</code>
+</li>
+</ul>
+</details>
+<details>
+<summary>🔳 QR Code support — @conde2</summary>
+<ul>
+<li>by <a href="https://github.com/conde2">@conde2</a>  
+</li>
+<li><strong>UIQrCode</strong> properties example:
+<ul>
+<li><code>code-border: 2</code>
+</li>
+<li><code>code: Hail OTClient Redemption - Conde2 Dev</code>
+</li>
+</ul>
+</li>
+</ul>
+</details>
+<details>
+<summary>💬 Typing Icon — @SkullzOTS</summary>
+<ul>
+<li>by <a href="https://github.com/SkullzOTS">@SkullzOTS</a>  
+</li>
+<li>Enable in <a href="https://github.com/mehah/otclient/blob/main/data/setup.otml">setup.otml</a>: set <code>draw-typing: true</code>
+</li>
+</ul>
+<p align="center">
+  <img src="https://github.com/kokekanon/OTredemption-Picture-NODELETE/blob/main/Picture/typing%20ico/001.gif?raw=true" width="200">
+</p>
+</details>
+<details>
+<summary>🪜 Smooth Walk Elevation — @SkullzOTS</summary>
+<ul>
+<li>by <a href="https://github.com/SkullzOTS">@SkullzOTS</a>  
+</li>
+<li>Preview: <a href="https://i.gyazo.com/af0ed0f15a9e4d67bd4d0b2847bd6be7.gif">Gyazo</a>  
+</li>
+<li>Enable in <a href="https://github.com/mehah/otclient/blob/main/modules/game_features/features.lua#L5">modules/game_features/features.lua</a>: uncomment line 5 (<code>g_game.enableFeature(GameSmoothWalkElevation)</code>)
+</li>
+</ul>
+<p align="center">
+  <img src="https://github.com/kokekanon/OTredemption-Picture-NODELETE/blob/main/Picture/smooth/001_smooth.gif?raw=true" width="200">
+</p>
+</details>
+<details>
+<summary>🗺️ Layout based on Tibia 13 — @marcosvf132</summary>
+<ul>
+<li>by <a href="https://github.com/marcosvf132">@marcosvf132</a>  
+</li>
+<li><strong>Game_shop</strong> based on Store by <a href="https://github.com/Oskar1121/Store">@Oskar1121</a>, modified/fixed by <a href="https://github.com/Nottinghster/">@Nottinghster</a>
+</li>
+<li><strong>Minimap WorldTime</strong>
+<ul>
+<li>TFS C++ (old): <code>void ProtocolGame::sendWorldTime()</code>
+</li>
+<li>TFS LUA (new): <code>function Player.sendWorldTime(self, time)</code>
+</li>
+<li>Canary: <code>void ProtocolGame::sendTibiaTime(int32_t time)</code>
+</li>
+</ul>
+</li>
+<li><strong>Outfit windows</strong> compatible with attachEffect, shader  
+<ul>
+<li>Canary  
+</li>
+<li><strong>1.4.2</strong>: <a href="https://github.com/kokekanon/TFS-1.4.2-Compatible-Aura-Effect-Wings-Shader-MEHAH/commit/77f80d505b01747a7c519e224d11c124de157a8f">https://github.com/kokekanon/TFS-1.4.2-Compatible-Aura-Effect-Wings-Shader-MEHAH/commit/77f80d505b01747a7c519e224d11c124de157a8f</a>  
+</li>
+<li><strong>Downgrade</strong>:  
+<ul>
+<li><a href="https://github.com/kokekanon/forgottenserver-downgrade/pull/2">https://github.com/kokekanon/forgottenserver-downgrade/pull/2</a>  
+</li>
+<li><a href="https://github.com/kokekanon/forgottenserver-downgrade/pull/7">https://github.com/kokekanon/forgottenserver-downgrade/pull/7</a>  
+</li>
+<li><a href="https://github.com/kokekanon/forgottenserver-downgrade/pull/9">https://github.com/kokekanon/forgottenserver-downgrade/pull/9</a>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Calendar
+</li>
+<li><code>client_bottommenu</code> (activate <code>Services.status</code> array in <code>init.lua</code>)
+</li>
+</ul>
+<p><strong>Status service</strong> Put <code>./otclient/tools/api/status.php</code> in: <code>C:/UniServerZ/www/api/</code></p>
+<p>If it doesn&#x27;t work, enable <strong>curl</strong>:</p>
+<p><img src="https://github.com/Nottinghster/otclient/assets/114332266/99ad2ce7-d70f-47f4-aa19-083140fb5814" alt="image"> <img src="https://github.com/Nottinghster/otclient/assets/114332266/84349388-a458-4eb5-b1d6-cce5693cfd5a" alt="image"></p>
+<p align="center">
+<table>
+<tr>
+<td><img src="https://github.com/kokekanon/OTredemption-Picture-NODELETE/blob/main/Picture/Layout%2013/001_interface.png?raw=true" width="300"></td>
+<td><img src="https://github.com/kokekanon/OTredemption-Picture-NODELETE/blob/main/Picture/Layout%2013/002_ingame.png?raw=true" width="300"></td>
+</tr>
+<tr>
+<td align="center">Interface</td>
+<td align="center">In-game</td>
+</tr>
+</table>
+</p>
+<ul>
+<li>Imbuement tracker — by <a href="https://github.com/reyaleman">@Reyaleman</a>  
+</li>
+<li>Blessing  
+</li>
+<li>Screenshot  
+</li>
+<li>Highscores  
+</li>
+<li>Store <em>(compatible with 1098, 12.91 ~ 15.25)</em>  
+</li>
+<li>QuickLoot  
+</li>
+<li>Groups Vip  
+</li>
+<li>Reward Wall <em>(Daily Rewards)</em>
+</li>
+</ul>
+</details>
+<details>
+<summary>🌐 Browser Client — @OTArchive</summary>
+<ul>
+<li>by <a href="https://github.com/OTArchive">@OTArchive</a>  
+</li>
+<li>Wiki: <a href="https://github.com/OTArchive/otclient-web/wiki/Guia-%E2%80%90-OTClient-Redemption-Web">https://github.com/OTArchive/otclient-web/wiki/Guia-%E2%80%90-OTClient-Redemption-Web</a>  
+</li>
+<li>Video: <a href="https://github.com/user-attachments/assets/e8ab58c7-1be3-4c76-bc6d-bd831e846826">https://github.com/user-attachments/assets/e8ab58c7-1be3-4c76-bc6d-bd831e846826</a>
+</li>
+</ul>
+</details>
+<ul>
+<li>Mobile Support — by <a href="https://github.com/tuliomagalhaes">@tuliomagalhaes</a> • <a href="https://github.com/BenDol">@BenDol</a> • <a href="https://github.com/SkullzOTS">@SkullzOTS</a>
+</li>
+</ul>
+<p align="center">
+<table>
+<tr>
+<td><img src="https://github.com/kokekanon/OTredemption-Picture-NODELETE/blob/main/Picture/Android/001_ingame.png?raw=true" width="200"></td>
+<td><img src="https://github.com/kokekanon/OTredemption-Picture-NODELETE/blob/main/Picture/Android/001_interface.png?raw=true" width="200"></td>
+<td><img src="https://github.com/kokekanon/OTredemption-Picture-NODELETE/blob/main/Picture/Android/003_patrikq.jpg?raw=true" width="270"></td>
+</tr>
+<tr>
+<td align="center">Interface</td>
+<td align="center">Density Pixel</td>
+<td align="center">Joystick</td>
+</tr>
+</table>
+</p>
+<ul>
+<li>Support <strong>HTTP/HTTPS/WS/WSS</strong> — by <a href="https://github.com/alfuveam">@alfuveam</a>
+</li>
+<li>Support Tibia 12.85/protobuf by <a href="https://github.com/nekiro">@Nekiro</a>
+</li>
+<li>Action Bar — by <a href="https://github.com/Dip-Set1">@DipSet</a>  
+</li>
+<li>Access to widget children via <code>widget.childId</code> — by <a href="https://github.com/Hugo0x1337">@Hugo0x1337</a>  
+</li>
+<li>Shader System Fix <em>(CTRL + Y)</em> — by <a href="https://github.com/FreshyPeshy">@FreshyPeshy</a>
+</li>
+</ul>
+<p align="center">
+<table>
+<tr>
+<td><img src="https://github.com/kokekanon/OTredemption-Picture-NODELETE/blob/main/Picture/Shader/001_creature.gif?raw=true" width="200"></td>
+<td><img src="https://github.com/kokekanon/OTredemption-Picture-NODELETE/blob/main/Picture/Shader/003_map.gif?raw=true" width="200"></td>
+<td><img src="https://github.com/kokekanon/OTredemption-Picture-NODELETE/blob/main/Picture/Shader/002_mount.gif?raw=true" width="200"></td>
+</tr>
+<tr>
+<td align="center">Creature</td>
+<td align="center">Map</td>
+<td align="center">Mount</td>
+</tr>
+</table>
+</p>
+<ul>
+<li>Refactored Battle Module — by <a href="https://github.com/andersonfaaria">@andersonfaaria</a>  
+</li>
+<li>Health &amp; Mana Circle — by <a href="https://github.com/EgzoT">@EgzoT</a>, <a href="https://github.com/GustavoBlaze">@GustavoBlaze</a>, <a href="https://github.com/Tekadon58">@Tekadon58</a> • <a href="https://github.com/EgzoT/-OTClient-Mod-health_and_mana_circle">Project</a>  
+</li>
+<li>Tibia Theme 1.2 by <strong>Zews</strong> — <a href="https://otland.net/threads/otc-tibia-theme-v1-2.230988/">Forum Thread</a>  
+</li>
+<li>Add option <code>ADJUST_CREATURE_INFORMATION_BASED_ON_CROP_SIZE</code> in <a href="https://github.com/mehah/otclient/blob/main/data/setup.otml#L24">setup.otml</a> — by <a href="https://github.com/SkullzOTS">@SkullzOTS</a>
+</li>
+<li><strong>Lua Debugger for VSCode</strong> — <a href="https://github.com/mehah/otclient/wiki/Lua-Debugging-(VSCode%29">see wiki</a> — by <a href="https://github.com/BenDol">@BenDol</a>  
+</li>
+<li><strong>3D Sound and Sound Effects!</strong> — by <a href="https://github.com/codinablack">@Codinablack</a>
+</li>
+</ul>
+<div class="table-wrap"><table><thead><tr><th>Example 1</th><th>Example 2</th><th>Example 3</th></tr></thead><tbody>
+<tr><td><video src="https://github.com/kokekanon/otclient.readme/assets/114332266/4547907a-8eb9-42f5-b445-901cb5270509" width="200" controls></video></td><td><video src="https://github.com/kokekanon/otclient.readme/assets/114332266/0bb4739f-e902-4370-85dc-e796564aac8e" width="200" controls></video></td><td><video src="https://github.com/kokekanon/otclient.readme/assets/114332266/95db3fa1-a793-4ab7-86a3-e21a8543a23c" width="200" controls></video></td></tr>
+</tbody></table></div>
+<h4 id="sponsored-features">💸 Sponsored (Features)</h4>
+<ul>
+<li><strong>Bot V8</strong> — (<a href="https://github.com/luanluciano93">@luanluciano93</a>, <a href="https://github.com/SkullzOTS">@SkullzOTS</a>, <a href="https://github.com/kokekanon">@kokekanon</a>, <a href="https://github.com/FranciskoKing">@FranciskoKing</a>, <a href="https://github.com/Kizuno18">@Kizuno18</a>)  
+<ul>
+<li>Adapted <strong>85%</strong>  
+</li>
+<li><a href="https://github.com/mehah/otclient/blob/68e4e1b94c2041bd235441244156e6477058250c/vc17/settings.props#L9">VS Solution</a> / <a href="https://github.com/mehah/otclient/blob/68e4e1b94c2041bd235441244156e6477058250c/src/CMakeLists.txt#L13">CMAKE</a>
+</li>
+</ul>
+</li>
+<li><strong>Shader with Framebuffer</strong> — (<a href="https://github.com/SkullzOTS">@SkullzOTS</a>, <a href="https://github.com/Mryukiimaru">@Mryukiimaru</a>, <a href="https://github.com/JeanTheOne">@JeanTheOne</a>, <a href="https://github.com/KizaruHere">@KizaruHere</a>)
+</li>
+</ul>
+<p align="center">
+<table>
+<tr>
+<td><img src="https://github.com/kokekanon/OTredemption-Picture-NODELETE/blob/main/Picture/Shader/Framebuffer/001_creature.gif?raw=true" width="200"></td>
+<td><img src="https://github.com/kokekanon/OTredemption-Picture-NODELETE/blob/main/Picture/Shader/Framebuffer/002_items.gif?raw=true" width="200"></td>
+<td><img src="https://github.com/kokekanon/OTredemption-Picture-NODELETE/blob/main/Picture/Shader/Framebuffer/003_UICreature.gif?raw=true" width="110"></td>
+</tr>
+<tr>
+<td align="center">Creature</td>
+<td align="center">Items</td>
+<td align="center">UICreature</td>
+</tr>
+</table>
+</p>
+<ul>
+<li><strong>Full Cyclopedia</strong> — (<a href="https://github.com/luanluciano93">@luanluciano93</a>, <a href="https://github.com/kokekanon">@kokekanon</a>, <a href="https://github.com/MUN1Z">@MUN1Z</a>, <a href="https://github.com/qatari">@qatari</a>)
+</li>
+<li><strong>Wheel of Destiny</strong> — (R!ck, ZLukSrT#8740, Christianlb, <a href="https://github.com/andreoam">@andreoam</a>, <a href="https://github.com/libergod">@Libergod</a>)
+</li>
+</ul>
+<h4 id="otclient-v8-features">🔦 OTClient V8 (Features)</h4>
+<ul>
+<li>Lighting System  
+</li>
+<li>Floor Fading  
+</li>
+<li>Path Finding  
+</li>
+<li>Module Shop  
+</li>
+<li>Module Outfit  
+</li>
+<li>Placeholder  
+</li>
+<li>UIGraph  
+</li>
+<li>Keybinds  
+</li>
+<li>Cam system
+</li>
+</ul>
+<hr>
+<h2 id="the-mobile-project"><img height="20" src="https://raw.githubusercontent.com/github/explore/80688e429a7d4ef2fca1e82350fe8e3517d3494d/topics/android/android.png"/> The Mobile Project</h2>
+<p>This is a fork of edubart&#x27;s OTClient. The objective of this fork is to develop a runnable OTClient on mobile devices.</p>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>☑ Compile on Android devices
+</li>
+<li>☐ Compile on Apple devices
+</li>
+<li>☐ Adapt the UI reusing the existing LUA code
+</li>
+</ul>
+<hr>
+<h2 id="compiling">🔨 Compiling</h2>
+<p>If you are interested in compiling this project, visit the <strong><a href="https://github.com/mehah/otclient/wiki">Wiki</a></strong>.</p>
+<p>For content-addressed vcpkg reuse across CMake presets, Visual Studio Solutions, worktrees, and compatible forks, see the <a href="docs/development/shared-build-cache.md">shared build cache guide</a>.</p>
+<hr>
+<h2 id="docker">🐳 Docker</h2>
+<p>In order to build the app for production, run the following commands:</p>
+<p><strong>1) Build the image</strong></p>
+<pre><code class="language-bash">docker build -t mehah/otclient .</code></pre>
+<p><strong>2) Run the built image</strong></p>
+<pre><code class="language-bash"># Disable access control for the X server.
+xhost +
+
+# Run the container image with the required bindings to the host devices and volumes.
+docker run -it --rm \
+  --env DISPLAY \
+  --volume /tmp/.X11-unix:/tmp/.X11-unix \
+  --device /dev/dri \
+  --device /dev/snd mehah/otclient /bin/bash
+
+# Enable access control for the X server.
+xhost -</code></pre>
+<hr>
+<h2 id="need-help">🩺 Need Help?</h2>
+<p>Ask questions on <strong>Discord</strong>: <a href="https://discord.gg/tUjTBZzMCy">https://discord.gg/tUjTBZzMCy</a></p>
+<hr>
+<h2 id="bugs">📑 Bugs</h2>
+<p>Found a bug? Please create an issue in our <strong><a href="https://github.com/mehah/otclient/issues">bug tracker</a></strong>.</p>
+<aside class="admonition tip"><strong>Tip</strong><div>If using <strong>Nostalrius 7.2</strong>, <strong>Nekiro TFS-1.5-Downgrades-7.72</strong> OR any protocol below <strong>860</strong> and the walking system is <strong>stuttering</strong>, set  <br><a href="https://github.com/mehah/otclient/blob/cf7badda978de88cb3724615688e3d9da2ff4207/data/setup.otml#L21"><code>force-new-walking-formula: true</code></a> in <code>data/setup.otml</code>.  <br>In old protocols, if item speed feels too fast, adjust  <br><a href="https://github.com/mehah/otclient/blob/cf7badda978de88cb3724615688e3d9da2ff4207/data/setup.otml#L32"><code>item-ticks-per-frame: 75</code></a> in <code>data/setup.otml</code>.</div></aside>
+<blockquote>if you use TVP or Nostalrius 7.72 activate the feature <code>g_game.enableFeature(GameTileAddThingWithStackpos)</code> in game_feature .</blockquote>
+<hr>
+<h2 id="roadmap">❤️ Roadmap</h2>
+<div class="table-wrap"><table><thead><tr><th>TO-DO list</th><th>Status</th><th>PR</th></tr></thead><tbody>
+<tr><td>11.50 - Loot Container</td><td><img src="https://geps.dev/progress/0" alt=""></td><td>None</td></tr>
+<tr><td>11.80 - Cyclopedia Map</td><td><img src="https://geps.dev/progress/0" alt=""></td><td>None</td></tr>
+<tr><td>12.20 - Search Locker</td><td><img src="https://geps.dev/progress/0" alt=""></td><td>None</td></tr>
+<tr><td>12.20 - Party List</td><td><img src="https://geps.dev/progress/0" alt=""></td><td>None</td></tr>
+<tr><td>12.30 - Prey Hunt + Tracker</td><td><img src="https://geps.dev/progress/0" alt=""></td><td>None</td></tr>
+<tr><td>12.90 - Podium System</td><td><img src="https://geps.dev/progress/0" alt=""></td><td>None</td></tr>
+<tr><td>14.12 - Quickloot Keybind</td><td><img src="https://geps.dev/progress/0" alt=""></td><td>None</td></tr>
+<tr><td>14.12 - Cyclopedia Magical Archive</td><td><img src="https://geps.dev/progress/5" alt=""></td><td><a href="https://github.com/opentibiabr/otclient/pull/1676">#1676</a></td></tr>
+<tr><td>15.00 - Aim At A Target</td><td><img src="https://geps.dev/progress/0" alt=""></td><td>None</td></tr>
+<tr><td>15.12 - UI Map Conditions</td><td><img src="https://geps.dev/progress/0" alt=""></td><td>None</td></tr>
+<tr><td>15.14 - Battle List Keybinds</td><td><img src="https://geps.dev/progress/0" alt=""></td><td>None</td></tr>
+<tr><td>15.24 - Protocol Features</td><td><img src="https://geps.dev/progress/100" alt=""></td><td><a href="https://github.com/opentibiabr/otclient/pull/1604">#1604</a></td></tr>
+</tbody></table></div>
+<hr>
+<h2 id="support-protocol">💯 Support Protocol</h2>
+<div class="table-wrap"><table><thead><tr><th>Protocol / version</th><th>Description</th><th>Required Feature</th><th>Compatibility</th></tr></thead><tbody>
+<tr><td>TFS (7.72)</td><td>Downgrade nekiro / Nostalrius</td><td><a href="https://github.com/mehah/otclient/blob/cf7badda978de88cb3724615688e3d9da2ff4207/data/setup.otml#L21">force-new-walking-formula: true</a> • <a href="https://github.com/mehah/otclient/blob/cf7badda978de88cb3724615688e3d9da2ff4207/data/setup.otml#L32">item-ticks-per-frame: 500</a></td><td>✅</td></tr>
+<tr><td>TFS 0.4 (8.6)</td><td>Fir3element</td><td><a href="https://github.com/mehah/otclient/blob/cf7badda978de88cb3724615688e3d9da2ff4207/data/setup.otml#L32">item-ticks-per-frame: 500</a></td><td>✅</td></tr>
+<tr><td>TFS 1.5 (8.0 / 8.60)</td><td>Downgrade nekiro / MillhioreBT</td><td><a href="https://github.com/mehah/otclient/blob/cf7badda978de88cb3724615688e3d9da2ff4207/data/setup.otml#L21">force-new-walking-formula: true</a> • <a href="https://github.com/mehah/otclient/blob/cf7badda978de88cb3724615688e3d9da2ff4207/data/setup.otml#L32">item-ticks-per-frame: 500</a></td><td>✅</td></tr>
+<tr><td>TFS 1.4.2 (10.98)</td><td>Release Otland</td><td></td><td>✅</td></tr>
+<tr><td>TFS 1.6 (13.10)</td><td>Main repo otland (2024)</td><td><a href="https://github.com/mehah/otclient/wiki/Tutorial-to-Use-OTC-in-TFS-main">See wiki</a></td><td>✅</td></tr>
+<tr><td>Canary (13.21 / 13.32 / 13.40)</td><td>OpenTibiaBr</td><td><a href="https://github.com/opentibiabr/otclient/wiki/Tutorial-to-use-OTC-in-Canary-main">See Wiki</a></td><td>✅</td></tr>
+<tr><td>Canary (14.00 ~ 14.12)</td><td>OpenTibiaBr</td><td><a href="https://github.com/opentibiabr/otclient/wiki/Tutorial-to-use-OTC-in-Canary-main">See Wiki</a></td><td>✅</td></tr>
+<tr><td>Canary (15.00 ~ 15.25)</td><td>OpenTibiaBr</td><td><a href="https://github.com/opentibiabr/otclient/wiki/Tutorial-to-use-OTC-in-Canary-main">See Wiki</a></td><td>✅</td></tr>
+</tbody></table></div>
+<hr>
+<h2 id="license">©️ License</h2>
+<p>OTClient is made available under the <strong>MIT License</strong> — you are free to use it for commercial, non-commercial, closed or open projects. See: <a href="http://opensource.org/licenses/MIT">MIT License</a></p>
+<hr>
+<h2 id="contributors">❤️ Contributors</h2>
+<p>If you are interested in supporting the project, donate here: <strong><a href="https://www.paypal.com/donate/?business=CV9D5JF8E46LY&amp;no_recurring=0&amp;item_name=Thank+you+very+much+for+your+donation.&amp;currency_code=BRL">PayPal</a></strong></p>
+</body>
+</html>
