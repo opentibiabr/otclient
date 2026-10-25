@@ -7,8 +7,7 @@ local MAX_NEWS_FILE_SIZE = 10 * 1024 * 1024
 
 local OTC_CATEGORY = "OTC"
 local OTC_REDEMPTION_TITLE = "OTC Redemption"
-local OTC_REDEMPTION_URL =
-    "https://raw.githubusercontent.com/kokekanon/OTredemption-Picture-NODELETE/refs/heads/main/Wiki/readme.html"
+local OTC_REDEMPTION_URL = "https://raw.githubusercontent.com/opentibiabr/otclient/refs/heads/main/docs/game_compendium.html"
 
 -- Display order and presentation of the known news categories.
 local CATEGORIES = {

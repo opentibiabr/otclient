@@ -578,7 +578,7 @@ Found a bug? Please create an issue in our **[bug tracker](https://github.com/me
 | 15.00 - Aim At A Target | ![](https://geps.dev/progress/0) | None |
 | 15.12 - UI Map Conditions | ![](https://geps.dev/progress/0) | None |
 | 15.14 - Battle List Keybinds | ![](https://geps.dev/progress/0) | None |
-| 15.24 - Protocol Features | ![](https://geps.dev/progress/100) | [#1604](https://github.com/opentibiabr/otclient/pull/1604) |
+| 15.25 - Protocol Features | ![](https://geps.dev/progress/100) | [#1604](https://github.com/opentibiabr/otclient/pull/1604) |
 
 
 ---
