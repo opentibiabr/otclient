@@ -1,0 +1,38 @@
+// Labels-Default
+&var-font: verdana-11px-antialised
+
+&var-cip-font: Verdana Bold-11px
+&var-cip-font-new: Verdana Bold-11px-new
+&var-cip-font-small: Verdana Bold-9px-small
+&var-cip-font-lowspace: Verdana Bold-11-px-lowspace
+&var-cip-font-off: Verdana-Strikethrough-11px
+&var-cip-font-wheel: Verdana Bold-11px-wheel
+&var-cip-font-outline: Verdana Bold-11px-outline
+
+&var-cip-font-ttf: verdana-ttf
+
+// Colors
+&var-text-color: #dfdfdf
+&var-text-color-disabled: #dfdfdf88
+&var-text-cip-color: #c0c0c0
+&var-cip-inactive-color: #707070
+&var-text-cip-color-green: #44ad25
+&var-text-cip-color-green-disabled: #2c4f23
+&var-text-cip-color-white: #f7f7f7
+&var-text-cip-color-highlight: #f4f4f4
+&var-text-cip-color-grey: #909090
+&var-text-cip-color-orange: #ff9854
+&var-text-cip-color-yellow: #ffda34
+&var-text-cip-color-blue: #3fbbca
+&var-text-cip-color-light-red: #f75f5f
+&var-text-cip-store-disabled: #565656
+&var-text-cip-store-red: #D33C3C
+&var-text-cip-store-red-disabled: #562626
+&var-text-cip-store-sale: #f7af48
+&var-text-cip-store-sale-disabled: #664f2e
+&var-text-cip-store-timed: #1872c3
+&var-text-cip-store-timed-disabled: #1d3b55
+&var-textlist-selected: #585858
+&var-textlist-even: #414141
+&var-textlist-odd: #484848
+&var-progress-red: #c00000

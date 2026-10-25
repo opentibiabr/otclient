@@ -15,6 +15,26 @@ local selectionBox = nil   -- green rectangle around the selected widget
 local hoverBox = nil       -- yellow rectangle around the widget under the mouse
 local resizeHandle = nil   -- resize handle, bottom-right corner
 
+local inspectLayer = nil
+local inspectPanel = nil
+local inspectDetailsList = nil
+local luaReferencesWindow = nil
+local luaReferencesList = nil
+local luaReferencesWidget = nil
+local luaReferencesData = nil
+local luaReferencesCacheWidget = nil
+local luaReferencesCache = nil
+local inspectHoverBox = nil
+local inspectSelectionBox = nil
+local inspectMode = false
+local inspectHoverWidget = nil
+local inspectSelectedWidget = nil
+local inspectPanelRect = nil
+local inspectDisplayedWidget = nil
+local inspectDisplayedHoverWidget = nil
+local inspectDetailsText = ''
+local inspectStatusText = 'OTUI Inspect mode: OFF'
+
 local targetPath = nil
 local targetFileTime = 0
 local watchEvent = nil
@@ -52,6 +72,10 @@ local styleCache = nil     -- style palette; depends on the open file
 local AUTO_RELOAD_INTERVAL = 300
 local MAX_TREE_DEPTH = 12
 local HANDLE_SIZE = 10
+local INSPECTOR_PANEL_WIDTH = 400
+local INSPECTOR_PANEL_HEIGHT = 380
+local INSPECTOR_PANEL_MARGIN = 12
+local LUA_REFERENCE_CONTEXT_LENGTH = 110
 
 -- ============================================================ helpers
 
@@ -74,13 +98,14 @@ local function normalizePath(path)
   return path
 end
 
--- Stacking (bottom -> top): stage, captureLayer, editorWindow, boxes.
+-- Stacking (bottom -> top): stage, captureLayer, editorWindow, boxes, inspector.
 local function restackLayers()
   if captureLayer and not captureLayer:isDestroyed() then captureLayer:raise() end
   if editorWindow and not editorWindow:isDestroyed() then editorWindow:raise() end
   if hoverBox and not hoverBox:isDestroyed() then hoverBox:raise() end
   if selectionBox and not selectionBox:isDestroyed() then selectionBox:raise() end
   if resizeHandle and not resizeHandle:isDestroyed() then resizeHandle:raise() end
+  if inspectLayer and not inspectLayer:isDestroyed() then inspectLayer:raise() end
 end
 
 local function describePath(widget)
@@ -347,6 +372,1408 @@ local function nodeForWidget(widget)
   end
 
   return node, nil, { kind = 'widget', path = path }
+end
+
+-- ============================================================ global inspector
+
+local function safeWidgetCall(widget, callback, fallback)
+  local ok, value = pcall(callback)
+  if ok and value ~= nil then return value end
+  return fallback
+end
+
+local function inspectorText(value)
+  if value == nil or tostring(value) == '' then return 'unknown' end
+  return tostring(value)
+end
+
+local function inspectorBoolean(value)
+  if value == nil then return 'unknown' end
+  return tostring(value)
+end
+
+local function inspectorRectText(rect)
+  if not rect then return 'unknown' end
+  return string.format('x=%s y=%s w=%s h=%s', inspectorText(rect.x), inspectorText(rect.y),
+    inspectorText(rect.width), inspectorText(rect.height))
+end
+
+local function inspectorPositionText(rect)
+  if not rect then return 'unknown' end
+  return string.format('x=%s y=%s', inspectorText(rect.x), inspectorText(rect.y))
+end
+
+local function inspectorSizeText(rect)
+  if not rect then return 'unknown' end
+  return string.format('w=%s h=%s', inspectorText(rect.width), inspectorText(rect.height))
+end
+
+local function inspectorMarginsText(widget)
+  local top = safeWidgetCall(widget, function() return widget:getMarginTop() end, nil)
+  local right = safeWidgetCall(widget, function() return widget:getMarginRight() end, nil)
+  local bottom = safeWidgetCall(widget, function() return widget:getMarginBottom() end, nil)
+  local left = safeWidgetCall(widget, function() return widget:getMarginLeft() end, nil)
+  if top == nil and right == nil and bottom == nil and left == nil then return 'unknown' end
+  return string.format('top=%s right=%s bottom=%s left=%s', inspectorText(top), inspectorText(right),
+    inspectorText(bottom), inspectorText(left))
+end
+
+local function inspectorAnchorName(anchor)
+  local names = {
+    [AnchorTop] = 'top',
+    [AnchorBottom] = 'bottom',
+    [AnchorLeft] = 'left',
+    [AnchorRight] = 'right',
+    [AnchorVerticalCenter] = 'verticalCenter',
+    [AnchorHorizontalCenter] = 'horizontalCenter',
+  }
+  return names[anchor] or 'unknown'
+end
+
+local function inspectorAnchorsText(widget, node)
+  if node then
+    local anchors = {}
+    for _, prop in ipairs(Otml.properties(node)) do
+      if prop.tag:sub(1, 8) == 'anchors.' and prop.value then
+        table.insert(anchors, prop.tag .. ': ' .. prop.value)
+      end
+    end
+    if #anchors > 0 then return table.concat(anchors, ', ') end
+    return 'none'
+  end
+
+  local anchors = safeWidgetCall(widget, function() return widget:getAnchors() end, nil)
+  if type(anchors) ~= 'table' then return 'unknown' end
+  local names = {}
+  for _, anchor in ipairs(anchors) do
+    table.insert(names, inspectorAnchorName(anchor))
+  end
+  if #names == 0 then return 'none' end
+  return table.concat(names, ', ')
+end
+
+local function isWidgetDescendantOf(widget, ancestor)
+  local current = widget
+  while current do
+    if current == ancestor then return true end
+    current = safeWidgetCall(current, function() return current:getParent() end, nil)
+  end
+  return false
+end
+
+local function globalInspectorNode(widget)
+  if not stage or stage:isDestroyed() or not doc then return nil end
+  if not isWidgetDescendantOf(widget, stage) then return nil end
+  local ok, node = pcall(function() return nodeForWidget(widget) end)
+  return ok and node or nil
+end
+
+local function globalInspectorOrigin(widget)
+  local node = globalInspectorNode(widget)
+  if node and targetPath then
+    local line = inspectorText(node.line)
+    return targetPath .. ':' .. line, line, 'known', 'none', node
+  end
+
+  local runtimeSource = safeWidgetCall(widget, function() return widget:getSource() end, nil)
+  if type(runtimeSource) == 'string' and runtimeSource ~= '' and runtimeSource ~= '[C]' then
+    return runtimeSource, 'unknown', 'runtime source',
+      'runtime-only or dynamic; not editable in Inspect mode', nil
+  end
+
+  return 'unknown', 'unknown', 'runtime-only or dynamic',
+    'runtime-only or dynamic; not editable in Inspect mode', nil
+end
+
+local function globalInspectorPath(widget)
+  local parts = {}
+  local current = widget
+  while current and current ~= rootWidget do
+    local name = safeWidgetCall(current, function() return current:getStyleName() end, nil)
+    local id = safeWidgetCall(current, function() return current:getId() end, nil)
+    local part = id and id ~= '' and id or inspectorText(name)
+    table.insert(parts, 1, part)
+    current = safeWidgetCall(current, function() return current:getParent() end, nil)
+  end
+  table.insert(parts, 1, 'root')
+  return table.concat(parts, ' > ')
+end
+
+local function globalInspectorParentPath(widget)
+  local parent = safeWidgetCall(widget, function() return widget:getParent() end, nil)
+  if not parent then return 'unknown' end
+  return globalInspectorPath(parent)
+end
+
+local function globalInspectorChildren(widget)
+  local count = safeWidgetCall(widget, function() return widget:getChildCount() end, nil)
+  if count ~= nil then return tostring(count) end
+  local children = safeWidgetCall(widget, function() return widget:getChildren() end, nil)
+  if type(children) == 'table' then return tostring(#children) end
+  return 'unknown'
+end
+
+local function globalInspectorData(widget)
+  if not widget or safeWidgetCall(widget, function() return widget:isDestroyed() end, false) then
+    return nil
+  end
+
+  local rect = safeWidgetCall(widget, function() return widget:getRect() end, nil)
+  local styleName = safeWidgetCall(widget, function() return widget:getStyleName() end, nil)
+  local className = safeWidgetCall(widget, function() return widget:getClassName() end, nil)
+  if not className or className == '' then className = styleName end
+  local id = safeWidgetCall(widget, function() return widget:getId() end, nil)
+  local source, sourceLine, mapping, warning, node = globalInspectorOrigin(widget)
+  local on = safeWidgetCall(widget, function() return widget:isOn() end, nil)
+  local checked = safeWidgetCall(widget, function() return widget:isChecked() end, nil)
+  local disabled = safeWidgetCall(widget, function() return widget:isDisabled() end, nil)
+  local hidden = safeWidgetCall(widget, function() return widget:isHidden() end, nil)
+  local visible = safeWidgetCall(widget, function() return widget:isEffectivelyVisible() end, nil)
+  local enabled = safeWidgetCall(widget, function() return widget:isEnabled() end, nil)
+
+  return {
+    className = inspectorText(className),
+    id = inspectorText(id),
+    path = globalInspectorPath(widget),
+    parent = globalInspectorParentPath(widget),
+    children = globalInspectorChildren(widget),
+    rect = inspectorRectText(rect),
+    position = inspectorPositionText(rect),
+    size = inspectorSizeText(rect),
+    visible = inspectorBoolean(visible),
+    enabled = inspectorBoolean(enabled),
+    on = inspectorBoolean(on),
+    checked = inspectorBoolean(checked),
+    disabled = inspectorBoolean(disabled),
+    hidden = inspectorBoolean(hidden),
+    styleName = inspectorText(styleName),
+    margins = inspectorMarginsText(widget),
+    anchors = inspectorAnchorsText(widget, node),
+    source = source,
+    sourceLine = sourceLine,
+    mapping = mapping,
+    warning = warning,
+  }
+end
+
+local function luaPatternEscape(value)
+  return (value:gsub('([%^%$%(%)%%%.%[%]%*%+%-%?])', '%%%1'))
+end
+
+local function luaReferenceFiles(directory)
+  if not directory then return {} end
+
+  local files = {}
+  pcall(function()
+    files = g_resources.listDirectoryFiles(directory, true, false, true)
+  end)
+
+  local result = {}
+  for _, file in ipairs(files) do
+    if file:ends('.lua') then table.insert(result, file) end
+  end
+  table.sort(result)
+  return result
+end
+
+local function luaReferenceOtuiFiles(directory)
+  if not directory then return {} end
+
+  local files = {}
+  pcall(function()
+    files = g_resources.listDirectoryFiles(directory, true, false, true)
+  end)
+
+  local result = {}
+  for _, file in ipairs(files) do
+    if file:ends('.otui') then table.insert(result, file) end
+  end
+  table.sort(result)
+  return result
+end
+
+local GENERIC_LUA_WIDGET_STYLES = {
+  Item = true,
+  UIWidget = true,
+  Panel = true,
+  UILabel = true,
+  UIButton = true,
+  UIProgressBar = true,
+}
+
+local function isGenericLuaWidgetStyle(styleName)
+  return styleName and GENERIC_LUA_WIDGET_STYLES[styleName] == true
+end
+
+local GENERIC_LUA_WIDGET_IDS = {
+  button = true,
+  child = true,
+  content = true,
+  data = true,
+  description = true,
+  icon = true,
+  image = true,
+  info = true,
+  item = true,
+  label = true,
+  list = true,
+  name = true,
+  panel = true,
+  parent = true,
+  row = true,
+  separator = true,
+  slot = true,
+  status = true,
+  text = true,
+  time = true,
+  title = true,
+  type = true,
+  value = true,
+  widget = true,
+  window = true,
+}
+
+local function isGenericLuaWidgetId(id)
+  return id and GENERIC_LUA_WIDGET_IDS[id:lower()] == true
+end
+
+local function luaFunctionName(line)
+  return line:match('^%s*local%s+function%s+([%w_%.:]+)') or
+    line:match('^%s*function%s+([%w_%.:]+)')
+end
+
+local function countLuaTokens(line, token)
+  local count = 0
+  local escaped = luaPatternEscape(token)
+  for _ in line:gmatch('%f[%a]' .. escaped .. '%f[^%a]') do count = count + 1 end
+  return count
+end
+
+local function luaFunctionNames(lines)
+  local names = {}
+  local stack = {}
+  local blockDepth = 0
+
+  for lineNumber, originalLine in ipairs(lines) do
+    local line = originalLine:gsub('%-%-.*', '')
+    local functionName = luaFunctionName(line)
+    names[lineNumber] = functionName or (stack[#stack] and stack[#stack].name) or 'module scope'
+
+    local opens = countLuaTokens(line, 'function') + countLuaTokens(line, 'repeat')
+    if line:match('^%s*if%s+') or line:match('%sif%s+') then
+      opens = opens + countLuaTokens(line, 'then')
+    end
+    opens = opens + countLuaTokens(line, 'do')
+    local closes = countLuaTokens(line, 'end') + countLuaTokens(line, 'until')
+
+    if functionName then
+      table.insert(stack, { name = functionName, depth = blockDepth + 1 })
+    end
+    blockDepth = math.max(0, blockDepth + opens - closes)
+    while stack[#stack] and blockDepth < stack[#stack].depth do
+      table.remove(stack)
+    end
+  end
+
+  return names
+end
+
+local function luaReferenceKind(line)
+  local lower = line:lower()
+  if lower:find('recursivegetchildbyid', 1, true) or lower:find('getchildbyid', 1, true) then
+    return 'lookup'
+  end
+  if lower:find('createwidget', 1, true) or lower:find('setid', 1, true) then
+    return 'creation'
+  end
+  if lower:find('settext', 1, true) or lower:find('sethtml', 1, true) then
+    return 'text'
+  end
+  if lower:find('setvisible', 1, true) or lower:match('%.show%s*%(') or
+      lower:match('%.hide%s*%(') then
+    return 'visibility'
+  end
+  if lower:find('setenabled', 1, true) or lower:match('%.enable%s*%(') or
+      lower:match('%.disable%s*%(') then
+    return 'enabled/state'
+  end
+  if lower:find('setchecked', 1, true) or lower:find('seton', 1, true) then
+    return 'checked/on'
+  end
+  if lower:find('destroy', 1, true) or lower:find('remove', 1, true) then
+    return 'destroy'
+  end
+  if lower:find('callback', 1, true) or lower:find('connect', 1, true) or
+      lower:find('onclick', 1, true) or lower:find('onchange', 1, true) or
+      lower:find('onfocus', 1, true) then
+    return 'callback'
+  end
+  return 'dynamic/unresolved'
+end
+
+local function luaReferenceIsRelevant(line)
+  local lower = line:lower()
+  return lower:find('getchildbyid', 1, true) or lower:find('recursivegetchildbyid', 1, true) or
+    lower:find('createwidget', 1, true) or lower:find('settext', 1, true) or
+    lower:find('setvisible', 1, true) or lower:find('setenabled', 1, true) or
+    lower:find('setchecked', 1, true) or lower:find('seton', 1, true) or
+    lower:find('destroy', 1, true) or lower:find('remove', 1, true) or
+    lower:find('callback', 1, true) or lower:find('connect', 1, true) or
+    lower:find('onclick', 1, true) or
+    lower:find('onchange', 1, true) or lower:find('onfocus', 1, true) or
+    lower:match('%.show%s*%(') or lower:match('%.hide%s*%(')
+end
+
+local function luaReferenceMetadataKey(line, id)
+  if not id or id == '' or id == 'unknown' then return false end
+  local escapedId = luaPatternEscape(id)
+  return line:match("^%s*%['" .. escapedId .. "'%]%s*=") ~= nil or
+    line:match('^%s*%["' .. escapedId .. '"%]%s*=') ~= nil
+end
+
+local function luaReferenceHasExactId(line, id)
+  if not id or id == '' or id == 'unknown' then return false, false end
+
+  local quoted = line:find("'" .. id .. "'", 1, true) or
+    line:find('"' .. id .. '"', 1, true)
+  if quoted then
+    local quoteEnd = quoted + #id + 1
+    local suffix = line:sub(quoteEnd + 1)
+    if not suffix:match('^%s*%.%.') then return true, true end
+    return false, false
+  end
+
+  if id:match('^[%w_]+$') then
+    local escaped = luaPatternEscape(id)
+    if line:find('%f[%w_]' .. escaped .. '%f[^%w_]') then
+      return true, false
+    end
+  end
+  return false, false
+end
+
+local function luaReferenceHasPartialId(line, id)
+  if not id or id == '' or id == 'unknown' or #id < 6 then return false end
+  if id:match('^(widget|child|item|button|label|window|panel)%d+$') then
+    return false
+  end
+  local prefixLength = math.max(4, math.floor(#id * 0.6))
+  return line:lower():find(id:sub(1, prefixLength):lower(), 1, true) ~= nil
+end
+
+local function luaReferenceShortContext(line)
+  local context = line:trim()
+  if #context <= LUA_REFERENCE_CONTEXT_LENGTH then return context end
+  return context:sub(1, LUA_REFERENCE_CONTEXT_LENGTH - 3) .. '...'
+end
+
+local function scanLuaReferenceFile(file, id, styleName)
+  local okRead, text = pcall(function() return g_resources.readFileContents(file) end)
+  if not okRead or not text then return {}, false end
+
+  local lines = {}
+  for line in (text .. '\n'):gmatch('(.-)\n') do table.insert(lines, line) end
+  local functions = luaFunctionNames(lines)
+  local aliases = {}
+  local widgetAliases = {}
+  local createdWidgetAliases = {}
+  local explicitWidgetAliases = {}
+  local parentAliases = {}
+  local references = {}
+  local dynamicPossible = false
+
+  local function addReference(lineNumber, kind, confidence, area, context, reason)
+    table.insert(references, {
+      file = file,
+      line = lineNumber,
+      functionName = functions[lineNumber] or 'unknown',
+      kind = kind,
+      confidence = confidence,
+      area = area,
+      context = context,
+      shortContext = luaReferenceShortContext(context),
+      reason = reason,
+    })
+  end
+
+  for _, originalLine in ipairs(lines) do
+    local line = originalLine:gsub('%-%-.*', '')
+    local exact = luaReferenceHasExactId(line, id)
+    local createdAlias = line:match('([%w_]+)%s*:%s*setId%s*%(%s*[\'\"]' ..
+      luaPatternEscape(id or '') .. '[\'\"]')
+    if exact and createdAlias then
+      aliases[createdAlias] = true
+      explicitWidgetAliases[createdAlias] = true
+    end
+
+    if styleName and line:lower():find('createwidget', 1, true) and
+        (line:find("'" .. styleName .. "'", 1, true) or
+          line:find('"' .. styleName .. '"', 1, true)) then
+      local widgetAlias = line:match('([%w_]+)%s*=%s*.-createWidget%s*%(')
+      if widgetAlias then createdWidgetAliases[widgetAlias] = true end
+    end
+
+    local parentAlias, createdStyle = line:match('([%w_]+)%s*=%s*.-createWidget%s*%(%s*[\'"]([%w_]+)[\'"]')
+    if parentAlias and createdStyle and not isGenericLuaWidgetStyle(createdStyle) then
+      parentAliases[parentAlias] = createdStyle
+    end
+  end
+
+  for alias in pairs(createdWidgetAliases) do
+    if not isGenericLuaWidgetStyle(styleName) or explicitWidgetAliases[alias] then
+      widgetAliases[alias] = true
+    end
+  end
+
+  for lineNumber, originalLine in ipairs(lines) do
+    local line = originalLine:gsub('%-%-.*', '')
+    local trimmedLine = line:trim()
+    if trimmedLine ~= '' then
+      local exact, quoted = luaReferenceHasExactId(line, id)
+      local alias = false
+      local widgetAliasName = nil
+      for name in pairs(aliases) do
+        if line:find('%f[%w_]' .. luaPatternEscape(name) .. '%f[^%w_]', 1) then
+          alias = true
+          break
+        end
+      end
+      for name in pairs(widgetAliases) do
+        if line:find('%f[%w_]' .. luaPatternEscape(name) .. '%f[^%w_]', 1) then
+          widgetAliasName = name
+          break
+        end
+      end
+
+      local createsAlias = line:match('[%w_]+%s*=%s*[%w_:]+%s*getChildById%s*%(%s*[\'\"]' ..
+        luaPatternEscape(id or '') .. '[\'\"]') or
+        line:match('local%s+([%w_]+)%s*=%s*.-getChildById%s*%(%s*[\'\"]' ..
+          luaPatternEscape(id or '') .. '[\'\"]')
+      if createsAlias and quoted then aliases[createsAlias] = true end
+
+      local relevant = luaReferenceIsRelevant(line)
+      local partial = luaReferenceHasPartialId(line, id)
+      local lowerLine = line:lower()
+      local isStyleCreation = styleName and lowerLine:find('createwidget', 1, true) and
+        (line:find("'" .. styleName .. "'", 1, true) or
+          line:find('"' .. styleName .. '"', 1, true)) and
+        (not isGenericLuaWidgetStyle(styleName) or widgetAliasName ~= nil)
+      local isStyleReuse = styleName and lowerLine:find('createwidget', 1, true) and
+        (line:find("'" .. styleName .. "'", 1, true) or
+          line:find('"' .. styleName .. '"', 1, true)) and not isStyleCreation
+      local isChildLookup = widgetAliasName and
+        (lowerLine:find('getchildbyid', 1, true) or
+          lowerLine:find('recursivegetchildbyid', 1, true))
+      local isDynamicChildLookup = isChildLookup and
+        not line:match('getChildById%s*%(%s*[\'"][^\'"]+[\'"]') and
+        not line:match('recursiveGetChildById%s*%(%s*[\'"][^\'"]+[\'"]')
+      local attributeName = widgetAliasName and
+        line:match(luaPatternEscape(widgetAliasName) .. '%.([%w_]+)%s*=')
+      local isReference = exact or alias
+      local memberPattern = '%.' .. luaPatternEscape(id or '') .. '%s*[:.]'
+      local parentAliasName = line:match('([%w_]+)' .. memberPattern)
+      local isContextualMember = isGenericLuaWidgetId(id) and parentAliasName and
+        parentAliases[parentAliasName] ~= nil
+      local isTokenOnly = isGenericLuaWidgetId(id) and exact and not isContextualMember and
+        not quoted
+      local isMetadataKey = luaReferenceMetadataKey(line, id)
+      if isMetadataKey then
+        addReference(lineNumber, 'metadata', 'high', 'metadata mapping', trimmedLine,
+          'The selected id is used as a data or tooltip table key.')
+      elseif isContextualMember then
+        addReference(lineNumber, luaReferenceKind(line), 'high', 'contextual runtime',
+          trimmedLine, 'The generic child id is accessed through the parent alias "' ..
+          parentAliasName .. '" (' .. parentAliases[parentAliasName] .. ').')
+      elseif isStyleReuse then
+        addReference(lineNumber, 'style reuse', 'low', 'style reuse', trimmedLine,
+          'The style is reused, but this line does not identify the selected instance.')
+      elseif isTokenOnly then
+        addReference(lineNumber, 'text/token match', 'low', 'text/token match', trimmedLine,
+          'The generic id appears as a variable, table field, or text token without widget context.')
+      elseif isStyleCreation then
+        addReference(lineNumber, 'creation', 'high', 'creation', trimmedLine,
+          'Created with the selected OTUI style.')
+      elseif isReference then
+        local kind = luaReferenceKind(line)
+        local confidence = (quoted or alias) and 'high' or 'medium'
+        addReference(lineNumber, kind, confidence, 'direct runtime id', trimmedLine,
+          'The selected runtime id or a confirmed alias appears here.')
+      elseif isDynamicChildLookup then
+        dynamicPossible = true
+        addReference(lineNumber, 'dynamic/unresolved', 'dynamic/unresolved',
+          'dynamic child mapping', trimmedLine,
+          'The child id is supplied by a runtime expression.')
+      elseif isChildLookup then
+        addReference(lineNumber, 'lookup', 'high', 'child lookup', trimmedLine,
+          'The selected OTUI style owns this child lookup.')
+      elseif attributeName then
+        addReference(lineNumber, 'dynamic/unresolved', 'high', 'runtime attribute',
+          trimmedLine, 'Lua field assigned directly on the selected widget.')
+      elseif widgetAliasName and relevant then
+        addReference(lineNumber, luaReferenceKind(line), 'high', 'mutation', trimmedLine,
+          'The selected OTUI style instance is mutated here.')
+      elseif relevant and partial then
+        dynamicPossible = true
+        addReference(lineNumber, 'dynamic/unresolved', 'dynamic/unresolved',
+          'unresolved match', trimmedLine, 'Only a partial identifier match was found.')
+      elseif relevant and (line:match('getChildById%s*%(%s*[%w_]+%s*%)') or
+          line:match('recursiveGetChildById%s*%(%s*[%w_]+%s*%)')) then
+        dynamicPossible = true
+      end
+    end
+  end
+
+  return references, dynamicPossible
+end
+
+local function luaReferenceModuleDirectory(data)
+  if not data then return nil end
+  local source = data.source and data.source:gsub(':%d+$', '') or nil
+  if not source or source == '' or source == 'unknown' then return nil end
+  if source:match('^/modules/') then return source:match('^(.*)/[^/]+$') end
+  local moduleName = source:match('^/(game_[^/]+)/') or source:match('^/(client_[^/]+)/')
+  return moduleName and '/modules/' .. moduleName or nil
+end
+
+local function luaReferenceOtuiSources(styleName, id, preferredDirectory)
+  if (not styleName or styleName == '' or styleName == 'unknown') and
+      (not id or id == '' or id == 'unknown') then
+    return {}
+  end
+
+  local files = {}
+  local seen = {}
+  for _, directory in ipairs({ '/modules', '/styles' }) do
+    for _, file in ipairs(luaReferenceOtuiFiles(directory)) do
+      if not seen[file] then
+        seen[file] = true
+        table.insert(files, file)
+      end
+    end
+  end
+
+  local sources = {}
+  local stylePattern = styleName and not isGenericLuaWidgetStyle(styleName) and
+    '^%s*' .. luaPatternEscape(styleName) .. '%s*<'
+  local idPattern = id and id ~= '' and id ~= 'unknown' and
+    '^%s*id:%s*' .. luaPatternEscape(id) .. '%s*$'
+  for _, file in ipairs(files) do
+    local okRead, text = pcall(function() return g_resources.readFileContents(file) end)
+    if okRead and text then
+      local lineNumber = 0
+      for line in (text .. '\n'):gmatch('(.-)\n') do
+        lineNumber = lineNumber + 1
+        if idPattern and line:match(idPattern) then
+          table.insert(sources, {
+            file = file,
+            line = lineNumber,
+            kind = 'id',
+            primary = preferredDirectory and file:find(preferredDirectory, 1, true) ~= nil,
+          })
+        elseif stylePattern and line:match(stylePattern) then
+          table.insert(sources, {
+            file = file,
+            line = lineNumber,
+            kind = 'style',
+            primary = preferredDirectory and file:find(preferredDirectory, 1, true) ~= nil,
+          })
+        end
+      end
+    end
+  end
+  table.sort(sources, function(first, second)
+    local firstPreferred = preferredDirectory and first.file:find(preferredDirectory, 1, true) ~= nil
+    local secondPreferred = preferredDirectory and second.file:find(preferredDirectory, 1, true) ~= nil
+    if firstPreferred ~= secondPreferred then return firstPreferred end
+    if first.file ~= second.file then return first.file < second.file end
+    return first.line < second.line
+  end)
+  return sources
+end
+
+local function discoverLuaReferences(widget)
+  local data = globalInspectorData(widget)
+  if not data then return { references = {}, dynamicPossible = false } end
+
+  local id = data.id
+  local moduleDirectory = luaReferenceModuleDirectory(data)
+  if id == 'unknown' or id == '' then
+    return {
+      references = {},
+      dynamicPossible = true,
+      otuiSources = luaReferenceOtuiSources(data.styleName, data.id, moduleDirectory),
+    }
+  end
+
+  local references = {}
+  local dynamicPossible = data.warning ~= 'none'
+  local seenFiles = {}
+  local filePriority = {}
+  local files = {}
+
+  local function addFiles(candidates, priority)
+    for _, file in ipairs(candidates) do
+      if file ~= '/modules/dev_otui/dev_otui.lua' and not seenFiles[file] then
+        seenFiles[file] = true
+        filePriority[file] = priority
+        table.insert(files, file)
+      end
+    end
+  end
+
+  -- Search the owning module first so the most relevant source is available
+  -- even when a project-wide search has to be expanded afterwards.
+  addFiles(luaReferenceFiles(moduleDirectory), 1)
+  addFiles(luaReferenceFiles('/modules'), 2)
+
+  for _, file in ipairs(files) do
+    local found, hasDynamic = scanLuaReferenceFile(file, id, data.styleName)
+    dynamicPossible = dynamicPossible or hasDynamic
+    for _, reference in ipairs(found) do
+      reference.scope = filePriority[file] == 1 and 'owner module' or 'other modules'
+      table.insert(references, reference)
+    end
+  end
+
+  local areaOrder = {
+    ['contextual runtime'] = 1,
+    ['direct runtime id'] = 2,
+    creation = 3,
+    ['child lookup'] = 4,
+    ['dynamic child mapping'] = 5,
+    ['runtime attribute'] = 6,
+    ['metadata mapping'] = 7,
+    ['style reuse'] = 8,
+    mutation = 9,
+    ['text/token match'] = 10,
+    ['unresolved match'] = 11,
+  }
+  table.sort(references, function(first, second)
+    local firstFilePriority = filePriority[first.file] or 2
+    local secondFilePriority = filePriority[second.file] or 2
+    if firstFilePriority ~= secondFilePriority then
+      return firstFilePriority < secondFilePriority
+    end
+    local firstOrder = areaOrder[first.area] or 99
+    local secondOrder = areaOrder[second.area] or 99
+    if firstOrder ~= secondOrder then return firstOrder < secondOrder end
+    if first.file ~= second.file then return first.file < second.file end
+    return first.line < second.line
+  end)
+
+  local unique = {}
+  local result = {}
+  for _, reference in ipairs(references) do
+    local key = table.concat({ reference.file, reference.line, reference.kind, reference.context }, ':')
+    if not unique[key] then
+      unique[key] = true
+      table.insert(result, reference)
+    end
+  end
+
+  return {
+    references = result,
+    dynamicPossible = dynamicPossible,
+    otuiSources = luaReferenceOtuiSources(data.styleName, data.id, moduleDirectory),
+  }
+end
+
+local function getLuaReferences(widget)
+  if luaReferencesCacheWidget == widget and luaReferencesCache then
+    return luaReferencesCache
+  end
+  luaReferencesCacheWidget = widget
+  luaReferencesCache = discoverLuaReferences(widget)
+  return luaReferencesCache
+end
+
+local function luaReferencesSection(widget)
+  local data = globalInspectorData(widget)
+  if not data then
+    return 'LUA REFERENCES\n\nNo Lua references found for this widget.'
+  end
+
+  local result = getLuaReferences(widget)
+  local lines = { 'LUA REFERENCES' }
+  if #result.otuiSources > 0 then
+    table.insert(lines, '')
+    table.insert(lines, 'OTUI DEFINITION')
+    table.insert(lines, 'Style: ' .. data.styleName)
+    for sourceIndex, source in ipairs(result.otuiSources) do
+      table.insert(lines, source.primary and 'Role: primary context match' or
+        (sourceIndex == 1 and 'Role: candidate context' or 'Role: style/id reuse'))
+      table.insert(lines, 'File: ' .. source.file)
+      table.insert(lines, 'Line: ' .. tostring(source.line))
+      table.insert(lines, 'Match: ' .. (source.kind or 'source'))
+    end
+  end
+  if #result.references == 0 then
+    table.insert(lines, '')
+    table.insert(lines, result.dynamicPossible and
+      'Static references not found.\nDynamic or unresolved references may exist.' or
+      'No Lua references found for this widget.')
+    return table.concat(lines, '\n')
+  end
+
+  for _, reference in ipairs(result.references) do
+    table.insert(lines, '')
+    table.insert(lines, 'File: ' .. reference.file)
+    table.insert(lines, 'Function: ' .. reference.functionName)
+    table.insert(lines, 'Line: ' .. tostring(reference.line))
+    table.insert(lines, 'Scope: ' .. (reference.scope or 'other modules'))
+    table.insert(lines, 'Area: ' .. reference.area)
+    table.insert(lines, 'Kind: ' .. reference.kind)
+    table.insert(lines, 'Confidence: ' .. reference.confidence)
+    if reference.reason then table.insert(lines, 'Reason: ' .. reference.reason) end
+    table.insert(lines, 'Context:')
+    table.insert(lines, '  ' .. reference.context)
+  end
+  return table.concat(lines, '\n')
+end
+
+--- Build a short, prompt-friendly description of a runtime widget.
+-- @param widget UIWidget: visible runtime widget selected by the inspector.
+-- @return string: short widget summary or the empty-state message.
+function buildGlobalInspectorSummary(widget)
+  local data = globalInspectorData(widget)
+  if not data then return 'No widget found at this position.' end
+  return table.concat({
+    'OTUI Runtime Widget',
+    'Class: ' .. data.className,
+    'Id: ' .. data.id,
+    'Path: ' .. data.path,
+    'Rect: ' .. data.rect,
+    'Source: ' .. data.source,
+  }, '\n')
+end
+
+--- Build the detailed report copied by the runtime inspector.
+-- @param widget UIWidget: visible runtime widget selected by the inspector.
+-- @return string: detailed report containing only runtime-readable fields.
+function buildGlobalInspectorDetails(widget)
+  local data = globalInspectorData(widget)
+  if not data then
+    return table.concat({
+      'OTUI Runtime Widget Details',
+      '',
+      'No widget found at this position.',
+    }, '\n')
+  end
+
+  local details = table.concat({
+    'OTUI Runtime Widget Details',
+    '',
+    'Class: ' .. data.className,
+    'Id: ' .. data.id,
+    'Runtime path: ' .. data.path,
+    'Parent: ' .. data.parent,
+    'Children: ' .. data.children,
+    'Rect: ' .. data.rect,
+    'Position: ' .. data.position,
+    'Size: ' .. data.size,
+    'Visible: ' .. data.visible,
+    'Enabled: ' .. data.enabled,
+    'On: ' .. data.on,
+    'Checked: ' .. data.checked,
+    'Disabled: ' .. data.disabled,
+    'Hidden: ' .. data.hidden,
+    'State: on=' .. data.on .. ' checked=' .. data.checked ..
+      ' disabled=' .. data.disabled .. ' hidden=' .. data.hidden,
+    'Style name: ' .. data.styleName,
+    'Margins: ' .. data.margins,
+    'Anchors: ' .. data.anchors,
+    'Source: ' .. data.source,
+    'Source line: ' .. data.sourceLine,
+    'Mapping status: ' .. data.mapping,
+    'Dynamic warning: ' .. data.warning,
+  }, '\n')
+  return details .. '\n\n' .. luaReferencesSection(widget)
+end
+
+local function inspectorPointInRect(point, rect)
+  return rect and point.x >= rect.x and point.x <= rect.x + rect.width and
+    point.y >= rect.y and point.y <= rect.y + rect.height
+end
+
+local function inspectorRectsIntersect(first, second)
+  return first and second and first.x < second.x + second.width and
+    first.x + first.width > second.x and first.y < second.y + second.height and
+    first.y + first.height > second.y
+end
+
+local function chooseInspectorPanelRect(mousePos, widgetRect, viewport)
+  local margin = INSPECTOR_PANEL_MARGIN
+  local width = math.min(INSPECTOR_PANEL_WIDTH, math.max(1, viewport.width - margin * 2))
+  local height = math.min(INSPECTOR_PANEL_HEIGHT, math.max(1, viewport.height - margin * 2))
+  local right = viewport.x + viewport.width - width - margin
+  local bottom = viewport.y + viewport.height - height - margin
+  local candidates = {
+    { x = right, y = bottom },
+    { x = viewport.x + margin, y = bottom },
+    { x = right, y = viewport.y + margin },
+    { x = viewport.x + margin, y = viewport.y + margin },
+  }
+
+  local fallback = nil
+  for _, candidate in ipairs(candidates) do
+    local rect = { x = candidate.x, y = candidate.y, width = width, height = height }
+    if not fallback and not inspectorPointInRect(mousePos, rect) then
+      fallback = rect
+    end
+    if not inspectorPointInRect(mousePos, rect) and
+        not inspectorRectsIntersect(rect, widgetRect) then
+      return rect
+    end
+  end
+  return fallback or {
+    x = candidates[1].x,
+    y = candidates[1].y,
+    width = width,
+    height = height,
+  }
+end
+
+local function isInspectorPanelRectInsideViewport(rect, viewport)
+  return rect and rect.x >= viewport.x + INSPECTOR_PANEL_MARGIN and
+    rect.y >= viewport.y + INSPECTOR_PANEL_MARGIN and
+    rect.x + rect.width <= viewport.x + viewport.width - INSPECTOR_PANEL_MARGIN and
+    rect.y + rect.height <= viewport.y + viewport.height - INSPECTOR_PANEL_MARGIN
+end
+
+local function isInspectorPanelRectValid(rect, mousePos, widgetRect, viewport)
+  if not isInspectorPanelRectInsideViewport(rect, viewport) then return false end
+  if inspectorPointInRect(mousePos, rect) then return false end
+  return not inspectorRectsIntersect(rect, widgetRect)
+end
+
+local function isInspectorPanelPoint(mousePos)
+  return inspectPanelRect and inspectorPointInRect(mousePos, inspectPanelRect)
+end
+
+--- Position the information panel in the safest screen corner for the cursor.
+-- @param mousePos Point: current cursor position.
+-- @param widgetRect Rect: optional rect of the observed widget.
+-- @return Rect: selected panel rectangle, when the inspector is visible.
+function positionInspectorPanel(mousePos, widgetRect)
+  if not inspectPanel or inspectPanel:isDestroyed() then return nil end
+  local viewport = rootWidget:getRect()
+  inspectPanelRect = chooseInspectorPanelRect(mousePos, widgetRect, viewport)
+  inspectPanel:breakAnchors()
+  inspectPanel:setRect(inspectPanelRect)
+  return inspectPanelRect
+end
+
+local function isInspectorOverlayWidget(widget)
+  if widget == inspectLayer or widget == hoverBox or widget == selectionBox or
+    widget == resizeHandle or widget == inspectHoverBox or widget == inspectSelectionBox or
+    widget == captureLayer then
+    return true
+  end
+  for _, guide in ipairs(guides) do
+    if widget == guide then return true end
+  end
+  return isWidgetDescendantOf(widget, inspectLayer)
+end
+
+local function findGlobalWidgetAt(parent, mousePos)
+  if not parent or parent:isDestroyed() then return nil end
+  if parent:isClipping() and not parent:containsPaddingPoint(mousePos) then return nil end
+
+  local children = parent:getChildren()
+  for index = #children, 1, -1 do
+    local child = children[index]
+    if not isInspectorOverlayWidget(child) and child:isExplicitlyVisible() then
+      local descendant = findGlobalWidgetAt(child, mousePos)
+      if descendant then return descendant end
+      if child:containsPoint(mousePos) then return child end
+    end
+  end
+  return nil
+end
+
+local function refreshGlobalInspectorVisuals()
+  moveBoxTo(inspectHoverBox, inspectHoverWidget)
+  moveBoxTo(inspectSelectionBox, inspectSelectedWidget)
+  restackLayers()
+end
+
+local function setInspectorStatus(message)
+  inspectStatusText = message
+  if editorWindow then status(message) end
+  if inspectPanel and not inspectPanel:isDestroyed() then
+    local label = inspectPanel:recursiveGetChildById('inspectorStatus')
+    if label then
+      label:setText(message)
+      label:setTooltip(message)
+    end
+  end
+end
+
+local function isLuaReferencesPoint(mousePos)
+  return luaReferencesWindow and not luaReferencesWindow:isDestroyed() and
+    mousePos and luaReferencesWindow:containsPoint(mousePos)
+end
+
+local function updateLuaReferencesButton(widget)
+  if not inspectPanel or inspectPanel:isDestroyed() then return end
+  local button = inspectPanel:recursiveGetChildById('luaReferencesBtn')
+  if not button then return end
+
+  local available = widget and not widget:isDestroyed()
+  button:setVisible(available)
+  button:setEnabled(available)
+  button:setTooltip(available and 'Find Lua code that creates or changes this widget.' or '')
+end
+
+local function luaReferenceConfidenceColor(confidence)
+  if confidence == 'high' then return '#9fe09f' end
+  if confidence == 'medium' then return '#f0d26a' end
+  return '#ff9d6e'
+end
+
+local function populateLuaReferencesWindow(widget, data, result)
+  if not luaReferencesWindow or luaReferencesWindow:isDestroyed() then return end
+  luaReferencesWindow:setText('Lua References: ' .. data.id)
+
+  local subtitle = luaReferencesWindow:recursiveGetChildById('referencesSubtitle')
+  if subtitle then
+    local sourceFile = data.source:gsub(':%d+$', '')
+    local sourceLine = data.sourceLine
+    if sourceFile == 'unknown' and result.otuiSources[1] then
+      local source = result.otuiSources[1]
+      sourceFile = source.file
+      sourceLine = tostring(source.line) .. ' (' .. (source.kind or 'source') .. ')'
+    end
+    subtitle:setText('Style: ' .. data.styleName .. ' - ' .. sourceFile ..
+      ' - line ' .. sourceLine .. ' - ' .. data.path)
+  end
+
+  luaReferencesList = luaReferencesWindow:recursiveGetChildById('referencesList')
+  if not luaReferencesList then return end
+  luaReferencesList:destroyChildren()
+
+  if #result.references == 0 then
+    local empty = g_ui.createWidget('OtuiLuaReferenceEmpty', luaReferencesList)
+    empty:setText(result.dynamicPossible and
+      'Static references not found.\nDynamic or unresolved references may exist.' or
+      'No Lua references found for this widget.')
+    empty:setTooltip(empty:getText())
+    return
+  end
+
+  local currentFile = nil
+  local currentFunction = nil
+  local currentScope = nil
+  local currentArea = nil
+  for _, reference in ipairs(result.references) do
+    if reference.scope ~= currentScope then
+      currentScope = reference.scope
+      currentArea = nil
+      currentFile = nil
+      currentFunction = nil
+      local scopeLabel = g_ui.createWidget('OtuiLuaReferenceArea', luaReferencesList)
+      scopeLabel:setText(string.upper(reference.scope or 'OTHER MODULES'))
+      scopeLabel:setTooltip(reference.scope == 'owner module' and
+        'References found in the module that owns the selected widget.' or
+        'References found outside the owning module.')
+    end
+    if reference.area ~= currentArea then
+      currentArea = reference.area
+      currentFile = nil
+      currentFunction = nil
+      local areaLabel = g_ui.createWidget('OtuiLuaReferenceArea', luaReferencesList)
+      areaLabel:setText(string.upper(reference.area))
+      areaLabel:setTooltip(reference.reason or reference.area)
+    end
+    if reference.file ~= currentFile then
+      currentFile = reference.file
+      currentFunction = nil
+      local fileLabel = g_ui.createWidget('OtuiLuaReferenceFile', luaReferencesList)
+      fileLabel:setText(reference.file)
+      fileLabel:setTooltip(reference.file)
+    end
+    if reference.functionName ~= currentFunction then
+      currentFunction = reference.functionName
+      local functionLabel = g_ui.createWidget('OtuiLuaReferenceFunction', luaReferencesList)
+      functionLabel:setText('Function: ' .. reference.functionName)
+      functionLabel:setTooltip('Function: ' .. reference.functionName)
+    end
+
+    local row = g_ui.createWidget('OtuiLuaReferenceRow', luaReferencesList)
+    local summary = row:getChildById('referenceSummary')
+    local context = row:getChildById('referenceContext')
+    summary:setText(string.format('[%s] line %d - %s - %s', reference.confidence,
+      reference.line, reference.kind, reference.area))
+    summary:setColor(luaReferenceConfidenceColor(reference.confidence))
+    summary:setTooltip(reference.reason or reference.context)
+    context:setText(reference.shortContext)
+    context:setTooltip(reference.context)
+  end
+end
+
+function closeLuaReferences()
+  if luaReferencesWindow and not luaReferencesWindow:isDestroyed() then
+    luaReferencesWindow:destroy()
+  end
+  luaReferencesWindow = nil
+  luaReferencesList = nil
+  luaReferencesWidget = nil
+  luaReferencesData = nil
+  if inspectLayer and not inspectLayer:isDestroyed() then
+    inspectLayer:focus()
+  end
+end
+
+function openLuaReferences()
+  local widget = inspectSelectedWidget
+  if not widget or widget:isDestroyed() then
+    setInspectorStatus('Fix a widget selection before opening Lua references.')
+    return
+  end
+
+  closeLuaReferences()
+  luaReferencesWidget = widget
+  luaReferencesData = globalInspectorData(widget)
+  local result = getLuaReferences(widget)
+  luaReferencesWindow = g_ui.createWidget('OtuiLuaReferencesWindow', inspectLayer)
+  luaReferencesWindow:setFocusable(true)
+  luaReferencesWindow:show()
+  luaReferencesWindow:raise()
+  populateLuaReferencesWindow(widget, luaReferencesData, result)
+  luaReferencesWindow:focus()
+end
+
+function copyLuaReferences()
+  local widget = luaReferencesWidget or inspectSelectedWidget
+  if not widget or widget:isDestroyed() then
+    setInspectorStatus('No fixed widget selection to copy.')
+    return
+  end
+  g_window.setClipboardText(luaReferencesSection(widget))
+  setInspectorStatus('Lua references copied to clipboard.')
+end
+
+local function inspectorHoverSummary(widget)
+  local data = globalInspectorData(widget)
+  if not data then return 'No widget under cursor.' end
+  return table.concat({
+    'Class: ' .. data.className,
+    'Id: ' .. data.id,
+    'Path: ' .. data.path,
+    'Rect: ' .. data.rect,
+  }, '\n')
+end
+
+local function globalInspectorSections(widget)
+  local data = globalInspectorData(widget)
+  if not data then return nil end
+  return {
+    {
+      title = 'IDENTITY',
+      fields = {
+        { 'Class', data.className },
+        { 'Id', data.id },
+        { 'Runtime path', data.path },
+        { 'Parent', data.parent },
+        { 'Children', data.children },
+      },
+    },
+    {
+      title = 'LAYOUT',
+      fields = {
+        { 'Rect', data.rect },
+        { 'Position', data.position },
+        { 'Size', data.size },
+        { 'Anchors', data.anchors },
+        { 'Margins', data.margins },
+      },
+    },
+    {
+      title = 'STATE',
+      fields = {
+        { 'Visible', data.visible },
+        { 'Enabled', data.enabled },
+        { 'On', data.on },
+        { 'Checked', data.checked },
+        { 'Disabled', data.disabled },
+        { 'Hidden', data.hidden },
+      },
+    },
+    {
+      title = 'SOURCE',
+      fields = {
+        { 'Source', data.source },
+        { 'Source line', data.sourceLine },
+        { 'Mapping', data.mapping },
+        { 'Warning', data.warning },
+      },
+    },
+  }
+end
+
+local function updateInspectorHoverSummary(widget)
+  if not inspectPanel or inspectPanel:isDestroyed() then return end
+  if widget == inspectDisplayedHoverWidget then return end
+
+  local label = inspectPanel:recursiveGetChildById('inspectorHoverSummaryText')
+  if label then
+    local summary = inspectorHoverSummary(widget)
+    label:setText(summary)
+    label:setTooltip(summary)
+  end
+  inspectDisplayedHoverWidget = widget
+end
+
+local function rebuildInspectorDetails(widget)
+  if not inspectDetailsList or inspectDetailsList:isDestroyed() then return end
+  updateLuaReferencesButton(widget)
+  inspectDetailsText = widget and 'Selected widget details available.' or 'No fixed selection.'
+  inspectDetailsList:destroyChildren()
+
+  if not widget then
+    local emptyLabel = g_ui.createWidget('OtuiInspectorEmpty', inspectDetailsList)
+    emptyLabel:setText('Left click a widget to pin its details here.')
+    emptyLabel:setTooltip('Left click a widget to pin its details here.')
+    return
+  end
+
+  for _, section in ipairs(globalInspectorSections(widget)) do
+    local sectionLabel = g_ui.createWidget('OtuiInspectorSection', inspectDetailsList)
+    sectionLabel:setText(section.title)
+
+    for _, field in ipairs(section.fields) do
+      local fieldWidget = g_ui.createWidget('OtuiInspectorField', inspectDetailsList)
+      local keyLabel = fieldWidget:getChildById('fieldKey')
+      local valueLabel = fieldWidget:getChildById('fieldValue')
+      keyLabel:setText(field[1])
+      valueLabel:setText(field[2])
+      valueLabel:setTooltip(field[2])
+    end
+  end
+end
+
+local function updateInspectorPanel(widget, mousePos)
+  if not inspectPanel or inspectPanel:isDestroyed() then return end
+  if inspectSelectedWidget and inspectSelectedWidget:isDestroyed() then
+    closeLuaReferences()
+    inspectSelectedWidget = nil
+    inspectPanelRect = nil
+    inspectDisplayedWidget = nil
+    inspectDetailsText = ''
+  end
+
+  local viewport = rootWidget:getRect()
+  local observedRect = widget and widget:getRect() or nil
+  local shouldReposition = not inspectPanelRect
+  if inspectSelectedWidget then
+    shouldReposition = shouldReposition or
+      not isInspectorPanelRectInsideViewport(inspectPanelRect, viewport)
+  elseif not isInspectorPanelPoint(mousePos) then
+    shouldReposition = shouldReposition or not isInspectorPanelRectValid(
+      inspectPanelRect, mousePos, observedRect, viewport)
+  end
+
+  if shouldReposition then
+    local positioningRect = inspectSelectedWidget and inspectSelectedWidget:getRect() or observedRect
+    positionInspectorPanel(mousePos, positioningRect)
+  end
+
+  if inspectSelectedWidget ~= inspectDisplayedWidget or inspectDetailsText == '' then
+    inspectDisplayedWidget = inspectSelectedWidget
+    rebuildInspectorDetails(inspectSelectedWidget)
+  end
+  updateInspectorHoverSummary(widget)
+
+  local modeLabel = inspectPanel:recursiveGetChildById('inspectorMode')
+  if modeLabel then
+    modeLabel:setText(inspectSelectedWidget and
+      'SELECTED FIXED · left click changes it' or
+      'HOVER MODE · left click pins it')
+  end
+  local statusLabel = inspectPanel:recursiveGetChildById('inspectorStatus')
+  if statusLabel then
+    statusLabel:setText(inspectStatusText)
+    statusLabel:setTooltip(inspectStatusText)
+  end
+  inspectPanel:show()
+  restackLayers()
+end
+
+function inspectWidgetAt(mousePos)
+  if not inspectMode or not inspectLayer or inspectLayer:isDestroyed() then return nil end
+  mousePos = mousePos or g_window.getMousePosition()
+  if isInspectorPanelPoint(mousePos) or isLuaReferencesPoint(mousePos) then
+    refreshGlobalInspectorVisuals()
+    updateInspectorPanel(inspectHoverWidget, mousePos)
+    return inspectHoverWidget
+  end
+  inspectHoverWidget = findGlobalWidgetAt(rootWidget, mousePos)
+  refreshGlobalInspectorVisuals()
+  updateInspectorPanel(inspectHoverWidget, mousePos)
+  return inspectHoverWidget
+end
+
+function copyInspectorSummary(widget)
+  widget = widget or inspectSelectedWidget or inspectHoverWidget
+  if not widget or widget:isDestroyed() then
+    setInspectorStatus('No widget found at this position.')
+    return
+  end
+  g_window.setClipboardText(buildGlobalInspectorSummary(widget))
+  setInspectorStatus('Inspector summary copied to clipboard.')
+end
+
+function copyInspectorDetails(widget)
+  widget = widget or inspectSelectedWidget or inspectHoverWidget
+  if not widget or widget:isDestroyed() then
+    setInspectorStatus('No widget found at this position.')
+    return
+  end
+  g_window.setClipboardText(buildGlobalInspectorDetails(widget))
+  setInspectorStatus('Inspector details copied to clipboard.')
+end
+
+local function isInspectToggleCombo(keyCombo, keys)
+  return keys and (keyCombo == keys.primary or keyCombo == keys.secondary)
+end
+
+local function isInspectToggleKey(keyCode, keyboardModifiers)
+  local keyCombo = determineKeyComboDesc(keyCode, keyboardModifiers)
+  local ok, keys = pcall(function()
+    return Keybind.getKeybindKeys('Debug', 'Toggle OTUI Inspector')
+  end)
+  if not ok or not keys then return false end
+
+  return isInspectToggleCombo(keyCombo, keys)
+end
+
+function toggleInspectMode()
+  setInspectMode(not inspectMode)
+  return true
+end
+
+function setInspectMode(enabled)
+  enabled = enabled == true
+  if inspectMode == enabled then return end
+
+  if enabled then
+    if captureLayer then
+      setPickMode(false)
+      local pickCheck = editorWindow and editorWindow:recursiveGetChildById('pickCheck')
+      if pickCheck then
+        pickCheck.suppress = true
+        pickCheck:setChecked(false)
+        pickCheck.suppress = false
+      end
+    end
+
+    inspectMode = true
+    inspectHoverWidget = nil
+    inspectSelectedWidget = nil
+    inspectDisplayedWidget = nil
+    inspectDisplayedHoverWidget = nil
+    inspectPanelRect = nil
+    inspectDetailsText = ''
+    if hoverBox and not hoverBox:isDestroyed() then hoverBox:hide() end
+    if selectionBox and not selectionBox:isDestroyed() then selectionBox:hide() end
+
+    inspectLayer = g_ui.createWidget('UIWidget', rootWidget)
+    inspectLayer:setId('otuiInspectLayer')
+    inspectLayer:fill('parent')
+    inspectLayer:setFocusable(true)
+    inspectLayer:setPhantom(false)
+
+    inspectPanel = g_ui.createWidget('OtuiGlobalInspectorPanel', inspectLayer)
+    inspectPanel:setId('otuiGlobalInspectorPanel')
+    inspectPanel:setPhantom(true)
+    inspectPanel:setFocusable(false)
+    inspectDetailsList = inspectPanel:recursiveGetChildById('inspectorDetails')
+
+    inspectHoverBox = ensureBox(inspectHoverBox, '#ffcc00')
+    inspectSelectionBox = ensureBox(inspectSelectionBox, '#00ff00')
+
+    inspectLayer.onMouseMove = function(_, mousePos)
+      inspectWidgetAt(mousePos)
+      return true
+    end
+
+    inspectLayer.onMousePress = function(_, mousePos, button)
+      if isInspectorPanelPoint(mousePos) or isLuaReferencesPoint(mousePos) then return false end
+      local widget = inspectWidgetAt(mousePos)
+      if button == MouseLeftButton then
+        inspectSelectedWidget = widget
+        inspectPanelRect = nil
+        if widget then
+          positionInspectorPanel(mousePos, widget:getRect())
+          setInspectorStatus('Widget selection fixed.')
+        else
+          setInspectorStatus('No widget found at this position.')
+        end
+        refreshGlobalInspectorVisuals()
+        updateInspectorPanel(widget, mousePos)
+        return true
+      end
+
+      if button == MouseRightButton then
+        if not widget and not inspectSelectedWidget then
+          setInspectorStatus('No widget found at this position.')
+        elseif g_keyboard.isShiftPressed() then
+          copyInspectorDetails()
+        else
+          copyInspectorSummary()
+        end
+        return true
+      end
+      return true
+    end
+
+    inspectLayer.onMouseRelease = function()
+      return true
+    end
+
+    inspectLayer.onMouseWheel = function(_, mousePos)
+      if isInspectorPanelPoint(mousePos) or isLuaReferencesPoint(mousePos) then return false end
+      return true
+    end
+
+    inspectLayer.onKeyDown = function(_, keyCode, keyboardModifiers)
+      if isInspectToggleKey(keyCode, keyboardModifiers) then return false end
+      return true
+    end
+
+    inspectLayer.onKeyPress = function(_, keyCode, keyboardModifiers)
+      if isInspectToggleKey(keyCode, keyboardModifiers) then return false end
+      if keyCode == KeyEscape then
+        scheduleEvent(function()
+          if inspectMode then setInspectMode(false) end
+        end, 1)
+      end
+      return true
+    end
+
+    inspectLayer:grabMouse()
+    restackLayers()
+    inspectLayer:focus()
+    setInspectorStatus('OTUI Inspect mode: ON')
+    inspectWidgetAt(g_window.getMousePosition())
+    return
+  end
+
+  inspectMode = false
+  closeLuaReferences()
+  if inspectHoverBox and not inspectHoverBox:isDestroyed() then inspectHoverBox:hide() end
+  if inspectSelectionBox and not inspectSelectionBox:isDestroyed() then inspectSelectionBox:hide() end
+  if inspectLayer and not inspectLayer:isDestroyed() then
+    inspectLayer:ungrabMouse()
+    inspectLayer:destroy()
+  end
+  inspectLayer, inspectPanel, inspectDetailsList = nil, nil, nil
+  inspectHoverWidget, inspectSelectedWidget = nil, nil
+  inspectDisplayedWidget, inspectDisplayedHoverWidget = nil, nil
+  inspectPanelRect, inspectDetailsText = nil, ''
+  refreshSelectionVisuals()
+  setInspectorStatus('OTUI Inspect mode: OFF')
+  restackLayers()
 end
 
 local function readDocument(path)
@@ -2317,6 +3744,139 @@ function selfTest()
     'clearNodeSelection must reset all three, nodeError included')
   currentNode, nodeError, currentRef = keepNode, keepError, keepRef
 
+  -- Runtime inspector reports must remain useful without a file-backed preview.
+  local fakeParent = {}
+  function fakeParent:getStyleName() return 'UIPanel' end
+  function fakeParent:getId() return 'panel' end
+  function fakeParent:getParent() return nil end
+
+  local fakeWidget = {}
+  function fakeWidget:getStyleName() return 'TestButton' end
+  function fakeWidget:getClassName() return 'UIButton' end
+  function fakeWidget:getId() return 'closeButton' end
+  function fakeWidget:getParent() return fakeParent end
+  function fakeWidget:getChildCount() return 0 end
+  function fakeWidget:getRect() return { x = 143, y = 69, width = 32, height = 20 } end
+  function fakeWidget:isDestroyed() return false end
+  function fakeWidget:isOn() return true end
+  function fakeWidget:isChecked() return false end
+  function fakeWidget:isDisabled() return false end
+  function fakeWidget:isHidden() return false end
+  function fakeWidget:isEffectivelyVisible() return true end
+  function fakeWidget:isEnabled() return true end
+  function fakeWidget:getMarginTop() return 1 end
+  function fakeWidget:getMarginRight() return 2 end
+  function fakeWidget:getMarginBottom() return 3 end
+  function fakeWidget:getMarginLeft() return 4 end
+  function fakeWidget:getAnchors() return { AnchorTop, AnchorLeft } end
+
+  local fakeSummary = buildGlobalInspectorSummary(fakeWidget)
+  local fakeDetails = buildGlobalInspectorDetails(fakeWidget)
+  local fakeSections = globalInspectorSections(fakeWidget)
+  check(fakeSummary:find('Class: UIButton', 1, true) ~= nil,
+    'global inspector summary should include the class')
+  check(fakeSummary:find('Id: closeButton', 1, true) ~= nil,
+    'global inspector summary should include the id')
+  check(fakeSummary:find('Rect: x=143 y=69 w=32 h=20', 1, true) ~= nil,
+    'global inspector summary should include the rect')
+  check(fakeDetails:find('Mapping status: runtime-only or dynamic', 1, true) ~= nil,
+    'global inspector details should flag runtime-only widgets')
+  check(fakeDetails:find('Margins: top=1 right=2 bottom=3 left=4', 1, true) ~= nil,
+    'global inspector details should include margins')
+  check(fakeDetails:find('Anchors: top, left', 1, true) ~= nil,
+    'global inspector details should include anchors')
+  check(fakeDetails:find('Style name: TestButton', 1, true) ~= nil,
+    'global inspector details should preserve the OTUI style name')
+  check(fakeDetails:find('LUA REFERENCES', 1, true) ~= nil,
+    'global inspector details should include Lua references')
+  check(luaReferencesSection(fakeWidget):find('LUA REFERENCES', 1, true) ~= nil,
+    'Lua reference copy should expose its own section')
+  local anonymousWidget = setmetatable({}, { __index = fakeWidget })
+  function anonymousWidget:getId() return nil end
+  local anonymousReferencesOk, anonymousReferences = pcall(discoverLuaReferences, anonymousWidget)
+  check(anonymousReferencesOk, 'anonymous widgets should not break Lua reference discovery')
+  check(anonymousReferencesOk and type(anonymousReferences.otuiSources) == 'table',
+    'anonymous widget references should always include OTUI sources')
+  local anonymousSectionOk = pcall(luaReferencesSection, anonymousWidget)
+  check(anonymousSectionOk, 'anonymous widgets should not break Lua reference copies')
+  check(isInspectToggleCombo('Ctrl+Alt+I', { primary = 'Ctrl+Alt+I' }),
+    'configured primary inspector shortcut should be recognized')
+  check(isInspectToggleCombo('F8', { secondary = 'F8' }),
+    'configured secondary inspector shortcut should be recognized')
+  check(not isInspectToggleCombo('Ctrl+Alt+I', { primary = 'F8' }),
+    'unconfigured inspector shortcut should not be swallowed')
+  local characterReferences, characterDynamic = scanLuaReferenceFile(
+    '/modules/client_entergame/characterlist.lua', 'widget6554', 'CharacterWidget')
+  local hasCharacterCreation = false
+  local hasDynamicChildMapping = false
+  local hasRuntimeAttribute = false
+  for _, reference in ipairs(characterReferences) do
+    hasCharacterCreation = hasCharacterCreation or reference.area == 'creation'
+    hasDynamicChildMapping = hasDynamicChildMapping or reference.area == 'dynamic child mapping'
+    hasRuntimeAttribute = hasRuntimeAttribute or reference.area == 'runtime attribute'
+  end
+  check(hasCharacterCreation, 'Lua references should detect CharacterWidget creation')
+  check(hasDynamicChildMapping and characterDynamic,
+    'Lua references should explain dynamic child lookup')
+  check(hasRuntimeAttribute, 'Lua references should expose runtime widget attributes')
+  local preyReferences = scanLuaReferenceFile(
+    '/modules/game_prey/prey.lua', 'shopPermButton', 'UIWidget')
+  check(#preyReferences == 1 and preyReferences[1].area == 'metadata mapping' and
+      preyReferences[1].functionName == 'module scope',
+    'generic UIWidget scans should keep only the metadata mapping')
+  local preySources = luaReferenceOtuiSources('UIWidget', 'shopPermButton')
+  check(#preySources > 0 and preySources[1].file == '/modules/game_prey/prey.otui',
+    'OTUI source lookup should resolve a generic widget by id')
+  local trackerReferences = scanLuaReferenceFile(
+    '/modules/game_imbuementtracker/imbuementtracker.lua', 'item', 'Item')
+  local hasContextualTrackerReference = false
+  local hasTokenTrackerReference = false
+  for _, reference in ipairs(trackerReferences) do
+    hasContextualTrackerReference = hasContextualTrackerReference or
+      reference.area == 'contextual runtime'
+    hasTokenTrackerReference = hasTokenTrackerReference or
+      reference.area == 'text/token match'
+  end
+  check(hasContextualTrackerReference and hasTokenTrackerReference,
+    'generic ids should distinguish parent context from token matches')
+  local reuseReferences = scanLuaReferenceFile(
+    '/modules/game_containers/containers.lua', 'item', 'Item')
+  local hasStyleReuse = false
+  for _, reference in ipairs(reuseReferences) do
+    hasStyleReuse = hasStyleReuse or reference.area == 'style reuse'
+  end
+  check(hasStyleReuse, 'generic style creations should be marked as style reuse')
+  local referencesWindow = g_ui.createWidget('OtuiLuaReferencesWindow', rootWidget)
+  check(referencesWindow ~= nil, 'Lua references modal style should instantiate')
+  if referencesWindow then referencesWindow:destroy() end
+  check(#fakeSections == 4 and fakeSections[1].title == 'IDENTITY' and
+      fakeSections[4].title == 'SOURCE',
+    'inspector UI details should expose the four grouped sections')
+  check(buildGlobalInspectorDetails(nil):find('No widget found at this position.', 1, true) ~= nil,
+    'global inspector should handle an empty hit test')
+
+  local qaViewport = { x = 0, y = 0, width = 800, height = 600 }
+  local qaWidgetRect = { x = 390, y = 290, width = 20, height = 20 }
+  local preferredPanel = chooseInspectorPanelRect({ x = 400, y = 100 }, qaWidgetRect, qaViewport)
+  check(preferredPanel.x == 388 and preferredPanel.y == 208,
+    'inspector panel should prefer the bottom-right corner')
+  check(not isInspectorPanelRectValid(preferredPanel, { x = 450, y = 300 }, qaWidgetRect, qaViewport),
+    'inspector panel should treat its own area as occupied by the cursor')
+  for _, point in ipairs({
+    { x = 20, y = 20 }, { x = 780, y = 20 },
+    { x = 20, y = 580 }, { x = 780, y = 580 },
+  }) do
+    local panelRect = chooseInspectorPanelRect(point, qaWidgetRect, qaViewport)
+    check(panelRect.x >= INSPECTOR_PANEL_MARGIN and
+      panelRect.y >= INSPECTOR_PANEL_MARGIN,
+      'inspector panel should stay inside the viewport')
+    check(panelRect.x + panelRect.width <= qaViewport.width - INSPECTOR_PANEL_MARGIN and
+      panelRect.y + panelRect.height <= qaViewport.height - INSPECTOR_PANEL_MARGIN,
+      'inspector panel should respect the viewport margin')
+    check(not inspectorPointInRect(point, panelRect),
+      'inspector panel should not cover the cursor')
+  end
+
   -- A read failure must reach the user. readDocument writes the module's `doc`,
   -- so the current one is put back before returning.
   local savedDoc = doc
@@ -2372,23 +3932,33 @@ function init()
   Keybind.bind('Debug', 'Toggle OTUI Editor', {
     { type = KEY_DOWN, callback = toggle }
   })
+
+  Keybind.new('Debug', 'Toggle OTUI Inspector', 'Ctrl+Alt+I', '')
+  Keybind.bind('Debug', 'Toggle OTUI Inspector', {
+    { type = KEY_DOWN, callback = toggleInspectMode }
+  })
 end
 
 function terminate()
+  if inspectMode then setInspectMode(false) end
+
   removeEvent(watchEvent)
   watchEvent = nil
 
   Keybind.delete('Debug', 'Toggle OTUI Editor')
+  Keybind.delete('Debug', 'Toggle OTUI Inspector')
 
   closePicker()
   closeGallery()
   closeStage()
 
   clearGuides()
-  for _, widget in ipairs({ selectionBox, hoverBox, resizeHandle, captureLayer }) do
+  for _, widget in ipairs({ selectionBox, hoverBox, resizeHandle, captureLayer,
+                            inspectSelectionBox, inspectHoverBox }) do
     if widget and not widget:isDestroyed() then widget:destroy() end
   end
   selectionBox, hoverBox, resizeHandle, captureLayer = nil, nil, nil, nil
+  inspectSelectionBox, inspectHoverBox = nil, nil
   selectedPath = nil
   doc = nil
 

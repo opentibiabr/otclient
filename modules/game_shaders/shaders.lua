@@ -110,6 +110,16 @@ local TEXT_SHADERS = { {
     frag = 'shaders/fragment/text_glow.frag' -- Soft glow effect (higher GPU cost)
 } }
 
+local CLIENT_SHADERS = {}
+for _, opts in ipairs(MAP_SHADERS) do
+    CLIENT_SHADERS[#CLIENT_SHADERS + 1] = {
+        name = opts.name:gsub('^Map', 'Client'),
+        frag = opts.frag,
+        tex1 = opts.tex1,
+        tex2 = opts.tex2
+    }
+end
+
 local function attachShaders()
     local map = modules.game_interface.getMapPanel()
     map:setShader('Default')
@@ -143,6 +153,10 @@ end
 ShaderController = Controller:new()
 
 function ShaderController:onInit()
+    for _, opts in ipairs(CLIENT_SHADERS) do
+        registerShader(opts, 'setupMapShader')
+    end
+
     for _, opts in pairs(MAP_SHADERS) do
         registerShader(opts, 'setupMapShader')
     end
@@ -183,6 +197,15 @@ function ShaderController:onGameStart()
     attachShaders()
 end
 
+function ShaderController:onClientComboBoxChange(event)
+    local data = event.target:getCurrentOption().data
+    if data and data.frag then
+        g_shaders.setScreenShader(event.text)
+    else
+        g_shaders.setScreenShader('')
+    end
+end
+
 function ShaderController:onMapComboBoxChange(event)
     local map = modules.game_interface.getMapPanel()
     map:setShader(event.text)
@@ -209,6 +232,10 @@ end
 
 function ShaderController:open()
     self:loadHtml('shaders.html', modules.game_interface.getMapPanel())
+
+    for _, opts in ipairs(CLIENT_SHADERS) do
+        self.ui.clientComboBox:addOption(opts.name, opts)
+    end
 
     for _, opts in pairs(MAP_SHADERS) do
         self.ui.mapComboBox:addOption(opts.name, opts)

@@ -38,10 +38,12 @@
 class OTMLParser
 {
 public:
-    OTMLParser(const OTMLDocumentPtr& doc, std::istream& in);
+    OTMLParser(const OTMLDocumentPtr& doc, std::istream& in, const std::unordered_map<std::string, std::string>& aliases);
 
     /// Parse the entire document
     void parse();
+
+    static void resolveVariables(const OTMLNodePtr& node, const std::unordered_map<std::string, std::string>& aliases);
 
 private:
     /// Retrieve next line from the input stream
@@ -63,4 +65,5 @@ private:
     stdext::map<OTMLNodePtr, OTMLNodePtr> parentMap;
 
     std::istream& in;
+    const std::unordered_map<std::string, std::string>& aliases;
 };

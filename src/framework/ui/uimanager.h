@@ -49,6 +49,7 @@ public:
     static std::string getDeviceStyleName(std::string_view stylePath, std::string_view deviceName);
     void importStyleFromOTML(const OTMLNodePtr& styleNode);
     void importStyleFromOTML(const OTMLDocumentPtr& doc);
+    void resolveStyleAliases(const OTMLNodePtr& styleNode) const;
     OTMLNodePtr getStyle(std::string_view sn);
     std::string getStyleName(std::string_view styleName);
     std::string getStyleClass(std::string_view styleName);
@@ -89,6 +90,8 @@ protected:
     friend class GraphicalApplication;
 
 private:
+    void registerGlobalAliases(const OTMLDocumentPtr& doc);
+
     UIWidgetPtr m_rootWidget;
     UIWidgetPtr m_mouseReceiver;
     UIWidgetPtr m_keyboardReceiver;
@@ -101,6 +104,7 @@ private:
     bool m_drawDebugBoxes{ false };
     bool m_hoverTextUpdateScheduled{ false };
     stdext::map<std::string, OTMLNodePtr> m_styles;
+    std::unordered_map<std::string, std::string> m_globalAliases;
     std::string m_hoveredText;
     UIWidgetList m_destroyedWidgets;
     ScheduledEventPtr m_checkEvent;

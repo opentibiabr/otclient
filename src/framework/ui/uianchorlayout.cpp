@@ -218,9 +218,17 @@ bool UIAnchorLayout::updateWidget(const UIWidgetPtr& widget, const UIAnchorGroup
             }
         }
         if (getMargin || getCenterPos) {
+            // Only siblings on the first line box shift the centered start;
+            // later lines are positioned independently once the run wraps.
+            const int lineAvail = std::max<int>(0, parentWidget->getWidth() - parentWidget->getPaddingLeft() - parentWidget->getPaddingRight());
+            int lineW = widget->getWidth() + widget->getMarginLeft() + widget->getMarginRight();
             for (auto p = widget->getNextWidget(); p && p->isAnchorable() && p->getPositionType() != PositionType::Absolute && isInlineish(p.get()); p = p->getNextWidget()) {
+                const int pw = p->getWidth() + p->getMarginLeft() + p->getPaddingLeft() + p->getPaddingRight();
+                if (lineAvail > 0 && lineW + pw > lineAvail)
+                    break;
+                lineW += pw;
                 if (getCenterPos)
-                    ajustCenterPos += p->getWidth() + p->getMarginLeft() + p->getPaddingLeft() + p->getPaddingRight();
+                    ajustCenterPos += pw;
 
                 if (getMargin && p->getDisplay() == DisplayType::InlineBlock)
                     realMarginTop = std::max<int>(realMarginTop, p->getMarginTop());
@@ -228,7 +236,58 @@ bool UIAnchorLayout::updateWidget(const UIWidgetPtr& widget, const UIAnchorGroup
         }
     }
 
+    // Inline items continuing a line box are centered on their predecessor
+    // (see UIWidget::applyAnchorAlignment). Push the line leader down so the
+    // tallest item of the line starts at the line top and the rest center on it.
+    int lineCenterOffset = 0;
+    if (widget->isOnHtml() && isInlineish(widget.get())) {
+        const auto continuesLine = [this](const UIWidgetPtr& w, const std::string& prevId) {
+            const auto it = m_anchorsGroups.find(w);
+            if (it == m_anchorsGroups.end())
+                return false;
+            for (const auto& a : it->second->getAnchors()) {
+                if (a->getAnchoredEdge() == Fw::AnchorVerticalCenter && a->getHookedEdge() == Fw::AnchorVerticalCenter && a->getHookdWidgetId() == prevId)
+                    return true;
+            }
+            return false;
+        };
+
+        bool isLeader = true;
+        for (const auto& a : anchorGroup->getAnchors()) {
+            if (a->getAnchoredEdge() == Fw::AnchorVerticalCenter) {
+                isLeader = false;
+                break;
+            }
+        }
+
+        if (isLeader) {
+            const int ownH = widget->getHeight();
+            int maxH = ownH;
+            std::string lastId = widget->getId();
+            for (auto p = widget->getNextWidget(); p; p = p->getNextWidget()) {
+                if (continuesLine(p, lastId)) {
+                    maxH = std::max<int>(maxH, p->getHeight());
+                    lastId = p->getId();
+                } else if (p->getPositionType() != PositionType::Absolute && p->getFloat() == FloatType::None && p->isVisible())
+                    break;
+            }
+            lineCenterOffset = std::max<int>(0, (maxH - ownH) / 2);
+        }
+    }
+
     const auto& virtualParentWidget = widget->getPositionType() == PositionType::Absolute ? widget->getVirtualParent() : nullptr;
+
+    const auto display = widget->getDisplay();
+    const auto parentDisplay = parentWidget->getDisplay();
+    const bool autoMarginBlock =
+        widget->isOnHtml() &&
+        (widget->isMarginLeftAuto() || widget->isMarginRightAuto()) &&
+        widget->getPositionType() != PositionType::Absolute &&
+        widget->getFloat() == FloatType::None &&
+        (display == DisplayType::Block || display == DisplayType::Table ||
+         display == DisplayType::ListItem || display == DisplayType::Flex || display == DisplayType::Grid) &&
+        (parentDisplay == DisplayType::Block || parentDisplay == DisplayType::InlineBlock ||
+         parentDisplay == DisplayType::TableCell || parentDisplay == DisplayType::ListItem);
 
     // calculates new rect based on anchors
     for (const auto& anchor : anchorGroup->getAnchors()) {
@@ -264,6 +323,29 @@ bool UIAnchorLayout::updateWidget(const UIWidgetPtr& widget, const UIAnchorGroup
         }
 
         const int point = anchor->getHookedPoint(hookedWidget, parentWidget);
+        const auto edge = anchor->getAnchoredEdge();
+        if (autoMarginBlock && hookedWidget == parentWidget &&
+            (edge == Fw::AnchorLeft || edge == Fw::AnchorRight || edge == Fw::AnchorHorizontalCenter)) {
+            // Resolve against the final containing width on every layout pass,
+            // including after table sizing, image loading and parent resizing.
+            const auto& innerRect = parentWidget->getPaddingRect();
+            const int marginLeft = widget->isMarginLeftAuto() ? 0 : widget->getMarginLeft();
+            const int marginRight = widget->isMarginRightAuto() ? 0 : widget->getMarginRight();
+            const int freeSpace = std::max(0, innerRect.width() - newRect.width() - marginLeft - marginRight);
+            const int autoLeft = widget->isMarginLeftAuto()
+                ? freeSpace / (widget->isMarginRightAuto() ? 2 : 1) : 0;
+            int offset = 0;
+            if (widget->getPositionType() == PositionType::Relative) {
+                const auto& positions = widget->getPositions();
+                if (positions.left.unit != Unit::Auto)
+                    offset = positions.left.value;
+                else if (positions.right.unit != Unit::Auto)
+                    offset = -positions.right.value;
+            }
+            newRect.moveLeft(innerRect.left() - parentWidget->getVirtualOffset().x + marginLeft + autoLeft + offset);
+            horizontalMoved = true;
+            continue;
+        }
         switch (anchor->getAnchoredEdge()) {
             case Fw::AnchorHorizontalCenter: {
                 auto margin = widget->getMarginLeft() - widget->getMarginRight();
@@ -346,6 +428,7 @@ bool UIAnchorLayout::updateWidget(const UIWidgetPtr& widget, const UIAnchorGroup
 
                     if (isInlineish(widget.get())) {
                         margin += widget->getLineHeight().valueCalculed - hookedWidget->getLineHeight().valueCalculed;
+                        margin += lineCenterOffset;
                     }
 
                     if (widget->getPositionType() == PositionType::Relative || widget->getPositionType() == PositionType::Absolute) {

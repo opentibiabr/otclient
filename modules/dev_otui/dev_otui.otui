@@ -1,3 +1,327 @@
+OtuiInspectorSection < UILabel
+  height: 14
+  margin-top: 5
+  font: verdana-11px-rounded
+  color: #f0d26a
+  text-offset: 1 1
+  phantom: true
+
+OtuiInspectorEmpty < UILabel
+  height: 32
+  font: verdana-11px-monochrome
+  color: #a0a0a0
+  text-wrap: true
+  text-offset: 1 1
+  phantom: true
+
+OtuiInspectorField < UIWidget
+  height: 15
+  phantom: true
+
+  UILabel
+    id: fieldKey
+    width: 86
+    height: 15
+    anchors.top: parent.top
+    anchors.left: parent.left
+    font: verdana-11px-monochrome
+    color: #a0a0a0
+    text-offset: 1 1
+    phantom: true
+
+  UILabel
+    id: fieldValue
+    height: 15
+    anchors.top: parent.top
+    anchors.left: fieldKey.right
+    anchors.right: parent.right
+    font: verdana-11px-monochrome
+    color: #dfdfdf
+    text-offset: 1 1
+    phantom: true
+
+OtuiLuaReferenceFile < UILabel
+  height: 18
+  margin-top: 5
+  font: verdana-11px-rounded
+  color: #f0d26a
+  text-offset: 1 1
+  phantom: true
+
+OtuiLuaReferenceFunction < UILabel
+  height: 16
+  font: verdana-11px-monochrome
+  color: #9fc7ff
+  text-offset: 5 1
+  phantom: true
+
+OtuiLuaReferenceArea < UILabel
+  height: 16
+  margin-top: 5
+  font: verdana-11px-rounded
+  color: #d6b7ff
+  text-offset: 1 1
+  phantom: true
+
+OtuiLuaReferenceRow < UIWidget
+  height: 42
+  phantom: true
+
+  UILabel
+    id: referenceSummary
+    height: 16
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    font: verdana-11px-monochrome
+    color: #dfdfdf
+    text-offset: 10 1
+    phantom: true
+
+  UILabel
+    id: referenceContext
+    anchors.top: referenceSummary.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    height: 24
+    font: terminus-10px
+    color: #bdbdbd
+    text-wrap: true
+    text-offset: 18 0
+    phantom: true
+
+OtuiLuaReferenceEmpty < UILabel
+  height: 34
+  font: verdana-11px-monochrome
+  color: #a0a0a0
+  text-wrap: true
+  text-offset: 1 1
+  phantom: true
+
+OtuiLuaReferencesWindow < Window
+  id: otuiLuaReferencesWindow
+  size: 620 540
+  image-source: /images/ui/window
+  image-border: 6
+  image-border-top: 27
+  padding: 8
+  @onEscape: modules.dev_otui.closeLuaReferences()
+
+  UILabel
+    id: referencesSubtitle
+    height: 48
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 22
+    font: verdana-11px-rounded
+    color: #a0a0a0
+    text-wrap: true
+    text-align: center
+    text-offset: 1 1
+    phantom: true
+
+  TextList
+    id: referencesList
+    anchors.top: referencesSubtitle.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: closeReferencesBtn.top
+    margin-top: 4
+    margin-right: 14
+    margin-bottom: 8
+    padding: 4
+    background-color: #404040
+    border-width-top: 1
+    border-width-left: 1
+    border-width-bottom: 1
+    border-width-right: 1
+    border-color-top: #1b1b1a
+    border-color-left: #1b1b1a
+    border-color-bottom: #6b6b6b
+    border-color-right: #6b6b6b
+    focusable: false
+    vertical-scrollbar: referencesScroll
+
+  VerticalScrollBar
+    id: referencesScroll
+    anchors.top: referencesList.top
+    anchors.right: parent.right
+    anchors.bottom: referencesList.bottom
+    width: 10
+    step: 15
+    pixels-scroll: true
+
+  Button
+    id: copyReferencesBtn
+    width: 110
+    height: 20
+    anchors.left: parent.left
+    anchors.bottom: parent.bottom
+    !text: 'Copy References'
+    @onClick: modules.dev_otui.copyLuaReferences()
+
+  Button
+    id: closeReferencesBtn
+    width: 64
+    height: 20
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    !text: 'Close'
+    @onClick: modules.dev_otui.closeLuaReferences()
+
+OtuiGlobalInspectorPanel < UIWidget
+  width: 400
+  height: 342
+  padding: 8
+  image-source: /images/ui/window
+  image-border: 6
+  image-border-top: 27
+  phantom: true
+  focusable: false
+
+  UILabel
+    id: inspectorTitle
+    height: 18
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    font: cipsoftFont
+    color: #dfdfdf
+    text-align: center
+    text-offset: 0 2
+    phantom: true
+    !text: 'OTUI Inspector'
+
+  UILabel
+    id: inspectorMode
+    height: 14
+    anchors.top: inspectorTitle.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 1
+    font: verdana-11px-rounded
+    color: #a0a0a0
+    text-align: center
+    text-offset: 1 0
+    phantom: true
+    !text: 'Hover highlighted in yellow | left click fixes it'
+
+  UILabel
+    id: inspectorHoverTitle
+    height: 14
+    anchors.top: inspectorMode.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 5
+    font: verdana-11px-rounded
+    color: #f0d26a
+    text-offset: 1 0
+    phantom: true
+    !text: 'HOVER NOW'
+
+  UIWidget
+    id: inspectorHoverSummary
+    height: 92
+    anchors.top: inspectorHoverTitle.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 2
+    background-color: #404040
+    border-width-top: 1
+    border-width-left: 1
+    border-width-bottom: 1
+    border-width-right: 1
+    border-color-top: #1b1b1a
+    border-color-left: #1b1b1a
+    border-color-bottom: #6b6b6b
+    border-color-right: #6b6b6b
+    phantom: true
+
+    UILabel
+      id: inspectorHoverSummaryText
+      anchors.fill: parent
+      margin: 5
+      font: verdana-11px-monochrome
+      color: #dfdfdf
+      text-wrap: true
+      text-offset: 1 1
+      phantom: true
+      !text: 'No widget under cursor.'
+
+  UILabel
+    id: inspectorSelectedTitle
+    height: 18
+    anchors.top: inspectorHoverSummary.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 5
+    font: verdana-11px-rounded
+    color: #8fe08f
+    text-offset: 1 0
+    phantom: true
+    !text: 'SELECTED WIDGET'
+
+  Button
+    id: luaReferencesBtn
+    width: 112
+    height: 18
+    anchors.top: inspectorHoverSummary.bottom
+    anchors.right: parent.right
+    margin-top: 5
+    visible: false
+    !text: 'Lua References'
+    @onClick: modules.dev_otui.openLuaReferences()
+
+  TextList
+    id: inspectorDetails
+    anchors.top: inspectorSelectedTitle.bottom
+    anchors.left: parent.left
+    anchors.right: inspectorScroll.left
+    anchors.bottom: inspectorStatus.top
+    margin-top: 2
+    margin-right: 4
+    margin-bottom: 4
+    padding: 4
+    border-width-top: 1
+    border-width-left: 1
+    border-width-bottom: 1
+    border-width-right: 1
+    border-color-top: #1b1b1a
+    border-color-left: #1b1b1a
+    border-color-bottom: #6b6b6b
+    border-color-right: #6b6b6b
+    background-color: #404040
+    focusable: false
+    phantom: false
+    vertical-scrollbar: inspectorScroll
+
+  VerticalScrollBar
+    id: inspectorScroll
+    anchors.top: inspectorSelectedTitle.bottom
+    anchors.right: parent.right
+    anchors.bottom: inspectorStatus.top
+    width: 10
+    margin-top: 2
+    margin-bottom: 4
+    step: 15
+    pixels-scroll: true
+    phantom: false
+
+  UILabel
+    id: inspectorStatus
+    height: 18
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    font: verdana-11px-rounded
+    color: #f0d26a
+    text-wrap: true
+    text-align: topLeft
+    text-offset: 1 0
+    phantom: true
+    !text: 'OTUI Inspect mode: ON'
+
 OtuiTreeItem < UILabel
   height: 14
   font: verdana-11px-monochrome

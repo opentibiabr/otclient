@@ -1,0 +1,47 @@
+<html>
+<style>
+  window {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 12px;
+    background-color: #ffffff;
+    color: #222222;
+  }
+
+  .fixture {
+    width: 420px;
+    padding: 8px;
+    border: 2px dashed #607d8b;
+    background-color: #eceff1;
+  }
+
+  table {
+    width: 240px;
+    border: 1px solid #2e7d32;
+    border-spacing: 2px;
+    background-color: #c8e6c9;
+  }
+
+  td {
+    padding: 6px;
+    border: 1px solid #81c784;
+  }
+</style>
+
+<h2>Centered table inside &lt;center&gt;</h2>
+<p>The table should be horizontally centered within the dashed parent.</p>
+<div class="fixture">
+  <center>
+    <table>
+      <tbody>
+        <tr>
+          <td>Left cell</td>
+          <td>Right cell</td>
+        </tr>
+      </tbody>
+    </table>
+  </center>
+</div>
+</html>
