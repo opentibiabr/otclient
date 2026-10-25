@@ -32,6 +32,10 @@ public:
     static ImagePtr load(const std::string& file);
     static ImagePtr loadPNG(const char* data, size_t size);
     static ImagePtr loadPNG(const std::string& file);
+    // Decodes a JPEG buffer (RGBA); returns nullptr when the data is not a JPEG.
+    static ImagePtr loadJPEG(const char* data, size_t size);
+    // Decodes a GIF buffer (RGBA, all frames as animation); returns nullptr when the data is not a GIF.
+    static ImagePtr loadGIF(const char* data, size_t size);
     static ImagePtr fromQRCode(const std::string& code, int border);
 
     void savePNG(const std::string& fileName);
@@ -88,10 +92,12 @@ public:
 
 private:
     std::vector<AnimationFrame> m_animation;
+    uint16_t m_animationPlays{ 0 }; // 0 = loop forever
 
 public:
     bool isAnimated() const { return !m_animation.empty(); }
     const std::vector<AnimationFrame>& getAnimation() const { return m_animation; }
     void addAnimationFrame(const std::shared_ptr<Image>& image, int delay) { m_animation.push_back({ image, delay }); }
+    uint16_t getAnimationPlays() const { return m_animationPlays; }
+    void setAnimationPlays(const uint16_t plays) { m_animationPlays = plays; }
 };
-

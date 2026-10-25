@@ -34,6 +34,8 @@ struct StyleValue
     std::string value;
     std::string inheritedFromId;
     bool important{ false };
+    // Set by the universal selector (*): weakest value, replaced by inherited or matched rules.
+    bool universal{ false };
 };
 
 class HtmlNode : public std::enable_shared_from_this<HtmlNode>

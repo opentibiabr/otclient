@@ -49,6 +49,7 @@ public:
     static std::string getDeviceStyleName(std::string_view stylePath, std::string_view deviceName);
     void importStyleFromOTML(const OTMLNodePtr& styleNode);
     void importStyleFromOTML(const OTMLDocumentPtr& doc);
+    void resolveStyleAliases(const OTMLNodePtr& styleNode) const;
     OTMLNodePtr getStyle(std::string_view sn);
     std::string getStyleName(std::string_view styleName);
     std::string getStyleClass(std::string_view styleName);

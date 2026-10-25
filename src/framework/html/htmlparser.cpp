@@ -65,6 +65,7 @@ static std::string html_entity_decode(const std::string& s) {
         else if (ent == "gt") rep = ">";
         else if (ent == "quot") rep = "\"";
         else if (ent == "apos") rep = "'";
+        else if (ent == "nbsp") rep = "\xA0";
         else if (!ent.empty() && ent[0] == '#') {
             long code = 0;
             if (ent.size() >= 2 && (ent[1] == 'x' || ent[1] == 'X')) {

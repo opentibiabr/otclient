@@ -254,6 +254,11 @@ void OTMLParser::parse()
     resolveVariablesRecursive(doc->asOTMLNode(), aliases, doc.get());
 }
 
+void OTMLParser::resolveVariables(const OTMLNodePtr& node, const AliasMap& aliases)
+{
+    resolveVariablesRecursive(node, aliases, nullptr);
+}
+
 std::string OTMLParser::getNextLine()
 {
     ++currentLine;

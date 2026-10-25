@@ -53,6 +53,7 @@ Module
     - game_cyclopedia
     - game_creatureinformation
     - game_rewardwall
+    - game_compendium
     - game_forge
     - game_tutorial
     - game_inspect
