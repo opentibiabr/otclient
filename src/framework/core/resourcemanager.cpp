@@ -723,15 +723,23 @@ std::string ResourceManager::resolvePath(const std::string& path)
 
 std::string ResourceManager::getRealDir(const std::string& path)
 {
+    const auto resolvedPath = resolvePath(path);
+    const auto relativePath = resolvedPath.starts_with("/") ? resolvedPath.substr(1) : resolvedPath;
     std::string dir;
-    if (const char* cdir = PHYSFS_getRealDir(resolvePath(path).c_str()))
+    if (const char* cdir = PHYSFS_getRealDir(relativePath.c_str()))
         dir = cdir;
     return dir;
 }
 
 std::string ResourceManager::getRealPath(const std::string& path)
 {
-    return getRealDir(path) + "/" + path;
+    const auto resolvedPath = resolvePath(path);
+    const auto realDir = getRealDir(path);
+    if (realDir.empty())
+        return resolvedPath;
+
+    const auto relativePath = resolvedPath.starts_with("/") ? resolvedPath.substr(1) : resolvedPath;
+    return (std::filesystem::path(realDir) / relativePath).generic_string();
 }
 
 std::string ResourceManager::getBaseDir()

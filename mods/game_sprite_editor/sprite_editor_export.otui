@@ -1,0 +1,281 @@
+Panel
+  id: exportPanel
+  anchors.fill: parent
+  visible: false
+
+  AppearanceCenteredSectionHeader
+    id: exportHeader
+    !text: tr('Export assets')
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: parent.top
+
+  Panel
+    id: exportSubpageTabs
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: exportHeader.bottom
+    margin-top: 5
+    height: 24
+    layout: horizontalBox
+    spacing: 4
+
+    AppearanceNavigationButton
+      id: exportAssetsSubpageButton
+      !text: tr('Export')
+      width: 150
+      height: 24
+      checkable: true
+      @onClick: modules.game_sprite_editor.setExportSubpage('assets')
+
+    AppearanceNavigationButton
+      id: exportBackupsSubpageButton
+      !text: tr('Backups')
+      width: 150
+      height: 24
+      checkable: true
+      @onClick: modules.game_sprite_editor.setExportSubpage('backups')
+
+  Panel
+    id: exportModeTabs
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: exportSubpageTabs.bottom
+    margin-top: 5
+    height: 24
+    layout: horizontalBox
+    spacing: 4
+
+    AppearanceNavigationButton
+      id: replaceVersionModeButton
+      !text: tr('Replace')
+      width: 70
+      height: 24
+      checkable: true
+      @onClick: modules.game_sprite_editor.setExportMode('replace')
+
+    AppearanceNavigationButton
+      id: newVersionModeButton
+      !text: tr('New')
+      width: 52
+      height: 24
+      checkable: true
+      @onClick: modules.game_sprite_editor.setExportMode('new')
+
+    AppearanceNavigationButton
+      id: exportFolderModeButton
+      !text: tr('Folder')
+      !tooltip: tr('Copy the working assets package to a chosen folder.')
+      width: 62
+      height: 24
+      checkable: true
+      @onClick: modules.game_sprite_editor.setExportMode('folder')
+
+    AppearanceNavigationButton
+      id: exportAppearanceModeButton
+      !text: tr('Appearance')
+      !tooltip: tr('Export the selected appearance with its referenced sprites as a portable bundle.')
+      width: 94
+      height: 24
+      checkable: true
+      @onClick: modules.game_sprite_editor.setExportMode('appearance')
+
+  AppearanceFieldLabel
+    id: exportSourceLabel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: exportModeTabs.bottom
+    margin-top: 9
+    height: 18
+    text-wrap: false
+
+  Panel
+    id: exportTargetRow
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: exportSourceLabel.bottom
+    margin-top: 4
+    height: 23
+
+    AppearanceFieldLabel
+      id: targetVersionLabel
+      anchors.left: parent.left
+      anchors.verticalCenter: parent.verticalCenter
+      width: 190
+
+    AppearanceCenteredNumberEdit
+      id: newVersionEdit
+      anchors.right: parent.right
+      anchors.verticalCenter: parent.verticalCenter
+      width: 92
+      height: 22
+      max-length: 5
+      visible: false
+
+    AppearanceTextEdit
+      id: exportFolderEdit
+      anchors.left: parent.left
+      anchors.right: exportFolderBrowseButton.left
+      anchors.verticalCenter: parent.verticalCenter
+      margin-right: 5
+      height: 22
+      !placeholder: tr('Destination folder')
+      visible: false
+
+    AppearanceActionButton
+      id: exportFolderBrowseButton
+      !text: tr('Browse...')
+      anchors.right: parent.right
+      anchors.verticalCenter: parent.verticalCenter
+      width: 78
+      height: 22
+      visible: false
+      @onClick: modules.game_sprite_editor.openExportFolderPicker()
+
+  AppearanceFieldLabel
+    id: installTargetLabel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: exportTargetRow.bottom
+    margin-top: 2
+    height: 18
+    text-wrap: false
+
+  AppearanceActionButton
+    id: exportButton
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: installTargetLabel.bottom
+    margin-top: 7
+    height: 25
+    @onClick: modules.game_sprite_editor.exportWorkCopy()
+
+  AppearanceActionButton
+    id: exportAppearanceBatchButton
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: exportButton.bottom
+    margin-top: 5
+    height: 24
+    visible: false
+    !tooltip: tr('Exports the appearances currently shown in the left list, up to 8 at a time.')
+    @onClick: modules.game_sprite_editor.exportFilteredAppearanceBundles()
+
+  Label
+    id: exportHint
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: exportAppearanceBatchButton.bottom
+    margin-top: 7
+    height: 42
+    text-wrap: true
+
+  Label
+    id: exportStatus
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: exportHint.bottom
+    margin-top: 5
+    height: 45
+    text-wrap: true
+
+  Panel
+    id: restoreBackupPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: exportSubpageTabs.bottom
+    anchors.bottom: parent.bottom
+    margin-top: 6
+    visible: false
+
+    AppearanceCenteredSectionHeader
+      id: restoreBackupHeader
+      !text: tr('Restore installed backup')
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: parent.top
+
+    AppearanceFieldLabel
+      id: installedBackupListLabel
+      !text: tr('Available backups | Newest first')
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: restoreBackupHeader.bottom
+      margin-top: 4
+      height: 18
+
+    ScrollablePanel
+      id: installedBackupList
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: installedBackupListLabel.bottom
+      margin-top: 3
+      height: 154
+      margin-right: 14
+      vertical-scrollbar: installedBackupScroll
+      layout:
+        type: verticalBox
+        spacing: 4
+      auto-focus: none
+
+    VerticalScrollBar
+      id: installedBackupScroll
+      anchors.top: installedBackupList.top
+      anchors.bottom: installedBackupList.bottom
+      anchors.right: parent.right
+      step: 52
+      pixels-scroll: true
+
+    Label
+      id: backupDetailLabel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: installedBackupList.bottom
+      margin-top: 4
+      height: 38
+      text-wrap: true
+
+    ScrollablePanel
+      id: backupChangesList
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: backupDetailLabel.bottom
+      anchors.bottom: restoreBackupChangeButton.top
+      margin-top: 4
+      margin-right: 14
+      margin-bottom: 4
+      vertical-scrollbar: backupChangesScroll
+      layout:
+        type: verticalBox
+        spacing: 3
+      auto-focus: none
+
+    VerticalScrollBar
+      id: backupChangesScroll
+      anchors.top: backupChangesList.top
+      anchors.bottom: backupChangesList.bottom
+      anchors.right: parent.right
+      step: 48
+      pixels-scroll: true
+
+    AppearanceActionButton
+      id: restoreBackupChangeButton
+      !text: tr('Restore selected change')
+      !tooltip: tr('Restore the appearance to the state before this edit. The current state remains in history.')
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: restoreBackupButton.top
+      margin-bottom: 3
+      height: 23
+      enabled: false
+      @onClick: modules.game_sprite_editor.restoreInstalledBackupChange()
+
+    AppearanceActionButton
+      id: restoreBackupButton
+      !text: tr('Restore selected backup')
+      !tooltip: tr('Restore a previous installed package. This does not create another backup.')
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
+      height: 24
+      @onClick: modules.game_sprite_editor.restoreInstalledBackup()

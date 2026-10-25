@@ -7,7 +7,7 @@ This document describes the automatic client assets installation flow introduced
 For modern Tibia client versions (>= 1281), OTClient must be able to:
 
 1. Detect missing assets for the selected version.
-2. Prompt the user to download required assets.
+2. Prompt the user to download required assets from the login flow or the offline Assets Editor.
 3. Download and install assets automatically.
 4. Keep final installed files in the same paths already used by OTC runtime.
 

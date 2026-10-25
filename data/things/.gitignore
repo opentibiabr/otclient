@@ -1,3 +1,7 @@
 *
 !.gitignore
 !README.md
+!/pngs/
+/pngs/*
+!/pngs/README.md
+/backup/

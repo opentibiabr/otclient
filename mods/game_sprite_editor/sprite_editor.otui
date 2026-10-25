@@ -1,0 +1,761 @@
+SpriteEditorWindow < MainWindow
+  id: spriteEditorWindow
+  !text: ''
+  anchors.fill: parent
+  @onEscape: modules.game_sprite_editor.requestClose()
+
+  UIWidget
+    id: editorBrand
+    image-source: /images/topbuttons/assets_editor_logo
+    anchors.left: parent.left
+    anchors.verticalCenter: pageNavigation.verticalCenter
+    margin-left: 12
+    size: 180 36
+    focusable: false
+    phantom: true
+
+  Label
+    id: statusLabel
+    !text: tr('Status: Loading the work copy…')
+    anchors.left: appearancesPanel.right
+    anchors.right: historyActions.left
+    anchors.verticalCenter: pageNavigation.verticalCenter
+    margin-left: 12
+    margin-right: 12
+    color: #c6c6c6
+    text-align: left
+    text-wrap: true
+
+  Panel
+    id: historyActions
+    anchors.right: pageNavigation.left
+    anchors.verticalCenter: pageNavigation.verticalCenter
+    margin-right: 8
+    size: 116 22
+    layout: horizontalBox
+    spacing: 4
+
+    AppearanceNavigationButton
+      id: undoButton
+      !text: tr('Undo')
+      !tooltip: tr('Undo one of the last 20 saved changes in this client session.')
+      width: 56
+      height: 22
+      @onClick: modules.game_sprite_editor.undoWorkCopyEdit()
+
+    AppearanceNavigationButton
+      id: redoButton
+      !text: tr('Redo')
+      !tooltip: tr('Redo a saved change undone in this client session.')
+      width: 56
+      height: 22
+      @onClick: modules.game_sprite_editor.redoWorkCopyEdit()
+
+  Panel
+    id: pageNavigation
+    anchors.right: parent.right
+    anchors.top: parent.top
+    width: 320
+    height: 22
+    layout: horizontalBox
+    spacing: 4
+
+    AppearanceNavigationButton
+      id: editorPageButton
+      !text: tr('Properties')
+      !tooltip: tr('Edit the appearance name, description, flags, and values.')
+      width: 77
+      height: 22
+      @onClick: modules.game_sprite_editor.showEditorPage()
+
+    AppearanceNavigationButton
+      id: importPageButton
+      !text: tr('Import')
+      !tooltip: tr('Replace or edit a frame sprite, or create an appearance from PNG.')
+      width: 77
+      height: 22
+      @onClick: modules.game_sprite_editor.showImportPage()
+
+    AppearanceNavigationButton
+      id: exportPageButton
+      !text: tr('Export')
+      !tooltip: tr('Export the working copy as an asset package.')
+      width: 77
+      height: 22
+      @onClick: modules.game_sprite_editor.showExportPage()
+
+    AppearanceNavigationButton
+      id: historyPageButton
+      !text: tr('History')
+      !tooltip: tr('Review and recover appearance edits saved with this asset package.')
+      width: 77
+      height: 22
+      @onClick: modules.game_sprite_editor.showHistoryPage()
+
+  Panel
+    id: appearancesPanel
+    anchors.left: parent.left
+    anchors.top: pageNavigation.bottom
+    anchors.bottom: parent.bottom
+    margin-top: 8
+    margin-bottom: 33
+    width: 190
+
+    ComboBox
+      id: versionComboBox
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: parent.top
+      height: 22
+
+    AppearanceActionButton
+      id: loadAssetsButton
+      !text: tr('Load assets')
+      !tooltip: tr('Copy the selected installed version into a working copy, or reset its existing working copy from the installed assets.')
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: versionComboBox.bottom
+      margin-top: 3
+      height: 24
+      @onClick: modules.game_sprite_editor.loadSelectedAssets()
+
+    AppearanceSectionHeader
+      id: appearanceCategoryLabel
+      !text: tr('Appearance category')
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: loadAssetsButton.bottom
+      margin-top: 7
+      height: 23
+      font: Verdana Bold-11px
+      text-align: center
+      text-offset: 0 3
+
+    ComboBox
+      id: appearanceCategory
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 4
+      height: 22
+
+    UIScrollArea
+      id: appearanceList
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: appearanceCategory.bottom
+      anchors.bottom: appearanceSearch.top
+      margin-top: 6
+      margin-bottom: 7
+      margin-right: 12
+      vertical-scrollbar: appearanceListScroll
+      auto-focus: none
+
+      Panel
+        id: appearanceListContent
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
+        height: 1
+        focusable: false
+
+    TextEdit
+      id: appearanceSearch
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
+      height: 23
+      !placeholder: tr('Name or exact ID')
+      !tooltip: tr('Numbers match an exact appearance ID. Text matches part of the name.')
+      @onEnter: modules.game_sprite_editor.applyAppearanceSearch()
+
+    VerticalScrollBar
+      id: appearanceListScroll
+      anchors.top: appearanceList.top
+      anchors.bottom: appearanceList.bottom
+      anchors.right: parent.right
+      step: 52
+      pixels-scroll: true
+
+  Panel
+    id: editorCanvasFrame
+    anchors.top: appearancesPanel.top
+    anchors.left: appearancesPanel.right
+    anchors.right: rightPanel.left
+    anchors.bottom: appearancesPanel.bottom
+    margin-left: 12
+    margin-right: 12
+    background-color: #242424
+
+    UISpriteEditorCanvas
+      id: canvas
+      anchors.fill: parent
+      margin: 4
+      margin-bottom: 4
+      focusable: true
+
+    Panel
+      id: previewDirectionPad
+      anchors.centerIn: canvas
+      size: 176 122
+      visible: false
+
+      PreviewDirectionButton
+        id: previewNorthWest
+        !text: tr('NW')
+        anchors.left: parent.left
+        anchors.top: parent.top
+        @onClick: modules.game_sprite_editor.selectPreviewDirection(7)
+
+      PreviewDirectionButton
+        id: previewNorth
+        !text: tr('North')
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.top: parent.top
+        @onClick: modules.game_sprite_editor.selectPreviewDirection(0)
+
+      PreviewDirectionButton
+        id: previewNorthEast
+        !text: tr('NE')
+        anchors.right: parent.right
+        anchors.top: parent.top
+        @onClick: modules.game_sprite_editor.selectPreviewDirection(4)
+
+      PreviewDirectionButton
+        id: previewWest
+        !text: tr('West')
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        @onClick: modules.game_sprite_editor.selectPreviewDirection(3)
+
+      PreviewDirectionButton
+        id: previewEast
+        !text: tr('East')
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        @onClick: modules.game_sprite_editor.selectPreviewDirection(1)
+
+      PreviewDirectionButton
+        id: previewSouthWest
+        !text: tr('SW')
+        anchors.left: parent.left
+        anchors.bottom: parent.bottom
+        @onClick: modules.game_sprite_editor.selectPreviewDirection(6)
+
+      PreviewDirectionButton
+        id: previewSouth
+        !text: tr('South')
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: parent.bottom
+        @onClick: modules.game_sprite_editor.selectPreviewDirection(2)
+
+      PreviewDirectionButton
+        id: previewSouthEast
+        !text: tr('SE')
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        @onClick: modules.game_sprite_editor.selectPreviewDirection(5)
+
+    Panel
+      id: previewZoomControl
+      anchors.right: canvas.right
+      anchors.bottom: parent.bottom
+      margin-right: 8
+      size: 34 126
+      background-color: #303030
+      border-width: 1
+      border-color: #4a4a4a
+      visible: false
+      focusable: false
+      !tooltip: tr('Drag the slider to change preview zoom.')
+
+      Label
+        id: previewZoomLabel
+        !text: tr('1x')
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
+        margin-top: 3
+        height: 18
+        text-align: center
+        text-wrap: false
+        focusable: false
+
+      VerticalScrollBar
+        id: previewZoomScroll
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: previewZoomLabel.bottom
+        anchors.bottom: parent.bottom
+        margin-left: 10
+        margin-right: 10
+        margin-top: 2
+        margin-bottom: 3
+        step: 1
+        minimum: 1
+        maximum: 64
+        pixels-scroll: false
+
+  Label
+    id: spriteInfoLabel
+    !text: tr('Select an appearance to see its sprite.')
+    anchors.left: editorCanvasFrame.left
+    anchors.right: editorCanvasFrame.right
+    anchors.top: editorCanvasFrame.top
+    margin-left: 8
+    margin-right: 8
+    margin-top: 6
+    height: 18
+    text-align: center
+    text-wrap: false
+
+  Panel
+    id: previewControls
+    anchors.left: editorCanvasFrame.left
+    anchors.right: editorCanvasFrame.right
+    anchors.bottom: editorCanvasFrame.bottom
+    margin-left: 8
+    margin-right: 8
+    margin-bottom: 8
+    height: 156
+    background-color: #363636
+    border-width: 1
+    border-color: #4a4a4a
+    visible: false
+
+    Panel
+      id: previewTopControls
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: parent.top
+      margin-left: 8
+      margin-right: 8
+      margin-top: 8
+      height: 1
+      layout: verticalBox
+      spacing: 4
+
+      Panel
+        id: previewMetaRow
+        height: 22
+        layout: horizontalBox
+        spacing: 4
+
+        ComboBox
+          id: previewFrameGroup
+          width: 112
+          height: 22
+
+        AppearanceOptionCheckBox
+          id: previewMoving
+          !text: tr('Moving')
+          width: 88
+          visible: false
+
+        AppearanceOptionCheckBox
+          id: previewMounted
+          !text: tr('Mounted')
+          width: 88
+          visible: false
+
+      Panel
+        id: previewPatternRow
+        height: 22
+        layout:
+          type: horizontalBox
+          spacing: 10
+
+        ComboBox
+          id: previewPatternX
+          width: 124
+          height: 22
+
+        ComboBox
+          id: previewPatternY
+          width: 124
+          height: 22
+
+        ComboBox
+          id: previewLayer
+          width: 100
+          height: 22
+
+        ComboBox
+          id: previewPatternZ
+          width: 124
+          height: 22
+
+      Panel
+        id: previewAnimationSettingsRow
+        height: 28
+        visible: false
+
+        Panel
+          id: animationStartGroup
+          anchors.left: parent.left
+          anchors.top: parent.top
+          anchors.bottom: parent.bottom
+          width: 104
+          background-color: #303030
+          border-width: 1
+          border-color: #4a4a4a
+
+          AppearanceFieldLabel
+            !text: tr('Start')
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+            margin-left: 5
+            width: 36
+            height: 22
+            tooltip: tr('Default starting frame for this animation.')
+
+          AppearanceTextEdit
+            id: animationDefaultPhase
+            anchors.left: prev.right
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            margin-left: 3
+            margin-right: 4
+            width: 44
+            height: 22
+
+        Panel
+          id: animationStartModeGroup
+          anchors.left: animationStartGroup.right
+          anchors.top: parent.top
+          anchors.bottom: parent.bottom
+          margin-left: 6
+          width: 158
+          background-color: #303030
+          border-width: 1
+          border-color: #4a4a4a
+
+          AppearanceOptionCheckBox
+            id: animationRandomStart
+            !text: tr('Random')
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+            margin-left: 5
+            width: 73
+            tooltip: tr('Start at a random frame.')
+
+          AppearanceOptionCheckBox
+            id: animationSynchronized
+            !text: tr('Sync')
+            anchors.left: animationRandomStart.right
+            anchors.verticalCenter: parent.verticalCenter
+            margin-left: 1
+            width: 68
+            tooltip: tr('Synchronize this animation with other appearances.')
+
+        Panel
+          id: animationLoopGroup
+          anchors.left: animationStartModeGroup.right
+          anchors.right: parent.right
+          anchors.top: parent.top
+          anchors.bottom: parent.bottom
+          margin-left: 6
+          background-color: #303030
+          border-width: 1
+          border-color: #4a4a4a
+
+          ComboBox
+            id: animationLoopType
+            anchors.left: parent.left
+            anchors.right: animationLoopCountControls.left
+            anchors.verticalCenter: parent.verticalCenter
+            margin-left: 5
+            margin-right: 4
+            height: 22
+            tooltip: tr('Animation loop type.')
+
+          Panel
+            id: animationLoopCountControls
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            margin-right: 4
+            width: 100
+            height: 22
+            visible: false
+
+            Label
+              id: animationLoopCountLabel
+              !text: tr('Count')
+              anchors.left: parent.left
+              anchors.verticalCenter: parent.verticalCenter
+              width: 42
+              height: 22
+              text-wrap: false
+
+            AppearanceTextEdit
+              id: animationLoopCount
+              anchors.right: parent.right
+              anchors.verticalCenter: parent.verticalCenter
+              width: 48
+              height: 22
+              tooltip: tr('Number of loops when the loop type is Counted.')
+
+    Panel
+      id: previewTimelinePanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: previewTopControls.bottom
+      margin-left: 8
+      margin-right: 8
+      margin-top: 6
+      height: 100
+
+      Panel
+        id: previewTimelineFrameGroup
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
+        height: 60
+        background-color: #303030
+        border-width: 1
+        border-color: #4a4a4a
+        focusable: false
+        phantom: true
+
+      Label
+        id: previewTimelineLabel
+        !text: tr('Frames')
+        anchors.left: parent.left
+        anchors.top: parent.top
+        width: 50
+        height: 22
+        text-align: center
+        text-wrap: false
+        color: #dfdfdf
+
+      UIScrollArea
+        id: previewTimeline
+        anchors.left: previewTimelineLabel.right
+        anchors.right: previewPhaseActions.left
+        anchors.top: parent.top
+        margin-left: 6
+        margin-right: 4
+        height: 48
+        horizontal-scrollbar: previewTimelineScroll
+        auto-focus: none
+
+        Panel
+          id: previewTimelineFrames
+          anchors.left: parent.left
+          anchors.top: parent.top
+          height: 48
+          layout: horizontalBox
+          spacing: 0
+
+      Panel
+        id: previewPhaseActions
+        anchors.right: parent.right
+        anchors.top: parent.top
+        size: 104 22
+        layout: horizontalBox
+        spacing: 2
+
+        AppearanceActionButton
+          id: previewPlayButton
+          !text: tr('Play')
+          size: 48 22
+          !tooltip: tr('Play the animation preview from the selected frame.')
+          @onClick: modules.game_sprite_editor.togglePreviewAnimation()
+
+        AppearanceActionButton
+          id: removeAnimationFrameButton
+          !text: tr('-')
+          size: 25 22
+          !tooltip: tr('Remove the last frame and its sprite links.')
+
+        AppearanceActionButton
+          id: addAnimationFrameButton
+          !text: tr('+')
+          size: 25 22
+          !tooltip: tr('Add a frame by copying the last frame.')
+
+      HorizontalScrollBar
+        id: previewTimelineScroll
+        anchors.left: previewTimeline.left
+        anchors.right: previewPhaseActions.left
+        anchors.top: previewTimeline.bottom
+        margin-top: 2
+        margin-right: 4
+        height: 8
+        pixels-scroll: true
+        visible: false
+
+      Panel
+        id: previewAnimationFrameRow
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        margin-bottom: 11
+        height: 28
+
+        Panel
+          id: previewFrameSelectionGroup
+          anchors.left: parent.left
+          anchors.top: parent.top
+          anchors.bottom: parent.bottom
+          width: 164
+          background-color: #303030
+          border-width: 1
+          border-color: #4a4a4a
+
+          AppearanceFieldLabel
+            id: previewPhaseLabel
+            !text: tr('Frame')
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+            margin-left: 5
+            width: 42
+            height: 22
+
+          SpinBox
+            id: previewPhaseStepper
+            anchors.left: previewPhaseLabel.right
+            anchors.verticalCenter: parent.verticalCenter
+            margin-left: 3
+            width: 62
+            height: 22
+            minimum: 1
+            maximum: 1
+            text: 1
+
+          Label
+            id: previewPhaseCount
+            anchors.left: previewPhaseStepper.right
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            margin-left: 4
+            margin-right: 4
+            height: 22
+            text-wrap: false
+
+        Panel
+          id: previewDurationGroup
+          anchors.left: parent.left
+          anchors.right: parent.right
+          anchors.top: parent.top
+          anchors.bottom: parent.bottom
+          margin-left: 0
+          visible: false
+
+          Panel
+            id: animationDurationMinGroup
+            anchors.left: parent.left
+            anchors.right: parent.horizontalCenter
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            margin-right: 3
+            background-color: #303030
+            border-width: 1
+            border-color: #4a4a4a
+
+            AppearanceFieldLabel
+              id: animationDurationMinLabel
+              !text: tr('Min ms')
+              anchors.left: parent.left
+              anchors.verticalCenter: parent.verticalCenter
+              margin-left: 6
+              width: 48
+              height: 22
+
+            AppearanceCenteredNumberEdit
+              id: animationDurationMin
+              anchors.left: animationDurationMinLabel.right
+              anchors.right: parent.right
+              anchors.verticalCenter: parent.verticalCenter
+              margin-left: 4
+              margin-right: 5
+              height: 22
+
+          Panel
+            id: animationDurationMaxGroup
+            anchors.left: parent.horizontalCenter
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            margin-left: 3
+            background-color: #303030
+            border-width: 1
+            border-color: #4a4a4a
+
+            AppearanceFieldLabel
+              id: animationDurationMaxLabel
+              !text: tr('Max ms')
+              anchors.left: parent.left
+              anchors.verticalCenter: parent.verticalCenter
+              margin-left: 6
+              width: 48
+              height: 22
+
+            AppearanceCenteredNumberEdit
+              id: animationDurationMax
+              anchors.left: animationDurationMaxLabel.right
+              anchors.right: parent.right
+              anchors.verticalCenter: parent.verticalCenter
+              margin-left: 4
+              margin-right: 5
+              height: 22
+
+  Panel
+    id: rightPanel
+    anchors.top: pageNavigation.bottom
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    margin-top: 8
+    margin-bottom: 33
+    width: 320
+  AppearanceActionButton
+    id: reloadButton
+    !text: tr('Reload saved copy')
+    anchors.left: editorCanvasFrame.left
+    anchors.bottom: parent.bottom
+    width: 130
+    height: 25
+    !tooltip: tr('Reload the saved working copy from disk, including appearances and static data. This does not reset it from installed assets.')
+    @onClick: modules.game_sprite_editor.reloadPackage()
+
+  AppearanceActionButton
+    id: duplicateAppearanceButton
+    !text: tr('Copy')
+    !tooltip: tr('Copy flags, values, animation, and sprite links to a new ID. Sprite IDs stay shared until replaced.')
+    anchors.left: appearancesPanel.left
+    anchors.bottom: parent.bottom
+    width: 56
+    height: 25
+    @onClick: modules.game_sprite_editor.duplicateSelectedAppearance()
+
+  AppearanceActionButton
+    id: deleteAppearanceButton
+    !text: tr('Delete')
+    !tooltip: tr('Remove this appearance from the working copy. Its sprites are kept, including sprites shared by other appearances.')
+    anchors.horizontalCenter: appearancesPanel.horizontalCenter
+    anchors.bottom: parent.bottom
+    width: 56
+    height: 25
+    @onClick: modules.game_sprite_editor.deleteSelectedAppearance()
+
+  AppearanceActionButton
+    id: createAppearanceShortcutButton
+    !text: tr('New')
+    !tooltip: tr('Create an appearance from a PNG or an existing sprite ID.')
+    anchors.right: appearancesPanel.right
+    anchors.bottom: parent.bottom
+    width: 56
+    height: 25
+    @onClick: modules.game_sprite_editor.openNewAppearance()
+
+  Button
+    id: closeButton
+    !text: tr('Return to game')
+    !tooltip: tr('Close the editor and return to the game. The working copy remains saved.')
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    width: 124
+    height: 25
+    @onClick: modules.game_sprite_editor.requestClose()
+
+SpriteEditorWindow
