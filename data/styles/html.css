@@ -150,6 +150,11 @@ dl {
   display: block;
 }
 
+ul,
+ol {
+  padding-left: 16;
+}
+
 li {
   display: list-item;
 }
@@ -256,6 +261,46 @@ legend {
 }
 summary {
   display: list-item;
+}
+
+/* === Text-level semantics === */
+center {
+  display: block;
+  text-align: center;
+}
+
+center table {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Font weight/style/decoration are not supported, so dedicated font faces are used instead. */
+strong,
+b,
+th {
+  font: Verdana Bold-11px;
+}
+
+em,
+i,
+cite,
+var {
+  font: verdana-11px-antialised-italic;
+}
+
+u,
+ins {
+  font: verdana-11px-monochrome-underline;
+}
+
+s,
+del,
+strike {
+  font: Verdana-Strikethrough-11px;
+}
+
+a {
+  color: #3c9cff;
 }
 
 /* === Hidden elements === */

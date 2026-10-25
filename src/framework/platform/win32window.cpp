@@ -1219,7 +1219,7 @@ Rect WIN32Window::getClientRect() const
     if (m_window) {
         RECT clientRect = { 0,0,0,0 };
         GetClientRect(m_window, &clientRect);
-        return Rect(Point(clientRect.left, clientRect.top), Point(clientRect.right, clientRect.bottom));
+        return Rect(clientRect.left, clientRect.top, clientRect.right - clientRect.left, clientRect.bottom - clientRect.top);
     }
     return Rect(m_position, m_size);
 }

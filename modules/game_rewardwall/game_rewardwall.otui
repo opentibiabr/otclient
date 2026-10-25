@@ -1,0 +1,598 @@
+MainWindowHigh
+  id: rewardWallWindow
+  !text: tr('Reward Wall')
+  font: $var-cip-font-new
+  color: #909090
+  size: 538 522
+  text-offset: 0 2
+  @onEscape: modules.game_rewardwall.rewardWallController:onClickToggle()
+
+  MiniPanel
+    id: historyPanel
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    margin-top: -7
+    margin-bottom: 32
+    !text: tr('History')
+    text-offset: 0 2
+    font: $var-cip-font-new
+    color: #909090
+    visible: false
+
+    TextListWithScroll
+      id: historyList
+      anchors.fill: parent
+      margin-top: -3
+      margin-left: -1
+      margin-bottom: 2
+      background-color: #363636
+      padding-top: 1
+      focusable: false
+    
+    HorizontalSeparator
+      anchors.top: parent.top
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 12
+      margin-right: 12
+
+  MiniPanel
+    id: restingAreaPanel
+    size: 506 126
+    anchors.top: parent.top
+    anchors.left: parent.left
+    !text: tr('Resting Area Bonuses')
+    text-offset: -1 2
+    font: $var-cip-font-new
+    color: #909090
+    margin-top: -7
+    focusable: false
+
+    Panel
+      id: restingAreaInfo
+      size: 70 100
+      anchors.top: parent.top
+      anchors.left: parent.left
+      focusable: false
+
+      UIWidget
+        id: rewardStreakIcon
+        anchors.top: parent.top
+        anchors.left: parent.left
+        margin-top: -3
+        margin-left: 1
+        size: 66 44
+        image-source: /game_rewardwall/images/icon-rewardstreak-default
+        image-size: 66 44
+        image-fixed-ratio: true
+        text-align: center
+        text-offset: -1 -2
+        font: $var-cip-font-new
+        color: #c0c0c0
+        @onHoverChange: modules.game_rewardwall.onHoverStatusPlayerChange(self, value)
+
+      RestingAreaTimeLeft
+        id: timeLeft
+        fixed-size: true
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        margin-top: 3
+        margin-left: 1
+        @onHoverChange: modules.game_rewardwall.onHoverStatusPlayerChange(self, value)
+
+      RestingAreaJoker
+        id: restingAreaGold
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        margin-top: 6
+        margin-left: 1
+        @onHoverChange: modules.game_rewardwall.onHoverStatusPlayerChange(self, value)
+
+    Panel
+      id: bonusIcons
+      size: 421 71
+      anchors.top: parent.top
+      anchors.left: parent.left
+      margin-top: -5
+      margin-left: 72
+      border-color: #00000077
+      focusable: false
+      clipping: false
+      layout:
+        type: horizontalBox
+        spacing: 5
+
+      imgBonuses
+        id: bonusIcon1
+        icon-clip: 0 0 64 64
+        @onHoverChange: modules.game_rewardwall.onHoverBonusChange(self, value)
+
+      imgBonuses
+        id: bonusIcon2
+        icon-clip: 64 0 64 64
+        @onHoverChange: modules.game_rewardwall.onHoverBonusChange(self, value)
+
+      imgBonuses
+        id: bonusIcon3
+        icon-clip: 128 0 64 64
+        @onHoverChange: modules.game_rewardwall.onHoverBonusChange(self, value)
+
+      imgBonuses
+        id: bonusIcon4
+        icon-clip: 192 0 64 64
+        @onHoverChange: modules.game_rewardwall.onHoverBonusChange(self, value)
+
+      imgBonuses
+        id: bonusIcon5
+        icon-clip: 256 0 64 64
+        @onHoverChange: modules.game_rewardwall.onHoverBonusChange(self, value)
+
+      imgBonuses
+        id: bonusIcon6
+        icon-clip: 320 0 64 64
+        @onHoverChange: modules.game_rewardwall.onHoverBonusChange(self, value)
+
+    Label
+      id: streakWarning
+      text-align: center
+      text-wrap: true
+      border-color: #00000077
+      height: 45
+      width: 420
+      anchors.top: parent.top
+      anchors.left: parent.left
+      anchors.horizontalCenter: parent.horizontalCenter
+      margin-top: 58
+      margin-left: 33
+      font: $var-cip-font-new
+      phantom: true
+      color: #c0c0c0
+      text: Great! You benefit from the best possible rewards and bonuses due to your premium status.
+
+  MiniPanel
+    id: dailyRewardsPanel
+    !text: tr('Daily Rewards')
+    text-offset: -1 2
+    font: $var-cip-font-new
+    color: #909090
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    size: 506 133
+    margin-top: 11
+
+    Panel
+      id: reward1
+      size: 72 96
+      anchors.top: parent.top
+      anchors.left: parent.left
+      margin-top: -3
+      margin-left: -4
+      focusable: false
+
+      RewardButton3
+        id: rewardButton1
+        anchors.top: parent.top
+        anchors.left: parent.left
+        margin-left: 5
+        size: 66 66
+        fixed-size: true
+        @onHoverChange: modules.game_rewardwall.onHoverRewardTypeChange(self, value)
+
+      RewardGoldSlot
+        id: rewardGold1
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        margin-top: 6
+        margin-left: 5
+        margin-right: 1
+        height: 20
+        @onHoverChange: modules.game_rewardwall.onHoverStatusRewardChange(self, value)
+
+    RewardArrow
+      id: arrow1
+      image-offset: 1 25
+
+    Panel
+      id: reward2
+      size: 72 96
+      anchors.top: parent.top
+      anchors.left: prev.right
+      margin-top: -3
+      margin-left: 0
+      focusable: false
+
+      RewardButton3
+        id: rewardButton2
+        anchors.top: parent.top
+        anchors.left: parent.left
+        margin-left: 2
+        size: 66 66
+        fixed-size: true
+        @onHoverChange: modules.game_rewardwall.onHoverRewardTypeChange(self, value)
+
+      RewardGoldSlot
+        id: rewardGold2
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        margin-top: 6
+        margin-left: 2
+        height: 20
+        @onHoverChange: modules.game_rewardwall.onHoverStatusRewardChange(self, value)
+   
+
+    RewardArrow
+      id: arrow2
+      margin-left: -4
+      image-offset: 1 25
+
+    Panel
+      id: reward3
+      size: 72 96
+      anchors.top: parent.top
+      anchors.left: prev.right
+      margin-top: -3
+      margin-left: 1
+      focusable: false
+
+      RewardButton3
+        id: rewardButton3
+        anchors.top: parent.top
+        anchors.left: parent.left
+        margin-left: 1
+        size: 66 66
+        fixed-size: true
+        @onHoverChange: modules.game_rewardwall.onHoverRewardTypeChange(self, value)
+
+      RewardGoldSlot
+        id: rewardGold3
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        margin-top: 6
+        margin-left: 1
+        margin-right: 5
+        height: 20
+        @onHoverChange: modules.game_rewardwall.onHoverStatusRewardChange(self, value)
+
+    RewardArrow
+      id: arrow3
+      margin-left: -2
+
+    Panel
+      id: reward4
+      size: 72 96
+      anchors.top: parent.top
+      anchors.left: prev.right
+      margin-top: -3
+      margin-left: -2
+      focusable: false
+
+      RewardButton3
+        id: rewardButton4
+        anchors.top: parent.top
+        anchors.left: parent.left
+        margin-left: 1
+        size: 66 66
+        fixed-size: true
+        @onHoverChange: modules.game_rewardwall.onHoverRewardTypeChange(self, value)
+
+      RewardGoldSlot
+        id: rewardGold4
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        margin-top: 6
+        margin-left: 1
+        margin-right: 5
+        height: 20
+        @onHoverChange: modules.game_rewardwall.onHoverStatusRewardChange(self, value)
+
+    RewardArrow
+      id: arrow4
+      margin-left: -2
+
+    Panel
+      id: reward5
+      size: 72 96
+      anchors.top: parent.top
+      anchors.left: prev.right
+      margin-top: -3
+      margin-left: -2
+      focusable: false
+
+      RewardButton3
+        id: rewardButton5
+        anchors.top: parent.top
+        anchors.left: parent.left
+        margin-left: 1
+        size: 66 66
+        fixed-size: true
+        @onHoverChange: modules.game_rewardwall.onHoverRewardTypeChange(self, value)
+
+      RewardGoldSlot
+        id: rewardGold5
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        margin-top: 6
+        margin-left: 1
+        margin-right: 5
+        height: 20
+        @onHoverChange: modules.game_rewardwall.onHoverStatusRewardChange(self, value)
+
+    RewardArrow
+      id: arrow5
+      margin-left: -2
+
+    Panel
+      id: reward6
+      size: 72 96
+      anchors.top: parent.top
+      anchors.left: prev.right
+      margin-top: -3
+      margin-left: -2
+      focusable: false
+
+      RewardButton3
+        id: rewardButton6
+        anchors.top: parent.top
+        anchors.left: parent.left
+        margin-left: 1
+        size: 66 66
+        fixed-size: true
+        @onHoverChange: modules.game_rewardwall.onHoverRewardTypeChange(self, value)
+
+      RewardGoldSlot
+        id: rewardGold6
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        margin-top: 6
+        margin-left: 1
+        margin-right: 5
+        height: 20
+        @onHoverChange: modules.game_rewardwall.onHoverStatusRewardChange(self, value)
+
+    RewardArrow
+      id: arrow6
+      margin-left: -2
+
+    Panel
+      id: reward7
+      size: 72 96
+      anchors.top: parent.top
+      anchors.left: prev.right
+      margin-top: -3
+      margin-left: -2
+      focusable: false
+
+      RewardButton3
+        id: rewardButton7
+        anchors.top: parent.top
+        anchors.left: parent.left
+        margin-left: 1
+        size: 66 66
+        fixed-size: true
+        @onHoverChange: modules.game_rewardwall.onHoverRewardTypeChange(self, value)
+
+      RewardGoldSlot
+        id: rewardGold7
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        margin-top: 6
+        margin-left: 1
+        margin-right: 5
+        height: 20
+        @onHoverChange: modules.game_rewardwall.onHoverStatusRewardChange(self, value)
+
+    UIWidget
+      id: arrowLoop
+      anchors.top: prev.top
+      anchors.left: prev.right
+      margin-top: 1
+      margin-left: -1
+      image-source: /game_rewardwall/images/icon-rewardarrow-loop-inactive
+      image-offset: -466 90
+      image-size: 435 13
+
+  QtPanel
+    id: premiumStatus
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    margin-top: 11
+    size: 506 51
+
+    Label
+      id: premiumMessage
+      text-align: center
+      text-wrap: true
+      border-color: #00000077
+      height: 38
+      width: 350
+      font: $var-cip-font-new
+      color: #c0c0c0
+      anchors.left: parent.left
+      anchors.top: parent.top
+      margin-top: -2
+      text: Great! You benefit from the best possible rewards and bonuses due to your premium status.
+
+    BigPremiumButton
+      id: premiumButton
+      anchors.right: parent.right
+      anchors.top: parent.top
+      margin-top: -2
+      margin-right: -3
+      @onClick: modules.game_rewardwall.rewardWallController:onClickSendStoreRewardWall()
+
+  QtPanel
+    id: infoPanel
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    margin-top: 11
+    size: 506 105
+    focusable: false
+
+    Label
+      id: free
+      text-align: topLeft
+      text-wrap: true
+      font: $var-cip-font-new
+      color: #808080
+      anchors.left: parent.left
+      anchors.top: parent.top
+      anchors.bottom: parent.bottom
+      margin: 2
+      width: 235
+      visible: false
+
+    Label
+      id: premium
+      text-align: topLeft
+      text-wrap: true
+      font: $var-cip-font-new
+      color: #909090
+      anchors.left: free.right
+      anchors.top: parent.top
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
+      margin-top: 2
+      margin-bottom: 2
+      margin-right: 2
+      margin-left: 5
+      visible: false
+
+    Label
+      id: statusText
+      anchors.fill: parent
+      margin-top: -5
+      margin-left: -3
+      text-align: topLeft
+      text-wrap: true
+      font: $var-cip-font-new
+      color: #c0c0c0
+      focusable: false
+
+  Panel
+    id: footerPanel
+    size: 510 33
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    margin-bottom: -6
+    focusable: false
+
+    HorizontalSeparator
+      id: footerSeparator
+      anchors.top: parent.top
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-right: 4
+
+    UIWidget
+      id: footerGold1
+      size: 26 20
+      margin-top: 6
+      anchors.left: parent.left
+      anchors.top: footerSeparator.bottom
+      image-source: /images/ui/button-verydarkgrey-down
+      image-border: 3
+      image-clip: 0 0 98 40
+
+      RewardResourceIcon
+        id: gold
+        image-source: /game_rewardwall/images/icon-daily-reward-joker
+
+      UIWidget
+        id: text
+        font: $var-cip-font-new
+        font-color: #c0c0c0
+        anchors.top: parent.top
+        anchors.left: parent.left
+        margin-top: 1
+        margin-left: 3
+        anchors.verticalCenter: parent.verticalCenter
+        text-align: center
+        phantom: true
+
+    UIWidget
+      id: footerGold2
+      size: 52 20
+      anchors.left: footerGold1.right
+      anchors.top: footerSeparator.bottom
+      margin-left: 6
+      margin-top: 6
+      image-source: /images/ui/button-verydarkgrey-down
+      image-border: 3
+      image-clip: 0 0 98 40
+
+      RewardResourceIcon
+        id: gold
+        image-source: /game_rewardwall/images/instant-reward-access-icon
+
+      UIWidget
+        id: text
+        font: $var-cip-font-new
+        font-color: #c0c0c0
+        anchors.top: parent.top
+        anchors.left: parent.left
+        margin-top: 1
+        margin-left: 29
+        anchors.verticalCenter: parent.verticalCenter
+        text-align: center
+        phantom: true
+
+    Button
+      id: storeSmallButton
+      color: #dfdfdfff
+      size: 26 20
+      margin-left: 4
+      margin-top: 6
+      image-source: /images/ui/miniStoreIcon
+      image-clip: 0 0 26 22
+      image-fixed-ratio: true
+      image-border: 1
+      padding: 10
+      opacity: 1.0
+      click-sound: 2774
+      anchors.top: footerSeparator.bottom
+      anchors.left: footerGold2.right
+      @onClick: modules.game_rewardwall.rewardWallController:onClickSendStoreJoker()
+
+      $hover !disabled:
+        image-clip: 0 0 26 22
+
+      $pressed:
+        image-clip: 0 22 26 22
+      
+      $on:
+        image-clip: 0 22 26 22
+
+      $checked:
+        image-clip: 0 22 26 22
+
+      $disabled:
+        color: #dfdfdf88
+        opacity: 0.8
+        change-cursor-image: false
+
+    Button
+      id: historyButton
+      !text: tr('History')
+      size: 43 20
+      anchors.bottom: parent.bottom
+      anchors.right: closeButton.left
+      margin-bottom: 6
+      margin-right: 6
+      @onClick: modules.game_rewardwall.rewardWallController:onClickshowHistory()
+
+    Button
+      id: closeButton
+      !text: tr('Close')
+      size: 43 20
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
+      margin-bottom: 6
+      margin-right: 4
+      @onClick: modules.game_rewardwall.rewardWallController:onClickToggle()

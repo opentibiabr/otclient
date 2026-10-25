@@ -252,7 +252,7 @@ https://github.com/kokekanon/otclient.readme/assets/114332266/16aaa78b-fc55-4c6e
 ---
 
 ### 🔗 Compatibility & Protocols
-- Client **7.6 ~ 12.85 ~ 12.92**, **13.00 ~ 15.24** support *(protobuf)*  
+- Client **7.6 ~ 12.85 ~ 12.92**, **13.00 ~ 15.25** support *(protobuf)*  
 - Market rewritten (compatible with TFS and Canary)  
 - Async Texture Loading *(engine-level feature)*  
 - Supports sequenced packages and compression  
@@ -399,7 +399,7 @@ If it doesn't work, enable **curl**:
 - Blessing  
 - Screenshot  
 - Highscores  
-- Store *(compatible with 1098, 12.91 ~ 15.24)*  
+- Store *(compatible with 1098, 12.91 ~ 15.25)*  
 - QuickLoot  
 - Groups Vip  
 - Reward Wall *(Daily Rewards)*
@@ -567,12 +567,19 @@ Found a bug? Please create an issue in our **[bug tracker](https://github.com/me
 ## <a id="roadmap"></a>❤️ Roadmap
 | TO-DO list | Status | PR |
 |---|---|---|
-| Sound tibia 13 | ![](https://geps.dev/progress/80) | [#1098](https://github.com/mehah/otclient/pull/1098) |
-| Prey and tasks | ![](https://geps.dev/progress/10) | [#1380](https://github.com/mehah/otclient/pull/1380) |
-| Compendium | ![](https://geps.dev/progress/15) | [#1625](https://github.com/mehah/otclient/pull/1625) |
-| Party List | ![](https://geps.dev/progress/0) | None |
-| Proficiency | ![](https://geps.dev/progress/80) | [#1593](https://github.com/mehah/otclient/pull/1593) |
-| New Imbui 15x/14x | ![](https://geps.dev/progress/80) | [#1616](https://github.com/mehah/otclient/pull/1616) |
+| 11.50 - Loot Container | ![](https://geps.dev/progress/0) | None |
+| 11.80 - Cyclopedia Map | ![](https://geps.dev/progress/0) | None |
+| 12.20 - Search Locker | ![](https://geps.dev/progress/0) | None |
+| 12.20 - Party List | ![](https://geps.dev/progress/0) | None |
+| 12.30 - Prey Hunt + Tracker | ![](https://geps.dev/progress/0) | None |
+| 12.90 - Podium System | ![](https://geps.dev/progress/0) | None |
+| 14.12 - Quickloot Keybind | ![](https://geps.dev/progress/0) | None |
+| 14.12 - Cyclopedia Magical Archive | ![](https://geps.dev/progress/5) | [#1676](https://github.com/opentibiabr/otclient/pull/1676) |
+| 15.00 - Aim At A Target | ![](https://geps.dev/progress/0) | None |
+| 15.12 - UI Map Conditions | ![](https://geps.dev/progress/0) | None |
+| 15.14 - Battle List Keybinds | ![](https://geps.dev/progress/0) | None |
+| 15.25 - Protocol Features | ![](https://geps.dev/progress/100) | [#1604](https://github.com/opentibiabr/otclient/pull/1604) |
+
 
 ---
 
@@ -587,7 +594,7 @@ Found a bug? Please create an issue in our **[bug tracker](https://github.com/me
 | TFS 1.6 (13.10) | Main repo otland (2024) | [See wiki](https://github.com/mehah/otclient/wiki/Tutorial-to-Use-OTC-in-TFS-main) | ✅ |
 | Canary (13.21 / 13.32 / 13.40) | OpenTibiaBr | [See Wiki](https://github.com/opentibiabr/otclient/wiki/Tutorial-to-use-OTC-in-Canary-main) | ✅ |
 | Canary (14.00 ~ 14.12) | OpenTibiaBr | [See Wiki](https://github.com/opentibiabr/otclient/wiki/Tutorial-to-use-OTC-in-Canary-main) | ✅ |
-| Canary (15.00 ~ 15.24) | OpenTibiaBr | [See Wiki](https://github.com/opentibiabr/otclient/wiki/Tutorial-to-use-OTC-in-Canary-main) | ✅ |
+| Canary (15.00 ~ 15.25) | OpenTibiaBr | [See Wiki](https://github.com/opentibiabr/otclient/wiki/Tutorial-to-use-OTC-in-Canary-main) | ✅ |
 
 ---
 

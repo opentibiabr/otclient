@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "framework/otml/otmldocument.h"
+#include "framework/ui/uimanager.h"
 
 #include <sstream>
 #include <string>
@@ -72,6 +73,98 @@ DerivedPanel < UIWidget
     EXPECT_EQ("#33AAFF", aliases.at("secondaryColor"));
     EXPECT_EQ(aliases.end(), aliases.find("panelAccent"));
     EXPECT_EQ(aliases.end(), aliases.find("headerAccent"));
+}
+
+TEST(OTMLAlias, SharesRootAliasesAcrossDocumentsWithoutExportingInheritedOrNestedAliases)
+{
+    std::istringstream variables("&var-font: Verdana Bold-11px\n&var-color: #dfdfdf\n");
+    const auto globals = OTMLDocument::parse(variables, "0-vars.otui");
+    ASSERT_EQ(2u, globals->globalAliases().size());
+
+    std::istringstream style("Label < UILabel\n  font: $var-font\n  color: $var-color\n  &local: #123456\n  border-color: $local\n");
+    const auto styleDoc = OTMLDocument::parse(style, "10-labels.otui", globals->globalAliases());
+    const auto label = findStyleByTag(styleDoc, "Label < UILabel");
+    ASSERT_NE(nullptr, label);
+    EXPECT_EQ("Verdana Bold-11px", label->valueAt("font"));
+    EXPECT_EQ("#dfdfdf", label->valueAt("color"));
+    EXPECT_EQ("#123456", label->valueAt("border-color"));
+    EXPECT_TRUE(styleDoc->globalAliases().empty());
+
+    std::istringstream moduleUI("ModuleWidget\n  color: $var-color\n");
+    const auto moduleDoc = OTMLDocument::parse(moduleUI, "modules/example/window.otui", globals->globalAliases());
+    EXPECT_EQ("#dfdfdf", moduleDoc->get("ModuleWidget")->valueAt("color"));
+
+    std::istringstream overrideUI("&var-color: #abcdef\nModuleWidget\n  color: $var-color\n");
+    const auto overrideDoc = OTMLDocument::parse(overrideUI, "modules/other/window.otui", globals->globalAliases());
+    EXPECT_EQ("#abcdef", overrideDoc->get("ModuleWidget")->valueAt("color"));
+    EXPECT_EQ("#abcdef", overrideDoc->globalAliases().at("var-color"));
+    EXPECT_EQ("#dfdfdf", globals->globalAliases().at("var-color"));
+}
+
+TEST(OTMLAlias, ResolvesGeneratedCssStylesUsingImportedGlobals)
+{
+    UIManager ui;
+    std::istringstream variables(
+        "&var-cip-font-new: Verdana Bold-11px-new\n"
+        "&var-color: #dfdfdf\n"
+        "&var-hover-color: $var-color\n");
+    ui.importStyleFromOTML(OTMLDocument::parse(variables, "0-vars.otui"));
+
+    const auto styles = OTMLNode::create();
+    styles->writeAt("font", "$var-cip-font-new");
+    styles->writeAt("color", "$var-color");
+    styles->writeAt("width", "100px");
+    styles->writeAt("text", "Price: $10");
+    const auto hover = OTMLNode::create("$hover");
+    hover->writeAt("color", "$var-hover-color");
+    styles->addChild(hover);
+
+    ui.resolveStyleAliases(styles);
+
+    EXPECT_EQ("Verdana Bold-11px-new", styles->valueAt("font"));
+    EXPECT_EQ("#dfdfdf", styles->valueAt("color"));
+    EXPECT_EQ("100px", styles->valueAt("width"));
+    EXPECT_EQ("Price: $10", styles->valueAt("text"));
+    EXPECT_EQ("$hover", hover->tag());
+    EXPECT_EQ("#dfdfdf", hover->valueAt("color"));
+}
+
+TEST(OTMLAlias, PreservesInvalidGeneratedCssAliases)
+{
+    UIManager ui;
+    std::istringstream variables("&first: $second\n&second: $first\n");
+    ui.importStyleFromOTML(OTMLDocument::parse(variables, "circular-vars.otui"));
+    const auto styles = OTMLNode::create();
+    styles->writeAt("font", "$missing-font");
+    styles->writeAt("color", "$first");
+
+    ui.resolveStyleAliases(styles);
+
+    EXPECT_EQ("$missing-font", styles->valueAt("font"));
+    EXPECT_EQ("$first", styles->valueAt("color"));
+}
+
+TEST(OTMLAlias, ResolvesGeneratedCssAliasesWithoutExportingLocalDefinitions)
+{
+    UIManager ui;
+    std::istringstream variables("&var-color: #dfdfdf\n");
+    ui.importStyleFromOTML(OTMLDocument::parse(variables, "0-vars.otui"));
+    const auto localStyles = OTMLNode::create();
+    localStyles->writeAt("&var-color", "#123456");
+    localStyles->writeAt("color", "$var-color");
+    ui.resolveStyleAliases(localStyles);
+    EXPECT_EQ("#123456", localStyles->valueAt("color"));
+
+    const auto styles = OTMLNode::create();
+    styles->writeAt("color", "$var-color");
+    ui.resolveStyleAliases(styles);
+    EXPECT_EQ("#dfdfdf", styles->valueAt("color"));
+
+    ui.clearStyles();
+    const auto afterClear = OTMLNode::create();
+    afterClear->writeAt("color", "$var-color");
+    ui.resolveStyleAliases(afterClear);
+    EXPECT_EQ("$var-color", afterClear->valueAt("color"));
 }
 
 TEST(OTMLAlias, CircularReferenceDetection)

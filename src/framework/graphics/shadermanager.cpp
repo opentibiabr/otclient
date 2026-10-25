@@ -22,6 +22,7 @@
 
 #include "shadermanager.h"
 
+#include "drawpoolmanager.h"
 #include "paintershaderprogram.h"
 #include "framework/core/eventdispatcher.h"
 #include "framework/core/resourcemanager.h"
@@ -45,6 +46,7 @@ void ShaderManager::init() { PainterShaderProgram::release(); }
 void ShaderManager::terminate() { clear(); }
 
 void ShaderManager::clear() {
+    g_drawPool.setScreenShader(nullptr);
     m_shaders.clear();
     m_shadersVector.clear();
 }
@@ -161,6 +163,13 @@ void ShaderManager::setupTextShader(const std::string_view name)
         if (!shader) return;
         shader->bindUniformLocation(TEXT_OFFSET_UNIFORM, "u_Offset");
         shader->bindUniformLocation(TEXT_CENTER_UNIFORM, "u_Center");
+    });
+}
+
+void ShaderManager::setScreenShader(const std::string_view name)
+{
+    g_mainDispatcher.addEvent([this, shaderName = std::string(name)] {
+        g_drawPool.setScreenShader(shaderName.empty() ? nullptr : getShader(shaderName));
     });
 }
 

@@ -33,19 +33,19 @@ OTMLDocumentPtr OTMLDocument::create()
     return doc;
 }
 
-OTMLDocumentPtr OTMLDocument::parse(const std::string& fileName)
+OTMLDocumentPtr OTMLDocument::parse(const std::string& fileName, const std::unordered_map<std::string, std::string>& aliases)
 {
     std::stringstream fin;
     const auto& source = g_resources.resolvePath(fileName);
     g_resources.readFileStream(source, fin);
-    return parse(fin, source);
+    return parse(fin, source, aliases);
 }
 
-OTMLDocumentPtr OTMLDocument::parse(std::istream& in, const std::string_view source)
+OTMLDocumentPtr OTMLDocument::parse(std::istream& in, const std::string_view source, const std::unordered_map<std::string, std::string>& aliases)
 {
     const auto& doc(OTMLDocumentPtr(new OTMLDocument));
     doc->setSource(source);
-    OTMLParser parser(doc, in);
+    OTMLParser parser(doc, in, aliases);
     parser.parse();
     return doc;
 }

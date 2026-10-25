@@ -2,7 +2,7 @@
     .content {
         padding: 40;
         width: 200px;
-        height: 125px;
+        height: 160px;
     }
 
     select {
@@ -12,6 +12,7 @@
 </style>
 <html>
 <window focusable="false" class="content" placement="top-left" title="Shaders: Map / Outfit / Mount / Text">
+    <select id="clientComboBox" onchange="self:onClientComboBoxChange(event)"></select>
     <select id="mapComboBox" onchange="self:onMapComboBoxChange(event)"></select>
     <select id="outfitComboBox" onchange="self:onOutfitComboBoxChange(event)"></select>
     <select id="mountComboBox" onchange="self:onMountComboBoxChange(event)"></select>

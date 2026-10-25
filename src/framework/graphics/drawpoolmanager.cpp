@@ -24,6 +24,7 @@
 
 #include "graphics.h"
 #include "painter.h"
+#include "shadermanager.h"
 #include "textureatlas.h"
 #include <framework/core/configmanager.h>
 
@@ -72,8 +73,11 @@ void DrawPoolManager::init(const uint16_t spriteSize)
     }
 }
 
-void DrawPoolManager::terminate() const
+void DrawPoolManager::terminate()
 {
+    m_screenShader = nullptr;
+    m_screenFramebuffer = nullptr;
+
     // Destroy Pools
     for (int_fast8_t i = -1; ++i < static_cast<uint8_t>(DrawPoolType::LAST);) {
         delete m_pools[i];
@@ -95,8 +99,37 @@ void DrawPoolManager::draw()
         g_painter->setResolution(m_size, m_transformMatrix);
     }
 
+    // Pools below blit into this texture instead of the backbuffer, then one shader covers the whole window.
+    const bool postProcess = m_screenShader && !m_size.isEmpty();
+    if (postProcess) {
+        if (!m_screenFramebuffer) {
+            m_screenFramebuffer = std::make_shared<FrameBuffer>();
+            m_screenFramebuffer->setSmooth(false);
+            m_screenFramebuffer->setAutoClear(false);
+            m_screenFramebuffer->disableBlend();
+            m_screenFramebuffer->m_isScene = true;
+        }
+
+        if (!m_screenFramebuffer->isValid() || m_screenFramebuffer->getSize() != m_size)
+            m_screenFramebuffer->resize(m_size);
+
+        m_screenFramebuffer->bind();
+        g_painter->clear(Color::black);
+    }
+
     for (int8_t i = -1; ++i < static_cast<uint8_t>(DrawPoolType::LAST);) {
         drawPool(static_cast<DrawPoolType>(i));
+    }
+
+    if (postProcess) {
+        m_screenFramebuffer->release();
+        g_painter->resetState();
+        g_painter->setAlphaWriting(true);
+        g_painter->setShaderProgram(m_screenShader);
+        m_screenShader->bind();
+        m_screenShader->setUniformValue(ShaderManager::MAP_WALKOFFSET, 0.f, 0.f);
+        m_screenFramebuffer->draw(Rect(0, 0, m_size));
+        g_painter->resetShaderProgram();
     }
 }
 
