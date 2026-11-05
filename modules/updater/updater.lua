@@ -6,6 +6,10 @@ local updaterWindow
 local loadModulesFunction
 local scheduledEvent
 local httpOperationId = 0
+local changeUrlDialog
+local updaterPaused = false
+local updaterProgress = 0
+local resumeUpdaterProgress
 
 local function onLog(level, message, time)
   if level == LogError then
@@ -200,6 +204,13 @@ end
 function Updater.abort(terminate)
   HTTP.cancel(httpOperationId)
   removeEvent(scheduledEvent)
+  updaterPaused = false
+  resumeUpdaterProgress = nil
+  if changeUrlDialog then
+    local dialog = changeUrlDialog
+    changeUrlDialog = nil
+    dialog:destroy()
+  end
   if updaterWindow then
     updaterWindow:destroy()
     updaterWindow = nil
@@ -213,6 +224,10 @@ end
 function Updater.check(args)
   if updaterWindow then return end
 
+  updaterPaused = false
+  updaterProgress = 0
+  resumeUpdaterProgress = nil
+
   updaterWindow = g_ui.displayUI('updater')
   updaterWindow:show()
   updaterWindow:focus()
@@ -224,6 +239,12 @@ function Updater.check(args)
   local canWaitForCustomUrl = g_platform.isMobile() and allowCustomServers and loadModulesFunction
   local function progressUpdater(value)
     removeEvent(scheduledEvent)
+    scheduledEvent = nil
+    if updaterPaused then
+      updaterProgress = value
+      return
+    end
+    updaterProgress = value
     if value == 100 then
       return Updater.error(tr("Timeout"))
     end
@@ -232,6 +253,11 @@ function Updater.check(args)
     end
     scheduledEvent = scheduleEvent(function() progressUpdater(value + 1) end, 100)
     updaterWindow.mainProgress:setPercent(value)
+  end
+  resumeUpdaterProgress = function()
+    if not updaterPaused or not updaterWindow then return end
+    updaterPaused = false
+    progressUpdater(updaterProgress)
   end
   progressUpdater(0)
 
@@ -272,7 +298,7 @@ Updater.enableChangeUrl = not g_platform.isMobile()
 -- [ ] 7. Verify update process cancellation works correctly
 
 function Updater.changeUrl()
-  if not updaterWindow then
+  if not updaterWindow or changeUrlDialog then
     return
   end
 
@@ -289,6 +315,21 @@ function Updater.changeUrl()
   end
 
   local dialog = g_ui.createWidget('ChangeUrlDialog', rootWidget)
+  changeUrlDialog = dialog
+  updaterPaused = true
+  removeEvent(scheduledEvent)
+  scheduledEvent = nil
+  dialog.onEscape = function()
+    dialog:destroy()
+  end
+  dialog.onDestroy = function()
+    if changeUrlDialog == dialog then
+      changeUrlDialog = nil
+      if updaterPaused and resumeUpdaterProgress then
+        resumeUpdaterProgress()
+      end
+    end
+  end
   local textEdit = dialog:recursiveGetChildById('urlInput')
   textEdit:setText(Services.updater or '')
   local okButton = dialog:recursiveGetChildById('okButton')
@@ -297,6 +338,7 @@ function Updater.changeUrl()
     newUrl = newUrl and newUrl:match("^%s*(.-)%s*$") or ""
     if newUrl:match("^https?://[^%s/]+[^%s]*$") then
       -- Cancel current update process before restarting with new URL
+      updaterPaused = false
       removeEvent(scheduledEvent)
       HTTP.cancel(httpOperationId)
       Services.updater = newUrl
@@ -313,6 +355,7 @@ function Updater.changeUrl()
   local restartButton = dialog:recursiveGetChildById('restartButton')
   restartButton.onClick = function()
     -- Cancel current update process before restarting
+    updaterPaused = false
     removeEvent(scheduledEvent)
     HTTP.cancel(httpOperationId)
     dialog:destroy()
