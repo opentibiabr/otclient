@@ -127,17 +127,20 @@ connect(const LuaObjectPtr& obj, std::string_view field, const Lambda& f, bool p
 template<typename T>
 void LuaObject::connectLuaField(const std::string_view field, const std::function<T>& f, const bool pushFront)
 {
+    bool handlerAssociated = false;
     luaGetField(field);
     if (g_lua.isTable()) {
         if (pushFront)
             g_lua.pushInteger(1);
         push_luavalue(f);
         g_lua.callGlobalField("table", "insert");
+        handlerAssociated = true;
     } else {
         if (g_lua.isNil()) {
             push_luavalue(f);
             luaSetField(field);
             g_lua.pop();
+            handlerAssociated = true;
         } else if (g_lua.isFunction()) {
             g_lua.newTable();
             g_lua.insert(-2);
@@ -145,8 +148,12 @@ void LuaObject::connectLuaField(const std::string_view field, const std::functio
             push_luavalue(f);
             g_lua.rawSeti(2);
             luaSetField(field);
+            handlerAssociated = true;
         }
     }
+
+    if (handlerAssociated)
+        m_missingEvents.erase(std::string{ field });
 }
 
 // connect for std::function
