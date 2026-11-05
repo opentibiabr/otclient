@@ -289,9 +289,9 @@ function Updater.changeUrl()
   end
 
   local dialog = g_ui.createWidget('ChangeUrlDialog', rootWidget)
-  local textEdit = dialog:getChildById('urlInput')
+  local textEdit = dialog:recursiveGetChildById('urlInput')
   textEdit:setText(Services.updater or '')
-  local okButton = dialog:getChildById('okButton')
+  local okButton = dialog:recursiveGetChildById('okButton')
   okButton.onClick = function()
     local newUrl = textEdit:getText()
     newUrl = newUrl and newUrl:match("^%s*(.-)%s*$") or ""
@@ -310,7 +310,7 @@ function Updater.changeUrl()
     end
   end
 
-  local restartButton = dialog:getChildById('restartButton')
+  local restartButton = dialog:recursiveGetChildById('restartButton')
   restartButton.onClick = function()
     -- Cancel current update process before restarting
     removeEvent(scheduledEvent)
