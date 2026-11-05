@@ -39,7 +39,9 @@ local function downloadFiles(url, files, index, retries, doneCallback)
   updaterWindow.downloadProgress:setPercent(0)
   updaterWindow.mainProgress:setPercent(math.floor(100 * index / #files))
 
-  httpOperationId = HTTP.download(url .. file, file,
+  -- Join the download base URL and the manifest path without altering the API endpoint.
+  local baseUrl = url:gsub("/+$", "")
+  httpOperationId = HTTP.download(baseUrl .. "/" .. file:gsub("^/+", ""), file,
     function(file, checksum, err)
       if not err and checksum ~= file_checksum then
         err = "Invalid checksum of: " .. file .. ".\nShould be " .. file_checksum .. ", is: " .. checksum
@@ -81,17 +83,10 @@ local function updateFiles(data, keepCurrentFiles)
     keepCurrentFiles = true
   end
 
-  -- Restrict the local checksum scan to the roots present in the server manifest.
-  -- Without this, filesChecksums() walks the whole resource tree (including
-  -- build artifacts), blocking the UI thread and delaying the download phase.
-  local seen = {}
+  -- Scan only the manifest files. A directory scope reads its whole subtree on the UI thread.
   local scopeList = {}
   for file in pairs(data.files) do
-    local root = file:match("^/?([^/]+)")
-    if root and not seen[root] then
-      seen[root] = true
-      table.insert(scopeList, root)
-    end
+    table.insert(scopeList, file)
   end
 
   local newFiles = false
@@ -270,7 +265,7 @@ Updater.enableChangeUrl = not g_platform.isMobile()
 -- Test Checklist for changeUrl on mobile:
 -- [ ] 1. Verify dialog opens correctly on mobile screen sizes
 -- [ ] 2. Test TextEdit input works with mobile keyboard
--- [ ] 3. Confirm OK button saves URL with trailing slash and restarts updater
+-- [ ] 3. Confirm OK button saves the URL unchanged and restarts updater
 -- [ ] 4. Confirm Restart button restarts updater without changing URL
 -- [ ] 5. Verify dialog closes properly when buttons are clicked
 -- [ ] 6. Test with valid and invalid URLs (missing the http:// or https:// scheme)
@@ -330,10 +325,6 @@ function Updater.changeUrl()
       -- Cancel current update process before restarting with new URL
       removeEvent(scheduledEvent)
       HTTP.cancel(httpOperationId)
-      -- Normalize URL to ensure trailing slash
-      if not newUrl:match("/$") then
-        newUrl = newUrl .. "/"
-      end
       Services.updater = newUrl
       dialog:destroy()
       -- Restart updater with new URL
