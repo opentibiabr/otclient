@@ -68,13 +68,13 @@ if (!is_string($platform)) {
 }
 $binary = $binaries[$platform] ?? "";
 
+$dir = realpath($files_dir);
+if (!$dir || !is_dir($dir)) {
+    sendError("Server configuration error: files directory not found");
+}
+
 $cache = readFreshCache($cache_file, $checksum_update_interval);
 if (!$cache) { // update cache
-    $dir = realpath($files_dir);
-    if (!$dir || !is_dir($dir)) {
-        sendError("Server configuration error: files directory not found");
-    }
-
     // File locking to prevent race conditions
     $lock_file = $cache_file . ".lock";
     $lock = fopen($lock_file, "w");
