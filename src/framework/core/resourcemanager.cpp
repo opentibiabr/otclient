@@ -325,28 +325,49 @@ void ResourceManager::terminate()
 bool ResourceManager::discoverWorkDir(const std::string& existentFile)
 {
     // search for modules directory
-    std::string possiblePaths[] = { g_platform.getCurrentDir(),
-                                    g_resources.getBaseDir(),
-                                    g_resources.getBaseDir() + "/game_data/",
-                                    g_resources.getBaseDir() + "../",
-                                    g_resources.getBaseDir() + "../share/" + g_app.getCompactName() + "/",
-                                    };
-
-    bool found = false;
-    for (const auto& dir : possiblePaths) {
+    const auto tryMountWorkDir = [&](const std::string& dir) {
         if (!PHYSFS_mount(dir.c_str(), nullptr, 0))
-            continue;
+            return false;
 
         if (PHYSFS_exists(existentFile.c_str())) {
             g_logger.debug("Found work dir at '{}'", dir);
             m_workDir = dir;
-            found = true;
-            break;
+            return true;
         }
         PHYSFS_unmount(dir.c_str());
+        return false;
+    };
+
+    const std::string possiblePaths[] = { g_platform.getCurrentDir(),
+                                          g_resources.getBaseDir(),
+                                          g_resources.getBaseDir() + "/game_data/",
+                                          g_resources.getBaseDir() + "../",
+                                          g_resources.getBaseDir() + "../share/" + g_app.getCompactName() + "/" };
+
+    for (const auto& dir : possiblePaths) {
+        if (tryMountWorkDir(dir))
+            return true;
     }
 
-    return found;
+#if defined(__APPLE__)
+    // When launched from Finder, the current directory is not the source or
+    // install directory. Check bundle resources, then walk up from the app
+    // executable to find a colocated modules directory.
+    auto directory = m_binaryPath.parent_path();
+    const auto resourcesDirectory = directory.parent_path() / "Resources";
+    if (tryMountWorkDir(resourcesDirectory.generic_string() + "/"))
+        return true;
+
+    while (!directory.empty()) {
+        if (directory == directory.root_path())
+            break;
+        if (tryMountWorkDir(directory.generic_string() + "/"))
+            return true;
+        directory = directory.parent_path();
+    }
+#endif
+
+    return false;
 }
 
 bool ResourceManager::setupUserWriteDir(const std::string& appWriteDirName)
