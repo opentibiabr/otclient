@@ -288,36 +288,10 @@ function Updater.changeUrl()
     return
   end
 
-  local dialog = g_ui.createWidget('MainWindow', rootWidget)
-  dialog:setId('changeUrlDialog')
-  dialog:setText(tr('Change Updater URL'))
-  dialog:setSize({
-    width = 400,
-    height = 120
-  })
-
-  local layout = g_ui.createWidget('VerticalBox', dialog)
-  layout:setId('layout')
-  layout:addAnchor(AnchorTop, 'parent', AnchorTop)
-  layout:addAnchor(AnchorLeft, 'parent', AnchorLeft)
-  layout:addAnchor(AnchorRight, 'parent', AnchorRight)
-  layout:setMarginTop(30)
-  layout:setMarginLeft(10)
-  layout:setMarginRight(10)
-
-  local textEdit = g_ui.createWidget('TextEdit', layout)
-  textEdit:setId('urlInput')
+  local dialog = g_ui.createWidget('ChangeUrlDialog', rootWidget)
+  local textEdit = dialog:getChildById('urlInput')
   textEdit:setText(Services.updater or '')
-  textEdit:setHeight(20)
-
-  local buttonBox = g_ui.createWidget('HorizontalBox', layout)
-  buttonBox:setMarginTop(10)
-  buttonBox:setHeight(25)
-
-  local okButton = g_ui.createWidget('Button', buttonBox)
-  okButton:setText(tr('OK'))
-  okButton:setWidth(80)
-  okButton:setMarginRight(5)
+  local okButton = dialog:getChildById('okButton')
   okButton.onClick = function()
     local newUrl = textEdit:getText()
     newUrl = newUrl and newUrl:match("^%s*(.-)%s*$") or ""
@@ -336,9 +310,7 @@ function Updater.changeUrl()
     end
   end
 
-  local restartButton = g_ui.createWidget('Button', buttonBox)
-  restartButton:setText(tr('Restart'))
-  restartButton:setWidth(80)
+  local restartButton = dialog:getChildById('restartButton')
   restartButton.onClick = function()
     -- Cancel current update process before restarting
     removeEvent(scheduledEvent)

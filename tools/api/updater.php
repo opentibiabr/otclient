@@ -129,8 +129,6 @@ if (!$cache) { // update cache
 $ret = array("url" => $files_url, "files" => array(), "keepFiles" => false);
 $binary_file = null;
 $binary_checksum = null;
-$binary_depth = PHP_INT_MAX;
-$binary_ambiguous = false;
 
 foreach ($cache as $file => $checksum) {
     $base = trim(explode("/", ltrim($file, "/"))[0]);
@@ -138,28 +136,23 @@ foreach ($cache as $file => $checksum) {
         $ret["files"][$file] = $checksum;
     }
 
-    // Match the configured binary path (or basename) without letting a nested
-    // duplicate override the shallowest match, or silently win an ambiguous one.
+    // A bare executable name is only valid at the update root. Selecting by
+    // basename anywhere in the tree can mistake an addon/module for the client.
     if (!empty($binary)) {
         $relative = ltrim($file, "/");
-        $matches = strpos($binary, "/") !== false
-            ? $relative === ltrim($binary, "/")
-            : basename($relative) === $binary;
+        $configured_binary = str_replace("\\", "/", trim($binary));
+        $relative = str_replace("\\", "/", $relative);
+        $matches = strpos($configured_binary, "/") !== false
+            ? $relative === ltrim($configured_binary, "/")
+            : $relative === $configured_binary;
         if ($matches) {
-            $depth = substr_count($relative, "/");
-            if ($depth < $binary_depth) {
-                $binary_file = $file;
-                $binary_checksum = $checksum;
-                $binary_depth = $depth;
-                $binary_ambiguous = false;
-            } elseif ($depth === $binary_depth) {
-                $binary_ambiguous = true;
-            }
+            $binary_file = $file;
+            $binary_checksum = $checksum;
         }
     }
 }
 
-if ($binary_file !== null && !$binary_ambiguous) {
+if ($binary_file !== null) {
     $ret["binary"] = array("file" => $binary_file, "checksum" => $binary_checksum);
 }
 
