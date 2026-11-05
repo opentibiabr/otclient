@@ -29,6 +29,28 @@ function sendError($error)
     die();
 }
 
+/**
+ * Read the checksum cache only when it is still within the freshness window.
+ *
+ * Stale or unreadable caches return null so the caller rebuilds them instead
+ * of serving outdated checksums to clients.
+ *
+ * @param string $cache_file Absolute path to the JSON cache file.
+ * @param int    $interval   Maximum accepted cache age in seconds.
+ * @return array|null Decoded cache map, or null when missing, stale or invalid.
+ */
+function readFreshCache($cache_file, $interval)
+{
+    if (!file_exists($cache_file)) {
+        return null;
+    }
+    if (filemtime($cache_file) + $interval <= time()) {
+        return null;
+    }
+    $cache = json_decode(file_get_contents($cache_file), true);
+    return is_array($cache) && $cache ? $cache : null;
+}
+
 $data = json_decode(file_get_contents("php://input"));
 if (!$data || !is_object($data)) {
     sendError("Invalid input data");
@@ -44,11 +66,7 @@ if (!is_string($platform)) {
 }
 $binary = $binaries[$platform] ?? "";
 
-$cache = null;
-$cache_file = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $checksum_file;
-if (file_exists($cache_file) && (filemtime($cache_file) + $checksum_update_interval > time())) {
-    $cache = json_decode(file_get_contents($cache_file), true);
-}
+$cache = readFreshCache($cache_file, $checksum_update_interval);
 if (!$cache) { // update cache
     $dir = realpath($files_dir);
     if (!$dir || !is_dir($dir)) {
@@ -66,18 +84,14 @@ if (!$cache) { // update cache
         if (!flock($lock, LOCK_EX | LOCK_NB)) {
             // Another process is updating cache, wait and use existing cache
             usleep(100000); // 100ms
-            if (file_exists($cache_file)) {
-                $cache = json_decode(file_get_contents($cache_file), true);
-            }
+            $cache = readFreshCache($cache_file, $checksum_update_interval);
             if (!$cache) {
                 // Wait for the lock if cache still not available
                 if (!flock($lock, LOCK_EX)) {
                     sendError("Server error: could not acquire cache lock");
                 }
                 // Re-check cache after acquiring lock
-                if (file_exists($cache_file)) {
-                    $cache = json_decode(file_get_contents($cache_file), true);
-                }
+                $cache = readFreshCache($cache_file, $checksum_update_interval);
             }
         }
 

@@ -321,7 +321,7 @@ function Updater.changeUrl()
   okButton.onClick = function()
     local newUrl = textEdit:getText()
     newUrl = newUrl and newUrl:match("^%s*(.-)%s*$") or ""
-    if newUrl:match("^https?://[^%s/]+") then
+    if newUrl:match("^https?://[^%s/]+[^%s]*$") then
       -- Cancel current update process before restarting with new URL
       removeEvent(scheduledEvent)
       HTTP.cancel(httpOperationId)
