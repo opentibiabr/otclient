@@ -99,6 +99,9 @@ public:
 
 private:
     int m_fieldsTableRef;
+    // Events that have been found at least once. Keep positive knowledge so a
+    // temporarily removed class handler does not become a permanent miss.
+    std::unordered_map<std::string, bool> m_events;
 
     /// Fields that were looked up and did not exist, stamped with the
     /// generation in which the lookup happened. A stamp older than the current
@@ -245,10 +248,17 @@ void LuaObject::callLuaField(const std::string_view field, const T&... args)
         g_lua.pop(rets);
 
     // -1 means the field did not exist; 0 or more means a handler ran.
-    if (rets == -1)
-        m_missingEvents[fieldStr] = s_eventCacheGeneration;
-    else
+    if (rets == -1) {
+        // A class handler can be removed and restored by direct table writes,
+        // which do not pass through connect() and cannot invalidate globally.
+        // Preserve the old positive-cache behavior for events seen before.
+        const auto knownEvent = m_events.find(fieldStr);
+        if (knownEvent == m_events.end() || !knownEvent->second)
+            m_missingEvents[fieldStr] = s_eventCacheGeneration;
+    } else {
+        m_events[fieldStr] = true;
         m_missingEvents.erase(fieldStr);
+    }
 }
 
 template<typename... T>
