@@ -95,6 +95,8 @@ public:
     bool extractDownloadedArchiveToWorkDir(const std::string& path, std::string destinationPath, const std::string& entryPrefix, bool stripPrefix);
     bool extractDownloadedZip(const std::string& path, std::string destinationPath, const std::string& entryPrefix, bool stripPrefix);
     bool writeFileContentsToWorkDir(const std::string& fileName, const std::string& data);
+    /// Computes CRC32 checksums for the files under the given virtual roots.
+    /// Passing an empty list keeps the legacy full-scan from "/" behavior.
     std::unordered_map<std::string, std::string> filesChecksums(const std::vector<std::string>& scopePaths = {});
     std::string selfChecksum();
     void updateFiles(const std::set<std::string>& files);

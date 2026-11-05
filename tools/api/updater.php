@@ -17,6 +17,12 @@ $binaries = array(
 );
 // CONFIG END
 
+/**
+ * Send a JSON error response and stop execution.
+ *
+ * @param string $error Human-readable error message.
+ * @return never
+ */
 function sendError($error)
 {
     echo (json_encode(array("error" => $error)));

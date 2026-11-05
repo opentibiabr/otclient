@@ -263,8 +263,9 @@ function Updater.error(message)
 end
 
 -- TODO: [MOBILE-TEST] Mobile testing required for changeUrl functionality.
--- The button is hidden on mobile; this flag allows disabling the flow entirely.
-Updater.enableChangeUrl = true
+-- The button is hidden on mobile; keep the flow disabled there until the
+-- manual checklist below is verified.
+Updater.enableChangeUrl = not g_platform.isMobile()
 
 -- Test Checklist for changeUrl on mobile:
 -- [ ] 1. Verify dialog opens correctly on mobile screen sizes
@@ -283,6 +284,12 @@ function Updater.changeUrl()
   -- Guard: only allow if feature flag is enabled
   if not Updater.enableChangeUrl then
     g_logger.warning("Updater.changeUrl is disabled. Set Updater.enableChangeUrl = true to enable.")
+    return
+  end
+
+  -- Mobile testing is still pending; never expose the flow there.
+  if g_platform.isMobile() then
+    g_logger.warning("Updater.changeUrl is not available on mobile until the manual test checklist is verified.")
     return
   end
 
