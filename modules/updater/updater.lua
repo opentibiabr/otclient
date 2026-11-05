@@ -96,7 +96,10 @@ local function updateFiles(data, keepCurrentFiles)
   local newFiles = false
   local finalFiles = {}
   local localFiles = g_resources.filesChecksums(scopeList)
-
+local localFiles = {}
+if next(scopeList) then
+    localFiles = g_resources.filesChecksums(scopeList)
+end
   local toUpdate = {}
   local toUpdateFiles = {}
   -- keep all files or files from data/things
