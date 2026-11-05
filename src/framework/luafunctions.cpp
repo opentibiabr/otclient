@@ -289,6 +289,7 @@ void Application::registerLuaFunctions()
         std::vector<std::string> scopePaths;
         if (lua->getTop() >= 1 && !lua->isNil(1))
             scopePaths = lua->castValue<std::vector<std::string>>(1);
+        lua->clearStack();
         return lua->polymorphicPush(g_resources.filesChecksums(scopePaths));
     });
     g_lua.bindSingletonFunction("g_resources", "selfChecksum", &ResourceManager::selfChecksum, &g_resources);
