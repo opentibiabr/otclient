@@ -4,6 +4,7 @@ $files_dir = "C:/UniServerZ/www/files"; // Directory where the files are located
 $files_url = "http://localhost/files"; // Url where the client will download the files
 $files_and_dirs = array("init.lua", "data", "modules", "mods");
 $checksum_file = "checksums.txt";
+$cache_file = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $checksum_file;
 $checksum_update_interval = 60; // seconds
 $binaries = array(
     "WIN32-WGL" => "otclient_x64.exe",
