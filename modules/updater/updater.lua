@@ -73,33 +73,34 @@ local function updateFiles(data, keepCurrentFiles)
     return Updater.error(data.error)
   end
 
-  if not data.files or type(data.url) ~= 'string' or data.url:len() < 4 then
+  if type(data.files) ~= 'table' or type(data.url) ~= 'string' or data.url:len() < 4 then
     return Updater.error("Invalid data from updater api: " .. json.encode(data, 2))
   end
 
   if data.keepFiles then
     keepCurrentFiles = true
   end
-  
-  -- Restrict local scan to the same roots as the server.
-  -- Basically gets the root folder of each directory. E.g.: "/data/things" ---> "data"
+
+  -- Restrict the local checksum scan to the roots present in the server manifest.
+  -- Without this, filesChecksums() walks the whole resource tree (including
+  -- build artifacts), blocking the UI thread and delaying the download phase.
   local seen = {}
   local scopeList = {}
   for file in pairs(data.files) do
-      local root = file:match("^/?([^/]+)")
-      if root and not seen[root] then
+    local root = file:match("^/?([^/]+)")
+    if root and not seen[root] then
       seen[root] = true
       table.insert(scopeList, root)
-      end
+    end
   end
-  
+
   local newFiles = false
   local finalFiles = {}
-  local localFiles = g_resources.filesChecksums(scopeList)
-local localFiles = {}
-if next(scopeList) then
+  -- An empty scope would make filesChecksums() fall back to scanning "/".
+  local localFiles = {}
+  if #scopeList > 0 then
     localFiles = g_resources.filesChecksums(scopeList)
-end
+  end
   local toUpdate = {}
   local toUpdateFiles = {}
   -- keep all files or files from data/things
@@ -224,12 +225,14 @@ function Updater.check(args)
 
   local updateData = nil
   local allowCustomServers = ALLOW_CUSTOM_SERVERS or false
+  -- Mobile clients with custom servers get some time to set the updater URL.
+  local canWaitForCustomUrl = g_platform.isMobile() and allowCustomServers and loadModulesFunction
   local function progressUpdater(value)
     removeEvent(scheduledEvent)
     if value == 100 then
       return Updater.error(tr("Timeout"))
     end
-    if updateData and (value > 60 or (not g_platform.isMobile() or not allowCustomServers or not loadModulesFunction)) then -- gives 3s to set custom updater for mobile version
+    if updateData and (value > 60 or not canWaitForCustomUrl) then -- gives 6s to set custom updater for mobile version
       return updateFiles(updateData)
     end
     scheduledEvent = scheduleEvent(function() progressUpdater(value + 1) end, 100)
@@ -259,9 +262,9 @@ function Updater.error(message)
   end
 end
 
--- TODO: [MOBILE-TEST] Mobile testing required for changeUrl functionality
--- Feature flag to enable/disable changeUrl (set to false until mobile testing is complete)
-Updater.enableChangeUrl = false
+-- TODO: [MOBILE-TEST] Mobile testing required for changeUrl functionality.
+-- The button is hidden on mobile; this flag allows disabling the flow entirely.
+Updater.enableChangeUrl = true
 
 -- Test Checklist for changeUrl on mobile:
 -- [ ] 1. Verify dialog opens correctly on mobile screen sizes
@@ -269,89 +272,90 @@ Updater.enableChangeUrl = false
 -- [ ] 3. Confirm OK button saves URL with trailing slash and restarts updater
 -- [ ] 4. Confirm Restart button restarts updater without changing URL
 -- [ ] 5. Verify dialog closes properly when buttons are clicked
--- [ ] 6. Test with valid and invalid URLs (less than 5 characters)
+-- [ ] 6. Test with valid and invalid URLs (missing the http:// or https:// scheme)
 -- [ ] 7. Verify update process cancellation works correctly
 
 function Updater.changeUrl()
-    if not updaterWindow then
-        return
+  if not updaterWindow then
+    return
+  end
+
+  -- Guard: only allow if feature flag is enabled
+  if not Updater.enableChangeUrl then
+    g_logger.warning("Updater.changeUrl is disabled. Set Updater.enableChangeUrl = true to enable.")
+    return
+  end
+
+  local dialog = g_ui.createWidget('MainWindow', rootWidget)
+  dialog:setId('changeUrlDialog')
+  dialog:setText(tr('Change Updater URL'))
+  dialog:setSize({
+    width = 400,
+    height = 120
+  })
+
+  local layout = g_ui.createWidget('VerticalBox', dialog)
+  layout:setId('layout')
+  layout:addAnchor(AnchorTop, 'parent', AnchorTop)
+  layout:addAnchor(AnchorLeft, 'parent', AnchorLeft)
+  layout:addAnchor(AnchorRight, 'parent', AnchorRight)
+  layout:setMarginTop(30)
+  layout:setMarginLeft(10)
+  layout:setMarginRight(10)
+
+  local textEdit = g_ui.createWidget('TextEdit', layout)
+  textEdit:setId('urlInput')
+  textEdit:setText(Services.updater or '')
+  textEdit:setHeight(20)
+
+  local buttonBox = g_ui.createWidget('HorizontalBox', layout)
+  buttonBox:setMarginTop(10)
+  buttonBox:setHeight(25)
+
+  local okButton = g_ui.createWidget('Button', buttonBox)
+  okButton:setText(tr('OK'))
+  okButton:setWidth(80)
+  okButton:setMarginRight(5)
+  okButton.onClick = function()
+    local newUrl = textEdit:getText()
+    newUrl = newUrl and newUrl:match("^%s*(.-)%s*$") or ""
+    if newUrl:match("^https?://[^%s/]+") then
+      -- Cancel current update process before restarting with new URL
+      removeEvent(scheduledEvent)
+      HTTP.cancel(httpOperationId)
+      -- Normalize URL to ensure trailing slash
+      if not newUrl:match("/$") then
+        newUrl = newUrl .. "/"
+      end
+      Services.updater = newUrl
+      dialog:destroy()
+      -- Restart updater with new URL
+      if updaterWindow then
+        updaterWindow:destroy()
+        updaterWindow = nil
+      end
+      Updater.check()
     end
+  end
 
-    -- Guard: only allow if feature flag is enabled
-    if not Updater.enableChangeUrl then
-        g_logger.warning("Updater.changeUrl is disabled. Set Updater.enableChangeUrl = true to enable.")
-        return
+  local restartButton = g_ui.createWidget('Button', buttonBox)
+  restartButton:setText(tr('Restart'))
+  restartButton:setWidth(80)
+  restartButton.onClick = function()
+    -- Cancel current update process before restarting
+    removeEvent(scheduledEvent)
+    HTTP.cancel(httpOperationId)
+    dialog:destroy()
+    if updaterWindow then
+      updaterWindow:destroy()
+      updaterWindow = nil
     end
+    -- Restart update process from beginning
+    Updater.check()
+  end
 
-    local dialog = g_ui.createWidget('MainWindow', rootWidget)
-    dialog:setId('changeUrlDialog')
-    dialog:setText(tr('Change Updater URL'))
-    dialog:setSize({
-        width = 400,
-        height = 120
-    })
-
-    local layout = g_ui.createWidget('VerticalBox', dialog)
-    layout:setId('layout')
-    layout:addAnchor(AnchorTop, 'parent', AnchorTop)
-    layout:addAnchor(AnchorLeft, 'parent', AnchorLeft)
-    layout:addAnchor(AnchorRight, 'parent', AnchorRight)
-    layout:setMarginTop(30)
-    layout:setMarginLeft(10)
-    layout:setMarginRight(10)
-
-    local textEdit = g_ui.createWidget('TextEdit', layout)
-    textEdit:setId('urlInput')
-    textEdit:setText(Services.updater or '')
-    textEdit:setHeight(20)
-
-    local buttonBox = g_ui.createWidget('HorizontalBox', layout)
-    buttonBox:setMarginTop(10)
-    buttonBox:setHeight(25)
-
-    local okButton = g_ui.createWidget('Button', buttonBox)
-    okButton:setText(tr('OK'))
-    okButton:setWidth(80)
-    okButton:setMarginRight(5)
-    okButton.onClick = function()
-        local newUrl = textEdit:getText()
-        if newUrl and newUrl:len() > 4 then
-            -- Cancel current update process before restarting with new URL
-            removeEvent(scheduledEvent)
-            HTTP.cancel(httpOperationId)
-            -- Normalize URL to ensure trailing slash
-            if not newUrl:match("/$") then
-                newUrl = newUrl .. "/"
-            end
-            Services.updater = newUrl
-            dialog:destroy()
-            -- Restart updater with new URL
-            if updaterWindow then
-                updaterWindow:destroy()
-                updaterWindow = nil
-            end
-            Updater.check()
-        end
-    end
-
-    local restartButton = g_ui.createWidget('Button', buttonBox)
-    restartButton:setText(tr('Restart'))
-    restartButton:setWidth(80)
-    restartButton.onClick = function()
-        -- Cancel current update process before restarting
-        removeEvent(scheduledEvent)
-        HTTP.cancel(httpOperationId)
-        dialog:destroy()
-        if updaterWindow then
-            updaterWindow:destroy()
-            updaterWindow = nil
-        end
-        -- Restart update process from beginning
-        Updater.check()
-    end
-
-    dialog:show()
-    dialog:focus()
-    dialog:raise()
-    textEdit:focus()
+  dialog:show()
+  dialog:focus()
+  dialog:raise()
+  textEdit:focus()
 end

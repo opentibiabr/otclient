@@ -33,6 +33,9 @@ $build = $data->build ?? ""; // 2.4, 2.4.1, 2.5, etc
 $os = $data->os ?? "unknown"; // android, windows, mac, linux, unknown
 $platform = $data->platform ?? ""; // WIN32-WGL, X11-GLX, ANDROID-EGL, etc
 $args = $data->args ?? []; // custom args when calling Updater.check()
+if (!is_string($platform)) {
+    sendError("Invalid platform");
+}
 $binary = $binaries[$platform] ?? "";
 
 $cache = null;
@@ -78,7 +81,9 @@ if (!$cache) { // update cache
             foreach ($rii as $file) {
                 if (!$file->isFile())
                     continue;
-                $path = str_replace($dir, '', $file->getPathname());
+                // Strip only the leading files directory so nested paths that
+                // repeat the same string are preserved.
+                $path = substr($file->getPathname(), strlen($dir));
                 $path = str_replace(DIRECTORY_SEPARATOR, '/', $path);
                 $checksum = hash_file("crc32b", $file->getPathname());
 
@@ -100,16 +105,40 @@ if (!$cache) { // update cache
     }
 }
 $ret = array("url" => $files_url, "files" => array(), "keepFiles" => false);
+$binary_file = null;
+$binary_checksum = null;
+$binary_depth = PHP_INT_MAX;
+$binary_ambiguous = false;
+
 foreach ($cache as $file => $checksum) {
     $base = trim(explode("/", ltrim($file, "/"))[0]);
     if (in_array($base, $files_and_dirs)) {
         $ret["files"][$file] = $checksum;
     }
-    // Use basename to correctly match binary filename regardless of path
-    $filename = basename($file);
-    if ($filename == $binary && !empty($binary)) {
-        $ret["binary"] = array("file" => $file, "checksum" => $checksum);
+
+    // Match the configured binary path (or basename) without letting a nested
+    // duplicate override the shallowest match, or silently win an ambiguous one.
+    if (!empty($binary)) {
+        $relative = ltrim($file, "/");
+        $matches = strpos($binary, "/") !== false
+            ? $relative === ltrim($binary, "/")
+            : basename($relative) === $binary;
+        if ($matches) {
+            $depth = substr_count($relative, "/");
+            if ($depth < $binary_depth) {
+                $binary_file = $file;
+                $binary_checksum = $checksum;
+                $binary_depth = $depth;
+                $binary_ambiguous = false;
+            } elseif ($depth === $binary_depth) {
+                $binary_ambiguous = true;
+            }
+        }
     }
+}
+
+if ($binary_file !== null && !$binary_ambiguous) {
+    $ret["binary"] = array("file" => $binary_file, "checksum" => $binary_checksum);
 }
 
 $body = json_encode($ret, JSON_PRETTY_PRINT);

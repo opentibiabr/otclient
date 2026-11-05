@@ -1108,10 +1108,10 @@ std::unordered_map<std::string, std::string> ResourceManager::filesChecksums(con
 {
     std::unordered_map<std::string, std::string> ret;
 
-    /** 
+    /**
      * Compatibility: if no scope is passed, keep the
      * old behavior (full scan from "/"). This is
-     * costly and SHOULD NOT be used by the updater — performance-sensitive
+     * costly and SHOULD NOT be used by the updater - performance-sensitive
      * callers must always provide an explicit scope.
      **/
     std::vector<std::string> roots = scopePaths;
@@ -1135,13 +1135,18 @@ std::unordered_map<std::string, std::string> ResourceManager::filesChecksums(con
 
         for (auto& filePath : files) {
             if (ret.contains(filePath))
-				continue; // Already processed this file (it may exist in multiple search paths).
+                continue; // Already processed this file (it may exist in multiple search paths).
 
             PHYSFS_File* file = PHYSFS_openRead(filePath.c_str());
             if (!file)
                 continue;
 
             const int fileSize = PHYSFS_fileLength(file);
+            if (fileSize < 0) {
+                PHYSFS_close(file);
+                continue;
+            }
+
             std::string buffer(fileSize, 0);
             PHYSFS_readBytes(file, &buffer[0], fileSize);
             PHYSFS_close(file);
