@@ -897,6 +897,7 @@ void Client::registerLuaFunctions()
     g_lua.bindClassStaticFunction<AttachedEffect>("create", &AttachedEffect::create);
     g_lua.bindClassMemberFunction<AttachedEffect>("clone", &AttachedEffect::clone);
     g_lua.bindClassMemberFunction<AttachedEffect>("getId", &AttachedEffect::getId);
+    g_lua.bindClassMemberFunction<AttachedEffect>("getThingId", &AttachedEffect::getThingId);
     g_lua.bindClassMemberFunction<AttachedEffect>("getSpeed", &AttachedEffect::getSpeed);
     g_lua.bindClassMemberFunction<AttachedEffect>("setOnTop", &AttachedEffect::setOnTop);
     g_lua.bindClassMemberFunction<AttachedEffect>("setSpeed", &AttachedEffect::setSpeed);

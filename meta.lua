@@ -2356,6 +2356,9 @@ function AttachedEffect:clone() end
 ---@return integer
 function AttachedEffect:getId() end
 
+---@return integer
+function AttachedEffect:getThingId() end
+
 ---@return number
 function AttachedEffect:getSpeed() end
 
