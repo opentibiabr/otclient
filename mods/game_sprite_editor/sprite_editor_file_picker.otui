@@ -1,0 +1,165 @@
+SpriteEditorFileEntry < Button
+  size: 66 62
+  text: ''
+  checkable: true
+  draggable: false
+  anchors.left: parent.left
+  anchors.top: parent.top
+
+  Panel
+    id: filePickerPreviewBackground
+    anchors.fill: parent
+    margin: 2
+    background-color: #363636
+    phantom: true
+
+  Panel
+    id: filePickerThumbnail
+    anchors.centerIn: parent
+    size: 46 46
+    image-size: 46 46
+    image-fixed-ratio: true
+    image-smooth: false
+    phantom: true
+
+  Label
+    id: filePickerFolderLabel
+    anchors.centerIn: parent
+    width: 52
+    height: 18
+    text-align: center
+    text-wrap: false
+    text: 'Folder'
+    phantom: true
+    visible: false
+
+  $on:
+    image-clip: 0 20 43 20
+
+  $pressed:
+    image-clip: 0 20 43 20
+
+  $dragging:
+    opacity: 0.8
+
+MainWindow
+  id: spriteEditorFilePickerWindow
+  size: 360 500
+  !text: tr('Choose a PNG file')
+  anchors.right: parent.right
+  anchors.verticalCenter: parent.verticalCenter
+  margin-right: 8
+
+  @onEscape: modules.game_sprite_editor.closePngFilePicker()
+
+  Label
+    id: filePickerHintLabel
+    !text: tr('Browse folders and select a PNG image.')
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: parent.top
+    height: 18
+    text-wrap: false
+
+  TextEdit
+    id: filePickerPathEdit
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: filePickerHintLabel.bottom
+    margin-top: 4
+    margin-right: 190
+    height: 22
+
+  Button
+    id: filePickerLoadFolderButton
+    !text: tr('Load folder')
+    anchors.right: filePickerOpenFolderButton.left
+    anchors.top: filePickerPathEdit.top
+    margin-right: 4
+    width: 90
+    height: 22
+
+  Button
+    id: filePickerOpenFolderButton
+    !text: tr('Open folder')
+    anchors.right: parent.right
+    anchors.top: filePickerPathEdit.top
+    width: 92
+    height: 22
+    !tooltip: tr('Open this path in your system file manager')
+
+  TextEdit
+    id: filePickerFilterEdit
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: filePickerPathEdit.bottom
+    margin-top: 5
+    height: 22
+    !placeholder: tr('Filter files or folders by name')
+
+  UIScrollArea
+    id: filePickerEntries
+    anchors.left: parent.left
+    anchors.right: filePickerScroll.left
+    anchors.top: filePickerFilterEdit.bottom
+    anchors.bottom: filePickerCountLabel.top
+    margin-top: 5
+    margin-bottom: 4
+    vertical-scrollbar: filePickerScroll
+    auto-focus: none
+
+    Panel
+      id: filePickerContent
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: parent.top
+      height: 1
+      focusable: false
+
+  VerticalScrollBar
+    id: filePickerScroll
+    anchors.top: filePickerFilterEdit.bottom
+    anchors.bottom: filePickerCountLabel.top
+    anchors.right: parent.right
+    margin-top: 5
+    margin-bottom: 4
+    step: 62
+    pixels-scroll: true
+
+  Label
+    id: filePickerCountLabel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: filePickerSelectedLabel.top
+    height: 17
+    text-wrap: false
+
+  Label
+    id: filePickerSelectedLabel
+    anchors.left: parent.left
+    anchors.right: filePickerUseButton.left
+    anchors.bottom: filePickerUseButton.top
+    margin-right: 6
+    margin-bottom: 5
+    height: 30
+    text-wrap: true
+    !text: tr('Click a PNG to select it.')
+
+  Button
+    id: filePickerUseButton
+    !text: tr('Use folder')
+    anchors.right: filePickerCancelButton.left
+    anchors.bottom: parent.bottom
+    margin-right: 5
+    width: 154
+    height: 24
+    enabled: false
+    visible: false
+
+  Button
+    id: filePickerCancelButton
+    !text: tr('Cancel')
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    width: 90
+    height: 24

@@ -86,6 +86,24 @@ public:
     bool isDatLoaded() { return m_datLoaded; }
     bool isValidDatId(const uint16_t id, const ThingCategory category) const { return category < ThingLastCategory && id >= 1 && id < m_thingTypes[category].size(); }
 
+#ifdef FRAMEWORK_EDITOR
+    void invalidateTextureCache();
+    std::string getAppearanceEditorData(int version, int category, int id);
+    std::string getAppearanceEditorSnapshot(int version, int category, int id);
+    bool restoreAppearanceEditorSnapshot(int version, int category, int id, bool present, const std::string& snapshot);
+    bool saveAppearanceEditorData(int version, int category, int id, const std::string& changes);
+    bool replaceAppearanceSprite(int version, int category, int appearanceId,
+                                 int frameGroupIndex, int spriteIndex, int spriteId);
+    int createAppearanceFromSprite(int version, int category, int spriteId);
+    int duplicateAppearance(int version, int category, int sourceId);
+    bool deleteAppearance(int version, int category, int id);
+    std::string exportAppearanceBundle(int version, int category, int id, const std::string& destination);
+    std::string exportAppearanceBundles(int version, int category, const std::string& appearanceIds,
+                                        const std::string& destination);
+    std::string importAppearanceBundle(int version, const std::string& bundleDirectory);
+    std::string importAppearanceBundlesFromDirectory(int version, const std::string& directory);
+#endif
+
 private:
     const nlohmann::json& getCatalogContent(const std::string& file);
     void clearCatalogContent();

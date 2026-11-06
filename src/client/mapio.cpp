@@ -25,6 +25,7 @@
 #include "game.h"
 #include "map.h"
 #include "tile.h"
+#include "thingtypemanager.h"
 
 #include <framework/core/application.h>
 #include <framework/core/binarytree.h>

@@ -23,13 +23,23 @@
 #if !defined(WIN32) && !defined(__EMSCRIPTEN__)
 
 #include "platform.h"
+#include <algorithm>
+#include <cerrno>
 #include <cstring>
+#include <cstdlib>
 #include <fstream>
+#include <filesystem>
+#include <fcntl.h>
 #include <unistd.h>
 #include <framework/stdext/stdext.h>
 #include <framework/core/eventdispatcher.h>
 
 #include <sys/stat.h>
+#include <sys/wait.h>
+
+#ifdef __linux__
+extern char** environ;
+#endif
 
 #ifdef ANDROID
 #include <errno.h>
@@ -66,23 +76,83 @@ bool Platform::spawnProcess(std::string process, const std::vector<std::string>&
     if(stat(process.c_str(), &sts) == -1 && errno == ENOENT)
         return false;
 
-    pid_t pid = fork();
-    if(pid == -1)
-        return false;
+    std::vector<char*> processArgs;
+    processArgs.push_back(process.data());
+    for (const auto& arg : args)
+        processArgs.push_back(const_cast<char*>(arg.c_str()));
+    processArgs.push_back(nullptr);
 
-    if(pid == 0) {
-        std::vector<char*> cargs;
-        cargs.push_back(const_cast<char*>(process.c_str()));
-        for(const auto& arg : args) {
-            cargs.push_back(const_cast<char*>(arg.c_str()));
+#ifdef __linux__
+    const auto executablePath = std::filesystem::path(process);
+    const auto runtimeDirectory = executablePath.parent_path().parent_path() / "runtime";
+    std::error_code filesystemError;
+    const bool hasPrivateRuntime = executablePath.parent_path().filename() == "bin" &&
+        std::filesystem::is_directory(runtimeDirectory, filesystemError) && !filesystemError;
+    std::vector<std::string> environmentStorage;
+    std::vector<char*> processEnvironment;
+    if (hasPrivateRuntime) {
+        const std::string libraryPathVariable = "LD_LIBRARY_PATH=";
+        const char* existingLibraryPath = std::getenv("LD_LIBRARY_PATH");
+        std::string libraryPath = runtimeDirectory.generic_string();
+        if (existingLibraryPath && existingLibraryPath[0] != '\0')
+            libraryPath += ":" + std::string(existingLibraryPath);
+
+        for (char** variable = environ; variable && *variable; ++variable) {
+            if (std::strncmp(*variable, libraryPathVariable.c_str(), libraryPathVariable.size()) != 0)
+                environmentStorage.emplace_back(*variable);
         }
-        cargs.push_back(nullptr);
+        environmentStorage.emplace_back(libraryPathVariable + libraryPath);
+        processEnvironment.reserve(environmentStorage.size() + 1);
+        for (auto& variable : environmentStorage)
+            processEnvironment.push_back(variable.data());
+        processEnvironment.push_back(nullptr);
+    }
+#endif
 
-        execv(process.c_str(), cargs.data());
+    int execStatusPipe[2];
+    if (pipe(execStatusPipe) != 0)
+        return false;
+    if (fcntl(execStatusPipe[1], F_SETFD, FD_CLOEXEC) == -1) {
+        close(execStatusPipe[0]);
+        close(execStatusPipe[1]);
+        return false;
+    }
+
+    pid_t pid = fork();
+    if(pid == -1) {
+        close(execStatusPipe[0]);
+        close(execStatusPipe[1]);
+        return false;
+    }
+
+    if (pid == 0) {
+        close(execStatusPipe[0]);
+#ifdef __linux__
+        if (hasPrivateRuntime)
+            execve(process.c_str(), processArgs.data(), processEnvironment.data());
+        else
+#endif
+            execv(process.c_str(), processArgs.data());
+        const int execError = errno;
+        const ssize_t statusBytesWritten = write(execStatusPipe[1], &execError, sizeof(execError));
+        (void)statusBytesWritten;
         _exit(EXIT_FAILURE);
     }
 
-    return true;
+    close(execStatusPipe[1]);
+    int execError = 0;
+    ssize_t bytesRead;
+    do {
+        bytesRead = read(execStatusPipe[0], &execError, sizeof(execError));
+    } while (bytesRead == -1 && errno == EINTR);
+    close(execStatusPipe[0]);
+
+    if (bytesRead > 0) {
+        int childStatus = 0;
+        waitpid(pid, &childStatus, 0);
+        return false;
+    }
+    return bytesRead == 0;
 }
 
 int Platform::getProcessId()
@@ -114,6 +184,29 @@ std::string Platform::getCurrentDir()
         res += "/";
     }
     return res;
+}
+
+std::vector<std::string> Platform::listDirectoryEntries(std::string path)
+{
+    std::vector<std::string> entries;
+    std::error_code error;
+    const std::filesystem::directory_iterator end;
+    auto iterator = std::filesystem::directory_iterator(path, error);
+    while (!error && iterator != end) {
+        const auto entryPath = iterator->path();
+        std::error_code statusError;
+        if (iterator->is_directory(statusError)) {
+            auto entry = entryPath.generic_string();
+            if (!entry.ends_with('/'))
+                entry.push_back('/');
+            entries.push_back(std::move(entry));
+        } else if (iterator->is_regular_file(statusError)) {
+            entries.push_back(entryPath.generic_string());
+        }
+        iterator.increment(error);
+    }
+    std::ranges::sort(entries);
+    return entries;
 }
 
 bool Platform::copyFile(std::string from, std::string to)
