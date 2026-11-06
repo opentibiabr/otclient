@@ -283,7 +283,15 @@ void Application::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_resources", "extractDownloadedArchiveToWorkDir", &ResourceManager::extractDownloadedArchiveToWorkDir, &g_resources);
     g_lua.bindSingletonFunction("g_resources", "extractDownloadedZip", &ResourceManager::extractDownloadedZip, &g_resources);
     g_lua.bindSingletonFunction("g_resources", "writeFileContentsToWorkDir", &ResourceManager::writeFileContentsToWorkDir, &g_resources);
-    g_lua.bindSingletonFunction("g_resources", "filesChecksums", &ResourceManager::filesChecksums, &g_resources);
+    // The C++ default argument is not applied by the Lua binder, so an omitted
+    // or nil scope must be converted to an empty vector here (legacy full scan).
+    g_lua.registerClassStaticFunction("g_resources", "filesChecksums", [](LuaInterface* lua) -> int {
+        std::vector<std::string> scopePaths;
+        if (lua->getTop() >= 1 && !lua->isNil(1))
+            scopePaths = lua->castValue<std::vector<std::string>>(1);
+        lua->clearStack();
+        return lua->polymorphicPush(g_resources.filesChecksums(scopePaths));
+    });
     g_lua.bindSingletonFunction("g_resources", "selfChecksum", &ResourceManager::selfChecksum, &g_resources);
     g_lua.bindSingletonFunction("g_resources", "updateFiles", &ResourceManager::updateFiles, &g_resources);
     g_lua.bindSingletonFunction("g_resources", "updateExecutable", &ResourceManager::updateExecutable, &g_resources);

@@ -1,3 +1,38 @@
+ChangeUrlDialog < MainWindow
+  id: changeUrlDialog
+  size: 400 120
+  !text: tr('Change Updater URL')
+
+  Panel
+    id: contentPanel
+    anchors.fill: parent
+    margin: 10
+    margin-top: 30
+    layout:
+      type: verticalBox
+      spacing: 10
+
+    TextEdit
+      id: urlInput
+      height: 20
+
+    Panel
+      id: buttonRow
+      height: 25
+      layout:
+        type: horizontalBox
+        spacing: 5
+
+      Button
+        id: okButton
+        width: 80
+        !text: tr('OK')
+
+      Button
+        id: restartButton
+        width: 80
+        !text: tr('Restart')
+
 StaticMainWindow
   id: updaterWindow
   !text: tr('Updater')
@@ -41,8 +76,8 @@ StaticMainWindow
     margin-top: 5
     margin-bottom: 10
     !text: tr('Change updater URL')
-    @onClick: Updater.changeUrl()
-    $!mobile:
+    @onClick: if Updater.enableChangeUrl then Updater.changeUrl() end
+    $mobile:
       visible: false
 
   Button
