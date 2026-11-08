@@ -242,7 +242,7 @@ PhantomMiniWindow
       anchors.right: standPosture.right
       anchors.bottom: parent.bottom
       font: cipsoftFont
-      color: #c0c0c0ff
+      color: #ffffffff
       size: 44 13
       @onClick: |
         g_game.stop()
@@ -599,7 +599,7 @@ PhantomMiniWindow
       margin-right: 7
       anchors.bottom: icons.bottom
       font: cipsoftFont
-      color: #c0c0c0ff
+      color: #ffffffff
       size: 44 13
       @onClick: |
         g_game.stop()
