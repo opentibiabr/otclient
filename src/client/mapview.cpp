@@ -205,11 +205,18 @@ void MapView::drawFloor()
         g_drawPool.flush();
     }
 
-    if (m_posInfo.rect.contains(g_window.getMousePosition() * g_window.getDisplayDensity())) {
-        if (m_crosshairTexture && m_mousePosition.isValid()) {
-            const auto& point = transformPositionTo2D(m_mousePosition);
-            const auto& crosshairRect = Rect(point, m_tileSize, m_tileSize);
-            g_drawPool.addTexturedRect(crosshairRect, m_crosshairTexture);
+    auto mousePoint = g_window.getMousePosition();
+    if (g_app.getHUDScale() != DEFAULT_DISPLAY_DENSITY)
+        mousePoint.scale(g_app.getHUDScale());
+
+    if (m_posInfo.rect.contains(mousePoint * g_window.getDisplayDensity())) {
+        if (m_crosshairTexture) {
+            m_mousePosition = getPosition(mousePoint);
+            if (m_mousePosition.isValid()) {
+                const auto& point = transformPositionTo2D(m_mousePosition);
+                const auto& crosshairRect = Rect(point, m_tileSize, m_tileSize);
+                g_drawPool.addTexturedRect(crosshairRect, m_crosshairTexture);
+            }
         }
     } else if (m_lastHighlightTile) {
         m_mousePosition = {}; // Invalidate mousePosition
