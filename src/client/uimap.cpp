@@ -97,6 +97,8 @@ void UIMap::drawSelf(const DrawPoolType drawPane)
 
 void UIMap::updateMapRect() {
     m_mapView->updateRect(m_mapviewRect);
+    if (isHovered() && m_mapView->getLastMousePosition().isValid())
+        m_mapView->updateMouseCursor(m_mapView->getLastMousePosition());
 }
 
 // ----------------- moved from header: bodies that access m_mapView -----------------
@@ -311,6 +313,7 @@ void UIMap::onHoverChange(bool hovered)
         if (mousePosition.isValid()) {
             m_mapView->onMouseMove(mousePosition);
             m_mapView->setLastMousePosition(mousePosition);
+            m_mapView->updateMouseCursor(mousePosition);
         }
     }
 }
@@ -327,6 +330,7 @@ bool UIMap::onMouseMove(const Point& mousePos, const Point& mouseMoved)
     if (isHovered() && m_mapView->getLastMousePosition() != pos) {
         m_mapView->onMouseMove(pos);
         m_mapView->setLastMousePosition(pos);
+        m_mapView->updateMouseCursor(pos);
     } else if (isHovered()) {
         m_mapView->updateMouseCursor(pos);
     }

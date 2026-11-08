@@ -127,15 +127,23 @@ void MapView::drawFloor(const bool updateHover)
     const auto mousePoint = g_window.getMousePosition();
     const bool mouseInsideMap = m_posInfo.rect.contains(mousePoint * g_window.getDisplayDensity());
 
-    if (mouseInsideMap && m_crosshairTexture) {
+    if (mouseInsideMap) {
         const auto mousePosition = getPosition(mousePoint);
-        if (mousePosition != m_mousePosition) {
+        if (m_crosshairTexture)
             m_mousePosition = mousePosition;
-            if (updateHover) {
-                destroyHighlightTile();
-                updateHighlightTile(mousePosition);
-            }
+
+        if (updateHover && (!m_highlightUpdatesEnabled || mousePosition != m_highlightMousePosition)) {
+            destroyHighlightTile();
+            updateHighlightTile(mousePosition);
+        } else if (!updateHover && (m_lastHighlightTile || m_highlightMousePosition.isValid())) {
+            destroyHighlightTile();
         }
+        m_highlightUpdatesEnabled = updateHover;
+    } else {
+        m_mousePosition = {};
+        if (m_lastHighlightTile || m_highlightMousePosition.isValid())
+            destroyHighlightTile();
+        m_highlightUpdatesEnabled = false;
     }
 
     uint32_t flags = Otc::DrawThings;
@@ -224,9 +232,6 @@ void MapView::drawFloor(const bool updateHover)
             const auto& crosshairRect = Rect(point, m_tileSize, m_tileSize);
             g_drawPool.addTexturedRect(crosshairRect, m_crosshairTexture);
         }
-    } else if (m_lastHighlightTile) {
-        m_mousePosition = {}; // Invalidate mousePosition
-        destroyHighlightTile();
     }
 }
 
@@ -614,7 +619,6 @@ void MapView::onMouseMove(const Position& mousePos, const bool /*isVirtualMove*/
 {
     destroyHighlightTile();
     updateHighlightTile(mousePos);
-    updateMouseCursor(mousePos);
 }
 
 void MapView::updateMouseCursor(const Position& mousePos)
@@ -694,7 +698,7 @@ void MapView::onKeyRelease(const InputEvent& inputEvent)
     const bool shiftPressed = inputEvent.keyboardModifiers & Fw::KeyboardShiftModifier;
     if (shiftPressed != m_shiftPressed) {
         m_shiftPressed = shiftPressed;
-        onMouseMove(m_mousePosition);
+        destroyHighlightTile();
     }
 }
 
@@ -1046,6 +1050,7 @@ void MapView::setCrosshairTexture(const std::string& texturePath)
 }
 
 void MapView::updateHighlightTile(const Position& mousePos) {
+    m_highlightMousePosition = mousePos;
     if (m_drawHighlightTarget) {
         if ((m_lastHighlightTile = (m_shiftPressed ? getTopTile(mousePos) : g_map.getTile(mousePos))))
             m_lastHighlightTile->select(m_shiftPressed ? TileSelectType::NO_FILTERED : TileSelectType::FILTERED);
@@ -1057,6 +1062,7 @@ void MapView::destroyHighlightTile() {
         m_lastHighlightTile->unselect();
         m_lastHighlightTile = nullptr;
     }
+    m_highlightMousePosition = {};
 }
 
 void MapView::addForegroundTile(const TilePtr& tile) {

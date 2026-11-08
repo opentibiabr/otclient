@@ -251,6 +251,7 @@ private:
     Position m_customCameraPosition;
     Position m_lastCameraPosition;
     Position m_mousePosition;
+    Position m_highlightMousePosition;
     Position m_shaderPosition;
 
     std::array<AwareRange, Otc::InvalidDirection + 1> m_viewPortDirection;
@@ -268,6 +269,7 @@ private:
     bool m_follow{ true };
     bool m_drawingLight{ true };
     bool m_drawHarmony{ true };
+    bool m_highlightUpdatesEnabled{ false };
 
     bool m_fadeFinish{ false };
     bool m_autoViewMode{ false };
