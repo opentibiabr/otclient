@@ -128,7 +128,14 @@ public:
     void setLastMousePosition(const Position& mousePos) { m_mousePosition = mousePos; }
     const Position& getLastMousePosition() const { return m_mousePosition; }
 
-    void setDrawHighlightTarget(const bool enable) { m_drawHighlightTarget = enable; }
+    void setDrawHighlightTarget(const bool enable)
+    {
+        if (m_drawHighlightTarget == enable)
+            return;
+
+        m_drawHighlightTarget = enable;
+        destroyHighlightTile();
+    }
 
     void setFloorFading(const uint16_t value) { m_floorFading = value; }
 
