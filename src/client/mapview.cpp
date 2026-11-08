@@ -121,9 +121,22 @@ void MapView::preLoad() {
     g_map.updateAttachedWidgets(static_self_cast<MapView>());
 }
 
-void MapView::drawFloor()
+void MapView::drawFloor(const bool updateHover)
 {
     const auto& cameraPosition = m_posInfo.camera;
+    const auto mousePoint = g_window.getMousePosition();
+    const bool mouseInsideMap = m_posInfo.rect.contains(mousePoint * g_window.getDisplayDensity());
+
+    if (mouseInsideMap && m_crosshairTexture) {
+        const auto mousePosition = getPosition(mousePoint);
+        if (mousePosition != m_mousePosition) {
+            m_mousePosition = mousePosition;
+            if (updateHover) {
+                destroyHighlightTile();
+                updateHighlightTile(mousePosition);
+            }
+        }
+    }
 
     uint32_t flags = Otc::DrawThings;
     if (m_drawNames) { flags |= Otc::DrawNames; }
@@ -205,18 +218,11 @@ void MapView::drawFloor()
         g_drawPool.flush();
     }
 
-    auto mousePoint = g_window.getMousePosition();
-    if (m_posInfo.rect.contains(mousePoint * g_window.getDisplayDensity())) {
-        if (m_crosshairTexture) {
-            const auto mousePosition = getPosition(mousePoint);
-            if (mousePosition != m_mousePosition)
-                onMouseMove(m_mousePosition = mousePosition, true);
-
-            if (m_mousePosition.isValid()) {
-                const auto& point = transformPositionTo2D(m_mousePosition);
-                const auto& crosshairRect = Rect(point, m_tileSize, m_tileSize);
-                g_drawPool.addTexturedRect(crosshairRect, m_crosshairTexture);
-            }
+    if (mouseInsideMap) {
+        if (m_crosshairTexture && m_mousePosition.isValid()) {
+            const auto& point = transformPositionTo2D(m_mousePosition);
+            const auto& crosshairRect = Rect(point, m_tileSize, m_tileSize);
+            g_drawPool.addTexturedRect(crosshairRect, m_crosshairTexture);
         }
     } else if (m_lastHighlightTile) {
         m_mousePosition = {}; // Invalidate mousePosition
@@ -606,11 +612,13 @@ void MapView::onFadeInFinished()
 // so the onMouseMove event is triggered by sending the new tile position that the mouse is in.
 void MapView::onMouseMove(const Position& mousePos, const bool /*isVirtualMove*/)
 {
-    { // Highlight Target System
-        destroyHighlightTile();
-        updateHighlightTile(mousePos);
-    }
+    destroyHighlightTile();
+    updateHighlightTile(mousePos);
+    updateMouseCursor(mousePos);
+}
 
+void MapView::updateMouseCursor(const Position& mousePos)
+{
     if (!g_mouse.isCursorChanged()) {
         bool cursorSet = false;
         if (m_cursorAnimations) {

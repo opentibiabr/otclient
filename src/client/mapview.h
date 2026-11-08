@@ -122,6 +122,7 @@ public:
     void setAntiAliasingMode(Otc::AntialiasingMode mode);
 
     void onMouseMove(const Position& mousePos, bool isVirtualMove = false);
+    void updateMouseCursor(const Position& mousePos);
     void onKeyRelease(const InputEvent& inputEvent);
 
     void setLastMousePosition(const Position& mousePos) { m_mousePosition = mousePos; }
@@ -196,7 +197,7 @@ private:
     uint8_t calcFirstVisibleFloor(bool checkLimitsFloorsView) const;
     uint8_t calcLastVisibleFloor() const;
 
-    void drawFloor();
+    void drawFloor(bool updateHover);
     void drawLights();
 
     bool canFloorFade() const { return m_floorViewMode == Otc::FADE && m_floorFading; }

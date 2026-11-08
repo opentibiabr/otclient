@@ -27,6 +27,7 @@
 #include "lightview.h"
 #include "map.h"
 #include "mapview.h"
+#include "framework/ui/uimanager.h"
 #include "framework/graphics/drawpoolmanager.h"
 #include "framework/otml/otmlnode.h"
 #include <framework/platform/platformwindow.h>
@@ -55,7 +56,7 @@ UIMap::~UIMap()
 void UIMap::draw(const DrawPoolType drawPane) {
     if (drawPane == DrawPoolType::MAP) {
         g_drawPool.preDraw(drawPane, [this] {
-            m_mapView->drawFloor();
+            m_mapView->drawFloor(isHovered() || g_ui.isMouseGrabbed());
         }, [this] {
             m_mapView->registerEvents();
         }, m_mapView->m_posInfo.rect, m_mapView->m_posInfo.srcRect,
@@ -303,8 +304,15 @@ void UIMap::resetCursorToDefault()
 void UIMap::onHoverChange(bool hovered)
 {
     UIWidget::onHoverChange(hovered);
-    if (!hovered)
+    if (!hovered) {
         resetCursorToDefault();
+    } else {
+        const auto mousePosition = getPosition(g_window.getMousePosition());
+        if (mousePosition.isValid()) {
+            m_mapView->onMouseMove(mousePosition);
+            m_mapView->setLastMousePosition(mousePosition);
+        }
+    }
 }
 
 bool UIMap::onMouseMove(const Point& mousePos, const Point& mouseMoved)
@@ -319,6 +327,8 @@ bool UIMap::onMouseMove(const Point& mousePos, const Point& mouseMoved)
     if (isHovered() && m_mapView->getLastMousePosition() != pos) {
         m_mapView->onMouseMove(pos);
         m_mapView->setLastMousePosition(pos);
+    } else if (isHovered()) {
+        m_mapView->updateMouseCursor(pos);
     }
 
     return UIWidget::onMouseMove(mousePos, mouseMoved);
