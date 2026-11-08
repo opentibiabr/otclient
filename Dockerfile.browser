@@ -35,9 +35,10 @@ RUN apt-get install -y --no-install-recommends \
 SHELL ["/bin/bash", "-lc"]
 
 WORKDIR /opt
+ARG EMSCRIPTEN_VERSION=6.0.13
 RUN git clone --filter=blob:none --single-branch --depth 1 https://github.com/emscripten-core/emsdk.git emsdk \
- && /opt/emsdk/emsdk install latest \
- && /opt/emsdk/emsdk activate latest
+ && /opt/emsdk/emsdk install ${EMSCRIPTEN_VERSION} \
+ && /opt/emsdk/emsdk activate ${EMSCRIPTEN_VERSION}
 
 ENV VCPKG_ROOT=/opt/vcpkg
 COPY vcpkg.json /tmp/vcpkg.json

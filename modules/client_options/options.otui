@@ -259,7 +259,6 @@ MainWindow
   QtButton
     !text: tr('Ok')
     size: 42 20
-    color: #c0c0c0ff
     anchors.right: next.left
     anchors.bottom: parent.bottom
     margin-right: 8
@@ -271,7 +270,6 @@ MainWindow
   QtButton
     !text: tr('Apply')
     size: 42 20
-    color: #c0c0c0ff
     anchors.right: next.left
     anchors.bottom: parent.bottom
     margin-right: 8
@@ -282,7 +280,6 @@ MainWindow
   QtButton
     !text: tr('Cancel')
     size: 42 20
-    color: #c0c0c0ff
     anchors.right: parent.right
     anchors.bottom: parent.bottom
     margin-bottom: -4

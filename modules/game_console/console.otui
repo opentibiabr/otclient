@@ -170,7 +170,7 @@ ConsoleTabBarButton < UIButton
 
   $checked:
     image-clip: 0 0 96 18
-    color: #dfdfdfff
+    color: #ffffffff
 
   $on !checked:
     image-clip: 0 18 96 18
@@ -479,7 +479,7 @@ Panel
     margin-bottom: 3
     margin-right: 3
     size: 64 18
-    color: #c0c0c0ff
+    color: #ffffffff
     font: cipsoftFont
     !text: tr('Chat Off')
     &isChecked: false
