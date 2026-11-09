@@ -2,6 +2,8 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros">
+    <TOGGLE_FRAMEWORK_EDITOR Condition="'$(TOGGLE_FRAMEWORK_EDITOR)'==''">OFF</TOGGLE_FRAMEWORK_EDITOR>
+    <FRAMEWORK_EDITOR_DEFINITION Condition="'$(TOGGLE_FRAMEWORK_EDITOR)'=='ON'">FRAMEWORK_EDITOR;</FRAMEWORK_EDITOR_DEFINITION>
     <PREPROCESSOR_DEFS>
         WIN32;
         _CRT_SECURE_NO_WARNINGS;
@@ -13,6 +15,7 @@
         FRAMEWORK_NET;
         FRAMEWORK_SOUND;
         FRAMEWORK_PROTOBUF;
+        $(FRAMEWORK_EDITOR_DEFINITION)
         FRAMEWORK_HAVE_LIBARCHIVE;
         USE_PRECOMPILED_HEADERS;
         OPENSSL_API_COMPAT=0x10100000L;

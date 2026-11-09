@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "declarations.h"
 #ifdef FRAMEWORK_PROTOBUF
 #include <appearances.pb.h>
@@ -80,6 +82,7 @@ public:
     int getNumPatternZ() { return m_numPatternZ; }
     int getAnimationPhases() const;
     int getIdleAnimationPhases() const;
+    const std::vector<uint32_t>& getThumbnailAnimationSprites() const { return m_thumbnailAnimationSprites; }
     Animator* getAnimator() const { return m_animator; }
     Animator* getIdleAnimator() const { return m_idleAnimator; }
 
@@ -270,6 +273,7 @@ private:
     std::string m_customImage;
 
     std::vector<uint32_t> m_spritesIndex;
+    std::vector<uint32_t> m_thumbnailAnimationSprites;
     std::vector<TextureData> m_textureData;
 
     std::atomic_bool m_loading{ false };

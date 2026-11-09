@@ -1,0 +1,201 @@
+AssetEditHistoryEntry < Button
+  height: 58
+  checkable: true
+  background-color: #303030
+  border-width: 1
+  border-color: #4a4a4a
+  padding: 3
+
+  UISpriteEditorCanvas
+    id: historyThumbnail
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 2
+    size: 40 40
+    phantom: true
+    visible: false
+
+  Label
+    id: historyText
+    anchors.left: historyThumbnail.right
+    anchors.right: parent.right
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 5
+    margin-right: 3
+    height: 50
+    text-wrap: true
+    color: #dedede
+    phantom: true
+
+BackupChangeEntry < AssetEditHistoryEntry
+  height: 58
+
+AssetBackupPackageIcon < Panel
+  size: 34 34
+  background-color: #26222c
+  border-width: 1
+  border-color: #594a6f
+
+  Panel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    margin-left: 7
+    margin-right: 7
+    margin-top: 14
+    margin-bottom: 5
+    background-color: #6847a1
+    border-width: 1
+    border-color: #997cc4
+
+    Panel
+      anchors.horizontalCenter: parent.horizontalCenter
+      anchors.top: parent.top
+      anchors.bottom: parent.bottom
+      width: 2
+      background-color: #c3a7e7
+
+  Panel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: parent.top
+    height: 7
+    margin-left: 4
+    margin-right: 4
+    margin-top: 8
+    background-color: #b199d4
+    border-width: 1
+    border-color: #d0b9ee
+
+InstalledAssetBackupEntry < Button
+  height: 46
+  checkable: true
+  padding: 4
+  background-color: #303030
+  border-width: 1
+  border-color: #4a4a4a
+
+  $hover:
+    background-color: #39343f
+
+  $on:
+    background-color: #493a60
+    border-color: #a48acb
+
+  AssetBackupPackageIcon
+    id: backupPackageIcon
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+
+  Label
+    id: backupTimestamp
+    anchors.left: backupPackageIcon.right
+    anchors.right: parent.right
+    anchors.top: parent.top
+    margin-left: 7
+    margin-right: 4
+    margin-top: 6
+    height: 16
+    color: #f0edf5
+    text-wrap: false
+
+  Label
+    id: backupCaption
+    anchors.left: backupPackageIcon.right
+    anchors.right: parent.right
+    anchors.top: backupTimestamp.bottom
+    margin-left: 7
+    margin-right: 4
+    height: 14
+    color: #bcb2c8
+    text-wrap: false
+
+InstalledAssetBackupEmptyEntry < Label
+  height: 46
+  text-align: center
+  text-wrap: true
+  color: #bcbcbc
+  background-color: #303030
+  border-width: 1
+  border-color: #4a4a4a
+  padding: 6
+
+Panel
+  id: historyPanel
+  anchors.fill: parent
+  visible: false
+
+  AppearanceCenteredSectionHeader
+    id: historyHeader
+    !text: tr('Asset edit history')
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: parent.top
+
+  Label
+    id: historyDescription
+    !text: tr('Edit log: asset-editor-history.json. Full package backups are restored from Export.')
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: historyHeader.bottom
+    margin-top: 5
+    height: 38
+    text-wrap: true
+
+  Label
+    id: historySourceLabel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: historyDescription.bottom
+    margin-top: 4
+    height: 20
+    text-wrap: false
+
+  ScrollablePanel
+    id: assetEditHistoryList
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: historySourceLabel.bottom
+    anchors.bottom: historyDetailTitle.top
+    margin-top: 4
+    margin-bottom: 7
+    vertical-scrollbar: assetEditHistoryScroll
+    layout:
+      type: verticalBox
+      spacing: 3
+    auto-focus: none
+
+  VerticalScrollBar
+    id: assetEditHistoryScroll
+    anchors.top: assetEditHistoryList.top
+    anchors.bottom: assetEditHistoryList.bottom
+    anchors.right: parent.right
+    step: 50
+    pixels-scroll: true
+
+  AppearanceCenteredSectionHeader
+    id: historyDetailTitle
+    !text: tr('Select an edit')
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: historyDetailLabel.top
+
+  Label
+    id: historyDetailLabel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: restoreHistoryButton.top
+    margin-bottom: 6
+    height: 92
+    text-wrap: true
+
+  AppearanceActionButton
+    id: restoreHistoryButton
+    !text: tr('Restore previous state')
+    !tooltip: tr('Restore the appearance and sprite state saved before this edit. This creates a new history entry.')
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    height: 25
+    @onClick: modules.game_sprite_editor.restoreAssetHistoryEntry()

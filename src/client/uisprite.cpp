@@ -21,6 +21,7 @@
  */
 
 #include "uisprite.h"
+#include <client/game.h>
 #include <client/spritemanager.h>
 #include "framework/graphics/drawpoolmanager.h"
 #include "framework/otml/otmlnode.h"
@@ -50,7 +51,7 @@ void UISprite::drawSelf(const DrawPoolType drawPane)
 
 void UISprite::setSpriteId(const int id)
 {
-    if (!g_sprites.isLoaded())
+    if (!g_sprites.isLoaded() && !g_game.isUsingProtobuf())
         return;
 
     m_spriteId = id;

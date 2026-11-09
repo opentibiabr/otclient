@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="320" height="64" viewBox="0 0 320 64">
+  <image xlink:href="../../data/images/topbuttons/assets_editor.png" x="4" y="6" width="52" height="52" image-rendering="pixelated" />
+
+  <text x="68" y="31" fill="#e8e5df" font-family="Verdana, DejaVu Sans, sans-serif" font-size="28" font-weight="700" letter-spacing="1.2">ASSETS</text>
+
+  <g stroke-linejoin="round">
+    <path d="M68 48 L79 42 L79 54 Z" fill="#9b8060" />
+    <path d="M68 48 L75 47 L68 48 L75 49 Z" fill="#292727" />
+    <path d="M79 42 H202 V54 H79 Z" fill="#c79d55" />
+    <path d="M83 44 H199 V47 H83 Z" fill="#e5c37e" />
+    <path d="M202 42 H211 V54 H202 Z" fill="#8277a8" />
+    <path d="M205 44 H211 V52 H205 Z" fill="#b5a7d5" />
+  </g>
+
+  <text x="220" y="53" fill="#c4b4ee" font-family="Verdana, DejaVu Sans, sans-serif" font-size="13" font-weight="700" letter-spacing="2.2">EDITOR</text>
+</svg>

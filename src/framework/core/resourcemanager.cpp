@@ -29,6 +29,7 @@
 #include "framework/graphics/drawpoolmanager.h"
 #include "framework/net/protocolhttp.h"
 #include "framework/platform/platform.h"
+#include "framework/stdext/string.h"
 #include "framework/util/crypt.h"
 
 #ifndef USE_PRECOMPILED_HEADERS
@@ -744,15 +745,29 @@ std::string ResourceManager::resolvePath(const std::string& path)
 
 std::string ResourceManager::getRealDir(const std::string& path)
 {
+    const auto resolvedPath = resolvePath(path);
+    const auto relativePath = resolvedPath.starts_with("/") ? resolvedPath.substr(1) : resolvedPath;
     std::string dir;
-    if (const char* cdir = PHYSFS_getRealDir(resolvePath(path).c_str()))
+    if (const char* cdir = PHYSFS_getRealDir(relativePath.c_str()))
         dir = cdir;
     return dir;
 }
 
 std::string ResourceManager::getRealPath(const std::string& path)
 {
-    return getRealDir(path) + "/" + path;
+    const auto resolvedPath = resolvePath(path);
+    const auto realDir = getRealDir(path);
+    if (realDir.empty())
+        return resolvedPath;
+
+    const auto relativePath = resolvedPath.starts_with("/") ? resolvedPath.substr(1) : resolvedPath;
+#ifdef WIN32
+    const auto realPath = std::filesystem::path(stdext::utf8_to_utf16(realDir)) /
+                          std::filesystem::path(stdext::utf8_to_utf16(relativePath));
+    return stdext::utf16_to_utf8(realPath.generic_wstring());
+#else
+    return (std::filesystem::path(realDir) / relativePath).generic_string();
+#endif
 }
 
 std::string ResourceManager::getBaseDir()
