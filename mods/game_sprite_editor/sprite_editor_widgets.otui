@@ -1,0 +1,242 @@
+AppearanceResultRow < Button
+  height: 52
+  text: ''
+  anchors.left: parent.left
+  anchors.right: parent.right
+  anchors.top: parent.top
+
+  UISpriteEditorCanvas
+    id: thumbnail
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 4
+    size: 40 40
+
+  Label
+    id: appearanceId
+    anchors.left: thumbnail.right
+    anchors.right: parent.right
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 7
+    height: 22
+    text-align: center
+    text-wrap: false
+
+SpritePickerCell < Button
+  size: 70 60
+  text: ''
+  checkable: true
+  draggable: true
+  anchors.left: parent.left
+  anchors.top: parent.top
+  text-wrap: false
+
+  UISpriteEditorCanvas
+    id: thumbnail
+    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.top: parent.top
+    margin-top: 1
+    size: 32 32
+    phantom: true
+
+  Label
+    id: spriteSizeBadge
+    anchors.top: parent.top
+    anchors.right: parent.right
+    margin-top: 2
+    margin-right: 1
+    size: 20 12
+    text-align: right
+    text-offset: 9 -10
+    text-wrap: false
+    font: small-9px
+    color: #ffffff
+    background-color: alpha
+    phantom: true
+    visible: false
+
+  Label
+    id: spritePickerId
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: thumbnail.bottom
+    height: 17
+    text-align: center
+    text-wrap: false
+    background-color: #242424
+    phantom: true
+
+  $on:
+    image-clip: 0 20 43 20
+    text-offset: 1 1
+
+  $pressed:
+    image-clip: 0 20 43 20
+    text-offset: 1 1
+
+  $dragging:
+    opacity: 0.8
+
+AppearanceSectionHeader < Label
+  height: 23
+  background-color: #603bb0
+  color: #ffffff
+  text-offset: 5 3
+  text-wrap: false
+
+AppearanceCenteredSectionHeader < AppearanceSectionHeader
+  text-align: center
+  text-offset: 0 3
+
+AppearanceFieldLabel < Label
+  height: 18
+  text-offset: 0 2
+  text-wrap: false
+
+AppearanceTextEdit < TextEdit
+  height: 22
+
+AppearanceCenteredNumberEdit < AppearanceTextEdit
+  text-align: center
+
+AppearanceOptionCheckBox < CheckBox
+  height: 21
+  text-offset: 18 0
+  image-rect: 0 4 12 12
+  text-wrap: false
+
+AppearanceFlagCheckBox < AppearanceOptionCheckBox
+
+AppearanceNavigationButton < Button
+  height: 26
+
+  $on:
+    image-clip: 0 20 43 20
+    text-offset: 1 1
+
+  $pressed:
+    image-clip: 0 20 43 20
+    text-offset: 1 1
+
+AppearanceActionButton < Button
+  height: 26
+
+AppearanceValueRow < Panel
+  height: 24
+
+  AppearanceFieldLabel
+    id: propertyLabel
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    width: 145
+    text-wrap: false
+
+  AppearanceTextEdit
+    id: propertyValue
+    anchors.left: propertyLabel.right
+    anchors.right: parent.right
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 5
+    height: 20
+
+AppearanceValueSelectRow < Panel
+  height: 24
+
+  AppearanceFieldLabel
+    id: propertyLabel
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    width: 145
+    text-wrap: false
+
+  ComboBox
+    id: propertySelection
+    anchors.left: propertyLabel.right
+    anchors.right: parent.right
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 5
+    height: 20
+
+AppearanceTextValueRow < AppearanceValueRow
+
+AppearanceMultiValueGroup < Panel
+  height: 24
+
+  AppearanceFieldLabel
+    id: propertyLabel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: parent.top
+    height: 20
+    text-wrap: false
+
+  Panel
+    id: propertyOptions
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: propertyLabel.bottom
+    anchors.bottom: parent.bottom
+    layout: verticalBox
+    spacing: 0
+
+AppearanceMultiValueCheckBox < AppearanceFlagCheckBox
+  height: 19
+
+AppearanceTimelineFrame < Button
+  size: 28 22
+  text-wrap: false
+
+  $on:
+    image-clip: 0 20 43 20
+    text-offset: 1 1
+
+  $pressed:
+    image-clip: 0 20 43 20
+    text-offset: 1 1
+
+AppearanceTimelineTrack < Panel
+  size: 30 22
+
+  Panel
+    id: previewTimelineRail
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.verticalCenter: parent.verticalCenter
+    height: 2
+    background-color: #777777
+    phantom: true
+
+  Panel
+    id: previewTimelineThumb
+    size: 8 12
+    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.verticalCenter: parent.verticalCenter
+    background-color: #d9c7ff
+    border-width: 1
+    border-color: #f1eaff
+    phantom: true
+    visible: false
+
+AppearanceTimelineCell < Panel
+  size: 30 48
+
+  AppearanceTimelineFrame
+    id: previewTimelineFrameButton
+    anchors.left: parent.left
+    anchors.top: parent.top
+    margin-left: 1
+
+  AppearanceTimelineTrack
+    id: previewTimelineTrack
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: previewTimelineFrameButton.bottom
+    margin-top: 4
+
+PreviewDirectionButton < Button
+  size: 48 21
+  checkable: true
+
+  $checked:
+    image-clip: 0 20 43 20
+    text-offset: 1 1
