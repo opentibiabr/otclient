@@ -62,8 +62,11 @@ vcpkg_cmake_configure(
     OPTIONS
         ${FEATURE_OPTIONS}
         -DALSOFT_ENABLE_MODULES=OFF
-        # CMake >= 4 synthesizes the std module with host libstdc++ headers when
-        # cross-compiling with NDK/emscripten clang; openal does not use import std.
+        # openal does not use C++ modules. Disable scanning (CMake >= 3.28) and
+        # import std (CMake 4.0-4.4; 4.5 ignores CMAKE_CXX_MODULE_STD and derives
+        # it from scanning) so the std module is never synthesized with host
+        # libstdc++ headers during NDK/emscripten cross-builds.
+        -DCMAKE_CXX_SCAN_FOR_MODULES=OFF
         -DCMAKE_CXX_MODULE_STD=OFF
         -DALSOFT_CPUEXT_NEON=${ALSOFT_CPUEXT_NEON}
         -DALSOFT_EXAMPLES=OFF
@@ -110,6 +113,7 @@ vcpkg_cmake_configure(
         ALSOFT_BACKEND_WASAPI
         ALSOFT_REQUIRE_WASAPI
         CMAKE_CXX_MODULE_STD
+        CMAKE_CXX_SCAN_FOR_MODULES
 )
 
 vcpkg_cmake_install()
