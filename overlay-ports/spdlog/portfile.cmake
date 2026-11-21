@@ -1,14 +1,7 @@
-# GitHub returns HTTP 503 for commit-patch URLs with ?full_index=1; use plain .patch (SHA512 updated for its content).
-vcpkg_download_distfile(SPDLOG_BACKPORT_3541_PATCH
-    URLS https://github.com/gabime/spdlog/commit/1685e694c5cd8328280c48f8b94b1281c17c6fee.patch
-    FILENAME spdlog-backport-3541.patch
-    SHA512 ae6bd65fc986d764baf49057d0b5c42d0e0fbd2ae6c9ac007d76450396bb439835d5df2e90697aecea67af3b3388dbafd974cd52e1f05d9a5131ecbd7ed50a9b
-)
-vcpkg_download_distfile(SPDLOG_BACKPORT_3543_PATCH
-    URLS https://github.com/gabime/spdlog/commit/d5af52d903ed69f96c7350155e94aeff248b31eb.patch
-    FILENAME spdlog-backport-3543.patch
-    SHA512 f867fb3ae7aa4802cc0cfeeca7594d0c994f28b7a39324aec86be9fab1784dceaf837833f8a3f73cc983a5e9c0f018022f8cff8a3771beae2f65f6f7e4f01f1f
-)
+# Backports of gabime/spdlog#3541 and #3543, vendored from the vcpkg baseline port.
+# GitHub's commit-patch endpoints return HTTP 503 intermittently (and always
+# with ?full_index=1), so the patches ship with the port instead of downloading.
+# Order matters: 3543 only applies after 3541.
 
 vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
@@ -17,8 +10,8 @@ vcpkg_from_github(
     SHA512 8df117055d19ff21c9c9951881c7bdf27cc0866ea3a4aa0614b2c3939cedceab94ac9abaa63dc4312b51562b27d708cb2f014c68c603fd1c1051d3ed5c1c3087
     HEAD_REF v1.x
     PATCHES
-        "${SPDLOG_BACKPORT_3541_PATCH}"
-        "${SPDLOG_BACKPORT_3543_PATCH}"
+        "${CMAKE_CURRENT_LIST_DIR}/spdlog-backport-3541.patch"
+        "${CMAKE_CURRENT_LIST_DIR}/spdlog-backport-3543.patch"
 )
 
 vcpkg_check_features(OUT_FEATURE_OPTIONS FEATURE_OPTIONS

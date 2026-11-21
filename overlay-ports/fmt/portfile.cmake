@@ -1,9 +1,6 @@
-# GitHub returns HTTP 503 for commit-patch URLs with ?full_index=1; use plain .patch (SHA512 updated for its content).
-vcpkg_download_distfile(FMT_BACKPORT_4813_PATCH
-    URLS https://github.com/fmtlib/fmt/commit/588b3a0f8f6a8bcf2a959cae882d5b2703e86737.patch
-    FILENAME fmt-backport-4813.patch
-    SHA512 8562103930a347597150ec5d74165248694a936363f721b2e0c61baffc10a1eb6f6c368b9eab8294e66bc625f5103d02ee9362d99baf80c5c20b1aeac6a3c2a9
-)
+# Backport of fmtlib/fmt#4813, vendored from the vcpkg baseline port.
+# GitHub's commit-patch endpoints return HTTP 503 intermittently (and always
+# with ?full_index=1), so the patch ships with the port instead of downloading.
 
 vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
@@ -12,7 +9,7 @@ vcpkg_from_github(
     SHA512 5ac2ba0f54a484999ed5407d82b77aad170cea49a267decd2c0eedadf3b14413e2a83fcc8e9ca9c16640595e019b8636e160f72314d8be50653324e82ac745eb
     HEAD_REF master
     PATCHES
-        "${FMT_BACKPORT_4813_PATCH}"
+        "${CMAKE_CURRENT_LIST_DIR}/fmt-backport-4813.patch"
 )
 
 vcpkg_cmake_configure(
