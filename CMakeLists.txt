@@ -47,6 +47,11 @@ endif()
 # *****************************************************************************
 project(otclient)
 
+# otclient does not use C++ modules. Disable module scanning so CMake >= 3.28
+# (including 4.5's automatic import std) never synthesizes the std module with
+# host libstdc++ headers during NDK/emscripten cross-builds.
+set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
+
 # *****************************************************************************
 # Append cmake search path
 # *****************************************************************************
