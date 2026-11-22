@@ -1,0 +1,138 @@
+Panel
+  id: propertiesPanel
+  anchors.fill: parent
+
+  AppearanceCenteredSectionHeader
+    id: appearanceInfoLabel
+    !text: tr('Select an appearance from the list.')
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: parent.top
+
+  AppearanceFieldLabel
+    !text: tr('Name')
+    anchors.left: parent.left
+    anchors.top: appearanceInfoLabel.bottom
+    margin-top: 7
+
+  AppearanceTextEdit
+    id: appearanceName
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    margin-top: 3
+
+  AppearanceFieldLabel
+    !text: tr('Description')
+    anchors.left: parent.left
+    anchors.top: appearanceName.bottom
+    margin-top: 5
+
+  AppearanceTextEdit
+    id: appearanceDescription
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    margin-top: 3
+
+  Panel
+    id: propertiesTabBar
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: appearanceDescription.bottom
+    margin-top: 7
+    height: 24
+    layout: horizontalBox
+    spacing: 4
+    visible: false
+
+    AppearanceNavigationButton
+      id: flagsTabButton
+      !text: tr('Flags')
+      width: 158
+      height: 24
+      @onClick: modules.game_sprite_editor.showPropertiesTab('flags')
+
+    AppearanceNavigationButton
+      id: valuesTabButton
+      !text: tr('Values')
+      width: 158
+      height: 24
+      @onClick: modules.game_sprite_editor.showPropertiesTab('values')
+
+  Label
+    id: noPropertyOptionsLabel
+    !text: tr('No flags or values for this appearance.')
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: propertiesTabBar.bottom
+    margin-top: 4
+    height: 21
+    visible: false
+
+  UIScrollArea
+    id: appearanceFlagsList
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: propertiesTabBar.bottom
+    anchors.bottom: appearanceStatus.top
+    margin-top: 4
+    margin-right: 12
+    margin-bottom: 5
+    vertical-scrollbar: appearanceFlagsScroll
+    layout: verticalBox
+    padding: 3
+    auto-focus: none
+
+  VerticalScrollBar
+    id: appearanceFlagsScroll
+    anchors.top: appearanceFlagsList.top
+    anchors.bottom: appearanceFlagsList.bottom
+    anchors.right: parent.right
+    step: 21
+    pixels-scroll: true
+
+  UIScrollArea
+    id: appearanceValuesList
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: propertiesTabBar.bottom
+    anchors.bottom: appearanceStatus.top
+    margin-top: 4
+    margin-right: 12
+    margin-bottom: 5
+    vertical-scrollbar: appearanceValuesScroll
+    layout: verticalBox
+    padding: 3
+    auto-focus: none
+    visible: false
+
+  VerticalScrollBar
+    id: appearanceValuesScroll
+    anchors.top: appearanceValuesList.top
+    anchors.bottom: appearanceValuesList.bottom
+    anchors.right: parent.right
+    step: 24
+    pixels-scroll: true
+    visible: false
+
+  Label
+    id: appearanceStatus
+    !text: tr('Saved in the working copy.')
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: saveAppearanceButton.top
+    margin-bottom: 5
+    height: 28
+    text-wrap: true
+
+  AppearanceActionButton
+    id: saveAppearanceButton
+    !text: tr('Save changes')
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    height: 0
+    visible: false
+    enabled: false
+    @onClick: modules.game_sprite_editor.saveAppearanceProperties()

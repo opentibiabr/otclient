@@ -112,6 +112,7 @@ public:
 
     void setSpritesCount(const int count) { m_spritesCount = count; }
     int getSpritesCount() const { return m_spritesCount; }
+    std::string getSpriteRanges() const;
 
     void setPath(const std::string& path) { m_path = path; }
     std::string getPath() const { return m_path; }
@@ -134,7 +135,40 @@ public:
     ImagePtr getSpriteImage(int id, bool& isLoading);
     void saveSpriteToFile(int id, const std::string& file);
 
+#ifdef FRAMEWORK_EDITOR
+    std::string createWorkCopy(int version);
+    bool workCopyExists(int version);
+    std::string resetWorkCopy(int version);
+    std::string getWorkCopyHistoryState(int version);
+    void beginWorkCopyEdit(int version);
+    bool commitWorkCopyEdit(int version, const std::string& label);
+    std::string undoWorkCopyEdit(int version);
+    std::string redoWorkCopyEdit(int version);
+    std::string getInstalledAssetBackups(int version);
+    std::string getInstalledAssetBackupHistory(int version, const std::string& backupName);
+    std::string restoreInstalledAssetBackup(int version, const std::string& backupName);
+    std::string getAssetEditHistory(int version);
+    std::string appendAssetEditHistory(int version, const std::string& entry);
+    std::string getSpriteImagePngBase64(int version, int spriteId);
+    void restoreSpriteImageFromPngBase64(int version, int spriteId, const std::string& encodedPng);
+    std::string exportWorkCopy(int version, const std::string& destination);
+    std::string installWorkCopy(int version);
+    std::string installWorkCopyAsNewVersion(int sourceVersion, int targetVersion);
+    void saveSpriteToWorkCopy(int id, const ImagePtr& image, int version);
+    int importSpriteFromFile(int id, const std::string& fileName, int version);
+    int importSpriteForAppearance(int referenceSpriteId, const std::string& fileName, int version);
+    std::string importSpritesFromDirectory(const std::string& directory, int version);
+    std::string importSpritesFromSheet(const std::string& fileName, int version, int spriteWidth, int spriteHeight,
+                                       int firstCell, int lastCell, bool skipTransparentCells);
+    void releaseSpriteSheetsExcept(int id);
+    void releaseDecodedSpriteSheets();
+#endif
+
 private:
+#ifdef FRAMEWORK_EDITOR
+    int importNewSprite(const ImagePtr& image, int version, SpriteLayout spriteLayout);
+    std::vector<int> importNewSprites(const std::vector<std::pair<ImagePtr, SpriteLayout>>& sprites, int version);
+#endif
     uint32_t m_spritesCount{ 0 };
     std::vector<SpriteSheetPtr> m_sheets;
     std::string m_path;
