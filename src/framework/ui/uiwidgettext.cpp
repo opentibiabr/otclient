@@ -209,10 +209,12 @@ void UIWidget::updateText()
     if ((hasEventListener(EVENT_TEXT_CLICK) || hasEventListener(EVENT_TEXT_HOVER)) && m_textEvents.empty())
         processCodeTags();
 
+    // Also for an invalid rect, or setRect's deferred re-wrap check never settles.
+    m_textWrapWidth = getWidth();
+
     if (isTextWrap() && m_rect.isValid()) {
         m_drawTextColors = m_textColors;
         const auto& wrapOptions = getTextWrapOptions();
-        m_textWrapWidth = getWidth();
         if (m_textOverflowLength > 0 && m_text.length() > m_textOverflowLength)
             m_drawText = m_font->wrapText(m_text.substr(0, m_textOverflowLength - m_textOverflowCharacter.length()) + m_textOverflowCharacter, getWidth() - m_textOffset.x, wrapOptions, &m_drawTextColors);
         else

@@ -3,10 +3,11 @@
 ## Supported OS
 
 - Ubuntu 24.04
+- Ubuntu 26.04
 
 ## 1. Install the required software
 
-The following command will install Git, CMake, a compiler and the libraries used by OTClient. 
+The following command will install Git, CMake, a compiler and the libraries used by OTClient Redemption. 
 
 Git will be used to download the source code, and CMake will be used to generate the build files.
 

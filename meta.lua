@@ -2356,6 +2356,9 @@ function AttachedEffect:clone() end
 ---@return integer
 function AttachedEffect:getId() end
 
+---@return integer
+function AttachedEffect:getThingId() end
+
 ---@return number
 function AttachedEffect:getSpeed() end
 
@@ -3807,8 +3810,9 @@ function g_resources.resolvePath(path) end
 ---@return string
 function g_resources.fileChecksum(path) end
 
+---@param scopePaths? string[]
 ---@return table<string, string>
-function g_resources.filesChecksums() end
+function g_resources.filesChecksums(scopePaths) end
 
 ---@return string
 function g_resources.selfChecksum() end

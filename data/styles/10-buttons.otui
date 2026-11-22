@@ -1,6 +1,6 @@
 Button < UIButton
   font: cipsoftFont
-  color: #dfdfdfff
+  color: #ffffffff
   size: 43 20
   text-offset: 0 2
   image-source: /images/ui/buttons
@@ -220,7 +220,7 @@ QtButton < UIButton
   image-border: 3
   padding: 5 10 5 10
   opacity: 1.0
-  color: #b9b9b9ff
+  color: #ffffffff
 
   $pressed:
     image-clip: 0 46 22 23

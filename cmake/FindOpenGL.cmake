@@ -48,10 +48,10 @@ ELSE (WIN32)
 
   IF (APPLE)
 
-    # On MacOS X the default method is to use OpenGL.framework.
-    # Changing the OPENGL_USE_APPLE_X11 option will allow using
-    # OpenGL with X11 instead.
-    OPTION (OPENGL_USE_APPLE_X11 "Use X11 OpenGL on OSX?" ON)
+    # X11 Mesa libGL cannot back a Cocoa NSOpenGLContext, so default to the
+    # native OpenGL.framework. XQuartz users can still opt in with
+    # -DOPENGL_USE_APPLE_X11=ON from a fresh build directory.
+    OPTION (OPENGL_USE_APPLE_X11 "Use X11 OpenGL on OSX?" OFF)
 
     IF (NOT OPENGL_USE_APPLE_X11)
 
@@ -67,7 +67,9 @@ ELSE (WIN32)
       # currently present within CMake. Therefore, explicity set
       # the link commands here.
       SET (OPENGL_gl_LIBRARY "-framework OpenGL" CACHE STRING "OpenGL lib for OSX")
-      SET (OPENGL_glu_LIBRARY "-framework AGL" CACHE STRING "AGL lib for OSX")
+      # AGL.framework was removed from the macOS SDK; OpenGL.framework
+      # exports both GL and GLU.
+      SET (OPENGL_glu_LIBRARY "-framework OpenGL" CACHE STRING "GLU link flag for OSX")
 
     ENDIF (NOT OPENGL_USE_APPLE_X11)
 
