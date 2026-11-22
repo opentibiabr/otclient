@@ -175,7 +175,7 @@ local function toggleMute()
         setOption('soundMaster', restoreVolume)
     else
         options.soundMaster.lastVolume = current
-        g_settings.setNumber('soundMasterLastVolume', current)
+        g_settings.set('soundMasterLastVolume', current)
         setOption('soundMaster', 1)
     end
 end
