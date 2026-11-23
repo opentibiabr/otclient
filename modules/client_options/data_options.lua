@@ -861,7 +861,8 @@ return {
     },
     soundMaster = {
         value = 25,
-        aux = true,
+        -- Audio starts enabled, so a saved muted volume must count as a change on load.
+        aux = false,
         lastVolume = 25,
         action = function(value, options, controller, panels, extraWidgets)
             if not g_sounds then
